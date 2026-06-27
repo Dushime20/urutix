@@ -1,34 +1,41 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SystemSettingsService } from '../../services/system-settings.service';
 
 @Controller('settings/public')
 export class PublicSettingsController {
-    constructor(private readonly settingsService: SystemSettingsService) { }
+  private readonly logger = new Logger(PublicSettingsController.name);
 
-    /**
-     * Get public contact settings (no auth required)
-     */
-    @Get('contact')
-    async getPublicContactSettings() {
-        try {
-            const [phone, email, address] = await Promise.all([
-                this.settingsService.getSetting('contact', 'phone').catch(() => '+250788309463'),
-                this.settingsService.getSetting('contact', 'email').catch(() => 'hello@urutix.com'),
-                this.settingsService.getSetting('contact', 'address').catch(() => 'Kigali, Rwanda · Nairobi, Kenya'),
-            ]);
+  constructor(
+    private readonly settingsService: SystemSettingsService,
+    private readonly configService: ConfigService,
+  ) {}
 
-            return {
-                phone,
-                email,
-                address,
-            };
-        } catch (error) {
-            // Return defaults if settings not found
-            return {
-                phone: '+250788309463',
-                email: 'hello@urutix.com',
-                address: 'Kigali, Rwanda · Nairobi, Kenya',
-            };
-        }
+  /**
+   * Returns public contact settings.
+   * Priority: system_settings table → CONTACT_* env vars → empty strings.
+   * No hardcoded values — if nothing is configured, fields return empty.
+   */
+  @Get('contact')
+  async getPublicContactSettings() {
+    try {
+      const [phone, email, address] = await Promise.all([
+        this.settingsService.getSetting('contact', 'phone')
+          .catch(() => this.configService.get<string>('CONTACT_PHONE') || ''),
+        this.settingsService.getSetting('contact', 'email')
+          .catch(() => this.configService.get<string>('CONTACT_EMAIL') || ''),
+        this.settingsService.getSetting('contact', 'address')
+          .catch(() => this.configService.get<string>('CONTACT_ADDRESS') || ''),
+      ]);
+
+      return { phone, email, address };
+    } catch (error) {
+      this.logger.error(`Failed to load contact settings: ${error.message}`);
+      return {
+        phone:   this.configService.get<string>('CONTACT_PHONE')   || '',
+        email:   this.configService.get<string>('CONTACT_EMAIL')   || '',
+        address: this.configService.get<string>('CONTACT_ADDRESS') || '',
+      };
     }
+  }
 }

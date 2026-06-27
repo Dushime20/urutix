@@ -35,7 +35,7 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const token = client.handshake.auth.token || client.handshake.headers.authorization?.split(' ')[1];
 
             if (token) {
-                const secret = this.configService.get<string>('JWT_SECRET') || 'your-secret-key';
+                const secret = this.configService.get<string>('JWT_SECRET');
                 const payload = this.jwtService.verify(token, { secret });
 
                 // Join user-specific room

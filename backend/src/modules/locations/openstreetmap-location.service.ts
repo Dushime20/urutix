@@ -159,7 +159,7 @@ export class OpenStreetMapLocationService {
 
       const response = await axios.get(url, {
         headers: {
-          'User-Agent': 'CargoAIMatching/1.0 (https://github.com/your-repo)',
+          'User-Agent': 'UrutiX-Logistics/1.0',
           'Accept-Language': 'en',
         },
         timeout: 10000,

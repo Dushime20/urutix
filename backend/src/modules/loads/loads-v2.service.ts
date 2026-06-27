@@ -1234,7 +1234,7 @@ export class LoadsV2Service {
     user: User,
   ): void {
     // Handle case where user might be undefined or missing tenantId
-    const tenantId = user?.tenantId || '00000000-0000-0000-0000-000000000001';
+    const tenantId = user?.tenantId;
 
     queryBuilder.andWhere('load.tenantId = :tenantId', {
       tenantId: tenantId,

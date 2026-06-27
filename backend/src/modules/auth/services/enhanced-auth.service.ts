@@ -151,7 +151,7 @@ export class EnhancedAuthService {
       const existingUser = await this.userRepository.findOne({
         where: {
           email: normalizedEmail,
-          tenantId: tenant || '00000000-0000-0000-0000-000000000001',
+          tenantId: tenant,
           role: userType,
         },
       });
@@ -543,7 +543,7 @@ export class EnhancedAuthService {
       );
 
       // Fetch tenant name
-      let tenantName = 'Default Tenant';
+      let tenantName = '';
       if (user.tenantId) {
         try {
           const tenant = await this.tenantRepository.findOne({
@@ -631,7 +631,7 @@ export class EnhancedAuthService {
       const tokens = await this.generateTokens(user, false);
       
       // Fetch tenant name
-      let tenantName = 'Default Tenant';
+      let tenantName = '';
       if (user.tenantId) {
         const tenant = await this.tenantRepository.findOne({ where: { id: user.tenantId } });
         if (tenant) tenantName = tenant.name;
@@ -1493,7 +1493,7 @@ export class EnhancedAuthService {
       }
 
       // Fetch tenant name separately using tenantId
-      let tenantName = 'Default Tenant';
+      let tenantName = '';
       if (user.tenantId) {
         try {
           const tenant = await this.tenantRepository.findOne({
@@ -1650,7 +1650,7 @@ export class EnhancedAuthService {
       await this.userProfileRepository.save(userProfile);
 
       // Fetch tenant name
-      let tenantName = 'Default Tenant';
+      let tenantName = '';
       if (user.tenantId) {
         try {
           const tenant = await this.tenantRepository.findOne({
@@ -1717,11 +1717,11 @@ export class EnhancedAuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_SECRET') || 'your-secret-key',
-        expiresIn: `${accessExpiryTime}m`, // Fix: use accessExpiryTime directly (minutes)
+        secret: this.configService.get('JWT_SECRET'),
+        expiresIn: `${accessExpiryTime}m`,
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
         expiresIn: `${refreshTokenExpiry}m`,
       }),
     ]);
@@ -1837,12 +1837,11 @@ export class EnhancedAuthService {
       }
     }
 
-    // Check if default tenant exists
-    const defaultId = '00000000-0000-0000-0000-000000000001';
-    const defaultTenant = await this.tenantRepository.findOne({ where: { id: defaultId } });
-    
-    if (defaultTenant) {
-        return defaultId;
+    // Check if default tenant exists (configured via DEFAULT_TENANT_ID env var)
+    const defaultId = this.configService?.get<string>('DEFAULT_TENANT_ID');
+    if (defaultId) {
+      const defaultTenant = await this.tenantRepository.findOne({ where: { id: defaultId } });
+      if (defaultTenant) return defaultId;
     }
 
     // Fallback: Find the first available active tenant
@@ -2056,7 +2055,7 @@ export class EnhancedAuthService {
     try {
       const auditLog = this.auditLogRepository.create({
         userId,
-        tenantId: metadata.tenantId || '00000000-0000-0000-0000-000000000001', // Add tenantId from metadata or default
+        tenantId: metadata.tenantId || userId, // use userId as a non-null fallback until tenantId is always available
         action: AuditAction.OTHER, // Use the correct enum value
         description: `User ${event}`, // Use description field instead of event
         metadata,

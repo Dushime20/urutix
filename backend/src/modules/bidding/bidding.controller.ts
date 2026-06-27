@@ -85,14 +85,16 @@ export class BiddingController {
       },
     },
   })
-  async testDatabase(): Promise<{
+  async testDatabase(
+    @Request() req: any,
+  ): Promise<{
     message: string;
     auctionCount: number;
     timestamp: string;
   }> {
     try {
       const auctionCount = await this.biddingService.getAuctions(
-        '00000000-0000-0000-0000-000000000001',
+        req.user?.tenantId,
       );
       return {
         message: 'Database connection successful',
@@ -456,8 +458,8 @@ export class BiddingController {
   ): Promise<Bid> {
     const bid = await this.biddingService.acceptBid(
       bidId,
-      req.user?.userId || '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-      req.user?.tenantId || '00000000-0000-0000-0000-000000000001',
+      req.user.userId,
+      req.user.tenantId,
       req.user?.role as UserRole,
     );
 

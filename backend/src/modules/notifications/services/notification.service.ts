@@ -188,8 +188,13 @@ export class NotificationService {
 
       switch ((notification as any).channel) {
         case NotificationChannel.EMAIL:
+          // Only send if a real recipient email was stored in metadata
+          if (!notification.metadata?.recipientEmail) {
+            this.logger.warn(`[EMAIL] No recipientEmail for notification ${(notification as any).id} — skipping email delivery`);
+            break;
+          }
           result = await this.emailService.sendGenericEmail({
-            to:       notification.metadata?.recipientEmail || 'placeholder@example.com',
+            to:       notification.metadata.recipientEmail,
             subject:  notification.title || 'Notification',
             textBody: notification.message,
           });

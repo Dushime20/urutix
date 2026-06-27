@@ -78,8 +78,11 @@ export class ActivityLogService {
 
             // Send email alert if enabled
             if (settings['email_enabled'] === 'true' || settings['email_enabled'] === true) {
-                // In a real app, we would fetch admin emails. For now, we mock or use a configured admin email
-                const adminEmail = settings['admin_email'] || 'admin@example.com';
+                const adminEmail = settings['admin_email'];
+                if (!adminEmail) {
+                    console.warn('[SecurityAlert] admin_email not configured in system settings — skipping email alert');
+                    return;
+                }
                 await this.systemSettingsService.sendEmail(
                     adminEmail,
                     'Security Alert: Suspicious Activity Detected',

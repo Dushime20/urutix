@@ -80,7 +80,7 @@ export class AuthService {
     const existingUser = await this.userRepository.findOne({
       where: {
         email,
-        tenantId: tenant || '00000000-0000-0000-0000-000000000001', // Allow tenant specification
+        tenantId: tenant,
       },
     });
 
@@ -197,7 +197,7 @@ export class AuthService {
     );
 
     // Fetch tenant and validate status
-    let tenantName = 'Default Tenant';
+    let tenantName = '';
     if (user.tenantId) {
       try {
         const tenant = await this.tenantRepository.findOne({
@@ -260,8 +260,7 @@ export class AuthService {
     let payload: any;
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret:
-          this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
       });
     } catch (err) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -503,7 +502,7 @@ export class AuthService {
     }
 
     // Fetch tenant name separately using tenantId
-    let tenantName = 'Default Tenant';
+    let tenantName = '';
     if (user.tenantId) {
       try {
         const tenant = await this.tenantRepository.findOne({
@@ -544,12 +543,12 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_SECRET') || 'your-secret-key',
+        secret: this.configService.get('JWT_SECRET') ,
         expiresIn: accessTokenExpiry,
       }),
       this.jwtService.signAsync(payload, {
         secret:
-          this.configService.get('JWT_REFRESH_SECRET') || 'your-refresh-secret',
+          this.configService.get('JWT_REFRESH_SECRET'),
         expiresIn: refreshTokenExpiry,
       }),
     ]);
@@ -665,13 +664,13 @@ export class AuthService {
       }
     }
 
-    // TODO: Implement proper tenant discovery based on:
-    // 1. Subdomain from request headers
-    // 2. Organization code in registration
-    // 3. Invitation token
-    // 4. Default tenant for public registration
+    // No tenant provided — find the first active tenant
+    const anyTenant = await this.tenantRepository.findOne({
+      where: {},
+      order: { createdAt: 'ASC' },
+    });
+    if (anyTenant) return anyTenant.id;
 
-    // For now, use default tenant
-    return '00000000-0000-0000-0000-000000000001';
+    throw new ConflictException('No tenant configured. Please contact your administrator.');
   }
 }

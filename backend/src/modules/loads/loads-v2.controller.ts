@@ -160,14 +160,7 @@ export class LoadsV2Controller {
   })
   async findPublished(
     @Query() queryDto: LoadQueryV2Dto,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'DRIVER',
-      },
-    },
+    @Request() req,
   ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
     try {
       const user = req.user as User;
@@ -219,14 +212,7 @@ export class LoadsV2Controller {
   })
   async getAssignedLoads(
     @Query() queryDto: LoadQueryV2Dto,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'TRUCK_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
     try {
       const user = req.user as User;
@@ -253,14 +239,7 @@ export class LoadsV2Controller {
   })
   async searchLoads(
     @Query() searchParams: any,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<PaginatedResponseV2<LoadResponseV2Dto>> {
     try {
       const user = req.user as User;
@@ -295,14 +274,7 @@ export class LoadsV2Controller {
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
       const user = req.user as User;
@@ -385,14 +357,7 @@ export class LoadsV2Controller {
   })
   async publishLoad(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
       const user = req.user as User;
@@ -422,14 +387,7 @@ export class LoadsV2Controller {
   })
   async unpublishLoad(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
       const user = req.user as User;
@@ -461,14 +419,7 @@ export class LoadsV2Controller {
   async assignTruck(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('truckId', ParseUUIDPipe) truckId: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
       const user = req.user as User;
@@ -498,14 +449,7 @@ export class LoadsV2Controller {
   })
   async unassignTruck(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
       const user = req.user as User;
@@ -536,14 +480,7 @@ export class LoadsV2Controller {
   async rateLoad(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() ratingData: { rating: number; comment?: string },
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<LoadResponseV2Dto> {
     try {
       const user = req.user as User;
@@ -573,14 +510,7 @@ export class LoadsV2Controller {
   })
   async getMatchingTrucks(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<any[]> {
     try {
       const user = req.user as User;
@@ -605,14 +535,7 @@ export class LoadsV2Controller {
   })
   async getLoadTracking(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<any> {
     try {
       const user = req.user as User;
@@ -641,14 +564,7 @@ export class LoadsV2Controller {
   })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
   ): Promise<{ message: string }> {
     try {
       const user = req.user as User;
@@ -677,14 +593,7 @@ export class LoadsV2Controller {
     description: 'Analytics retrieved successfully',
   })
   async getDashboardAnalytics(
-    @Request()
-    req = {
-      user: {
-        id: '701a9079-6100-4b47-a3b9-f9b070bfa7c6',
-        tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'CARGO_OWNER',
-      },
-    },
+    @Request() req,
     @Query('period') period?: string,
   ): Promise<any> {
     try {
@@ -714,3 +623,4 @@ export class LoadsV2Controller {
     };
   }
 }
+

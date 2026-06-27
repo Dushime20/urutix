@@ -53,7 +53,7 @@ import { TwoFactorController } from './controllers/two-factor.controller';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
+        secret: configService.get<string>('JWT_SECRET'),
         signOptions: { expiresIn: '24h' }, // 24 hours session duration
       }),
       inject: [ConfigService],

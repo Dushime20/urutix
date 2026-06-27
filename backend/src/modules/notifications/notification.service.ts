@@ -938,9 +938,12 @@ export class NotificationService {
     notification: Notification,
   ): Promise<void> {
     try {
-      // TODO: Get recipient email from user context or notification metadata
-      const recipientEmail =
-        notification.metadata?.recipientEmail || 'placeholder@example.com';
+      // Only send if we have a real recipient email in metadata
+      const recipientEmail = notification.metadata?.recipientEmail;
+      if (!recipientEmail) {
+        console.warn(`[EMAIL] No recipientEmail in metadata for notification ${notification.id} — skipping`);
+        return;
+      }
       await this.emailService.sendGenericEmail({
         to:       recipientEmail,
         subject:  notification.title || 'Notification',
