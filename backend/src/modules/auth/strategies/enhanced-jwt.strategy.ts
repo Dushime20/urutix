@@ -18,11 +18,18 @@ export class EnhancedJwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(EnhancedJwtStrategy.name);
 
   constructor(private configService: ConfigService) {
+    const jwtSecret = configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error(
+        '[EnhancedJwtStrategy] JWT_SECRET environment variable is not set. ' +
+        'Add JWT_SECRET to your .env file and restart the server.',
+      );
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
-      passReqToCallback: true, // Allow access to request object
+      secretOrKey: jwtSecret,
+      passReqToCallback: true,
     });
   }
 
