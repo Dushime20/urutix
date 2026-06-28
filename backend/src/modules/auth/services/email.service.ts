@@ -63,6 +63,10 @@ export class EmailService {
         port,
         secure,
         auth: { user, pass },
+        // Connection timeouts — prevents hanging on slow/unreliable SMTP servers
+        connectionTimeout: 10000,   // 10s to establish connection
+        greetingTimeout:   10000,   // 10s for server greeting
+        socketTimeout:     30000,   // 30s per socket operation
         ...(secure ? { tls: { rejectUnauthorized: false } } : {}),
       });
 
