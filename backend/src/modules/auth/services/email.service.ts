@@ -147,7 +147,7 @@ export class EmailService {
   async sendVerificationEmail(email: string, token: string): Promise<void> {
     const { frontendUrl } = getEnvConfig();
     const url = `${frontendUrl}/verify-email?token=${token}`;
-    await this.sendGenericEmail({
+    const result = await this.sendGenericEmail({
       to: email,
       subject: 'Verify your email address — UrutiX',
       htmlBody: this.renderEmail({
@@ -160,6 +160,9 @@ export class EmailService {
         note:     "If you didn't create an account, you can safely ignore this email.",
       }),
     });
+    if (!result.success) {
+      this.logger.error(`[EMAIL] sendVerificationEmail FAILED for ${email}: ${result.error}`);
+    }
   }
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
@@ -188,13 +191,10 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendDriverPasswordSetupEmail', email, {
       subject: 'Set up your UrutiX Driver Account',
       htmlBody: this.renderSetupEmail({
-        firstName,
-        role:     'Driver',
-        ctaColor: '#345E85',
+        firstName, role: 'Driver', ctaColor: '#345E85',
         setupUrl: `${frontendUrl}/driver/setup-password?token=${token}`,
         features: ['Accept and manage trip assignments', 'Track your routes in real time', 'Submit proof-of-delivery reports', 'View your earnings and schedules'],
       }),
@@ -205,17 +205,13 @@ export class EmailService {
     email: string, firstName: string, _lastName: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendDriverWelcomeEmail', email, {
       subject: 'You have been added as a Driver on UrutiX',
       htmlBody: this.renderEmail({
-        title:    'Welcome to Your Fleet',
-        greeting: `Welcome back, ${firstName}!`,
-        body:     'A truck owner has added you as a driver to their fleet on UrutiX. Since you already have an account, you can log in directly using your existing credentials.',
-        ctaLabel: 'Go to Dashboard',
-        ctaUrl:   `${frontendUrl}/auth`,
-        ctaColor: '#345E85',
-        note:     'If you have questions, contact your truck owner or our support team.',
+        title: 'Welcome to Your Fleet', greeting: `Welcome back, ${firstName}!`,
+        body:  'A truck owner has added you as a driver to their fleet on UrutiX. Since you already have an account, you can log in directly using your existing credentials.',
+        ctaLabel: 'Go to Dashboard', ctaUrl: `${frontendUrl}/auth`, ctaColor: '#345E85',
+        note: 'If you have questions, contact your truck owner or our support team.',
       }),
     });
   }
@@ -224,13 +220,10 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, tenantName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendTenantPasswordSetupEmail', email, {
       subject: `Set up your UrutiX Tenant Account — ${tenantName}`,
       htmlBody: this.renderSetupEmail({
-        firstName,
-        role:     'Tenant Admin',
-        ctaColor: '#0f172a',
+        firstName, role: 'Tenant Admin', ctaColor: '#0f172a',
         setupUrl: `${frontendUrl}/tenant/setup-password?token=${token}`,
         features: [`Manage your "${tenantName}" workspace`, 'Invite and manage team members', 'Configure subscription and billing', 'Monitor all fleet operations'],
       }),
@@ -241,13 +234,10 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendCargoOwnerPasswordSetupEmail', email, {
       subject: 'Set up your UrutiX Cargo Owner Account',
       htmlBody: this.renderSetupEmail({
-        firstName,
-        role:     'Cargo Owner',
-        ctaColor: '#345E85',
+        firstName, role: 'Cargo Owner', ctaColor: '#345E85',
         setupUrl: `${frontendUrl}/cargo-owner/setup-password?token=${token}`,
         features: ['Create and publish cargo shipments', 'Find and assign vetted carriers', 'Track shipments in real time', 'View analytics and shipping history'],
       }),
@@ -258,13 +248,10 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendBrokerPasswordSetupEmail', email, {
       subject: 'Set up your UrutiX Broker Account',
       htmlBody: this.renderSetupEmail({
-        firstName,
-        role:     'Broker',
-        ctaColor: '#059669',
+        firstName, role: 'Broker', ctaColor: '#059669',
         setupUrl: `${frontendUrl}/broker/setup-password?token=${token}`,
         features: ['Browse and bid on available loads', 'Manage assignments and commissions', 'Track shipment progress', 'View earnings and payout history'],
       }),
@@ -275,13 +262,10 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendTruckOwnerPasswordSetupEmail', email, {
       subject: 'Set up your UrutiX Truck Owner Account',
       htmlBody: this.renderSetupEmail({
-        firstName,
-        role:     'Truck Owner',
-        ctaColor: '#d97706',
+        firstName, role: 'Truck Owner', ctaColor: '#d97706',
         setupUrl: `${frontendUrl}/truck-owner/setup-password?token=${token}`,
         features: ['Manage your fleet of trucks and drivers', 'Track vehicles and performance', 'Monitor fuel and maintenance', 'View earnings and financial reports'],
       }),
@@ -292,15 +276,12 @@ export class EmailService {
     email: string, lenderName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendLenderPasswordSetupEmail', email, {
       subject: `Set up your UrutiX Lender Account — ${lenderName}`,
       htmlBody: this.renderSetupEmail({
-        firstName: lenderName,
-        role:      'Lender',
-        ctaColor:  '#7c3aed',
-        setupUrl:  `${frontendUrl}/lender/setup-password?token=${token}`,
-        features:  ['Manage loan applications and approvals', 'Set lending policies and interest rates', 'Track repayments and portfolio performance', 'View financial reports and analytics'],
+        firstName: lenderName, role: 'Lender', ctaColor: '#7c3aed',
+        setupUrl: `${frontendUrl}/lender/setup-password?token=${token}`,
+        features: ['Manage loan applications and approvals', 'Set lending policies and interest rates', 'Track repayments and portfolio performance', 'View financial reports and analytics'],
       }),
     });
   }
@@ -309,13 +290,10 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendAgentPasswordSetupEmail', email, {
       subject: 'Set up your UrutiX Agent Account',
       htmlBody: this.renderSetupEmail({
-        firstName,
-        role:     'Agent',
-        ctaColor: '#6d28d9',
+        firstName, role: 'Agent', ctaColor: '#6d28d9',
         setupUrl: `${frontendUrl}/agent/setup-password?token=${token}`,
         features: ['Coordinate cargo owners and carriers', 'Manage client relationships', 'Track shipments and provide updates', 'Handle documentation and reports'],
       }),
@@ -326,13 +304,10 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendCustomsOfficerPasswordSetupEmail', email, {
       subject: 'Set up your UrutiX Customs Officer Account',
       htmlBody: this.renderSetupEmail({
-        firstName,
-        role:     'Customs Officer',
-        ctaColor: '#0369a1',
+        firstName, role: 'Customs Officer', ctaColor: '#0369a1',
         setupUrl: `${frontendUrl}/customs-officer/setup-password?token=${token}`,
         features: ['Inspect incoming vehicles and shipments', 'Manage cargo inspection workflows', 'Flag restricted goods', 'Access audit logs and reports'],
       }),
@@ -343,17 +318,15 @@ export class EmailService {
     email: string, firstName: string, _lastName: string, cargoOwnerEmail: string, token: string,
   ): Promise<void> {
     const { frontendUrl } = getEnvConfig();
-    await this.sendGenericEmail({
-      to: email,
+    await this.sendAndLog('sendReceiverInvitationEmail', email, {
       subject: 'You have been invited to UrutiX as a Cargo Receiver',
       htmlBody: this.renderEmail({
-        title:    'You Have Been Invited',
-        greeting: `Hello ${firstName},`,
-        body:     `<strong>${cargoOwnerEmail}</strong> has invited you to become a cargo receiver on UrutiX. Click the button below to set up your password and access your account.`,
+        title: 'You Have Been Invited', greeting: `Hello ${firstName},`,
+        body:  `<strong>${cargoOwnerEmail}</strong> has invited you to become a cargo receiver on UrutiX. Click the button below to set up your password and access your account.`,
         ctaLabel: 'Accept Invitation & Set Password',
         ctaUrl:   `${frontendUrl}/receiver/setup-password?token=${token}`,
         ctaColor: '#345E85',
-        note:     `If you didn't expect this email, you can ignore it or contact ${cargoOwnerEmail}.`,
+        note: `If you didn't expect this email, you can ignore it or contact ${cargoOwnerEmail}.`,
       }),
     });
   }
@@ -361,74 +334,52 @@ export class EmailService {
   // ─── Broker / commission emails ────────────────────────────────────────────
 
   async sendBrokerLoadAssignmentEmail(
-    recipientEmail: string,
-    brokerName: string,
-    loadTitle: string,
-    loadId: string,
-    commissionRate: number,
-    commissionAmount: number,
+    recipientEmail: string, brokerName: string, loadTitle: string,
+    loadId: string, commissionRate: number, commissionAmount: number,
   ): Promise<void> {
-    await this.sendGenericEmail({
-      to: recipientEmail,
+    await this.sendAndLog('sendBrokerLoadAssignmentEmail', recipientEmail, {
       subject: `New Load Assignment: ${loadTitle} — UrutiX`,
       htmlBody: this.renderEmail({
-        title:    'New Load Assignment',
-        greeting: `Hello ${brokerName},`,
+        title: 'New Load Assignment', greeting: `Hello ${brokerName},`,
         body: `You have been assigned to a new load:<br><br>
           <strong>Load:</strong> ${loadTitle}<br>
           <strong>Load ID:</strong> ${loadId}<br>
           <strong>Commission Rate:</strong> ${commissionRate}%<br>
           <strong>Commission Amount:</strong> ${commissionAmount}`,
-        ctaLabel: 'View Load',
-        ctaUrl:   `${this.getFrontendUrl()}/dashboard/broker`,
-        ctaColor: '#059669',
-        note:     'Thank you for your work with UrutiX.',
+        ctaLabel: 'View Load', ctaUrl: `${this.getFrontendUrl()}/dashboard/broker`,
+        ctaColor: '#059669', note: 'Thank you for your work with UrutiX.',
       }),
     });
   }
 
   async sendCommissionStatusUpdateEmail(
-    recipientEmail: string,
-    brokerName: string,
-    loadTitle: string,
-    commissionAmount: number,
-    status: string,
+    recipientEmail: string, brokerName: string, loadTitle: string,
+    commissionAmount: number, status: string,
   ): Promise<void> {
-    await this.sendGenericEmail({
-      to: recipientEmail,
+    await this.sendAndLog('sendCommissionStatusUpdateEmail', recipientEmail, {
       subject: `Commission Update: ${loadTitle} — ${status}`,
       htmlBody: this.renderEmail({
-        title:    'Commission Status Update',
-        greeting: `Hello ${brokerName},`,
+        title: 'Commission Status Update', greeting: `Hello ${brokerName},`,
         body: `Your commission for <strong>${loadTitle}</strong> (amount: ${commissionAmount}) has been updated to <strong>${status}</strong>.`,
-        ctaLabel: 'View Commission',
-        ctaUrl:   `${this.getFrontendUrl()}/dashboard/broker`,
-        ctaColor: '#345E85',
+        ctaLabel: 'View Commission', ctaUrl: `${this.getFrontendUrl()}/dashboard/broker`, ctaColor: '#345E85',
       }),
     });
   }
 
   async sendCommissionPayoutRequestEmail(
-    recipientEmail: string,
-    brokerName: string,
-    totalAmount: number,
-    payoutMethod: string,
-    accountDetails: string,
+    recipientEmail: string, brokerName: string, totalAmount: number,
+    payoutMethod: string, accountDetails: string,
   ): Promise<void> {
-    await this.sendGenericEmail({
-      to: recipientEmail,
+    await this.sendAndLog('sendCommissionPayoutRequestEmail', recipientEmail, {
       subject: 'Payout Request Submitted — UrutiX',
       htmlBody: this.renderEmail({
-        title:    'Payout Request Submitted',
-        greeting: `Hello ${brokerName},`,
+        title: 'Payout Request Submitted', greeting: `Hello ${brokerName},`,
         body: `Your commission payout request has been submitted successfully.<br><br>
           <strong>Amount:</strong> ${totalAmount}<br>
           <strong>Method:</strong> ${payoutMethod}<br>
           <strong>Account:</strong> ${accountDetails}<br><br>
           We will process your request shortly and notify you once it has been approved.`,
-        ctaLabel: 'View Payouts',
-        ctaUrl:   `${this.getFrontendUrl()}/dashboard/broker`,
-        ctaColor: '#345E85',
+        ctaLabel: 'View Payouts', ctaUrl: `${this.getFrontendUrl()}/dashboard/broker`, ctaColor: '#345E85',
       }),
     });
   }
@@ -570,6 +521,25 @@ export class EmailService {
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  /**
+   * Shared wrapper used by all public email methods.
+   * Calls sendGenericEmail and logs the outcome with the caller's name
+   * so docker logs show exactly which email type succeeded or failed.
+   */
+  private async sendAndLog(
+    methodName: string,
+    to: string,
+    options: { subject: string; htmlBody?: string; textBody?: string; replyTo?: string },
+  ): Promise<void> {
+    this.logger.log(`[EMAIL] ${methodName} → to=${to} | subject="${options.subject}"`);
+    const result = await this.sendGenericEmail({ to, ...options });
+    if (result.success) {
+      this.logger.log(`[EMAIL] ${methodName} SUCCESS ✓ → ${to} | id=${result.messageId}`);
+    } else {
+      this.logger.error(`[EMAIL] ${methodName} FAILED ✗ → ${to} | ${result.error}`);
+    }
+  }
 
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
