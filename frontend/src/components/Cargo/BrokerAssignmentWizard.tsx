@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
     X, User, DollarSign, TrendingUp, Mail,
-    ArrowRight, ArrowLeft, CheckCircle, FileText, Calendar
+    ArrowRight, ArrowLeft, CheckCircle, FileText, Calendar,
+    Clock, MapPin, Truck
 } from 'lucide-react';
 import { brokerAPI } from '../../services/brokerApi';
 import toast from 'react-hot-toast';
@@ -29,12 +30,28 @@ interface BrokerAssignmentWizardProps {
     onSuccess?: () => void;
 }
 
-// Helper: convert an ISO date string or Date to yyyy-MM-dd for <input type="date">
+// Helper: convert an ISO date string or Date to yyyy-MM-dd for internal state
 const toDateInputValue = (value?: string | Date): string => {
     if (!value) return '';
     const d = new Date(value);
     if (isNaN(d.getTime())) return '';
     return d.toISOString().split('T')[0];
+};
+
+// Helper: format date for display — e.g. "Mon, 14 Jul 2025"
+const formatDisplayDate = (iso: string): string => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+// Helper: days between today and a yyyy-MM-dd string
+const daysFromNow = (iso: string): number | null => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return Math.ceil((d.getTime() - Date.now()) / 86_400_000);
 };
 
 export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
@@ -291,24 +308,96 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                         </div>
                     ) : (
                         /* STEP 2: CONTRACT TERMS */
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Agreed Rate</label>
+                        <div className="space-y-5">
+
+                            {/* ── Cargo Schedule Card (read-only, display only) ── */}
+                            <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-600">
+                                    <Truck className="w-3.5 h-3.5 text-white" />
+                                    <span className="text-xs font-semibold text-white uppercase tracking-wider">Cargo Schedule</span>
+                                    <span className="ml-auto text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">Auto-filled from cargo</span>
+                                </div>
+                                <div className="grid grid-cols-2 divide-x divide-blue-100">
+                                    {/* Pickup */}
+                                    <div className="p-4 flex flex-col gap-1.5">
+                                        <div className="flex items-center gap-1.5 text-blue-500">
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            <span className="text-[11px] font-semibold uppercase tracking-wider">Pickup Date</span>
+                                        </div>
+                                        {contractTerms.pickupDate ? (
+                                            <>
+                                                <p className="text-sm font-bold text-gray-800 leading-tight">
+                                                    {formatDisplayDate(contractTerms.pickupDate)}
+                                                </p>
+                                                {(() => {
+                                                    const days = daysFromNow(contractTerms.pickupDate);
+                                                    if (days === null) return null;
+                                                    const label = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days < 0 ? `${Math.abs(days)}d ago` : `In ${days} days`;
+                                                    const color = days < 0 ? 'text-red-500' : days <= 3 ? 'text-amber-500' : 'text-emerald-600';
+                                                    return (
+                                                        <span className={`flex items-center gap-1 text-xs font-medium ${color}`}>
+                                                            <Clock className="w-3 h-3" />
+                                                            {label}
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-gray-400 italic">Not set</p>
+                                        )}
+                                    </div>
+                                    {/* Delivery */}
+                                    <div className="p-4 flex flex-col gap-1.5">
+                                        <div className="flex items-center gap-1.5 text-indigo-500">
+                                            <MapPin className="w-3.5 h-3.5" />
+                                            <span className="text-[11px] font-semibold uppercase tracking-wider">Delivery Date</span>
+                                        </div>
+                                        {contractTerms.deliveryDate ? (
+                                            <>
+                                                <p className="text-sm font-bold text-gray-800 leading-tight">
+                                                    {formatDisplayDate(contractTerms.deliveryDate)}
+                                                </p>
+                                                {contractTerms.pickupDate && contractTerms.deliveryDate && (() => {
+                                                    const pickup = new Date(contractTerms.pickupDate);
+                                                    const delivery = new Date(contractTerms.deliveryDate);
+                                                    const span = Math.ceil((delivery.getTime() - pickup.getTime()) / 86_400_000);
+                                                    if (span <= 0) return null;
+                                                    return (
+                                                        <span className="flex items-center gap-1 text-xs font-medium text-indigo-500">
+                                                            <Clock className="w-3 h-3" />
+                                                            {span} day{span !== 1 ? 's' : ''} transit
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-gray-400 italic">Not set</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── Financial Terms ── */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="rounded-xl border border-gray-200 p-4 bg-white">
+                                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <DollarSign className="w-3.5 h-3.5" /> Agreed Rate
+                                    </p>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">$</span>
                                         <input
                                             type="number"
                                             value={contractTerms.agreedRate}
                                             onChange={(e) => setContractTerms({ ...contractTerms, agreedRate: Number(e.target.value) })}
-                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full pl-7 pr-3 py-2 text-sm font-semibold text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
                                         />
                                     </div>
                                 </div>
-                                <div className="col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Commission (%)</label>
+                                <div className="rounded-xl border border-gray-200 p-4 bg-white">
+                                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                        <TrendingUp className="w-3.5 h-3.5" /> Commission Rate
+                                    </p>
                                     <div className="relative">
-                                        <TrendingUp className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                                         <input
                                             type="number"
                                             min="0"
@@ -316,64 +405,36 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                             step="0.1"
                                             value={contractTerms.commissionRate}
                                             onChange={(e) => setContractTerms({ ...contractTerms, commissionRate: Number(e.target.value) })}
-                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full pl-3 pr-8 py-2 text-sm font-semibold text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
                                         />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">%</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Terms</label>
+                            {/* ── Payment Terms ── */}
+                            <div className="rounded-xl border border-gray-200 p-4 bg-white">
+                                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <FileText className="w-3.5 h-3.5" /> Payment Terms
+                                </p>
                                 <input
                                     type="text"
                                     value={contractTerms.paymentTerms}
                                     onChange={(e) => setContractTerms({ ...contractTerms, paymentTerms: e.target.value })}
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
                                     placeholder="e.g. Net 30 days"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Pickup Date
-                                        <span className="ml-1.5 text-xs text-gray-400 font-normal">(from cargo)</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                                        <input
-                                            type="date"
-                                            value={contractTerms.pickupDate}
-                                            readOnly
-                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed select-none"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Delivery Date
-                                        <span className="ml-1.5 text-xs text-gray-400 font-normal">(from cargo)</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                                        <input
-                                            type="date"
-                                            value={contractTerms.deliveryDate}
-                                            readOnly
-                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed select-none"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Special Instructions</label>
+                            {/* ── Special Instructions ── */}
+                            <div className="rounded-xl border border-gray-200 p-4 bg-white">
+                                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Special Instructions</p>
                                 <textarea
                                     rows={3}
                                     value={contractTerms.specialInstructions}
                                     onChange={(e) => setContractTerms({ ...contractTerms, specialInstructions: e.target.value })}
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Any specific requirements..."
+                                    className="w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 resize-none"
+                                    placeholder="Any specific requirements or notes for the broker..."
                                 />
                             </div>
                         </div>
