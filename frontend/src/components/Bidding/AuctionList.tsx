@@ -554,20 +554,21 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-col items-start gap-1 min-w-0">
                 <span className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider sm:tracking-widest">
-                  {auction.currentHighestBid ? 'Current Bid' : 'Starting Price'}
+                  {auction.currentHighestBid ? 'Lowest Bid So Far' : 'Open for Bids'}
                 </span>
                 <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 italic truncate w-full">
-                  {auction.currentHighestBid 
-                    ? formatCurrency(auction.currentHighestBid) 
-                    : auction.load?.offeredPrice 
-                      ? formatCurrency(Number(auction.load.offeredPrice))
-                      : auction.reservePrice 
-                        ? formatCurrency(Number(auction.reservePrice))
-                        : '$-.--'}
+                  {auction.currentHighestBid
+                    ? formatCurrency(auction.currentHighestBid)
+                    : '—'}
                 </span>
-                {!auction.currentHighestBid && auction.reservePrice && auction.load?.offeredPrice && (
-                  <span className="text-[7px] sm:text-[8px] font-bold text-slate-400 dark:text-slate-500 truncate w-full">
-                    Reserve: {formatCurrency(Number(auction.reservePrice))}
+                {auction.currentHighestBid && (
+                  <span className="text-[7px] sm:text-[8px] font-bold text-amber-500 dark:text-amber-400 truncate w-full">
+                    Bid lower to win
+                  </span>
+                )}
+                {!auction.currentHighestBid && (
+                  <span className="text-[7px] sm:text-[8px] font-bold text-emerald-500 dark:text-emerald-400 truncate w-full">
+                    Be first — bid your best price
                   </span>
                 )}
               </div>
@@ -769,11 +770,15 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         </td>
                         <td className="px-6 py-4">
                           {auction.currentHighestBid ? (
-                            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(auction.currentHighestBid)}</div>
-                          ) : auction.load?.offeredPrice ? (
-                            <div className="text-sm font-black text-blue-600 dark:text-blue-400">{formatCurrency(Number(auction.load.offeredPrice))}</div>
+                            <>
+                              <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(auction.currentHighestBid)}</div>
+                              <div className="text-[9px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-tight mt-0.5">Lowest so far — bid lower</div>
+                            </>
                           ) : (
-                            <div className="text-xs font-bold text-gray-300 dark:text-slate-700 italic uppercase">No price</div>
+                            <>
+                              <div className="text-sm font-black text-slate-400 dark:text-slate-500 italic">No bids yet</div>
+                              <div className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-tight mt-0.5">Be first — bid your best</div>
+                            </>
                           )}
                           <div className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
                         </td>
@@ -979,7 +984,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
               {/* Bid Amount */}
               <div className="space-y-3">
-                <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Bid Amount (USD) *</label>
+                <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Your Shipping Price (USD) *</label>
                 <div className="relative group">
                   <input
                     type="number"
@@ -987,16 +992,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     onChange={(e) => setBidAmount(e.target.value)}
                     className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
                     placeholder="0.00"
+                    min={1}
                   />
                 </div>
-                <div className="flex items-center gap-4 text-xs font-medium">
-                  <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 font-bold">
-                    Floor: {selectedAuction.currentHighestBid ? formatCurrency(selectedAuction.currentHighestBid) : formatCurrency(selectedAuction.reservePrice || 0)}
-                  </span>
-                  {selectedAuction.minimumBidIncrement && (
-                    <span className="text-gray-400 dark:text-slate-500">Min. Increment: {formatCurrency(selectedAuction.minimumBidIncrement)}</span>
+                <div className="flex flex-wrap items-center gap-3 text-xs font-medium">
+                  {selectedAuction.currentHighestBid ? (
+                    <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-lg border border-amber-100 dark:border-amber-800 font-bold">
+                      Current lowest: {formatCurrency(selectedAuction.currentHighestBid)} — bid lower to win
+                    </span>
+                  ) : (
+                    <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 font-bold">
+                      No bids yet — be first with your best price
+                    </span>
                   )}
                 </div>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 font-medium">
+                  The lowest bid wins. Enter the shipping price you are willing to charge.
+                </p>
               </div>
 
               {/* Asset Allocation */}
