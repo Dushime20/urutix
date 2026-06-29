@@ -39,74 +39,61 @@ export class BidValidationService {
   }
 
   /**
-   * REVERSE AUCTION: Carriers bid DOWN from target price
-   * Pricing: Reserve < Target < MaxBudget
-   * Winner: LOWEST bid above reserve
+   * REVERSE AUCTION: Carriers bid DOWN from target price.
+   * The reserve price is the MAXIMUM the cargo owner will pay (ceiling).
+   * Winner: LOWEST bid — lower bids are more competitive.
    */
   private validateReverseBid(bidAmount: number, auction: any): ValidationResult {
     const reservePrice = parseFloat(auction.reservePrice || '0');
-    const targetPrice = parseFloat(auction.targetPrice || auction.reservePrice || '0');
-    const maxBudget = auction.maxBudget ? parseFloat(auction.maxBudget) : Infinity;
     const minimumDecrement = auction.minimumBidDecrement ? parseFloat(auction.minimumBidDecrement) : 0;
 
-    // Rule 1: Must be above reserve price (quality floor)
-    if (bidAmount < reservePrice) {
-      throw new BadRequestException(
-        `Bid amount must be at least ${this.formatCurrency(reservePrice)} (reserve price). ` +
-        `This ensures minimum quality standards.`
-      );
+    // Rule 1: Must be a positive amount
+    if (bidAmount <= 0) {
+      throw new BadRequestException('Bid amount must be greater than zero.');
     }
 
-    // Rule 2: Check minimum decrement if there's a current bid
+    // Rule 2: Must beat current lowest bid by minimum decrement (if set)
     if (auction.currentHighestBid && minimumDecrement > 0) {
-      const currentBid = parseFloat(auction.currentHighestBid);
-      const maxAllowedBid = currentBid - minimumDecrement;
-      
+      const currentLowest = parseFloat(auction.currentHighestBid);
+      const maxAllowedBid = currentLowest - minimumDecrement;
+
       if (bidAmount > maxAllowedBid) {
         return {
           valid: false,
-          message: `In reverse auction, your bid must be at least ${this.formatCurrency(minimumDecrement)} lower than current bid (${this.formatCurrency(currentBid)})`,
-          suggestedBid: maxAllowedBid
+          message: `Your bid must be at least ${this.formatCurrency(minimumDecrement)} lower than the current lowest bid of ${this.formatCurrency(currentLowest)}. Maximum allowed: ${this.formatCurrency(maxAllowedBid)}.`,
+          suggestedBid: maxAllowedBid,
         } as any;
       }
     }
 
-    // Rule 3: Below target = HIGHLY competitive (shipper saves money)
-    if (bidAmount <= targetPrice) {
-      const savings = targetPrice - bidAmount;
+    // Rule 3: Above reserve price ceiling — cargo owner may not accept, but bid is still valid
+    if (reservePrice > 0 && bidAmount > reservePrice) {
+      return {
+        valid: true,
+        competitive: false,
+        warning: 'Above cargo owner budget',
+        message: `Your bid is above the cargo owner's maximum budget. Lower your price to improve chances of winning.`,
+        competitiveLevel: 'LOW',
+      };
+    }
+
+    // Rule 4: At or below reserve — competitive
+    const currentLowest = auction.currentHighestBid ? parseFloat(auction.currentHighestBid) : null;
+    if (currentLowest && bidAmount < currentLowest) {
       return {
         valid: true,
         competitive: true,
-        message: `Excellent bid! You're ${this.formatCurrency(savings)} below target price. Highly likely to win.`,
-        competitiveLevel: 'HIGH'
+        message: `You are now the lowest bidder at ${this.formatCurrency(bidAmount)}.`,
+        competitiveLevel: 'HIGH',
       };
     }
 
-    // Rule 4: Above target but below max = ACCEPTABLE (needs justification)
-    if (bidAmount > targetPrice && bidAmount <= maxBudget) {
-      const premium = bidAmount - targetPrice;
-      return {
-        valid: true,
-        competitive: false,
-        warning: 'Above target price',
-        message: `Your bid is ${this.formatCurrency(premium)} above target. Please justify your premium service (e.g., faster delivery, better equipment, insurance).`,
-        competitiveLevel: 'MEDIUM'
-      };
-    }
-
-    // Rule 5: Above max budget = UNLIKELY to win
-    if (bidAmount > maxBudget) {
-      const excess = bidAmount - maxBudget;
-      return {
-        valid: true,
-        competitive: false,
-        warning: 'Significantly above budget',
-        message: `Your bid is ${this.formatCurrency(excess)} above shipper's maximum budget. Unlikely to be accepted unless you offer exceptional value.`,
-        competitiveLevel: 'LOW'
-      };
-    }
-
-    return { valid: true };
+    return {
+      valid: true,
+      competitive: true,
+      message: `Bid placed at ${this.formatCurrency(bidAmount)}. Lower bids have a better chance of winning.`,
+      competitiveLevel: currentLowest && bidAmount === currentLowest ? 'MEDIUM' : 'HIGH',
+    };
   }
 
   /**
@@ -197,19 +184,14 @@ export class BidValidationService {
   }
 
   /**
-   * SEALED BID: Blind bidding, bids hidden until deadline
-   * Pricing: Reserve < Bids < Infinity
-   * Winner: LOWEST bid (or best value based on criteria)
+   * SEALED BID: Blind bidding, bids hidden until deadline.
+   * Freight sealed bids are reverse-style — lowest valid bid wins.
+   * No floor enforced; reserve price is the ceiling (cargo owner's max budget).
    */
   private validateSealedBid(bidAmount: number, auction: any): ValidationResult {
-    const reservePrice = parseFloat(auction.reservePrice || '0');
-    const targetPrice = auction.targetPrice ? parseFloat(auction.targetPrice) : null;
-
-    // Rule 1: Must be above reserve price
-    if (bidAmount < reservePrice) {
-      throw new BadRequestException(
-        `Bid amount must be at least ${this.formatCurrency(reservePrice)} (reserve price).`
-      );
+    // Rule 1: Must be a positive amount
+    if (bidAmount <= 0) {
+      throw new BadRequestException('Bid amount must be greater than zero.');
     }
 
     // Rule 2: Check if revision is allowed
@@ -219,25 +201,15 @@ export class BidValidationService {
         competitive: true,
         warning: 'Bid cannot be revised',
         message: `Sealed bid submitted at ${this.formatCurrency(bidAmount)}. You cannot revise this bid. All bids will be revealed after the deadline.`,
-        competitiveLevel: 'UNKNOWN'
-      };
-    }
-
-    // Rule 3: Provide guidance based on target price
-    if (targetPrice && bidAmount <= targetPrice) {
-      return {
-        valid: true,
-        competitive: true,
-        message: `Sealed bid submitted at ${this.formatCurrency(bidAmount)} (at or below target). You can revise before deadline. All bids revealed after deadline.`,
-        competitiveLevel: 'UNKNOWN'
+        competitiveLevel: 'UNKNOWN',
       };
     }
 
     return {
       valid: true,
       competitive: true,
-      message: `Sealed bid submitted at ${this.formatCurrency(bidAmount)}. You can revise before deadline. All bids will be revealed after the deadline.`,
-      competitiveLevel: 'UNKNOWN'
+      message: `Sealed bid submitted at ${this.formatCurrency(bidAmount)}. You can revise before the deadline. All bids will be revealed after the deadline.`,
+      competitiveLevel: 'UNKNOWN',
     };
   }
 
