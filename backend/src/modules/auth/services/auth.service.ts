@@ -335,11 +335,9 @@ export class AuthService {
     });
 
     if (!user) {
-      // Don't reveal if user exists or not for security
-      return {
-        message:
-          'If an account with this email exists, a password reset link has been sent.',
-      };
+      throw new BadRequestException(
+        'No account found with this email address. Please check and try again.',
+      );
     }
 
     // Generate password reset token
@@ -347,8 +345,7 @@ export class AuthService {
     await this.emailService.sendPasswordResetEmail(email, resetToken);
 
     return {
-      message:
-        'If an account with this email exists, a password reset link has been sent.',
+      message: 'Password reset link has been sent to your email address.',
     };
   }
 

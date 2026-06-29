@@ -855,14 +855,12 @@ export class EnhancedAuthService {
       });
 
       if (!user) {
-        // Don't reveal if user exists or not for security
         this.logger.log(
           `Password reset requested for non-existent email: ${email} from IP: ${clientIp}`,
         );
-        return {
-          message:
-            'If an account with this email exists, a password reset link has been sent.',
-        };
+        throw new BadRequestException(
+          'No account found with this email address. Please check and try again.',
+        );
       }
 
       // Generate password reset token
@@ -889,8 +887,7 @@ export class EnhancedAuthService {
         `Password reset email sent to: ${email} from IP: ${clientIp}`,
       );
       return {
-        message:
-          'If an account with this email exists, a password reset link has been sent.',
+        message: 'Password reset link has been sent to your email address.',
       };
     } catch (error) {
       this.logger.error(`Password reset request failed: ${error.message}`);
