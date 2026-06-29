@@ -1287,18 +1287,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     {detailsAuction.load?.loadValue ? formatCurrency(detailsAuction.load.loadValue) : '—'}
                   </p>
                 </div>
-                <div className="p-3 sm:p-5 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl sm:rounded-2xl space-y-1">
-                  <p className="text-[8px] sm:text-[9px] font-black text-[#345E85]/60 dark:text-blue-400/60 uppercase tracking-wider">Reserve Price</p>
-                  <p className="text-base sm:text-xl font-black text-[#345E85] dark:text-blue-400 truncate">
-                    {detailsAuction.reservePrice ? formatCurrency(detailsAuction.reservePrice) : '—'}
-                  </p>
-                </div>
-                <div className="p-3 sm:p-5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl sm:rounded-2xl space-y-1">
-                  <p className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Min. Increment</p>
-                  <p className="text-base sm:text-xl font-black text-slate-900 dark:text-slate-100 truncate">
-                    {detailsAuction.minimumBidIncrement ? formatCurrency(detailsAuction.minimumBidIncrement) : '—'}
-                  </p>
-                </div>
               </div>
 
               {/* Auction Window */}
