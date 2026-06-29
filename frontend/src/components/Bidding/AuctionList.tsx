@@ -578,7 +578,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 sm:py-4 px-3 sm:px-5 bg-slate-50/80 dark:bg-slate-950/80 rounded-xl sm:rounded-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 sm:py-4 px-3 sm:px-5 bg-slate-50/80 dark:bg-slate-950/80 rounded-xl sm:rounded-2xl">
               <div className="flex-1 min-w-0">
                 <p className="text-[7px] sm:text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider sm:tracking-widest mb-1.5 sm:mb-1">Route Vector</p>
                 <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-col sm:flex-row">
@@ -591,16 +591,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   </span>
                 </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openDetailsModal(auction);
-                }}
-                className="shrink-0 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#345E85] dark:text-blue-400 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-wider hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all flex items-center justify-center gap-1.5 w-full sm:w-auto"
-                title="View full route details"
-              >
-                <Eye size={10} /> Full Route
-              </button>
             </div>
           </div>
         </div>
@@ -851,9 +841,20 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     placeholder="0.00"
                   />
                 </div>
-                <div className="text-sm font-medium text-gray-400 dark:text-slate-500">
-                  Reserve price: {selectedAuction.reservePrice ? formatCurrency(selectedAuction.reservePrice) : '$0.00'}
+                <div className="flex flex-wrap items-center gap-3 text-xs font-medium">
+                  {selectedAuction.currentHighestBid ? (
+                    <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-lg border border-amber-100 dark:border-amber-800 font-bold">
+                      Current lowest: {formatCurrency(selectedAuction.currentHighestBid)} — bid lower to win
+                    </span>
+                  ) : (
+                    <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 font-bold">
+                      No bids yet — be first with your best price
+                    </span>
+                  )}
                 </div>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 font-medium">
+                  The lowest bid wins. Enter the shipping price you are willing to charge.
+                </p>
               </div>
 
               {/* Advance Payment Section */}
@@ -1337,15 +1338,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               )}
               {(userRole === 'TRUCK_OWNER' || userRole === 'BROKER') && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                  <button
-                    type="button"
-                    onClick={() => { setShowDetailsModal(false); openQuickBidModal(detailsAuction); }}
-                    disabled={detailsAuction.status !== 'ACTIVE'}
-                    className="flex-1 py-3 sm:py-4 bg-[#345E85] text-white rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wide sm:tracking-widest hover:bg-[#2a4d6d] transition-all shadow-lg shadow-blue-900/10 active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
-                  >
-                    <ZapIcon size={13} className="text-yellow-300 shrink-0" /> 
-                    <span className="truncate">Quick Bid</span>
-                  </button>
                   <button
                     type="button"
                     onClick={() => { setShowDetailsModal(false); openBidModal(detailsAuction); }}
