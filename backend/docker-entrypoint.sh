@@ -75,13 +75,13 @@ wait_for_db() {
 # Run migrations if AUTO_MIGRATE is enabled
 run_migrations() {
     if [ "$AUTO_MIGRATE" = "true" ]; then
-        log_info "AUTO_MIGRATE enabled, running migrations..."
-        
-        if NODE_ENV=production bash scripts/migrate.sh run; then
+        log_info "AUTO_MIGRATE enabled, running migrations via migrate.js..."
+
+        if node migrate.js; then
             log_success "Migrations completed"
         else
             log_error "Migrations failed"
-            
+
             if [ "$FAIL_ON_MIGRATION_ERROR" = "true" ]; then
                 log_error "FAIL_ON_MIGRATION_ERROR is true, exiting..."
                 exit 1
@@ -91,7 +91,7 @@ run_migrations() {
         fi
     else
         log_info "AUTO_MIGRATE disabled, skipping migrations"
-        log_info "Run migrations manually: docker-compose exec backend npm run migration:run:prod"
+        log_info "Run migrations manually: docker-compose exec backend node migrate.js"
     fi
 }
 
