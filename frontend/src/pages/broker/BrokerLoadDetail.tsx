@@ -119,230 +119,193 @@ const BrokerLoadDetail: React.FC = () => {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-32">
-      {/* Ultra-Compact Detail Header */}
-      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-100/60 dark:bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
-        
-        <div className="relative z-10 flex items-center gap-6">
-          <button onClick={() => navigate('/dashboard/broker/loads')} className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white hover:text-slate-900 transition-all backdrop-blur-xl">
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1 text-slate-900 dark:text-white">{load.title}</h1>
-            <p className="text-slate-400 text-sm font-bold uppercase">#{load.id.substring(0, 8).toUpperCase()}</p>
-          </div>
-          <span className={`px-4 py-1.5 rounded-xl text-[8px] font-bold uppercase border shadow-lg ${getStatusPrimeStyle(load.status)}`}>
-            {load.status.replace('_', ' ')}
-          </span>
-        </div>
+    <div className="max-w-[1400px] mx-auto space-y-6 animate-fade-in pb-32">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+         <div className="flex items-center gap-4">
+           <button onClick={() => navigate('/dashboard/broker/loads')} className="p-2 hover:bg-slate-100 rounded-lg dark:hover:bg-slate-800 transition-colors">
+             <ArrowLeft size={20} className="text-slate-600 dark:text-slate-300" />
+           </button>
+           <div>
+             <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">{load.title}</h1>
+             <p className="text-slate-500 text-sm mt-1">ID: {load.id}</p>
+           </div>
+         </div>
+         <span className={`px-4 py-1.5 rounded-full text-xs font-semibold self-start md:self-auto ${getStatusPrimeStyle(load.status)}`}>
+           {load.status.replace('_', ' ')}
+         </span>
+      </div>
 
-        <div className="relative z-10 flex items-center gap-12 mr-4 text-right">
-           <div className="text-center hidden md:block">
-             <p className="text-xl font-bold leading-none text-primary-400">{load.brokerCommissionRate || 0}%</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Yield</p>
-           </div>
-           {load.brokerCommissionAmount && (
-             <div className="text-center hidden md:block">
-               <p className="text-xl font-bold leading-none text-emerald-400">{load.brokerCommissionAmount.toLocaleString()}</p>
-               <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Profit</p>
-             </div>
-           )}
-           <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center shadow-xl shadow-primary-900/20 group-hover:scale-110 transition-all">
-             <Target size={20} />
-           </div>
+      {/* Financial Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-center">
+           <p className="text-sm font-medium text-slate-500 mb-2 flex items-center gap-2"><DollarSign size={16}/> Total Capital</p>
+           <p className="text-3xl font-bold text-slate-900 dark:text-white">{load.loadValue?.toLocaleString() || 0} <span className="text-base font-medium text-slate-400">{load.currencyCode}</span></p>
+        </div>
+        <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-6 shadow-sm border border-emerald-200 dark:border-emerald-800/50 flex flex-col justify-center">
+           <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2"><TrendingUp size={16}/> Broker Yield ({load.brokerCommissionRate || 0}%)</p>
+           <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{load.brokerCommissionAmount?.toLocaleString() || 0} <span className="text-base font-medium">{load.currencyCode}</span></p>
+        </div>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-center">
+           <p className="text-sm font-medium text-slate-500 mb-2 flex items-center gap-2"><Truck size={16}/> Carrier Payout</p>
+           <p className="text-3xl font-bold text-slate-900 dark:text-white">
+             {((load.loadValue || 0) - (load.brokerCommissionAmount || 0)).toLocaleString()} <span className="text-base font-medium text-slate-400">{load.currencyCode}</span>
+           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8 space-y-12">
-          {/* Specification System */}
-          <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm p-12 space-y-12 group relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-            <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
-              <div className="w-2 h-2 bg-primary-600 rounded-full"></div> Specification
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-50 dark:bg-slate-800/50 dark:border-slate-800/50">
-                <p className="text-xs font-bold text-slate-400 uppercase mb-4">Context</p>
-                <p className="text-lg font-bold text-slate-700 leading-relaxed italic dark:text-slate-200">{load.description || 'No context logged.'}</p>
-              </div>
-              <div className="space-y-6">
-                {[
-                  { label: 'Class', value: load.loadType || 'Standard', icon: Package },
-                  { label: 'Equipment', value: load.equipmentType || 'Standard', icon: Truck },
-                  { label: 'Volume', value: `${load.weight?.toLocaleString() || 'N/A'} KG`, icon: Weight },
-                  { label: 'Capital', value: `${load.loadValue.toLocaleString()} ${load.currencyCode}`, icon: DollarSign },
-                ].map((spec, i) => (
-                  <div key={i} className="flex items-center justify-between p-6 bg-slate-50/50 rounded-2xl border border-slate-50 group-hover:bg-white transition-all dark:border-slate-800/50">
-                    <div className="flex items-center gap-3">
-                       <spec.icon size={16} className="text-slate-300" />
-                       <span className="text-sm font-bold text-slate-400 uppercase">{spec.label}</span>
-                    </div>
-                    <span className="text-sm font-bold text-slate-900 uppercase dark:text-white">{spec.value}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content (Left Col) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Logistics & Route */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2"><MapPin size={20} className="text-primary-600"/> Route Details</h3>
+             <div className="space-y-6 relative">
+                <div className="absolute left-[7px] top-6 bottom-6 w-px bg-slate-200 dark:bg-slate-700"></div>
+                <div className="flex gap-4 relative z-10">
+                  <div className="mt-1"><div className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 border-4 border-primary-600"></div></div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Pickup Location</p>
+                    <p className="text-base font-medium text-slate-900 dark:text-white">{load.pickupLocation || 'Not Specified'}</p>
+                    {load.pickupDate && <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-2"><Calendar size={14} className="text-primary-500"/> {new Date(load.pickupDate).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</p>}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+                <div className="flex gap-4 relative z-10">
+                  <div className="mt-1"><div className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 border-4 border-slate-800 dark:border-slate-400"></div></div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Delivery Location</p>
+                    <p className="text-base font-medium text-slate-900 dark:text-white">{load.deliveryLocation || 'Not Specified'}</p>
+                    {load.deliveryDate && <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-2"><Calendar size={14} className="text-slate-500"/> {new Date(load.deliveryDate).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</p>}
+                  </div>
+                </div>
+             </div>
           </div>
 
-          {/* Sourcing System */}
-          <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm p-12 space-y-10 group relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-            <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
-              <div className="w-2 h-2 bg-indigo-500 rounded-full"></div> Sourcing
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div onClick={() => setShowMatchModal(true)} className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100 cursor-pointer group/card hover:bg-white hover:shadow-2xl transition-all duration-500 overflow-hidden relative dark:bg-slate-800/50 dark:border-slate-800">
-                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/card:opacity-10 transition-opacity"><Target size={100} /></div>
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary-600 mb-8 shadow-sm group-hover/card:bg-primary-600 group-hover/card:text-white transition-all dark:bg-slate-900"><Truck size={20} /></div>
-                <h4 className="text-xl font-bold text-slate-900 mb-2 uppercase tracking-tight italic dark:text-white">Direct Match</h4>
-                <p className="text-sm font-bold text-slate-400 uppercase leading-relaxed">algorithmic vector matching for carriers.</p>
-                <div className="mt-8 flex items-center gap-2 text-primary-600 group/link text-xs font-bold uppercase">Compute <ArrowRight size={14} className="group-hover/link:translate-x-2 transition-transform" /></div>
-              </div>
-              <div onClick={() => setShowAuctionModal(true)} className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100 cursor-pointer group/card hover:bg-white hover:shadow-2xl transition-all duration-500 overflow-hidden relative dark:bg-slate-800/50 dark:border-slate-800">
-                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/card:opacity-10 transition-opacity"><TrendingUp size={100} /></div>
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary-600 mb-8 shadow-sm group-hover/card:bg-primary-600 group-hover/card:text-white transition-all dark:bg-slate-900"><Zap size={20} /></div>
-                <h4 className="text-xl font-bold text-slate-900 mb-2 uppercase tracking-tight italic dark:text-white">Auction</h4>
-                <p className="text-sm font-bold text-slate-400 uppercase leading-relaxed">Initiate bidding session for open rates.</p>
-                <div className="mt-8 flex items-center gap-2 text-primary-600 group/link text-xs font-bold uppercase">Initiate <ArrowRight size={14} className="group-hover/link:translate-x-2 transition-transform" /></div>
-              </div>
-            </div>
+          {/* Load Specifications */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2"><Package size={20} className="text-primary-600"/> Cargo Specifications</h3>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-semibold">Load Type</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{load.loadType || 'Not Specified'}</p>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-semibold">Cargo Type</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{load.cargoType || 'Not Specified'}</p>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-semibold">Equipment</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{load.equipmentType || 'Not Specified'}</p>
+                </div>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-semibold">Weight</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{load.weight ? `${load.weight.toLocaleString()} KG` : 'Not Specified'}</p>
+                </div>
+             </div>
+             {load.description && (
+                <div className="p-5 border border-slate-100 dark:border-slate-700/50 rounded-xl bg-white dark:bg-slate-800/20">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2"><FileText size={14}/> Context / Instructions</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{load.description}</p>
+                </div>
+             )}
           </div>
 
+          {/* Tracking */}
           {(load.status === 'IN_TRANSIT' || load.status === 'DELIVERED' || trackingEvents.length > 0) && (
-            <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden group dark:bg-slate-900 dark:border-slate-800">
-              <div className="p-10 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between dark:border-slate-800">
-                <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div> Vector Analysis
-                </h3>
-                <button onClick={() => fetchTrackingInfo(load.id)} className="p-2 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-slate-900 dark:bg-slate-900 dark:border-slate-800"><Activity size={18} /></button>
-              </div>
-              <BrokerTrackingSection trackingEvents={trackingEvents} onRefresh={() => fetchTrackingInfo(load.id)} loading={trackingLoading} />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><Activity size={20} className="text-primary-600"/> Tracking History</h3>
+                 <button onClick={() => fetchTrackingInfo(load.id)} className="p-2 hover:bg-slate-100 rounded-lg dark:hover:bg-slate-800 transition-colors">
+                   <Activity size={18} className="text-slate-500"/>
+                 </button>
+               </div>
+               <BrokerTrackingSection trackingEvents={trackingEvents} onRefresh={() => fetchTrackingInfo(load.id)} loading={trackingLoading} />
             </div>
           )}
         </div>
 
-        <div className="lg:col-span-4 space-y-12">
-          {/* Trajectory */}
-          <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm p-10 space-y-10 group overflow-hidden relative dark:bg-slate-900 dark:border-slate-800">
-            <h3 className="text-sm font-bold text-slate-400 uppercase flex items-center gap-3">
-              <MapPin size={16} className="text-primary-600" /> Trajectory
-            </h3>
-            <div className="space-y-10 relative">
-               <div className="absolute left-[13px] top-6 bottom-6 w-px bg-slate-100 border-l border-dashed border-slate-300"></div>
-               <div className="flex gap-6 group/point z-10 relative">
-                  <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-lg">A</div>
-                  <div>
-                     <p className="text-xs font-bold text-slate-400 uppercase mb-1">Pickup</p>
-                     <p className="text-sm font-bold text-slate-900 leading-snug italic uppercase dark:text-white">{load.pickupLocation}</p>
-                  </div>
-               </div>
-               <div className="flex gap-6 group/point z-10 relative">
-                  <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-lg dark:bg-slate-950">B</div>
-                  <div>
-                     <p className="text-xs font-bold text-slate-400 uppercase mb-1">Target</p>
-                     <p className="text-sm font-bold text-slate-900 leading-snug italic uppercase dark:text-white">{load.deliveryLocation}</p>
-                  </div>
-               </div>
-            </div>
-          </div>
-
-          {/* Agreements */}
-          <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group dark:bg-slate-950">
-            <div className="relative z-10 flex items-center justify-between mb-10">
-              <h3 className="text-sm font-bold uppercase text-slate-500 italic dark:text-slate-400">Agreements</h3>
-              <ShieldCheck size={18} className={contract ? 'text-primary-500' : 'text-slate-700'} />
-            </div>
-            {contract ? (
-              <div className="space-y-8 relative z-10">
-                <div className="p-8 bg-white/5 border border-white/10 rounded-[2.5rem] space-y-6">
-                   <div className="flex justify-between items-center text-xs font-bold uppercase">
-                      <span className="text-slate-500 dark:text-slate-400">State</span>
-                      <span className="text-emerald-400">{contract.status}</span>
-                   </div>
-                   <div className="pt-6 border-t border-white/5 flex justify-between items-end">
-                      <span className="text-xs font-bold text-slate-500 uppercase dark:text-slate-400">Rate</span>
-                      <p className="text-3xl font-bold text-white italic">{contract.agreedRate.toLocaleString()} <span className="text-sm text-primary-400">{contract.currencyCode}</span></p>
-                   </div>
-                </div>
-                <button onClick={() => navigate('/dashboard/broker/contracts')} className="w-full py-5 bg-white text-slate-900 rounded-2xl text-sm font-bold uppercase hover:bg-primary-600 hover:text-white transition-all dark:bg-slate-900 dark:text-white">View Record <ExternalLink size={14} className="inline ml-2" /></button>
-              </div>
-            ) : (
-              <div className="text-center py-10 opacity-30 space-y-6">
-                 <ShieldCheck size={32} className="mx-auto" />
-                 <p className="text-sm font-bold uppercase">No active agreement.</p>
-              </div>
-            )}
+        {/* Right Col */}
+        <div className="space-y-6">
+          {/* Actions */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Sourcing Actions</h3>
+             <div className="space-y-3">
+               <button onClick={() => setShowMatchModal(true)} className="w-full flex items-center justify-between p-4 bg-primary-50 text-primary-700 rounded-xl hover:bg-primary-100 transition-colors border border-primary-100 dark:bg-primary-900/20 dark:border-primary-900/30 dark:text-primary-400">
+                 <div className="flex items-center gap-3"><Target size={18}/> <span className="font-medium">Direct Match</span></div>
+                 <ChevronRight size={16}/>
+               </button>
+               <button onClick={() => setShowAuctionModal(true)} className="w-full flex items-center justify-between p-4 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-900/30 dark:text-indigo-400">
+                 <div className="flex items-center gap-3"><Zap size={18}/> <span className="font-medium">Start Auction</span></div>
+                 <ChevronRight size={16}/>
+               </button>
+             </div>
           </div>
 
           {/* Shipper */}
-          <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm p-10 space-y-10 group transition-all duration-500 dark:bg-slate-900 dark:border-slate-800">
-             <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Shipper</h3>
-             <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-[2.5rem] border border-slate-50 hover:bg-white hover:shadow-2xl transition-all dark:bg-slate-800/50 dark:border-slate-800/50">
-                <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-xl shadow-primary-900/10">{(load.cargoOwner?.profile?.firstName || 'O').charAt(0).toUpperCase()}</div>
-                <div>
-                  <h4 className="text-lg font-bold text-slate-900 uppercase italic dark:text-white">{load.cargoOwner?.profile?.firstName || 'Shipper'}</h4>
-                  <p className="text-xs font-bold text-slate-400 uppercase">{load.cargoOwner?.profile?.companyName || 'Verified Company'}</p>
-                </div>
-             </div>
-             <div className="space-y-4">
-               <button onClick={() => setShowContactModal(true)} className="w-full flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-slate-900 hover:text-white transition-all group/it dark:bg-slate-800/50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><User size={20} className="text-primary-600"/> Shipper Details</h3>
+             {load.cargoOwner ? (
+               <div className="space-y-4">
                  <div className="flex items-center gap-4">
-                   <Phone size={16} className="text-slate-300 group-hover/it:text-primary-400" />
-                   <span className="text-sm font-bold uppercase">Voice Terminal</span>
+                   <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-lg border border-slate-200 dark:border-slate-700">
+                     {(load.cargoOwner.profile?.firstName || load.cargoOwner.email || 'U').charAt(0).toUpperCase()}
+                   </div>
+                   <div>
+                     <p className="font-medium text-slate-900 dark:text-white">{load.cargoOwner.profile?.firstName ? `${load.cargoOwner.profile.firstName} ${load.cargoOwner.profile.lastName || ''}` : 'Name Not Provided'}</p>
+                     <p className="text-sm text-slate-500">{load.cargoOwner.profile?.companyName || 'Company Not Provided'}</p>
+                   </div>
                  </div>
-                 <ChevronRight size={14} />
-               </button>
-               <button onClick={() => setShowContactModal(true)} className="w-full flex items-center justify-between p-5 bg-slate-50 rounded-2xl hover:bg-slate-900 hover:text-white transition-all group/it dark:bg-slate-800/50">
-                 <div className="flex items-center gap-4">
-                   <Mail size={16} className="text-slate-300 group-hover/it:text-primary-400" />
-                   <span className="text-sm font-bold uppercase">Mail Node</span>
+                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                   {load.cargoOwner.email ? (
+                     <a href={`mailto:${load.cargoOwner.email}`} className="flex items-center gap-3 text-sm text-slate-600 hover:text-primary-600 dark:text-slate-300">
+                       <Mail size={16} className="text-slate-400"/> <span className="truncate">{load.cargoOwner.email}</span>
+                     </a>
+                   ) : (
+                     <p className="flex items-center gap-3 text-sm text-slate-400"><Mail size={16}/> No Email Provided</p>
+                   )}
+                   {load.cargoOwner.phone ? (
+                     <a href={`tel:${load.cargoOwner.phone}`} className="flex items-center gap-3 text-sm text-slate-600 hover:text-primary-600 dark:text-slate-300">
+                       <Phone size={16} className="text-slate-400"/> <span>{load.cargoOwner.phone}</span>
+                     </a>
+                   ) : (
+                     <p className="flex items-center gap-3 text-sm text-slate-400"><Phone size={16}/> No Phone Provided</p>
+                   )}
                  </div>
-                 <ChevronRight size={14} />
-               </button>
-             </div>
+               </div>
+             ) : (
+               <p className="text-sm text-slate-500 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">Shipper details unavailable.</p>
+             )}
+          </div>
+
+          {/* Contract / Agreement */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><ShieldCheck size={20} className="text-primary-600"/> Active Agreement</h3>
+             {contract ? (
+               <div className="space-y-4">
+                 <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+                   <span className="text-sm font-medium text-slate-500">Status</span>
+                   <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-lg">{contract.status}</span>
+                 </div>
+                 <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-slate-800">
+                   <span className="text-sm font-medium text-slate-500">Agreed Rate</span>
+                   <span className="text-sm font-semibold text-slate-900 dark:text-white">{contract.agreedRate.toLocaleString()} {contract.currencyCode}</span>
+                 </div>
+                 <button onClick={() => navigate('/dashboard/broker/contracts')} className="w-full flex justify-center items-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl transition-colors text-sm font-medium dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 mt-2 border border-slate-200 dark:border-slate-700">
+                   View Full Contract <ExternalLink size={14}/>
+                 </button>
+               </div>
+             ) : (
+               <div className="text-center py-6 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                 <ShieldCheck size={24} className="mx-auto text-slate-400 mb-2"/>
+                 <p className="text-sm text-slate-500">No active agreement currently.</p>
+               </div>
+             )}
           </div>
         </div>
       </div>
 
       <MatchTransportersModal isOpen={showMatchModal} onClose={() => setShowMatchModal(false)} loadId={load.id} />
       <CreateBrokerAuctionModal isOpen={showAuctionModal} onClose={() => setShowAuctionModal(false)} loadId={load.id} loadTitle={load.title} onSuccess={() => loadLoadDetails()} />
-
-      <Dialog open={showContactModal} onOpenChange={setShowContactModal}>
-        <DialogContent className="sm:max-w-xl bg-white rounded-[4rem] border-none shadow-2xl p-0 overflow-hidden animate-slide-up dark:bg-slate-900">
-           <div className="p-16 bg-slate-900 text-white relative overflow-hidden dark:bg-slate-950">
-              <h2 className="text-4xl font-bold uppercase italic leading-none">Connect <br /><span className="text-primary-600">Shipper</span></h2>
-              <p className="text-sm font-bold text-slate-500 uppercase mt-6 italic dark:text-slate-400">Authorization Interface</p>
-              <div className="absolute top-0 right-0 p-12 opacity-5"><Activity size={120} /></div>
-           </div>
-           
-           <div className="p-16 space-y-12">
-              <div className="flex items-center gap-10 p-10 bg-slate-50 rounded-[3rem] border border-slate-100 shadow-sm dark:bg-slate-800/50 dark:border-slate-800">
-                 <div className="w-24 h-24 bg-primary-600 rounded-[2rem] flex items-center justify-center text-white font-bold text-4xl shadow-2xl">{(load.cargoOwner?.profile?.firstName || 'O').charAt(0).toUpperCase()}</div>
-                 <div className="space-y-2">
-                    <h3 className="text-3xl font-bold text-slate-900 uppercase italic leading-none dark:text-white">{load.cargoOwner?.profile?.firstName || 'Shipper'} {load.cargoOwner?.profile?.lastName || 'Name'}</h3>
-                    <p className="text-sm font-bold text-slate-400 uppercase">{load.cargoOwner?.profile?.companyName || 'Verified Shipper Entity'}</p>
-                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <a href={`mailto:${load.cargoOwner?.email}`} className="flex flex-col p-10 bg-slate-50 rounded-[2.5rem] hover:bg-white hover:shadow-2xl hover:scale-105 transition-all group/li border border-transparent hover:border-slate-100 dark:bg-slate-800/50">
-                   <Mail className="text-slate-300 group-hover/li:text-primary-500 mb-6" size={32} />
-                   <p className="text-xs font-bold text-slate-400 uppercase mb-1">Mail Node</p>
-                   <p className="text-sm font-bold text-slate-900 truncate tracking-tight dark:text-white">{load.cargoOwner?.email || 'Awaiting...'}</p>
-                </a>
-                {load.cargoOwner?.phone && (
-                   <a href={`tel:${load.cargoOwner.phone}`} className="flex flex-col p-10 bg-slate-50 rounded-[2.5rem] hover:bg-white hover:shadow-2xl hover:scale-105 transition-all group/li border border-transparent hover:border-slate-100 dark:bg-slate-800/50">
-                      <Phone className="text-slate-300 group-hover/li:text-emerald-500 mb-6" size={32} />
-                      <p className="text-xs font-bold text-slate-400 uppercase mb-1">Voice Terminal</p>
-                      <p className="text-sm font-bold text-slate-900 tracking-tight dark:text-white">{load.cargoOwner.phone}</p>
-                   </a>
-                )}
-              </div>
-              <button onClick={() => setShowContactModal(false)} className="w-full py-7 bg-slate-900 text-white rounded-[2rem] text-sm font-bold uppercase hover:bg-primary-600 transition-all shadow-2xl dark:bg-slate-950">Abort Interface</button>
-           </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
