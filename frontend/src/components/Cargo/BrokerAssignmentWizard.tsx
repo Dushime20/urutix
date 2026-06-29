@@ -311,16 +311,16 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                         <div className="space-y-5">
 
                             {/* ── Cargo Schedule Card (read-only, display only) ── */}
-                            <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
-                                <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-600">
+                            <div className="rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50 to-primary-100/60 overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 py-2.5 bg-primary-600">
                                     <Truck className="w-3.5 h-3.5 text-white" />
                                     <span className="text-xs font-semibold text-white uppercase tracking-wider">Cargo Schedule</span>
                                     <span className="ml-auto text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">Auto-filled from cargo</span>
                                 </div>
-                                <div className="grid grid-cols-2 divide-x divide-blue-100">
+                                <div className="grid grid-cols-2 divide-x divide-primary-100">
                                     {/* Pickup */}
                                     <div className="p-4 flex flex-col gap-1.5">
-                                        <div className="flex items-center gap-1.5 text-blue-500">
+                                        <div className="flex items-center gap-1.5 text-primary-500">
                                             <MapPin className="w-3.5 h-3.5" />
                                             <span className="text-[11px] font-semibold uppercase tracking-wider">Pickup Date</span>
                                         </div>
@@ -348,7 +348,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                     </div>
                                     {/* Delivery */}
                                     <div className="p-4 flex flex-col gap-1.5">
-                                        <div className="flex items-center gap-1.5 text-indigo-500">
+                                        <div className="flex items-center gap-1.5 text-primary-400">
                                             <MapPin className="w-3.5 h-3.5" />
                                             <span className="text-[11px] font-semibold uppercase tracking-wider">Delivery Date</span>
                                         </div>
@@ -363,7 +363,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                                     const span = Math.ceil((delivery.getTime() - pickup.getTime()) / 86_400_000);
                                                     if (span <= 0) return null;
                                                     return (
-                                                        <span className="flex items-center gap-1 text-xs font-medium text-indigo-500">
+                                                        <span className="flex items-center gap-1 text-xs font-medium text-primary-500">
                                                             <Clock className="w-3 h-3" />
                                                             {span} day{span !== 1 ? 's' : ''} transit
                                                         </span>
@@ -389,7 +389,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                             type="number"
                                             value={contractTerms.agreedRate}
                                             onChange={(e) => setContractTerms({ ...contractTerms, agreedRate: Number(e.target.value) })}
-                                            className="w-full pl-7 pr-3 py-2 text-sm font-semibold text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                                            className="w-full pl-7 pr-3 py-2 text-sm font-semibold text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-50"
                                         />
                                     </div>
                                 </div>
@@ -405,7 +405,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                             step="0.1"
                                             value={contractTerms.commissionRate}
                                             onChange={(e) => setContractTerms({ ...contractTerms, commissionRate: Number(e.target.value) })}
-                                            className="w-full pl-3 pr-8 py-2 text-sm font-semibold text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                                            className="w-full pl-3 pr-8 py-2 text-sm font-semibold text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-50"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">%</span>
                                     </div>
@@ -421,7 +421,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                     type="text"
                                     value={contractTerms.paymentTerms}
                                     onChange={(e) => setContractTerms({ ...contractTerms, paymentTerms: e.target.value })}
-                                    className="w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                                    className="w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-50"
                                     placeholder="e.g. Net 30 days"
                                 />
                             </div>
@@ -433,7 +433,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                     rows={3}
                                     value={contractTerms.specialInstructions}
                                     onChange={(e) => setContractTerms({ ...contractTerms, specialInstructions: e.target.value })}
-                                    className="w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 resize-none"
+                                    className="w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-gray-50 resize-none"
                                     placeholder="Any specific requirements or notes for the broker..."
                                 />
                             </div>
