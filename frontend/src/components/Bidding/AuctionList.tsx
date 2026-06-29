@@ -14,13 +14,19 @@ import {
   X,
   AlertCircle,
   Eye,
-  Truck
+  Truck,
+  CalendarCheck,
+  MapPin,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { biddingAPI } from '../../services/biddingApi';
 import { fleetApi } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/formatNumber';
+import { AvailableTruckSelect } from '../availability/AvailableTruckSelect';
+import { AvailableDriverSelect } from '../availability/AvailableDriverSelect';
+import { BidAvailabilityChecker } from '../availability/BidAvailabilityChecker';
 
 interface LoadLocation {
   id: string;
@@ -262,7 +268,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     setShowQuickBidModal(true);
   };
 
-  const openBidModal = async (auction: Auction) => {
+  const openBidModal = (auction: Auction) => {
     setSelectedAuction(auction);
     setBidAmount(
       String(
@@ -272,19 +278,20 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       )
     );
     setBidNotes('');
-    setProposedPickupDate('');
-    setProposedDeliveryDate('');
+    // Auto-populate dates from cargo — these are read-only, not editable by the bidder
+    const pickup = auction?.load?.pickupDate
+      ? new Date(auction.load.pickupDate).toISOString()
+      : '';
+    const delivery = auction?.load?.deliveryDate
+      ? new Date(auction.load.deliveryDate).toISOString()
+      : '';
+    setProposedPickupDate(pickup);
+    setProposedDeliveryDate(delivery);
     setAdvancePaymentPercentage('');
     setRequireAdvancePayment(true);
     setSelectedTruckId('');
     setSelectedDriverId('');
     setAvailableDrivers([]);
-    try {
-      const truckList = await fleetApi.getTrucks({});
-      setTrucks(truckList || []);
-    } catch {
-      setTrucks([]);
-    }
     setShowBidModal(true);
   };
 
@@ -999,67 +1006,99 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     <Truck size={18} />
                   </div>
                   <h4 className="text-lg font-extrabold text-[#0369a1] dark:text-blue-400">Asset Selection</h4>
+                  <span className="ml-auto text-[9px] font-black text-[#0369a1]/60 dark:text-blue-400/60 uppercase tracking-widest">
+                    Only available for cargo dates
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Select Truck *</label>
-                    <select
-                      value={selectedTruckId}
-                      onChange={(e) => setSelectedTruckId(e.target.value)}
-                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-blue-500 transition-all cursor-pointer appearance-none"
-                    >
-                      <option value="">Select Unit</option>
-                      {trucks.map((t) => (
-                        <option key={t.id} value={t.id}>{t.plateNumber} • {t.make} {t.model}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Select Driver</label>
-                    <select
-                      value={selectedDriverId}
-                      onChange={(e) => setSelectedDriverId(e.target.value)}
-                      disabled={!selectedTruckId || loadingDrivers}
-                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-slate-400 dark:focus:border-blue-500 transition-all cursor-pointer disabled:bg-gray-50 dark:disabled:bg-slate-900 disabled:text-gray-400 dark:disabled:text-slate-600 appearance-none"
-                    >
-                      <option value="">{!selectedTruckId ? 'Select a truck first' : loadingDrivers ? 'Loading...' : availableDrivers.length === 0 ? 'No drivers assigned' : 'Select Driver'}</option>
-                      {availableDrivers.map((d) => (
-                        <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                {/* Availability-aware truck select — filtered to cargo date window */}
+                <AvailableTruckSelect
+                  pickupDateTime={proposedPickupDate}
+                  deliveryDateTime={proposedDeliveryDate}
+                  capacityWeight={selectedAuction?.load?.weight}
+                  value={selectedTruckId}
+                  onChange={(id) => {
+                    setSelectedTruckId(id);
+                    setSelectedDriverId('');
+                  }}
+                  label="Select Truck"
+                  required
+                />
+
+                {/* Availability-aware driver select — filtered to cargo date window */}
+                <AvailableDriverSelect
+                  pickupDateTime={proposedPickupDate}
+                  deliveryDateTime={proposedDeliveryDate}
+                  value={selectedDriverId}
+                  onChange={setSelectedDriverId}
+                  label="Select Driver"
+                />
+
+                {/* Live conflict checker — fires whenever truck/driver/dates change */}
+                <BidAvailabilityChecker
+                  truckId={selectedTruckId || undefined}
+                  driverId={selectedDriverId || undefined}
+                  pickupDateTime={proposedPickupDate || undefined}
+                  deliveryDateTime={proposedDeliveryDate || undefined}
+                />
               </div>
 
-              {/* Schedule Delivery Block */}
+              {/* Delivery Schedule — read-only, sourced from cargo */}
               <div className="bg-[#f0f9ff]/80 dark:bg-blue-900/10 p-8 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30 space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center justify-center text-[#0369a1] dark:text-blue-400">
-                    <Clock size={18} />
+                    <CalendarCheck size={18} />
                   </div>
                   <h4 className="text-lg font-extrabold text-[#0369a1] dark:text-blue-400">Delivery Schedule</h4>
+                  <span className="ml-auto flex items-center gap-1 text-[9px] font-black text-[#0369a1]/60 dark:text-blue-400/60 uppercase tracking-widest">
+                    <Lock size={10} /> Set by cargo owner
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Pickup Date *</label>
-                    <input
-                      type="datetime-local"
-                      value={proposedPickupDate}
-                      onChange={(e) => setProposedPickupDate(e.target.value)}
-                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 transition-all"
-                    />
+                    <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Pickup Date</p>
+                    <div className="flex items-center gap-3 h-14 px-4 bg-white/70 dark:bg-slate-900/70 border-2 border-blue-100 dark:border-blue-900/40 rounded-xl">
+                      <CalendarCheck size={16} className="text-[#0369a1] dark:text-blue-400 shrink-0" />
+                      <span className="text-sm font-bold text-gray-800 dark:text-slate-200">
+                        {proposedPickupDate
+                          ? new Date(proposedPickupDate).toLocaleString('en-US', {
+                              year: 'numeric', month: 'short', day: 'numeric',
+                              hour: '2-digit', minute: '2-digit',
+                            })
+                          : <span className="text-gray-400 italic font-medium">Not specified</span>}
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Delivery Date *</label>
-                    <input
-                      type="datetime-local"
-                      value={proposedDeliveryDate}
-                      onChange={(e) => setProposedDeliveryDate(e.target.value)}
-                      className="w-full h-14 px-4 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-400 transition-all"
-                    />
+                    <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Delivery Date</p>
+                    <div className="flex items-center gap-3 h-14 px-4 bg-white/70 dark:bg-slate-900/70 border-2 border-blue-100 dark:border-blue-900/40 rounded-xl">
+                      <CalendarCheck size={16} className="text-[#0369a1] dark:text-blue-400 shrink-0" />
+                      <span className="text-sm font-bold text-gray-800 dark:text-slate-200">
+                        {proposedDeliveryDate
+                          ? new Date(proposedDeliveryDate).toLocaleString('en-US', {
+                              year: 'numeric', month: 'short', day: 'numeric',
+                              hour: '2-digit', minute: '2-digit',
+                            })
+                          : <span className="text-gray-400 italic font-medium">Not specified</span>}
+                      </span>
+                    </div>
                   </div>
                 </div>
+                {/* Route info */}
+                {(selectedAuction?.load?.locations || selectedAuction?.load?.origin) && (
+                  <div className="flex items-start gap-3 pt-2">
+                    <MapPin size={14} className="text-[#0369a1] dark:text-blue-400 mt-0.5 shrink-0" />
+                    <p className="text-xs font-medium text-gray-500 dark:text-slate-400 leading-relaxed">
+                      {(() => {
+                        const pickup = selectedAuction.load.locations?.find((l: any) => l.type === 'PICKUP');
+                        const delivery = selectedAuction.load.locations?.find((l: any) => l.type === 'DELIVERY');
+                        const from = pickup?.locationData?.city || pickup?.locationData?.name || selectedAuction.load.origin?.city || '—';
+                        const to = delivery?.locationData?.city || delivery?.locationData?.name || selectedAuction.load.destination?.city || '—';
+                        return `${from} → ${to}`;
+                      })()}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Advance Payment Section */}
