@@ -1262,6 +1262,8 @@ const UnifiedCargoManagement = () => {
             loadId={selectedLoadForBroker.id}
             loadTitle={selectedLoadForBroker.title}
             loadValue={selectedLoadForBroker.loadValue}
+            cargoPickupDate={selectedLoadForBroker.pickupDate}
+            cargoDeliveryDate={selectedLoadForBroker.deliveryDate}
             onSuccess={handleBrokerAssignmentSuccess}
           />
         )

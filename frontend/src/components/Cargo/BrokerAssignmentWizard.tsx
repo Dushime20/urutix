@@ -24,8 +24,18 @@ interface BrokerAssignmentWizardProps {
     loadId: string;
     loadTitle?: string;
     loadValue?: number;
+    cargoPickupDate?: string;
+    cargoDeliveryDate?: string;
     onSuccess?: () => void;
 }
+
+// Helper: convert an ISO date string or Date to yyyy-MM-dd for <input type="date">
+const toDateInputValue = (value?: string | Date): string => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+};
 
 export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
     isOpen,
@@ -33,6 +43,8 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
     loadId,
     loadTitle,
     loadValue = 0,
+    cargoPickupDate,
+    cargoDeliveryDate,
     onSuccess,
 }) => {
     // Steps: 1 = Select Broker, 2 = Contract Terms
@@ -63,12 +75,17 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
             fetchBrokers();
             setStep(1); // Reset to step 1
             setSelectedBroker(null);
-            // Reset terms but keep loadValue if available
-            setContractTerms(prev => ({ ...prev, agreedRate: loadValue || 0 }));
+            // Reset terms, seeding dates from cargo data
+            setContractTerms(prev => ({
+                ...prev,
+                agreedRate: loadValue || 0,
+                pickupDate: toDateInputValue(cargoPickupDate),
+                deliveryDate: toDateInputValue(cargoDeliveryDate),
+            }));
         } else {
             console.log('❌ Modal is NOT open, skipping fetchBrokers()');
         }
-    }, [isOpen, loadValue]);
+    }, [isOpen, loadValue, cargoPickupDate, cargoDeliveryDate]);
 
     // Update commission when broker is selected
     useEffect(() => {
@@ -318,26 +335,32 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Date</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Pickup Date
+                                        <span className="ml-1.5 text-xs text-gray-400 font-normal">(from cargo)</span>
+                                    </label>
                                     <div className="relative">
                                         <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                                         <input
                                             type="date"
                                             value={contractTerms.pickupDate}
-                                            onChange={(e) => setContractTerms({ ...contractTerms, pickupDate: e.target.value })}
-                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                            readOnly
+                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed select-none"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Delivery Date</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Delivery Date
+                                        <span className="ml-1.5 text-xs text-gray-400 font-normal">(from cargo)</span>
+                                    </label>
                                     <div className="relative">
                                         <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                                         <input
                                             type="date"
                                             value={contractTerms.deliveryDate}
-                                            onChange={(e) => setContractTerms({ ...contractTerms, deliveryDate: e.target.value })}
-                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                            readOnly
+                                            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed select-none"
                                         />
                                     </div>
                                 </div>
