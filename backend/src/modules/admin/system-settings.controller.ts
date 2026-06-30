@@ -90,21 +90,9 @@ export class SystemSettingsController {
     }
 
     /**
-     * Update a setting
-     */
-    @Put(':category/:key')
-    async updateSetting(
-        @Param('category') category: string,
-        @Param('key') key: string,
-        @Body() data: UpdateSettingDto,
-        @Req() req: any,
-    ) {
-        data.updatedBy = req.user?.id;
-        return await this.settingsService.updateSetting(category, key, data);
-    }
-
-    /**
      * Update multiple settings in a category
+     * NOTE: This must be registered BEFORE the :category/:key route to avoid
+     * NestJS matching "bulk" as the :category param and "contact" as :key.
      */
     @Put('bulk/:category')
     async updateCategorySettings(
@@ -117,6 +105,20 @@ export class SystemSettingsController {
             settings,
             req.user?.id,
         );
+    }
+
+    /**
+     * Update a setting
+     */
+    @Put(':category/:key')
+    async updateSetting(
+        @Param('category') category: string,
+        @Param('key') key: string,
+        @Body() data: UpdateSettingDto,
+        @Req() req: any,
+    ) {
+        data.updatedBy = req.user?.id;
+        return await this.settingsService.updateSetting(category, key, data);
     }
 
     /**
