@@ -195,8 +195,29 @@ export class SystemSettingsService implements OnModuleInit {
                 const setting = await this.updateSetting(category, key, { value, updatedBy });
                 updated.push(setting);
             } catch (error) {
-                // Skip if setting doesn't exist
-                console.error(`Failed to update ${category}:${key}`, error);
+                if (error instanceof NotFoundException) {
+                    // Row doesn't exist yet — create it (first save from UI)
+                    try {
+                        const dataType = typeof value === 'boolean' ? 'boolean'
+                            : typeof value === 'number' ? 'number'
+                            : typeof value === 'object' && value !== null ? 'json'
+                            : 'string';
+
+                        const created = await this.createSetting({
+                            category,
+                            key,
+                            value,
+                            dataType,
+                            isPublic: true,
+                            updatedBy,
+                        });
+                        updated.push(created);
+                    } catch (createError) {
+                        console.error(`Failed to create ${category}:${key}`, createError);
+                    }
+                } else {
+                    console.error(`Failed to update ${category}:${key}`, error);
+                }
             }
         }
 
