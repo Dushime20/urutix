@@ -97,50 +97,24 @@ export class BidValidationService {
   }
 
   /**
-   * FORWARD AUCTION: Carriers bid UP from starting price
-   * Pricing: Starting < Reserve < Target
-   * Winner: HIGHEST bid above reserve
+   * FORWARD AUCTION (freight): Truck owners compete on price — lowest bid wins.
+   * No floor, no increment enforcement. Any positive amount is valid.
    */
   private validateForwardBid(bidAmount: number, auction: any): ValidationResult {
-    const startingPrice = parseFloat(auction.startingPrice || '0');
-    const reservePrice = parseFloat(auction.reservePrice || '0');
-    const currentHighest = auction.currentHighestBid ? parseFloat(auction.currentHighestBid) : 0;
-    const minimumIncrement = auction.minimumBidIncrement ? parseFloat(auction.minimumBidIncrement) : 0;
-
-    // Rule 1: Must be higher than current highest bid (or starting price)
-    const minimumBid = currentHighest > 0 
-      ? currentHighest + minimumIncrement 
-      : Math.max(startingPrice, minimumIncrement);
-    
-    if (bidAmount < minimumBid) {
-      throw new BadRequestException(
-        `Bid must be at least ${this.formatCurrency(minimumBid)}. ` +
-        (currentHighest > 0 
-          ? `Current highest bid is ${this.formatCurrency(currentHighest)}.`
-          : `Starting price is ${this.formatCurrency(startingPrice)}.`)
-      );
+    if (bidAmount <= 0) {
+      throw new BadRequestException('Bid amount must be greater than zero.');
     }
 
-    // Rule 2: Below reserve = NOT YET WINNING
-    if (bidAmount < reservePrice) {
-      const shortfall = reservePrice - bidAmount;
-      return {
-        valid: true,
-        competitive: false,
-        warning: 'Below reserve price',
-        message: `Your bid is ${this.formatCurrency(shortfall)} below reserve price. You need to bid at least ${this.formatCurrency(reservePrice)} to be eligible to win.`,
-        competitiveLevel: 'LOW',
-        suggestedBid: reservePrice
-      };
-    }
+    const currentLowest = auction.currentHighestBid ? parseFloat(auction.currentHighestBid) : null;
+    const isLeading = currentLowest !== null && bidAmount < currentLowest;
 
-    // Rule 3: Above reserve = COMPETITIVE
-    const premium = bidAmount - reservePrice;
     return {
       valid: true,
       competitive: true,
-      message: `Strong bid! You're ${this.formatCurrency(premium)} above reserve price. Currently ${currentHighest > 0 && bidAmount > currentHighest ? 'winning' : 'competitive'}.`,
-      competitiveLevel: 'HIGH'
+      message: isLeading
+        ? `You are now the lowest bidder at ${this.formatCurrency(bidAmount)}.`
+        : `Bid placed at ${this.formatCurrency(bidAmount)}.`,
+      competitiveLevel: isLeading ? 'HIGH' : 'MEDIUM',
     };
   }
 
