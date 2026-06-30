@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
 import { Load } from '../../entities/load.entity';
@@ -20,6 +21,7 @@ import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { BiddingService } from './bidding.service';
 import { BiddingIntelligenceService } from './bidding-intelligence.service';
 import { BidValidationService } from './services/bid-validation.service';
+import { AuctionSchedulerService } from './auction-scheduler.service';
 import { BiddingController } from './bidding.controller';
 import { NotificationModule } from '../notifications/notification.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
@@ -28,6 +30,7 @@ import { AvailabilityModule } from '../availability/availability.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([
       Bid,
       Auction,
@@ -51,7 +54,7 @@ import { AvailabilityModule } from '../availability/availability.module';
     AnalyticsModule,
     AvailabilityModule,
   ],
-  providers: [BiddingService, BiddingIntelligenceService, BidValidationService, CreditService],
+  providers: [BiddingService, BiddingIntelligenceService, BidValidationService, CreditService, AuctionSchedulerService],
   controllers: [BiddingController],
   exports: [BiddingService, BiddingIntelligenceService, BidValidationService],
 })

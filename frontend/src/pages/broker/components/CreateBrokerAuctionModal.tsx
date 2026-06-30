@@ -33,11 +33,18 @@ export const CreateBrokerAuctionModal: React.FC<CreateBrokerAuctionModalProps> =
     e.preventDefault();
     setLoading(true);
     try {
+      // Convert datetime-local strings (which have no timezone) to UTC ISO strings
+      // so the backend always receives an unambiguous timestamp.
+      const toUTC = (localStr: string): string => {
+        if (!localStr) return localStr;
+        return new Date(localStr).toISOString();
+      };
+
       await biddingAPI.createAuction({
         loadId,
         auctionType: formData.auctionType as 'REVERSE' | 'FORWARD' | 'DUTCH' | 'SEALED',
-        auctionStart: formData.auctionStart,
-        auctionEnd: formData.auctionEnd,
+        auctionStart: toUTC(formData.auctionStart),
+        auctionEnd: toUTC(formData.auctionEnd),
         reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
       });
       toast.success('Auction created successfully!');

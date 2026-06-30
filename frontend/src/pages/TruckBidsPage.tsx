@@ -3,6 +3,7 @@ import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
+import { localToUTC } from '../utils/dateTime';
 import { FaTimes, FaStar, FaRegStar, FaUser, FaArrowRight, FaClock } from 'react-icons/fa';
 import { Grid, Table, Clock, Search, Filter, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -266,8 +267,8 @@ const TruckBidsPage: React.FC = () => {
 				loadId: selectedAuction.loadId,
 				bidAmount: amountNum,
 				bidCurrency: 'USD',
-				proposedPickupDate: proposedPickupDate,
-				proposedDeliveryDate: proposedDeliveryDate,
+				proposedPickupDate: localToUTC(proposedPickupDate),
+				proposedDeliveryDate: localToUTC(proposedDeliveryDate),
 				bidNotes: 'Quick bid from Truck Owner',
 				advancePaymentPercentage: quickRequireAdvancePayment ? advancePercentage : undefined,
 				requireAdvancePayment: quickRequireAdvancePayment,
@@ -409,8 +410,8 @@ const TruckBidsPage: React.FC = () => {
 				loadId: selectedAuction.loadId,
 				bidAmount: amountNum,
 				bidCurrency: 'USD',
-				proposedPickupDate: proposedPickupDate,
-				proposedDeliveryDate: proposedDeliveryDate,
+				proposedPickupDate: localToUTC(proposedPickupDate),
+				proposedDeliveryDate: localToUTC(proposedDeliveryDate),
 				bidNotes: bidNotes || undefined,
 				advancePaymentPercentage: requireAdvancePayment ? advancePercentage : undefined,
 				requireAdvancePayment: requireAdvancePayment,

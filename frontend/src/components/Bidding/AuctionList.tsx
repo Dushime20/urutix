@@ -27,6 +27,7 @@ import { formatCurrency } from '../../utils/formatNumber';
 import { AvailableTruckSelect } from '../availability/AvailableTruckSelect';
 import { AvailableDriverSelect } from '../availability/AvailableDriverSelect';
 import { BidAvailabilityChecker } from '../availability/BidAvailabilityChecker';
+import { localToUTC } from '../../utils/dateTime';
 
 interface LoadLocation {
   id: string;
@@ -358,8 +359,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         loadId: selectedAuction.loadId,
         bidAmount: amountNum,
         bidCurrency: 'USD',
-        proposedPickupDate: proposedPickupDate,
-        proposedDeliveryDate: proposedDeliveryDate,
+        proposedPickupDate: localToUTC(proposedPickupDate),
+        proposedDeliveryDate: localToUTC(proposedDeliveryDate),
         bidNotes: `Quick bid from ${userRole === 'BROKER' ? 'Broker' : 'Truck Owner'}`,
         advancePaymentPercentage: quickRequireAdvancePayment ? advancePercentage : undefined,
         requireAdvancePayment: quickRequireAdvancePayment,
@@ -391,8 +392,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         loadId: selectedAuction.loadId,
         bidAmount: amountNum,
         bidCurrency: 'USD',
-        proposedPickupDate: proposedPickupDate,
-        proposedDeliveryDate: proposedDeliveryDate,
+        proposedPickupDate: localToUTC(proposedPickupDate),
+        proposedDeliveryDate: localToUTC(proposedDeliveryDate),
         bidNotes: bidNotes || undefined,
         advancePaymentPercentage: requireAdvancePayment ? advancePercentage : undefined,
         requireAdvancePayment: requireAdvancePayment,
