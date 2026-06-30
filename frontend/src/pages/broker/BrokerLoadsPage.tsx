@@ -274,63 +274,71 @@ const BrokerLoadsPage: React.FC = () => {
           <p className="text-xs font-bold text-slate-400 uppercase leading-relaxed">System scan complete. No loads in pipeline matching criteria.</p>
         </div>
       ) : viewMode === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredLoads.map((load) => {
             const contract = contracts.get(load.id);
             return (
-              <div key={load.id} className="group bg-white rounded-[3rem] border border-slate-100 p-10 shadow-sm hover:shadow-2xl transition-all duration-500 relative overflow-hidden flex flex-col justify-between dark:bg-slate-900 dark:border-slate-800">
+              <div key={load.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between h-full group">
                 <div>
-                  <div className="flex justify-between items-start mb-8">
-                    <span className={`px-4 py-2 text-xs font-bold uppercase rounded-xl border shadow-sm ${getStatusPrimeStyle(load.status)}`}>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusPrimeStyle(load.status)}`}>
                       {load.status.replace('_', ' ')}
                     </span>
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-primary-600 group-hover:text-white transition-all shadow-sm dark:bg-slate-800/50">
-                      <Activity size={18} />
-                    </div>
+                    <span className="text-slate-400 text-xs font-medium">#{load.id.slice(0, 8)}</span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-slate-900 mb-4 line-clamp-2 min-h-[3rem] dark:text-white">{load.title}</h3>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{load.title}</h3>
                   
-                  <div className="space-y-4 mb-10 pt-6 border-t border-slate-50 dark:border-slate-800/50">
-                    <div className="flex items-center justify-between">
-                       <p className="text-sm font-bold text-slate-400 uppercase">Rate</p>
-                       <p className="text-lg font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
+                  <div className="flex items-center gap-6 mb-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div>
+                       <p className="text-xs text-slate-500 font-medium mb-1">Rate</p>
+                       <p className="text-base font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
                     </div>
-                    {load.brokerCommissionRate && (
-                       <div className="flex items-center justify-between">
-                          <p className="text-sm font-bold text-primary-400 uppercase">Yield</p>
-                          <p className="text-lg font-bold text-primary-600">+{load.brokerCommissionRate}%</p>
+                    {load.brokerCommissionRate > 0 && (
+                       <div>
+                          <p className="text-xs text-emerald-600 font-medium mb-1">Yield</p>
+                          <p className="text-base font-bold text-emerald-600">+{load.brokerCommissionRate}%</p>
                        </div>
                     )}
                   </div>
 
-                  <div className="bg-slate-50 rounded-[2rem] p-6 space-y-4 mb-10 group-hover:bg-slate-900 group-hover:text-white transition-all dark:bg-slate-800/50">
-                    <div className="flex items-center gap-4">
-                      <div className="w-2 h-2 rounded-full bg-slate-300"></div>
-                      <p className="text-sm font-bold uppercase truncate">{load.pickupLocation}</p>
+                  <div className="space-y-3 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1"><div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-primary-600"></div></div>
+                      <div className="flex-1">
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Pickup</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1">{load.pickupLocation || 'Not Specified'}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-2 h-2 rounded-full bg-primary-600"></div>
-                      <p className="text-sm font-bold uppercase truncate">{load.deliveryLocation}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1"><div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-800 dark:border-slate-400"></div></div>
+                      <div className="flex-1">
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Delivery</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1">{load.deliveryLocation || 'Not Specified'}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {contract && contract.status === 'PENDING_BROKER_ACCEPTANCE' && (
-                  <div className="mb-8 p-6 bg-amber-50 rounded-[2rem] border border-amber-100 flex items-center justify-between gap-4">
-                     <div className="flex items-center gap-3">
-                        <AlertCircle className="text-amber-500" size={18} />
-                        <p className="text-sm font-bold uppercase text-amber-900 tracking-tight">Contract Pending</p>
-                     </div>
-                     <button onClick={() => handleViewContract(load.id)} className="px-6 py-2 bg-amber-600 text-white text-xs font-bold uppercase rounded-xl">Review</button>
-                  </div>
-                )}
+                <div className="space-y-4">
+                  {contract && contract.status === 'PENDING_BROKER_ACCEPTANCE' && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                          <AlertCircle className="text-amber-600 dark:text-amber-500" size={16} />
+                          <p className="text-xs font-medium text-amber-800 dark:text-amber-400">Contract Pending</p>
+                       </div>
+                       <button onClick={() => handleViewContract(load.id)} className="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-lg hover:bg-amber-700 transition-colors">Review</button>
+                    </div>
+                  )}
 
-                <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-50 dark:border-slate-800/50">
-                  <button onClick={() => handleDownloadContract(load.id)} className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-900 hover:text-white transition-all dark:bg-slate-800/50"><Download size={18} /></button>
-                  <button onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="px-8 py-4 bg-primary-600 text-white rounded-2xl text-sm font-bold uppercase shadow-xl shadow-primary-900/10 hover:-translate-y-1 transition-all flex items-center gap-2">
-                    <Eye size={14} /> Full View
-                  </button>
+                  <div className="flex items-center gap-3 pt-2">
+                    <button onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="flex-1 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors flex justify-center items-center gap-2">
+                      <Eye size={16} /> View Details
+                    </button>
+                    <button onClick={() => handleDownloadContract(load.id)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" title="Download Contract">
+                      <Download size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

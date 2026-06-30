@@ -199,14 +199,21 @@ export class PermissionTableInitService implements OnModuleInit {
 
   private async seedRoles() {
     const systemRoles = [
-      ['SUPER_ADMIN',     'Full system access across all tenants', true],
-      ['ADMIN',           'Tenant-level administrative access',    true],
-      ['CARGO_OWNER',     'Cargo owner operational access',        true],
-      ['TRUCK_OWNER',     'Truck fleet management access',         true],
-      ['DRIVER',          'Driver operational access',             true],
-      ['BROKER',          'Broker intermediary access',            true],
-      ['LENDER',          'Financial lending access',              true],
-      ['CUSTOMS_OFFICER', 'Customs inspection access',             true],
+      ['SUPER_ADMIN',          'Full system access across all tenants',       true],
+      ['ADMIN',                'Tenant-level administrative access',           true],
+      ['TENANT_ADMIN',         'Tenant workspace administrator access',        true],
+      ['CARGO_OWNER',          'Cargo owner operational access',               true],
+      ['CARGO_RECEIVER',       'Cargo receiver access',                        true],
+      ['TRUCK_OWNER',          'Truck fleet management access',                true],
+      ['DRIVER',               'Driver operational access',                    true],
+      ['BROKER',               'Broker intermediary access',                   true],
+      ['LENDER',               'Financial lending access',                     true],
+      ['AGENT',                'Agent coordination access',                    true],
+      ['CUSTOMS_OFFICER',      'Customs inspection access',                    true],
+      ['FLEET_MANAGER',        'Fleet management operational access',          true],
+      ['FLEET_DISPATCHER',     'Fleet dispatch operational access',            true],
+      ['FLEET_ACCOUNTANT',     'Fleet financial and accounting access',        true],
+      ['FLEET_SAFETY_OFFICER', 'Fleet safety and compliance access',           true],
     ];
 
     for (const [name, description, isSystem] of systemRoles) {
