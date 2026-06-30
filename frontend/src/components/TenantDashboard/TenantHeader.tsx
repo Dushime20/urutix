@@ -44,8 +44,8 @@ interface TenantHeaderProps {
   tenant: Tenant;
   onRefresh: () => void;
   isRefreshing?: boolean;
-  selectedView: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'communicate' | 'profile' | 'lenders' | 'kyc';
-  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'communicate' | 'profile' | 'lenders' | 'kyc') => void;
+  selectedView: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc';
+  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc') => void;
 }
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({
@@ -74,7 +74,6 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
         { id: 'bidding', label: 'Negotiations', icon: DollarSign, description: 'Active bidding & load acquisition' },
         { id: 'fleet', label: 'Fleet Systems', icon: Truck, description: 'Internal asset management' },
         { id: 'cargo', label: 'Inventory Control', icon: Box, description: 'Cargo & specialized storage' },
-        { id: 'operations', label: 'Operational Health', icon: Route, description: 'Efficiency & performance monitoring' },
       ]
     },
     {
@@ -214,7 +213,8 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                                   const routeMap: Record<string, string> = {
                                     'overview': '/tenant-admin',
                                     'financial': '/tenant-admin/financial',
-                                    'purchase-credits': '/tenant-admin/purchase-credits',
+                                    'purchase-credits': '/tenant-admin/subscription-plans',
+                                    'subscription-plans': '/tenant-admin/subscription-plans',
                                     'billing': '/tenant-admin/billing',
                                     'communicate': '/tenant-admin/communication',
                                     'fleet': '/tenant-admin/fleet',
@@ -435,7 +435,8 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                                 const routeMap: Record<string, string> = {
                                   'overview': '/tenant-admin',
                                   'financial': '/tenant-admin/financial',
-                                  'purchase-credits': '/tenant-admin/purchase-credits',
+                                  'purchase-credits': '/tenant-admin/subscription-plans',
+                                  'subscription-plans': '/tenant-admin/subscription-plans',
                                   'billing': '/tenant-admin/billing',
                                   'communicate': '/tenant-admin/communication',
                                   'fleet': '/tenant-admin/fleet',

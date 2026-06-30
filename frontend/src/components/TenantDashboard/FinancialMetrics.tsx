@@ -279,9 +279,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
   };
 
   return (
-    <div className={`bg-[#F9FAFB] dark:bg-slate-950 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col h-full max-h-[95vh] text-[#1F2937] antialiased ${className}`}>
+    <div className={`space-y-6 ${className}`}>
       {/* Header */}
-      <div className="px-10 py-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      <div className="px-10 py-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between rounded-t-[32px]">
         <div>
           <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1"><TranslatedText text="Financial Status" /></h3>
           <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white"><TranslatedText text="Balance & Revenue" /></h2>
@@ -341,7 +341,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+      <div className="pt-6">
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
             <motion.div

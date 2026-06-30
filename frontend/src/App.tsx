@@ -611,7 +611,7 @@ function App() {
                       <Route path="financial" element={<TenantDashboardPage defaultView="financial" />} />
                       <Route path="purchase-credits" element={<TenantDashboardPage defaultView="purchase-credits" />} />
                       <Route path="billing" element={<TenantDashboardPage defaultView="billing" />} />
-                      <Route path="subscription-plans" element={<SubscriptionPlans />} />
+                      <Route path="subscription-plans" element={<TenantDashboardPage defaultView="subscription-plans" />} />
                       {/* NEW: Credit Marketplace - Configure and Manage */}
                       <Route path="credit-marketplace" element={<CreditMarketplace />} />
                       <Route path="truck-owners" element={<TenantDashboardPage defaultView="truck-owners" />} />

@@ -36,15 +36,13 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
     const { tSync } = useTranslation();
     const [activeTab, setActiveTab] = useState<'overview' | 'billing' | 'fleet' | 'performance'>('overview');
 
-    // Mock additional partner data that might not be in the initial user object
+    // Partner data sourced from actual user object — no hardcoded fallbacks
     const partnerExt = {
-        rating: 4.8,
-        joinDate: 'Oct 2023',
-        totalLoads: 142,
-        onTimeRate: 97.5,
-        fleetSize: partner.role === 'TRUCK_OWNER' ? 4 : 0,
-        kycStatus: 'VERIFIED',
-        location: 'Kigali, Rwanda'
+        kycStatus: (partner as any).kycStatus || 'PENDING',
+        location: (partner as any).profile?.city || (partner as any).profile?.country || '',
+        joinDate: (partner as any).createdAt
+            ? new Date((partner as any).createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+            : '',
     };
 
     const tabs = [
@@ -114,25 +112,6 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                             exit={{ opacity: 0, y: -10 }}
                             className="space-y-10"
                         >
-                            {/* Key Performance Row */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                                 {[
-                                     { label: tSync('On-Time Delivery'), value: `${partnerExt.onTimeRate}%`, icon: Award, color: 'indigo' },
-                                     { label: tSync('Partner Rating'), value: `${partnerExt.rating}/5.0`, icon: Activity, color: 'amber' },
-                                     { label: tSync('Total Loads'), value: partnerExt.totalLoads, icon: Box, color: 'emerald' }
-                                 ].map((stat, i) => (
-                                     <div key={i} className="bg-white dark:bg-slate-800/50 p-5 md:p-6 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm flex md:block items-center md:items-start gap-4 md:gap-0">
-                                         <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-900/20 flex items-center justify-center mb-0 md:mb-4 flex-shrink-0`}>
-                                             <stat.icon className={`w-6 h-6 text-${stat.color}-600 dark:text-${stat.color}-400`} />
-                                         </div>
-                                         <div>
-                                             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 md:mb-1 italic">{stat.label}</p>
-                                             <p className="text-xl font-black text-slate-900 dark:text-white tabular-nums">{stat.value}</p>
-                                         </div>
-                                     </div>
-                                 ))}
-                            </div>
-
                             {/* Info & Metadata */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div className="bg-white dark:bg-slate-800/50 p-6 md:p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm">
@@ -264,41 +243,22 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                             exit={{ opacity: 0, scale: 0.98 }}
                             className="space-y-8"
                         >
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter"><TranslatedText text="Registered Trucks" /></h4>
-                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">{tSync('Tracking 4 total assets')}</p>
+                            <div className="bg-white dark:bg-slate-800/50 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm text-center">
+                                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Truck className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                                 </div>
-                                <button className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 dark:shadow-none hover:bg-indigo-700 transition-all"><TranslatedText text="Add Truck" /></button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="bg-white dark:bg-slate-800/50 p-6 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-6 group hover:border-indigo-100 dark:hover:border-indigo-900/50 transition-all">
-                                        <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-colors">
-                                            <Truck className="w-8 h-8 text-indigo-500" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight truncate">V-TRK-2940-00{i}</p>
-                                                <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800/50 italic flex-shrink-0 ml-2"><TranslatedText text="Live" /></span>
-                                            </div>
-                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest truncate italic">Scania R450 · Heavy Duty</p>
-                                            <div className="mt-4 flex items-center gap-4 border-t border-slate-50 dark:border-slate-700/50 pt-3">
-                                                <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest whitespace-nowrap italic">
-                                                    <Activity className="w-3.5 h-3.5" /> 84% <TranslatedText text="Health" />
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest whitespace-nowrap italic">
-                                                    <MapPin className="w-3.5 h-3.5" /> <TranslatedText text="Kigali" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">
+                                    <TranslatedText text="Fleet details not available" />
+                                </h4>
+                                <p className="text-sm text-slate-400 dark:text-slate-500">
+                                    <TranslatedText text="Truck data for this partner is managed in the Fleet module." />
+                                </p>
                             </div>
                         </motion.div>
                     )}
 
-                     {activeTab === 'performance' && (
+
+                     {activeTab === 'performance' && (
                         <motion.div
                             key="performance"
                             initial={{ opacity: 0, x: 20 }}

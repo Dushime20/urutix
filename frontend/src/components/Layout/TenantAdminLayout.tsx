@@ -52,6 +52,7 @@ const TenantAdminLayoutContent: React.FC = () => {
     location.pathname === '/tenant-admin/financial' ||
     location.pathname === '/tenant-admin/purchase-credits' ||
     location.pathname === '/tenant-admin/billing' ||
+    location.pathname === '/tenant-admin/subscription-plans' ||
     location.pathname === '/tenant-admin/communication' ||
     location.pathname === '/tenant-admin/fleet' ||
     location.pathname === '/tenant-admin/cargo' ||

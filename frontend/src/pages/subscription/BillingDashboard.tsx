@@ -254,7 +254,7 @@ const BillingDashboard: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
             <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600 mb-1">Available Balance</p>
+                <p className="text-xs text-gray-600 mb-1">Available Credits</p>
                 <div className="flex items-baseline gap-2">
                   <p className={`text-2xl font-black leading-none ${getBalanceColor()}`}>
                     {balance?.currentBalance.toLocaleString()}
@@ -273,50 +273,36 @@ const BillingDashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Monthly Usage */}
+          {/* Lifetime Consumed */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
             <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600 mb-1">Monthly Usage</p>
+                <p className="text-xs text-gray-600 mb-1">Total Consumed</p>
                 <p className="text-2xl font-black text-gray-900 leading-none">
-                  {usage?.totalConsumed.toLocaleString() || 0}
+                  {balance?.lifetimeSpent.toLocaleString() || 0}
                 </p>
               </div>
               <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
                 <TrendingUp className="text-white" size={20} />
               </div>
             </div>
-            {subscription && usage && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-[10px] text-gray-500 font-bold uppercase mb-1.5">
-                  <span>{getUsagePercentage()}% consumed</span>
-                  <span>{subscription.plan.includedCredits.toLocaleString()}</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${getUsagePercentage() > 90 ? 'bg-red-500' :
-                      getUsagePercentage() > 70 ? 'bg-yellow-500' :
-                        'bg-indigo-600'
-                      }`}
-                    style={{ width: `${Math.min(getUsagePercentage(), 100)}%` }}
-                  />
-                </div>
-              </div>
-            )}
+            <div className="mt-4 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+              All-time credits used
+            </div>
           </div>
 
-          {/* Current Plan */}
+          {/* Purchased Credits */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
             <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600 mb-1">Current Plan</p>
+                <p className="text-xs text-gray-600 mb-1">Purchased Credits</p>
                 <p className="text-2xl font-black text-gray-900 leading-none truncate max-w-[120px]">
-                  {subscription?.plan.name}
+                  {balance?.purchasedCredits.toLocaleString() || 0}
                 </p>
                 <p className="text-[10px] text-gray-500 font-bold mt-1.5 uppercase tracking-wider">
-                  {subscription?.billingCycle}
+                  Top-up credits
                 </p>
               </div>
               <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
@@ -325,26 +311,25 @@ const BillingDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Next Renewal */}
+          {/* Bonus Credits */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 group relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity bg-gray-50"></div>
             <div className="relative flex items-center justify-between">
               <div>
-                <p className="text-xs text-gray-600 mb-1">Days Until Renewal</p>
+                <p className="text-xs text-gray-600 mb-1">Bonus Credits</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-black text-gray-900 leading-none">{daysUntilRenewal}</p>
+                  <p className="text-2xl font-black text-gray-900 leading-none">
+                    {balance?.bonusCredits.toLocaleString() || 0}
+                  </p>
                 </div>
               </div>
               <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center group-hover:bg-gray-900 transition-colors">
                 <Clock className="text-white" size={20} />
               </div>
             </div>
-            {daysUntilRenewal <= 7 && (
-              <div className="mt-4 flex items-center gap-1 text-[10px] text-orange-600 font-bold uppercase tracking-wider">
-                <Clock size={12} />
-                <span>Renewal Approaching</span>
-              </div>
-            )}
+            <div className="mt-4 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+              Earned from promotions
+            </div>
           </div>
         </div>
 
@@ -396,7 +381,7 @@ const BillingDashboard: React.FC = () => {
                         {balance?.subscriptionCredits.toLocaleString()}
                       </div>
                       <div className="text-xs text-indigo-600 mt-1">
-                        Refreshes {balance?.nextRefreshDate ? new Date(balance.nextRefreshDate).toLocaleDateString() : 'N/A'}
+                        Available until fully consumed
                       </div>
                     </div>
                     <div className="bg-green-50 rounded-lg p-4">
@@ -404,7 +389,7 @@ const BillingDashboard: React.FC = () => {
                       <div className="text-2xl font-bold text-green-900">
                         {balance?.purchasedCredits.toLocaleString()}
                       </div>
-                      <div className="text-xs text-green-600 mt-1">Valid for 12 months</div>
+                      <div className="text-xs text-green-600 mt-1">Available until fully consumed</div>
                     </div>
                     <div className="bg-purple-50 rounded-lg p-4">
                       <div className="text-sm text-purple-600 font-medium mb-1">Bonus Credits</div>
@@ -416,60 +401,30 @@ const BillingDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Subscription Details */}
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">Subscription Details</h3>
-                  <div className="bg-slate-50 rounded-lg p-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="text-sm text-slate-600 mb-1">Current Plan</div>
-                        <div className="text-xl font-bold text-slate-900">{subscription?.plan.name}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-slate-600 mb-1">Billing Cycle</div>
-                        <div className="text-xl font-bold text-slate-900 capitalize">
-                          {subscription?.billingCycle}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-slate-600 mb-1">Monthly Credits</div>
-                        <div className="text-xl font-bold text-slate-900">
-                          {subscription?.plan.includedCredits.toLocaleString()}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-slate-600 mb-1">Next Billing Date</div>
-                        <div className="text-xl font-bold text-slate-900">
-                          {subscription?.currentPeriodEnd
-                            ? new Date(subscription.currentPeriodEnd).toLocaleDateString()
-                            : 'N/A'}
-                        </div>
-                      </div>
-                    </div>
+                {/* Credit Model Info */}
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
+                  <h4 className="font-black text-blue-900 text-sm uppercase tracking-wider mb-2">How Credits Work</h4>
+                  <p className="text-xs text-blue-700 font-medium leading-relaxed">
+                    Credits are consumed as you use platform features. They remain available until fully used — there is no monthly reset or expiry based on a billing cycle. Purchase more credits at any time to top up your balance.
+                  </p>
+                </div>
 
-                    <div className="mt-6 flex gap-3">
-                      <button
-                        onClick={() => navigate('/tenant-admin/subscription-plans')}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-black transition-all font-black text-xs shadow-lg shadow-black/10"
-                      >
-                        <ArrowUp size={14} />
-                        Upgrade Plan
-                      </button>
-                      <button
-                        onClick={() => navigate('/tenant-admin/purchase-credits')}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-900 rounded-xl hover:bg-gray-50 transition-all font-black text-xs"
-                      >
-                        <ShoppingCart size={14} />
-                        Buy Credits
-                      </button>
-                      <button
-                        onClick={() => setShowCancelModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-all font-black text-xs ml-auto"
-                      >
-                        Cancel Subscription
-                      </button>
-                    </div>
-                  </div>
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => navigate('/tenant-admin/subscription-plans')}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-black transition-all font-black text-xs shadow-lg shadow-black/10"
+                  >
+                    <ArrowUp size={14} />
+                    Buy More Credits
+                  </button>
+                  <button
+                    onClick={() => navigate('/tenant-admin/purchase-credits')}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-900 rounded-xl hover:bg-gray-50 transition-all font-black text-xs"
+                  >
+                    <ShoppingCart size={14} />
+                    Top Up
+                  </button>
                 </div>
               </div>
             )}

@@ -49,6 +49,7 @@ import TenantBidding from './TenantBidding';
 import TruckOwnerBilling from '../../pages/tenant-admin/TruckOwnerBilling';
 import PurchaseCredits from '../../pages/subscription/PurchaseCredits';
 import BillingDashboard from '../../pages/subscription/BillingDashboard';
+import SubscriptionPlans from '../../pages/subscription/SubscriptionPlans';
 import Profile from '../../pages/Profile';
 import TenantLenderManagementPage from '../../pages/TenantLenderManagementPage';
 import TenantCommunication from '../../pages/tenant/TenantCommunication';
@@ -76,7 +77,7 @@ ChartJS.register(
 interface TenantDashboardProps {
   tenantId?: string;
   className?: string;
-  defaultView?: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'communicate' | 'profile' | 'lenders' | 'kyc';
+  defaultView?: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc';
 }
 
 const TenantDashboard: React.FC<TenantDashboardProps> = ({
@@ -89,7 +90,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'communicate' | 'profile' | 'lenders' | 'kyc'>(defaultView);
+  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc'>(defaultView);
   const [trackingActivity, setTrackingActivity] = useState<any>(null);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
 
@@ -619,6 +620,12 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           {!isLoading && selectedView === 'billing' && (
             <motion.div key="billing" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <BillingDashboard />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'subscription-plans' && (
+            <motion.div key="subscription-plans" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <SubscriptionPlans />
             </motion.div>
           )}
 

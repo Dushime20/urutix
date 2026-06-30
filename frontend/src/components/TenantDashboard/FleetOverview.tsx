@@ -13,6 +13,7 @@ import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { fleetApi } from '../../services/fleetApi';
+import { tenantApi } from '../../services/tenantApi';
 import AddTruckModal from './AddTruckModal';
 import toast from 'react-hot-toast';
 
@@ -26,6 +27,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddTruckModalOpen, setIsAddTruckModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [timeRange, setTimeRange] = useState<'7d' | '30d'>('7d');
   const itemsPerPage = 5;
   const queryClient = useQueryClient();
 
@@ -68,6 +70,14 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
     },
   });
 
+  // Fetch real fleet utilization trend from backend
+  const { data: trendsData } = useQuery({
+    queryKey: ['fleet-trends', tenantId, timeRange],
+    queryFn: () => tenantApi.getTenantTrends(tenantId!, timeRange),
+    enabled: !!tenantId,
+    staleTime: 60000,
+  });
+
   // Calculate fleet summary from real data
   const fleetSummary = useMemo(() => {
     const activeTrucks = trucks.filter((truck: any) => truck.status === 'AVAILABLE').length;
@@ -87,17 +97,12 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
     };
   }, [trucks, drivers]);
 
-  // Calculate utilization (mock calculation for now)
+  // Calculate utilization from real data only
   const utilization = useMemo(() => {
     const totalTrucks = trucks.length;
     const activeTrucks = fleetSummary.activeTrucks;
     const currentUtilization = totalTrucks > 0 ? Math.round((activeTrucks / totalTrucks) * 100) : 0;
-    
-    return {
-      current: currentUtilization,
-      weekly: [78, 82, 75, 88, 91, 85, currentUtilization],
-      monthly: [82, 79, 85, 88, 90, 87, 89, 91, 88, 86, 89, currentUtilization],
-    };
+    return { current: currentUtilization };
   }, [trucks, fleetSummary.activeTrucks]);
 
   // Transform trucks data for display
@@ -115,7 +120,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
         truck.currentDriver.email || 'Unknown Driver' : 
         'Unassigned',
       location: truck.currentAddress || truck.currentLocation?.address || 'Unknown',
-      utilization: Math.floor(Math.random() * 100), // Mock utilization for now
+      utilization: null as number | null, // real utilization not available per-truck yet
       lastMaintenance: truck.updatedAt,
       make: truck.make,
       model: truck.model,
@@ -248,12 +253,29 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
     );
   }
 
+  // Build chart labels from timeRange
+  const trendLabels = useMemo(() => {
+    const points = trendsData?.fleetUtilization?.length || 0;
+    if (points === 0) return [];
+    const now = new Date();
+    return Array.from({ length: points }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - (points - 1 - i));
+      return timeRange === '7d'
+        ? d.toLocaleDateString('en-US', { weekday: 'short' })
+        : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+  }, [trendsData, timeRange]);
+
+  const trendValues = trendsData?.fleetUtilization ?? [];
+  const hasRealTrendData = trendValues.some(v => v > 0);
+
   const utilizationChartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: trendLabels,
     datasets: [
       {
         label: 'Fleet Utilization (%)',
-        data: utilization.weekly,
+        data: trendValues,
         borderColor: '#6366f1',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
         borderWidth: 3,
@@ -385,21 +407,45 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
               <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Truck Usage Trend" /></h4>
             </div>
             <div className="flex gap-2">
-              <button className="px-4 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-primary-600 hover:text-white transition-all"><TranslatedText text="Week" /></button>
-              <button className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-xl text-[10px] font-black tracking-widest uppercase hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"><TranslatedText text="Month" /></button>
+              <button
+                onClick={() => setTimeRange('7d')}
+                className={`px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all ${timeRange === '7d' ? 'bg-primary-600 text-white' : 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-600 hover:text-white'}`}
+              >
+                <TranslatedText text="Week" />
+              </button>
+              <button
+                onClick={() => setTimeRange('30d')}
+                className={`px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all ${timeRange === '30d' ? 'bg-primary-600 text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+              >
+                <TranslatedText text="Month" />
+              </button>
             </div>
           </div>
-          <div className="h-72">
-            <Line data={utilizationChartData} options={{
-              ...chartOptions,
-              scales: {
-                ...chartOptions.scales,
-                y: {
-                  ...chartOptions.scales.y,
-                  suggestedMax: 100
+          <div className="h-72 relative">
+            {!hasRealTrendData ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3 border border-slate-100 dark:border-slate-700">
+                  <Activity className="w-6 h-6 text-slate-300 dark:text-slate-600" />
+                </div>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  <TranslatedText text="No fleet activity yet" />
+                </p>
+                <p className="text-xs text-slate-300 dark:text-slate-600 mt-1 font-medium">
+                  <TranslatedText text="Assign trucks to trips to see utilization" />
+                </p>
+              </div>
+            ) : (
+              <Line data={utilizationChartData} options={{
+                ...chartOptions,
+                scales: {
+                  ...chartOptions.scales,
+                  y: {
+                    ...chartOptions.scales.y,
+                    suggestedMax: 100
+                  }
                 }
-              }
-            }} />
+              }} />
+            )}
           </div>
         </div>
 
@@ -583,12 +629,14 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between gap-4">
                            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none"><TranslatedText text="Usage" /> (%)</span>
-                           <span className="text-[10px] font-black text-slate-800 dark:text-white italic">{truck.utilization}%</span>
+                           <span className="text-[10px] font-black text-slate-800 dark:text-white italic">
+                             {truck.utilization != null ? `${truck.utilization}%` : '—'}
+                           </span>
                         </div>
                         <div className="w-28 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${truck.utilization}%` }}
+                            animate={{ width: `${truck.utilization ?? 0}%` }}
                             transition={{ duration: 1 }}
                             className="bg-primary-600 dark:bg-primary-500 h-full rounded-full shadow-[0_0_8px_rgba(52,94,133,0.5)]"
                           />
