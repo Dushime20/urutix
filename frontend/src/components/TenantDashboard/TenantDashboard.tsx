@@ -397,7 +397,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   };
 
   return (
-    <div className={`min-h-screen bg-white dark:bg-slate-950 ${className}`}>
+    <div className={`min-h-screen bg-white dark:bg-slate-950 overflow-x-hidden ${className}`}>
       {/* Header */}
       <TenantHeader
         tenant={currentTenant}

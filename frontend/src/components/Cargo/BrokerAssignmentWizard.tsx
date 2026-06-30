@@ -25,6 +25,8 @@ interface BrokerAssignmentWizardProps {
     loadId: string;
     loadTitle?: string;
     loadValue?: number;
+    /** The price the Cargo Owner is willing to pay for transportation (commission basis) */
+    targetPrice?: number;
     cargoPickupDate?: string;
     cargoDeliveryDate?: string;
     onSuccess?: () => void;
@@ -60,10 +62,14 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
     loadId,
     loadTitle,
     loadValue = 0,
+    targetPrice,
     cargoPickupDate,
     cargoDeliveryDate,
     onSuccess,
 }) => {
+    // Commission is calculated on the transportation payment amount (targetPrice),
+    // not the cargo's declared value (loadValue).
+    const commissionBasis = targetPrice && targetPrice > 0 ? targetPrice : loadValue;
     // Steps: 1 = Select Broker, 2 = Contract Terms
     const [step, setStep] = useState<1 | 2>(1);
     const [loading, setLoading] = useState(false);
@@ -76,7 +82,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
 
     // Step 2 State: Contract Details
     const [contractTerms, setContractTerms] = useState({
-        agreedRate: loadValue || 0,
+        agreedRate: commissionBasis || 0,
         commissionRate: 5.0,
         paymentTerms: 'Net 30 days',
         specialInstructions: '',
@@ -95,7 +101,7 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
             // Reset terms, seeding dates from cargo data
             setContractTerms(prev => ({
                 ...prev,
-                agreedRate: loadValue || 0,
+                agreedRate: commissionBasis || 0,
                 pickupDate: toDateInputValue(cargoPickupDate),
                 deliveryDate: toDateInputValue(cargoDeliveryDate),
             }));
@@ -425,6 +431,22 @@ export const BrokerAssignmentWizard: React.FC<BrokerAssignmentWizardProps> = ({
                                     placeholder="e.g. Net 30 days"
                                 />
                             </div>
+
+                            {/* ── Commission Preview ── */}
+                            {contractTerms.agreedRate > 0 && contractTerms.commissionRate > 0 && (
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                                    <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider mb-2">Commission Preview</p>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-600">
+                                            {contractTerms.commissionRate}% of {contractTerms.agreedRate.toLocaleString()} (transportation fee)
+                                        </span>
+                                        <span className="font-bold text-emerald-700">
+                                            = {((contractTerms.agreedRate * contractTerms.commissionRate) / 100).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <p className="text-[10px] text-emerald-500 mt-1">Commission is based on the transportation fee, not the cargo's declared value.</p>
+                                </div>
+                            )}
 
                             {/* ── Special Instructions ── */}
                             <div className="rounded-xl border border-gray-200 p-4 bg-white">

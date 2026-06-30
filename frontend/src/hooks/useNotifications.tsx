@@ -78,6 +78,16 @@ export const useNotifications = () => {
     newSocket.on('disconnect', () => setIsConnected(false));
 
     newSocket.on('notification:new', (data: any) => {
+      // Role-based filter: LOW_BALANCE is only for TRUCK_OWNER and TENANT_ADMIN
+      const notifType = ((data as any).notificationType || (data as any).type || '').toUpperCase();
+      const creditBalanceRoles = ['TRUCK_OWNER', 'TENANT_ADMIN'];
+      if (
+        (notifType === 'LOW_BALANCE' || notifType.includes('LOW_BALANCE')) &&
+        user &&
+        !creditBalanceRoles.includes(user.role)
+      ) {
+        return; // Suppress for roles that don't manage TRX credits
+      }
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
       toast(data.title || 'New notification', {
@@ -159,21 +169,39 @@ export const useNotifications = () => {
     }
   }, [user?.id, queryClient, apiNotifications]);
 
+  // ── Role-based notification filtering ────────────────────────────────────
+  // LOW_BALANCE (TRX credit) notifications must only be visible to roles that
+  // actually manage or consume TRX credits: TRUCK_OWNER and TENANT_ADMIN.
+  const CREDIT_BALANCE_ROLES = ['TRUCK_OWNER', 'TENANT_ADMIN'];
+  const isCreditBalanceRole = user ? CREDIT_BALANCE_ROLES.includes(user.role) : false;
+
   // ── Derived state ────────────────────────────────────────────────────────
-  const notifications: UrutixNotification[] = (apiNotifications as any[]).map((n: any) => ({
-    id: n.id,
-    type: n.notificationType || n.type || 'GENERAL',
-    title: n.title,
-    message: n.message,
-    data: n.metadata || n.data,
-    timestamp: n.createdAt || n.timestamp || new Date().toISOString(),
-    isRead: isNotificationRead(n),
-    category: n.category,
-    priority: n.priority,
-    createdAt: n.createdAt,
-    actionUrl: n.actionUrl,
-    actionText: n.actionText,
-  }));
+  const notifications: UrutixNotification[] = (apiNotifications as any[])
+    .filter((n: any) => {
+      const notifType = (n.notificationType || n.type || '').toUpperCase();
+      // Hide LOW_BALANCE notifications from roles that don't manage TRX credits
+      if (
+        (notifType === 'LOW_BALANCE' || notifType.includes('LOW_BALANCE')) &&
+        !isCreditBalanceRole
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .map((n: any) => ({
+      id: n.id,
+      type: n.notificationType || n.type || 'GENERAL',
+      title: n.title,
+      message: n.message,
+      data: n.metadata || n.data,
+      timestamp: n.createdAt || n.timestamp || new Date().toISOString(),
+      isRead: isNotificationRead(n),
+      category: n.category,
+      priority: n.priority,
+      createdAt: n.createdAt,
+      actionUrl: n.actionUrl,
+      actionText: n.actionText,
+    }));
 
   // Unread count: prefer server value, fall back to client-side count
   const serverUnreadCount = unreadCountData?.count ?? null;

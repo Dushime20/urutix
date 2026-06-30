@@ -8,7 +8,7 @@ const TenantFleetManagement: React.FC = () => {
   const tenantId = user?.tenantId || 'default-tenant';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Page Header */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between">

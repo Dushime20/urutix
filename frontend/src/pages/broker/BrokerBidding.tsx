@@ -5,13 +5,14 @@ import AuctionList from '../../components/Bidding/AuctionList';
 import BidHistory from '../../components/Bidding/BidHistory';
 import BidAnalytics from '../../components/Bidding/BidAnalytics';
 import CreateAuction from '../../components/Bidding/CreateAuction';
-import { Gavel, Users, BarChart3, DollarSign, Heart, Plus, Activity, Zap, Shield, ArrowRight } from 'lucide-react';
+import BrokerBidManagement from '../../components/Bidding/BrokerBidManagement';
+import { Gavel, Users, BarChart3, DollarSign, Heart, Plus, Activity, CheckSquare } from 'lucide-react';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const BrokerBidding: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
-  const [activeTab, setActiveTab] = useState('auctions');
+  const [activeTab, setActiveTab] = useState('bids');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
@@ -87,11 +88,12 @@ const BrokerBidding: React.FC = () => {
 
       {/* Tabs Terminal */}
       <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
-        <div className="bg-slate-50/50 p-3 border-b border-slate-100 dark:border-slate-800">
-           <div className="flex gap-2">
+        <div className="bg-slate-50/50 p-3 border-b border-slate-100 dark:border-slate-800 overflow-x-auto">
+           <div className="flex gap-2 min-w-max">
               {[
+                { id: 'bids', label: 'Manage Bids', icon: CheckSquare },
                 { id: 'auctions', label: 'Open', icon: Gavel },
-                { id: 'bids', label: 'History', icon: Clock },
+                { id: 'history', label: 'History', icon: ClockIcon },
                 { id: 'watched', label: 'Saved', icon: Heart },
                 { id: 'create', label: 'Host', icon: Plus },
                 { id: 'analytics', label: 'Analysis', icon: BarChart3 },
@@ -99,18 +101,22 @@ const BrokerBidding: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-sm font-bold uppercase transition-all ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-900 hover:bg-white'}`}
+                  className={`flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold uppercase transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-900 hover:bg-white dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-800'}`}
                 >
                   <tab.icon size={14} />
                   {tab.label}
+                  {tab.id === 'bids' && (
+                    <span className="px-1.5 py-0.5 rounded-md bg-primary-600 text-white text-[9px] font-black">NEW</span>
+                  )}
                 </button>
               ))}
            </div>
         </div>
 
-        <div className="p-12">
+        <div className="p-8 sm:p-12">
+          {activeTab === 'bids' && <BrokerBidManagement />}
           {activeTab === 'auctions' && <AuctionList userRole="BROKER" />}
-          {activeTab === 'bids' && <BidHistory userRole="BROKER" />}
+          {activeTab === 'history' && <BidHistory userRole="BROKER" />}
           {activeTab === 'watched' && <AuctionList userRole="BROKER" showWatchedOnly={true} />}
           {activeTab === 'create' && <CreateAuction />}
           {activeTab === 'analytics' && <BidAnalytics userRole="BROKER" />}
@@ -120,8 +126,8 @@ const BrokerBidding: React.FC = () => {
   );
 };
 
-// Internal constant for Clock until I decide to import it
-const Clock = ({ size }: { size: number }) => (
+// Internal constant for ClockIcon until I decide to import it
+const ClockIcon = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 );
 

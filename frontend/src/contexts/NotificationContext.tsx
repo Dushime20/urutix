@@ -41,7 +41,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ...n,
         isRead: !!(n.isRead || n.status === 'READ' || (typeof n.readAt === 'string' && n.readAt.length > 0)),
       }));
-      setNotifications(normalised);
+      // Role-based filter: LOW_BALANCE is only for TRUCK_OWNER and TENANT_ADMIN
+      const creditBalanceRoles = ['TRUCK_OWNER', 'TENANT_ADMIN'];
+      const filtered = normalised.filter((n: any) => {
+        const notifType = (n.notificationType || n.type || '').toUpperCase();
+        if (
+          (notifType === 'LOW_BALANCE' || notifType.includes('LOW_BALANCE')) &&
+          !creditBalanceRoles.includes(user.role)
+        ) {
+          return false;
+        }
+        return true;
+      });
+      setNotifications(filtered);
     } catch (err: any) {
       console.error('Error fetching notifications:', err);
       setError(err.message || 'Failed to fetch notifications');
@@ -130,6 +142,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Real-time notification push from backend
     socket.on('notification', (newNotif: Notification) => {
+      // Role-based filter: LOW_BALANCE is only for TRUCK_OWNER and TENANT_ADMIN
+      const notifType = ((newNotif as any).notificationType || (newNotif as any).type || '').toUpperCase();
+      const creditBalanceRoles = ['TRUCK_OWNER', 'TENANT_ADMIN'];
+      if (
+        (notifType === 'LOW_BALANCE' || notifType.includes('LOW_BALANCE')) &&
+        user &&
+        !creditBalanceRoles.includes(user.role)
+      ) {
+        return; // Suppress for roles that don't manage TRX credits
+      }
+
       setNotifications(prev => {
         // Avoid duplicates
         if (prev.some(n => n.id === newNotif.id)) return prev;

@@ -1517,6 +1517,7 @@ export const CargoDashboard: React.FC = () => {
                 loadId={selectedLoadForBroker.id}
                 loadTitle={selectedLoadForBroker.title}
                 loadValue={selectedLoadForBroker.loadValue}
+                targetPrice={selectedLoadForBroker.offeredPrice || (selectedLoadForBroker as any).targetPrice}
                 currentBrokerId={(selectedLoadForBroker as any).brokerId}
                 onSuccess={handleBrokerAssignmentSuccess}
               />

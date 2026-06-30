@@ -331,82 +331,83 @@ const TenantAdminRoutes: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <FaRoute className="text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <FaRoute className="text-blue-600 flex-shrink-0" />
               Route Management
             </h1>
-            <p className="text-gray-600 mt-2">Manage and monitor your tenant routes</p>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage and monitor your tenant routes</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => refetchRoutes()}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
             >
               <FaSync className="w-4 h-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
               onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm"
             >
               <FaPlus className="w-4 h-4" />
-              New Route
+              <span className="hidden sm:inline">New Route</span>
+              <span className="sm:hidden">New</span>
             </button>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-blue-600 font-medium">Total Routes</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.totalRoutes}</p>
+              <div className="min-w-0">
+                <p className="text-xs text-blue-600 font-medium truncate">Total Routes</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-900">{stats.totalRoutes}</p>
               </div>
-              <FaRoute className="w-8 h-8 text-blue-600 opacity-50" />
+              <FaRoute className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Active Routes</p>
-                <p className="text-2xl font-bold text-green-900">{stats.activeRoutes}</p>
+              <div className="min-w-0">
+                <p className="text-xs text-green-600 font-medium truncate">Active</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-900">{stats.activeRoutes}</p>
               </div>
-              <FaCheckCircle className="w-8 h-8 text-green-600 opacity-50" />
+              <FaCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 font-medium">Inactive Routes</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.inactiveRoutes}</p>
+              <div className="min-w-0">
+                <p className="text-xs text-gray-600 font-medium truncate">Inactive</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.inactiveRoutes}</p>
               </div>
-              <FaTimesCircle className="w-8 h-8 text-gray-600 opacity-50" />
+              <FaTimesCircle className="w-6 h-6 sm:w-8 sm:h-8 text-gray-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-600 font-medium">Total Distance</p>
-                <p className="text-2xl font-bold text-purple-900">
+              <div className="min-w-0">
+                <p className="text-xs text-purple-600 font-medium truncate">Total Distance</p>
+                <p className="text-lg sm:text-2xl font-bold text-purple-900 truncate">
                   {stats.totalDistance.toFixed(0)} km
                 </p>
               </div>
-              <FaRoad className="w-8 h-8 text-purple-600 opacity-50" />
+              <FaRoad className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-orange-600 font-medium">Assigned Trucks</p>
-                <p className="text-2xl font-bold text-orange-900">{stats.assignedTrucks}</p>
+              <div className="min-w-0">
+                <p className="text-xs text-orange-600 font-medium truncate">Assigned Trucks</p>
+                <p className="text-xl sm:text-2xl font-bold text-orange-900">{stats.assignedTrucks}</p>
               </div>
-              <FaTruck className="w-8 h-8 text-orange-600 opacity-50" />
+              <FaTruck className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 opacity-50 flex-shrink-0 ml-2" />
             </div>
           </div>
         </div>
@@ -414,21 +415,21 @@ const TenantAdminRoutes: React.FC = () => {
 
       {/* Filters and Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <FaSearch className="absolute left-3 top-3 text-gray-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="relative sm:col-span-2 lg:col-span-1">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search routes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -438,7 +439,7 @@ const TenantAdminRoutes: React.FC = () => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           >
             <option value="name">Sort by Name</option>
             <option value="distance">Sort by Distance</option>

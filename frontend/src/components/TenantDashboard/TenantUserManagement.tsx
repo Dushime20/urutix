@@ -126,9 +126,9 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
     };
 
     return (
-        <div className="space-y-8 pb-20">
+        <div className="space-y-8 pb-20 w-full max-w-full overflow-x-hidden">
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 py-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 py-4">
                 {[
                     { label: 'Total Users', value: stats.total, icon: Users, borderColor: 'border-primary-100 dark:border-primary-900/30', shadowColor: 'shadow-primary-100/20 dark:shadow-primary-900/10' },
                     { label: 'Truck Owners', value: stats.truckOwners, icon: Truck, borderColor: 'border-indigo-100 dark:border-indigo-900/30', shadowColor: 'shadow-indigo-100/20 dark:shadow-indigo-900/10' },

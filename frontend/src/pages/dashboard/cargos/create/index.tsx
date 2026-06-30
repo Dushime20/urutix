@@ -454,6 +454,7 @@ const CargoCreatePage: React.FC = () => {
             loadId={cargoData.id}
             loadTitle={cargoData.title}
             loadValue={cargoData.loadValue}
+            targetPrice={(cargoData as any).offeredPrice || (cargoData as any).targetPrice}
             onBrokerAssigned={handleBrokerAssigned}
             onSkip={handleSkipBrokerAssignment}
           />

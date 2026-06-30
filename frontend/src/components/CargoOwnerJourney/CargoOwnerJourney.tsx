@@ -306,6 +306,7 @@ const CargoOwnerJourney: React.FC = () => {
             loadId={cargoDetails?.id || ''}
             loadTitle={cargoDetails?.title}
             loadValue={cargoDetails?.loadValue}
+            targetPrice={(cargoDetails as any)?.offeredPrice || (cargoDetails as any)?.targetPrice}
             onSuccess={handleBrokerAssignmentComplete}
           />
         );

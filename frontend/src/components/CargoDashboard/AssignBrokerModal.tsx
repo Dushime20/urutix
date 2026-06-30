@@ -23,6 +23,8 @@ interface AssignBrokerModalProps {
   loadId: string;
   loadTitle?: string;
   loadValue?: number;
+  /** The price the Cargo Owner is willing to pay for transportation (used for commission basis) */
+  targetPrice?: number;
   currentBrokerId?: string;
   onSuccess?: () => void;
 }
@@ -33,9 +35,13 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
   loadId,
   loadTitle,
   loadValue = 0,
+  targetPrice,
   currentBrokerId,
   onSuccess,
 }) => {
+  // Commission is calculated on the transportation payment amount (targetPrice / offeredPrice),
+  // not on the cargo's declared load value.
+  const commissionBasis = targetPrice && targetPrice > 0 ? targetPrice : loadValue;
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loading, setLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
@@ -192,8 +198,8 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
     return name.includes(search) || email.includes(search) || company.includes(search);
   });
 
-  // Calculate commission amount preview
-  const commissionAmount = loadValue ? (loadValue * commissionRate) / 100 : 0;
+  // Calculate commission amount preview — based on transportation fee, not cargo declared value
+  const commissionAmount = commissionBasis ? (commissionBasis * commissionRate) / 100 : 0;
 
   if (!isOpen) return null;
 
@@ -265,15 +271,25 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
             </div>
           )}
 
-          {/* Load Value Info */}
-          {loadValue > 0 && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600"><TranslatedText text="Load Value" />:</span>
-                <span className="text-lg font-semibold text-gray-900">
-                  {fmtFull(loadValue)}
-                </span>
-              </div>
+          {/* Transportation Fee Info */}
+          {commissionBasis > 0 && (
+            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              {targetPrice && targetPrice > 0 ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600"><TranslatedText text="Target Transportation Price" />:</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {fmtFull(targetPrice)}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600"><TranslatedText text="Transportation Value (basis)" />:</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {fmtFull(loadValue)}
+                  </span>
+                </div>
+              )}
+              <p className="text-xs text-gray-400">Commission is calculated on the transportation fee, not the cargo's declared value.</p>
             </div>
           )}
 
@@ -402,7 +418,7 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <div className="text-sm text-gray-600 min-w-[120px]">
-                {selectedBrokerId && loadValue > 0 && (
+                {selectedBrokerId && commissionBasis > 0 && (
                   <div className="flex items-center space-x-1">
                     <DollarSign className="w-4 h-4" />
                     <span className="font-medium">
@@ -412,9 +428,9 @@ export const AssignBrokerModal: React.FC<AssignBrokerModalProps> = ({
                 )}
               </div>
             </div>
-            {selectedBrokerId && loadValue > 0 && (
+            {selectedBrokerId && commissionBasis > 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Commission amount: {commissionRate}% of {fmtFull(loadValue)} = {fmtFull(commissionAmount)}
+                Commission amount: {commissionRate}% of {fmtFull(commissionBasis)} (transportation fee) = {fmtFull(commissionAmount)}
               </p>
             )}
           </div>

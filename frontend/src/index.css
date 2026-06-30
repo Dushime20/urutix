@@ -48,10 +48,12 @@
 
 @layer base {
   html {
+    overflow-x: hidden;
     font-family: 'Mona Sans', 'system-ui', 'sans-serif';
   }
   
   body {
+    overflow-x: hidden;
     @apply bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-100;
   }
 

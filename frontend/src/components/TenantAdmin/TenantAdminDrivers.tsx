@@ -417,34 +417,35 @@ const TenantAdminDrivers: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-inner">
+              <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-inner flex-shrink-0">
                 <Users size={20} />
               </div>
               <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600">Driver Management</h2>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Fleet Drivers</h1>
-            <p className="text-gray-500 font-medium mt-1">Manage and monitor your tenant drivers</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Fleet Drivers</h1>
+            <p className="text-gray-500 font-medium mt-1 text-sm sm:text-base">Manage and monitor your tenant drivers</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => refetchDrivers()}
-              className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium"
+              className="px-3 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium text-sm"
             >
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
               onClick={openCreateModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium"
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium text-sm"
             >
               <Plus className="w-4 h-4" />
-              New Driver
+              <span className="hidden sm:inline">New Driver</span>
+              <span className="sm:hidden">New</span>
             </button>
           </div>
         </div>

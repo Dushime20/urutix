@@ -28,6 +28,8 @@ interface BrokerAssignmentStepProps {
   loadId: string;
   loadTitle?: string;
   loadValue?: number;
+  /** The price the Cargo Owner is willing to pay for transportation (commission basis) */
+  targetPrice?: number;
   onBrokerAssigned: (brokerId: string, contractId?: string) => void;
   onSkip: () => void;
 }
@@ -38,6 +40,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
   loadId,
   loadTitle,
   loadValue = 0,
+  targetPrice,
   onBrokerAssigned,
   onSkip,
 }) => {
@@ -50,6 +53,10 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [contractId, setContractId] = useState<string | null>(null);
+
+  // Commission is based on the transportation payment amount (targetPrice),
+  // not the cargo's declared value (loadValue).
+  const commissionBasis = targetPrice && targetPrice > 0 ? targetPrice : loadValue;
 
   // Fetch available brokers
   useEffect(() => {
@@ -152,8 +159,8 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
     return name.includes(search) || email.includes(search) || company.includes(search);
   });
 
-  // Calculate commission amount preview
-  const commissionAmount = loadValue ? (loadValue * commissionRate) / 100 : 0;
+  // Calculate commission amount preview — based on transportation fee, not cargo declared value
+  const commissionAmount = commissionBasis ? (commissionBasis * commissionRate) / 100 : 0;
 
   if (!isOpen) return null;
 
@@ -222,13 +229,18 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                           <span className="text-gray-600">Commission Rate:</span>
                           <span className="font-medium text-gray-900">{commissionRate}%</span>
                         </div>
-                        {loadValue > 0 && (
+                        {commissionBasis > 0 && (
                           <div className="flex justify-between">
                             <span className="text-gray-600">Commission Amount:</span>
                             <span className="font-medium text-gray-900">
                               {fmtFull(commissionAmount)}
                             </span>
                           </div>
+                        )}
+                        {commissionBasis > 0 && (
+                          <p className="text-xs text-gray-400 pt-1 border-t border-gray-200">
+                            Calculated on transportation fee{targetPrice && targetPrice > 0 ? ` (Target Price: ${fmtFull(targetPrice)})` : ''}, not declared cargo value.
+                          </p>
                         )}
                       </div>
                     </div>
@@ -282,15 +294,25 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Load Value Info */}
+          {/* Transportation Fee Info */}
           {loadValue > 0 && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Load Value:</span>
-                <span className="text-lg font-semibold text-gray-900">
-                  {fmtFull(loadValue)}
-                </span>
-              </div>
+            <div className="bg-gray-50 rounded-lg p-4 space-y-1">
+              {targetPrice && targetPrice > 0 ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Target Transportation Price:</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {fmtFull(targetPrice)}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Transportation Value:</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {fmtFull(loadValue)}
+                  </span>
+                </div>
+              )}
+              <p className="text-xs text-gray-400">Commission is calculated on the transportation fee, not the cargo's declared value.</p>
             </div>
           )}
 
@@ -404,9 +426,9 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                 )}
               </div>
             </div>
-            {selectedBrokerId && loadValue > 0 && (
+            {selectedBrokerId && commissionBasis > 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Commission amount: {commissionRate}% of {fmtFull(loadValue)} = {fmtFull(commissionAmount)}
+                Commission: {commissionRate}% of {fmtFull(commissionBasis)} (transportation fee) = {fmtFull(commissionAmount)}
               </p>
             )}
           </div>

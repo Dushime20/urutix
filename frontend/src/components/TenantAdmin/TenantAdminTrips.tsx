@@ -197,7 +197,7 @@ const TenantAdminTrips: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
       {user?.tenantId && (
         <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-6 mb-6">
           <ActiveTrips tenantId={user.tenantId} />
@@ -288,7 +288,7 @@ const TenantAdminTrips: React.FC = () => {
 
       {/* Filters and Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
           <div className="relative">
             <FaSearch className="absolute left-2.5 top-2.5 text-gray-400 w-3.5 h-3.5" />
             <input
