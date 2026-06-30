@@ -98,7 +98,7 @@ const Settings: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
-        `${getApiBaseUrl()}/admin/settings/category/contact`,
+        `${getApiBaseUrl()}/admin/settings/bulk/contact`,
         contactSettings,
         { headers: { Authorization: `Bearer ${token}` } }
       );

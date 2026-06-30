@@ -106,7 +106,7 @@ export class SystemSettingsController {
     /**
      * Update multiple settings in a category
      */
-    @Put('category/:category')
+    @Put('bulk/:category')
     async updateCategorySettings(
         @Param('category') category: string,
         @Body() settings: Record<string, any>,
