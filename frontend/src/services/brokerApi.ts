@@ -227,6 +227,26 @@ export interface BrokerStatistics {
   averageCommissionRate: number;
 }
 
+export interface LoadLocation {
+  id: string;
+  type: 'PICKUP' | 'DELIVERY';
+  status: string;
+  sequence: number;
+  locationData: {
+    name?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    contactInfo?: Record<string, any>;
+    coordinates?: { latitude: number; longitude: number };
+    operatingHours?: Record<string, any>;
+  };
+  requirements?: Record<string, any>;
+  estimatedTime?: number;
+  scheduledDate?: string;
+}
+
 export interface BrokerLoad {
   id: string;
   title: string;
@@ -238,6 +258,7 @@ export interface BrokerLoad {
   cargoType?: string;
   weight?: number;
   equipmentType?: string;
+  // Derived display fields (may be absent — use getPickupAddress / getDeliveryAddress helpers)
   pickupLocation?: string;
   deliveryLocation?: string;
   pickupDate?: string;
@@ -245,6 +266,22 @@ export interface BrokerLoad {
   brokerCommissionRate?: number;
   brokerCommissionAmount?: number;
   createdAt: string;
+  // Raw location / route data from API
+  locations?: LoadLocation[];
+  origin?: {
+    lat?: number;
+    lng?: number;
+    city?: string;
+    address?: string;
+    country?: string;
+  };
+  destination?: {
+    lat?: number;
+    lng?: number;
+    city?: string;
+    address?: string;
+    country?: string;
+  };
   cargoOwner?: {
     id: string;
     email: string;
@@ -256,6 +293,133 @@ export interface BrokerLoad {
       phone?: string;
     };
   };
+}
+
+// ── Raw-coordinate string detection ──────────────────────────────────────────
+/** Returns true when a string is nothing but raw lat/lng, e.g. "-17.4240, 40.0781" */
+function isRawCoordString(s: string): boolean {
+  return /^\s*-?\d{1,3}(?:\.\d+)?\s*,\s*-?\d{1,3}(?:\.\d+)?\s*$/.test(s);
+}
+
+// ── Coordinate extraction helpers ─────────────────────────────────────────────
+
+/**
+ * Returns the raw coordinates for the pickup point, if available.
+ * These can be passed to `useReverseGeocode` for a live place-name lookup.
+ */
+export function getPickupCoords(
+  load: BrokerLoad,
+): { lat: number; lng: number } | null {
+  const pickupLoc = load.locations?.find(l => l.type === 'PICKUP');
+  if (pickupLoc?.locationData.coordinates) {
+    return {
+      lat: pickupLoc.locationData.coordinates.latitude,
+      lng: pickupLoc.locationData.coordinates.longitude,
+    };
+  }
+  if (load.origin?.lat != null && load.origin?.lng != null) {
+    return { lat: load.origin.lat, lng: load.origin.lng };
+  }
+  return null;
+}
+
+/**
+ * Returns the raw coordinates for the delivery point, if available.
+ */
+export function getDeliveryCoords(
+  load: BrokerLoad,
+): { lat: number; lng: number } | null {
+  const deliveryLoc = load.locations?.find(l => l.type === 'DELIVERY');
+  if (deliveryLoc?.locationData.coordinates) {
+    return {
+      lat: deliveryLoc.locationData.coordinates.latitude,
+      lng: deliveryLoc.locationData.coordinates.longitude,
+    };
+  }
+  if (load.destination?.lat != null && load.destination?.lng != null) {
+    return { lat: load.destination.lat, lng: load.destination.lng };
+  }
+  return null;
+}
+
+// ── Address getters ───────────────────────────────────────────────────────────
+
+/**
+ * Returns the best *static* pickup address from a BrokerLoad — i.e. the value
+ * stored in the data without any async geocoding.
+ *
+ * If the result looks like a raw coordinate string (e.g. "-17.4240, 40.0781")
+ * the caller should pass the result of `getPickupCoords(load)` to
+ * `useReverseGeocode` to resolve it to a real place name.
+ *
+ * Priority: pickupLocation → locations[PICKUP].locationData → origin
+ */
+export function getPickupAddress(load: BrokerLoad): string {
+  if (load.pickupLocation && !isRawCoordString(load.pickupLocation)) {
+    return load.pickupLocation;
+  }
+
+  const pickupLoc = load.locations?.find(l => l.type === 'PICKUP');
+  if (pickupLoc) {
+    const d = pickupLoc.locationData;
+    if (d.city) return [d.city, d.state, d.country].filter(Boolean).join(', ');
+    if (d.address && !isRawCoordString(d.address)) return d.address;
+    if (d.name && !isRawCoordString(d.name)) return d.name;
+    // Has coordinates — return empty so caller triggers reverse-geocode
+    if (d.coordinates) return '';
+  }
+
+  if (load.origin) {
+    if (load.origin.city) return [load.origin.city, load.origin.country].filter(Boolean).join(', ');
+    if (load.origin.address && !isRawCoordString(load.origin.address)) return load.origin.address;
+  }
+
+  return '';
+}
+
+/**
+ * Returns the best *static* delivery address from a BrokerLoad.
+ * Same contract as `getPickupAddress` — empty string means coordinates are
+ * available via `getDeliveryCoords(load)` and should be reverse-geocoded.
+ *
+ * Priority: deliveryLocation → locations[DELIVERY].locationData → destination
+ */
+export function getDeliveryAddress(load: BrokerLoad): string {
+  if (load.deliveryLocation && !isRawCoordString(load.deliveryLocation)) {
+    return load.deliveryLocation;
+  }
+
+  const deliveryLoc = load.locations?.find(l => l.type === 'DELIVERY');
+  if (deliveryLoc) {
+    const d = deliveryLoc.locationData;
+    if (d.city) return [d.city, d.state, d.country].filter(Boolean).join(', ');
+    if (d.address && !isRawCoordString(d.address)) return d.address;
+    if (d.name && !isRawCoordString(d.name)) return d.name;
+    if (d.coordinates) return '';
+  }
+
+  if (load.destination) {
+    if (load.destination.city) return [load.destination.city, load.destination.country].filter(Boolean).join(', ');
+    if (load.destination.address && !isRawCoordString(load.destination.address)) return load.destination.address;
+  }
+
+  return '';
+}
+
+/**
+ * Returns the scheduled pickup date from a BrokerLoad.
+ * Priority: pickupDate → locations[PICKUP].scheduledDate
+ */
+export function getPickupDate(load: BrokerLoad): string | undefined {
+  return load.pickupDate || load.locations?.find(l => l.type === 'PICKUP')?.scheduledDate;
+}
+
+/**
+ * Returns the scheduled delivery date from a BrokerLoad.
+ * Priority: deliveryDate → locations[DELIVERY].scheduledDate
+ */
+export function getDeliveryDate(load: BrokerLoad): string | undefined {
+  return load.deliveryDate || load.locations?.find(l => l.type === 'DELIVERY')?.scheduledDate;
 }
 
 // ==================== BROKER INTELLIGENCE TYPES ====================

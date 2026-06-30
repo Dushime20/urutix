@@ -2,7 +2,8 @@ import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { brokerAPI, type BrokerLoad, type LoadContract } from '../../services/brokerApi';
+import { brokerAPI, type BrokerLoad, type LoadContract, getPickupAddress, getDeliveryAddress, getPickupDate, getDeliveryDate, getPickupCoords, getDeliveryCoords } from '../../services/brokerApi';
+import LocationLabel from '../../components/common/LocationLabel';
 import {
   Package,
   MapPin,
@@ -166,16 +167,28 @@ const BrokerLoadDetail: React.FC = () => {
                   <div className="mt-1"><div className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 border-4 border-primary-600"></div></div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Pickup Location</p>
-                    <p className="text-base font-medium text-slate-900 dark:text-white">{load.pickupLocation || 'Not Specified'}</p>
-                    {load.pickupDate && <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-2"><Calendar size={14} className="text-primary-500"/> {new Date(load.pickupDate).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</p>}
+                    <LocationLabel
+                      address={getPickupAddress(load)}
+                      lat={getPickupCoords(load)?.lat}
+                      lng={getPickupCoords(load)?.lng}
+                      fallback="Not Specified"
+                      className="text-base font-medium text-slate-900 dark:text-white"
+                    />
+                    {getPickupDate(load) && <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-2"><Calendar size={14} className="text-primary-500"/> {new Date(getPickupDate(load)!).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</p>}
                   </div>
                 </div>
                 <div className="flex gap-4 relative z-10">
                   <div className="mt-1"><div className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 border-4 border-slate-800 dark:border-slate-400"></div></div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Delivery Location</p>
-                    <p className="text-base font-medium text-slate-900 dark:text-white">{load.deliveryLocation || 'Not Specified'}</p>
-                    {load.deliveryDate && <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-2"><Calendar size={14} className="text-slate-500"/> {new Date(load.deliveryDate).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</p>}
+                    <LocationLabel
+                      address={getDeliveryAddress(load)}
+                      lat={getDeliveryCoords(load)?.lat}
+                      lng={getDeliveryCoords(load)?.lng}
+                      fallback="Not Specified"
+                      className="text-base font-medium text-slate-900 dark:text-white"
+                    />
+                    {getDeliveryDate(load) && <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5 mt-2"><Calendar size={14} className="text-slate-500"/> {new Date(getDeliveryDate(load)!).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</p>}
                   </div>
                 </div>
              </div>

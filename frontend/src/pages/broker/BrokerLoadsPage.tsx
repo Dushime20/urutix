@@ -2,7 +2,8 @@ import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { brokerAPI, type BrokerLoad, type LoadContract } from '../../services/brokerApi';
+import { brokerAPI, type BrokerLoad, type LoadContract, getPickupAddress, getDeliveryAddress, getPickupDate, getDeliveryDate, getPickupCoords, getDeliveryCoords } from '../../services/brokerApi';
+import LocationLabel from '../../components/common/LocationLabel';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import ContractAcceptanceModal from '../../components/broker/ContractAcceptanceModal';
 import FilterSelect from '../../components/common/FilterSelect';
@@ -156,10 +157,10 @@ const BrokerLoadsPage: React.FC = () => {
           currency: fullContract.currencyCode || loadData.currencyCode || 'KES',
           weight: loadData.weight || loadInfo.weight,
           cargoType: loadData.cargoType || loadInfo.cargoType || 'GENERAL',
-          pickupLocation: loadData.pickupLocation || 'N/A',
-          deliveryLocation: loadData.deliveryLocation || 'N/A',
-          pickupDate: new Date(fullContract.pickupDate || loadData.pickupDate || Date.now()).toISOString().split('T')[0],
-          deliveryDate: new Date(fullContract.deliveryDate || loadData.deliveryDate || Date.now()).toISOString().split('T')[0],
+          pickupLocation: getPickupAddress(loadData) || 'N/A',
+          deliveryLocation: getDeliveryAddress(loadData) || 'N/A',
+          pickupDate: new Date(fullContract.pickupDate || getPickupDate(loadData) || Date.now()).toISOString().split('T')[0],
+          deliveryDate: new Date(fullContract.deliveryDate || getDeliveryDate(loadData) || Date.now()).toISOString().split('T')[0],
         },
         commission: {
           rate: fullContract.commissionRate || 0,
@@ -307,14 +308,26 @@ const BrokerLoadsPage: React.FC = () => {
                       <div className="mt-1"><div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-primary-600"></div></div>
                       <div className="flex-1">
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Pickup</p>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1">{load.pickupLocation || 'Not Specified'}</p>
+                        <LocationLabel
+                          address={getPickupAddress(load)}
+                          lat={getPickupCoords(load)?.lat}
+                          lng={getPickupCoords(load)?.lng}
+                          fallback="Not Specified"
+                          className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 block"
+                        />
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="mt-1"><div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-800 dark:border-slate-400"></div></div>
                       <div className="flex-1">
                         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Delivery</p>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1">{load.deliveryLocation || 'Not Specified'}</p>
+                        <LocationLabel
+                          address={getDeliveryAddress(load)}
+                          lat={getDeliveryCoords(load)?.lat}
+                          lng={getDeliveryCoords(load)?.lng}
+                          fallback="Not Specified"
+                          className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 block"
+                        />
                       </div>
                     </div>
                   </div>
@@ -371,9 +384,21 @@ const BrokerLoadsPage: React.FC = () => {
                   </td>
                   <td className="px-10 py-10">
                     <div className="flex items-center gap-4 text-sm font-bold text-slate-600 uppercase opacity-60 group-hover:opacity-100 transition-all dark:text-slate-300">
-                       <span>{load.pickupLocation}</span>
-                       <ArrowRight size={10} />
-                       <span>{load.deliveryLocation}</span>
+                       <LocationLabel
+                         address={getPickupAddress(load)}
+                         lat={getPickupCoords(load)?.lat}
+                         lng={getPickupCoords(load)?.lng}
+                         fallback="N/A"
+                         className="truncate max-w-[120px]"
+                       />
+                       <ArrowRight size={10} className="shrink-0" />
+                       <LocationLabel
+                         address={getDeliveryAddress(load)}
+                         lat={getDeliveryCoords(load)?.lat}
+                         lng={getDeliveryCoords(load)?.lng}
+                         fallback="N/A"
+                         className="truncate max-w-[120px]"
+                       />
                     </div>
                   </td>
                   <td className="px-10 py-10 text-right">
