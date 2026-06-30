@@ -43,6 +43,7 @@ import { getApiErrorMessage } from '../config/errorMessages';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 import axios from 'axios';
 import { getApiBaseUrl } from '../config/environment';
+import api from '../services/api';
 
 
 const Settings: React.FC = () => {
@@ -96,12 +97,7 @@ const Settings: React.FC = () => {
   const handleSaveContactSettings = async () => {
     setIsSavingContact(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `${getApiBaseUrl()}/admin/settings/bulk/contact`,
-        contactSettings,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put('/admin/settings/bulk/contact', contactSettings);
       toast.success('Contact settings saved successfully!');
     } catch (error: any) {
       console.error('Failed to save contact settings:', error);
