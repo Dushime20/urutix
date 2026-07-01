@@ -22,9 +22,17 @@ import { RouteTruck } from '../../entities/route-truck.entity';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import {
+  Document,
+  DocumentStatus,
+  EntityType,
+  DocumentCategory,
+} from '../../entities/document.entity';
 import { CreateTruckDto } from './dto/create-truck.dto';
 import { CreateFleetDriverDto } from './dto/create-driver.dto';
 import { EmailService } from '../auth/services/email.service';
+import { DocumentService } from '../documents/document.service';
+import { FileUploadService } from '../file-upload/file-upload.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -47,7 +55,11 @@ export class FleetService {
     private readonly userProfileRepository: Repository<UserProfile>,
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    @InjectRepository(Document)
+    private readonly documentRepository: Repository<Document>,
     private readonly emailService: EmailService,
+    private readonly documentService: DocumentService,
+    private readonly fileUploadService: FileUploadService,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
@@ -631,7 +643,8 @@ export class FleetService {
     createDriverDto: CreateFleetDriverDto,
     userId: string,
     tenantId: string,
-  ): Promise<Driver> {
+    documentFiles?: { file: Express.Multer.File; documentType: string; title: string; description?: string; expiryDate?: string }[],
+  ): Promise<Driver & { documents: Document[] }> {
     try {
       console.log('👤 Creating driver:', {
         firstName: createDriverDto.firstName,
@@ -912,16 +925,15 @@ export class FleetService {
         // Override status from DTO to ensure it's ACTIVE for new drivers
         status: DriverStatus.ACTIVE,
         availabilityStatus: 'AVAILABLE',
-        // Set default values for optional fields that aren't in the DTO
-        emergencyContact: {},
-        licenseClasses: [],
-        endorsements: [],
-        restrictions: [],
-        certifications: [],
-        preferences: {},
-        // Handle new fields
-        experience: createDriverDto.experience || 0,
-        driverNotes: createDriverDto.driverNotes || null,
+        // Save exactly what the frontend sent — no fallbacks
+        emergencyContact: createDriverDto.emergencyContact,
+        licenseClasses: createDriverDto.licenseClasses,
+        endorsements: createDriverDto.endorsements,
+        restrictions: createDriverDto.restrictions,
+        certifications: createDriverDto.certifications,
+        preferences: createDriverDto.preferences,
+        experience: createDriverDto.experience,
+        driverNotes: createDriverDto.driverNotes,
       });
 
       console.log('💾 Saving driver to database...');
@@ -961,7 +973,71 @@ export class FleetService {
         }
       }
 
-      return savedDriver;
+      // Save documents uploaded during driver creation
+      const savedDocuments: Document[] = [];
+      if (documentFiles && documentFiles.length > 0) {
+        this.logger.log(`📎 Saving ${documentFiles.length} document(s) for driver ${savedDriver.id}`);
+
+        for (const docEntry of documentFiles) {
+          try {
+            const uploadResult = await this.fileUploadService.uploadFile(
+              docEntry.file,
+              'documents',
+            );
+
+            const docRecord = this.documentRepository.create({
+              entityType: EntityType.DRIVER,
+              entityId: savedDriver.id,
+              documentType: docEntry.documentType as any,
+              category: DocumentCategory.LICENSE,
+              title: docEntry.title,
+              description: docEntry.description || '',
+              fileName: uploadResult.fileName,
+              originalFileName: uploadResult.originalFileName,
+              fileUrl: uploadResult.fileUrl,
+              thumbnailUrl: uploadResult.thumbnailUrl || uploadResult.fileUrl,
+              fileSize: uploadResult.fileSize,
+              mimeType: uploadResult.mimeType,
+              fileExtension: uploadResult.fileExtension,
+              expiryDate: docEntry.expiryDate ? new Date(docEntry.expiryDate) : undefined,
+              uploadedBy: userId,
+              tenantId,
+              status: DocumentStatus.PENDING,
+              currentVersion: 1,
+              versions: [
+                {
+                  version: 1,
+                  fileUrl: uploadResult.fileUrl,
+                  fileName: uploadResult.fileName,
+                  fileSize: uploadResult.fileSize,
+                  uploadedAt: new Date(),
+                  uploadedBy: userId,
+                  changeNotes: 'Initial upload during driver creation',
+                },
+              ],
+              auditTrail: [
+                {
+                  action: 'CREATED',
+                  performedBy: userId,
+                  performedAt: new Date(),
+                  details: { method: 'driver_creation' },
+                },
+              ],
+            });
+
+            const saved = await this.documentRepository.save(docRecord);
+            savedDocuments.push(saved);
+            this.logger.log(`✅ Document saved: ${saved.id} (${docEntry.title})`);
+          } catch (docError: any) {
+            // Log the error but don't fail the driver creation
+            this.logger.error(`❌ Failed to save document "${docEntry.title}": ${docError.message}`);
+          }
+        }
+
+        this.logger.log(`✅ ${savedDocuments.length}/${documentFiles.length} document(s) saved`);
+      }
+
+      return { ...savedDriver, documents: savedDocuments };
     } catch (error) {
       console.error('❌ Error in createDriver service:', error);
       console.error('❌ Error message:', error.message);
@@ -1059,23 +1135,28 @@ export class FleetService {
    * Calculate years of experience from hire date or license issue date
    */
   private calculateExperience(driver: Driver): number {
+    // Use the stored experience value if it was explicitly set
+    if (driver.experience !== null && driver.experience !== undefined && driver.experience > 0) {
+      return driver.experience;
+    }
+
+    // Fall back to computing from hire date only when no value was stored
     let experience = 0;
     const now = new Date();
-    
+
     if (driver.hireDate) {
       const hireDate = new Date(driver.hireDate);
       const diffTime = Math.abs(now.getTime() - hireDate.getTime());
       const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
       experience = Math.floor(diffYears);
     } else if (driver.licenseIssueDate) {
-      // Fallback to license issue date if hire date is not available
       const licenseDate = new Date(driver.licenseIssueDate);
       const diffTime = Math.abs(now.getTime() - licenseDate.getTime());
       const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
       experience = Math.floor(diffYears);
     }
-    
-    return Math.max(0, experience); // Ensure non-negative
+
+    return Math.max(0, experience);
   }
 
   async findAllDrivers(
@@ -1135,6 +1216,7 @@ export class FleetService {
         'driver.hourlyRate',
         'driver.mileageRate',
         'driver.totalEarnings',
+        'driver.experience',
         'driver.driverNotes',
         'driver.preferences',
         'driver.createdAt',

@@ -741,29 +741,52 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       });
 
       const payload = {
-        // required by backend DTO
-        firstName: d.firstName || '',
-        lastName: d.lastName || '',
-        email: d.contactInfo?.email || '',
-        phone: d.contactInfo?.phone || '',
+        // Personal info
+        firstName: d.firstName,
+        lastName: d.lastName,
+        email: d.contactInfo?.email,
+        phone: d.contactInfo?.phone,
         dateOfBirth: dateOfBirthISO,
-        address: d.address || '',
-        employeeId: d.employeeId, // optional
-        licenseNumber: d.licenseNumber || '',
+        address: d.address,
+        employeeId: d.employeeId,
+        // License
+        licenseNumber: d.licenseNumber,
         licenseIssueDate: licenseIssueDateISO,
         licenseExpiry: licenseExpiryISO,
-        licenseState: d.licenseState || 'N/A',
-        licenseCountry: d.licenseCountry || 'N/A',
-        employmentType: d.employmentType || 'FULL_TIME',
+        licenseState: d.licenseState,
+        licenseCountry: d.licenseCountry,
+        // licenseType from form maps to licenseClasses array on backend
+        licenseClasses: d.licenseType ? [d.licenseType] : d.licenseClasses,
+        endorsements: d.endorsements,
+        restrictions: d.restrictions,
+        // Employment
+        employmentType: d.employmentType,
         hireDate: hireDateISO,
         terminationDate: toISOString(d.terminationDate),
-        status: d.status || 'ACTIVE',
-        hourlyRate: d.hourlyRate ? Number(d.hourlyRate) : undefined,
-        mileageRate: d.mileageRate ? Number(d.mileageRate) : undefined,
+        status: d.status,
+        // Compliance dates
         medicalCertExpiry: toISOString(d.medicalCertExpiry),
         drugTestDate: toISOString(d.drugTestDate),
         backgroundCheckDate: toISOString(d.backgroundCheckDate),
         trainingCompletionDate: toISOString(d.trainingCompletionDate),
+        // Financial
+        hourlyRate: d.hourlyRate !== undefined && d.hourlyRate !== '' ? Number(d.hourlyRate) : undefined,
+        mileageRate: d.mileageRate !== undefined && d.mileageRate !== '' ? Number(d.mileageRate) : undefined,
+        // Experience & notes
+        experience: d.experience !== undefined && d.experience !== '' ? Number(d.experience) : undefined,
+        driverNotes: d.driverNotes,
+        // Emergency contact — send the whole object as-is from the form
+        emergencyContact: d.emergencyContact,
+        preferences: d.preferences,
+        // Certifications: CertificationsStep stores as an object map { hazmatCertified: true, ... }
+        // Convert to an array of enabled certification keys for consistent DB storage
+        certifications: d.certifications
+          ? Object.entries(d.certifications)
+              .filter(([, enabled]) => enabled)
+              .map(([key]) => key)
+          : undefined,
+        // Pass through documents — parent page handles the actual upload calls
+        documents: d.documents,
       };
 
       console.log('📦 Final driver payload:', payload);

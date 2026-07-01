@@ -18,7 +18,6 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { fleetApi } from '../services/fleetApi';
-import { documentApi } from '../services/documents/documentApi';
 import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import { DriversList } from '../components/FleetDashboard/DriversList';
 import { DriverAssignments } from '../components/FleetDashboard/DriverAssignments';
@@ -108,55 +107,29 @@ const UnifiedDriverManagement: React.FC = () => {
 
   const handleDriverFormSubmit = async (data: any) => {
     try {
-      let driverId: string;
-
       if (editingDriver) {
+        // On edit, documents are handled separately (can't re-upload)
         await fleetApi.updateDriver(editingDriver.id, data);
-        driverId = editingDriver.id;
-        console.log('✅ Driver updated successfully:', driverId);
+        console.log('✅ Driver updated successfully:', editingDriver.id);
         toast.success('Driver updated successfully!');
       } else {
+        // On create, documents are sent together with driver data in one request
         const createdDriver = await fleetApi.createDriver(data);
-        driverId = createdDriver.id;
         console.log('✅ Driver created successfully:', createdDriver);
-        toast.success('Driver added successfully!');
-      }
-
-      // Upload documents if any are provided
-      if (data.documents && Array.isArray(data.documents) && data.documents.length > 0) {
-        toast.loading(`Uploading ${data.documents.length} document(s)...`);
-
-        for (const doc of data.documents) {
-          try {
-            await documentApi.createDocument(
-              {
-                entityType: 'DRIVER',
-                entityId: driverId,
-                documentType: doc.documentType,
-                category: 'LICENSE',
-                title: doc.title,
-                description: doc.description || '',
-                expiryDate: doc.expiryDate || undefined,
-                priority: 'NORMAL',
-              },
-              doc.file
-            );
-          } catch (docError: any) {
-            console.error('Failed to upload document:', doc.title, docError);
-            toast.error(getApiErrorMessage(docError));
-          }
-        }
-
-        toast.dismiss();
-        toast.success('All documents uploaded successfully!');
+        const docCount = data.documents?.length || 0;
+        toast.success(
+          docCount > 0
+            ? `Driver created with ${docCount} document(s) saved!`
+            : 'Driver added successfully!'
+        );
       }
 
       // Wait for data refresh to complete
       await loadDrivers();
-      
+
       // Trigger DriversList component refresh
       setDriversListRefreshKey(prev => prev + 1);
-      
+
       handleDriverFormClose();
       setActiveTab('my-drivers');
       navigate('/dashboard/fleet/drivers');

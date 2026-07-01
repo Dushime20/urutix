@@ -9,11 +9,30 @@ import {
   MaxLength,
   IsDateString,
   IsEmail,
+  IsArray,
+  ValidateNested,
+  IsObject,
   Matches,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { DriverStatus, EmploymentType } from '../../../entities/driver.entity';
 
+export class EmergencyContactDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  relationship?: string;
+}
+
 export class CreateFleetDriverDto {
+
   @IsString()
   @MaxLength(100)
   firstName: string;
@@ -113,4 +132,32 @@ export class CreateFleetDriverDto {
   @IsOptional()
   @IsString()
   driverNotes?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EmergencyContactDto)
+  emergencyContact?: EmergencyContactDto;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  licenseClasses?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  endorsements?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  restrictions?: string[];
+
+  @IsOptional()
+  @IsArray()
+  certifications?: string[];
+
+  @IsOptional()
+  @IsObject()
+  preferences?: Record<string, any>;
 }

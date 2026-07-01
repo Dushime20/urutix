@@ -66,6 +66,9 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 	const [driverDocuments, setDriverDocuments] = useState<Document[]>([]);
 	const [loadingDocs, setLoadingDocs] = useState(false);
 	const [uploadingDocFor, setUploadingDocFor] = useState<Driver | null>(null);
+	const [editingDoc, setEditingDoc] = useState<Document | null>(null);
+	const [editDocForm, setEditDocForm] = useState<{ title: string; description: string; expiryDate: string; file: File | null }>({ title: '', description: '', expiryDate: '', file: null });
+	const [savingDocEdit, setSavingDocEdit] = useState(false);
 	const [deleteConfirmDriver, setDeleteConfirmDriver] = useState<Driver | null>(null);
 	const [deletingDriver, setDeletingDriver] = useState(false);
 
@@ -158,14 +161,45 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 		}
 	};
 
+	const openEditDoc = (doc: Document) => {
+		setEditingDoc(doc);
+		setEditDocForm({
+			title: doc.title,
+			description: doc.description || '',
+			expiryDate: doc.expiryDate ? doc.expiryDate.split('T')[0] : '',
+			file: null,
+		});
+	};
+
+	const handleSaveDocEdit = async () => {
+		if (!editingDoc) return;
+		setSavingDocEdit(true);
+		try {
+			await documentApi.updateDocument(
+				editingDoc.id,
+				{
+					title: editDocForm.title,
+					description: editDocForm.description,
+					expiryDate: editDocForm.expiryDate || undefined,
+				},
+				editDocForm.file || undefined,
+			);
+			toast.success('Document updated successfully');
+			setEditingDoc(null);
+			// Refresh the document list
+			if (viewingDocsFor) {
+				const docs = await documentApi.getDocumentsByEntity('DRIVER', viewingDocsFor.id);
+				setDriverDocuments(docs);
+			}
+		} catch {
+			toast.error('Failed to update document');
+		} finally {
+			setSavingDocEdit(false);
+		}
+	};
+
 	return (
 		<div className="space-y-8 pb-12">
-			{/* Debug Info */}
-			{selectedDriver && (
-				<div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-[10000]">
-					Selected: {selectedDriver.firstName} {selectedDriver.lastName}
-				</div>
-			)}
 			{/* Stats Matrix */}
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-gray-900 p-10 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-200">
 				<CircularStatCard
@@ -550,6 +584,12 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 						{/* Footer */}
 						<div className="p-8 border-t border-slate-50 dark:border-slate-800 shrink-0 flex gap-4 bg-white dark:bg-slate-900 transition-colors">
 							<button
+								onClick={() => setUploadingDocFor(selectedDriver)}
+								className="flex-1 py-4 bg-primary-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
+							>
+								Add Document
+							</button>
+							<button
 								onClick={() => setViewingDocsFor(selectedDriver)}
 								className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-inter"
 							>
@@ -557,7 +597,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 							</button>
 							<button
 								onClick={() => setSelectedDriver(null)}
-								className="flex-1 py-4 bg-primary-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20"
+								className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-inter"
 							>
 								Close Profile
 							</button>
@@ -614,8 +654,9 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 											<div className="flex items-start justify-between mb-4">
 												<div className="size-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-primary-500 dark:text-primary-400 shadow-sm transition-colors cursor-pointer"><FileText size={20} /></div>
 												<div className="flex gap-1">
-													<button onClick={() => handleDownloadDocument(doc)} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shadow-sm"><Download size={14} /></button>
-													<button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors shadow-sm"><ExternalLink size={14} /></button>
+													<button onClick={() => openEditDoc(doc)} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors shadow-sm" title="Edit document"><Edit3 size={14} /></button>
+													<button onClick={() => handleDownloadDocument(doc)} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shadow-sm" title="Download"><Download size={14} /></button>
+													<button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors shadow-sm" title="Open in new tab"><ExternalLink size={14} /></button>
 												</div>
 											</div>
 											<h4 className="font-black text-slate-900 dark:text-white text-sm tracking-tight mb-1 truncate transition-colors">{doc.title}</h4>
@@ -628,6 +669,103 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 									))}
 								</div>
 							)}
+						</div>
+					</motion.div>
+				</div>,
+				document.body
+			)}
+
+			{/* Edit Document Modal */}
+			{editingDoc && createPortal(
+				<div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4" onClick={() => setEditingDoc(null)}>
+					<motion.div
+						initial={{ opacity: 0, scale: 0.95 }}
+						animate={{ opacity: 1, scale: 1 }}
+						className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl max-w-md w-full border border-slate-100 dark:border-slate-800 overflow-hidden"
+						onClick={(e) => e.stopPropagation()}
+					>
+						{/* Header */}
+						<div className="flex items-center justify-between px-8 py-6 border-b border-slate-50 dark:border-slate-800">
+							<div>
+								<h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Edit Document</h3>
+								<p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 truncate max-w-[240px]">{editingDoc.originalFileName}</p>
+							</div>
+							<button onClick={() => setEditingDoc(null)} className="size-9 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
+								<X size={16} />
+							</button>
+						</div>
+
+						{/* Form */}
+						<div className="px-8 py-6 space-y-5">
+							<div>
+								<label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Title *</label>
+								<input
+									type="text"
+									value={editDocForm.title}
+									onChange={(e) => setEditDocForm(f => ({ ...f, title: e.target.value }))}
+									className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+								/>
+							</div>
+
+							<div>
+								<label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Description</label>
+								<textarea
+									value={editDocForm.description}
+									onChange={(e) => setEditDocForm(f => ({ ...f, description: e.target.value }))}
+									rows={3}
+									className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all resize-none"
+								/>
+							</div>
+
+							<div>
+								<label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Expiry Date</label>
+								<input
+									type="date"
+									value={editDocForm.expiryDate}
+									onChange={(e) => setEditDocForm(f => ({ ...f, expiryDate: e.target.value }))}
+									className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all"
+								/>
+							</div>
+
+							<div>
+								<label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Replace File (optional)</label>
+								<div className="flex items-center gap-3">
+									<label className="flex-1 h-11 px-4 bg-slate-50 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2 cursor-pointer hover:border-primary-400 hover:text-primary-500 transition-all">
+										<FileText size={14} />
+										{editDocForm.file ? editDocForm.file.name : 'Click to select new file'}
+										<input
+											type="file"
+											className="hidden"
+											accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+											onChange={(e) => setEditDocForm(f => ({ ...f, file: e.target.files?.[0] || null }))}
+										/>
+									</label>
+									{editDocForm.file && (
+										<button onClick={() => setEditDocForm(f => ({ ...f, file: null }))} className="size-9 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-xl flex items-center justify-center hover:bg-rose-100 transition-colors flex-shrink-0">
+											<X size={14} />
+										</button>
+									)}
+								</div>
+							</div>
+						</div>
+
+						{/* Footer */}
+						<div className="flex gap-3 px-8 pb-8">
+							<button
+								onClick={() => setEditingDoc(null)}
+								className="flex-1 h-11 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={handleSaveDocEdit}
+								disabled={savingDocEdit || !editDocForm.title.trim()}
+								className="flex-1 h-11 bg-primary-500 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+							>
+								{savingDocEdit ? (
+									<><Loader2 size={14} className="animate-spin" /> Saving...</>
+								) : 'Save Changes'}
+							</button>
 						</div>
 					</motion.div>
 				</div>,

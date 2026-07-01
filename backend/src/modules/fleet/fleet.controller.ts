@@ -17,6 +17,8 @@ import {
   UnauthorizedException,
   ConflictException,
   InternalServerErrorException,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,7 +28,9 @@ import {
   ApiQuery,
   ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { FleetService } from './fleet.service';
 import { CreateTruckDto } from './dto/create-truck.dto';
 import { CreateFleetDriverDto } from './dto/create-driver.dto';
@@ -2043,10 +2047,11 @@ export class FleetController {
 
   // Driver endpoints
   @Post('drivers')
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Create a new driver',
     description:
-      'Creates a new driver in the fleet with comprehensive information including license, certifications, and employment details',
+      'Creates a new driver in the fleet. Supports optional document uploads (multipart/form-data). Send document files as the "documents" field and document metadata as "documentsMeta" JSON array.',
   })
   @ApiBody({ type: CreateFleetDriverDto, description: 'Driver creation data' })
   @ApiResponse({
@@ -2056,53 +2061,27 @@ export class FleetController {
       type: 'object',
       properties: {
         message: { type: 'string', example: 'Driver created successfully' },
-        driver: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', format: 'uuid' },
-            firstName: { type: 'string' },
-            lastName: { type: 'string' },
-            email: { type: 'string' },
-            status: {
-              type: 'string',
-              enum: [
-                'ACTIVE',
-                'INACTIVE',
-                'SUSPENDED',
-                'ON_LEAVE',
-                'TERMINATED',
-                'IN_TRANSIT',
-              ],
-            },
-            licenseNumber: { type: 'string' },
-          },
-        },
+        driver: { type: 'object' },
+        documents: { type: 'array' },
       },
     },
   })
   @ApiResponse({ status: 400, description: 'Bad request - invalid data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - insufficient permissions',
-  })
-  @ApiResponse({
-    status: 409,
-    description:
-      'Conflict - driver with same license number or user already exists',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({ status: 409, description: 'Conflict - driver with same license number or user already exists' })
+  @UseInterceptors(FilesInterceptor('documents', 20))
   async createDriver(
     @Body(
       new ValidationPipe({
         transform: true,
         whitelist: true,
         forbidNonWhitelisted: false,
-        transformOptions: {
-          enableImplicitConversion: true,
-        },
+        transformOptions: { enableImplicitConversion: true },
       }),
     )
     createDriverDto: CreateFleetDriverDto,
+    @UploadedFiles() files: Express.Multer.File[],
     @Request() req,
   ) {
     try {
@@ -2114,6 +2093,7 @@ export class FleetController {
         phone: createDriverDto.phone,
         userId: req.user?.userId,
         tenantId: req.user?.tenantId,
+        documentCount: files?.length || 0,
       });
 
       // Validate email is provided
@@ -2125,39 +2105,50 @@ export class FleetController {
 
       // Validate user authentication
       if (!req.user) {
-        throw new UnauthorizedException(
-          'User not authenticated. Please log in.',
-        );
+        throw new UnauthorizedException('User not authenticated. Please log in.');
       }
       if (!req.user.userId) {
-        throw new UnauthorizedException(
-          'User ID not found in authentication token.',
-        );
+        throw new UnauthorizedException('User ID not found in authentication token.');
       }
       if (!req.user.tenantId) {
-        throw new BadRequestException(
-          'Tenant ID not found. User must be associated with a tenant.',
-        );
+        throw new BadRequestException('Tenant ID not found. User must be associated with a tenant.');
       }
 
-      const driver = await this.fleetService.createDriver(
+      // Parse document metadata sent alongside the files.
+      // Frontend sends a JSON array as the "documentsMeta" body field.
+      // Each entry: { documentType, title, description?, expiryDate? }
+      let documentsMeta: { documentType: string; title: string; description?: string; expiryDate?: string }[] = [];
+      if ((createDriverDto as any).documentsMeta) {
+        try {
+          const raw = (createDriverDto as any).documentsMeta;
+          documentsMeta = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        } catch {
+          this.logger.warn('⚠️ Could not parse documentsMeta field');
+        }
+      }
+
+      // Pair each uploaded file with its metadata
+      const documentFiles = (files || []).map((file, index) => ({
+        file,
+        documentType: documentsMeta[index]?.documentType || 'DRIVER_LICENSE',
+        title: documentsMeta[index]?.title || file.originalname,
+        description: documentsMeta[index]?.description,
+        expiryDate: documentsMeta[index]?.expiryDate,
+      }));
+
+      const result = await this.fleetService.createDriver(
         createDriverDto,
         req.user.userId,
         req.user.tenantId,
+        documentFiles.length > 0 ? documentFiles : undefined,
       );
 
-      console.log('✅ Driver created successfully:', driver.id);
+      console.log('✅ Driver created successfully:', result.id);
 
       return {
         message: 'Driver created successfully',
-        driver: {
-          id: driver.id,
-          firstName: driver.firstName,
-          lastName: driver.lastName,
-          email: driver.email,
-          status: driver.status,
-          licenseNumber: driver.licenseNumber,
-        },
+        driver: result,
+        documents: result.documents,
       };
     } catch (error) {
       console.error('❌ Error in createDriver controller:', error);

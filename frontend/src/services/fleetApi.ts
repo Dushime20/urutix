@@ -540,8 +540,43 @@ export const fleetApi = {
     return driver as Driver;
   },
 
-  createDriver: async (data: CreateDriverDto): Promise<Driver> => {
-    const response = await api.post<FleetApiResponse<Driver>>('/fleet/drivers', data);
+  createDriver: async (data: CreateDriverDto & { documents?: { file: File; documentType: string; title: string; description?: string; expiryDate?: string }[] }): Promise<Driver> => {
+    const { documents, ...driverData } = data;
+
+    // If there are documents, send as multipart/form-data so files go up in the same request
+    if (documents && documents.length > 0) {
+      const formData = new FormData();
+
+      // Append all driver fields as individual form fields
+      Object.entries(driverData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'object') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        }
+      });
+
+      // Append each document file under the "documents" key
+      documents.forEach((doc) => {
+        formData.append('documents', doc.file);
+      });
+
+      // Append document metadata as a JSON array in "documentsMeta"
+      const meta = documents.map(({ file, ...rest }) => rest);
+      formData.append('documentsMeta', JSON.stringify(meta));
+
+      const response = await api.post<FleetApiResponse<Driver>>('/fleet/drivers', formData, {
+        headers: { 'Content-Type': undefined as any },
+      });
+      const driver = response.data.driver || response.data.data || response.data.drivers;
+      if (!driver) throw new Error('Failed to create driver');
+      return driver as Driver;
+    }
+
+    // No documents — send plain JSON as before
+    const response = await api.post<FleetApiResponse<Driver>>('/fleet/drivers', driverData);
     const driver = response.data.driver || response.data.data || response.data.drivers;
     if (!driver) {
       throw new Error('Failed to create driver');

@@ -332,6 +332,7 @@ export const FleetDashboard: React.FC = () => {
         console.log('✅ Truck created successfully:', created);
         newFleetItem = normalizeTruck(created);
       } else if (formType === 'drivers') {
+        // Documents are sent together with driver data in one multipart request
         const created = await fleetApi.createDriver(fleetData);
         console.log('✅ Driver created successfully:', created);
         newFleetItem = normalizeDriver(created);
