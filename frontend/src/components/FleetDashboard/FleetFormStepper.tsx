@@ -606,6 +606,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
           email: ''
         }
       });
+    }
+  }, [initialData]);
 
   // Helper function to build equipmentList from all equipment boolean fields
   const buildEquipmentList = React.useCallback((formData: Partial<FleetFormData>): string[] => {
