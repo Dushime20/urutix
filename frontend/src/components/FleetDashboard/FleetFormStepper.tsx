@@ -410,11 +410,30 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         licenseType: initialData.licenseType || '',
         licenseIssueDate: formatDateForInput(initialData.licenseIssueDate),
         licenseExpiry: formatDateForInput(initialData.licenseExpiry),
+        licenseState: initialData.licenseState || '',
+        licenseCountry: initialData.licenseCountry || '',
+        address: initialData.address || '',
+        employmentType: initialData.employmentType || '',
         hireDate: formatDateForInput(initialData.hireDate),
+        status: initialData.status || 'ACTIVE',
+        availabilityStatus: initialData.availabilityStatus || 'AVAILABLE',
         experience: initialData.experience?.toString() || '',
+        driverNotes: initialData.driverNotes || '',
+        specialCertifications: '',
+        hourlyRate: initialData.hourlyRate?.toString() || '',
+        mileageRate: initialData.mileageRate?.toString() || '',
+        medicalCertExpiry: formatDateForInput(initialData.medicalCertExpiry),
+        drugTestDate: formatDateForInput(initialData.drugTestDate),
+        backgroundCheckDate: formatDateForInput(initialData.backgroundCheckDate),
+        trainingCompletionDate: formatDateForInput(initialData.trainingCompletionDate),
+        emergencyContact: {
+          name: initialData.emergencyContact?.name || '',
+          phone: initialData.emergencyContact?.phone || '',
+          relationship: initialData.emergencyContact?.relationship || '',
+        },
         contactInfo: {
-          phone: initialData.contactInfo?.phone || '',
-          email: initialData.contactInfo?.email || ''
+          phone: initialData.contactInfo?.phone || initialData.phone || '',
+          email: initialData.contactInfo?.email || initialData.email || ''
         }
       });
     } else {
@@ -558,14 +577,35 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         lastName: '',
         licenseNumber: '',
         licenseType: '',
+        licenseState: '',
+        licenseCountry: '',
+        licenseIssueDate: '',
+        licenseExpiry: '',
+        dateOfBirth: '',
+        address: '',
+        employmentType: '',
+        hireDate: '',
+        status: 'ACTIVE',
+        availabilityStatus: 'AVAILABLE',
         experience: '',
+        driverNotes: '',
+        specialCertifications: '',
+        hourlyRate: '',
+        mileageRate: '',
+        medicalCertExpiry: '',
+        drugTestDate: '',
+        backgroundCheckDate: '',
+        trainingCompletionDate: '',
+        emergencyContact: {
+          name: '',
+          phone: '',
+          relationship: '',
+        },
         contactInfo: {
           phone: '',
           email: ''
         }
       });
-    }
-  }, [initialData]);
 
   // Helper function to build equipmentList from all equipment boolean fields
   const buildEquipmentList = React.useCallback((formData: Partial<FleetFormData>): string[] => {
@@ -740,6 +780,15 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         hireDate: hireDateISO,
       });
 
+      // Merge specialCertifications text into driverNotes so it reaches the DB
+      const mergedNotes = [
+        d.driverNotes,
+        d.specialCertifications ? `Special Certifications: ${d.specialCertifications}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+        .trim() || undefined;
+
       const payload = {
         // Personal info
         firstName: d.firstName,
@@ -764,6 +813,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         hireDate: hireDateISO,
         terminationDate: toISOString(d.terminationDate),
         status: d.status,
+        availabilityStatus: d.availabilityStatus || 'AVAILABLE',
         // Compliance dates
         medicalCertExpiry: toISOString(d.medicalCertExpiry),
         drugTestDate: toISOString(d.drugTestDate),
@@ -774,7 +824,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         mileageRate: d.mileageRate !== undefined && d.mileageRate !== '' ? Number(d.mileageRate) : undefined,
         // Experience & notes
         experience: d.experience !== undefined && d.experience !== '' ? Number(d.experience) : undefined,
-        driverNotes: d.driverNotes,
+        driverNotes: mergedNotes,
         // Emergency contact — send the whole object as-is from the form
         emergencyContact: d.emergencyContact,
         preferences: d.preferences,
@@ -785,6 +835,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
               .filter(([, enabled]) => enabled)
               .map(([key]) => key)
           : undefined,
+        // Route assignments
+        routeIds: d.routeIds,
         // Pass through documents — parent page handles the actual upload calls
         documents: d.documents,
       };

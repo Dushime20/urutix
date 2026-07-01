@@ -527,6 +527,18 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               placeholder="e.g. Nairobi"
             />
           </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">Issuing Country *</label>
+            <input
+              type="text"
+              value={formData.licenseCountry || ''}
+              onChange={(e) => handleInputChange('licenseCountry', e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              required
+              placeholder="e.g. Kenya"
+            />
+          </div>
         </div>
       </div>
 

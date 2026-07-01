@@ -1400,13 +1400,36 @@ export class FleetService {
       };
     });
 
+    // Fetch documents for all drivers in a single query and attach them
+    const driverIds = driversWithExperience.map((d) => d.id);
+    let documentsMap: Record<string, Document[]> = {};
+    if (driverIds.length > 0) {
+      const allDocs = await this.documentRepository
+        .createQueryBuilder('doc')
+        .where('doc.entityType = :entityType', { entityType: EntityType.DRIVER })
+        .andWhere('doc.entityId IN (:...driverIds)', { driverIds })
+        .andWhere('doc.tenantId = :tenantId', { tenantId })
+        .orderBy('doc.createdAt', 'DESC')
+        .getMany();
+
+      allDocs.forEach((doc) => {
+        if (!documentsMap[doc.entityId]) documentsMap[doc.entityId] = [];
+        documentsMap[doc.entityId].push(doc);
+      });
+    }
+
+    const driversWithDocuments = driversWithExperience.map((driver) => ({
+      ...driver,
+      documents: documentsMap[driver.id] || [],
+    }));
+
     // Log for debugging
-    console.log('📊 findAllDrivers - Total drivers:', driversWithExperience.length);
+    console.log('📊 findAllDrivers - Total drivers:', driversWithDocuments.length);
     console.log(
       '📊 Drivers with currentTruckId:',
-      driversWithExperience.filter((d) => d.currentTruckId).length,
+      driversWithDocuments.filter((d) => d.currentTruckId).length,
     );
-    driversWithExperience.forEach((driver) => {
+    driversWithDocuments.forEach((driver) => {
       if (driver.currentTruckId) {
         console.log(
           `  - Driver ${driver.firstName} ${driver.lastName} has currentTruckId: ${driver.currentTruckId}, experience: ${driver.experience} years`,
@@ -1414,7 +1437,7 @@ export class FleetService {
       }
     });
 
-    return driversWithExperience;
+    return driversWithDocuments;
   }
 
   async findOneDriver(
@@ -1422,7 +1445,7 @@ export class FleetService {
     tenantId: string,
     userId?: string,
     userRole?: string,
-  ): Promise<Driver> {
+  ): Promise<Driver & { documents: Document[]; experience: number }> {
     const driver = await this.driverRepository.findOne({
       where: { id, tenantId },
     });
@@ -1452,11 +1475,27 @@ export class FleetService {
       }
     }
 
-    // Add experience as a computed property
+    // Fetch associated documents for this driver
+    const documents = await this.documentRepository.find({
+      where: { entityId: id, tenantId, entityType: EntityType.DRIVER },
+      order: { createdAt: 'DESC' },
+    });
+
     return {
       ...driver,
       experience: this.calculateExperience(driver),
-    } as Driver & { experience: number };
+      documents,
+    } as Driver & { documents: Document[]; experience: number };
+  }
+
+  async getDriverDocuments(
+    driverId: string,
+    tenantId: string,
+  ): Promise<Document[]> {
+    return this.documentRepository.find({
+      where: { entityId: driverId, tenantId, entityType: EntityType.DRIVER },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async getDriverStats(

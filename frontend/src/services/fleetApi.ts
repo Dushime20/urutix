@@ -76,6 +76,30 @@ export interface DriverAssignment {
 
 export type FleetItem = Truck;
 
+export interface DriverDocument {
+  id: string;
+  entityId: string;
+  entityType: string;
+  documentType: string;
+  category?: string;
+  title: string;
+  description?: string;
+  fileName: string;
+  originalFileName: string;
+  fileUrl: string;
+  thumbnailUrl?: string;
+  fileSize: number;
+  mimeType: string;
+  fileExtension: string;
+  expiryDate?: string;
+  uploadedBy: string;
+  tenantId: string;
+  status: string;
+  currentVersion: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Driver {
   id: string;
   userId: string;
@@ -101,7 +125,7 @@ export interface Driver {
   locationUpdatedAt?: string;
   tenantId: string;
   experienceYears?: number;
-  experience?: number; // Years of driving experience
+  experience?: number;
   rating?: number;
   totalTrips?: number;
   totalDistance?: number;
@@ -118,12 +142,18 @@ export interface Driver {
   hourlyRate?: number;
   mileageRate?: number;
   totalEarnings?: number;
-  driverNotes?: string; // Additional notes about the driver
+  driverNotes?: string;
   emergencyContact?: {
     name?: string;
     phone?: string;
     relationship?: string;
   };
+  certifications?: string[];
+  endorsements?: string[];
+  restrictions?: string[];
+  preferences?: Record<string, any>;
+  /** Documents attached to this driver — populated by GET /fleet/drivers and GET /fleet/drivers/:id */
+  documents?: DriverDocument[];
   createdAt: string;
   updatedAt: string;
 }
@@ -398,15 +428,21 @@ export interface CreateDriverDto {
   licenseCountry?: string;
   hireDate: string;
   employmentType?: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'OWNER_OPERATOR' | 'FREELANCE';
-  routeIds?: string[]; // Array of route IDs to assign to the driver
-  experience?: number; // Years of experience
+  status?: string;
+  availabilityStatus?: string;
+  routeIds?: string[];
+  experience?: number;
   medicalCertExpiry?: string;
   drugTestDate?: string;
   backgroundCheckDate?: string;
   trainingCompletionDate?: string;
   hourlyRate?: number;
   mileageRate?: number;
-  driverNotes?: string; // Additional notes
+  driverNotes?: string;
+  certifications?: string[];
+  endorsements?: string[];
+  restrictions?: string[];
+  preferences?: Record<string, any>;
   emergencyContact?: {
     name?: string;
     phone?: string;
@@ -543,44 +579,40 @@ export const fleetApi = {
   createDriver: async (data: CreateDriverDto & { documents?: { file: File; documentType: string; title: string; description?: string; expiryDate?: string }[] }): Promise<Driver> => {
     const { documents, ...driverData } = data;
 
-    // If there are documents, send as multipart/form-data so files go up in the same request
+    // Always send as multipart/form-data so the backend FilesInterceptor('documents', 20)
+    // can process the request whether or not files are attached.
+    const formData = new FormData();
+
+    // Append all driver scalar and object fields.
+    // Arrays and plain objects are JSON-stringified so they survive the multipart boundary.
+    Object.entries(driverData).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value) || (typeof value === 'object' && !(value instanceof File))) {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    });
+
+    // Append each document file under the "documents" field name that
+    // FilesInterceptor('documents', 20) listens for.
     if (documents && documents.length > 0) {
-      const formData = new FormData();
-
-      // Append all driver fields as individual form fields
-      Object.entries(driverData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (typeof value === 'object') {
-            formData.append(key, JSON.stringify(value));
-          } else {
-            formData.append(key, String(value));
-          }
-        }
-      });
-
-      // Append each document file under the "documents" key
       documents.forEach((doc) => {
         formData.append('documents', doc.file);
       });
 
-      // Append document metadata as a JSON array in "documentsMeta"
-      const meta = documents.map(({ file, ...rest }) => rest);
+      // Append document metadata as a JSON array so the controller can pair
+      // each file with its documentType / title / description / expiryDate.
+      const meta = documents.map(({ file: _f, ...rest }) => rest);
       formData.append('documentsMeta', JSON.stringify(meta));
-
-      const response = await api.post<FleetApiResponse<Driver>>('/fleet/drivers', formData, {
-        headers: { 'Content-Type': undefined as any },
-      });
-      const driver = response.data.driver || response.data.data || response.data.drivers;
-      if (!driver) throw new Error('Failed to create driver');
-      return driver as Driver;
     }
 
-    // No documents — send plain JSON as before
-    const response = await api.post<FleetApiResponse<Driver>>('/fleet/drivers', driverData);
-    const driver = response.data.driver || response.data.data || response.data.drivers;
-    if (!driver) {
-      throw new Error('Failed to create driver');
-    }
+    // Pass undefined so the browser sets the correct multipart Content-Type + boundary.
+    const response = await api.post<FleetApiResponse<Driver>>('/fleet/drivers', formData, {
+      headers: { 'Content-Type': undefined as any },
+    });
+    const driver = response.data.driver || response.data.data || (response.data as any).drivers;
+    if (!driver) throw new Error('Failed to create driver');
     return driver as Driver;
   },
 
@@ -597,9 +629,9 @@ export const fleetApi = {
     await api.delete(`/fleet/drivers/${id}`);
   },
 
-  getDriverDocuments: async (driverId: string): Promise<any[]> => {
+  getDriverDocuments: async (driverId: string): Promise<DriverDocument[]> => {
     const response = await api.get(`/fleet/drivers/${driverId}/documents`);
-    return response.data.data || response.data.documents || response.data || [];
+    return response.data.documents || response.data.data || response.data || [];
   },
 
   addDriverDocument: async (driverId: string, data: any): Promise<any> => {

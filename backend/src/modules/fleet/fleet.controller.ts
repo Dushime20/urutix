@@ -2494,6 +2494,29 @@ export class FleetController {
     };
   }
 
+  @Get('drivers/:id/documents')
+  @ApiOperation({
+    summary: 'Get driver documents',
+    description: 'Retrieves all documents uploaded for a specific driver',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID (UUID)' })
+  @ApiResponse({ status: 200, description: 'Driver documents retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Driver not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getDriverDocuments(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    const documents = await this.fleetService.getDriverDocuments(
+      id,
+      req.user.tenantId,
+    );
+    return {
+      message: 'Driver documents retrieved successfully',
+      documents,
+    };
+  }
+
   @Get('drivers/:id/stats')
   @ApiOperation({
     summary: 'Get driver statistics',
