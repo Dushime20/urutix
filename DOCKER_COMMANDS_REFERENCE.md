@@ -523,7 +523,7 @@ docker-compose -f docker-compose.dev.yml logs -f
 ```bash
 cd ~/urutix-smart-logistics
 git pull origin main
-docker-compose -f docker-compose.production.yml up -d --build
+
 docker-compose -f docker-compose.production.yml exec backend npm run db:migrate
 docker-compose -f docker-compose.production.yml logs -f backend
 ```
