@@ -6,6 +6,7 @@ import {
   Min,
   Max,
   MaxLength,
+  MinLength,
   IsDateString,
   IsEmail,
   IsArray,
@@ -76,7 +77,7 @@ export class CreateFleetDriverDto {
   employeeId?: string;
 
   @IsString()
-  @MaxLength(50)
+  @MinLength(10)
   licenseNumber: string;
 
   @IsDateString({}, { message: 'licenseIssueDate must be a valid ISO 8601 date string' })
@@ -85,13 +86,15 @@ export class CreateFleetDriverDto {
   @IsDateString({}, { message: 'licenseExpiry must be a valid ISO 8601 date string' })
   licenseExpiry: string;
 
+  @IsOptional()
   @IsString()
-  @MaxLength(50)
-  licenseState: string;
+  @MaxLength(100)
+  licenseState?: string;
 
+  @IsOptional()
   @IsString()
-  @MaxLength(50)
-  licenseCountry: string;
+  @MaxLength(100)
+  licenseCountry?: string;
 
   @IsEnum(EmploymentType)
   employmentType: EmploymentType;
