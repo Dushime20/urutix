@@ -5,23 +5,13 @@ import { Request, NextFunction } from 'express';
 import * as morgan from 'morgan';
 import { v4 } from 'uuid';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = process.env.PORT || 3005;
 
-  // Serve static files from uploads directory (must be before global prefix)
-  const uploadsPath = join(process.cwd(), 'uploads');
-  // Serve at /uploads/ (direct access)
-  app.useStaticAssets(uploadsPath, {
-    prefix: '/uploads/',
-  });
-  // Also serve at /api/uploads/ so URLs with the API prefix work too
-  app.useStaticAssets(uploadsPath, {
-    prefix: '/api/uploads/',
-  });
-  console.log(`📁 Serving static files from: ${uploadsPath}`);
+  // Static files (uploads) are served directly by nginx from the Docker volume.
+  // NestJS does not serve uploads — see nginx/urutix.com.conf.
 
   // Configure CORS origins from environment variable ONLY
   const allowedOrigins = process.env.ALLOWED_ORIGINS
