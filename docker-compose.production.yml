@@ -89,7 +89,6 @@ services:
       MOBILE_MONEY_CALLBACK_URL: ${MOBILE_MONEY_CALLBACK_URL}
       MOBILE_MONEY_CURRENCY: ${MOBILE_MONEY_CURRENCY:-RWF}
       MOBILE_MONEY_ACCOUNT_PHONE: ${MOBILE_MONEY_ACCOUNT_PHONE}
-      FRONTEND_URL: ${FRONTEND_URL:-https://urutix.com}
     ports:
       - "3005:3005"   # Host nginx proxies this via gateway
     volumes:
