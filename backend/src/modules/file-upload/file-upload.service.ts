@@ -123,7 +123,10 @@ export class FileUploadService {
       const checksum = this.calculateChecksum(fileBuffer);
 
       // Generate URLs
-      const { backendUrl: baseUrl } = getEnvConfig();
+      // Static files are served at /uploads/ outside the /api global prefix,
+      // so strip any trailing /api from backendUrl before building the path.
+      const { backendUrl: rawBackendUrl } = getEnvConfig();
+      const baseUrl = rawBackendUrl.replace(/\/api$/, '');
       const fileUrl = `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
 
       let thumbnailUrl: string | undefined;
@@ -186,10 +189,8 @@ export class FileUploadService {
     fileName: string,
     subdirectory?: string,
   ): Promise<string> {
-    // For now, we'll return the original file URL
-    // In a production environment, you'd want to use a library like sharp or jimp
-    // to generate actual thumbnails
-    const { backendUrl: baseUrl } = getEnvConfig();
+    const { backendUrl: rawBackendUrl } = getEnvConfig();
+    const baseUrl = rawBackendUrl.replace(/\/api$/, '');
     return `${baseUrl}/uploads/${subdirectory ? subdirectory + '/' : ''}${fileName}`;
   }
 
