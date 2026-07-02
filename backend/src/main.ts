@@ -13,8 +13,13 @@ async function bootstrap() {
 
   // Serve static files from uploads directory (must be before global prefix)
   const uploadsPath = join(process.cwd(), 'uploads');
+  // Serve at /uploads/ (direct access)
   app.useStaticAssets(uploadsPath, {
     prefix: '/uploads/',
+  });
+  // Also serve at /api/uploads/ so URLs with the API prefix work too
+  app.useStaticAssets(uploadsPath, {
+    prefix: '/api/uploads/',
   });
   console.log(`📁 Serving static files from: ${uploadsPath}`);
 
