@@ -452,10 +452,26 @@ const DriverInformationStep: React.FC<DriverInformationStepProps> = ({
               type="text"
               value={formData.licenseNumber || ''}
               onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
+              onBlur={(e) => {
+                const val = e.target.value.trim();
+                const el = e.target;
+                const hint = el.parentElement?.querySelector('.license-hint') as HTMLElement | null;
+                if (val && val.length < 10) {
+                  el.classList.add('border-red-400', 'dark:border-red-500', 'focus:border-red-400');
+                  el.classList.remove('border-gray-100', 'dark:border-gray-700');
+                  if (hint) { hint.textContent = 'Minimum 10 characters required'; hint.classList.remove('hidden'); }
+                } else {
+                  el.classList.remove('border-red-400', 'dark:border-red-500', 'focus:border-red-400');
+                  el.classList.add('border-gray-100', 'dark:border-gray-700');
+                  if (hint) hint.classList.add('hidden');
+                }
+              }}
               className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
               required
-              placeholder="e.G. DL-987654321"
+              minLength={10}
+              placeholder="e.g. DL-987654321"
             />
+            <p className="license-hint hidden text-[10px] font-semibold text-red-500 px-1">Minimum 10 characters required</p>
           </div>
 
           <div className="space-y-1.5">

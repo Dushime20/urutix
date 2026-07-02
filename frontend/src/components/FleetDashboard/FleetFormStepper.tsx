@@ -1073,6 +1073,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             formData.dateOfBirth &&
             formData.address &&
             formData.licenseNumber &&
+            formData.licenseNumber.length >= 10 &&
             formData.licenseType &&
             formData.experience &&
             formData.licenseIssueDate &&
