@@ -72,7 +72,7 @@ export class Driver {
   @Column('jsonb', { default: {} })
   emergencyContact: Record<string, any>;
 
-  @Column({ length: 50, unique: true })
+  @Column({ length: 100, unique: true })
   licenseNumber: string;
 
   @Column('jsonb', { default: [] })
@@ -84,11 +84,11 @@ export class Driver {
   @Column('date')
   licenseExpiry: Date;
 
-  @Column({ length: 50 })
-  licenseState: string;
+  @Column({ length: 100, nullable: true })
+  licenseState?: string;
 
-  @Column({ length: 50 })
-  licenseCountry: string;
+  @Column({ length: 100, nullable: true })
+  licenseCountry?: string;
 
   @Column('jsonb', { default: [] })
   endorsements: any[];

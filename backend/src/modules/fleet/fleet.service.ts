@@ -926,7 +926,10 @@ export class FleetService {
         status: DriverStatus.ACTIVE,
         availabilityStatus: 'AVAILABLE',
         // Save exactly what the frontend sent — no fallbacks
-        emergencyContact: createDriverDto.emergencyContact,
+        // Spread as plain object so TypeORM serialises it correctly to jsonb
+        emergencyContact: createDriverDto.emergencyContact
+          ? { ...createDriverDto.emergencyContact }
+          : {},
         licenseClasses: createDriverDto.licenseClasses,
         endorsements: createDriverDto.endorsements,
         restrictions: createDriverDto.restrictions,

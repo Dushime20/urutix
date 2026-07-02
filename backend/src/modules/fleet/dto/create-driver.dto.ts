@@ -10,11 +10,10 @@ import {
   IsDateString,
   IsEmail,
   IsArray,
-  ValidateNested,
   IsObject,
   Matches,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { DriverStatus, EmploymentType } from '../../../entities/driver.entity';
 
 /**
@@ -180,14 +179,17 @@ export class CreateFleetDriverDto {
 
   /**
    * Emergency contact object.
-   * Comes as a JSON string from multipart — @Transform parses it, then
-   * @ValidateNested + @Type validate the resulting object.
+   * Comes as a JSON string from multipart — @Transform parses it back to a plain object.
    */
   @IsOptional()
-  @Transform(({ value }) => parseJsonIfString(value))
-  @ValidateNested()
-  @Type(() => EmergencyContactDto)
-  emergencyContact?: EmergencyContactDto;
+  @Transform(({ value }) => {
+    if (!value) return undefined;
+    const parsed = parseJsonIfString(value);
+    if (typeof parsed === 'object' && parsed !== null) return parsed;
+    return undefined;
+  })
+  @IsObject()
+  emergencyContact?: Record<string, any>;
 
   /**
    * License classes array — e.g. ["CLASS_A"].
