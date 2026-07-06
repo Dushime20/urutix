@@ -690,7 +690,7 @@ const BrokerBidManagement: React.FC = () => {
       message: 'Accepting this bid will mark it as the winner and automatically reject all other bids for this auction. This action cannot be undone.',
       confirmText: 'Accept Bid',
       cancelText: 'Cancel',
-      variant: 'default',
+      variant: 'info',
     });
     if (!confirmed) return;
 
