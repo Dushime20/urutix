@@ -37,6 +37,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
 import { Request } from 'express';
 import { DocumentService } from './document.service';
@@ -754,6 +755,7 @@ export class DocumentController {
   }
 
   @Get('serve/:id')
+  @Public()
   @Roles(
     UserRole.ADMIN,
     UserRole.SUPER_ADMIN,
@@ -777,7 +779,7 @@ export class DocumentController {
   ): Promise<void> {
     const document = await this.documentService.getDocumentById(
       id,
-      req.user.tenantId,
+      req.user?.tenantId,
     );
 
     const fileUrl = document.fileUrl;

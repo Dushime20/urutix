@@ -365,10 +365,12 @@ export class DocumentService {
   /**
    * Get document by ID
    */
-  async getDocumentById(id: string, tenantId: string): Promise<Document> {
-    const document = await this.documentRepository.findOne({
-      where: { id, tenantId },
-    });
+  async getDocumentById(id: string, tenantId?: string): Promise<Document> {
+    const where: any = { id };
+    if (tenantId) {
+      where.tenantId = tenantId;
+    }
+    const document = await this.documentRepository.findOne({ where });
 
     if (!document) {
       throw new NotFoundException(`Document with ID ${id} not found`);
