@@ -67,7 +67,8 @@ interface Auction {
     locations?: any[];
     origin?: any;
     destination?: any;
-    cargoOwner?: { id: string; email: string; profile?: { firstName?: string; lastName?: string; companyName?: string } };
+    brokerId?: string;
+    cargoOwner?: { id: string; email: string; profile?: { firstName?: string; lastName?.string; companyName?: string } };
   };
   bids?: Bid[];
 }
@@ -654,16 +655,16 @@ const BrokerBidManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [accepting, setAccepting] = useState<string | null>(null);
 
-  // Fetch broker's own auctions only
+  // Fetch auctions where this broker is assigned to the load
   const { data: auctionsData, isLoading, error, refetch } = useQuery({
-    queryKey: ['broker-my-auctions', user?.id],
+    queryKey: ['broker-assigned-auctions', user?.id],
     queryFn: async () => {
       const r = await biddingAPI.getAuctions();
       const raw: Auction[] = r.data?.auctions ?? r.data?.items ?? r.data ?? [];
       const list = Array.isArray(raw) ? raw : [];
-      // Data-isolation: only show auctions created by this broker
-      // Backend should already filter by auth token; front-end filters as defence-in-depth
-      return list.filter(a => !a.createdById || a.createdById === user?.id);
+      // Show auctions where broker is assigned to the load (load.brokerId === user.id)
+      // Backend filtering should handle this, but we also filter client-side for defense-in-depth
+      return list.filter(a => a.load?.brokerId === user?.id);
     },
     staleTime: 30_000,
     refetchInterval: 60_000,
@@ -696,7 +697,7 @@ const BrokerBidManagement: React.FC = () => {
       await biddingAPI.acceptBid(bidId);
       toast.success('Bid accepted! Other bids have been rejected.');
       // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: ['broker-my-auctions'] });
+      queryClient.invalidateQueries({ queryKey: ['broker-assigned-auctions'] });
       queryClient.invalidateQueries({ queryKey: ['auction-bids'] });
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Failed to accept bid';
