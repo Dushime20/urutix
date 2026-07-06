@@ -445,7 +445,9 @@ function AuctionBidPanel({ auction, onAcceptBid, accepting }: AuctionBidPanelPro
 
   const bids = bidsData ?? [];
   const hasAccepted = bids.some(b => b.status === 'ACCEPTED');
-  const auctionClosed = auction.status === 'CLOSED' || auction.status === 'CANCELLED';
+  // CLOSED = bidding period ended, broker still picks winner from PENDING bids
+  // Only CANCELLED blocks acceptance entirely
+  const auctionClosed = auction.status === 'CANCELLED';
 
   const filtered = bids.filter(b => bidFilter === 'all' || b.status === bidFilter);
 
