@@ -68,7 +68,7 @@ interface Auction {
     origin?: any;
     destination?: any;
     brokerId?: string;
-    cargoOwner?: { id: string; email: string; profile?: { firstName?: string; lastName?.string; companyName?: string } };
+    cargoOwner?: { id: string; email: string; profile?: { firstName?: string; lastName?: string; companyName?: string } };
   };
   bids?: Bid[];
 }
