@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 
 interface UserBalance {
     id: string;
@@ -159,47 +160,28 @@ const PartnerBillingManager: React.FC = () => {
             </div>
 
             {/* Statistics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {[
-                    { 
-                        title: 'Total Partners', 
-                        value: totalPartners, 
-                        icon: FaUser, 
-                        color: 'text-blue-600 dark:text-blue-400', 
-                        bg: 'bg-blue-50 dark:bg-blue-900/20',
-                        border: 'border-blue-100 dark:border-blue-800'
-                    },
-                    { 
-                        title: 'Distributed Credits', 
-                        value: totalCreditsHeldByPartners.toLocaleString(), 
-                        icon: FaExchangeAlt, 
-                        color: 'text-emerald-600 dark:text-emerald-400', 
-                        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-                        border: 'border-emerald-100 dark:border-emerald-800'
-                    },
-                    { 
-                        title: 'Pending Allocations', 
-                        value: '0', 
-                        icon: FaHistory, 
-                        color: 'text-amber-600 dark:text-amber-400', 
-                        bg: 'bg-amber-50 dark:bg-amber-900/20',
-                        border: 'border-amber-100 dark:border-amber-800'
-                    }
-                ].map((stat, i) => (
-                    <div key={i} className={`flex items-center space-x-6 p-6 bg-white dark:bg-slate-900 rounded-[32px] border ${stat.border} shadow-sm transition-all duration-300 hover:shadow-md group`}>
-                        <div className={`flex-shrink-0 flex items-center justify-center w-16 h-16 rounded-2xl ${stat.bg} transition-all duration-500 group-hover:scale-110`}>
-                            <stat.icon size={22} className={stat.color} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                                <TranslatedText text={stat.title} />
-                            </span>
-                            <span className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
-                                {stat.value}
-                            </span>
-                        </div>
-                    </div>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard
+                    title={<TranslatedText text="Total Partners" />}
+                    value={totalPartners}
+                    icon={<FaUser size={20} />}
+                    color="primary"
+                    variant="premium"
+                />
+                <StatCard
+                    title={<TranslatedText text="Distributed Credits" />}
+                    value={totalCreditsHeldByPartners.toLocaleString()}
+                    icon={<FaExchangeAlt size={20} />}
+                    color="success"
+                    variant="premium"
+                />
+                <StatCard
+                    title={<TranslatedText text="Pending Allocations" />}
+                    value="0"
+                    icon={<FaHistory size={20} />}
+                    color="warning"
+                    variant="premium"
+                />
             </div>
 
             {/* Partner List Table */}

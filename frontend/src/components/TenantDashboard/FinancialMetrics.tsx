@@ -24,6 +24,7 @@ import {
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 // Register Chart.js components
 ChartJS.register(
@@ -353,78 +354,38 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
             >
               {/* Core KPI Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  { 
-                    label: tSync('Total Earnings'), 
-                    value: (creditBalance?.revenueFromPartnerSales || 0) + (financialData.summary.totalRevenue || 0), 
-                    trend: 0, 
-                    icon: DollarSign, 
-                    color: 'primary' 
-                  },
-                  { 
-                    label: tSync('Net Profit'), 
-                    value: financialData.summary.netProfit || 0, 
-                    trend: 0, 
-                    icon: TrendingUp, 
-                    color: 'emerald' 
-                  },
-                  { 
-                    label: tSync('Average Trip Income'), 
-                    value: financialData.summary.averageRevenuePerLoad || 0, 
-                    trend: 0, 
-                    icon: Landmark, 
-                    color: 'blue' 
-                  },
-                  { 
-                    label: tSync('Remaining Credits'), 
-                    value: creditBalance?.currentBalance ?? 0, 
-                    trend: 0, 
-                    icon: Wallet, 
-                    color: 'violet', 
-                    isCredit: true 
-                  }
-                ].map((kpi, i) => {
-                  const isCredit = (kpi as any).isCredit;
-                  const isPercent = (kpi as any).isPercent;
-
-                  return (
-                    <motion.div
-                      key={kpi.label}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] group hover:border-primary-100 dark:hover:border-primary-800 transition-all"
-                    >
-                      <div className="flex justify-between items-start mb-6">
-                        <div className={`p-4 rounded-[18px] ${
-                          kpi.color === 'primary' ? 'bg-indigo-50 dark:bg-indigo-900/20' :
-                          kpi.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20' :
-                          kpi.color === 'blue' ? 'bg-blue-50 dark:bg-blue-900/20' :
-                          'bg-violet-50 dark:bg-violet-900/20'
-                        }`}>
-                          <kpi.icon className={`w-6 h-6 ${
-                            kpi.color === 'primary' ? 'text-indigo-600 dark:text-indigo-400' :
-                            kpi.color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' :
-                            kpi.color === 'blue' ? 'text-blue-600 dark:text-blue-400' :
-                            'text-violet-600 dark:text-violet-400'
-                          }`} />
-                        </div>
-                        {kpi.trend !== 0 && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                            {getTrendIcon(kpi.trend)}
-                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">{kpi.trend}%</span>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{kpi.label}</p>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                          {isCredit ? (kpi.value).toLocaleString() : (isPercent ? `${kpi.value}%` : formatCurrency(kpi.value))}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )
-                })}
+                <StatCard
+                  title={<TranslatedText text="Total Earnings" />}
+                  value={formatCurrency((creditBalance?.revenueFromPartnerSales || 0) + (financialData.summary.totalRevenue || 0))}
+                  icon={<DollarSign size={22} />}
+                  color="primary"
+                  variant="premium"
+                  trendDirection="neutral"
+                />
+                <StatCard
+                  title={<TranslatedText text="Net Profit" />}
+                  value={formatCurrency(financialData.summary.netProfit || 0)}
+                  icon={<TrendingUp size={22} />}
+                  color="emerald"
+                  variant="premium"
+                  trendDirection="neutral"
+                />
+                <StatCard
+                  title={<TranslatedText text="Average Trip Income" />}
+                  value={formatCurrency(financialData.summary.averageRevenuePerLoad || 0)}
+                  icon={<Landmark size={22} />}
+                  color="info"
+                  variant="premium"
+                  trendDirection="neutral"
+                />
+                <StatCard
+                  title={<TranslatedText text="Remaining Credits" />}
+                  value={(creditBalance?.currentBalance ?? 0).toLocaleString()}
+                  icon={<Wallet size={22} />}
+                  color="accent"
+                  variant="premium"
+                  trendDirection="neutral"
+                />
               </div>
 
               {/* Main Chart Section */}
@@ -559,79 +520,38 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               {/* Credit Balance Summary for Tenant Admin */}
               {creditBalance && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                  {/* Current Balance */}
-                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-[18px]">
-                        <Wallet className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                      </div>
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Current Balance" />
-                    </p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {(creditBalance.currentBalance ?? 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="Credits available to use" />
-                    </p>
-                  </div>
-
-                  {/* Subscription Credits */}
-                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-[18px]">
-                        <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                      </div>
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Subscription Credits" />
-                    </p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {(creditBalance.subscriptionCredits ?? 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="From active subscription plan" />
-                    </p>
-                  </div>
-
-                  {/* Bonus Credits */}
-                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-[18px]">
-                        <Activity className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                      </div>
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Bonus Credits" />
-                    </p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {(creditBalance.bonusCredits ?? 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="Earned from marketplace & bids" />
-                    </p>
-                  </div>
-
-                  {/* Lifetime Spent */}
-                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-3 bg-rose-50 dark:bg-rose-900/20 rounded-[18px]">
-                        <CheckCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
-                      </div>
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-                      <TranslatedText text="Lifetime Spent" />
-                    </p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {(creditBalance.lifetimeSpent ?? 0).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                      <TranslatedText text="Total credits consumed" />
-                    </p>
-                  </div>
-
+                  <StatCard
+                    title={<TranslatedText text="Current Balance" />}
+                    value={(creditBalance.currentBalance ?? 0).toLocaleString()}
+                    icon={<Wallet size={22} />}
+                    color="primary"
+                    variant="premium"
+                    subtitle={<TranslatedText text="Credits available to use" />}
+                  />
+                  <StatCard
+                    title={<TranslatedText text="Subscription Credits" />}
+                    value={(creditBalance.subscriptionCredits ?? 0).toLocaleString()}
+                    icon={<Package size={22} />}
+                    color="info"
+                    variant="premium"
+                    subtitle={<TranslatedText text="From active subscription plan" />}
+                  />
+                  <StatCard
+                    title={<TranslatedText text="Bonus Credits" />}
+                    value={(creditBalance.bonusCredits ?? 0).toLocaleString()}
+                    icon={<Activity size={22} />}
+                    color="warning"
+                    variant="premium"
+                    subtitle={<TranslatedText text="Earned from marketplace & bids" />}
+                  />
+                  <StatCard
+                    title={<TranslatedText text="Lifetime Spent" />}
+                    value={(creditBalance.lifetimeSpent ?? 0).toLocaleString()}
+                    icon={<CheckCircle size={22} />}
+                    color="error"
+                    variant="premium"
+                    subtitle={<TranslatedText text="Total credits consumed" />}
+                  />
                 </div>
               )}
 

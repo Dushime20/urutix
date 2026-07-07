@@ -17,6 +17,7 @@ import {
   FaExclamationTriangle,
 } from 'react-icons/fa';
 import ActiveTrips from '../TenantDashboard/ActiveTrips';
+import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 interface Trip {
   id: string;
@@ -223,66 +224,50 @@ const TenantAdminTrips: React.FC = () => {
           </button>
         </div>
 
-        {/* Compact Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-blue-600 font-medium truncate">Total</p>
-                <p className="text-lg font-bold text-blue-900">{stats.totalTrips}</p>
-              </div>
-              <FaRoute className="w-5 h-5 text-blue-600 opacity-50 flex-shrink-0 ml-1" />
-            </div>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-blue-600 font-medium truncate">Active</p>
-                <p className="text-lg font-bold text-blue-900">{stats.activeTrips}</p>
-              </div>
-              <FaTruck className="w-5 h-5 text-blue-600 opacity-50 flex-shrink-0 ml-1" />
-            </div>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-green-600 font-medium truncate">Completed</p>
-                <p className="text-lg font-bold text-green-900">{stats.completedTrips}</p>
-              </div>
-              <FaCheckCircle className="w-5 h-5 text-green-600 opacity-50 flex-shrink-0 ml-1" />
-            </div>
-          </div>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-yellow-600 font-medium truncate">Scheduled</p>
-                <p className="text-lg font-bold text-yellow-900">{stats.scheduledTrips}</p>
-              </div>
-              <FaClock className="w-5 h-5 text-yellow-600 opacity-50 flex-shrink-0 ml-1" />
-            </div>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-purple-600 font-medium truncate">Revenue</p>
-                <p className="text-base font-bold text-purple-900 truncate">
-                  ${stats.totalRevenue.toFixed(0)}
-                </p>
-              </div>
-              <FaDollarSign className="w-5 h-5 text-purple-600 opacity-50 flex-shrink-0 ml-1" />
-            </div>
-          </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-orange-600 font-medium truncate">Distance</p>
-                <p className="text-base font-bold text-orange-900 truncate">
-                  {stats.totalDistance.toFixed(0)} km
-                </p>
-              </div>
-              <FaRoute className="w-5 h-5 text-orange-600 opacity-50 flex-shrink-0 ml-1" />
-            </div>
-          </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatCard
+            title="Total Trips"
+            value={stats.totalTrips}
+            icon={<FaRoute size={16} />}
+            color="primary"
+            variant="premium"
+          />
+          <StatCard
+            title="Active"
+            value={stats.activeTrips}
+            icon={<FaTruck size={16} />}
+            color="info"
+            variant="premium"
+          />
+          <StatCard
+            title="Completed"
+            value={stats.completedTrips}
+            icon={<FaCheckCircle size={16} />}
+            color="success"
+            variant="premium"
+          />
+          <StatCard
+            title="Scheduled"
+            value={stats.scheduledTrips}
+            icon={<FaClock size={16} />}
+            color="warning"
+            variant="premium"
+          />
+          <StatCard
+            title="Revenue"
+            value={`$${stats.totalRevenue.toFixed(0)}`}
+            icon={<FaDollarSign size={16} />}
+            color="purple"
+            variant="premium"
+          />
+          <StatCard
+            title="Distance"
+            value={`${stats.totalDistance.toFixed(0)} km`}
+            icon={<FaRoute size={16} />}
+            color="secondary"
+            variant="premium"
+          />
         </div>
       </div>
 

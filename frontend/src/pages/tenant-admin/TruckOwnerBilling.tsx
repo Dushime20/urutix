@@ -18,6 +18,7 @@ import {
 import { motion } from 'framer-motion';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import ModernLoader from '../../components/common/ModernLoader';
 
 interface UserBalance {
@@ -169,48 +170,28 @@ const TruckOwnerBilling: React.FC = () => {
             </div>
 
             {/* Statistics Cards */}
-            {/* Statistics Cards — Circular Pattern Alignment */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 py-10">
-                {[
-                    { 
-                        title: 'Truck Owners', 
-                        value: totalTruckOwners, 
-                        icon: FaTruck, 
-                        color: 'text-primary-600', 
-                        border: 'border-primary-100',
-                        shadow: 'shadow-primary-100/50'
-                    },
-                    { 
-                        title: 'Active Owners', 
-                        value: activeTruckOwners, 
-                        icon: FaUser, 
-                        color: 'text-primary-600', 
-                        border: 'border-primary-100',
-                        shadow: 'shadow-primary-100/50'
-                    },
-                    { 
-                        title: 'Credits Distributed', 
-                        value: totalCreditsDistributed.toLocaleString(), 
-                        icon: FaWallet, 
-                        color: 'text-primary-600', 
-                        border: 'border-primary-100',
-                        shadow: 'shadow-primary-100/50'
-                    }
-                ].map((stat, i) => (
-                    <div key={i} className="flex items-center space-x-6 transition-transform duration-300 hover:translate-x-1 cursor-default group">
-                        <div className={`relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white dark:bg-slate-900 border ${stat.border} dark:border-slate-800 shadow-xl ${stat.shadow} dark:shadow-none overflow-hidden transition-all duration-500 group-hover:scale-110`}>
-                            <stat.icon size={28} className="text-primary-600 dark:text-primary-400" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className={`text-3xl font-black ${stat.color} dark:text-primary-400 tracking-tight leading-none mb-1`}>
-                                {stat.value}
-                            </span>
-                            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 whitespace-nowrap uppercase tracking-[0.2em]">
-                                <TranslatedText text={stat.title} />
-                            </span>
-                        </div>
-                    </div>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard
+                    title={<TranslatedText text="Truck Owners" />}
+                    value={totalTruckOwners}
+                    icon={<FaTruck size={20} />}
+                    color="primary"
+                    variant="premium"
+                />
+                <StatCard
+                    title={<TranslatedText text="Active Owners" />}
+                    value={activeTruckOwners}
+                    icon={<FaUser size={20} />}
+                    color="success"
+                    variant="premium"
+                />
+                <StatCard
+                    title={<TranslatedText text="Credits Distributed" />}
+                    value={totalCreditsDistributed.toLocaleString()}
+                    icon={<FaWallet size={20} />}
+                    color="info"
+                    variant="premium"
+                />
             </div>
             {/* Partner List — Enlite Prime Table */}
             <div className="bg-white dark:bg-slate-900 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
