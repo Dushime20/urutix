@@ -756,13 +756,6 @@ export class DocumentController {
 
   @Get('serve/:id')
   @Public()
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.SUPER_ADMIN,
-    UserRole.TRUCK_OWNER,
-    UserRole.DRIVER,
-    UserRole.CARGO_OWNER,
-  )
   @ApiOperation({
     summary: 'Serve document file',
     description: 'Serve a document file for viewing (inline)',
