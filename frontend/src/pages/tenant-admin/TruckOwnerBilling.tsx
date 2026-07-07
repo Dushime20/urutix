@@ -172,21 +172,21 @@ const TruckOwnerBilling: React.FC = () => {
             {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
-                    title={<TranslatedText text="Truck Owners" />}
+                    title={tSync('Truck Owners')}
                     value={totalTruckOwners}
                     icon={<FaTruck size={20} />}
                     color="primary"
                     variant="premium"
                 />
                 <StatCard
-                    title={<TranslatedText text="Active Owners" />}
+                    title={tSync('Active Owners')}
                     value={activeTruckOwners}
                     icon={<FaUser size={20} />}
                     color="success"
                     variant="premium"
                 />
                 <StatCard
-                    title={<TranslatedText text="Credits Distributed" />}
+                    title={tSync('Credits Distributed')}
                     value={totalCreditsDistributed.toLocaleString()}
                     icon={<FaWallet size={20} />}
                     color="info"

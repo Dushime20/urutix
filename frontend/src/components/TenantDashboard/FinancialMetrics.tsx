@@ -355,7 +355,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               {/* Core KPI Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                  title={<TranslatedText text="Total Earnings" />}
+                  title={tSync('Total Earnings')}
                   value={formatCurrency((creditBalance?.revenueFromPartnerSales || 0) + (financialData.summary.totalRevenue || 0))}
                   icon={<DollarSign size={22} />}
                   color="primary"
@@ -363,7 +363,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                   trendDirection="neutral"
                 />
                 <StatCard
-                  title={<TranslatedText text="Net Profit" />}
+                  title={tSync('Net Profit')}
                   value={formatCurrency(financialData.summary.netProfit || 0)}
                   icon={<TrendingUp size={22} />}
                   color="emerald"
@@ -371,7 +371,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                   trendDirection="neutral"
                 />
                 <StatCard
-                  title={<TranslatedText text="Average Trip Income" />}
+                  title={tSync('Average Trip Income')}
                   value={formatCurrency(financialData.summary.averageRevenuePerLoad || 0)}
                   icon={<Landmark size={22} />}
                   color="info"
@@ -379,7 +379,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                   trendDirection="neutral"
                 />
                 <StatCard
-                  title={<TranslatedText text="Remaining Credits" />}
+                  title={tSync('Remaining Credits')}
                   value={(creditBalance?.currentBalance ?? 0).toLocaleString()}
                   icon={<Wallet size={22} />}
                   color="accent"
@@ -521,36 +521,36 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               {creditBalance && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <StatCard
-                    title={<TranslatedText text="Current Balance" />}
+                    title={tSync('Current Balance')}
                     value={(creditBalance.currentBalance ?? 0).toLocaleString()}
                     icon={<Wallet size={22} />}
                     color="primary"
                     variant="premium"
-                    subtitle={<TranslatedText text="Credits available to use" />}
+                    subtitle={tSync('Credits available to use')}
                   />
                   <StatCard
-                    title={<TranslatedText text="Subscription Credits" />}
+                    title={tSync('Subscription Credits')}
                     value={(creditBalance.subscriptionCredits ?? 0).toLocaleString()}
                     icon={<Package size={22} />}
                     color="info"
                     variant="premium"
-                    subtitle={<TranslatedText text="From active subscription plan" />}
+                    subtitle={tSync('From active subscription plan')}
                   />
                   <StatCard
-                    title={<TranslatedText text="Bonus Credits" />}
+                    title={tSync('Bonus Credits')}
                     value={(creditBalance.bonusCredits ?? 0).toLocaleString()}
                     icon={<Activity size={22} />}
                     color="warning"
                     variant="premium"
-                    subtitle={<TranslatedText text="Earned from marketplace & bids" />}
+                    subtitle={tSync('Earned from marketplace & bids')}
                   />
                   <StatCard
-                    title={<TranslatedText text="Lifetime Spent" />}
+                    title={tSync('Lifetime Spent')}
                     value={(creditBalance.lifetimeSpent ?? 0).toLocaleString()}
                     icon={<CheckCircle size={22} />}
                     color="error"
                     variant="premium"
-                    subtitle={<TranslatedText text="Total credits consumed" />}
+                    subtitle={tSync('Total credits consumed')}
                   />
                 </div>
               )}

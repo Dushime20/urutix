@@ -162,21 +162,21 @@ const PartnerBillingManager: React.FC = () => {
             {/* Statistics Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
-                    title={<TranslatedText text="Total Partners" />}
+                    title={tSync('Total Partners')}
                     value={totalPartners}
                     icon={<FaUser size={20} />}
                     color="primary"
                     variant="premium"
                 />
                 <StatCard
-                    title={<TranslatedText text="Distributed Credits" />}
+                    title={tSync('Distributed Credits')}
                     value={totalCreditsHeldByPartners.toLocaleString()}
                     icon={<FaExchangeAlt size={20} />}
                     color="success"
                     variant="premium"
                 />
                 <StatCard
-                    title={<TranslatedText text="Pending Allocations" />}
+                    title={tSync('Pending Allocations')}
                     value="0"
                     icon={<FaHistory size={20} />}
                     color="warning"
