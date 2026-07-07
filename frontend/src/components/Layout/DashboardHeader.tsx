@@ -543,7 +543,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             </div>
             <div className="hidden sm:flex items-center gap-2">
               <CurrencySelector variant="compact" />
-              <ContextualHelp context={location.pathname} />
             </div>
             <div className="relative" ref={userMenuRef}>
               <button
@@ -592,16 +591,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                           <Users size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Team Management" />
                         </Link>
-                        <Link
-                          to="/dashboard/fleet/support"
-                          onClick={() => setShowUserMenu(false)}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg mb-1"
-                        >
-                          <HelpCircle size={14} className="text-slate-400 dark:text-slate-500" />
-                          <TranslatedText text="Support & Help" />
-                        </Link>
                       </>
                     )}
+                    <div className="px-4 py-1">
+                      <ContextualHelp context={location.pathname} dropdownMode />
+                    </div>
                   </div>
                   <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1 pb-1">
                     <div className="px-4 py-2">

@@ -16,6 +16,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { TranslatedText } from '../translated-text';
 
 interface HelpTopic {
   id: string;
@@ -29,9 +30,10 @@ interface HelpTopic {
 
 interface ContextualHelpProps {
   context?: string; // e.g., 'dashboard', 'cargo-create', 'tracking'
+  dropdownMode?: boolean; // render as a dropdown menu item
 }
 
-const ContextualHelp: React.FC<ContextualHelpProps> = () => {
+const ContextualHelp: React.FC<ContextualHelpProps> = ({ dropdownMode = false }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,16 +228,27 @@ You'll be notified about:
 
   return (
     <>
-      {/* Enhanced Help Button - Enlite Prime Style */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2.5 px-4 py-2 bg-white hover:bg-[#345E85] text-slate-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm border border-slate-100 group overflow-hidden relative"
-        title="Help & Support Hub"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <HelpCircle size={18} className="relative z-10 group-hover:rotate-12 transition-transform" />
-        <span className="hidden sm:inline text-xs font-black uppercase tracking-widest relative z-10">Help</span>
-      </button>
+      {/* Trigger button — adapts to header or dropdown context */}
+      {dropdownMode ? (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
+          title="Help & Support Hub"
+        >
+          <HelpCircle size={14} className="text-slate-400 dark:text-slate-500" />
+          <TranslatedText text="Help & Support" />
+        </button>
+      ) : (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="flex items-center gap-2.5 px-4 py-2 bg-white hover:bg-[#345E85] text-slate-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm border border-slate-100 group overflow-hidden relative"
+          title="Help & Support Hub"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <HelpCircle size={18} className="relative z-10 group-hover:rotate-12 transition-transform" />
+          <span className="hidden sm:inline text-xs font-black uppercase tracking-widest relative z-10">Help</span>
+        </button>
+      )}
 
       {/* Help Modal - Enlite Prime Aesthetic */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
