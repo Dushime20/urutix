@@ -7,10 +7,8 @@ import {
   Truck,
   DollarSign,
   Route,
-  HelpCircle,
   Settings as FaCog,
   User as FaUser,
-  RefreshCw as FaSync,
   Clock as FaClock,
   Bell as FaBell,
   Navigation,
@@ -268,20 +266,6 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
 
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Sync Button */}
-            <div className="hidden sm:block">
-              <button
-                onClick={onRefresh}
-                disabled={isRefreshing}
-                title="Refresh dashboard"
-                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 transition-all ${isRefreshing
-                  ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20 border-primary-100'
-                  : 'text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-600'
-                  }`}
-              >
-                <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
 
             <LanguageSwitcher />
 
@@ -289,14 +273,6 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
             <div className="hidden lg:block">
               <CargoOwnerNotificationDropdown />
             </div>
-
-            {/* HELP Button */}
-            <button className="hidden sm:flex items-center lg:gap-2 px-3 lg:px-4 py-2 rounded-full border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-bold text-slate-600 dark:text-slate-400 text-[11px] tracking-wider uppercase">
-              <div className="w-6 h-6 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                <HelpCircle className="w-4 h-4 text-slate-400" />
-              </div>
-              <span className="hidden lg:inline"><TranslatedText text="HELP" /></span>
-            </button>
 
             {/* Credit Balance Badge */}
             <div
