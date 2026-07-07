@@ -52,10 +52,12 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId, onTrackTrip }) => {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-96">
-                <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 border-4 border-primary-50 dark:border-primary-900/20 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin mb-6" />
-                    <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] italic"><TranslatedText text="Synchronizing Satellite Network" />...</p>
+            <div className="space-y-4 animate-pulse">
+                <div className="h-8 w-48 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[1, 2].map(i => (
+                        <div key={i} className="h-24 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800" />
+                    ))}
                 </div>
             </div>
         );

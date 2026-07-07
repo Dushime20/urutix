@@ -131,7 +131,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-50 sticky top-0">
+    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-50 sticky top-0 isolate">
       <div className="max-w-[1920px] mx-auto flex items-center justify-between min-w-0">
         {/* Left side - Logo and Navigation */}
         <div className="flex items-center gap-4 lg:gap-10 min-w-0 flex-1">
@@ -273,10 +273,13 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               <button
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 transition-all ${isRefreshing ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-600'
+                title="Refresh dashboard"
+                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 transition-all ${isRefreshing
+                  ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20 border-primary-100'
+                  : 'text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-600'
                   }`}
               >
-                <FaSync className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <FaSync className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
@@ -300,7 +303,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               onClick={() => setSelectedView('financial')}
               className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all group"
             >
-              <div className="p-1 bgColor-white dark:bg-slate-800 rounded-lg shadow-sm">
+              <div className="p-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
                 <DollarSign className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div className="flex flex-col items-start">
