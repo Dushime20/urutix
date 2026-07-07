@@ -438,23 +438,24 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                             className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-800 max-h-[95vh] flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                         >
-                             <div className="bg-primary-600 px-6 md:px-8 py-4 text-white relative overflow-hidden flex-shrink-0">
-                                <div className="relative z-10">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="p-2 bg-white/10 rounded-xl border border-white/20 backdrop-blur-md">
+                             <div className="bg-primary-600 px-6 py-3 text-white relative overflow-hidden flex-shrink-0">
+                                <div className="relative z-10 flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="p-1.5 bg-white/10 rounded-lg border border-white/20 shrink-0">
                                             <UserPlus className="w-4 h-4" />
                                         </div>
-                                        <button onClick={() => setIsOnboardModalOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
-                                            <X className="w-4 h-4" />
-                                        </button>
+                                        <div className="min-w-0">
+                                            <h3 className="text-sm font-black tracking-tight leading-none"><TranslatedText text="Add User" /></h3>
+                                            <p className="text-white/60 text-[10px] font-medium mt-0.5 truncate"><TranslatedText text="Create a new partner account in your network." /></p>
+                                        </div>
                                     </div>
-                                    <h3 className="text-lg font-black tracking-tight"><TranslatedText text="Add User" /></h3>
-                                    <p className="text-white/60 text-[11px] font-medium mt-0.5"><TranslatedText text="Create a new partner account in your network." /></p>
+                                    <button onClick={() => setIsOnboardModalOpen(false)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors shrink-0">
+                                        <X className="w-4 h-4" />
+                                    </button>
                                 </div>
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
                             </div>
 
-                            <div className="overflow-y-auto flex-1 custom-scrollbar rounded-t-[24px] -mt-3 bg-white dark:bg-slate-900 relative z-20">
+                            <div className="overflow-y-auto flex-1 custom-scrollbar bg-white dark:bg-slate-900 relative z-20">
                                 <form onSubmit={handleOnboardSubmit} className="p-6 md:p-10 space-y-6 md:space-y-8 bg-slate-50/50 dark:bg-slate-900/50">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                                         <div className="space-y-2">
