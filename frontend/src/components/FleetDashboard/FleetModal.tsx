@@ -265,7 +265,7 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
                             </div>
                             <div className="flex gap-1">
                               <button onClick={() => handleDownloadDocument(doc)} className="size-8 bg-white dark:bg-gray-900 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-green-500 dark:hover:text-green-400 transition-colors"><Download size={14} /></button>
-                              <button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white dark:bg-gray-900 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"><ExternalLink size={14} /></button>
+                              <button onClick={() => documentApi.openDocumentInNewTab(doc.id)} className="size-8 bg-white dark:bg-gray-900 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"><ExternalLink size={14} /></button>
                             </div>
                           </div>
                         ))

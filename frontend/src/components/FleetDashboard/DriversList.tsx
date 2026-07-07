@@ -656,7 +656,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 												<div className="flex gap-1">
 													<button onClick={() => openEditDoc(doc)} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors shadow-sm" title="Edit document"><Edit3 size={14} /></button>
 													<button onClick={() => handleDownloadDocument(doc)} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shadow-sm" title="Download"><Download size={14} /></button>
-													<button onClick={() => window.open(documentApi.getDocumentViewUrl(doc.id), '_blank')} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors shadow-sm" title="Open in new tab"><ExternalLink size={14} /></button>
+													<button onClick={() => documentApi.openDocumentInNewTab(doc.id)} className="size-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 transition-colors shadow-sm" title="Open in new tab"><ExternalLink size={14} /></button>
 												</div>
 											</div>
 											<h4 className="font-black text-slate-900 dark:text-white text-sm tracking-tight mb-1 truncate transition-colors">{doc.title}</h4>

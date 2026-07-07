@@ -450,6 +450,33 @@ export class DocumentApiService {
     return `${baseUrl}/documents/serve/${documentId}`;
   }
 
+  // Open document in new tab with auth token (fetches as blob)
+  async openDocumentInNewTab(documentId: string): Promise<void> {
+    try {
+      const response = await api.get(`${this.baseUrl}/serve/${documentId}`, {
+        responseType: 'blob',
+        headers: this.getHeaders(),
+      });
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/octet-stream',
+      });
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, '_blank');
+      // Revoke after a short delay to free memory
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+      if (!win) {
+        // Fallback: trigger download
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.target = '_blank';
+        a.click();
+      }
+    } catch (error) {
+      console.error('Failed to open document:', error);
+      throw error;
+    }
+  }
+
   // Get document preview URL
   getDocumentPreviewUrl(document: Document): string {
     // For images, return the file URL directly
