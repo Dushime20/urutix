@@ -226,48 +226,12 @@ const TenantAdminTrips: React.FC = () => {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard
-            title="Total Trips"
-            value={stats.totalTrips}
-            icon={<FaRoute size={16} />}
-            color="primary"
-            variant="premium"
-          />
-          <StatCard
-            title="Active"
-            value={stats.activeTrips}
-            icon={<FaTruck size={16} />}
-            color="info"
-            variant="premium"
-          />
-          <StatCard
-            title="Completed"
-            value={stats.completedTrips}
-            icon={<FaCheckCircle size={16} />}
-            color="success"
-            variant="premium"
-          />
-          <StatCard
-            title="Scheduled"
-            value={stats.scheduledTrips}
-            icon={<FaClock size={16} />}
-            color="warning"
-            variant="premium"
-          />
-          <StatCard
-            title="Revenue"
-            value={`$${stats.totalRevenue.toFixed(0)}`}
-            icon={<FaDollarSign size={16} />}
-            color="purple"
-            variant="premium"
-          />
-          <StatCard
-            title="Distance"
-            value={`${stats.totalDistance.toFixed(0)} km`}
-            icon={<FaRoute size={16} />}
-            color="secondary"
-            variant="premium"
-          />
+          <StatCard title="Total Trips"                     value={stats.totalTrips}                          icon={<FaRoute size={16} />}       color="primary"   variant="classic" />
+          <StatCard title="Active"                          value={stats.activeTrips}                         icon={<FaTruck size={16} />}       color="info"      variant="classic" />
+          <StatCard title="Completed"                       value={stats.completedTrips}                      icon={<FaCheckCircle size={16} />} color="success"   variant="classic" />
+          <StatCard title="Scheduled"                       value={stats.scheduledTrips}                      icon={<FaClock size={16} />}       color="warning"   variant="classic" />
+          <StatCard title="Revenue"                         value={`$${stats.totalRevenue.toFixed(0)}`}       icon={<FaDollarSign size={16} />}  color="purple"    variant="classic" />
+          <StatCard title="Distance"                        value={`${stats.totalDistance.toFixed(0)} km`}    icon={<FaRoute size={16} />}       color="secondary" variant="classic" />
         </div>
       </div>
 

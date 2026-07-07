@@ -359,7 +359,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                   value={formatCurrency((creditBalance?.revenueFromPartnerSales || 0) + (financialData.summary.totalRevenue || 0))}
                   icon={<DollarSign size={22} />}
                   color="primary"
-                  variant="premium"
+                  variant="classic"
                   trendDirection="neutral"
                 />
                 <StatCard
@@ -367,7 +367,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                   value={formatCurrency(financialData.summary.netProfit || 0)}
                   icon={<TrendingUp size={22} />}
                   color="emerald"
-                  variant="premium"
+                  variant="classic"
                   trendDirection="neutral"
                 />
                 <StatCard
@@ -375,7 +375,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                   value={formatCurrency(financialData.summary.averageRevenuePerLoad || 0)}
                   icon={<Landmark size={22} />}
                   color="info"
-                  variant="premium"
+                  variant="classic"
                   trendDirection="neutral"
                 />
                 <StatCard
@@ -383,7 +383,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                   value={(creditBalance?.currentBalance ?? 0).toLocaleString()}
                   icon={<Wallet size={22} />}
                   color="accent"
-                  variant="premium"
+                  variant="classic"
                   trendDirection="neutral"
                 />
               </div>
@@ -525,7 +525,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                     value={(creditBalance.currentBalance ?? 0).toLocaleString()}
                     icon={<Wallet size={22} />}
                     color="primary"
-                    variant="premium"
+                    variant="classic"
                     subtitle={tSync('Credits available to use')}
                   />
                   <StatCard
@@ -533,7 +533,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                     value={(creditBalance.subscriptionCredits ?? 0).toLocaleString()}
                     icon={<Package size={22} />}
                     color="info"
-                    variant="premium"
+                    variant="classic"
                     subtitle={tSync('From active subscription plan')}
                   />
                   <StatCard
@@ -541,7 +541,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                     value={(creditBalance.bonusCredits ?? 0).toLocaleString()}
                     icon={<Activity size={22} />}
                     color="warning"
-                    variant="premium"
+                    variant="classic"
                     subtitle={tSync('Earned from marketplace & bids')}
                   />
                   <StatCard
@@ -549,7 +549,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                     value={(creditBalance.lifetimeSpent ?? 0).toLocaleString()}
                     icon={<CheckCircle size={22} />}
                     color="error"
-                    variant="premium"
+                    variant="classic"
                     subtitle={tSync('Total credits consumed')}
                   />
                 </div>
