@@ -105,81 +105,17 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
   const trips = tripHistory || [];
   const breaks = breaksData?.breaks || [];
 
-  // Mock data for demonstration
-  const mockSafetyData: SafetyData = {
-    overallScore: 87,
-    drivingScore: 92,
-    complianceScore: 85,
-    vehicleScore: 88,
+  const data = safetyData || {
+    overallScore: 0,
+    drivingScore: 0,
+    complianceScore: 0,
+    vehicleScore: 0,
     lastUpdated: new Date().toISOString(),
-    trends: [
-      { period: 'Week 1', score: 82, change: 0 },
-      { period: 'Week 2', score: 85, change: 3 },
-      { period: 'Week 3', score: 87, change: 2 },
-      { period: 'Week 4', score: 87, change: 0 }
-    ],
-    violations: [
-      {
-        id: '1',
-        type: 'Speeding',
-        description: 'Exceeded speed limit by 10 mph',
-        date: '2024-01-15',
-        severity: 'MEDIUM',
-        status: 'RESOLVED',
-        points: 3
-      },
-      {
-        id: '2',
-        type: 'Harsh Braking',
-        description: 'Sudden brake application detected',
-        date: '2024-01-20',
-        severity: 'LOW',
-        status: 'PENDING',
-        points: 1
-      }
-    ],
-    certifications: [
-      {
-        id: '1',
-        name: 'Commercial Driver License',
-        issueDate: '2020-03-15',
-        expiryDate: '2025-03-15',
-        status: 'ACTIVE'
-      },
-      {
-        id: '2',
-        name: 'Hazmat Endorsement',
-        issueDate: '2021-06-20',
-        expiryDate: '2024-06-20',
-        status: 'EXPIRING_SOON'
-      },
-      {
-        id: '3',
-        name: 'Medical Certificate',
-        issueDate: '2023-09-10',
-        expiryDate: '2024-09-10',
-        status: 'EXPIRING_SOON'
-      }
-    ],
-    inspections: [
-      {
-        id: '1',
-        type: 'Pre-Trip Inspection',
-        date: '2024-01-25',
-        result: 'PASS',
-        notes: 'All systems operational'
-      },
-      {
-        id: '2',
-        type: 'Post-Trip Inspection',
-        date: '2024-01-24',
-        result: 'PASS',
-        notes: 'Minor wear on brake pads'
-      }
-    ]
+    trends: [],
+    violations: [],
+    certifications: [],
+    inspections: []
   };
-
-  const data = safetyData || mockSafetyData;
 
   const getScoreColor = (_score: number) => {
     return 'text-[#0f172a]';

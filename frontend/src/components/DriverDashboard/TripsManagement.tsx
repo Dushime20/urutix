@@ -47,6 +47,20 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
   const [selectedTripDetail, setSelectedTripDetail] = useState<string | null>(null);
 
+  // Fetch driver profile to get currentTruckId
+  const { data: driverProfile } = useQuery({
+    queryKey: ['driver-profile', driverId],
+    queryFn: () => driverApi.getDriverProfile(driverId),
+    enabled: !!driverId,
+  });
+
+  // Fetch the truck assigned to this driver
+  const { data: assignedTruck, isLoading: truckLoading } = useQuery({
+    queryKey: ['driver-assigned-truck', driverProfile?.currentTruckId],
+    queryFn: () => driverApi.getAssignedTruck(driverProfile!.currentTruckId!),
+    enabled: !!driverProfile?.currentTruckId,
+  });
+
   // Fetch current trip
   const { data: currentTrip, isLoading: currentLoading } = useQuery({
     queryKey: ['driver-current-trip', driverId],
@@ -127,6 +141,41 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
           </button>
         </div>
       </div>
+
+      {/* Assigned Truck Banner */}
+      {truckLoading && driverProfile?.currentTruckId ? (
+        <div className="h-16 bg-slate-50 border border-slate-100 rounded-2xl animate-pulse" />
+      ) : assignedTruck ? (
+        <div className="flex items-center gap-4 px-5 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-[#345E85]/10 flex items-center justify-center shrink-0">
+            <Truck size={18} className="text-[#345E85]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Your Assigned Vehicle</p>
+            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight truncate">
+              {[assignedTruck.make, assignedTruck.model].filter(Boolean).join(' ') || 'Vehicle'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="text-right">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Plate</p>
+              <p className="text-xs font-black text-slate-700 uppercase tracking-widest">{assignedTruck.plateNumber}</p>
+            </div>
+            <div className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${
+              assignedTruck.status === 'AVAILABLE' || assignedTruck.status === 'IN_USE'
+                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                : 'bg-amber-50 text-amber-600 border-amber-100'
+            }`}>
+              {assignedTruck.status?.replace('_', ' ') || 'Active'}
+            </div>
+          </div>
+        </div>
+      ) : driverProfile && !driverProfile.currentTruckId ? (
+        <div className="flex items-center gap-3 px-5 py-4 bg-amber-50 border border-amber-100 rounded-2xl">
+          <AlertCircle size={16} className="text-amber-500 shrink-0" />
+          <p className="text-xs font-bold text-amber-700">No truck has been assigned to you yet. Contact your fleet manager.</p>
+        </div>
+      ) : null}
 
       <AnimatePresence mode="wait">
         {/* Active Trip Section */}

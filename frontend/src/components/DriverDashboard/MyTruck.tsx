@@ -4,9 +4,7 @@ import {
   FileText, 
   Calendar, 
   Activity, 
-  ShieldCheck, 
   Wrench, 
-  AlertTriangle,
   Zap,
   Navigation,
   Gauge,
@@ -29,74 +27,43 @@ interface MyTruckProps {
 
 export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = React.useState(false);
-  // Mock truck data if none provided
-  const truck = truckData || {
-    id: 'T-9821',
-    plateNumber: 'KCU 459Y',
-    model: 'Volvo FH16 Globetrotter',
-    year: 2023,
-    vin: 'VV1FH16GB2023X9821',
-    color: 'Midnight Blue',
-    fuelType: 'Diesel / Hybrid',
-    currentOdo: '124,502 KM',
-    nextService: '126,000 KM',
-    engineStatus: 'Optimal',
-    tireStatus: 'Good'
-  };
+  
+  const truck = truckData;
 
   const { data: maintenanceData } = useQuery({
-    queryKey: ['truck-maintenance', truck.id],
-    queryFn: () => driverApi.getMaintenanceHistory(truck.id),
-    enabled: !!truck.id && truck.id !== 'T-9821', // Don't fetch for mock truck
+    queryKey: ['truck-maintenance', truck?.id],
+    queryFn: () => driverApi.getMaintenanceHistory(truck!.id),
+    enabled: !!truck?.id,
   });
 
-  const serviceHistory = maintenanceData?.logs || [
-    { id: 1, taskName: 'Oil Change & Filter', serviceDate: '2026-02-15', providerName: 'UrutiX Central Workshops', status: 'COMPLETED' },
-    { id: 2, taskName: 'Brake Pad Replacement', serviceDate: '2026-01-10', providerName: 'Kampala Heavy Duty Service', status: 'COMPLETED' },
-    { id: 3, taskName: 'Full Safety Inspection', serviceDate: '2025-12-20', providerName: 'UrutiX Central Workshops', status: 'COMPLETED' },
-  ];
+  const serviceHistory = maintenanceData?.logs || [];
 
-  const truckHistory = [
-    { 
-      id: 1, 
-      model: 'Volvo FH16 Globetrotter', 
-      plate: 'KCU 459Y', 
-      period: 'Jan 15, 2026 - Present', 
-      missions: 42, 
-      distance: '12,450 KM',
-      current: true 
-    },
-    { 
-      id: 2, 
-      model: 'Scania R500 V8', 
-      plate: 'KBX 123T', 
-      period: 'Nov 01, 2025 - Jan 14, 2026', 
-      missions: 125, 
-      distance: '35,000 KM' 
-    },
-    { 
-      id: 3, 
-      model: 'Mercedes-Benz Actros', 
-      plate: 'KCJ 789M', 
-      period: 'May 10, 2025 - Oct 31, 2025', 
-      missions: 210, 
-      distance: '58,200 KM' 
-    },
-  ];
+  const truckHistory = maintenanceData?.history || [];
 
-  const specs = [
-    { label: 'Payload Capacity', value: '45,000 KG', icon: Zap, color: 'text-blue-500' },
-    { label: 'Fuel Economy', value: '8.2 L / 100 KM', icon: Gauge, color: 'text-emerald-500' },
-    { label: 'Engine Power', value: '750 HP', icon: Activity, color: 'text-rose-500' },
-    { label: 'Tracking', value: 'Live active', icon: Navigation, color: 'text-blue-500' },
-  ];
+  const specs = truck ? [
+    { label: 'Payload Capacity', value: truck.payloadCapacity || 'N/A', icon: Zap, color: 'text-blue-500' },
+    { label: 'Fuel Economy', value: truck.fuelEconomy || 'N/A', icon: Gauge, color: 'text-emerald-500' },
+    { label: 'Engine Power', value: truck.enginePower || 'N/A', icon: Activity, color: 'text-rose-500' },
+    { label: 'Tracking', value: truck.trackingStatus || 'N/A', icon: Navigation, color: 'text-blue-500' },
+  ] : [];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-20">
       
+      {/* No truck assigned state */}
+      {!truck && (
+        <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-xl shadow-slate-200/30 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
+            <Truck size={40} className="text-slate-300" />
+          </div>
+          <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">No Truck Assigned</h3>
+          <p className="text-sm text-slate-400">You have not been assigned a truck yet. Contact your fleet manager.</p>
+        </div>
+      )}
+
       {/* 🚛 Compact Hero Section: Truck Profile */}
+      {truck && (
       <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/30 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50/40 via-transparent to-transparent pointer-events-none" />
         
         <div className="flex flex-col lg:flex-row items-center gap-10 relative z-10">
           <motion.div 
@@ -153,7 +120,9 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
           </div>
         </div>
       </div>
+      )}
 
+      {truck && (
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
         {/* 🛠️ Diagnostics Sidebar */}
         <div className="xl:col-span-4 space-y-10">
@@ -212,16 +181,11 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[
-                        { label: 'Vehicle Registration', status: 'Valid', expiry: '2026-12-15', icon: ShieldCheck, color: 'text-emerald-500' },
-                        { label: 'Transit Permit (COMESA)', status: 'Valid', expiry: '2026-08-20', icon: Navigation, color: 'text-blue-500' },
-                        { label: 'Insurance Certificate', status: 'Expiring Soon', expiry: '2026-04-10', icon: AlertTriangle, color: 'text-amber-500', warning: true },
-                        { label: 'Weight Certification', status: 'Valid', expiry: '2026-11-30', icon: Gauge, color: 'text-slate-400' },
-                    ].map((doc) => (
+                    {(truck.complianceDocs || []).map((doc: any) => (
                         <div key={doc.label} className="group p-6 bg-slate-50/50 rounded-[2rem] border border-slate-100 hover:bg-white hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500">
                             <div className="flex items-start justify-between mb-6 text-xl">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-sm border border-slate-100 ${doc.color}`}>
-                                    <doc.icon size={22} />
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-sm border border-slate-100 ${doc.warning ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                    <FileText size={22} />
                                 </div>
                                 <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${doc.warning ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
                                     {doc.status}
@@ -237,6 +201,9 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                             </button>
                         </div>
                     ))}
+                    {(!truck.complianceDocs || truck.complianceDocs.length === 0) && (
+                        <div className="col-span-2 text-center py-8 text-slate-400 text-sm">No compliance documents found.</div>
+                    )}
                 </div>
            </div>
 
@@ -257,7 +224,7 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                 <div className="space-y-6 relative ml-6">
                     <div className="absolute left-[20px] top-6 bottom-6 w-[2px] bg-slate-100" />
                     
-                    {serviceHistory.map((service: any) => (
+                    {serviceHistory.length > 0 ? serviceHistory.map((service: any) => (
                         <div key={service.id} className="relative flex items-start gap-10 group">
                             <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center z-10 group-hover:bg-[#345E85] group-hover:border-[#345E85] transition-all duration-300 shadow-sm">
                                 <div className="w-2 h-2 rounded-full bg-slate-400 group-hover:bg-white transition-all duration-300" />
@@ -277,12 +244,17 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    )) : (
+                        <div className="text-center py-8 text-slate-400 text-sm">No service history available.</div>
+                    )}
                 </div>
            </div>
         </div>
       </div>
+      )}
 
+      {truck && (
+      <>
       {/* 🚀 Legacy Assignment Matrix (Bright & Professional) */}
       <div className="bg-white rounded-[3.5rem] p-12 border border-slate-100 shadow-2xl shadow-slate-200/40 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50/30 to-transparent pointer-events-none" />
@@ -304,11 +276,11 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
             <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 p-4 rounded-2xl text-[10px] font-bold">
                 <div className="px-3 border-r border-slate-200">
                     <span className="text-slate-400 uppercase tracking-widest mr-2">Tenure:</span>
-                    <span className="text-[#0f172a] font-black italic">1,402 Days</span>
+                    <span className="text-[#0f172a] font-black italic">{maintenanceData?.tenureDays ? `${maintenanceData.tenureDays} Days` : 'N/A'}</span>
                 </div>
                 <div className="px-4">
                     <span className="text-slate-400 uppercase tracking-widest mr-2">Vehicles:</span>
-                    <span className="text-[#345E85] font-black italic">3 Units</span>
+                    <span className="text-[#345E85] font-black italic">{truckHistory.length > 0 ? `${truckHistory.length} Units` : 'N/A'}</span>
                 </div>
             </div>
         </div>
@@ -317,7 +289,7 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
             {/* 🛤️ Visual Rail (Neutral) */}
             <div className="absolute left-[27.5px] top-6 bottom-6 w-[1.5px] bg-slate-100 hidden md:block" />
 
-            {truckHistory.map((history, idx) => (
+            {truckHistory.length > 0 ? truckHistory.map((history: any, idx: number) => (
                 <motion.div 
                     key={history.id}
                     initial={{ opacity: 0, x: 5 }}
@@ -384,16 +356,20 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                         </div>
                     </div>
                 </motion.div>
-            ))}
+            )) : (
+                <div className="text-center py-8 text-slate-400 text-sm">No truck assignment history available.</div>
+            )}
         </div>
       </div>
 
       <MaintenanceTicketModal 
         isOpen={isMaintenanceModalOpen}
         onClose={() => setIsMaintenanceModalOpen(false)}
-        truckId={truck.id}
-        truckPlate={truck.plateNumber}
+        truckId={truck?.id}
+        truckPlate={truck?.plateNumber}
       />
+      </>
+      )}
     </div>
   );
 };

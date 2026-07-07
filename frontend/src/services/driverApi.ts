@@ -883,6 +883,27 @@ class DriverApiService {
     return response.data;
   }
 
+  async getAssignedTruck(truckId: string): Promise<{
+    id: string;
+    plateNumber: string;
+    make: string;
+    model: string;
+    year?: number;
+    status: string;
+    color?: string;
+    capacityWeight?: number;
+    fuelType?: string;
+  } | null> {
+    try {
+      const response = await api.get(`/fleet/trucks/${truckId}`);
+      return response.data.truck || null;
+    } catch (error: any) {
+      if (error.response?.status === 404) return null;
+      console.error('Error fetching assigned truck:', error);
+      return null;
+    }
+  }
+
   async reportTruckFault(data: {
     truckId: string;
     taskName: string;
