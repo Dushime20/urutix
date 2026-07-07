@@ -438,23 +438,23 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                             className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden border border-white/20 dark:border-slate-800 max-h-[95vh] flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                         >
-                             <div className="bg-primary-600 p-8 md:p-12 text-white relative overflow-hidden flex-shrink-0">
+                             <div className="bg-primary-600 px-6 md:px-10 py-6 md:py-8 text-white relative overflow-hidden flex-shrink-0">
                                 <div className="relative z-10">
-                                    <div className="flex justify-between items-start mb-8">
-                                        <div className="p-4 bg-white/10 rounded-[24px] border border-white/20 backdrop-blur-md">
-                                            <UserPlus className="w-8 h-8" />
+                                    <div className="flex justify-between items-start mb-5">
+                                        <div className="p-3 bg-white/10 rounded-[18px] border border-white/20 backdrop-blur-md">
+                                            <UserPlus className="w-6 h-6" />
                                         </div>
-                                        <button onClick={() => setIsOnboardModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                            <X className="w-6 h-6" />
+                                        <button onClick={() => setIsOnboardModalOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
+                                            <X className="w-5 h-5" />
                                         </button>
                                     </div>
-                                    <h3 className="text-3xl font-black tracking-tight"><TranslatedText text="Add User" /></h3>
-                                    <p className="text-white/60 text-xs font-medium mt-2"><TranslatedText text="Create a new partner account in your network." /></p>
+                                    <h3 className="text-2xl font-black tracking-tight"><TranslatedText text="Add User" /></h3>
+                                    <p className="text-white/60 text-[11px] font-medium mt-1"><TranslatedText text="Create a new partner account in your network." /></p>
                                 </div>
                                 <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
                             </div>
 
-                            <div className="overflow-y-auto flex-1 custom-scrollbar rounded-t-[40px] -mt-8 bg-white dark:bg-slate-900 relative z-20">
+                            <div className="overflow-y-auto flex-1 custom-scrollbar rounded-t-[32px] -mt-5 bg-white dark:bg-slate-900 relative z-20">
                                 <form onSubmit={handleOnboardSubmit} className="p-6 md:p-10 space-y-6 md:space-y-8 bg-slate-50/50 dark:bg-slate-900/50">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                                         <div className="space-y-2">

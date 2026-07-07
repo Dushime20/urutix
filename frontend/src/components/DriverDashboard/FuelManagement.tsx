@@ -173,16 +173,16 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
 
       {/* Summary Matrix */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="bg-slate-900 rounded-[2rem] p-8 border border-slate-800 shadow-xl shadow-slate-900/10 group transition-all duration-500 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[80px] rounded-full -mr-16 -mt-16" />
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mb-6 text-emerald-400">
+        <div className="relative bg-gradient-to-br from-[#345E85] via-[#2a4b6d] to-[#1e3a5a] rounded-[2rem] p-8 border border-white/10 shadow-xl shadow-[#345E85]/20 group transition-all duration-500 overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 blur-[80px] rounded-full -mr-16 -mt-16" />
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-6 text-white transition-transform group-hover:scale-110">
             <CreditCard size={24} />
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fuel Wallet Balance</p>
-          <h3 className="text-3xl font-black text-emerald-400 tracking-tight">
+          <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1">Fuel Wallet Balance</p>
+          <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-white italic font-mono">
              {walletLoading ? '...' : formatCurrency(wallet?.balance || 0)}
           </h3>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">Available for Refill</p>
+          <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mt-2">Available for Refill</p>
         </div>
 
         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
@@ -193,7 +193,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
           <h3 className="text-3xl font-black text-[#0f172a] lowercase tracking-tight">
             {formatCurrency(stats.totalSpend)}
           </h3>
-          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-2 flex items-center gap-1">
+          <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mt-2 flex items-center gap-1">
             <TrendingUp size={12} />
             Updated live
           </p>
@@ -209,7 +209,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
         </div>
 
         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6 text-emerald-600 transition-transform group-hover:scale-110">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-6 text-[#345E85] transition-transform group-hover:scale-110">
             <History size={24} />
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Avg Price / GAL</p>
@@ -218,40 +218,38 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
         </div>
       </div>
 
-      {/* AI Fuel Advisor & Eco-Score - New Feature */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-      {/* AI Fuel Advisor & Eco-Score - Compact & Bright */}
+      {/* AI Fuel Advisor & Eco-Score - Compact & Consistent */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden"
         >
-            <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-emerald-50/40 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50/40 via-transparent to-transparent pointer-events-none" />
             <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 shadow-sm">
                         <Sparkles size={18} />
                     </div>
                     <div>
-                        <h3 className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.3em] mb-0.5">AI Fuel Advisor</h3>
+                        <h3 className="text-[9px] font-black text-[#345E85] uppercase tracking-[0.3em] mb-0.5">AI Fuel Advisor</h3>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Efficiency Projection</p>
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white transition-all cursor-default group shadow-inner">
-                        <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <h4 className="text-[9px] font-black text-[#345E85] uppercase tracking-widest mb-2 flex items-center gap-2">
                              <TrendingUp size={12} /> Performance Insight
                         </h4>
                         <p className="text-[11px] font-medium leading-relaxed italic text-slate-600">
-                            "Your fuel consumption was <span className="text-emerald-600 font-black underline">5.2% higher</span> on the last Kampala run. Switch to the Bypass route next time to save approx. <span className="text-emerald-600 font-black">$42</span>."
+                            "Your fuel consumption was <span className="text-rose-600 font-black underline">5.2% higher</span> on the last Kampala run. Switch to the Bypass route next time to save approx. <span className="text-[#345E85] font-black underline">$42</span>."
                         </p>
                     </div>
                     
-                    <button className="flex items-center justify-between w-full p-5 bg-emerald-600 text-white rounded-2xl group hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/10">
+                    <button className="flex items-center justify-between w-full p-5 bg-[#345E85] text-white rounded-2xl group hover:bg-slate-900 transition-all shadow-lg shadow-blue-900/10">
                         <div className="text-left">
-                            <p className="text-[8px] font-black text-emerald-100 uppercase tracking-widest mb-0.5">Interactive Coaching</p>
+                            <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest mb-0.5">Interactive Coaching</p>
                             <p className="text-[10px] font-black uppercase tracking-tight">Unlock "Green Driving" Bonus (+$50)</p>
                         </div>
                         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -267,7 +265,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
         >
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100 shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100 shadow-sm">
                         <CloudRain size={18} />
                     </div>
                     <div>
@@ -276,7 +274,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                     </div>
                 </div>
                 <div className="text-right">
-                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase tracking-widest rounded-lg border border-emerald-100">
+                    <span className="px-3 py-1 bg-blue-50 text-[#345E85] text-[8px] font-black uppercase tracking-widest rounded-lg border border-blue-100">
                         Rank: Silver
                     </span>
                 </div>
@@ -285,7 +283,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
             <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">CO2 Saved</p>
-                    <p className="text-2xl font-black text-emerald-600 tracking-tighter italic">{Number(stats.co2Saved).toFixed(1)} KG</p>
+                    <p className="text-2xl font-black text-[#345E85] tracking-tighter italic">{Number(stats.co2Saved).toFixed(1)} KG</p>
                     <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none">Safe Planet Contribution</p>
                 </div>
                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
@@ -298,19 +296,18 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
             <div className="space-y-3 pt-6 border-t border-slate-100">
                  <div className="flex justify-between items-end text-[9px] font-black uppercase tracking-widest text-slate-400">
                     <span>Performance Score Progress</span>
-                    <span className="text-emerald-600 font-black">{stats.ecoScore}%</span>
+                    <span className="text-[#345E85] font-black">{stats.ecoScore}%</span>
                  </div>
                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${stats.ecoScore}%` }}
-                        className="h-full bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                        className="h-full bg-[#345E85] rounded-full shadow-[0_0_8px_rgba(52,94,133,0.3)]"
                     />
                  </div>
                  <p className="text-[8px] font-bold text-slate-400 uppercase italic opacity-70 px-1">Complete 3 more "Green Missions" to unlock Gold Tier rewards</p>
             </div>
         </motion.div>
-      </div>
       </div>
 
       {/* Form Modal */}
@@ -457,15 +454,15 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                             htmlFor="receiptFile"
                             className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all cursor-pointer group ${
                               formData.receiptFile 
-                                ? 'border-emerald-500 bg-emerald-50/30' 
+                                ? 'border-[#345E85] bg-blue-50/30' 
                                 : 'border-slate-200 hover:border-[#345E85] hover:bg-slate-50'
                             }`}
                           >
                             <FileText className={`w-8 h-8 mb-2 transition-colors ${
-                              formData.receiptFile ? 'text-emerald-500' : 'text-slate-300 group-hover:text-[#345E85]'
+                              formData.receiptFile ? 'text-[#345E85]' : 'text-slate-300 group-hover:text-[#345E85]'
                             }`} />
                             <span className={`text-[9px] font-black uppercase tracking-widest text-center truncate max-w-full px-2 ${
-                              formData.receiptFile ? 'text-emerald-600' : 'text-slate-400 group-hover:text-[#345E85]'
+                              formData.receiptFile ? 'text-[#345E85]' : 'text-slate-400 group-hover:text-[#345E85]'
                             }`}>
                               {formData.receiptFile ? formData.receiptFile.name : 'Upload Fuel Receipt'}
                             </span>
@@ -485,15 +482,15 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                             htmlFor="odometerFile"
                             className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all cursor-pointer group ${
                               formData.odometerVerificationFile 
-                                ? 'border-emerald-500 bg-emerald-50/30' 
+                                ? 'border-[#345E85] bg-blue-50/30' 
                                 : 'border-slate-200 hover:border-[#345E85] hover:bg-slate-50'
                             }`}
                           >
                             <Camera className={`w-8 h-8 mb-2 transition-colors ${
-                              formData.odometerVerificationFile ? 'text-emerald-500' : 'text-slate-300 group-hover:text-[#345E85]'
+                              formData.odometerVerificationFile ? 'text-[#345E85]' : 'text-slate-300 group-hover:text-[#345E85]'
                             }`} />
                             <span className={`text-[9px] font-black uppercase tracking-widest text-center truncate max-w-full px-2 ${
-                              formData.odometerVerificationFile ? 'text-emerald-600' : 'text-slate-400 group-hover:text-[#345E85]'
+                              formData.odometerVerificationFile ? 'text-[#345E85]' : 'text-slate-400 group-hover:text-[#345E85]'
                             }`}>
                               {formData.odometerVerificationFile ? formData.odometerVerificationFile.name : 'Odometer Reading Photo'}
                             </span>
@@ -586,7 +583,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                            <DollarSign size={10} />
                            Cost
                         </p>
-                        <p className="text-lg font-black text-emerald-600 tracking-tight">{formatCurrency(log.totalCost)}</p>
+                        <p className="text-lg font-black text-[#0f172a] dark:text-white tracking-tight">{formatCurrency(log.totalCost)}</p>
                         <p className="text-[10px] font-bold text-slate-400 mt-1">{log.paymentMethod?.replace('_', ' ') || 'CASH'}</p>
                       </div>
                     </div>
