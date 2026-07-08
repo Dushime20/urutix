@@ -9,6 +9,7 @@ import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Tenant, TenantStatus } from '../../entities/tenant.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
+import { Lender, LenderStatus } from '../../entities/lender.entity';
 import { EmailService } from '../auth/services/email.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
@@ -35,6 +36,8 @@ export class UsersService {
     private readonly tenantRepository: Repository<Tenant>,
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    @InjectRepository(Lender)
+    private readonly lenderRepository: Repository<Lender>,
     private readonly emailService: EmailService,
   ) { }
 
@@ -131,6 +134,32 @@ export class UsersService {
     });
 
     await this.userProfileRepository.save(userProfile);
+
+    // When a LENDER user is created, automatically create the corresponding
+    // lenders table row so GET /lending/tenant/lenders returns them immediately.
+    // This is the single source of truth — no manual step required.
+    if (savedUser.role === UserRole.LENDER) {
+      const existingLender = await this.lenderRepository.findOne({
+        where: { contact_email: savedUser.email },
+      });
+      if (!existingLender) {
+        const lenderName =
+          [createUserDto.firstName, createUserDto.lastName].filter(Boolean).join(' ').trim() ||
+          createUserDto.companyName ||
+          savedUser.email;
+
+        const lender = this.lenderRepository.create({
+          tenant_id: savedUser.tenantId,
+          name: lenderName,
+          contact_email: savedUser.email,
+          status: LenderStatus.ACTIVE,
+          // api_key_hash is required — use a placeholder; lender can configure
+          // webhook/API key later via the lender profile settings.
+          api_key_hash: 'PENDING_SETUP',
+        });
+        await this.lenderRepository.save(lender);
+      }
+    }
 
     // Generate password setup token and send email (if enabled)
     if (createUserDto.sendPasswordSetupEmail !== false) { // Default to true

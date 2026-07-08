@@ -70,60 +70,61 @@ export class LendingController {
     private readonly urutiLendingIntegration: UrutiLendingIntegrationService,
   ) { }
 
-  // ===== ADMIN ENDPOINTS =====
+  // ===== LENDER CREATION =====
+  // Two allowed roles: SUPER_ADMIN (cross-tenant) and TENANT_ADMIN (own tenant only).
+  // Plain ADMIN is intentionally excluded per business rules.
 
   @Post('admin/lenders')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Create a new lender',
     description:
-      'Admin endpoint to create a new lending institution with basic information',
+      'SUPER_ADMIN must supply tenantId in the request body to target a specific tenant. ' +
+      'TENANT_ADMIN is always scoped to their own tenant — body tenantId is ignored.',
   })
   @ApiBody({ type: CreateLenderDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Lender created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', format: 'uuid' },
-        name: { type: 'string' },
-        contact_email: { type: 'string' },
-        status: { type: 'string', enum: ['active', 'paused', 'suspended'] },
-        created_at: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
+  @ApiResponse({ status: 201, description: 'Lender created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - validation error' })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - insufficient permissions',
-  })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
   async createLender(@Body() createLenderDto: CreateLenderDto, @Request() req: any) {
-    // All roles must supply a tenant — SUPER_ADMIN/ADMIN use body.tenantId or their own tenantId
-    const tenantId =
-      req.user?.tenantId ||                             // TENANT_ADMIN / ADMIN always have tenantId
-      (createLenderDto as any).tenantId ||              // SUPER_ADMIN can pass it in the body
-      null;
+    const role: string = req.user?.role;
+
+    let tenantId: string | null;
+
+    if (role === UserRole.SUPER_ADMIN) {
+      // SUPER_ADMIN creates lenders for any tenant.
+      // body.tenantId is the target tenant; JWT tenantId is their own (irrelevant here).
+      tenantId = createLenderDto.tenantId || null;
+      if (!tenantId) {
+        throw new BadRequestException(
+          'SUPER_ADMIN must include tenantId in the request body to specify which tenant this lender belongs to.',
+        );
+      }
+    } else {
+      // TENANT_ADMIN: always their own tenant — never allow override via body.
+      tenantId = req.user?.tenantId || null;
+      if (!tenantId) {
+        throw new BadRequestException(
+          'Tenant ID is missing from your session. Please re-login.',
+        );
+      }
+    }
+
     return await this.lendingService.createLender(createLenderDto, tenantId);
   }
 
   @Post('tenant/lenders')
   @Roles(UserRole.TENANT_ADMIN)
   @ApiOperation({
-    summary: 'Create a new lender for tenant',
-    description:
-      'Tenant admin endpoint to create a new lending institution for their tenant',
+    summary: 'Create a new lender for tenant (tenant-admin shortcut)',
+    description: 'Dedicated endpoint for TENANT_ADMIN. Always scoped to their own tenant.',
   })
   @ApiBody({ type: CreateLenderDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Lender created successfully',
-  })
+  @ApiResponse({ status: 201, description: 'Lender created successfully' })
   async createTenantLender(@Body() createLenderDto: CreateLenderDto, @Request() req: any) {
     const tenantId = req.user?.tenantId;
     if (!tenantId) {
-      throw new BadRequestException('Tenant ID is required');
+      throw new BadRequestException('Tenant ID is missing from your session. Please re-login.');
     }
     return await this.lendingService.createLender(createLenderDto, tenantId);
   }
