@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LoanRequest, LoanRequestStatus } from '../../../entities/loan-request.entity';
+import { Lender } from '../../../entities/lender.entity';
+import { User, UserRole } from '../../../entities/user.entity';
 
 export interface PortfolioMetrics {
   total_loans_issued: number;
@@ -73,11 +75,41 @@ export class LenderAnalyticsService {
   constructor(
     @InjectRepository(LoanRequest)
     private loanRequestRepository: Repository<LoanRequest>,
+    @InjectRepository(Lender)
+    private lenderRepository: Repository<Lender>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
-  // ── resolve User UUID → Lender entity UUID — scoped to tenant ─────────
+  // ── Resolve any ID (user UUID or lender entity UUID) → actual lender entity UUID ──
+  private async resolveLenderId(lenderId: string): Promise<string | null> {
+    // First try direct lender entity lookup
+    const lenderEntity = await this.lenderRepository.findOne({ where: { id: lenderId } });
+    if (lenderEntity) return lenderEntity.id;
+
+    // Fall back: treat as a user ID, resolve via email → lender entity
+    const user = await this.userRepository.findOne({
+      where: { id: lenderId, role: UserRole.LENDER },
+    });
+    if (user) {
+      const lenderByEmail = await this.lenderRepository.findOne({
+        where: { contact_email: user.email },
+      });
+      if (lenderByEmail) {
+        this.logger.log(`Resolved analytics lender ID: user ${lenderId} → lender entity ${lenderByEmail.id}`);
+        return lenderByEmail.id;
+      }
+    }
+
+    this.logger.warn(`resolveLenderId: no lender entity found for ID ${lenderId}`);
+    return null;
+  }
+
+  // ── Fetch all loans for a lender, resolving user→lender ID automatically ──
   private async resolveLoans(lenderId: string, tenantId?: string): Promise<LoanRequest[]> {
-    const where: any = { lender_id: lenderId };
+    const actualLenderId = await this.resolveLenderId(lenderId);
+    if (!actualLenderId) return [];
+    const where: any = { lender_id: actualLenderId };
     if (tenantId) where.tenant_id = tenantId;
     return this.loanRequestRepository.find({ where });
   }

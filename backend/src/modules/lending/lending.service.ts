@@ -1980,9 +1980,22 @@ export class LendingService {
   }
 
   async getLenderDashboard(lenderId: string, dateFrom?: Date, dateTo?: Date, tenantId?: string) {
+    // Resolve user UUID → lender entity UUID (same as getLenderLoanRequests)
+    let actualLenderId: string = lenderId;
+    const lenderEntity = await this.lenderRepository.findOne({ where: { id: lenderId } });
+    if (lenderEntity) {
+      actualLenderId = lenderEntity.id;
+    } else {
+      const user = await this.userRepository.findOne({ where: { id: lenderId, role: UserRole.LENDER } });
+      if (user) {
+        const lenderByEmail = await this.lenderRepository.findOne({ where: { contact_email: user.email } });
+        if (lenderByEmail) actualLenderId = lenderByEmail.id;
+      }
+    }
+
     const queryBuilder = this.loanRequestRepository
       .createQueryBuilder('loan')
-      .where('loan.lender_id = :lenderId', { lenderId });
+      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
 
     // Tenant scope — only loans from the lender's tenant
     if (tenantId) {
