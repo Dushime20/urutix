@@ -478,8 +478,8 @@ export class FuelController {
 
     @Get('advances/stats/overview')
     @ApiOperation({ summary: 'Get advance stats overview' })
-    async getAdvanceStats(@GetTenant() tenantId: string) {
-        const stats = await this.advanceService.getAdvanceStats(tenantId);
+    async getAdvanceStats(@GetTenant() tenantId: string, @Request() req) {
+        const stats = await this.advanceService.getAdvanceStats(tenantId, req.user?.userId);
         return { success: true, data: stats };
     }
 

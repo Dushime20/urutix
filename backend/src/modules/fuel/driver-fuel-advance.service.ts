@@ -160,6 +160,13 @@ export class DriverFuelAdvanceService {
         employerId: string,
         tenantId: string,
     ): Promise<DriverFuelAdvance[]> {
+        const driverSubQuery = this.advanceRepository.manager
+            .createQueryBuilder()
+            .select('d.id')
+            .from('drivers', 'd')
+            .where('d."employerId" = :employerId', { employerId })
+            .andWhere('d."tenantId" = :tenantId', { tenantId });
+
         return await this.advanceRepository
             .createQueryBuilder('advance')
             .leftJoinAndSelect('advance.driver', 'driver')
@@ -167,7 +174,8 @@ export class DriverFuelAdvanceService {
             .leftJoinAndSelect('trip.load', 'load')
             .where('advance.tenantId = :tenantId', { tenantId })
             .andWhere('advance.status = :status', { status: DriverFuelAdvanceStatus.PENDING })
-            .andWhere('driver.employerId = :employerId', { employerId })
+            .andWhere(`advance.driverId IN (${driverSubQuery.getQuery()})`)
+            .setParameters(driverSubQuery.getParameters())
             .orderBy('advance.advanceDate', 'ASC')
             .getMany();
     }
@@ -176,6 +184,16 @@ export class DriverFuelAdvanceService {
         employerId: string,
         tenantId: string,
     ): Promise<DriverFuelAdvance[]> {
+        // First get the IDs of all drivers employed by this employer
+        // Using a subquery approach avoids issues where a leftJoin filters out
+        // advances when the driver join condition doesn't match.
+        const driverSubQuery = this.advanceRepository.manager
+            .createQueryBuilder()
+            .select('d.id')
+            .from('drivers', 'd')
+            .where('d."employerId" = :employerId', { employerId })
+            .andWhere('d."tenantId" = :tenantId', { tenantId });
+
         return await this.advanceRepository
             .createQueryBuilder('advance')
             .leftJoinAndSelect('advance.driver', 'driver')
@@ -183,15 +201,35 @@ export class DriverFuelAdvanceService {
             .leftJoinAndSelect('trip.load', 'load')
             .leftJoinAndSelect('advance.approver', 'approver')
             .where('advance.tenantId = :tenantId', { tenantId })
-            .andWhere('driver.employerId = :employerId', { employerId })
+            .andWhere(`advance.driverId IN (${driverSubQuery.getQuery()})`)
+            .setParameters(driverSubQuery.getParameters())
             .orderBy('advance.advanceDate', 'DESC')
             .getMany();
     }
 
-    async getAdvanceStats(tenantId: string): Promise<any> {
-        const advances = await this.advanceRepository.find({
-            where: { tenantId },
-        });
+    async getAdvanceStats(tenantId: string, employerId?: string): Promise<any> {
+        let advances: DriverFuelAdvance[];
+
+        if (employerId) {
+            // Scope stats to only the drivers employed by this employer
+            const driverSubQuery = this.advanceRepository.manager
+                .createQueryBuilder()
+                .select('d.id')
+                .from('drivers', 'd')
+                .where('d."employerId" = :employerId', { employerId })
+                .andWhere('d."tenantId" = :tenantId', { tenantId });
+
+            advances = await this.advanceRepository
+                .createQueryBuilder('advance')
+                .where('advance.tenantId = :tenantId', { tenantId })
+                .andWhere(`advance.driverId IN (${driverSubQuery.getQuery()})`)
+                .setParameters(driverSubQuery.getParameters())
+                .getMany();
+        } else {
+            advances = await this.advanceRepository.find({
+                where: { tenantId },
+            });
+        }
 
         const pending = advances.filter(a => a.status === DriverFuelAdvanceStatus.PENDING);
         const approved = advances.filter(a => a.status === DriverFuelAdvanceStatus.APPROVED);
