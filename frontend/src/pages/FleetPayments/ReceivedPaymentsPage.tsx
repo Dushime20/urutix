@@ -5,8 +5,6 @@ import { TrendingUp, Clock, CheckCircle, AlertCircle, Inbox, Building, User } fr
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
-// fmt replaced by useCurrencyFormat hook
-
 const statusStyle: Record<string, string> = {
   pending:    'bg-amber-100 text-amber-700',
   processing: 'bg-blue-100 text-blue-700',
@@ -17,12 +15,15 @@ const statusStyle: Record<string, string> = {
 };
 
 const ReceivedPaymentsPage = () => {
-  const { compactIn: fmt } = useCurrencyFormat();
+  // compact(amount, fromCurrency) → converts FROM fromCurrency TO user's preferred currency,
+  // then formats in K/M/B compact notation.
+  // compactIn(amount, targetCurrency, fromCurrency) → converts to a specific target currency.
+  const { compact, compactIn } = useCurrencyFormat();
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'cargo_owner' | 'lender'>('ALL');
 
-  // Use the /all endpoint which combines payeeId-linked + lender phone-matched payments
   const { data, isLoading, isError } = useQuery({
     queryKey: ['truck-owner-received-payments'],
     queryFn: () => paymentsAPI.getAllReceivedPayments({}),
@@ -32,8 +33,12 @@ const ReceivedPaymentsPage = () => {
   const payments: any[] = data?.data?.data?.payments || [];
   const summary = data?.data?.data?.summary || {};
 
+  // Currency that the backend stores amounts in (from summary or first payment).
+  // All amounts from the /all endpoint are in the same currency.
+  const payCurrency: string = summary?.currency || payments[0]?.currency || 'RWF';
+
   const filtered = useMemo(() => {
-    let list = payments;
+    let list = [...payments];
     if (statusFilter !== 'ALL') list = list.filter((p: any) => p.status === statusFilter.toLowerCase());
     if (sourceFilter !== 'ALL') {
       list = list.filter((p: any) =>
@@ -47,15 +52,21 @@ const ReceivedPaymentsPage = () => {
         (p.description || '').toLowerCase().includes(q) ||
         String(p.amount).includes(q) ||
         (p.trip?.tripNumber || '').toLowerCase().includes(q) ||
-        (p.lenderName || '').toLowerCase().includes(q)
+        (p.lenderName || '').toLowerCase().includes(q),
       );
     }
     return list;
   }, [payments, statusFilter, sourceFilter, search]);
 
-  const totalPending   = payments.filter((p: any) => p.status === 'pending' || p.status === 'processing').reduce((s: number, p: any) => s + Number(p.amount), 0);
-  const totalCompleted = payments.filter((p: any) => p.status === 'completed').reduce((s: number, p: any) => s + Number(p.amount), 0);
-  const currency = payments[0]?.currency || 'RWF';
+  // Sum totals in the payment's native currency — compact() will handle conversion
+  // to the user's preferred currency when rendering the stat cards.
+  const totalCompleted = payments
+    .filter((p: any) => p.status === 'completed')
+    .reduce((s: number, p: any) => s + Number(p.amount), 0);
+
+  const totalPending = payments
+    .filter((p: any) => p.status === 'pending' || p.status === 'processing')
+    .reduce((s: number, p: any) => s + Number(p.amount), 0);
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
@@ -72,10 +83,12 @@ const ReceivedPaymentsPage = () => {
 
   return (
     <div className="space-y-6">
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Total Received"
-          value={fmt(totalCompleted, currency)}
+          // compact(amount, fromCurrency): converts from payCurrency → preferred currency
+          value={compact(totalCompleted, payCurrency)}
           subtitle={`${payments.filter((p: any) => p.status === 'completed').length} completed`}
           icon={<TrendingUp size={24} />}
           color="primary"
@@ -83,7 +96,7 @@ const ReceivedPaymentsPage = () => {
         />
         <StatCard
           title="Pending / Processing"
-          value={fmt(totalPending, currency)}
+          value={compact(totalPending, payCurrency)}
           subtitle={`${payments.filter((p: any) => p.status === 'pending' || p.status === 'processing').length} in progress`}
           icon={<Clock size={24} />}
           color="primary"
@@ -91,8 +104,8 @@ const ReceivedPaymentsPage = () => {
         />
         <StatCard
           title="Total Payments"
-          value={summary.totalPayments || payments.length}
-          subtitle={`${summary.lenderPaymentsCount || 0} via lender · ${(summary.totalPayments || payments.length) - (summary.lenderPaymentsCount || 0)} direct`}
+          value={summary.totalPayments ?? payments.length}
+          subtitle={`${summary.lenderPaymentsCount ?? 0} via lender · ${(summary.totalPayments ?? payments.length) - (summary.lenderPaymentsCount ?? 0)} direct`}
           icon={<CheckCircle size={24} />}
           color="primary"
           variant="classic"
@@ -147,50 +160,62 @@ const ReceivedPaymentsPage = () => {
                   <p className="text-sm font-bold text-slate-400">No payments found</p>
                 </td>
               </tr>
-            ) : filtered.map((p: any) => (
-              <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-4 text-sm font-medium text-slate-700 whitespace-nowrap">
-                  {new Date(p.processedAt || p.dueDate || p.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-5 py-4 text-xs font-mono text-slate-500">
-                  {p.referenceNumber || `PAY-${p.id.slice(0, 8)}`}
-                </td>
-                <td className="px-5 py-4">
-                  {p.trip ? (
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">{p.trip.tripNumber}</p>
-                      {p.trip.load && (
-                        <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[160px]">{p.trip.load.title}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-slate-400">—</span>
-                  )}
-                </td>
-                <td className="px-5 py-4">
-                  {p.isLenderPayment ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-100 text-violet-700">
-                        <Building className="w-2.5 h-2.5" /> Lender
+            ) : filtered.map((p: any) => {
+              const rowCurrency: string = p.currency || payCurrency;
+              return (
+                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-4 text-sm font-medium text-slate-700 whitespace-nowrap">
+                    {new Date(p.processedAt || p.dueDate || p.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-5 py-4 text-xs font-mono text-slate-500">
+                    {p.referenceNumber || `PAY-${p.id.slice(0, 8)}`}
+                  </td>
+                  <td className="px-5 py-4">
+                    {p.trip ? (
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">{p.trip.tripNumber}</p>
+                        {p.trip.load && (
+                          <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[160px]">{p.trip.load.title}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4">
+                    {p.isLenderPayment ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-100 text-violet-700">
+                          <Building className="w-2.5 h-2.5" /> Lender
+                        </span>
+                        {p.lenderName && <span className="text-xs text-slate-500 truncate max-w-[80px]">{p.lenderName}</span>}
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
+                        <User className="w-2.5 h-2.5" /> Direct
                       </span>
-                      {p.lenderName && <span className="text-xs text-slate-500 truncate max-w-[80px]">{p.lenderName}</span>}
-                    </div>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
-                      <User className="w-2.5 h-2.5" /> Direct
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-base font-black text-emerald-600 whitespace-nowrap">
+                    {/*
+                      compactIn(amount, targetCurrency, fromCurrency):
+                      - targetCurrency = rowCurrency (show in the payment's original currency)
+                      - fromCurrency   = rowCurrency (amount is already in that currency, no conversion)
+                      This correctly displays 1950 RWF as "FRw1.95K RWF" instead of "FRw2.9M RWF".
+                      Currency conversion to the user's preferred currency is handled by the stat cards
+                      via compact(amount, fromCurrency).
+                    */}
+                    {compactIn(p.amount, rowCurrency, rowCurrency)}{' '}
+                    <span className="text-xs font-bold text-slate-400">{rowCurrency}</span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide ${statusStyle[p.status] || 'bg-slate-100 text-slate-600'}`}>
+                      {p.status}
                     </span>
-                  )}
-                </td>
-                <td className="px-5 py-4 text-base font-black text-emerald-600 whitespace-nowrap">
-                  {fmt(p.amount, p.currency)} <span className="text-xs font-bold text-slate-400">{p.currency}</span>
-                </td>
-                <td className="px-5 py-4">
-                  <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide ${statusStyle[p.status] || 'bg-slate-100 text-slate-600'}`}>
-                    {p.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
