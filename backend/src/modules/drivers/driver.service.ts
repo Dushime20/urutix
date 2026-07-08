@@ -720,10 +720,31 @@ export class DriverService {
     try {
       const driver = await this.getDriverById(id, tenantId);
 
+      // Query live trip data instead of relying on stale denormalized fields
+      const allTrips = await this.tripRepository
+        .createQueryBuilder('trip')
+        .where('trip.driverId = :id', { id })
+        .andWhere('trip.tenantId = :tenantId', { tenantId })
+        .getMany();
+
+      const completedTrips = allTrips.filter(
+        (t) => t.status === TripStatus.COMPLETED,
+      );
+
+      const totalTrips = allTrips.length;
+      const totalDistance = allTrips.reduce(
+        (sum, t) => sum + Number(t.totalDistance || 0),
+        0,
+      );
+      const totalEarnings = completedTrips.reduce(
+        (sum, t) => sum + Number(t.agreedPrice || 0),
+        0,
+      );
+
       return {
-        totalTrips: driver.totalTrips,
-        totalDistance: driver.totalDistance,
-        totalEarnings: driver.totalEarnings,
+        totalTrips,
+        totalDistance,
+        totalEarnings,
         averageRating: driver.rating,
         safetyScore: driver.safetyScore,
         onTimeDeliveryRate: driver.onTimeDeliveryRate,
@@ -758,6 +779,7 @@ export class DriverService {
       trips: number[];
       totalEarnings: number;
       totalTrips: number;
+      allTimeTrips: number;
       avgPerTrip: number;
       performanceGrade: string;
     };
@@ -786,13 +808,19 @@ export class DriverService {
     from.setDate(from.getDate() - (days - 1));
     from.setHours(0, 0, 0, 0);
 
-    // ── Fetch completed trips in range ────────────────────────────────────────
+    // ── Fetch all trips in range (not just completed) ─────────────────────────
     const trips = await this.tripRepository
       .createQueryBuilder('trip')
       .where('trip.driverId = :id', { id })
       .andWhere('trip.tenantId = :tenantId', { tenantId })
-      .andWhere('trip.actualEndTime >= :from', { from })
-      .andWhere('trip.status = :status', { status: TripStatus.COMPLETED })
+      .andWhere('trip.createdAt >= :from', { from })
+      .getMany();
+
+    // Also fetch all-time trips for stats
+    const allTrips = await this.tripRepository
+      .createQueryBuilder('trip')
+      .where('trip.driverId = :id', { id })
+      .andWhere('trip.tenantId = :tenantId', { tenantId })
       .getMany();
 
     // ── Build per-day buckets ─────────────────────────────────────────────────
@@ -806,18 +834,26 @@ export class DriverService {
     }
 
     for (const trip of trips) {
-      const end = new Date(trip.actualEndTime!);
+      // Use actualEndTime for completed trips, createdAt for others
+      const bucketDate = trip.actualEndTime
+        ? new Date(trip.actualEndTime)
+        : new Date(trip.createdAt);
       const idx = Math.floor(
-        (end.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
+        (bucketDate.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
       );
       if (idx >= 0 && idx < days) {
-        buckets[idx].earnings += Number(trip.agreedPrice || 0);
+        // Only add earnings for completed trips
+        if (trip.status === TripStatus.COMPLETED) {
+          buckets[idx].earnings += Number(trip.agreedPrice || 0);
+        }
         buckets[idx].trips += 1;
       }
     }
 
     const totalEarnings = buckets.reduce((s, b) => s + b.earnings, 0);
     const totalTrips = buckets.reduce((s, b) => s + b.trips, 0);
+    // Also include all-time total for context
+    const allTimeTrips = allTrips.length;
     const avgPerTrip = totalTrips > 0 ? Math.round(totalEarnings / totalTrips) : 0;
 
     // ── Performance grade from driver entity ──────────────────────────────────
@@ -885,6 +921,7 @@ export class DriverService {
         trips: buckets.map(b => b.trips),
         totalEarnings,
         totalTrips,
+        allTimeTrips,
         avgPerTrip,
         performanceGrade: grade,
       },
