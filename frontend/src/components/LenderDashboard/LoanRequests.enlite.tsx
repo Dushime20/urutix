@@ -31,7 +31,6 @@ interface LoanRequestsEnliteProps {
     onApprove: (id: string, payload: LoanApprovalPayload) => Promise<void>;
     onReject: (id: string, reason: string) => void;
     onViewDetails: (request: any) => void;
-    onProcessPayment: (request: any) => void;
     onViewPaymentDetails: (request: any) => void;
     onExport: () => void;
 }
@@ -43,15 +42,12 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onApprove,
     onReject,
     onViewDetails,
-    onProcessPayment,
     onViewPaymentDetails,
     onExport
 }) => {
     const { format: formatAmount, compact: compactAmount } = useCurrencyFormat();
     const [showExportModal, setShowExportModal] = useState(false);
     const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
-    // Track loans being processed to prevent double-payment
-    const [processingLoanIds, setProcessingLoanIds] = useState<Set<string>>(new Set());
 
     const handleExport = () => {
         setShowExportModal(true);
@@ -206,20 +202,6 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                         </>
                     )}
 
-                    {row.status === 'approved' && (
-                        <button
-                            onClick={() => {
-                                if (processingLoanIds.has(row.id)) return;
-                                setApprovalLoan(row);
-                            }}
-                            className="p-1.5 hover:bg-[#2c5173]/10 rounded text-[#2c5173] transition-colors disabled:opacity-40"
-                            title="Disburse Funds"
-                            disabled={processingLoanIds.has(row.id)}
-                        >
-                            <DollarSign className="w-4 h-4" />
-                        </button>
-                    )}
-
                     {row.status === 'disbursed' && (
                         <button
                             onClick={() => onViewPaymentDetails(row)}
@@ -285,10 +267,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     onClose={() => setApprovalLoan(null)}
                     onConfirm={async () => { /* handled internally by modal */ }}
                     onSuccess={(loanId) => {
-                        // Mark as processing to prevent double-disburse
-                        setProcessingLoanIds(prev => new Set(prev).add(loanId));
                         setApprovalLoan(null);
-                        // Notify parent to refresh the list
                         onApprove(loanId, { approvedAmount: approvalLoan.approved_amount ?? approvalLoan.requested_amount, loanTermMonths: approvalLoan.loan_term_months ?? 3, dueDate: approvalLoan.due_date ?? '' });
                     }}
                 />

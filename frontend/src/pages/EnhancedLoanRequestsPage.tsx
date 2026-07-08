@@ -1661,7 +1661,6 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           loading={fetching} requests={sorted} analytics={analytics}
           onApprove={handleApproveLoan} onReject={handleRejectLoan}
           onViewDetails={req => { setSelectedLoanForDetail(req); setShowDetailModal(true); }}
-          onProcessPayment={req => { setSelectedLoanForPayment(req); setShowPaymentModal(true); fetchTruckOwnerPhoneNumber(req); }}
           onViewPaymentDetails={req => { setSelectedLoanForPaymentDetails(req); fetchLoanPayments(req.id); setShowPaymentDetailsModal(true); }}
           onExport={() => alert('Exporting...')}
         />
