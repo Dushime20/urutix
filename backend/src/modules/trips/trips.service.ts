@@ -125,13 +125,26 @@ export class TripsService {
       }
 
       if (status) {
-        const statuses = Array.isArray(status)
+        // Guard: only pass values that are valid members of TripStatus enum.
+        // Invalid values (e.g. load statuses like ASSIGNED/PENDING) would cause
+        // a PostgreSQL "invalid input value for enum trips_status_enum" error.
+        const VALID_TRIP_STATUSES = Object.values(TripStatus) as string[];
+        const rawStatuses: string[] = Array.isArray(status)
           ? status
           : status.split(',').map((s: string) => s.trim()).filter(Boolean);
+        const statuses = rawStatuses.filter((s) => VALID_TRIP_STATUSES.includes(s));
+
         if (statuses.length === 1) {
           queryBuilder.andWhere('trip.status = :status', { status: statuses[0] });
-        } else {
+        } else if (statuses.length > 1) {
           queryBuilder.andWhere('trip.status IN (:...statuses)', { statuses });
+        }
+        // If all provided statuses were invalid, skip the filter (return all statuses)
+        // and log a warning so it surfaces in monitoring.
+        if (statuses.length === 0 && rawStatuses.length > 0) {
+          this.logger.warn(
+            `[TripsService] findAll received unrecognised trip status values: [${rawStatuses.join(', ')}] — filter ignored.`,
+          );
         }
       }
 

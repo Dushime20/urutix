@@ -105,8 +105,9 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
 
     setLoadingCargos(true);
     // Fetch only cargos that have an active trip — lenders only finance active trips
+    // Valid trip statuses: PLANNED, IN_PROGRESS, COMPLETED, CANCELLED, DELAYED
     const ACTIVE_TRIP_STATUSES = ['IN_PROGRESS', 'PLANNED', 'DELAYED'];
-    api.get('/trips', { params: { page: 1, limit: 100, status: 'IN_PROGRESS,ASSIGNED,PENDING,ACCEPTED' } })
+    api.get('/trips', { params: { page: 1, limit: 100, status: 'IN_PROGRESS,PLANNED,DELAYED' } })
       .then(async res => {
         const rawTrips = res.data?.data || res.data?.trips || res.data?.items || res.data || [];
         const tripsList: any[] = Array.isArray(rawTrips) ? rawTrips : [];
