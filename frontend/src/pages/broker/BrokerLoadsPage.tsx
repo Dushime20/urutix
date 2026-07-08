@@ -7,7 +7,7 @@ import LocationLabel from '../../components/common/LocationLabel';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import ContractAcceptanceModal from '../../components/broker/ContractAcceptanceModal';
 import FilterSelect from '../../components/common/FilterSelect';
-import receiverService, { type CreateReceiverDto } from '../../services/receiverService';
+import receiverService, { type CreateReceiverDto, type Receiver } from '../../services/receiverService';
 import {
   Package,
   Search,
@@ -21,7 +21,9 @@ import {
   Eye,
   UserPlus,
   X,
-  Loader2
+  Loader2,
+  Users,
+  CheckCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -37,8 +39,13 @@ const BrokerLoadsPage: React.FC = () => {
   const [selectedContract, setSelectedContract] = useState<LoadContract | null>(null);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showAddReceiverModal, setShowAddReceiverModal] = useState(false);
+  const [showAssignReceiverModal, setShowAssignReceiverModal] = useState(false);
   const [selectedLoadForReceiver, setSelectedLoadForReceiver] = useState<string | null>(null);
   const [addReceiverLoading, setAddReceiverLoading] = useState(false);
+  const [receivers, setReceivers] = useState<Receiver[]>([]);
+  const [receiversLoading, setReceiversLoading] = useState(false);
+  const [receiverSearchTerm, setReceiverSearchTerm] = useState('');
+  const [assigningReceiver, setAssigningReceiver] = useState(false);
   const [receiverForm, setReceiverForm] = useState<CreateReceiverDto & { assignToLoad: boolean }>({
     firstName: '',
     lastName: '',
@@ -252,6 +259,7 @@ const BrokerLoadsPage: React.FC = () => {
       }
       
       handleCloseAddReceiverModal();
+      loadBrokerLoads(); // Refresh loads to show updated receiver assignment
     } catch (err: any) {
       console.error('Failed to add receiver:', err);
       toast.error(err.response?.data?.message || 'Failed to add receiver');
@@ -259,6 +267,70 @@ const BrokerLoadsPage: React.FC = () => {
       setAddReceiverLoading(false);
     }
   };
+
+  const handleOpenAssignReceiverModal = async (loadId: string) => {
+    setSelectedLoadForReceiver(loadId);
+    setShowAssignReceiverModal(true);
+    await loadReceivers();
+  };
+
+  const handleCloseAssignReceiverModal = () => {
+    setShowAssignReceiverModal(false);
+    setSelectedLoadForReceiver(null);
+    setReceiverSearchTerm('');
+  };
+
+  const loadReceivers = async () => {
+    try {
+      setReceiversLoading(true);
+      const data = await receiverService.getReceivers();
+      setReceivers(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      console.error('Error loading receivers:', error);
+      toast.error('Failed to load receivers');
+    } finally {
+      setReceiversLoading(false);
+    }
+  };
+
+  const handleAssignExistingReceiver = async (receiverId: string) => {
+    if (!selectedLoadForReceiver) return;
+    
+    try {
+      setAssigningReceiver(true);
+      await receiverService.assignCargoToReceiver(selectedLoadForReceiver, receiverId);
+      toast.success('Receiver assigned successfully');
+      handleCloseAssignReceiverModal();
+      loadBrokerLoads(); // Refresh loads to show updated receiver assignment
+    } catch (error: any) {
+      console.error('Error assigning receiver:', error);
+      toast.error(error.response?.data?.message || 'Failed to assign receiver');
+    } finally {
+      setAssigningReceiver(false);
+    }
+  };
+
+  const handleUnassignReceiver = async (loadId: string) => {
+    if (!window.confirm('Are you sure you want to unassign the receiver from this load?')) return;
+    
+    try {
+      await receiverService.unassignCargoFromReceiver(loadId);
+      toast.success('Receiver unassigned successfully');
+      loadBrokerLoads(); // Refresh loads
+    } catch (error: any) {
+      console.error('Error unassigning receiver:', error);
+      toast.error(error.response?.data?.message || 'Failed to unassign receiver');
+    }
+  };
+
+  const filteredReceivers = useMemo(() => {
+    return receivers.filter(receiver => {
+      const searchLower = receiverSearchTerm.toLowerCase();
+      const name = `${receiver.profile?.firstName || ''} ${receiver.profile?.lastName || ''}`.toLowerCase();
+      const email = receiver.email.toLowerCase();
+      return name.includes(searchLower) || email.includes(searchLower);
+    });
+  }, [receivers, receiverSearchTerm]);
 
   const getStatusPrimeStyle = (status: string) => {
     switch (status) {
@@ -422,9 +494,16 @@ const BrokerLoadsPage: React.FC = () => {
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleOpenAddReceiverModal(load.id); }} 
                       className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-200 transition-colors dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30" 
-                      title="Add Cargo Receiver"
+                      title="Add New Receiver"
                     >
                       <UserPlus size={18} />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleOpenAssignReceiverModal(load.id); }} 
+                      className="p-2.5 bg-teal-100 text-teal-600 rounded-xl hover:bg-teal-200 transition-colors dark:bg-teal-900/20 dark:text-teal-400 dark:hover:bg-teal-900/30" 
+                      title="Assign Existing Receiver"
+                    >
+                      <Users size={18} />
                     </button>
                     <button onClick={() => handleDownloadContract(load.id)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" title="Download Contract">
                       <Download size={18} />
@@ -485,7 +564,8 @@ const BrokerLoadsPage: React.FC = () => {
                   </td>
                   <td className="px-10 py-10 text-right">
                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                       <button onClick={(e) => { e.stopPropagation(); handleOpenAddReceiverModal(load.id); }} className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all dark:bg-emerald-900/20 dark:border-emerald-800/50 dark:text-emerald-400 dark:hover:bg-emerald-600" title="Add Cargo Receiver"><UserPlus size={16} /></button>
+                       <button onClick={(e) => { e.stopPropagation(); handleOpenAddReceiverModal(load.id); }} className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all dark:bg-emerald-900/20 dark:border-emerald-800/50 dark:text-emerald-400 dark:hover:bg-emerald-600" title="Add New Receiver"><UserPlus size={16} /></button>
+                       <button onClick={(e) => { e.stopPropagation(); handleOpenAssignReceiverModal(load.id); }} className="p-4 bg-teal-50 border border-teal-100 text-teal-600 rounded-xl hover:bg-teal-600 hover:text-white transition-all dark:bg-teal-900/20 dark:border-teal-800/50 dark:text-teal-400 dark:hover:bg-teal-600" title="Assign Existing Receiver"><Users size={16} /></button>
                        <button onClick={(e) => { e.stopPropagation(); handleDownloadContract(load.id); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all dark:bg-slate-900 dark:border-slate-800"><Download size={16} /></button>
                        <button className="p-4 bg-slate-900 text-white rounded-xl shadow-xl transition-all dark:bg-slate-950"><Eye size={16} /></button>
                     </div>
@@ -625,6 +705,110 @@ const BrokerLoadsPage: React.FC = () => {
                     Add Receiver
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Existing Receiver Modal */}
+      {showAssignReceiverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                  <Users size={20} className="text-teal-600 dark:text-teal-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Assign Receiver</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    Load #{selectedLoadForReceiver?.slice(0, 8)}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseAssignReceiverModal}
+                className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search receivers..."
+                  value={receiverSearchTerm}
+                  onChange={(e) => setReceiverSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Receivers List */}
+            <div className="overflow-y-auto flex-1 p-4">
+              {receiversLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                </div>
+              ) : filteredReceivers.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                  <Users className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm font-medium">No receivers found</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Available Receivers</h3>
+                  
+                  {filteredReceivers.map((receiver) => (
+                    <div 
+                      key={receiver.id}
+                      className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-teal-300 dark:hover:border-teal-700 hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/30 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-all">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-900 dark:text-white text-sm">
+                            {receiver.profile?.firstName ? `${receiver.profile.firstName} ${receiver.profile.lastName}` : receiver.email}
+                          </div>
+                          {receiver.profile?.firstName && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400">{receiver.email}</div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleAssignExistingReceiver(receiver.id)}
+                        disabled={assigningReceiver}
+                        className="px-4 py-2 bg-teal-600 text-white rounded-xl text-xs font-semibold hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {assigningReceiver ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <CheckCircle size={14} />
+                        )}
+                        Assign
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
+              <button
+                onClick={handleCloseAssignReceiverModal}
+                className="px-6 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
+              >
+                Cancel
               </button>
             </div>
           </div>
