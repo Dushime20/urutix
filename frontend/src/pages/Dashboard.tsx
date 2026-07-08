@@ -649,42 +649,43 @@ const CargoOwnerDashboard = () => {
   }, [stats.incompleteCargos, matchingData.matchRecommendations]);
   const renderOverview = () => (
     <div className="space-y-4 md:space-y-6">
-      {/* 1. Hero / Performance Overview */}
-      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 md:p-8 lg:p-10 transition-colors duration-300">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/10 dark:from-blue-900/10 to-transparent pointer-events-none"></div>
-        <div className="relative z-10">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
-            <div className="max-w-full lg:max-w-2xl">
-              <div className="flex items-center gap-2 mb-2 md:mb-3">
-                <div className="bg-[#345E85]/10 dark:bg-primary-900/30 text-[#345E85] dark:text-primary-400 p-1.5 rounded-lg border border-[#345E85]/10 dark:border-primary-800">
-                  <Activity className="w-4 h-4" />
+      {/* 1. Hero / Performance Overview - Hidden for CARGO_RECEIVER */}
+      {user?.role !== 'CARGO_RECEIVER' && (
+        <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-4 md:p-8 lg:p-10 transition-colors duration-300">
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/10 dark:from-blue-900/10 to-transparent pointer-events-none"></div>
+          <div className="relative z-10">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
+              <div className="max-w-full lg:max-w-2xl">
+                <div className="flex items-center gap-2 mb-2 md:mb-3">
+                  <div className="bg-[#345E85]/10 dark:bg-primary-900/30 text-[#345E85] dark:text-primary-400 p-1.5 rounded-lg border border-[#345E85]/10 dark:border-primary-800">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] dark:text-primary-400">System_Summary</h2>
                 </div>
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] dark:text-primary-400">System_Summary</h2>
-              </div>
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-[1.1] mb-3 md:mb-4">
-                Neural <span className="text-[#345E85] dark:text-primary-400">Insights</span>
-              </h1>
-              <p className="text-xs md:text-base lg:text-lg text-slate-500 dark:text-slate-400 font-medium mb-4 md:mb-6 leading-relaxed">
-                Aggregated logistics intelligence for {stats.activeCargos} active missions. Optimized with AI matching protocols and real-time capital management.
-              </p>
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-[1.1] mb-3 md:mb-4">
+                  Neural <span className="text-[#345E85] dark:text-primary-400">Insights</span>
+                </h1>
+                <p className="text-xs md:text-base lg:text-lg text-slate-500 dark:text-slate-400 font-medium mb-4 md:mb-6 leading-relaxed">
+                  Aggregated logistics intelligence for {stats.activeCargos} active missions. Optimized with AI matching protocols and real-time capital management.
+                </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
-                <button
-                  onClick={() => setShowQuickActionFlow(true)}
-                  className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-[10px] lg:text-xs shadow-md hover:bg-slate-800 dark:hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  Add Cargo
-                </button>
-                <button
-                  onClick={() => navigate('/dashboard/analytics')}
-                  className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-[10px] lg:text-xs hover:border-[#345E85] dark:hover:border-primary-500 hover:text-[#345E85] dark:hover:text-primary-400 transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  Analytics
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
+                  <button
+                    onClick={() => setShowQuickActionFlow(true)}
+                    className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 bg-[#345E85] dark:bg-primary-600 text-white rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-[10px] lg:text-xs shadow-md hover:bg-slate-800 dark:hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    Add Cargo
+                  </button>
+                  <button
+                    onClick={() => navigate('/dashboard/analytics')}
+                    className="px-4 md:px-6 lg:px-8 py-2.5 md:py-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-[10px] lg:text-xs hover:border-[#345E85] dark:hover:border-primary-500 hover:text-[#345E85] dark:hover:text-primary-400 transition-all flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    Analytics
+                  </button>
+                </div>
               </div>
-            </div>
 
             <div className="flex flex-col gap-3 md:gap-4">
               {/* Achievements / Status Summary */}
@@ -721,6 +722,7 @@ const CargoOwnerDashboard = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* 2. Key Performance Indicators - Circular Style */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-6 md:mb-10 place-items-center bg-white dark:bg-slate-900 p-4 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-300">

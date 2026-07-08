@@ -7,6 +7,7 @@ import LocationLabel from '../../components/common/LocationLabel';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import ContractAcceptanceModal from '../../components/broker/ContractAcceptanceModal';
 import FilterSelect from '../../components/common/FilterSelect';
+import receiverService, { type CreateReceiverDto } from '../../services/receiverService';
 import {
   Package,
   Search,
@@ -17,7 +18,10 @@ import {
   AlertCircle,
   Download,
   Clock,
-  Eye
+  Eye,
+  UserPlus,
+  X,
+  Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
@@ -32,6 +36,16 @@ const BrokerLoadsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedContract, setSelectedContract] = useState<LoadContract | null>(null);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [showAddReceiverModal, setShowAddReceiverModal] = useState(false);
+  const [selectedLoadForReceiver, setSelectedLoadForReceiver] = useState<string | null>(null);
+  const [addReceiverLoading, setAddReceiverLoading] = useState(false);
+  const [receiverForm, setReceiverForm] = useState<CreateReceiverDto & { assignToLoad: boolean }>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    assignToLoad: true
+  });
 
   // Filters and view mode
   const [searchTerm, setSearchTerm] = useState('');
@@ -186,6 +200,63 @@ const BrokerLoadsPage: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       toast.error('Failed to generate PDF');
+    }
+  };
+
+  const handleOpenAddReceiverModal = (loadId: string) => {
+    setSelectedLoadForReceiver(loadId);
+    setShowAddReceiverModal(true);
+  };
+
+  const handleCloseAddReceiverModal = () => {
+    setShowAddReceiverModal(false);
+    setSelectedLoadForReceiver(null);
+    setReceiverForm({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      assignToLoad: true
+    });
+  };
+
+  const handleAddReceiver = async () => {
+    if (!receiverForm.firstName || !receiverForm.lastName || !receiverForm.email) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setAddReceiverLoading(true);
+      
+      // Create the receiver
+      const createDto: CreateReceiverDto = {
+        firstName: receiverForm.firstName,
+        lastName: receiverForm.lastName,
+        email: receiverForm.email,
+        phone: receiverForm.phone
+      };
+      
+      const result = await receiverService.createReceiver(createDto);
+      
+      // If assignToLoad is checked and we have a load selected, assign the cargo
+      if (receiverForm.assignToLoad && selectedLoadForReceiver && result.receiver?.id) {
+        try {
+          await receiverService.assignCargoToReceiver(selectedLoadForReceiver, result.receiver.id);
+          toast.success(`Receiver added and assigned to load successfully!`);
+        } catch (assignErr: any) {
+          toast.success(`Receiver added, but assignment failed: ${assignErr.response?.data?.message || assignErr.message}`);
+        }
+      } else {
+        toast.success(result.message || 'Receiver added successfully!');
+      }
+      
+      handleCloseAddReceiverModal();
+    } catch (err: any) {
+      console.error('Failed to add receiver:', err);
+      toast.error(err.response?.data?.message || 'Failed to add receiver');
+    } finally {
+      setAddReceiverLoading(false);
     }
   };
 
@@ -348,6 +419,13 @@ const BrokerLoadsPage: React.FC = () => {
                     <button onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="flex-1 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors flex justify-center items-center gap-2">
                       <Eye size={16} /> View Details
                     </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleOpenAddReceiverModal(load.id); }} 
+                      className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-200 transition-colors dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30" 
+                      title="Add Cargo Receiver"
+                    >
+                      <UserPlus size={18} />
+                    </button>
                     <button onClick={() => handleDownloadContract(load.id)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" title="Download Contract">
                       <Download size={18} />
                     </button>
@@ -407,6 +485,7 @@ const BrokerLoadsPage: React.FC = () => {
                   </td>
                   <td className="px-10 py-10 text-right">
                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                       <button onClick={(e) => { e.stopPropagation(); handleOpenAddReceiverModal(load.id); }} className="p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all dark:bg-emerald-900/20 dark:border-emerald-800/50 dark:text-emerald-400 dark:hover:bg-emerald-600" title="Add Cargo Receiver"><UserPlus size={16} /></button>
                        <button onClick={(e) => { e.stopPropagation(); handleDownloadContract(load.id); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all dark:bg-slate-900 dark:border-slate-800"><Download size={16} /></button>
                        <button className="p-4 bg-slate-900 text-white rounded-xl shadow-xl transition-all dark:bg-slate-950"><Eye size={16} /></button>
                     </div>
@@ -425,6 +504,131 @@ const BrokerLoadsPage: React.FC = () => {
           contractId={selectedContract.id}
           onContractAccepted={handleAcceptContract}
         />
+      )}
+
+      {/* Add Cargo Receiver Modal */}
+      {showAddReceiverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-8 relative">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <UserPlus size={20} className="text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Add Cargo Receiver</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {selectedLoadForReceiver ? `Load #${selectedLoadForReceiver.slice(0, 8)}` : ''}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseAddReceiverModal}
+                className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    First Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={receiverForm.firstName}
+                    onChange={(e) => setReceiverForm(prev => ({ ...prev, firstName: e.target.value }))}
+                    placeholder="John"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                    Last Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={receiverForm.lastName}
+                    onChange={(e) => setReceiverForm(prev => ({ ...prev, lastName: e.target.value }))}
+                    placeholder="Doe"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  Email Address <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={receiverForm.email}
+                  onChange={(e) => setReceiverForm(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="john.doe@company.com"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={receiverForm.phone}
+                  onChange={(e) => setReceiverForm(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="+254 700 000 000"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              {/* Assign to load toggle */}
+              <label className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 rounded-xl cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-all">
+                <input
+                  type="checkbox"
+                  checked={receiverForm.assignToLoad}
+                  onChange={(e) => setReceiverForm(prev => ({ ...prev, assignToLoad: e.target.checked }))}
+                  className="w-4 h-4 rounded accent-emerald-600"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Assign to this load</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Receiver will be linked to load #{selectedLoadForReceiver?.slice(0, 8)}</p>
+                </div>
+              </label>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={handleCloseAddReceiverModal}
+                className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddReceiver}
+                disabled={addReceiverLoading}
+                className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {addReceiverLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={16} />
+                    Add Receiver
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
