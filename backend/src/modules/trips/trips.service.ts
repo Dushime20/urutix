@@ -125,7 +125,14 @@ export class TripsService {
       }
 
       if (status) {
-        queryBuilder.andWhere('trip.status = :status', { status });
+        const statuses = Array.isArray(status)
+          ? status
+          : status.split(',').map((s: string) => s.trim()).filter(Boolean);
+        if (statuses.length === 1) {
+          queryBuilder.andWhere('trip.status = :status', { status: statuses[0] });
+        } else {
+          queryBuilder.andWhere('trip.status IN (:...statuses)', { statuses });
+        }
       }
 
       if (search) {
