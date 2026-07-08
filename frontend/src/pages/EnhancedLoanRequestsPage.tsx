@@ -1469,15 +1469,20 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     fetchLoanRequests();
   }, [lenderId, accessToken, statusFilter, isTruckOwner, isCargoOwner, fetchTruckOwnerLoans, fetchCargoOwnerLoans]);
 
-  const handleApproveLoan = async (loanId: string, payload: { approvedAmount: number; loanTermMonths: number; dueDate: string }) => {
-    // Do NOT call the approve API yet — payment must happen first.
-    const loan = requests.find(r => r.id === loanId);
-    if (loan) {
-      setPendingApprovalPayload(payload);
-      setSelectedLoanForPayment({ ...loan, approved_amount: payload.approvedAmount, due_date: payload.dueDate, loan_term_months: payload.loanTermMonths });
-      setShowPaymentModal(true);
-      fetchTruckOwnerPhoneNumber(loan);
-    }
+  const handleApproveLoan = async (_loanId: string, _payload: { approvedAmount: number; loanTermMonths: number; dueDate: string }) => {
+    // LoanApprovalModal handles the full approve + disburse flow internally.
+    // This callback is called on success — just refresh the list.
+    try {
+      let actualLenderId = lenderId;
+      try { const r = await api.get('/lending/my-lender-id'); if (r.data?.lenderId) actualLenderId = r.data.lenderId; } catch {}
+      const requestsResponse = await lendingApi.getLenderLoanRequests(actualLenderId!, undefined, 1, 100);
+      const requestsData = Array.isArray(requestsResponse) ? requestsResponse : (requestsResponse?.data || []);
+      setRequests(prev => prev.map(r => {
+        const updated = requestsData.find((u: any) => u.id === r.id);
+        if (!updated) return r;
+        return { ...r, status: updated.status, approved_amount: updated.approved_amount ?? r.approved_amount };
+      }));
+    } catch { /* non-fatal */ }
   };
 
   const handleRejectLoan = async (loanId: string, reason: string) => {
@@ -1661,64 +1666,6 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           onExport={() => alert('Exporting...')}
         />
       </div>
-
-      {showPaymentModal && selectedLoanForPayment && createPortal(
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-8 overflow-hidden">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 flex flex-col max-h-[80vh]">
-            <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Disburse <span className="text-blue-600">Funds</span></h3>
-                  <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-0.5">⚡ Payment required to approve loan</p>
-                </div>
-                <button onClick={() => { setShowPaymentModal(false); setPendingApprovalPayload(null); }} className="text-slate-400 hover:text-slate-600 transition-colors p-2 bg-slate-50 rounded-xl"><FaTimes size={18} /></button>
-              </div>
-              <div className="bg-slate-50 rounded-2xl p-6 mb-6 border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Disbursement Amount</p>
-                <p className="text-3xl font-black text-slate-900">{fmtMoney(selectedLoanForPayment.approved_amount ?? selectedLoanForPayment.requested_amount)}</p>
-                {pendingApprovalPayload && (
-                  <p className="text-[10px] text-slate-500 mt-2">
-                    Term: <span className="font-bold">{pendingApprovalPayload.loanTermMonths} months</span>
-                    {pendingApprovalPayload.dueDate && <> · Due: <span className="font-bold">{new Date(pendingApprovalPayload.dueDate).toLocaleDateString()}</span></>}
-                  </p>
-                )}
-              </div>
-              <div className="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-3 mb-6 flex items-start gap-3">
-                <span className="text-amber-500 mt-0.5 text-base">⚠</span>
-                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide leading-relaxed">
-                  Completing this payment will simultaneously approve & disburse the loan. This action cannot be undone.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <button onClick={() => setPaymentMethod('momo')}
-                  className={`w-full p-6 rounded-2xl border-2 transition-all flex items-center gap-4 ${paymentMethod === 'momo' ? 'border-blue-600 bg-blue-50/50' : 'border-slate-100 hover:border-slate-200'}`}>
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${paymentMethod === 'momo' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                    <FaMoneyBillWave size={20} />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-bold text-slate-900 text-sm uppercase">Mobile Money</p>
-                    <p className="text-[10px] text-slate-500 font-medium">Instant transfer to truck owner</p>
-                  </div>
-                </button>
-                {paymentMethod === 'momo' && (
-                  <div className="mt-4">
-                    <input type="text" value={truckOwnerPhone || ''} onChange={e => setTruckOwnerPhone(e.target.value)}
-                      placeholder="Enter Momo Phone Number"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-300 focus:ring-4 focus:ring-blue-50 focus:border-blue-200 transition-all" />
-                  </div>
-                )}
-                <div className="flex gap-3 mt-8">
-                  <button onClick={() => { setShowPaymentModal(false); setPendingApprovalPayload(null); }} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-                  <button onClick={handleProcessPayment} disabled={!paymentMethod || processingPayment}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 py-4 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-200 transition-all">
-                    {processingPayment ? 'Processing...' : 'Approve & Disburse'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>, document.body
-      )}
 
       {/* Loan Detail Modal */}
       {showDetailModal && selectedLoanForDetail && (

@@ -241,7 +241,6 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
             lenderName: loan.lender?.name || loan.lender?.contact_email || 'Lender',
             loanId: loan.id,
             loanNumber: loan.loan_number,
-            // truck owner userId so backend can stamp payeeId
             truckOwnerId: truckOwnerUserId ?? beneficiaryFromSplit?.id,
             provider: momoProvider,
           },
@@ -249,9 +248,83 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
       }
       // Bank transfer: approval is sufficient — physical transfer handled off-platform
 
+      // Step 3: Notify the truck owner (beneficiary) — in-app + email, fire-and-forget
+      const beneficiaryId = truckOwnerUserId ?? beneficiaryFromSplit?.id;
+      const lenderName   = loan.lender?.name || loan.lender?.contact_email || 'Your lender';
+      const loanRef      = loan.loan_number || loan.id?.slice(0, 8).toUpperCase();
+      const dueDateFmt   = new Date(dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const methodLabel  = disbursementMethod === 'momo'
+        ? `mobile money (${momoPhone.trim()})`
+        : `bank transfer to ${bankName.trim()}`;
+
+      if (beneficiaryId) {
+        const sharedMeta = {
+          loanId:    loan.id,
+          loanRef,
+          amount:    approvedAmount,
+          disbursementMethod,
+          lenderName,
+          dueDate,
+        };
+
+        // ── In-app notification ──────────────────────────────────────────
+        api.post('/notifications', {
+          type:       'TRUCK_OWNER_PAYMENT_RECEIVED',
+          entityType: 'LOAN',
+          entityId:   loan.id,
+          userId:     beneficiaryId,
+          tenantId:   loan.tenant_id,
+          channel:    'IN_APP',
+          priority:   'HIGH',
+          category:   'FINANCIAL',
+          subject:    `💰 Funds received — ${fmtUSD(approvedAmount)}`,
+          content:    `${fmtUSD(approvedAmount)} has been disbursed to you via ${methodLabel} for loan #${loanRef}. ` +
+                      `Repayment of ${fmtUSD(approvedAmount)} is due by ${dueDateFmt}. ` +
+                      `Please confirm receipt and contact ${lenderName} if you have any questions.`,
+          metadata:   sharedMeta,
+        }).catch(() => {});
+
+        // ── Email notification ───────────────────────────────────────────
+        api.post('/notifications', {
+          type:           'TRUCK_OWNER_PAYMENT_RECEIVED',
+          entityType:     'LOAN',
+          entityId:       loan.id,
+          userId:         beneficiaryId,
+          tenantId:       loan.tenant_id,
+          channel:        'EMAIL',
+          priority:       'HIGH',
+          category:       'FINANCIAL',
+          recipientEmail: loan.borrower_email || loan.borrower?.email,
+          recipientName:  loan.borrower_name  || loan.borrower?.contact_name,
+          subject:        `[Urutix] Loan disbursement confirmed — ${fmtUSD(approvedAmount)} sent to you`,
+          content: [
+            `Dear ${loan.borrower_name || 'Valued Customer'},`,
+            ``,
+            `We are pleased to inform you that your loan (Ref: #${loanRef}) has been approved and ${fmtUSD(approvedAmount)} has been successfully disbursed to your account via ${methodLabel}.`,
+            ``,
+            `Loan Summary`,
+            `────────────────────────────`,
+            `• Loan Reference : #${loanRef}`,
+            `• Disbursed Amount: ${fmtUSD(approvedAmount)}`,
+            `• Disbursement Method: ${disbursementMethod === 'momo' ? `Mobile Money — ${momoPhone.trim()}` : `Bank Transfer — ${bankName.trim()}`}`,
+            `• Repayment Due Date: ${dueDateFmt}`,
+            `• Lender: ${lenderName}`,
+            ``,
+            `Please check your ${disbursementMethod === 'momo' ? 'mobile money account' : 'bank account'} to confirm receipt of the funds.`,
+            ``,
+            `If you did not receive the funds or have any questions, please contact ${lenderName} immediately or reach out to our support team.`,
+            ``,
+            `Thank you for using Urutix.`,
+            `The Urutix Finance Team`,
+          ].join('\n'),
+          metadata: sharedMeta,
+        }).catch(() => {});
+      }
+
       toast.success('Loan approved and funds disbursed!');
-      setStep('success');
+      // Auto-close and refresh — no need for a "Done" screen
       onSuccess?.(loan.id);
+      onClose();
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to approve loan.';
       setErrorMsg(msg);
