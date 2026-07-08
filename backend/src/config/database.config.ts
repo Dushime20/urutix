@@ -109,6 +109,7 @@ import { UserPermissionOverride } from './../entities/user-permission-override.e
 
 // Team and Lender entities
 import { LenderUser, LenderRole, LenderPermission } from './../entities/lender-team.entity';
+import { LoanNumberSequence } from './../entities/loan-number-sequence.entity';
 
 // Lending policy entities
 import { LendingPolicyInterestRate } from './../entities/lending-policy-interest-rate.entity';
@@ -262,6 +263,8 @@ export const databaseConfig: TypeOrmModuleOptions = {
     LenderUser,
     LenderRole,
     LenderPermission,
+    // Loan number sequencing (atomic counter — prevents duplicate loan_number race condition)
+    LoanNumberSequence,
     // Lending policy entities
     LendingPolicyInterestRate,
     LendingPolicyLoanLimit,
@@ -419,6 +422,8 @@ export const testDatabaseConfig: TypeOrmModuleOptions = {
     LenderUser,
     LenderRole,
     LenderPermission,
+    // Loan number sequencing (atomic counter — prevents duplicate loan_number race condition)
+    LoanNumberSequence,
     // Lending policy entities
     LendingPolicyInterestRate,
     LendingPolicyLoanLimit,

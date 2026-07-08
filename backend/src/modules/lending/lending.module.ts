@@ -43,6 +43,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { LoanNotificationService } from './services/loan-notification.service';
 import { LoanEventListener } from './listeners/loan-event.listener';
 import { Notification } from '../../entities/notification.entity';
+import { LoanNumberSequence } from '../../entities/loan-number-sequence.entity';
 // import { PaymentsModule } from '../payments/payments.module'; // Temporarily comment out to avoid circular dependency
 
 @Module({
@@ -71,6 +72,7 @@ import { Notification } from '../../entities/notification.entity';
       UserProfile,
       PasswordResetToken,
       Notification,
+      LoanNumberSequence,
     ]),
     EnhancedAuthModule,
     // PaymentsModule, // Temporarily comment out

@@ -20,6 +20,7 @@ import { Repository, DataSource, In } from 'typeorm';
 import { Lender, LenderStatus } from '../../entities/lender.entity';
 import { LenderPolicy } from '../../entities/lender-policy.entity';
 import { LoanRequest, LoanRequestStatus } from '../../entities/loan-request.entity';
+import { LoanNumberSequence } from '../../entities/loan-number-sequence.entity';
 import {
   LoanDisbursement,
   DisbursementStatus,
@@ -83,6 +84,9 @@ export class LendingService {
 
     @InjectRepository(LoanRequest)
     private loanRequestRepository: Repository<LoanRequest>,
+
+    @InjectRepository(LoanNumberSequence)
+    private loanNumberSequenceRepository: Repository<LoanNumberSequence>,
 
     @InjectRepository(LoanDisbursement)
     private loanDisbursementRepository: Repository<LoanDisbursement>,
@@ -788,7 +792,33 @@ export class LendingService {
       ifrs9_stage: 1,
     });
 
-    const savedLoan = await this.loanRequestRepository.save(loanRequest);
+    // Save with retry — if a stale sequence value somehow produces a loan_number
+    // collision (e.g. tenant had pre-existing rows before the sequence table was
+    // seeded), regenerate and retry rather than surfacing a raw 500 to the client.
+    let savedLoan!: LoanRequest;
+    const MAX_LOAN_NUMBER_RETRIES = 3;
+    for (let attempt = 1; attempt <= MAX_LOAN_NUMBER_RETRIES; attempt++) {
+      try {
+        savedLoan = await this.loanRequestRepository.save(loanRequest);
+        break;
+      } catch (saveErr: any) {
+        const isLoanNumberConflict =
+          saveErr?.message?.includes('UQ_4382ec13ee491f4b516b8549d26') ||
+          (saveErr?.message?.includes('duplicate key') &&
+            saveErr?.message?.includes('loan_number'));
+
+        if (isLoanNumberConflict && attempt < MAX_LOAN_NUMBER_RETRIES) {
+          this.logger.warn(
+            `loan_number collision on attempt ${attempt}, regenerating ` +
+            `(tenant: ${createLoanDto.tenant_id})`,
+          );
+          loanRequest.loan_number = await this.generateLoanNumber(createLoanDto.tenant_id);
+          continue;
+        }
+        // Re-throw: not a loan_number conflict, or we've exhausted retries
+        throw saveErr;
+      }
+    }
     this.logger.log(`Loan request created with ID: ${savedLoan.id}`);
 
     // Compute and persist interest_rate / risk_score + IFRS 9 PD/LGD/EL at origination
@@ -1886,13 +1916,34 @@ export class LendingService {
   }
 
   /**
-   * Generate a human-readable, sequential loan number (e.g. LN-2024-000123).
-   * Compliant with standard loan ledger referencing (ISO 20022 / SWIFT).
+   * Generate a human-readable, sequential loan number (e.g. LN-2026-000042).
+   * Compliant with ISO 20022 / SWIFT loan ledger referencing standards.
+   *
+   * Uses an atomic PostgreSQL upsert on loan_number_sequences to prevent the
+   * TOCTOU race condition that the previous COUNT(*)-based approach had:
+   *   - Two concurrent requests both read count=N
+   *   - Both compute LN-YYYY-000(N+1)
+   *   - Second INSERT hits UQ_4382ec13ee491f4b516b8549d26 → 500
+   *
+   * INSERT ... ON CONFLICT DO UPDATE is serialised by PostgreSQL at the row
+   * level, so concurrent callers for the same (tenant_id, year) always receive
+   * strictly distinct sequence values — no application-level locking needed.
    */
   private async generateLoanNumber(tenantId: string): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await this.loanRequestRepository.count({ where: { tenant_id: tenantId } });
-    const seq = String(count + 1).padStart(6, '0');
+
+    const result: Array<{ last_seq: number }> = await this.loanNumberSequenceRepository.query(
+      `INSERT INTO loan_number_sequences (tenant_id, year, last_seq, updated_at)
+       VALUES ($1, $2, 1, now())
+       ON CONFLICT (tenant_id, year)
+       DO UPDATE SET
+         last_seq   = loan_number_sequences.last_seq + 1,
+         updated_at = now()
+       RETURNING last_seq`,
+      [tenantId, year],
+    );
+
+    const seq = String(result[0].last_seq).padStart(6, '0');
     return `LN-${year}-${seq}`;
   }
 
