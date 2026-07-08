@@ -20,7 +20,6 @@ import { Repository, DataSource, In } from 'typeorm';
 import { Lender, LenderStatus } from '../../entities/lender.entity';
 import { LenderPolicy } from '../../entities/lender-policy.entity';
 import { LoanRequest, LoanRequestStatus } from '../../entities/loan-request.entity';
-import { LoanNumberSequence } from '../../entities/loan-number-sequence.entity';
 import {
   LoanDisbursement,
   DisbursementStatus,
@@ -84,9 +83,6 @@ export class LendingService {
 
     @InjectRepository(LoanRequest)
     private loanRequestRepository: Repository<LoanRequest>,
-
-    @InjectRepository(LoanNumberSequence)
-    private loanNumberSequenceRepository: Repository<LoanNumberSequence>,
 
     @InjectRepository(LoanDisbursement)
     private loanDisbursementRepository: Repository<LoanDisbursement>,
@@ -1928,11 +1924,13 @@ export class LendingService {
    * INSERT ... ON CONFLICT DO UPDATE is serialised by PostgreSQL at the row
    * level, so concurrent callers for the same (tenant_id, year) always receive
    * strictly distinct sequence values — no application-level locking needed.
+   *
+   * The loan_number_sequences table is created by migration 039.
    */
   private async generateLoanNumber(tenantId: string): Promise<string> {
     const year = new Date().getFullYear();
 
-    const result: Array<{ last_seq: number }> = await this.loanNumberSequenceRepository.query(
+    const result: Array<{ last_seq: number }> = await this.dataSource.query(
       `INSERT INTO loan_number_sequences (tenant_id, year, last_seq, updated_at)
        VALUES ($1, $2, 1, now())
        ON CONFLICT (tenant_id, year)
