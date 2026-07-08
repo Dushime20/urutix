@@ -47,6 +47,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onViewPaymentDetails,
     onExport
 }) => {
+    const { format: formatAmount, compact: compactAmount } = useCurrencyFormat();
     const [showExportModal, setShowExportModal] = useState(false);
     const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
 
@@ -233,7 +234,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard title="Total Applications" value={analytics?.totalRequests ?? 0} subtitle="Lifetime requests" icon={<FileText size={18} />} color="primary" variant="classic" />
                 <StatCard title="Pending Approval" value={analytics?.pendingRequests ?? 0} subtitle="Requires attention" icon={<Clock size={18} />} color="primary" variant="classic" />
-                <StatCard title="Capital Requested" value={`${formatAmount((analytics?.totalAmountRequested / 1000 || 0))}K`} subtitle="Pipeline volume" icon={<DollarSign size={18} />} color="primary" variant="classic" />
+                <StatCard title="Capital Requested" value={compactAmount(analytics?.totalAmountRequested || 0)} subtitle="Pipeline volume" icon={<DollarSign size={18} />} color="primary" variant="classic" />
                 <StatCard title="Approval Rate" value={`${analytics?.approvalRate?.toFixed(1) || 0}%`} subtitle={`Avg risk: ${analytics?.averageRiskScore?.toFixed(0) || 0}%`} icon={<Shield size={18} />} color="primary" variant="classic" />
             </div>
 
