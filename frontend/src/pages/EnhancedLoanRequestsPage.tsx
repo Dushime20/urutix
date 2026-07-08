@@ -277,6 +277,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
     if (!form.cargo_id) { setError('Please select a cargo.'); return; }
     if (!form.trip_id) { setError('Please select a trip.'); return; }
     if (!form.beneficiary_id.trim()) { setError('Please enter a beneficiary.'); return; }
+    if (!form.lender_id) { setError('Please select a preferred lender.'); return; }
     
     const payload: CreateLoanRequestDto = {
       tenant_id: tenantId,
@@ -285,7 +286,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
       requested_amount: amount,
       created_by: userId,
       requested_split: [{ type: form.beneficiary_type, id: form.beneficiary_id.trim(), amount }],
-      ...(form.lender_id && { lender_id: form.lender_id }),
+      lender_id: form.lender_id,
       ...(form.due_date && { due_date: form.due_date }),
       metadata: { purpose: form.purpose || form.beneficiary_type },
     };
@@ -480,17 +481,26 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
 
           {/* Lender */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preferred Lender <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+              Preferred Lender <span className="text-rose-400">*</span>
+            </label>
             <div className="relative">
               <Landmark size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
               {loadingLenders && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
               <select value={form.lender_id} onChange={e => setForm(p => ({ ...p, lender_id: e.target.value }))}
-                className={selectCls(true)} disabled={loadingLenders}>
-                <option value="">{loadingLenders ? 'Loading lenders…' : 'Any available lender'}</option>
+                className={selectCls(true)} disabled={loadingLenders} required>
+                <option value="">
+                  {loadingLenders ? 'Loading lenders…' : lenders.length === 0 ? 'No lenders available in your tenant' : 'Select a lender'}
+                </option>
                 {lenders.map((l: any) => <option key={l.id} value={l.id}>{l.name}{l.contact_email ? ' — ' + l.contact_email : ''}</option>)}
               </select>
               <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
             </div>
+            {!loadingLenders && lenders.length === 0 && (
+              <p className="text-[10px] text-rose-500 mt-1.5 font-semibold flex items-center gap-1">
+                <AlertTriangle size={10} /> No active lenders found in your tenant. Ask your admin to add a lender first.
+              </p>
+            )}
           </div>
 
           {/* Date + Note */}
@@ -838,17 +848,26 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
 
           {/* Lender */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Preferred Lender <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+              Preferred Lender <span className="text-rose-400">*</span>
+            </label>
             <div className="relative">
               <Landmark size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
               {loadingLenders && <Loader2 size={14} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 animate-spin pointer-events-none z-10" />}
               <select value={form.lender_id} onChange={e => setForm(p => ({ ...p, lender_id: e.target.value }))}
-                className={selectCls(true)} disabled={loadingLenders}>
-                <option value="">{loadingLenders ? 'Loading lenders…' : 'Any available lender'}</option>
+                className={selectCls(true)} disabled={loadingLenders} required>
+                <option value="">
+                  {loadingLenders ? 'Loading lenders…' : lenders.length === 0 ? 'No lenders available in your tenant' : 'Select a lender'}
+                </option>
                 {lenders.map((l: any) => <option key={l.id} value={l.id}>{l.name}{l.contact_email ? ' — ' + l.contact_email : ''}</option>)}
               </select>
               <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
             </div>
+            {!loadingLenders && lenders.length === 0 && (
+              <p className="text-[10px] text-rose-500 mt-1.5 font-semibold flex items-center gap-1">
+                <AlertTriangle size={10} /> No active lenders found in your tenant. Ask your admin to add a lender first.
+              </p>
+            )}
           </div>
 
           {/* Note */}

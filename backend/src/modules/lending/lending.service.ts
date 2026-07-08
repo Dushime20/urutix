@@ -2002,13 +2002,67 @@ export class LendingService {
   async getAllLenders(tenantId?: string, status?: string): Promise<Lender[]> {
     const whereCondition: any = tenantId ? { tenant_id: tenantId } : {};
     if (status) {
-      whereCondition.status = status;
+      // Include ACTIVE + PAUSED so cargo owners see all available lenders.
+      // Only SUSPENDED lenders are hidden.
+      if (status === LenderStatus.ACTIVE) {
+        whereCondition.status = In([LenderStatus.ACTIVE, LenderStatus.PAUSED]);
+      } else {
+        whereCondition.status = status;
+      }
     }
-    return await this.lenderRepository.find({
+
+    // Primary query: lenders whose tenant_id matches directly
+    const directLenders = await this.lenderRepository.find({
       where: whereCondition,
       relations: ['policies'],
       order: { created_at: 'DESC' },
     });
+
+    // Secondary query: lenders whose tenant_id may be stale/null but whose
+    // contact_email matches a User with LENDER role in this tenant.
+    // This handles lenders created by SUPER_ADMIN without the correct tenant_id.
+    if (tenantId) {
+      const lenderUsersInTenant = await this.userRepository.find({
+        where: { tenantId, role: UserRole.LENDER, status: UserStatus.ACTIVE },
+        select: ['email'],
+      });
+
+      if (lenderUsersInTenant.length > 0) {
+        const emails = lenderUsersInTenant.map(u => u.email);
+        const directIds = new Set(directLenders.map(l => l.id));
+
+        const emailMatchedLenders = await this.lenderRepository.find({
+          where: { contact_email: In(emails) },
+          relations: ['policies'],
+          order: { created_at: 'DESC' },
+        });
+
+        for (const l of emailMatchedLenders) {
+          if (!directIds.has(l.id)) {
+            // Silently patch stale tenant_id so future queries work correctly
+            if (l.tenant_id !== tenantId) {
+              await this.lenderRepository.update(l.id, { tenant_id: tenantId });
+              l.tenant_id = tenantId;
+              this.logger.warn(
+                `[getAllLenders] Patched tenant_id for lender ${l.id} (${l.contact_email}) → ${tenantId}`,
+              );
+            }
+            // Apply status filter
+            const allowedStatuses: string[] =
+              status === LenderStatus.ACTIVE
+                ? [LenderStatus.ACTIVE, LenderStatus.PAUSED]
+                : status
+                ? [status]
+                : Object.values(LenderStatus);
+            if (allowedStatuses.includes(l.status)) {
+              directLenders.push(l);
+            }
+          }
+        }
+      }
+    }
+
+    return directLenders;
   }
 
   async getLenderByUserEmail(email: string): Promise<Lender | null> {
