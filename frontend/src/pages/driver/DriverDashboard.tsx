@@ -336,166 +336,179 @@ const DriverDashboard: React.FC = () => {
                 />
               </div>
 
-              {/* Middle Row: Active Mission (2/3) + Actions (1/3) */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                
-                {/* Active Mission (Col span 2) */}
-                <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between min-h-[300px]">
-                   <div className="flex items-center justify-between mb-4">
-                     <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Mission</h2>
-                     {analytics?.hos && (
-                       <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
-                         analytics.hos.status === 'Rest Required' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                         analytics.hos.status === 'Caution' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                         'bg-emerald-50 text-emerald-600 border-emerald-100'
-                       }`}>
-                         HOS: {analytics.hos.consecutiveDrivingHours.toFixed(1)}h / {analytics.hos.maxHoursPerShift}h
-                       </span>
-                     )}
-                   </div>
-                   {currentTrip ? (
-                      <div className="flex flex-col md:flex-row gap-8 h-full">
-                        <div className="flex-1 flex flex-col justify-between">
-                          <div>
-                            <p className="text-[10px] font-black text-[#2b5271] uppercase tracking-widest mb-2">Trip #{currentTrip.tripNumber || 'ACTIVE'}</p>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
-                              {currentTrip.origin.city || 'Origin'} <span className="text-slate-300 mx-2">→</span> {currentTrip.destination.city || 'Destination'}
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-4 mb-4">
-                              <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Status</p>
-                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase">{currentTrip.status.replace('_', ' ')}</p>
-                              </div>
-                              {currentTrip.estimatedArrival && (
-                                <div>
-                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ETA</p>
-                                  <p className="text-sm font-black text-[#2b5271] dark:text-white">
-                                    {new Date(currentTrip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                </div>
-                              )}
-                              {currentTrip.distance > 0 && (
-                                <div>
-                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Distance</p>
-                                  <p className="text-sm font-black text-slate-700 dark:text-white">{currentTrip.distance} km</p>
-                                </div>
-                              )}
-                              {currentTrip.earnings > 0 && (
-                                <div>
-                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Earnings</p>
-                                  <p className="text-sm font-black text-emerald-600">{fmtMoney(Number(currentTrip.earnings))}</p>
-                                </div>
-                              )}
-                            </div>
-                            {currentTrip.progress > 0 && (
-                              <div className="mb-4">
-                                <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                                  <span>Progress</span>
-                                  <span>{currentTrip.progress}%</span>
-                                </div>
-                                <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-[#2b5271] rounded-full transition-all duration-700"
-                                    style={{ width: `${Math.min(100, currentTrip.progress)}%` }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            {currentTrip.cargo?.description && (
-                              <p className="text-[10px] text-slate-400 font-medium mb-4 truncate">
-                                📦 {currentTrip.cargo.description} · {currentTrip.cargo.weight.toLocaleString()} kg
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {currentTrip.status === 'PLANNED' && (
-                              <button
-                                onClick={() => handleTripAction('start')}
-                                className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
-                              >
-                                Start Trip
-                              </button>
-                            )}
-                            {currentTrip.status === 'IN_PROGRESS' && (
-                              <>
-                                <button
-                                  onClick={() => handleTripAction('pause')}
-                                  className="bg-amber-50 text-amber-600 border border-amber-100 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-colors"
-                                >
-                                  Pause
-                                </button>
-                                <button
-                                  onClick={() => handleTripAction('complete')}
-                                  className="bg-emerald-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors"
-                                >
-                                  Complete
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-1 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] p-4 flex flex-col justify-center overflow-hidden">
-                           <DriverRouteMap trip={currentTrip} />
-                        </div>
-                      </div>
-                   ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                        <Route size={40} className="text-slate-200 dark:text-slate-700 mb-4" />
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">No Active Mission</h3>
-                        <p className="text-sm font-bold text-slate-500 mb-6">You are currently unassigned.</p>
-                        <button
-                          onClick={() => setActiveTab('missions')}
-                          className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
-                        >
-                          View Schedule
-                        </button>
-                      </div>
-                   )}
+              {/* Action Hub — horizontal tab strip above Active Mission */}
+              <div className="bg-white dark:bg-slate-800 rounded-[2rem] px-4 py-3 sm:px-6 sm:py-4">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Action Hub</p>
+                {/* Scrollable on very small screens, wraps on sm+ */}
+                <div className="flex items-stretch gap-2 overflow-x-auto pb-1 snap-x snap-mandatory sm:flex-wrap sm:overflow-x-visible sm:pb-0 scrollbar-none">
+                  <button
+                    onClick={() => setActiveTab('messages')}
+                    className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
+                  >
+                    <MessageIcon size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Dispatch</span>
+                  </button>
+                  <button
+                    onClick={() => handleEmergency('accident')}
+                    className="snap-start shrink-0 flex items-center gap-2.5 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white text-rose-600 dark:text-rose-400 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
+                  >
+                    <Shield size={16} className="shrink-0 transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Emergency</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('fuel')}
+                    className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
+                  >
+                    <FuelIcon size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Fuel Log</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('checklist')}
+                    className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
+                  >
+                    <ShieldCheck size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Inspection</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('missions')}
+                    className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
+                  >
+                    <Route size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">My Trips</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('cargo')}
+                    className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
+                  >
+                    <Package size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Cargo</span>
+                  </button>
                 </div>
+              </div>
 
-                {/* Actions (Col span 1) */}
-                <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 flex flex-col">
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Action Hub</h2>
-                  <div className="grid grid-cols-1 gap-3 flex-1">
-                    <button 
-                      onClick={() => setActiveTab('messages')}
-                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-left hover:bg-slate-100 transition-colors flex items-center gap-4 group"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-[#2b5271] group-hover:bg-[#2b5271] group-hover:text-white transition-colors">
-                        <MessageIcon size={20} />
+              {/* Active Mission — full width, map gets all remaining space */}
+              <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between min-h-[320px]">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Mission</h2>
+                  {analytics?.hos && (
+                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                      analytics.hos.status === 'Rest Required' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                      analytics.hos.status === 'Caution' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                      'bg-emerald-50 text-emerald-600 border-emerald-100'
+                    }`}>
+                      HOS: {analytics.hos.consecutiveDrivingHours.toFixed(1)}h / {analytics.hos.maxHoursPerShift}h
+                    </span>
+                  )}
+                </div>
+                {currentTrip ? (
+                  /* Two-column on md+: trip info left, map right (takes more space) */
+                  <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+                    {/* Trip details — compact on larger screens */}
+                    <div className="flex flex-col justify-between md:w-72 lg:w-80 shrink-0">
+                      <div>
+                        <p className="text-[10px] font-black text-[#2b5271] uppercase tracking-widest mb-2">
+                          Trip #{currentTrip.tripNumber || 'ACTIVE'}
+                        </p>
+                        <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
+                          {currentTrip.origin.city || 'Origin'}{' '}
+                          <span className="text-slate-300 mx-1">→</span>{' '}
+                          {currentTrip.destination.city || 'Destination'}
+                        </h3>
+                        <div className="flex flex-wrap gap-x-4 gap-y-3 mb-4">
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Status</p>
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
+                              {currentTrip.status.replace('_', ' ')}
+                            </p>
+                          </div>
+                          {currentTrip.estimatedArrival && (
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ETA</p>
+                              <p className="text-xs font-black text-[#2b5271] dark:text-white">
+                                {new Date(currentTrip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          )}
+                          {currentTrip.distance > 0 && (
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Distance</p>
+                              <p className="text-xs font-black text-slate-700 dark:text-white">{currentTrip.distance} km</p>
+                            </div>
+                          )}
+                          {currentTrip.earnings > 0 && (
+                            <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Earnings</p>
+                              <p className="text-xs font-black text-emerald-600">{fmtMoney(Number(currentTrip.earnings))}</p>
+                            </div>
+                          )}
+                        </div>
+                        {currentTrip.progress > 0 && (
+                          <div className="mb-4">
+                            <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                              <span>Progress</span>
+                              <span>{currentTrip.progress}%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-[#2b5271] rounded-full transition-all duration-700"
+                                style={{ width: `${Math.min(100, currentTrip.progress)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {currentTrip.cargo?.description && (
+                          <p className="text-[10px] text-slate-400 font-medium mb-4 truncate">
+                            📦 {currentTrip.cargo.description} · {currentTrip.cargo.weight.toLocaleString()} kg
+                          </p>
+                        )}
                       </div>
-                      <p className="text-xs font-black text-slate-700 dark:text-white uppercase tracking-widest">Dispatch</p>
-                    </button>
-                    <button 
-                      onClick={() => handleEmergency('accident')}
-                      className="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-2xl text-left hover:bg-rose-100 transition-colors flex items-center gap-4 group"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                        <Shield size={20} />
+                      {/* Trip action buttons */}
+                      <div className="flex items-center gap-3 mt-4">
+                        {currentTrip.status === 'PLANNED' && (
+                          <button
+                            onClick={() => handleTripAction('start')}
+                            className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                          >
+                            Start Trip
+                          </button>
+                        )}
+                        {currentTrip.status === 'IN_PROGRESS' && (
+                          <>
+                            <button
+                              onClick={() => handleTripAction('pause')}
+                              className="bg-amber-50 text-amber-600 border border-amber-100 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-colors"
+                            >
+                              Pause
+                            </button>
+                            <button
+                              onClick={() => handleTripAction('complete')}
+                              className="bg-emerald-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors"
+                            >
+                              Complete
+                            </button>
+                          </>
+                        )}
                       </div>
-                      <p className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">Emergency</p>
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('fuel')}
-                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-left hover:bg-slate-100 transition-colors flex items-center gap-4 group"
+                    </div>
+
+                    {/* Map — fills all remaining horizontal space */}
+                    <div className="flex-1 bg-slate-50 dark:bg-slate-900 rounded-[1.5rem] overflow-hidden min-h-[260px] sm:min-h-[320px]">
+                      <DriverRouteMap trip={currentTrip} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                    <Route size={40} className="text-slate-200 dark:text-slate-700 mb-4" />
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">No Active Mission</h3>
+                    <p className="text-sm font-bold text-slate-500 mb-6">You are currently unassigned.</p>
+                    <button
+                      onClick={() => setActiveTab('missions')}
+                      className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-[#2b5271] group-hover:bg-[#2b5271] group-hover:text-white transition-colors">
-                        <FuelIcon size={20} />
-                      </div>
-                      <p className="text-xs font-black text-slate-700 dark:text-white uppercase tracking-widest">Fuel Log</p>
-                    </button>
-                    <button 
-                      onClick={() => setActiveTab('checklist')}
-                      className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-left hover:bg-slate-100 transition-colors flex items-center gap-4 group"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-[#2b5271] group-hover:bg-[#2b5271] group-hover:text-white transition-colors">
-                        <ShieldCheck size={20} />
-                      </div>
-                      <p className="text-xs font-black text-slate-700 dark:text-white uppercase tracking-widest">Inspection</p>
+                      View Schedule
                     </button>
                   </div>
-                </div>
-
+                )}
               </div>
 
               {/* Bottom Row: Charts */}
