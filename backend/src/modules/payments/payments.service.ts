@@ -120,19 +120,43 @@ export class PaymentsService {
           );
         }
 
-        // Check if an active payment already exists for this trip
-        // (PENDING, PROCESSING, or COMPLETED — not FAILED/CANCELLED which can be retried)
-        const existingPayment = await this.paymentRepository.findOne({
-          where: [
-            { tripId: createPaymentDto.tripId, tenantId, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.PENDING },
-            { tripId: createPaymentDto.tripId, tenantId, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.PROCESSING },
-            { tripId: createPaymentDto.tripId, tenantId, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.COMPLETED },
-          ],
-        });
-        if (existingPayment)
-          throw new ConflictException(
-            `An active payment already exists for this trip (status: ${existingPayment.status}). Duplicate payments are not allowed.`,
-          );
+        // Check if an active payment already exists for this trip FROM THIS PAYER.
+        // Rules:
+        //  - One TRIP_PAYMENT per (tripId, payerId) — no duplicates.
+        //  - ADVANCE is allowed when no ADVANCE/TRIP_PAYMENT already exists.
+        //  - FINAL is allowed alongside a COMPLETED ADVANCE (split scenario).
+        //  - FAILED/CANCELLED may be retried (excluded from block list).
+        const blockStatuses = [PaymentStatus.PENDING, PaymentStatus.PROCESSING, PaymentStatus.COMPLETED];
+        const incomingType = createPaymentDto.paymentType as PaymentType;
+
+        if (incomingType === PaymentType.FINAL) {
+          // FINAL payment is allowed as long as there isn't already a FINAL active
+          const existingFinal = await this.paymentRepository.findOne({
+            where: blockStatuses.map(s => ({
+              tripId: createPaymentDto.tripId,
+              tenantId,
+              payerId: userId,
+              paymentType: PaymentType.FINAL,
+              status: s,
+            })) as any,
+          });
+          if (existingFinal)
+            throw new ConflictException(
+              `A final payment already exists for this trip (status: ${existingFinal.status}).`,
+            );
+        } else {
+          // For TRIP_PAYMENT and ADVANCE: block if any active TRIP_PAYMENT or ADVANCE exists
+          const existingPayment = await this.paymentRepository.findOne({
+            where: [
+              ...blockStatuses.map(s => ({ tripId: createPaymentDto.tripId, tenantId, payerId: userId, paymentType: PaymentType.TRIP_PAYMENT, status: s })),
+              ...blockStatuses.map(s => ({ tripId: createPaymentDto.tripId, tenantId, payerId: userId, paymentType: PaymentType.ADVANCE, status: s })),
+            ] as any,
+          });
+          if (existingPayment)
+            throw new ConflictException(
+              `An active payment already exists for this trip (type: ${existingPayment.paymentType}, status: ${existingPayment.status}). Duplicate payments are not allowed.`,
+            );
+        }
       }
     }
 

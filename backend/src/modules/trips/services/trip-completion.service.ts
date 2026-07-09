@@ -96,19 +96,44 @@ export class TripCompletionService {
       throw new NotFoundException('Load not found for trip');
     }
 
-    // Check if payment already exists to avoid duplicates
-    const existingPayment = await this.paymentRepository.findOne({
-      where: {
-        tripId,
-        tenantId,
-        paymentType: PaymentType.TRIP_PAYMENT,
-      },
+    // ── Duplicate prevention ──────────────────────────────────────────────────
+    // Check for an existing active obligation for THIS cargo owner on this trip.
+    // We check payerId=cargoOwner so a lender's TRIP_PAYMENT (payerId=lender)
+    // does NOT block creation of the cargo owner obligation.
+    // We allow ADVANCE + FINAL to coexist (split payment), but only one
+    // TRIP_PAYMENT per (tripId, payerId) may be PENDING/PROCESSING/COMPLETED.
+    const existingCargoOwnerPayment = await this.paymentRepository.findOne({
+      where: [
+        { tripId, tenantId, payerId: cargoOwner.id, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.PENDING },
+        { tripId, tenantId, payerId: cargoOwner.id, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.PROCESSING },
+        { tripId, tenantId, payerId: cargoOwner.id, paymentType: PaymentType.TRIP_PAYMENT, status: PaymentStatus.COMPLETED },
+      ],
     });
 
-    if (existingPayment) {
-      this.logger.log(`Payment already exists for trip ${tripId}: ${existingPayment.id}`);
-      return { payment: existingPayment };
+    if (existingCargoOwnerPayment) {
+      this.logger.log(`Cargo owner obligation already exists for trip ${tripId}: ${existingCargoOwnerPayment.id} (status: ${existingCargoOwnerPayment.status})`);
+      return { payment: existingCargoOwnerPayment };
     }
+
+    // Also skip if the cargo owner already paid an ADVANCE — the FINAL payment
+    // covers the remaining balance and was created at advance time.
+    const advancePaid = await this.paymentRepository.findOne({
+      where: [
+        { tripId, tenantId, payerId: cargoOwner.id, paymentType: PaymentType.ADVANCE, status: PaymentStatus.COMPLETED },
+        { tripId, tenantId, payerId: cargoOwner.id, paymentType: PaymentType.ADVANCE, status: PaymentStatus.PROCESSING },
+      ],
+    });
+    const finalPending = await this.paymentRepository.findOne({
+      where: [
+        { tripId, tenantId, payerId: cargoOwner.id, paymentType: PaymentType.FINAL, status: PaymentStatus.PENDING },
+        { tripId, tenantId, payerId: cargoOwner.id, paymentType: PaymentType.FINAL, status: PaymentStatus.ESCROW },
+      ],
+    });
+    if (advancePaid && finalPending) {
+      this.logger.log(`Advance paid + final payment already pending for trip ${tripId} — no new TRIP_PAYMENT needed`);
+      return { payment: finalPending };
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Get cargo owner and truck owner details
     const cargoOwner = await this.userRepository.findOne({
