@@ -100,6 +100,10 @@ export class PendingPaymentsController {
           paymentSource: (payment.metadata as any)?.paymentSource ||
             (payment.metadata as any)?.customFields?.paymentSource ||
             ((payment.metadata as any)?.isLenderPayment ? 'lender_disbursement' : 'direct_payment'),
+          // Whether this is a repayment obligation created when lender paid truck owner on behalf of cargo owner
+          isLoanRepaymentObligation: !!(payment.metadata as any)?.isLoanRepaymentObligation,
+          loanId: (payment.metadata as any)?.loanId ?? null,
+          lenderName: (payment.metadata as any)?.lenderName ?? null,
           trip: payment.trip ? {
             id: payment.trip.id,
             tripNumber: payment.trip.tripNumber,

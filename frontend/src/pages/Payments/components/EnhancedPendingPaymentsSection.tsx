@@ -247,7 +247,9 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
       (payment.isLenderPayment ? 'lender_disbursement' : 'direct_payment');
 
     const sourceLabel =
-      paymentSource === 'lender_disbursement'
+      payment.isLoanRepaymentObligation
+        ? { text: `Repay Lender${payment.lenderName ? ` · ${payment.lenderName}` : ''}`, color: 'bg-purple-100 text-purple-700' }
+        : paymentSource === 'lender_disbursement'
         ? { text: 'Via Lender', color: 'bg-purple-100 text-purple-700' }
         : paymentSource === 'direct_payment'
         ? { text: 'Direct Payment', color: 'bg-blue-100 text-blue-700' }

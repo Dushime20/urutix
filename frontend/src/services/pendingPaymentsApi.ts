@@ -16,6 +16,9 @@ export interface PendingPayment {
   paymentSource?: 'direct_payment' | 'lender_disbursement' | 'auto_created';
   isLenderPayment?: boolean;
   lenderName?: string | null;
+  /** True when this is a cargo owner obligation to repay a lender who paid the truck owner */
+  isLoanRepaymentObligation?: boolean;
+  loanId?: string | null;
   trip: {
     id: string;
     tripNumber: string;

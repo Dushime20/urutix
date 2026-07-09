@@ -1640,6 +1640,69 @@ export class LendingService {
                 loan.status = LoanRequestStatus.DISBURSED;
                 await manager.save(LoanDisbursement, disbursement);
                 await manager.save(LoanRequest, loan);
+
+                // ── Cargo owner obligation ────────────────────────────────────
+                // The lender just paid the truck owner on the cargo owner's behalf.
+                // 1. Cancel any existing PENDING trip payment for this trip that was
+                //    auto-created at trip completion (cargo owner → truck owner debt
+                //    is now replaced by cargo owner → lender debt).
+                // 2. Create a new PENDING payment record so the cargo owner can see
+                //    and settle their obligation to the lender from /pending-payments.
+                const cargoOwnerId: string = loan.created_by;
+                const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } = await import('../../entities/payment.entity');
+
+                // 1. Cancel the old trip-payment obligation if it exists
+                const existingTripPayment = await manager.findOne(PaymentEntity, {
+                  where: {
+                    tripId: trip.id,
+                    payerId: cargoOwnerId,
+                    paymentType: PmtType.TRIP_PAYMENT,
+                    status: PmtStatus.PENDING,
+                  } as any,
+                });
+                if (existingTripPayment) {
+                  existingTripPayment.status = PmtStatus.CANCELLED;
+                  (existingTripPayment.metadata as any) = {
+                    ...(existingTripPayment.metadata || {}),
+                    cancelledReason: 'Replaced by lender disbursement obligation',
+                    loanId: loan.id,
+                    cancelledAt: new Date().toISOString(),
+                  };
+                  await manager.save(PaymentEntity, existingTripPayment);
+                  this.logger.log(`Cancelled existing trip payment ${existingTripPayment.id} — replaced by lender obligation`);
+                }
+
+                // 2. Create cargo owner → lender repayment obligation
+                const dueDate = loan.due_date ? new Date(loan.due_date) : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
+                const obligationAmount = Number(loan.approved_amount || loan.requested_amount) + Number(loan.interest_amount || 0);
+                const obligationPayment = manager.create(PaymentEntity, {
+                  tripId: trip.id,
+                  tenantId: loan.tenant_id,
+                  payerId: cargoOwnerId,
+                  payeeId: lenderUserId,           // lender user id as payee
+                  amount: obligationAmount,
+                  currency: 'RWF',
+                  paymentMethod: PmtMethod.BANK_TRANSFER,
+                  paymentType: PmtType.TRIP_PAYMENT,
+                  status: PmtStatus.PENDING,
+                  dueDate,
+                  description: `Loan repayment to lender for trip ${trip.id.slice(-8).toUpperCase()}`,
+                  referenceNumber: `LREP-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
+                  metadata: {
+                    isLoanRepaymentObligation: true,
+                    isLenderPayment: false,
+                    loanId: loan.id,
+                    lenderName: loan.lender?.name ?? null,
+                    lenderId: loan.lender_id,
+                    cargoOwnerId,
+                    originalDisbursementPaymentId: processedPayment.id,
+                    paymentSource: 'lender_disbursement',
+                    automaticallyCreated: true,
+                  },
+                } as any);
+                await manager.save(PaymentEntity, obligationPayment);
+                this.logger.log(`Created cargo owner obligation payment ${obligationPayment.id} for loan ${loan.id}`);
+                // ─────────────────────────────────────────────────────────────
               } else {
                 throw new BadRequestException(`Payment processing failed with status: ${processedPayment.status}`);
               }
@@ -1675,6 +1738,66 @@ export class LendingService {
       await this.processDisbursementToBeneficiaries(savedDisbursement);
       loan.status = LoanRequestStatus.DISBURSED;
       await manager.save(LoanRequest, loan);
+
+      // ── Cargo owner obligation (fallback / non-MoMo path) ─────────────────
+      try {
+        const cargoOwnerId: string = loan.created_by;
+        const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } = await import('../../entities/payment.entity');
+
+        // Cancel old trip-payment obligation if exists
+        const existingTripPayment = await manager.findOne(PaymentEntity, {
+          where: {
+            tripId: trip.id,
+            payerId: cargoOwnerId,
+            paymentType: PmtType.TRIP_PAYMENT,
+            status: PmtStatus.PENDING,
+          } as any,
+        });
+        if (existingTripPayment) {
+          existingTripPayment.status = PmtStatus.CANCELLED;
+          (existingTripPayment.metadata as any) = {
+            ...(existingTripPayment.metadata || {}),
+            cancelledReason: 'Replaced by lender disbursement obligation',
+            loanId: loan.id,
+            cancelledAt: new Date().toISOString(),
+          };
+          await manager.save(PaymentEntity, existingTripPayment);
+        }
+
+        // Create cargo owner → lender obligation
+        const dueDate = loan.due_date ? new Date(loan.due_date) : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
+        const obligationAmount = Number(loan.approved_amount || loan.requested_amount) + Number(loan.interest_amount || 0);
+        const obligationPayment = manager.create(PaymentEntity, {
+          tripId: trip.id,
+          tenantId: loan.tenant_id,
+          payerId: cargoOwnerId,
+          payeeId: lenderUserId,
+          amount: obligationAmount,
+          currency: 'RWF',
+          paymentMethod: PmtMethod.BANK_TRANSFER,
+          paymentType: PmtType.TRIP_PAYMENT,
+          status: PmtStatus.PENDING,
+          dueDate,
+          description: `Loan repayment to lender for trip ${trip.id.slice(-8).toUpperCase()}`,
+          referenceNumber: `LREP-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
+          metadata: {
+            isLoanRepaymentObligation: true,
+            isLenderPayment: false,
+            loanId: loan.id,
+            lenderName: loan.lender?.name ?? null,
+            lenderId: loan.lender_id,
+            cargoOwnerId,
+            paymentSource: 'lender_disbursement',
+            automaticallyCreated: true,
+          },
+        } as any);
+        await manager.save(PaymentEntity, obligationPayment);
+        this.logger.log(`Created cargo owner obligation payment ${obligationPayment.id} for loan ${loan.id} (fallback path)`);
+      } catch (err: any) {
+        // Non-fatal — disbursement already succeeded
+        this.logger.error(`Failed to create cargo owner obligation (fallback): ${err.message}`);
+      }
+      // ──────────────────────────────────────────────────────────────────────
 
       return {
         success: true,
