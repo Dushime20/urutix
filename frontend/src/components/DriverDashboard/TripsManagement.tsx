@@ -34,6 +34,7 @@ import { AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { getApiErrorMessage } from '../../config/errorMessages';
+import { ProofOfDelivery } from './ProofOfDelivery';
 
 interface TripsManagementProps {
   driverId: string;
@@ -46,6 +47,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'previous'>('active');
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
   const [selectedTripDetail, setSelectedTripDetail] = useState<string | null>(null);
+  const [epodTrip, setEpodTrip] = useState<{ id: string; tripNumber?: string; cargoTitle?: string } | null>(null);
 
   // Fetch driver profile to get currentTruckId
   const { data: driverProfile } = useQuery({
@@ -93,15 +95,12 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
     }
   };
 
-  const handleCompleteTrip = async (tripId: string) => {
-    try {
-      await driverApi.completeTrip(tripId);
-      toast.success('Trip completed successfully!');
-      queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
-      queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
-    } catch (error: any) {
-      toast.error(getApiErrorMessage(error));
-    }
+  const handleCompleteTrip = (trip: { id: string; tripNumber?: string; cargo?: { description?: string } }) => {
+    setEpodTrip({
+      id: trip.id,
+      tripNumber: trip.tripNumber,
+      cargoTitle: trip.cargo?.description,
+    });
   };
 
   return (
@@ -262,7 +261,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                   {/* Actions */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleCompleteTrip(currentTrip.id)}
+                      onClick={() => handleCompleteTrip(currentTrip)}
                       className="flex-1 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                     >
                       <CheckCircle size={13} />
@@ -776,6 +775,55 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             </motion.div>
           );
         })()}
+      </AnimatePresence>
+
+      {/* ── ePOD Full-Screen Modal ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {epodTrip && (
+          <motion.div
+            key="epod-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          >
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+
+            {/* Modal panel */}
+            <motion.div
+              initial={{ y: 80, opacity: 0, scale: 0.97 }}
+              animate={{ y: 0,  opacity: 1, scale: 1    }}
+              exit={{    y: 80, opacity: 0, scale: 0.97 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="relative w-full sm:max-w-2xl h-[96vh] sm:h-auto sm:max-h-[92vh] flex flex-col rounded-t-[2rem] sm:rounded-[2rem] overflow-hidden shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <ProofOfDelivery
+                tripId={epodTrip.id}
+                tripNumber={epodTrip.tripNumber}
+                cargoTitle={epodTrip.cargoTitle}
+                origin={currentTrip?.origin?.city}
+                destination={currentTrip?.destination?.city}
+                cargoWeight={currentTrip?.cargo?.weight}
+                onComplete={() => {
+                  setEpodTrip(null);
+                  // Refresh trip lists — trip is now COMPLETED via ePOD service
+                  queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
+                  queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
+                  queryClient.invalidateQueries({ queryKey: ['driver-stats'] });
+                  setActiveTab('previous');
+                }}
+                onCancel={() => setEpodTrip(null)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
     </div>

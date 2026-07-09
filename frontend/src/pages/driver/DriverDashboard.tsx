@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useLocation } from 'react-router-dom';
 import {
@@ -46,7 +47,7 @@ import { DriverDocuments } from '../../components/DriverDashboard/DriverDocument
 import { MonthlyLeaderboard } from '../../components/DriverDashboard/MonthlyLeaderboard';
 import { IncidentReportModal } from '../../components/DriverDashboard/IncidentReportModal';
 import { PostTripChecklist } from '../../components/DriverDashboard/PostTripChecklist';
-import { PostTripChecklistModal } from '../../components/DriverDashboard/PostTripChecklistModal';
+import { ProofOfDelivery } from '../../components/DriverDashboard/ProofOfDelivery';
 import { RewardsTimeline } from '../../components/DriverDashboard/RewardsTimeline';
 import { MaintenanceHealth } from '../../components/DriverDashboard/MaintenanceHealth';
 import { MyTruck } from '../../components/DriverDashboard/MyTruck';
@@ -172,8 +173,9 @@ const DriverDashboard: React.FC = () => {
     }
     try {
       if (action === 'complete') {
+        // Open ePOD — trip is only marked complete after ePOD is submitted
         setShowPostTripModal(true);
-        return; // Don't call API yet, wait for checklist
+        return;
       }
 
       const actionLabels = {
@@ -608,15 +610,51 @@ const DriverDashboard: React.FC = () => {
         }}
       />
 
-      <PostTripChecklistModal 
-        isOpen={showPostTripModal}
-        onClose={() => setShowPostTripModal(false)}
-        onComplete={confirmTripCompletion}
-        truckId={currentTrip?.truck?.id}
-        truckPlate={currentTrip?.truck?.plateNumber}
-        driverId={driverId}
-        driverName={driver ? `${driver.firstName} ${driver.lastName}` : undefined}
-      />
+      {/* ── ePOD Modal — opens when driver clicks "Complete Trip" ── */}
+      <AnimatePresence>
+        {showPostTripModal && currentTrip && (
+          <motion.div
+            key="epod-overview-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowPostTripModal(false)}
+            />
+            <motion.div
+              initial={{ y: 80, opacity: 0, scale: 0.97 }}
+              animate={{ y: 0,  opacity: 1, scale: 1    }}
+              exit={{    y: 80, opacity: 0, scale: 0.97 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="relative w-full sm:max-w-2xl h-[96vh] sm:h-auto sm:max-h-[92vh] flex flex-col rounded-t-[2rem] sm:rounded-[2rem] overflow-hidden shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <ProofOfDelivery
+                tripId={currentTrip.id}
+                tripNumber={currentTrip.tripNumber}
+                cargoTitle={currentTrip.cargo?.description}
+                origin={currentTrip.origin?.city}
+                destination={currentTrip.destination?.city}
+                cargoWeight={currentTrip.cargo?.weight}
+                onComplete={() => {
+                  setShowPostTripModal(false);
+                  queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
+                  queryClient.invalidateQueries({ queryKey: ['driver-stats'] });
+                  setActiveTab('overview');
+                  toast.success('Mission finalized — ePOD submitted & invoice generated.', { duration: 5000 });
+                }}
+                onCancel={() => setShowPostTripModal(false)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

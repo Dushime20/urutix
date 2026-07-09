@@ -111,24 +111,39 @@ export class EpodService {
       }
     }
 
-    // 6. Create ePOD record
+    // 6. Create ePOD record — map all fields including new international-standard ones
     const epod = this.epodRepository.create({
       tenantId,
       tripId,
       driverId: driver.id,
       cargoOwnerId: load.cargoOwnerId,
-      recipientName: dto.recipientName,
-      recipientPhone: dto.recipientPhone,
-      deliveryNotes: dto.deliveryNotes,
-      odometerReading: dto.odometerReading,
+
+      // ── Recipient identity ──────────────────────────────────────────────
+      recipientName:      dto.recipientName,
+      recipientPhone:     dto.recipientPhone,
+      recipientIdNumber:  dto.recipientIdNumber,
+      recipientCompany:   dto.recipientCompany,
+
+      // ── Delivery details ────────────────────────────────────────────────
+      deliveredAt:     dto.deliveredAt ? new Date(dto.deliveredAt) : new Date(),
       deliveryAddress: dto.deliveryAddress,
+      odometerReading: dto.odometerReading,
       deliveryCoordinates:
         dto.latitude && dto.longitude
           ? { latitude: Number(dto.latitude), longitude: Number(dto.longitude) }
           : undefined,
+
+      // ── Cargo condition (CMR / BoL) ─────────────────────────────────────
+      cargoCondition: dto.cargoCondition ?? CargoConditionOnDelivery.INTACT,
+      unitsDelivered: dto.unitsDelivered,
+      deliveryNotes:  dto.deliveryNotes,
+      exceptionNotes: dto.exceptionNotes,
+
+      // ── Files ───────────────────────────────────────────────────────────
       signatureFileUrl,
       photoUrls,
-      status: EpodStatus.PENDING,
+
+      status:      EpodStatus.PENDING,
       submittedAt: new Date(),
     });
 
@@ -435,37 +450,68 @@ export class EpodService {
     load: Load,
     tenantId: string,
   ): Promise<void> {
-    const cargoTitle = load.title || load.cargoType || 'Cargo';
+    const cargoTitle   = load.title || load.cargoType || 'Cargo';
+    const conditionMap: Record<string, string> = {
+      INTACT:          '✅ Intact',
+      PARTIAL_DAMAGE:  '⚠️ Partial damage reported',
+      SHORT_DELIVERY:  '⚠️ Short delivery reported',
+      FULL_DAMAGE:     '🔴 Full damage reported',
+    };
+    const conditionLabel = conditionMap[epod.cargoCondition] ?? '✅ Intact';
 
-    // Notify cargo owner
+    // ── Cargo owner ────────────────────────────────────────────────────────
     await this.notificationService.createNotification({
-      userId: load.cargoOwnerId,
+      userId:   load.cargoOwnerId,
       tenantId,
-      subject: '📦 Delivery Confirmed — ePOD Submitted',
-      content: `Your cargo "${cargoTitle}" (Trip ${trip.tripNumber}) has been delivered. Recipient: ${epod.recipientName}. An invoice has been generated.`,
-      type: NotificationType.TRIP_COMPLETED,
-      category: NotificationCategory.TRIP,
-      channel: NotificationChannel.IN_APP,
-      priority: 'HIGH' as any,
+      subject:  '📦 Delivery Confirmed — ePOD Submitted',
+      content:  `Your cargo "${cargoTitle}" (Trip ${trip.tripNumber}) has been delivered. `
+              + `Recipient: ${epod.recipientName}${epod.recipientCompany ? ` (${epod.recipientCompany})` : ''}. `
+              + `Condition: ${conditionLabel}. `
+              + `An invoice has been generated and a payment obligation has been created.`,
+      type:      NotificationType.TRIP_COMPLETED,
+      category:  NotificationCategory.TRIP,
+      channel:   NotificationChannel.IN_APP,
+      priority:  epod.cargoCondition === 'INTACT' ? 'HIGH' : 'CRITICAL',
       actionUrl: `/dashboard/trips`,
-      actionText: 'View ePOD & Invoice',
-      metadata: { tripId: trip.id, epodId: epod.id },
+      actionText:'View ePOD & Invoice',
+      metadata:  { tripId: trip.id, epodId: epod.id, cargoCondition: epod.cargoCondition },
     } as any);
 
-    // Notify truck owner
+    // ── Truck owner ────────────────────────────────────────────────────────
     if (trip.truck?.ownerId) {
       await this.notificationService.createNotification({
-        userId: trip.truck.ownerId,
+        userId:   trip.truck.ownerId,
         tenantId,
-        subject: '✅ Trip Completed — ePOD Submitted',
-        content: `Trip ${trip.tripNumber} has been completed. ePOD submitted by driver. Recipient: ${epod.recipientName}.`,
-        type: NotificationType.TRIP_COMPLETED,
-        category: NotificationCategory.TRIP,
-        channel: NotificationChannel.IN_APP,
-        priority: 'NORMAL' as any,
+        subject:  '✅ Trip Completed — ePOD Submitted',
+        content:  `Trip ${trip.tripNumber} has been completed. `
+                + `ePOD submitted. Recipient: ${epod.recipientName}. `
+                + `Cargo condition: ${conditionLabel}. `
+                + `A payment obligation has been created — you will be paid once the cargo owner settles.`,
+        type:      NotificationType.TRIP_COMPLETED,
+        category:  NotificationCategory.TRIP,
+        channel:   NotificationChannel.IN_APP,
+        priority:  'NORMAL',
         actionUrl: `/dashboard/fleet/trips`,
-        actionText: 'View Trip',
-        metadata: { tripId: trip.id, epodId: epod.id },
+        actionText:'View Trip & Payment',
+        metadata:  { tripId: trip.id, epodId: epod.id },
+      } as any);
+    }
+
+    // ── Driver ─────────────────────────────────────────────────────────────
+    if (trip.driverId) {
+      await this.notificationService.createNotification({
+        userId:   trip.driverId,
+        tenantId,
+        subject:  '🏁 Mission Complete',
+        content:  `Trip ${trip.tripNumber} has been finalized. ePOD recorded. `
+                + `Cargo condition: ${conditionLabel}.`,
+        type:      NotificationType.TRIP_COMPLETED,
+        category:  NotificationCategory.TRIP,
+        channel:   NotificationChannel.IN_APP,
+        priority:  'NORMAL',
+        actionUrl: `/dashboard/missions`,
+        actionText:'View Completed Trip',
+        metadata:  { tripId: trip.id, epodId: epod.id },
       } as any);
     }
   }

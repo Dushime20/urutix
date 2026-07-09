@@ -14,9 +14,19 @@ import { User } from './user.entity';
 import { Driver } from './driver.entity';
 
 export enum EpodStatus {
-  PENDING   = 'PENDING',   // submitted, awaiting cargo-owner confirmation
+  PENDING   = 'PENDING',   // submitted by driver, awaiting cargo-owner confirmation
   CONFIRMED = 'CONFIRMED', // cargo owner confirmed receipt
   DISPUTED  = 'DISPUTED',  // cargo owner raised a dispute
+}
+
+/**
+ * Cargo condition at the point of delivery — aligns with CMR / BoL standards.
+ */
+export enum CargoConditionOnDelivery {
+  INTACT         = 'INTACT',          // All units received in perfect condition
+  PARTIAL_DAMAGE = 'PARTIAL_DAMAGE',  // Some units damaged — exception report required
+  SHORT_DELIVERY = 'SHORT_DELIVERY',  // Fewer units delivered than manifested
+  FULL_DAMAGE    = 'FULL_DAMAGE',     // Cargo is unusable — full exception report required
 }
 
 @Entity('epods')
@@ -48,40 +58,69 @@ export class Epod {
   cargoOwnerId: string;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'cargoOwnerId' })
+  @JoinColumn({ name: 'cargoOwner' })
   cargoOwner?: User;
 
-  // ── Recipient ──────────────────────────────────────────────────────────────
+  // ── Recipient identity ─────────────────────────────────────────────────────
+  /** Full legal name of the person who received the cargo */
   @Column({ length: 200 })
   recipientName: string;
 
-  @Column({ nullable: true })
+  @Column({ length: 50, nullable: true })
   recipientPhone?: string;
 
-  // ── Signature ─────────────────────────────────────────────────────────────
-  /** Path to the saved signature PNG file */
-  @Column({ nullable: true })
+  /** National ID or passport number — required for high-value / bonded cargo */
+  @Column({ length: 100, nullable: true })
+  recipientIdNumber?: string;
+
+  /** Company or organisation the recipient represents */
+  @Column({ length: 200, nullable: true })
+  recipientCompany?: string;
+
+  // ── Signature & photos ─────────────────────────────────────────────────────
+  /** Path / URL of the saved signature PNG */
+  @Column({ length: 500, nullable: true })
   signatureFileUrl?: string;
 
-  // ── Delivery photos ───────────────────────────────────────────────────────
-  /** Array of file URLs for delivery photos */
+  /** Array of delivery photo URLs (up to 8) */
   @Column('jsonb', { default: [] })
   photoUrls: string[];
 
-  // ── Delivery details ──────────────────────────────────────────────────────
-  @Column({ nullable: true })
+  // ── Delivery details ───────────────────────────────────────────────────────
+  /** Actual delivery date-time as reported by driver */
+  @Column('timestamp with time zone', { nullable: true })
+  deliveredAt?: Date;
+
+  @Column({ type: 'text', nullable: true })
   deliveryNotes?: string;
 
-  @Column({ nullable: true })
+  @Column({ length: 100, nullable: true })
   odometerReading?: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   deliveryAddress?: string;
 
   /** GPS coordinates at time of delivery */
   @Column('jsonb', { nullable: true })
   deliveryCoordinates?: { latitude: number; longitude: number };
 
+  // ── Cargo condition (CMR / BoL standard) ──────────────────────────────────
+  @Column({
+    type: 'enum',
+    enum: CargoConditionOnDelivery,
+    default: CargoConditionOnDelivery.INTACT,
+  })
+  cargoCondition: CargoConditionOnDelivery;
+
+  /** Actual units / pieces delivered (for short-delivery reconciliation) */
+  @Column({ length: 100, nullable: true })
+  unitsDelivered?: string;
+
+  /** Exception / damage description — required when cargoCondition !== INTACT */
+  @Column({ type: 'text', nullable: true })
+  exceptionNotes?: string;
+
+  // ── Status lifecycle ───────────────────────────────────────────────────────
   @Column({
     type: 'enum',
     enum: EpodStatus,

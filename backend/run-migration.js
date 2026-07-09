@@ -31,28 +31,58 @@ const migrations = [
     `,
   },
   {
+    name: 'create_cargo_condition_enum',
+    sql: `
+      DO $$ BEGIN
+        CREATE TYPE cargo_condition_on_delivery_enum AS ENUM (
+          'INTACT', 'PARTIAL_DAMAGE', 'SHORT_DELIVERY', 'FULL_DAMAGE'
+        );
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `,
+  },
+  {
     name: 'create_epods_table',
     sql: `
       CREATE TABLE IF NOT EXISTS epods (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        "tenantId"             UUID NOT NULL,
-        "tripId"               UUID NOT NULL UNIQUE,
-        "driverId"             UUID NOT NULL,
-        "cargoOwnerId"         UUID NOT NULL,
-        "recipientName"        VARCHAR(200) NOT NULL,
-        "recipientPhone"       VARCHAR(50),
-        "signatureFileUrl"     VARCHAR(500),
-        "photoUrls"            JSONB NOT NULL DEFAULT '[]',
-        "deliveryNotes"        TEXT,
-        "odometerReading"      VARCHAR(100),
-        "deliveryAddress"      TEXT,
-        "deliveryCoordinates"  JSONB,
-        status                 epod_status_enum NOT NULL DEFAULT 'PENDING',
-        "submittedAt"          TIMESTAMP WITH TIME ZONE NOT NULL,
-        "confirmedAt"          TIMESTAMP WITH TIME ZONE,
-        "invoiceId"            UUID,
-        "createdAt"            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        "updatedAt"            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+        id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "tenantId"            UUID NOT NULL,
+        "tripId"              UUID NOT NULL UNIQUE,
+        "driverId"            UUID NOT NULL,
+        "cargoOwnerId"        UUID NOT NULL,
+
+        -- Recipient identity (international BoL / CMR standard)
+        "recipientName"       VARCHAR(200) NOT NULL,
+        "recipientPhone"      VARCHAR(50),
+        "recipientIdNumber"   VARCHAR(100),
+        "recipientCompany"    VARCHAR(200),
+
+        -- Signature & photo evidence
+        "signatureFileUrl"    VARCHAR(500),
+        "photoUrls"           JSONB NOT NULL DEFAULT '[]',
+
+        -- Delivery details
+        "deliveredAt"         TIMESTAMP WITH TIME ZONE,
+        "deliveryNotes"       TEXT,
+        "odometerReading"     VARCHAR(100),
+        "deliveryAddress"     TEXT,
+        "deliveryCoordinates" JSONB,
+
+        -- Cargo condition at delivery
+        "cargoCondition"      cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT',
+        "unitsDelivered"      VARCHAR(100),
+        "exceptionNotes"      TEXT,
+
+        -- Status lifecycle
+        status                epod_status_enum NOT NULL DEFAULT 'PENDING',
+        "submittedAt"         TIMESTAMP WITH TIME ZONE NOT NULL,
+        "confirmedAt"         TIMESTAMP WITH TIME ZONE,
+        "disputedAt"          TIMESTAMP WITH TIME ZONE,
+        "disputeReason"       TEXT,
+        "invoiceId"           UUID,
+
+        "createdAt"           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        "updatedAt"           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       )
     `,
   },
@@ -61,6 +91,55 @@ const migrations = [
     sql: `
       CREATE INDEX IF NOT EXISTS idx_epods_tenant_status ON epods ("tenantId", status);
       CREATE INDEX IF NOT EXISTS idx_epods_cargo_owner   ON epods ("cargoOwnerId");
+      CREATE INDEX IF NOT EXISTS idx_epods_driver        ON epods ("driverId");
+      CREATE INDEX IF NOT EXISTS idx_epods_submitted_at  ON epods ("submittedAt");
+    `,
+  },
+  // ── Safe ALTER columns for existing epods tables (idempotent) ─────────────
+  {
+    name: 'epods_add_recipient_id_number',
+    sql: `ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientIdNumber" VARCHAR(100)`,
+  },
+  {
+    name: 'epods_add_recipient_company',
+    sql: `ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientCompany" VARCHAR(200)`,
+  },
+  {
+    name: 'epods_add_delivered_at',
+    sql: `ALTER TABLE epods ADD COLUMN IF NOT EXISTS "deliveredAt" TIMESTAMP WITH TIME ZONE`,
+  },
+  {
+    name: 'epods_add_cargo_condition',
+    sql: `
+      DO $$ BEGIN
+        ALTER TABLE epods ADD COLUMN "cargoCondition" cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT';
+      EXCEPTION WHEN duplicate_column THEN NULL;
+      END $$
+    `,
+  },
+  {
+    name: 'epods_add_units_delivered',
+    sql: `ALTER TABLE epods ADD COLUMN IF NOT EXISTS "unitsDelivered" VARCHAR(100)`,
+  },
+  {
+    name: 'epods_add_exception_notes',
+    sql: `ALTER TABLE epods ADD COLUMN IF NOT EXISTS "exceptionNotes" TEXT`,
+  },
+  {
+    name: 'epods_add_disputed_at',
+    sql: `ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputedAt" TIMESTAMP WITH TIME ZONE`,
+  },
+  {
+    name: 'epods_add_dispute_reason',
+    sql: `ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputeReason" TEXT`,
+  },
+  {
+    name: 'epods_resize_recipient_phone',
+    sql: `
+      DO $$ BEGIN
+        ALTER TABLE epods ALTER COLUMN "recipientPhone" TYPE VARCHAR(50);
+      EXCEPTION WHEN others THEN NULL;
+      END $$
     `,
   },
 ];
