@@ -39,6 +39,8 @@ export interface TruckAvailabilityQuery {
   tenantId: string;
   capacityWeight?: number;
   truckType?: string;
+  /** When set, only return trucks owned by this user (TRUCK_OWNER / FLEET_MANAGER scope) */
+  ownerId?: string;
 }
 
 export interface DriverAvailabilityQuery {
@@ -274,7 +276,7 @@ export class AvailabilityService {
    * and trucks that are MAINTENANCE or OUT_OF_SERVICE.
    */
   async getAvailableTrucks(query: TruckAvailabilityQuery): Promise<Truck[]> {
-    const { pickupDateTime, deliveryDateTime, tenantId, capacityWeight, truckType } = query;
+    const { pickupDateTime, deliveryDateTime, tenantId, capacityWeight, truckType, ownerId } = query;
 
     // 1. Find all truck IDs that have a conflicting reservation
     const busyReservations = await this.reservationRepo
@@ -307,6 +309,11 @@ export class AvailabilityService {
 
     if (truckType) {
       qb.andWhere('truck.truckType = :truckType', { truckType });
+    }
+
+    // Scope to a specific owner when the caller is a TRUCK_OWNER / FLEET_MANAGER
+    if (ownerId) {
+      qb.andWhere('truck.ownerId = :ownerId', { ownerId });
     }
 
     return qb.getMany();

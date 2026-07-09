@@ -3,6 +3,8 @@ import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
 import { fleetApi } from '../services/fleetApi';
+import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import { localToUTC } from '../utils/dateTime';
 import { FaTimes, FaStar, FaRegStar, FaUser, FaArrowRight, FaClock } from 'react-icons/fa';
 import { Grid, Table, Clock, Search, Filter, RefreshCw } from 'lucide-react';
@@ -11,6 +13,7 @@ import ModernLoader from '../components/common/ModernLoader';
 
 const TruckBidsPage: React.FC = () => {
 	const { compact: fmtBid } = useCurrencyFormat();
+	const { user } = useAuth();
 	const [auctions, setAuctions] = useState<any[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState('');
@@ -309,11 +312,41 @@ const TruckBidsPage: React.FC = () => {
 		setSelectedDriverId('');
 		setAvailableDrivers([]);
 		try {
-			// Only load trucks initially, drivers will be loaded when truck is selected
-			const truckList = await fleetApi.getTrucks({});
-			setTrucks(truckList || []);
+			// Use availability endpoint so only this truck owner's trucks are returned,
+			// pre-filtered for the auction date window and no scheduling conflicts.
+			const pickupDate = auction?.load?.pickupDate
+				? new Date(auction.load.pickupDate).toISOString()
+				: new Date().toISOString();
+			const deliveryDate = auction?.load?.deliveryDate
+				? new Date(auction.load.deliveryDate).toISOString()
+				: new Date(Date.now() + 86_400_000).toISOString();
+
+			const capacityWeight = auction?.load?.weight ?? auction?.load?.cargoWeight ?? undefined;
+
+			const params: Record<string, string> = {
+				pickupDateTime: pickupDate,
+				deliveryDateTime: deliveryDate,
+			};
+			if (capacityWeight) params.capacityWeight = String(capacityWeight);
+
+			const res = await api.get('/availability/trucks', { params });
+			const availTrucks: any[] = res.data?.data ?? [];
+
+			// Safety net: if the endpoint doesn't scope by owner server-side
+			// (older deployment), filter client-side by ownerId === current user
+			const myTrucks = availTrucks.filter(
+				(t: any) => !t.ownerId || t.ownerId === user?.id
+			);
+
+			setTrucks(myTrucks);
 		} catch {
-			setTrucks([]);
+			// Fallback: fetch fleet trucks and filter by owner client-side
+			try {
+				const truckList = await fleetApi.getTrucks({});
+				setTrucks((truckList || []).filter((t: any) => !t.ownerId || t.ownerId === user?.id));
+			} catch {
+				setTrucks([]);
+			}
 		}
 		setShowBidModal(true);
 	};

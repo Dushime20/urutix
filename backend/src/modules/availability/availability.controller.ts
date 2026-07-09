@@ -38,7 +38,8 @@ export class AvailabilityController {
     summary: 'Get available trucks for a date window',
     description:
       'Returns only trucks that have no confirmed shipment overlapping the requested pickup–delivery window ' +
-      'and are not in MAINTENANCE or OUT_OF_SERVICE status.',
+      'and are not in MAINTENANCE or OUT_OF_SERVICE status. ' +
+      'When called by a TRUCK_OWNER or FLEET_MANAGER, only their own trucks are returned.',
   })
   @ApiOkResponse({ description: 'List of available trucks' })
   async getAvailableTrucks(
@@ -46,12 +47,21 @@ export class AvailabilityController {
     @Request() req,
   ) {
     const tenantId = req.user.tenantId;
+    const role: string = req.user.role ?? '';
+
+    // Truck owners and fleet managers can only see their own trucks
+    const ownerId =
+      role === 'TRUCK_OWNER' || role === 'FLEET_MANAGER'
+        ? req.user.userId
+        : undefined;
+
     const trucks = await this.availabilityService.getAvailableTrucks({
       tenantId,
       pickupDateTime:   new Date(query.pickupDateTime),
       deliveryDateTime: new Date(query.deliveryDateTime),
       capacityWeight:   query.capacityWeight,
       truckType:        query.truckType,
+      ownerId,
     });
 
     return {
