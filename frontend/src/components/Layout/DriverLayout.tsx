@@ -8,8 +8,6 @@ import DashboardFooter from './DashboardFooter';
 import MobileBottomNav from './MobileBottomNav';
 import { useNavigate } from 'react-router-dom';
 import ModernLoader from '../common/ModernLoader';
-import { PostTripChecklistModal } from '../DriverDashboard/PostTripChecklistModal';
-import toast from 'react-hot-toast';
 import { cn } from '../../utils/cn';
 import { IncidentReportModal } from '../DriverDashboard/IncidentReportModal';
 
@@ -17,7 +15,6 @@ const DriverLayout: React.FC = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [driverId, setDriverId] = useState<string>('');
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
 
   // Redirect to auth if not logged in
@@ -83,30 +80,6 @@ const DriverLayout: React.FC = () => {
         isOpen={showIncidentModal}
         onClose={() => setShowIncidentModal(false)}
         driverId={driverId}
-      />
-
-      <PostTripChecklistModal 
-        isOpen={showCompleteModal}
-        onClose={() => setShowCompleteModal(false)}
-        onComplete={async (data) => {
-          if (!currentTrip) return;
-          try {
-            console.log('Completing trip with data:', data);
-            await driverApi.completeTrip(currentTrip.id);
-            toast.success('Mission finalized successfully!');
-            setShowCompleteModal(false);
-          } catch (error) {
-            toast.error('Failed to finalize mission');
-          }
-        }}
-        tripId={currentTrip?.id}
-        tripNumber={currentTrip?.tripNumber}
-        cargoTitle={currentTrip?.cargo?.description || currentTrip?.cargo?.type}
-        truckId={currentTrip?.truck?.id}
-        truckPlate={currentTrip?.truck?.plateNumber}
-        driverId={driverId}
-        driverName={currentDriverProfile ? `${currentDriverProfile.firstName} ${currentDriverProfile.lastName}` : undefined}
-        showEpod={true}
       />
 
       <MobileBottomNav />

@@ -39,14 +39,12 @@ import { SafetyRecords } from '../../components/DriverDashboard/SafetyRecords';
 import { UpcomingTrips } from '../../components/DriverDashboard/UpcomingTrips';
 import { QuickActions } from '../../components/DriverDashboard/QuickActions';
 import { CargoManagement } from '../../components/DriverDashboard/CargoManagement';
-import { PreTripChecklist } from '../../components/DriverDashboard/PreTripChecklist';
 import { DriverProfile } from '../../components/DriverDashboard/DriverProfile';
 import { DriverSettings } from '../../components/DriverDashboard/DriverSettings';
 import { DriverAnnouncements } from '../../components/DriverDashboard/DriverAnnouncements';
 import { DriverDocuments } from '../../components/DriverDashboard/DriverDocuments';
 import { MonthlyLeaderboard } from '../../components/DriverDashboard/MonthlyLeaderboard';
 import { IncidentReportModal } from '../../components/DriverDashboard/IncidentReportModal';
-import { PostTripChecklist } from '../../components/DriverDashboard/PostTripChecklist';
 import { ProofOfDelivery } from '../../components/DriverDashboard/ProofOfDelivery';
 import { RewardsTimeline } from '../../components/DriverDashboard/RewardsTimeline';
 import { MaintenanceHealth } from '../../components/DriverDashboard/MaintenanceHealth';
@@ -198,23 +196,6 @@ const DriverDashboard: React.FC = () => {
     }
   };
 
-  const confirmTripCompletion = async (data: { odometer: string; location: string }) => {
-    if (!currentTrip?.id) return;
-    try {
-      toast.loading('Confirming mission debrief...', { id: 'trip-action' });
-      // In a real app, we would send 'data.odometer' and 'data.location' to the API
-      console.log('Completing trip with data:', data);
-      await driverApi.completeTrip(currentTrip.id);
-      setShowPostTripModal(false);
-      toast.success('Mission finalized successfully!', { id: 'trip-action' });
-      queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
-      setActiveTab('overview');
-    } catch (error) {
-      console.error('Error finalizing mission:', error);
-      toast.error('Failed to finalize mission', { id: 'trip-action' });
-    }
-  };
-
   const handleEmergency = async (type: 'call' | 'accident') => {
      if (type === 'call') {
         window.location.href = 'tel:911'; 
@@ -232,8 +213,6 @@ const DriverDashboard: React.FC = () => {
       icon: Route,
       subItems: [
         { id: 'trips', label: 'My Assignments', icon: Route },
-        { id: 'checklist', label: 'Pre-Trip Check', icon: ShieldCheck },
-        { id: 'post_trip', label: 'Post-Trip Debrief', icon: ShieldCheck },
         { id: 'cargo', label: 'Cargo & Inspection', icon: Package },
         { id: 'leaderboard', label: 'Elite League', icon: Trophy },
         { id: 'announcements', label: 'Announcements', icon: Bell },
@@ -363,13 +342,6 @@ const DriverDashboard: React.FC = () => {
                   >
                     <FuelIcon size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Fuel Log</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('checklist')}
-                    className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
-                  >
-                    <ShieldCheck size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Inspection</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('missions')}
@@ -541,30 +513,6 @@ const DriverDashboard: React.FC = () => {
         )}
 
         {activeTab === 'cargo' && <CargoManagement driverId={driverId} />}
-        {activeTab === 'checklist' && (
-          <div className="max-w-4xl mx-auto">
-            <PreTripChecklist 
-              truckId={currentTrip?.truck?.id}
-              truckPlate={currentTrip?.truck?.plateNumber}
-              driverId={driverId}
-              driverName={driver ? `${driver.firstName} ${driver.lastName}` : user?.email}
-              onComplete={() => setActiveTab('overview')}
-            />
-          </div>
-        )}
-        {activeTab === 'post_trip' && (
-          <div className="max-w-4xl mx-auto">
-            <PostTripChecklist 
-              truckId={currentTrip?.truck?.id}
-              truckPlate={currentTrip?.truck?.plateNumber}
-              driverId={driverId}
-              driverName={driver ? `${driver.firstName} ${driver.lastName}` : user?.email}
-              onComplete={(data) => {
-                confirmTripCompletion(data);
-              }}
-            />
-          </div>
-        )}
         {(activeTab === 'missions' || activeTab === 'trips') && <TripsManagement driverId={driverId} />}
         {(activeTab === 'finance' || activeTab === 'earnings') && <EarningsOverview driverId={driverId} />}
         {activeTab === 'wallet' && <WalletAdvances driverId={driverId} />}
