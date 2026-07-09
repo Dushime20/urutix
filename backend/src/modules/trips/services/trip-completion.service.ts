@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { OnEvent } from '@nestjs/event-emitter';
 
 import { Trip, TripStatus } from '../../../entities/trip.entity';
 import { Load } from '../../../entities/load.entity';
@@ -42,6 +43,31 @@ export class TripCompletionService {
     private readonly paymentNotificationService: PaymentNotificationService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  /**
+   * Listen to trip.completed events emitted from any path:
+   * - updateTripStatus() in TripsService
+   * - completeTrip() in TripsController
+   * - driver service updates
+   * - loads.service delivery completion
+   * - tracking gateway status updates
+   *
+   * This ensures a PENDING payment is always created for the cargo owner
+   * regardless of which code path completed the trip.
+   * handleTripCompletion() is idempotent — it skips if a payment already exists.
+   */
+  @OnEvent('trip.completed', { async: true })
+  async onTripCompleted(event: { tripId: string; tenantId: string; cargoOwnerId?: string }): Promise<void> {
+    if (!event?.tripId || !event?.tenantId) return;
+    try {
+      await this.handleTripCompletion(event.tripId, event.tenantId, 'EPOD_SUBMISSION');
+      this.logger.log(`[onTripCompleted] Pending payment ensured for trip ${event.tripId}`);
+    } catch (err: any) {
+      // Non-fatal — trip completion already succeeded; payment creation is best-effort here.
+      // handleTripCompletion logs its own errors.
+      this.logger.error(`[onTripCompleted] Payment creation failed for trip ${event.tripId}: ${err.message}`);
+    }
+  }
 
   /**
    * Handle trip completion and create pending payment for cargo owner
