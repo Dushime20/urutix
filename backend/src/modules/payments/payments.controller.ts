@@ -180,7 +180,7 @@ export class PaymentsController {
               paymentMethod:'mobile_money',
               referenceId:  referenceNumber,
             },
-          });
+          } as any);
           payment = { ...existing, paymentMethod: PaymentMethod.DIGITAL_WALLET, referenceNumber } as Payment;
           this.logger.log(`Reusing PENDING payment ${existing.id} for trip ${dto.tripId}`);
         }
@@ -375,7 +375,7 @@ export class PaymentsController {
             senderType:           'cargo_owner',
             customFields: { paymentSource: 'direct_payment' },
           },
-        });
+        } as any);
         payment = { ...existingPendingPayment, paymentMethod: PaymentMethod.DIGITAL_WALLET, referenceNumber } as Payment;
       } else {
         const createPaymentDto: CreatePaymentDto = {
