@@ -159,28 +159,56 @@ export class PaymentsController {
       // Generate a unique reference number for this payment
       const referenceNumber = dto.referenceNumber || `MM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // Create payment record
-      const createPaymentDto: CreatePaymentDto = {
-        tripId: dto.tripId,
-        amount: dto.amount,
-        currency: dto.currency,
-        paymentMethod: PaymentMethod.DIGITAL_WALLET,
-        paymentType: (dto.paymentType as any) || PaymentType.TRIP_PAYMENT,
-        description: dto.description || 'Mobile Money payment for cargo transportation',
-        referenceNumber: referenceNumber,
-        metadata: {
-          ...dto.metadata,
-          phoneNumber: dto.phoneNumber,
-          paymentMethod: 'mobile_money',
-          referenceId: referenceNumber, // Store referenceId in metadata for webhook matching
-        },
-      };
+      // If a PENDING TRIP_PAYMENT already exists for this trip+payer (auto-created
+      // by TripCompletionService after ePOD), reuse it and process it directly
+      // rather than trying to create a duplicate.
+      let payment: Payment | null = null;
+      if (dto.tripId) {
+        const existing = await this.paymentRepository.findOne({
+          where: [
+            { tripId: dto.tripId, tenantId: req.user.tenantId, payerId: req.user.userId, status: PaymentStatus.PENDING,    paymentType: PaymentType.TRIP_PAYMENT },
+          ],
+        });
+        if (existing) {
+          // Stamp the mobile money reference so processPayment can use it
+          await this.paymentRepository.update(existing.id, {
+            paymentMethod:   PaymentMethod.DIGITAL_WALLET,
+            referenceNumber: referenceNumber,
+            metadata: {
+              ...(existing.metadata as object || {}),
+              phoneNumber:  dto.phoneNumber,
+              paymentMethod:'mobile_money',
+              referenceId:  referenceNumber,
+            },
+          });
+          payment = { ...existing, paymentMethod: PaymentMethod.DIGITAL_WALLET, referenceNumber } as Payment;
+          this.logger.log(`Reusing PENDING payment ${existing.id} for trip ${dto.tripId}`);
+        }
+      }
 
-      const payment = await this.paymentsService.createPayment(
-        createPaymentDto,
-        req.user.tenantId,
-        req.user.userId,
-      );
+      if (!payment) {
+        // No existing record — create a fresh one
+        const createPaymentDto: CreatePaymentDto = {
+          tripId: dto.tripId,
+          amount: dto.amount,
+          currency: dto.currency,
+          paymentMethod: PaymentMethod.DIGITAL_WALLET,
+          paymentType: (dto.paymentType as any) || PaymentType.TRIP_PAYMENT,
+          description: dto.description || 'Mobile Money payment for cargo transportation',
+          referenceNumber: referenceNumber,
+          metadata: {
+            ...dto.metadata,
+            phoneNumber: dto.phoneNumber,
+            paymentMethod: 'mobile_money',
+            referenceId: referenceNumber,
+          },
+        };
+        payment = await this.paymentsService.createPayment(
+          createPaymentDto,
+          req.user.tenantId,
+          req.user.userId,
+        );
+      }
 
       // Process the payment immediately (initiate mobile money transaction)
       const processedPayment = await this.paymentsService.processPayment(
@@ -277,22 +305,35 @@ export class PaymentsController {
       const validTripId = dto.tripId && dto.tripId.trim() !== '' ? dto.tripId : undefined;
 
       // ── Duplicate-payment guard ──────────────────────────────────────────────
-      // For trip-linked payments (non-lender), block if an active payment already
-      // exists for this trip so a cargo owner cannot pay twice.
+      // For trip-linked payments (non-lender): if a PENDING TRIP_PAYMENT already
+      // exists (auto-created by TripCompletionService after ePOD), reuse it —
+      // that record IS the obligation the cargo owner is settling.
+      // Only block if already PROCESSING or COMPLETED (payment already in flight / done).
+      let existingPendingPayment: Payment | null = null;
       if (validTripId && !dto.metadata?.isLenderPayment) {
         const existingTripPayment = await this.paymentRepository.findOne({
           where: [
-            { tripId: validTripId, tenantId: req.user.tenantId, status: PaymentStatus.PENDING, paymentType: PaymentType.TRIP_PAYMENT },
-            { tripId: validTripId, tenantId: req.user.tenantId, status: PaymentStatus.PROCESSING, paymentType: PaymentType.TRIP_PAYMENT },
-            { tripId: validTripId, tenantId: req.user.tenantId, status: PaymentStatus.COMPLETED, paymentType: PaymentType.TRIP_PAYMENT },
+            { tripId: validTripId, tenantId: req.user.tenantId, payerId: req.user.userId, status: PaymentStatus.PENDING,    paymentType: PaymentType.TRIP_PAYMENT },
+            { tripId: validTripId, tenantId: req.user.tenantId, payerId: req.user.userId, status: PaymentStatus.PROCESSING, paymentType: PaymentType.TRIP_PAYMENT },
+            { tripId: validTripId, tenantId: req.user.tenantId, payerId: req.user.userId, status: PaymentStatus.COMPLETED,  paymentType: PaymentType.TRIP_PAYMENT },
           ],
         });
+
         if (existingTripPayment) {
-          this.logger.warn(
-            `Duplicate payment attempt blocked for trip ${validTripId} by user ${req.user.userId}. Existing payment: ${existingTripPayment.id} (${existingTripPayment.status})`,
-          );
-          throw new BadRequestException(
-            `A payment for this trip already exists (status: ${existingTripPayment.status}, ref: ${existingTripPayment.referenceNumber}). Duplicate payments are not allowed.`,
+          if (existingTripPayment.status === PaymentStatus.COMPLETED) {
+            throw new BadRequestException(
+              `This trip has already been paid (ref: ${existingTripPayment.referenceNumber}).`,
+            );
+          }
+          if (existingTripPayment.status === PaymentStatus.PROCESSING) {
+            throw new BadRequestException(
+              `A payment for this trip is already being processed (ref: ${existingTripPayment.referenceNumber}). Please wait for confirmation.`,
+            );
+          }
+          // PENDING — reuse it. We will update this record instead of creating a new one.
+          existingPendingPayment = existingTripPayment;
+          this.logger.log(
+            `Reusing existing PENDING payment ${existingTripPayment.id} for trip ${validTripId} — updating with mobile money details.`,
           );
         }
       }
@@ -316,40 +357,58 @@ export class PaymentsController {
         }
       }
 
-      // Create payment record
-      const createPaymentDto: CreatePaymentDto = {
-        tripId: validTripId,
-        amount: dto.amount,
-        currency: dto.currency || 'RWF',
-        paymentMethod: PaymentMethod.DIGITAL_WALLET,
-        paymentType: validTripId ? PaymentType.TRIP_PAYMENT : PaymentType.SERVICE_FEE,
-        description: paymentMessage,
-        referenceNumber: referenceNumber,
-        metadata: {
-          ...dto.metadata,
-          phoneNumber: apiAccountPhone, // API account phone number (sender/payer)
-          receiverPhoneNumber: dto.receiverPhoneNumber, // User-provided receiver
-          paymentMethod: 'mobile_money',
-          referenceId: referenceNumber,
-          senderId: req.user.userId,
-          senderType: dto.metadata?.isLenderPayment ? 'lender' : 'cargo_owner',
-          // Carry lenderName so truck owner dashboard shows who paid them
-          lenderName: dto.metadata?.lenderName,
-          lenderId: dto.metadata?.lenderId,
-          loanId: dto.metadata?.loanId,
-          loanNumber: dto.metadata?.loanNumber,
-          // Payment source label for truck owner dashboard (stored as a custom field)
-          customFields: {
-            paymentSource: dto.metadata?.isLenderPayment ? 'lender_disbursement' : 'direct_payment',
+      // Create payment record — or reuse the existing PENDING obligation
+      let payment: Payment;
+      if (existingPendingPayment) {
+        // Reuse the auto-created pending record — update it with mobile money details
+        await this.paymentRepository.update(existingPendingPayment.id, {
+          paymentMethod:   PaymentMethod.DIGITAL_WALLET,
+          referenceNumber: referenceNumber,
+          description:     paymentMessage,
+          metadata: {
+            ...(existingPendingPayment.metadata as object || {}),
+            phoneNumber:          apiAccountPhone,
+            receiverPhoneNumber:  dto.receiverPhoneNumber,
+            paymentMethod:        'mobile_money',
+            referenceId:          referenceNumber,
+            senderId:             req.user.userId,
+            senderType:           'cargo_owner',
+            customFields: { paymentSource: 'direct_payment' },
           },
-        },
-      };
-
-      const payment = await this.paymentsService.createPayment(
-        createPaymentDto,
-        req.user.tenantId,
-        req.user.userId,
-      );
+        });
+        payment = { ...existingPendingPayment, paymentMethod: PaymentMethod.DIGITAL_WALLET, referenceNumber } as Payment;
+      } else {
+        const createPaymentDto: CreatePaymentDto = {
+          tripId: validTripId,
+          amount: dto.amount,
+          currency: dto.currency || 'RWF',
+          paymentMethod: PaymentMethod.DIGITAL_WALLET,
+          paymentType: validTripId ? PaymentType.TRIP_PAYMENT : PaymentType.SERVICE_FEE,
+          description: paymentMessage,
+          referenceNumber: referenceNumber,
+          metadata: {
+            ...dto.metadata,
+            phoneNumber:         apiAccountPhone,
+            receiverPhoneNumber: dto.receiverPhoneNumber,
+            paymentMethod:       'mobile_money',
+            referenceId:         referenceNumber,
+            senderId:            req.user.userId,
+            senderType:          dto.metadata?.isLenderPayment ? 'lender' : 'cargo_owner',
+            lenderName:          dto.metadata?.lenderName,
+            lenderId:            dto.metadata?.lenderId,
+            loanId:              dto.metadata?.loanId,
+            loanNumber:          dto.metadata?.loanNumber,
+            customFields: {
+              paymentSource: dto.metadata?.isLenderPayment ? 'lender_disbursement' : 'direct_payment',
+            },
+          },
+        };
+        payment = await this.paymentsService.createPayment(
+          createPaymentDto,
+          req.user.tenantId,
+          req.user.userId,
+        );
+      }
 
       // Stamp payeeId so truck owner can find this payment by their userId
       if (resolvedPayeeId && !payment.payeeId) {
