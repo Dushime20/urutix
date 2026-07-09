@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { getEnvConfig } from '../../config/env.config';
 
-import { Epod, EpodStatus } from '../../entities/epod.entity';
+import { Epod, EpodStatus, CargoConditionOnDelivery } from '../../entities/epod.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
