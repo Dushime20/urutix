@@ -58,8 +58,19 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
           </p>
           {transaction.trip && (
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-              Trip: {transaction.trip.tripNumber}
+              Trip #{transaction.trip.tripNumber}
+              {transaction.trip.load?.title ? ` · ${transaction.trip.load.title}` : ''}
             </p>
+          )}
+          {(transaction.trip?.load?.origin || transaction.trip?.load?.destination) && (
+            <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+              {transaction.trip.load?.origin ?? '—'} → {transaction.trip.load?.destination ?? '—'}
+            </p>
+          )}
+          {transaction.isLenderPayment && transaction.lenderName && (
+            <span className="inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 uppercase tracking-wide">
+              Via {transaction.lenderName}
+            </span>
           )}
         </div>
       </td>

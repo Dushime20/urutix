@@ -43,9 +43,17 @@ export interface CompletedTransaction {
   description: string;
   receiptUrl?: string;
   status: 'COMPLETED';
+  isLenderPayment?: boolean;
+  lenderName?: string | null;
   trip?: {
     id: string;
     tripNumber: string;
+    load?: {
+      title?: string;
+      cargoType?: string;
+      origin?: string | null;
+      destination?: string | null;
+    } | null;
   };
 }
 

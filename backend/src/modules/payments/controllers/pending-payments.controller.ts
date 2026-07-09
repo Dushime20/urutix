@@ -133,6 +133,106 @@ export class PendingPaymentsController {
   }
 
   /**
+   * GET /pending-payments/cargo-owner/completed
+   * Get completed (paid) transactions for cargo owner — their transaction history
+   */
+  @Get('cargo-owner/completed')
+  @Roles(UserRole.CARGO_OWNER, UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({
+    summary: 'Get completed payments for cargo owner',
+    description: 'Returns all completed payments made by the cargo owner — their full transaction history with trip, load, and route details',
+  })
+  @ApiQuery({ name: 'paymentType', required: false, enum: PaymentType })
+  @ApiQuery({ name: 'startDate', required: false, type: String, description: 'ISO date string' })
+  @ApiQuery({ name: 'endDate', required: false, type: String, description: 'ISO date string' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiOkResponse({ description: 'Completed payments retrieved successfully' })
+  async getCompletedPaymentsForCargoOwner(
+    @Request() req,
+    @Query('paymentType') paymentType?: PaymentType,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    let payments = await this.tripCompletionService.getCompletedPaymentsForCargoOwner(
+      req.user.userId,
+      req.user.tenantId,
+    );
+
+    // Apply optional filters
+    if (paymentType) {
+      payments = payments.filter(p => p.paymentType === paymentType);
+    }
+    if (startDate) {
+      const from = new Date(startDate);
+      payments = payments.filter(p => new Date(p.processedAt || p.createdAt) >= from);
+    }
+    if (endDate) {
+      const to = new Date(endDate);
+      payments = payments.filter(p => new Date(p.processedAt || p.createdAt) <= to);
+    }
+
+    // Pagination
+    const startIndex = Number(offset) || 0;
+    const endIndex = limit ? startIndex + Number(limit) : undefined;
+    const paginatedPayments = payments.slice(startIndex, endIndex);
+
+    const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    return {
+      success: true,
+      message: 'Completed payments retrieved successfully',
+      data: {
+        payments: paginatedPayments.map(payment => ({
+          id: payment.id,
+          tripId: payment.tripId,
+          amount: Number(payment.amount),
+          currency: payment.currency,
+          status: payment.status,
+          paymentType: payment.paymentType,
+          paymentMethod: payment.paymentMethod,
+          description: payment.description,
+          referenceNumber: payment.referenceNumber,
+          processedAt: payment.processedAt,
+          createdAt: payment.createdAt,
+          payeeId: payment.payeeId,
+          isLenderPayment: !!(payment.metadata as any)?.isLenderPayment,
+          lenderName: (payment.metadata as any)?.lenderName || null,
+          trip: payment.trip ? {
+            id: payment.trip.id,
+            tripNumber: payment.trip.tripNumber,
+            status: payment.trip.status,
+            load: payment.trip.load ? {
+              id: payment.trip.load.id,
+              title: payment.trip.load.title,
+              cargoType: payment.trip.load.cargoType,
+              origin: payment.trip.load.origin,
+              destination: payment.trip.load.destination,
+            } : null,
+          } : null,
+        })),
+        summary: {
+          totalPayments: payments.length,
+          totalAmount,
+          currency: paginatedPayments[0]?.currency || 'RWF',
+          tripPaymentsCount: payments.filter(p => p.paymentType === PaymentType.TRIP_PAYMENT).length,
+          advancePaymentsCount: payments.filter(p => p.paymentType === PaymentType.ADVANCE).length,
+        },
+        pagination: {
+          total: payments.length,
+          limit: limit ? Number(limit) : payments.length,
+          offset: startIndex,
+          hasMore: endIndex ? endIndex < payments.length : false,
+        },
+      },
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * GET /pending-payments/truck-owner
    * Get expected payments for truck owner (payments they will receive)
    */

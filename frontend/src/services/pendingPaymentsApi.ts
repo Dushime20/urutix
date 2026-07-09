@@ -111,6 +111,69 @@ class PendingPaymentsApi {
   }
 
   /**
+   * Get completed (paid) transactions for cargo owner — transaction history
+   */
+  async getCompletedPaymentsForCargoOwner(params?: {
+    paymentType?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{
+    payments: Array<{
+      id: string;
+      tripId: string;
+      amount: number;
+      currency: string;
+      status: string;
+      paymentType: string;
+      paymentMethod: string;
+      description: string;
+      referenceNumber: string;
+      processedAt: string | null;
+      createdAt: string;
+      payeeId: string | null;
+      isLenderPayment: boolean;
+      lenderName: string | null;
+      trip: {
+        id: string;
+        tripNumber: string;
+        status: string;
+        load: {
+          id: string;
+          title: string;
+          cargoType: string;
+          origin: string | null;
+          destination: string | null;
+        } | null;
+      } | null;
+    }>;
+    summary: {
+      totalPayments: number;
+      totalAmount: number;
+      currency: string;
+      tripPaymentsCount: number;
+      advancePaymentsCount: number;
+    };
+    pagination: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.paymentType) queryParams.append('paymentType', params.paymentType);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+
+    const response = await api.get(`/pending-payments/cargo-owner/completed?${queryParams.toString()}`);
+    return response.data.data;
+  }
+
+  /**
    * Process a pending payment
    */
   async processPayment(paymentId: string): Promise<any> {

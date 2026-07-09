@@ -215,6 +215,11 @@ export const paymentsAPI = {
     api.get('/pending-payments/truck-owner/completed', { params }),
   getAllReceivedPayments: (params?: { limit?: number; offset?: number; status?: string }) =>
     api.get('/pending-payments/truck-owner/all', { params }),
+  // CARGO OWNER ENDPOINTS
+  getCargoOwnerPendingPayments: (params?: { status?: string; limit?: number; offset?: number }) =>
+    api.get('/pending-payments/cargo-owner', { params }),
+  getCargoOwnerCompletedPayments: (params?: { paymentType?: string; startDate?: string; endDate?: string; limit?: number; offset?: number }) =>
+    api.get('/pending-payments/cargo-owner/completed', { params }),
 };
 
 // Locations API

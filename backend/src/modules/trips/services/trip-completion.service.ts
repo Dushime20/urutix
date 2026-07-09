@@ -358,6 +358,26 @@ export class TripCompletionService {
   }
 
   /**
+   * Get completed payments made by the cargo owner (transaction history).
+   * Returns all COMPLETED payments where the cargo owner was the payer,
+   * ordered newest first. Includes trip, load, and route info.
+   */
+  async getCompletedPaymentsForCargoOwner(
+    cargoOwnerId: string,
+    tenantId: string,
+  ): Promise<Payment[]> {
+    return this.paymentRepository.find({
+      where: {
+        payerId: cargoOwnerId,
+        tenantId,
+        status: PaymentStatus.COMPLETED,
+      },
+      relations: ['trip', 'trip.load'],
+      order: { processedAt: 'DESC', createdAt: 'DESC' },
+    });
+  }
+
+  /**
    * Get ALL received payments for a truck owner — including lender disbursements
    * sent directly to their phone (metadata.receiverPhoneNumber matches user.phone).
    * Combines: payeeId-linked payments + lender momo disbursements.
