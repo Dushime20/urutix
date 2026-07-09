@@ -96,6 +96,27 @@ export class TripCompletionService {
       throw new NotFoundException('Load not found for trip');
     }
 
+    // Get cargo owner and truck owner details first (needed for duplicate checks below)
+    const cargoOwner = await this.userRepository.findOne({
+      where: { id: trip.load.cargoOwnerId },
+      relations: ['profile'],
+    });
+
+    if (!cargoOwner) {
+      throw new NotFoundException('Cargo owner not found');
+    }
+
+    const truckOwner = trip.truck?.ownerId
+      ? await this.userRepository.findOne({
+          where: { id: trip.truck.ownerId },
+          relations: ['profile'],
+        })
+      : null;
+
+    if (!truckOwner) {
+      throw new NotFoundException('Truck owner not found');
+    }
+
     // ── Duplicate prevention ──────────────────────────────────────────────────
     // Check for an existing active obligation for THIS cargo owner on this trip.
     // We check payerId=cargoOwner so a lender's TRIP_PAYMENT (payerId=lender)
@@ -134,27 +155,6 @@ export class TripCompletionService {
       return { payment: finalPending };
     }
     // ─────────────────────────────────────────────────────────────────────────
-
-    // Get cargo owner and truck owner details
-    const cargoOwner = await this.userRepository.findOne({
-      where: { id: trip.load.cargoOwnerId },
-      relations: ['profile'],
-    });
-
-    const truckOwner = trip.truck?.ownerId
-      ? await this.userRepository.findOne({
-          where: { id: trip.truck.ownerId },
-          relations: ['profile'],
-        })
-      : null;
-
-    if (!cargoOwner) {
-      throw new NotFoundException('Cargo owner not found');
-    }
-
-    if (!truckOwner) {
-      throw new NotFoundException('Truck owner not found');
-    }
 
     // Calculate payment amount (use agreed price from trip)
     const paymentAmount = Number(trip.agreedPrice) || 0;
