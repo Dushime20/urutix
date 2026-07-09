@@ -9,9 +9,12 @@ import {
     ShieldAlert,
     Download,
     LayoutGrid,
-    List
+    List,
+    TrendingDown,
+    Banknote,
+    PiggyBank,
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
+import { StatCard } from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 
@@ -52,9 +55,12 @@ interface PortfolioAnalytics {
     totalOutstanding: number;
     totalDisbursed: number;
     totalRepaid: number;
+    totalInterestEarned: number;
     portfolioYield: number;
     onTimePaymentRate: number;
     defaultRate: number;
+    recoveryRate: number;
+    averageLoanSize: number;
 }
 
 interface ActiveLoansEnliteProps {
@@ -293,44 +299,102 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
         return acc;
     }, {} as Record<string, ActiveLoan[]>);
 
+    const fmt = (n: number) =>
+        new Intl.NumberFormat('en-RW', { style: 'currency', currency: 'RWF', maximumFractionDigits: 0 }).format(n);
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Portfolio Analytics */}
+            {/* Portfolio Analytics — 8 stat cards */}
             {analytics && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard
-                        title="Portfolio Exposure"
-                        value={`RWF ${((analytics.totalOutstanding || 0) / 1000000).toFixed(1)}M`}
-                        trend="+2.4% vs last month"
-                        trendDirection="up"
-                        icon={<DollarSign size={24} />}
-                        color="primary"
-                    />
-                    <StatCard
-                        title="Active Asset Count"
-                        value={(analytics.totalActiveLoans || 0).toString()}
-                        trend="Stable deployment"
-                        trendDirection="neutral"
-                        icon={<FileText size={24} />}
-                        color="secondary"
-                    />
-                    <StatCard
-                        title="Weighted Yield"
-                        value={`${(analytics.portfolioYield || 0).toFixed(1)}%`}
-                        trend="+0.5% optimization"
-                        trendDirection="up"
-                        icon={<TrendingUp size={24} />}
-                        color="success"
-                    />
-                    <StatCard
-                        title="Collection Index"
-                        value={`${(analytics.onTimePaymentRate || 0).toFixed(1)}%`}
-                        trend="-1.2% alert"
-                        trendDirection="down"
-                        icon={<CheckCircle2 size={24} />}
-                        color="warning"
-                    />
-                </div>
+                <>
+                    {/* Row 1: Money stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatCard
+                            variant="premium"
+                            title="Total Disbursed"
+                            value={fmt(analytics.totalDisbursed || 0)}
+                            subtitle="Cumulative capital deployed"
+                            trend="All time"
+                            trendDirection="neutral"
+                            icon={<Banknote size={22} />}
+                            color="primary"
+                        />
+                        <StatCard
+                            variant="premium"
+                            title="Outstanding Balance"
+                            value={fmt(analytics.totalOutstanding || 0)}
+                            subtitle="Active portfolio exposure"
+                            trend="Live"
+                            trendDirection="neutral"
+                            icon={<DollarSign size={22} />}
+                            color="info"
+                        />
+                        <StatCard
+                            variant="premium"
+                            title="Total Repaid"
+                            value={fmt(analytics.totalRepaid || 0)}
+                            subtitle="Principal recovered"
+                            trend={analytics.totalDisbursed > 0 ? `${((analytics.totalRepaid / analytics.totalDisbursed) * 100).toFixed(1)}% recovery` : '—'}
+                            trendDirection="up"
+                            icon={<PiggyBank size={22} />}
+                            color="success"
+                        />
+                        <StatCard
+                            variant="premium"
+                            title="Average Loan Size"
+                            value={fmt(analytics.averageLoanSize || 0)}
+                            subtitle="Per disbursement"
+                            trend="Portfolio avg"
+                            trendDirection="neutral"
+                            icon={<TrendingUp size={22} />}
+                            color="accent"
+                        />
+                    </div>
+
+                    {/* Row 2: Performance stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatCard
+                            variant="premium"
+                            title="Active Loans"
+                            value={(analytics.totalActiveLoans || 0).toString()}
+                            subtitle="Approved & disbursed"
+                            trend="Stable deployment"
+                            trendDirection="neutral"
+                            icon={<FileText size={22} />}
+                            color="secondary"
+                        />
+                        <StatCard
+                            variant="premium"
+                            title="Portfolio Yield"
+                            value={`${(analytics.portfolioYield || 0).toFixed(2)}%`}
+                            subtitle="Annualised return"
+                            trend="+0.5% optimisation"
+                            trendDirection="up"
+                            icon={<TrendingUp size={22} />}
+                            color="emerald"
+                        />
+                        <StatCard
+                            variant="premium"
+                            title="Recovery Rate"
+                            value={`${(analytics.onTimePaymentRate || 0).toFixed(1)}%`}
+                            subtitle="On-time collection index"
+                            trend={analytics.onTimePaymentRate >= 80 ? 'Healthy' : 'Monitor'}
+                            trendDirection={analytics.onTimePaymentRate >= 80 ? 'up' : 'down'}
+                            icon={<CheckCircle2 size={22} />}
+                            color="warning"
+                        />
+                        <StatCard
+                            variant="premium"
+                            title="Default Rate"
+                            value={`${(analytics.defaultRate || 0).toFixed(2)}%`}
+                            subtitle="NPL exposure"
+                            trend={analytics.defaultRate <= 5 ? 'Within threshold' : 'Above threshold'}
+                            trendDirection={analytics.defaultRate <= 5 ? 'neutral' : 'down'}
+                            icon={<TrendingDown size={22} />}
+                            color={analytics.defaultRate <= 5 ? 'secondary' : 'error'}
+                        />
+                    </div>
+                </>
             )}
 
             {/* Main Content Area */}

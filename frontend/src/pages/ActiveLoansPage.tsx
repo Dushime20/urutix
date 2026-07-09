@@ -46,10 +46,13 @@ interface LoanPortfolioAnalytics {
   totalOutstanding: number;
   totalDisbursed: number;
   totalRepaid: number;
+  totalInterestEarned: number;
   averageInterestRate: number;
   portfolioYield: number;
   defaultRate: number;
   onTimePaymentRate: number;
+  recoveryRate: number;
+  averageLoanSize: number;
   monthlyCollections: number;
   expectedMonthlyIncome: number;
 }
@@ -57,7 +60,7 @@ interface LoanPortfolioAnalytics {
 const ActiveLoansPage: React.FC = () => {
   const { user } = useAuth();
   const [loans, setLoans] = useState<ActiveLoan[]>([]);
-  const [analytics, setAnalytics] = useState<any | null>(null);
+  const [analytics, setAnalytics] = useState<LoanPortfolioAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<string>('created_at');
@@ -139,8 +142,24 @@ const ActiveLoansPage: React.FC = () => {
         });
 
         setLoans(transformedLoans);
-        // Analytics from getLenderAnalytics — real data
-        setAnalytics(analyticsData ?? null);
+        // Map backend snake_case portfolio metrics → camelCase shape the component expects
+        const p = analyticsData?.portfolio ?? {};
+        const mappedAnalytics: LoanPortfolioAnalytics = {
+          totalActiveLoans:      transformedLoans.length,
+          totalOutstanding:      Number(p.outstanding_balance ?? 0),
+          totalDisbursed:        Number(p.total_amount_disbursed ?? 0),
+          totalRepaid:           Number(p.total_amount_repaid ?? 0),
+          totalInterestEarned:   Number(analyticsData?.standards_summary?.ifrs9_ecl_estimate ?? 0),
+          averageInterestRate:   Number(p.average_loan_size > 0 ? (analyticsData?.standards_summary?.pd_average ?? 0) : 0),
+          portfolioYield:        Number(p.portfolio_yield ?? 0),
+          defaultRate:           Number(p.default_rate ?? 0),
+          onTimePaymentRate:     Number(p.recovery_rate ?? 0),
+          recoveryRate:          Number(p.recovery_rate ?? 0),
+          averageLoanSize:       Number(p.average_loan_size ?? 0),
+          monthlyCollections:    0,
+          expectedMonthlyIncome: 0,
+        };
+        setAnalytics(mappedAnalytics);
 
         if (transformedLoans.length === 0) {
           toast('No active loans found.', { icon: 'ℹ️' });
