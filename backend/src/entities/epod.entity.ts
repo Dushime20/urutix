@@ -58,7 +58,7 @@ export class Epod {
   cargoOwnerId: string;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'cargoOwner' })
+  @JoinColumn({ name: 'cargoOwnerId' })
   cargoOwner?: User;
 
   // ── Recipient identity ─────────────────────────────────────────────────────
