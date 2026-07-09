@@ -17,6 +17,7 @@ import {
 import { StatCard } from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Borrower {
     id: string | null;
@@ -83,6 +84,11 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
     onViewDetails
 }) => {
     const [viewMode, setViewMode] = useState<'table' | 'grouped'>('table');
+    const { format, compact } = useCurrencyFormat();
+
+    // Loans are stored in RWF — convert to user preferred currency
+    const fmt  = (n: number) => format(n, 'RWF');
+    const cpt  = (n: number) => compact(n, 'RWF');
 
     const handleExport = () => {
         if (loans.length === 0) return;
@@ -194,7 +200,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                         <span className="font-black text-slate-900 text-[11px]">
-                            RWF {(loan.principal_amount / 1000000).toFixed(1)}M
+                            {cpt(loan.principal_amount)}
                         </span>
                         {loan.interest_rate && (
                             <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-black">
@@ -217,7 +223,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     <div className="space-y-2 min-w-[120px]">
                         <div className="flex justify-between items-center mb-1">
                             <span className="font-black text-slate-900 text-[11px]">
-                                RWF {(loan.outstanding_balance / 1000000).toFixed(1)}M
+                                {cpt(loan.outstanding_balance)}
                             </span>
                             <span className="text-[10px] font-black text-[#345E85]">{progress.toFixed(0)}%</span>
                         </div>
@@ -298,9 +304,6 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
         acc[loan.status].push(loan);
         return acc;
     }, {} as Record<string, ActiveLoan[]>);
-
-    const fmt = (n: number) =>
-        new Intl.NumberFormat('en-RW', { style: 'currency', currency: 'RWF', maximumFractionDigits: 0 }).format(n);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -449,7 +452,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                                         </div>
                                         <div className="flex-1 border-t border-slate-100 border-dashed mx-4"></div>
                                         <div className="text-right">
-                                            <p className="text-xs font-black text-slate-900 uppercase">RWF {(statusLoans.reduce((sum, l) => sum + l.outstanding_balance, 0) / 1000000).toFixed(1)}M</p>
+                                            <p className="text-xs font-black text-slate-900 uppercase">{cpt(statusLoans.reduce((sum, l) => sum + l.outstanding_balance, 0))}</p>
                                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Total Exposure</p>
                                         </div>
                                     </div>
