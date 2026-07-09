@@ -310,7 +310,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     {/* Row 1: Money stats */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Total Disbursed"
                             value={fmt(analytics.totalDisbursed || 0)}
                             subtitle="Cumulative capital deployed"
@@ -320,7 +320,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             color="primary"
                         />
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Outstanding Balance"
                             value={fmt(analytics.totalOutstanding || 0)}
                             subtitle="Active portfolio exposure"
@@ -330,7 +330,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             color="info"
                         />
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Total Repaid"
                             value={fmt(analytics.totalRepaid || 0)}
                             subtitle="Principal recovered"
@@ -340,7 +340,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             color="success"
                         />
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Average Loan Size"
                             value={fmt(analytics.averageLoanSize || 0)}
                             subtitle="Per disbursement"
@@ -354,7 +354,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     {/* Row 2: Performance stats */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Active Loans"
                             value={(analytics.totalActiveLoans || 0).toString()}
                             subtitle="Approved & disbursed"
@@ -364,7 +364,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             color="secondary"
                         />
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Portfolio Yield"
                             value={`${(analytics.portfolioYield || 0).toFixed(2)}%`}
                             subtitle="Annualised return"
@@ -374,7 +374,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             color="emerald"
                         />
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Recovery Rate"
                             value={`${(analytics.onTimePaymentRate || 0).toFixed(1)}%`}
                             subtitle="On-time collection index"
@@ -384,7 +384,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             color="warning"
                         />
                         <StatCard
-                            variant="premium"
+                            variant="classic"
                             title="Default Rate"
                             value={`${(analytics.defaultRate || 0).toFixed(2)}%`}
                             subtitle="NPL exposure"
