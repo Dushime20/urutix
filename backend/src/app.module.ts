@@ -1,151 +1,146 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { EnhancedAuthModule } from './modules/auth/enhanced-auth.module';
-import { LoadsModule } from './modules/loads/loads.module';
-import { LoadsV2Module } from './modules/loads/loads-v2.module';
-import { RatingsModule } from './modules/ratings/ratings.module';
-import { RewardsModule } from './modules/rewards/rewards.module';
-import { ScoringModule } from './modules/scoring/scoring.module';
-import { TrackingModule } from './modules/tracking/tracking.module';
-import { FinancialModule } from './modules/financial/financial.module';
-import { FleetModule } from './modules/fleet/fleet.module';
-import { MatchingModule } from './modules/matching/matching.module';
-import { BiddingModule } from './modules/bidding/bidding.module';
-import { AdminModule } from './modules/admin/admin.module';
-import { TenantDashboardModule } from './modules/tenant-dashboard/tenant-dashboard.module';
-import { UsersModule } from './modules/users/users.module';
-import { LendingModule } from './modules/lending/lending.module';
-import { InsuranceModule } from './modules/insurance/insurance.module';
-import { DocumentModule } from './modules/documents/document.module';
-import { NotificationModule } from './modules/notifications/notification.module';
-import { FileUploadModule } from './modules/file-upload/file-upload.module';
-import { OcrModule } from './modules/ocr/ocr.module';
-import { SafetyModule } from './modules/safety/safety.module';
-import { TripsModule } from './modules/trips/trips.module';
-import { DriverModule } from './modules/drivers/driver.module';
-import { MaintenanceModule } from './modules/maintenance/maintenance.module';
-import { ReceiversModule } from './modules/receivers/receivers.module';
-import { BrokersModule } from './modules/brokers/brokers.module';
-import { FuelModule } from './modules/fuel/fuel.module';
-import { SubscriptionModule } from './modules/subscription/subscription.module';
-import { CreditMarketplaceModule } from './modules/credit-marketplace/credit-marketplace.module';
-import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { ActivityLogsModule } from './modules/activity-logs/activity-logs.module';
-import { MessengerModule } from './modules/messenger/messenger.module';
-import { MultiModalModule } from './modules/multi-modal/multi-modal.module';
-import { EventsModule } from './modules/events/events.module';
-import { PaymentsModule } from './modules/payments/payments.module';
-import { CargoOwnerModule } from './modules/cargo-owner/cargo-owner.module';
-import { CustomsModule } from './modules/customs/customs.module';
-import { ComplianceModule } from './modules/compliance/compliance.module';
-import { RevenueModule } from './modules/revenue/revenue.module';
-import { CarrierTierModule } from './modules/carrier-tier/carrier-tier.module';
-import { CarrierMarketplaceModule } from './modules/carrier-marketplace/carrier-marketplace.module';
-import { GeofencingModule } from './modules/geofencing/geofencing.module';
-import { CurrencyModule } from './modules/currency/currency.module';
-import { ApiMarketplaceModule } from './modules/api-marketplace/api-marketplace.module';
-import { DisputesModule } from './modules/disputes/disputes.module';
-import { AvailabilityModule } from './modules/availability/availability.module';
+
+// Config
 import { databaseConfig } from './config/database.config';
-import { ThrottlerModule } from '@nestjs/throttler';
+
+// Middleware / Interceptors
 import { TenantSubdomainMiddleware } from './middleware/tenant-subdomain.middleware';
-import { Tenant } from './entities/tenant.entity';
 import { ActivityLoggingInterceptor } from './interceptors/activity-logging.interceptor';
 import { ActivityLogService } from './services/activity-log.service';
+
+// Entities needed at root level
+import { Tenant }      from './entities/tenant.entity';
 import { ActivityLog } from './entities/activity-log.entity';
 import { UserSession } from './entities/user-session.entity';
 
+// Feature modules — alphabetical for maintainability
+import { ActivityLogsModule }      from './modules/activity-logs/activity-logs.module';
+import { AdminModule }             from './modules/admin/admin.module';
+import { AnalyticsModule }         from './modules/analytics/analytics.module';
+import { ApiMarketplaceModule }    from './modules/api-marketplace/api-marketplace.module';
+import { AvailabilityModule }      from './modules/availability/availability.module';
+import { BiddingModule }           from './modules/bidding/bidding.module';
+import { BrokersModule }           from './modules/brokers/brokers.module';
+import { CargoOwnerModule }        from './modules/cargo-owner/cargo-owner.module';
+import { CarrierMarketplaceModule } from './modules/carrier-marketplace/carrier-marketplace.module';
+import { CarrierTierModule }       from './modules/carrier-tier/carrier-tier.module';
+import { ComplianceModule }        from './modules/compliance/compliance.module';
+import { CreditMarketplaceModule } from './modules/credit-marketplace/credit-marketplace.module';
+import { CurrencyModule }          from './modules/currency/currency.module';
+import { CustomsModule }           from './modules/customs/customs.module';
+import { DisputesModule }          from './modules/disputes/disputes.module';
+import { DocumentModule }          from './modules/documents/document.module';
+import { DriverModule }            from './modules/drivers/driver.module';
+import { EnhancedAuthModule }      from './modules/auth/enhanced-auth.module';
+import { EventsModule }            from './modules/events/events.module';
+import { FileUploadModule }        from './modules/file-upload/file-upload.module';
+import { FinancialModule }         from './modules/financial/financial.module';
+import { FleetModule }             from './modules/fleet/fleet.module';
+import { FuelModule }              from './modules/fuel/fuel.module';
+import { GeofencingModule }        from './modules/geofencing/geofencing.module';
+import { InsuranceModule }         from './modules/insurance/insurance.module';
+import { LendingModule }           from './modules/lending/lending.module';
+import { LoadsModule }             from './modules/loads/loads.module';
+import { LoadsV2Module }           from './modules/loads/loads-v2.module';
+import { MaintenanceModule }       from './modules/maintenance/maintenance.module';
+import { MatchingModule }          from './modules/matching/matching.module';
+import { MessengerModule }         from './modules/messenger/messenger.module';
+import { MultiModalModule }        from './modules/multi-modal/multi-modal.module';
+import { NotificationModule }      from './modules/notifications/notification.module';
+import { OcrModule }               from './modules/ocr/ocr.module';
+import { PaymentsModule }          from './modules/payments/payments.module';
+import { RatingsModule }           from './modules/ratings/ratings.module';
+import { ReceiversModule }         from './modules/receivers/receivers.module';
+import { RevenueModule }           from './modules/revenue/revenue.module';
+import { RewardsModule }           from './modules/rewards/rewards.module';
+import { SafetyModule }            from './modules/safety/safety.module';
+import { ScoringModule }           from './modules/scoring/scoring.module';
+import { SubscriptionModule }      from './modules/subscription/subscription.module';
+import { TenantDashboardModule }   from './modules/tenant-dashboard/tenant-dashboard.module';
+import { TrackingModule }          from './modules/tracking/tracking.module';
+import { TripsModule }             from './modules/trips/trips.module';
+import { UsersModule }             from './modules/users/users.module';
+
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      useFactory: async () => {
-        // Drop indexes that block synchronize from dropping removed columns.
-        // We connect with a raw pg client before TypeORM initializes so that
-        // synchronize can proceed cleanly.
-        if (process.env.DB_SYNCHRONIZE === 'true') {
-          try {
-            const { Client } = await import('pg');
-            const pgClient = new Client({
-              host: process.env.DB_HOST || 'localhost',
-              port: parseInt(process.env.DB_PORT || '5432', 10),
-              user: process.env.DB_USERNAME || 'postgres',
-              password: String(process.env.DB_PASSWORD || ''),
-              database: process.env.DB_NAME || 'urutix',
-              ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-            });
-            await pgClient.connect();
-            await pgClient.query(`DROP INDEX IF EXISTS "public"."idx_tenants_health_score"`);
-            await pgClient.query(`DROP INDEX IF EXISTS "public"."idx_tenants_last_health_check"`);
-            await pgClient.end();
-            console.log('✅ Pre-sync cleanup: dropped blocking indexes on tenants table');
-          } catch (e) {
-            // Non-fatal: log and continue — synchronize may still succeed if
-            // the indexes were already dropped in a previous run.
-            console.warn('⚠️  Pre-sync cleanup warning:', (e as Error).message);
-          }
-        }
-        return databaseConfig;
-      },
-    }),
+    // ── Infrastructure ────────────────────────────────────────────────────
+    ConfigModule.forRoot({ isGlobal: true, cache: true }),
+
+    // TypeORM — synchronize is always false in production.
+    // Schema changes are deployed exclusively through SQL migrations
+    // (migrations/ directory, run by docker-entrypoint.sh via migrate.js).
+    TypeOrmModule.forRoot(databaseConfig),
+
+    // Entities accessed in AppModule providers
     TypeOrmModule.forFeature([Tenant, ActivityLog, UserSession]),
-    EventEmitterModule.forRoot(),
+
+    EventEmitterModule.forRoot({ wildcard: false, maxListeners: 20 }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
+
+    // Global rate-limiter — 20 req / 60 s per IP.
+    // Individual endpoints add @UseGuards(ThrottlerGuard) for stricter limits.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 20 }]),
+
+    // ── Feature modules ───────────────────────────────────────────────────
+    ActivityLogsModule,
+    AdminModule,
+    AnalyticsModule,
+    ApiMarketplaceModule,
+    AvailabilityModule,
+    BiddingModule,
+    BrokersModule,
+    CargoOwnerModule,
+    CarrierMarketplaceModule,
+    CarrierTierModule,
+    ComplianceModule,
+    CreditMarketplaceModule,
+    CurrencyModule,
+    CustomsModule,
+    DisputesModule,
+    DocumentModule,
+    DriverModule,
     EnhancedAuthModule,
-    LoadsModule,
-    LoadsV2Module,
-    RatingsModule,
-    RewardsModule,
-    ScoringModule,
-    TrackingModule,
+    EventsModule,
+    FileUploadModule,
     FinancialModule,
     FleetModule,
-    MatchingModule,
-    BiddingModule,
-    AdminModule,
-    TenantDashboardModule,
-    UsersModule,
-    LendingModule,
-    InsuranceModule,
-    DocumentModule,
-    NotificationModule,
-    FileUploadModule,
-    OcrModule,
-    SafetyModule,
-    TripsModule,
-    DriverModule,
-    ReceiversModule,
-    BrokersModule,
     FuelModule,
-    SubscriptionModule,
-    CreditMarketplaceModule,
-    AnalyticsModule,
-    ActivityLogsModule,
+    GeofencingModule,
+    InsuranceModule,
+    LendingModule,
+    LoadsModule,
+    LoadsV2Module,
+    MaintenanceModule,
+    MatchingModule,
     MessengerModule,
     MultiModalModule,
-    EventsModule,
+    NotificationModule,
+    OcrModule,
     PaymentsModule,
-    MaintenanceModule,
-    CargoOwnerModule,
-    CustomsModule,
-    ComplianceModule,
+    RatingsModule,
+    ReceiversModule,
     RevenueModule,
-    CarrierTierModule,
-    CarrierMarketplaceModule,
-    GeofencingModule,
-    ApiMarketplaceModule,
-    CurrencyModule,
-    DisputesModule,
-    AvailabilityModule,
+    RewardsModule,
+    SafetyModule,
+    ScoringModule,
+    SubscriptionModule,
+    TenantDashboardModule,
+    TrackingModule,
+    TripsModule,
+    UsersModule,
   ],
+
   controllers: [AppController],
+
   providers: [
     AppService,
     ActivityLogService,
@@ -156,9 +151,7 @@ import { UserSession } from './entities/user-session.entity';
   ],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(TenantSubdomainMiddleware)
-      .forRoutes('*'); // Apply to all routes
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(TenantSubdomainMiddleware).forRoutes('*');
   }
 }

@@ -1,16 +1,43 @@
+###############################################################################
+# UrutiX Production — docker-compose.production.yml
+#
+# Usage:
+#   docker compose -f docker-compose.production.yml up -d
+#
+# All sensitive values are injected from the host .env file — never hardcoded.
+# See .env.production.example for required variables and documentation.
+###############################################################################
+
 services:
-  # ============================================================
-  # PostgreSQL Database with PostGIS
-  # ============================================================
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # PostgreSQL 15 + PostGIS
+  # ──────────────────────────────────────────────────────────────────────────
   postgres:
     image: postgis/postgis:15-3.4-alpine
     container_name: urutix_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_USER:     ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-urutix}
-      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB:       ${DB_NAME:-urutix}
+      PGDATA:            /var/lib/postgresql/data/pgdata
+      # Tune Postgres for containerised workloads
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    command: >
+      postgres
+        -c max_connections=100
+        -c shared_buffers=256MB
+        -c effective_cache_size=512MB
+        -c work_mem=4MB
+        -c maintenance_work_mem=64MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=16MB
+        -c default_statistics_target=100
+        -c random_page_cost=1.1
+        -c log_min_duration_statement=2000
+        -c log_connections=off
+        -c log_disconnections=off
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
@@ -21,16 +48,35 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
-  # ============================================================
-  # Redis Cache
-  # ============================================================
+  # ──────────────────────────────────────────────────────────────────────────
+  # Redis 7
+  # ──────────────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: urutix_redis
     restart: unless-stopped
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    command: >
+      redis-server
+        --maxmemory 256mb
+        --maxmemory-policy allkeys-lru
+        --appendonly yes
+        --appendfsync everysec
+        --save 900 1
+        --save 300 10
+        --save 60 10000
+        --loglevel warning
+        ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     volumes:
       - redis_data:/data
     networks:
@@ -40,11 +86,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 384m
 
-  # ============================================================
-  # Backend — NestJS API (port 3005)
-  # Accessible to host nginx at 127.0.0.1:3005
-  # ============================================================
+  # ──────────────────────────────────────────────────────────────────────────
+  # Backend — NestJS API
+  # ──────────────────────────────────────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -58,39 +112,72 @@ services:
       redis:
         condition: service_healthy
     environment:
-      NODE_ENV: production
-      PORT: 3005
-      DB_HOST: postgres
-      DB_PORT: 5432
+      NODE_ENV:    production
+      PORT:        3005
+
+      # ── Database ──────────────────────────────────────────────────────────
+      DB_HOST:     postgres
+      DB_PORT:     5432
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME:-urutix}
-      DB_SSL: ${DB_SSL:-false}
-      DB_SYNCHRONIZE: "false"
-      AUTO_MIGRATE: "true"
-      FAIL_ON_MIGRATION_ERROR: "false"
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      DB_NAME:     ${DB_NAME:-urutix}
+      DB_SSL:      ${DB_SSL:-false}
+      DB_SSL_REJECT_UNAUTHORIZED: ${DB_SSL_REJECT_UNAUTHORIZED:-false}
+
+      # Connection pool (defaults wired in database.config.ts)
+      DB_POOL_MAX:                  ${DB_POOL_MAX:-20}
+      DB_POOL_MIN:                  ${DB_POOL_MIN:-5}
+      DB_POOL_IDLE_TIMEOUT_MS:      ${DB_POOL_IDLE_TIMEOUT_MS:-30000}
+      DB_POOL_ACQUIRE_TIMEOUT_MS:   ${DB_POOL_ACQUIRE_TIMEOUT_MS:-10000}
+      DB_SLOW_QUERY_MS:             ${DB_SLOW_QUERY_MS:-2000}
+
+      # Schema management — synchronize is ALWAYS false in production.
+      # Migrations run automatically on startup when AUTO_MIGRATE=true.
+      DB_SYNCHRONIZE:          "false"
+      AUTO_MIGRATE:            ${AUTO_MIGRATE:-true}
+      FAIL_ON_MIGRATION_ERROR: ${FAIL_ON_MIGRATION_ERROR:-true}
+
+      # ── Redis ─────────────────────────────────────────────────────────────
+      REDIS_HOST:     redis
+      REDIS_PORT:     6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      REDIS_DB: ${REDIS_DB:-0}
-      REDIS_TLS: ${REDIS_TLS:-false}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      REDIS_DB:       ${REDIS_DB:-0}
+      REDIS_TLS:      ${REDIS_TLS:-false}
+
+      # ── Auth ──────────────────────────────────────────────────────────────
+      JWT_SECRET:               ${JWT_SECRET}
+      JWT_REFRESH_SECRET:       ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRY:  ${JWT_ACCESS_TOKEN_EXPIRY:-1440}
+      JWT_REFRESH_TOKEN_EXPIRY: ${JWT_REFRESH_TOKEN_EXPIRY:-30}
+
+      # ── URLs & CORS ───────────────────────────────────────────────────────
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://urutix.com}
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL:    ${FRONTEND_URL}
+      BACKEND_URL:     ${BACKEND_URL}
+      API_URL:         ${API_URL}
+
+      # ── Email / SMTP ──────────────────────────────────────────────────────
+      SMTP_HOST:   ${SMTP_HOST}
+      SMTP_PORT:   ${SMTP_PORT:-587}
+      SMTP_USER:   ${SMTP_USER}
+      SMTP_PASS:   ${SMTP_PASS}
       SMTP_SECURE: ${SMTP_SECURE:-true}
-      MOBILE_MONEY_API_URL: ${MOBILE_MONEY_API_URL}
-      MOBILE_MONEY_API_KEY: ${MOBILE_MONEY_API_KEY}
-      MOBILE_MONEY_CALLBACK_URL: ${MOBILE_MONEY_CALLBACK_URL}
-      MOBILE_MONEY_CURRENCY: ${MOBILE_MONEY_CURRENCY:-RWF}
+      SMTP_FROM:   ${SMTP_FROM}
+
+      # ── Mobile Money ──────────────────────────────────────────────────────
+      MOBILE_MONEY_API_URL:       ${MOBILE_MONEY_API_URL}
+      MOBILE_MONEY_API_KEY:       ${MOBILE_MONEY_API_KEY}
+      MOBILE_MONEY_CALLBACK_URL:  ${MOBILE_MONEY_CALLBACK_URL}
+      MOBILE_MONEY_CURRENCY:      ${MOBILE_MONEY_CURRENCY:-RWF}
       MOBILE_MONEY_ACCOUNT_PHONE: ${MOBILE_MONEY_ACCOUNT_PHONE}
+      # Webhook HMAC secret — required in production to prevent spoofed webhooks
+      MOBILE_MONEY_WEBHOOK_SECRET: ${MOBILE_MONEY_WEBHOOK_SECRET}
+
+      # ── Observability ─────────────────────────────────────────────────────
+      LOG_LEVEL: ${LOG_LEVEL:-warn}
+
     ports:
-      - "3005:3005"   # Host nginx proxies this via gateway
+      - "127.0.0.1:3005:3005"   # Bind to loopback — only host nginx reaches this
     volumes:
       - backend_uploads:/app/uploads
       - backend_logs:/app/logs
@@ -98,31 +185,39 @@ services:
       - urutix_network
       - sparkmonitoring_locwise_net
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3005/api/health',(r)=>{process.exit(r.statusCode===200?0:1)})"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
-  # ============================================================
-  # Frontend — React SPA served by nginx (port 5173)
-  # Accessible to host nginx at 127.0.0.1:5173
-  # ============================================================
+  # ──────────────────────────────────────────────────────────────────────────
+  # Frontend — React SPA (nginx inside container)
+  # ──────────────────────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://urutix.com/api}
-        VITE_WEBSOCKET_URL: ${VITE_WEBSOCKET_URL:-wss://urutix.com}
+        VITE_API_BASE_URL:   ${VITE_API_BASE_URL:-https://urutix.com/api}
+        VITE_WEBSOCKET_URL:  ${VITE_WEBSOCKET_URL:-wss://urutix.com}
     container_name: urutix_frontend
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "5173:5173"   # Host nginx proxies this via gateway
+      - "127.0.0.1:5173:5173"   # Bind to loopback — only host nginx reaches this
     networks:
       - urutix_network
       - sparkmonitoring_locwise_net
@@ -132,24 +227,33 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
-  # ============================================================
-  # NOTE: No Docker nginx container.
-  # The host nginx (already running on ports 80/443 with SSL)
-  # acts as the reverse proxy. See nginx/setup-host-nginx.sh
-  # ============================================================
-
+# ──────────────────────────────────────────────────────────────────────────────
+# Networks
+# ──────────────────────────────────────────────────────────────────────────────
 networks:
   urutix_network:
     driver: bridge
     ipam:
       config:
         - subnet: 172.31.0.0/16
-  # Shared network with sparkmonitoring-frontend-1 (the host nginx container)
-  # This allows sparkmonitoring nginx to reach urutix containers by name
+  # Shared with sparkmonitoring nginx so the host reverse-proxy can reach
+  # urutix_backend and urutix_frontend by container name.
   sparkmonitoring_locwise_net:
     external: true
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Volumes
+# ──────────────────────────────────────────────────────────────────────────────
 volumes:
   postgres_data:
     driver: local

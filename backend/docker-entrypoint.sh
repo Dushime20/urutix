@@ -1,116 +1,148 @@
 #!/bin/bash
-
 ###############################################################################
-# Docker Entrypoint Script
-# 
-# Professional production entrypoint that handles:
-# - Database connection waiting
-# - Automatic migrations (optional)
-# - Health checks
-# - Graceful shutdown
+# UrutiX Backend — Docker Entrypoint
+#
+# Responsibilities:
+#   1. Validate that all required environment variables are present.
+#   2. Wait for PostgreSQL to accept connections.
+#   3. Run SQL migrations (when AUTO_MIGRATE=true).
+#   4. Hand off to the Node.js application via exec.
+#
+# Uses dumb-init as PID 1 so SIGTERM is forwarded cleanly to Node.
 ###############################################################################
 
-set -e
+set -euo pipefail
 
-# Colors
+# ── Colour helpers ────────────────────────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log_info() {
-    echo -e "${BLUE}[ENTRYPOINT]${NC} $1"
-}
+log_info()    { echo -e "${BLUE}[ENTRYPOINT]${NC} $*"; }
+log_success() { echo -e "${GREEN}[ENTRYPOINT]${NC} $*"; }
+log_warn()    { echo -e "${YELLOW}[ENTRYPOINT]${NC} $*"; }
+log_error()   { echo -e "${RED}[ENTRYPOINT]${NC} $*" >&2; }
 
-log_success() {
-    echo -e "${GREEN}[ENTRYPOINT]${NC} $1"
-}
+# ── 1. Required-variable validation ──────────────────────────────────────────
+validate_env() {
+  local missing=0
 
-log_error() {
-    echo -e "${RED}[ENTRYPOINT]${NC} $1"
-}
+  # Variables that MUST be set and non-empty in every environment.
+  local required_vars=(
+    DB_HOST DB_PORT DB_USERNAME DB_PASSWORD DB_NAME
+    JWT_SECRET JWT_REFRESH_SECRET
+  )
 
-# Wait for database to be ready
-wait_for_db() {
-    log_info "Waiting for database at $DB_HOST:$DB_PORT..."
-    
-    max_attempts=30
-    attempt=0
-    
-    until node -e "
-        const { Client } = require('pg');
-        const client = new Client({
-            host: process.env.DB_HOST,
-            port: process.env.DB_PORT,
-            user: process.env.DB_USERNAME,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME,
-        });
-        client.connect()
-            .then(() => {
-                console.log('Database connected');
-                client.end();
-                process.exit(0);
-            })
-            .catch((err) => {
-                console.error('Connection failed:', err.message);
-                process.exit(1);
-            });
-    "; do
-        attempt=$((attempt + 1))
-        
-        if [ $attempt -ge $max_attempts ]; then
-            log_error "Database connection timeout after $max_attempts attempts"
-            exit 1
-        fi
-        
-        log_info "Database not ready, waiting... (attempt $attempt/$max_attempts)"
-        sleep 2
-    done
-    
-    log_success "Database is ready"
-}
+  # Additional variables required only in production.
+  if [[ "${NODE_ENV:-production}" == "production" ]]; then
+    required_vars+=(
+      MOBILE_MONEY_WEBHOOK_SECRET
+      ALLOWED_ORIGINS
+      FRONTEND_URL
+    )
+  fi
 
-# Run migrations if AUTO_MIGRATE is enabled
-run_migrations() {
-    if [ "$AUTO_MIGRATE" = "true" ]; then
-        log_info "AUTO_MIGRATE enabled, running migrations via migrate.js..."
-
-        if node migrate.js; then
-            log_success "Migrations completed"
-        else
-            log_error "Migrations failed"
-
-            if [ "$FAIL_ON_MIGRATION_ERROR" = "true" ]; then
-                log_error "FAIL_ON_MIGRATION_ERROR is true, exiting..."
-                exit 1
-            else
-                log_error "Continuing despite migration failure..."
-            fi
-        fi
-    else
-        log_info "AUTO_MIGRATE disabled, skipping migrations"
-        log_info "Run migrations manually: docker-compose exec backend node migrate.js"
+  for var in "${required_vars[@]}"; do
+    if [[ -z "${!var:-}" ]]; then
+      log_error "Required environment variable '$var' is not set."
+      missing=1
     fi
+  done
+
+  if [[ $missing -eq 1 ]]; then
+    log_error "Aborting: one or more required environment variables are missing."
+    log_error "See .env.production.example for documentation."
+    exit 1
+  fi
+
+  # Warn (but don't abort) if JWT secrets look too short.
+  if [[ ${#JWT_SECRET} -lt 32 ]]; then
+    log_warn "JWT_SECRET is shorter than 32 characters — use at least 64 for production."
+  fi
+  if [[ ${#JWT_REFRESH_SECRET} -lt 32 ]]; then
+    log_warn "JWT_REFRESH_SECRET is shorter than 32 characters — use at least 64 for production."
+  fi
+
+  log_success "Environment validation passed."
 }
 
-# Main execution
+# ── 2. Wait for PostgreSQL ────────────────────────────────────────────────────
+wait_for_db() {
+  log_info "Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}..."
+
+  local max_attempts=30
+  local attempt=0
+  local wait_s=2
+
+  until node -e "
+    const { Client } = require('pg');
+    const c = new Client({
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT, 10),
+      user: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 3000,
+    });
+    c.connect()
+      .then(() => { c.end(); process.exit(0); })
+      .catch(() => process.exit(1));
+  " 2>/dev/null; do
+    attempt=$(( attempt + 1 ))
+
+    if (( attempt >= max_attempts )); then
+      log_error "PostgreSQL did not become ready after $max_attempts attempts. Aborting."
+      exit 1
+    fi
+
+    log_info "Not ready yet — attempt ${attempt}/${max_attempts}. Retrying in ${wait_s}s..."
+    sleep "$wait_s"
+  done
+
+  log_success "PostgreSQL is ready."
+}
+
+# ── 3. Run migrations ─────────────────────────────────────────────────────────
+run_migrations() {
+  if [[ "${AUTO_MIGRATE:-true}" != "true" ]]; then
+    log_info "AUTO_MIGRATE is disabled — skipping migrations."
+    log_info "Run manually: docker compose exec backend node migrate.js"
+    return
+  fi
+
+  log_info "Running migrations via migrate.js..."
+
+  if node migrate.js; then
+    log_success "Migrations completed successfully."
+  else
+    log_error "Migration runner exited with an error."
+
+    if [[ "${FAIL_ON_MIGRATION_ERROR:-true}" == "true" ]]; then
+      log_error "FAIL_ON_MIGRATION_ERROR=true — aborting startup."
+      exit 1
+    else
+      log_warn "FAIL_ON_MIGRATION_ERROR=false — continuing despite migration failure."
+    fi
+  fi
+}
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 main() {
-    log_info "=== Starting UrutiX Backend ==="
-    log_info "Environment: ${NODE_ENV:-production}"
-    log_info "Database: $DB_NAME@$DB_HOST:$DB_PORT"
-    
-    # Wait for database
-    wait_for_db
-    
-    # Run migrations if enabled
-    run_migrations
-    
-    # Start the application
-    log_success "Starting application..."
-    exec "$@"
+  log_info "========================================"
+  log_info "  UrutiX Backend starting"
+  log_info "  ENV  : ${NODE_ENV:-production}"
+  log_info "  DB   : ${DB_NAME}@${DB_HOST}:${DB_PORT}"
+  log_info "========================================"
+
+  validate_env
+  wait_for_db
+  run_migrations
+
+  log_success "Handing off to application: $*"
+  exec "$@"
 }
 
-# Run main
 main "$@"
