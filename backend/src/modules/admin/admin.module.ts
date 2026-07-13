@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
+import { ConfigModule } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
@@ -45,6 +47,7 @@ import { CreditPricingRule } from '../../entities/credit-pricing-rule.entity';
 import { SubscriptionService } from '../../services/subscription.service';
 import { CreditService } from '../../services/credit.service';
 import { PricingService } from '../../services/pricing.service';
+import { MobileMoneyPaymentService } from '../payments/services/mobile-money-payment.service';
 
 // Bulk Email imports
 import { EmailTemplate } from '../../entities/email-template.entity';
@@ -109,10 +112,12 @@ import { TenantManagementController } from './tenant-management.controller';
       // Security Center entities
       SecurityEvent,
     ]),
-    UsersModule, // Import UsersModule to use UsersService
-    EnhancedAuthModule, // Import EnhancedAuthModule to use PermissionService
-    NotificationsModule, // Import NotificationsModule for SmsService + NotificationsService
-    BiddingModule, // Import BiddingModule for BiddingService
+    HttpModule,
+    ConfigModule,
+    UsersModule,
+    EnhancedAuthModule,
+    NotificationsModule,
+    BiddingModule,
   ],
   controllers: [
     AdminController,
@@ -145,6 +150,7 @@ import { TenantManagementController } from './tenant-management.controller';
     SubscriptionService,
     CreditService,
     PricingService,
+    MobileMoneyPaymentService,
     // Bulk Email services
     BulkEmailService,
     AIEmailAssistantService,
