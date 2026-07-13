@@ -459,7 +459,7 @@ export class SubscriptionService {
           ...(subscription.metadata || {}),
           payerPhone: data.paymentDetails.phoneNumber,
           paymentMethod: data.paymentMethod,
-        },
+        } as any,
       });
     }
 
