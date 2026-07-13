@@ -8,6 +8,8 @@ import {
   MaxLength,
   IsNumber,
   IsDateString,
+  Min,
+  Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
@@ -15,7 +17,10 @@ import {
   DisputePriority,
   DisputeStatusV2,
   DisputeDecision,
+  SupportAssigneeRole,
+  EscalationReason,
 } from '../../../entities/dispute-v2.entity';
+import { Type } from 'class-transformer';
 
 // ─── Create Dispute ────────────────────────────────────────────────────────────
 
@@ -26,7 +31,7 @@ export class CreateDisputeDto {
   @MaxLength(255)
   title: string;
 
-  @ApiProperty({ example: 'The cargo arrived with significant physical damage to the packaging and contents.' })
+  @ApiProperty({ example: 'The cargo arrived with significant physical damage.' })
   @IsString()
   @MinLength(10)
   description: string;
@@ -40,12 +45,12 @@ export class CreateDisputeDto {
   @IsEnum(DisputePriority)
   priority?: DisputePriority;
 
-  @ApiPropertyOptional({ example: 'uuid-of-respondent' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
   respondentUserId?: string;
 
-  @ApiPropertyOptional({ example: 'uuid-of-trip' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
   tripId?: string;
@@ -69,6 +74,47 @@ export class CreateDisputeDto {
   @IsOptional()
   @IsUUID()
   invoiceId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  auctionId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  paymentId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  driverId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  brokerId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  lenderId?: string;
+
+  @ApiPropertyOptional({ example: 'Warehouse A, Lagos' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  location?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  incidentDate?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  additionalNotes?: string;
 }
 
 // ─── Update Dispute ────────────────────────────────────────────────────────────
@@ -95,6 +141,16 @@ export class UpdateDisputeDto {
   @IsOptional()
   @IsEnum(DisputePriority)
   priority?: DisputePriority;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  additionalNotes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  location?: string;
 }
 
 // ─── Add Comment ──────────────────────────────────────────────────────────────
@@ -118,12 +174,12 @@ export class ResolveDisputeDto {
   @IsEnum(DisputeDecision)
   decision: DisputeDecision;
 
-  @ApiProperty({ example: 'After reviewing the evidence, cargo was damaged in transit.' })
+  @ApiProperty()
   @IsString()
   @MinLength(10)
   resolutionSummary: string;
 
-  @ApiPropertyOptional({ example: 'Internal notes for recordkeeping.' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   adminNotes?: string;
@@ -140,6 +196,37 @@ export class ChangeStatusDto {
   @IsOptional()
   @IsString()
   reason?: string;
+}
+
+// ─── Assign Dispute ───────────────────────────────────────────────────────────
+
+export class AssignDisputeDto {
+  @ApiProperty()
+  @IsUUID()
+  assignedToUserId: string;
+
+  @ApiPropertyOptional({ enum: SupportAssigneeRole })
+  @IsOptional()
+  @IsEnum(SupportAssigneeRole)
+  assignedRole?: SupportAssigneeRole;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+// ─── Escalate Dispute ─────────────────────────────────────────────────────────
+
+export class EscalateDisputeDto {
+  @ApiProperty({ enum: EscalationReason })
+  @IsEnum(EscalationReason)
+  reason: EscalationReason;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 // ─── Filters ──────────────────────────────────────────────────────────────────
@@ -167,6 +254,11 @@ export class DisputeFilterDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  assignedToUserId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsDateString()
   fromDate?: string;
 
@@ -177,11 +269,21 @@ export class DisputeFilterDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
+  @Min(1)
   page?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
+  @Min(1)
+  @Max(100)
   limit?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  slaBreached?: boolean;
 }

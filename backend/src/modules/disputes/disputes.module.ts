@@ -7,6 +7,8 @@ import {
   DisputeAttachment,
   DisputeResolutionRecord,
   DisputeAuditLog,
+  DisputeAssignment,
+  DisputeEscalation,
 } from '../../entities/dispute-v2.entity';
 import { User } from '../../entities/user.entity';
 import { DisputesService } from './disputes.service';
@@ -24,6 +26,8 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       DisputeAttachment,
       DisputeResolutionRecord,
       DisputeAuditLog,
+      DisputeAssignment,
+      DisputeEscalation,
       User,
     ]),
     EventEmitterModule.forRoot(),

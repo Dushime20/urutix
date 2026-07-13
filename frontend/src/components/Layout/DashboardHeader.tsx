@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio } from 'lucide-react';
+import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio, Headphones } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import CurrencySelector from '../common/CurrencySelector';
@@ -103,6 +103,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
           ]
         },
+        {
+          label: 'Support',
+          path: `${basePath}/support`,
+          icon: Headphones,
+          subItems: [
+            { label: 'Report Issue', path: `${basePath}/support/new` },
+            { label: 'My Reports', path: `${basePath}/support` },
+          ]
+        },
       ];
     }
 
@@ -132,6 +141,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Credit Assessment', path: '/dashboard/broker/credit-management' },
           ]
         },
+        {
+          label: 'Support',
+          path: '/dashboard/broker/support',
+          icon: Headphones,
+          subItems: [
+            { label: 'Report Issue', path: '/dashboard/broker/support/new' },
+            { label: 'My Reports', path: '/dashboard/broker/support' },
+          ]
+        },
       ];
     }
 
@@ -159,6 +177,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Earnings Registry', path: '/dashboard/driver/earnings' },
             { label: 'Performance Metrics', path: '/dashboard/driver/analytics' },
             { label: 'Wallet & Advances', path: '/dashboard/driver/wallet' },
+          ]
+        },
+        {
+          label: 'Support',
+          path: '/dashboard/driver/support',
+          icon: Headphones,
+          subItems: [
+            { label: 'Report Issue', path: '/dashboard/driver/support/new' },
+            { label: 'My Reports', path: '/dashboard/driver/support' },
           ]
         },
         { label: 'Account', path: '/dashboard/driver/profile', icon: User },
@@ -194,6 +221,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financial Hub', path: '/dashboard/fleet/financial' },
             { label: 'Line of Credit', path: '/dashboard/fleet/credits' },
             { label: 'Performance Analytics', path: '/dashboard/fleet/analytics' },
+          ]
+        },
+        {
+          label: 'Support',
+          path: '/dashboard/fleet/support',
+          icon: Headphones,
+          subItems: [
+            { label: 'Report Issue', path: '/dashboard/fleet/support/new' },
+            { label: 'My Reports', path: '/dashboard/fleet/support' },
           ]
         },
       ];
@@ -237,6 +273,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Activity Forensics', path: '/admin/activity-logs' },
           ]
         },
+        {
+          label: 'Global Support',
+          path: '/admin/support',
+          icon: Headphones,
+          subItems: [
+            { label: 'All Tickets', path: '/admin/support' },
+            { label: 'Analytics', path: '/admin/support/analytics' },
+          ]
+        },
       ];
     }
 
@@ -274,6 +319,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Risk Analysis', path: '/lender/risk', icon: AlertTriangle },
             { label: 'Interest Tracking', path: '/lender/interest', icon: TrendingUp },
             { label: 'Financial Reports', path: '/lender/reports', icon: FileText },
+          ]
+        },
+        {
+          label: 'Support',
+          path: '/lender/support',
+          icon: Headphones,
+          subItems: [
+            { label: 'Report Issue', path: '/lender/support/new' },
+            { label: 'My Reports', path: '/lender/support' },
           ]
         },
       ];
@@ -331,6 +385,19 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Purchase Credits', path: '/tenant-admin/purchase-credits' },
             { label: 'Transaction History', path: '/tenant-admin/billing' },
             { label: 'General Settings', path: '/tenant-admin/settings' },
+          ]
+        },
+        {
+          label: 'Support Center',
+          path: '/tenant-admin/support',
+          icon: Headphones,
+          subItems: [
+            { label: 'All Reports', path: '/tenant-admin/support' },
+            { label: 'Open', path: '/tenant-admin/support?status=OPEN' },
+            { label: 'In Progress', path: '/tenant-admin/support?status=UNDER_REVIEW' },
+            { label: 'Escalated', path: '/tenant-admin/support?status=ESCALATED' },
+            { label: 'Resolved', path: '/tenant-admin/support?status=RESOLVED' },
+            { label: 'Analytics', path: '/tenant-admin/support/analytics' },
           ]
         },
       ];

@@ -334,7 +334,15 @@ export const disputesAPI = {
   getTimeline: (id: string) => api.get(`/disputes/${id}/timeline`),
   getResolutions: (id: string) => api.get(`/disputes/${id}/resolutions`),
 
+  // Assignment & escalation history
+  getAssignments: (id: string) => api.get(`/disputes/${id}/assignments`),
+  getEscalations: (id: string) => api.get(`/disputes/${id}/escalations`),
+
   // Admin actions
+  assign: (id: string, data: { assignedToUserId: string; assignedRole?: string; notes?: string }) =>
+    api.post(`/disputes/${id}/assign`, data),
+  escalate: (id: string, data: { reason: string; notes?: string }) =>
+    api.post(`/disputes/${id}/escalate`, data),
   resolve: (id: string, data: { decision: string; resolutionSummary: string; adminNotes?: string }) =>
     api.post(`/disputes/${id}/resolve`, data),
   close: (id: string) => api.post(`/disputes/${id}/close`),
@@ -345,6 +353,9 @@ export const disputesAPI = {
   // Analytics
   getAnalytics: (period?: string) =>
     api.get('/disputes/analytics', { params: period ? { period } : {} }),
+
+  // SLA
+  checkSla: () => api.post('/disputes/admin/check-sla'),
 };
 
 export default api; 

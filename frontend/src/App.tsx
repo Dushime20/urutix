@@ -113,6 +113,11 @@ const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
 // Dispute Resolution System
 const DisputeResolutionCenter = lazy(() => import('./pages/admin/DisputeResolutionCenter'));
 const UserDisputesPage = lazy(() => import('./pages/dashboard/disputes'));
+
+// ─── Support Module ───────────────────────────────────────────────────────────
+const UserSupportPage            = lazy(() => import('./pages/support/UserSupportPage'));
+const TenantSupportCenter        = lazy(() => import('./pages/support/TenantSupportCenter'));
+const SupportAnalyticsDashboard  = lazy(() => import('./pages/support/SupportAnalyticsDashboard'));
 // ─── New Feature Pages ────────────────────────────────────────────────────────
 const RevenueDashboard = lazy(() => import('./pages/admin/RevenueDashboard'));
 const ComplianceDashboard = lazy(() => import('./pages/shared/ComplianceDashboard'));
@@ -345,6 +350,8 @@ function App() {
                       <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
                       <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
+                      <Route path="support" element={<UserSupportPage />} />
+                      <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
 
                     {/* Cargo Owner Routes (alias for /dashboard) */}
@@ -454,6 +461,8 @@ function App() {
                       <Route path="tracking/trips/:tripId" element={<TripTracking />} />
                       <Route path="trip-tracking/:tripId" element={<TripTracking />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
+                      <Route path="support" element={<UserSupportPage />} />
+                      <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
 
                     {/* Profile Route for Truck Owner */}
@@ -494,6 +503,8 @@ function App() {
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
+                      <Route path="support" element={<UserSupportPage />} />
+                      <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
 
                     {/* Admin Routes - Super Admin (System Level) */}
@@ -536,6 +547,8 @@ function App() {
                       <Route path="billing" element={<BillingDashboard />} />
                       <Route path="credits" element={<PurchaseCredits />} />
                       <Route path="revenue" element={<RevenueDashboard />} />
+                      <Route path="support" element={<TenantSupportCenter />} />
+                      <Route path="support/analytics" element={<SupportAnalyticsDashboard onBack={() => window.history.back()} />} />
                     </Route>
 
                     {/* Admin Operational Routes - ADMIN Role (Operational Oversight) */}
@@ -625,6 +638,8 @@ function App() {
                       <Route path="geofences" element={<GeofenceManager />} />
                       <Route path="integrations" element={<IntegrationsPage />} />
                       <Route path="branding" element={<BrandingSettingsPage />} />
+                      <Route path="support" element={<TenantSupportCenter />} />
+                      <Route path="support/analytics" element={<SupportAnalyticsDashboard onBack={() => window.history.back()} />} />
                     </Route>
 
                     {/* Lender Routes */}
@@ -651,6 +666,8 @@ function App() {
                       <Route path="financial-info" element={<UnifiedFinancialManagement />} />
                       <Route path="receipts" element={<ReceiptViewer />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
+                      <Route path="support" element={<UserSupportPage />} />
+                      <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
 
                     {/* Broker Routes */}
@@ -684,6 +701,8 @@ function App() {
                       <Route path="multi-stop" element={<MultiStopManagement />} />
                       <Route path="performance" element={<PerformanceAnalytics />} />
                       <Route path="payouts" element={<PayoutsPage />} />
+                      <Route path="support" element={<UserSupportPage />} />
+                      <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
 
                     {/* Customs Officer Routes */}

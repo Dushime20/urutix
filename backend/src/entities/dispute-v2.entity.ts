@@ -18,6 +18,8 @@ import { Trip } from './trip.entity';
 export enum DisputeStatusV2 {
   OPEN = 'OPEN',
   UNDER_REVIEW = 'UNDER_REVIEW',
+  ASSIGNED = 'ASSIGNED',
+  INVESTIGATING = 'INVESTIGATING',
   AWAITING_INFORMATION = 'AWAITING_INFORMATION',
   ESCALATED = 'ESCALATED',
   RESOLVED = 'RESOLVED',
@@ -27,6 +29,7 @@ export enum DisputeStatusV2 {
 }
 
 export enum DisputeCategory {
+  // Existing
   PAYMENT_ISSUE = 'PAYMENT_ISSUE',
   DELIVERY_DELAY = 'DELIVERY_DELAY',
   CARGO_DAMAGE = 'CARGO_DAMAGE',
@@ -40,6 +43,29 @@ export enum DisputeCategory {
   DOCUMENTATION_ISSUE = 'DOCUMENTATION_ISSUE',
   FRAUD_SUSPECTED = 'FRAUD_SUSPECTED',
   OTHER = 'OTHER',
+  // Extended support categories
+  TRUCK_BREAKDOWN = 'TRUCK_BREAKDOWN',
+  AUCTION_ISSUE = 'AUCTION_ISSUE',
+  BROKER_COMPLAINT = 'BROKER_COMPLAINT',
+  LENDER_COMPLAINT = 'LENDER_COMPLAINT',
+  IDENTITY_VERIFICATION = 'IDENTITY_VERIFICATION',
+  INSURANCE_CLAIM = 'INSURANCE_CLAIM',
+  ACCOUNT_SUSPENSION = 'ACCOUNT_SUSPENSION',
+  TECHNICAL_PROBLEM = 'TECHNICAL_PROBLEM',
+  BILLING_ISSUE = 'BILLING_ISSUE',
+  SUBSCRIPTION_ISSUE = 'SUBSCRIPTION_ISSUE',
+  FEATURE_REQUEST = 'FEATURE_REQUEST',
+  SECURITY_CONCERN = 'SECURITY_CONCERN',
+}
+
+// Support ticket assignment roles
+export enum SupportAssigneeRole {
+  SUPPORT_OFFICER = 'SUPPORT_OFFICER',
+  OPERATIONS_MANAGER = 'OPERATIONS_MANAGER',
+  FINANCE_OFFICER = 'FINANCE_OFFICER',
+  COMPLIANCE_OFFICER = 'COMPLIANCE_OFFICER',
+  LEGAL_OFFICER = 'LEGAL_OFFICER',
+  ADMIN = 'ADMIN',
 }
 
 export enum DisputePriority {
@@ -55,6 +81,15 @@ export enum DisputeDecision {
   MUTUAL_SETTLEMENT = 'MUTUAL_SETTLEMENT',
 }
 
+export enum EscalationReason {
+  SLA_BREACH = 'SLA_BREACH',
+  CRITICAL_UNRESPONDED = 'CRITICAL_UNRESPONDED',
+  MULTIPLE_REOPENS = 'MULTIPLE_REOPENS',
+  FRAUD_DETECTED = 'FRAUD_DETECTED',
+  PAYMENT_DISPUTE_THRESHOLD = 'PAYMENT_DISPUTE_THRESHOLD',
+  MANUAL = 'MANUAL',
+}
+
 // ─── DisputeV2 ────────────────────────────────────────────────────────────────
 
 @Entity('disputes_v2')
@@ -63,6 +98,10 @@ export enum DisputeDecision {
 @Index(['complainantUserId', 'status'])
 @Index(['respondentUserId', 'status'])
 @Index(['tripId'])
+@Index(['assignedToUserId', 'status'])
+@Index(['ticketNumber'], { unique: true })
+@Index(['slaFirstResponseDue'])
+@Index(['slaResolutionDue'])
 export class DisputeV2 {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -72,6 +111,10 @@ export class DisputeV2 {
 
   @Column({ length: 50 })
   referenceNumber: string;
+
+  // Human-readable support ticket number: SUP-2026-000001
+  @Column({ length: 30, nullable: true })
+  ticketNumber?: string;
 
   @Column({ length: 255 })
   title: string;
@@ -95,6 +138,16 @@ export class DisputeV2 {
   @Column('uuid', { nullable: true })
   respondentUserId?: string;
 
+  // Assignment
+  @Column('uuid', { nullable: true })
+  assignedToUserId?: string;
+
+  @Column({ type: 'enum', enum: SupportAssigneeRole, nullable: true })
+  assignedRole?: SupportAssigneeRole;
+
+  @Column({ nullable: true })
+  assignedAt?: Date;
+
   // Related entities (all optional)
   @Column('uuid', { nullable: true })
   tripId?: string;
@@ -110,6 +163,63 @@ export class DisputeV2 {
 
   @Column('uuid', { nullable: true })
   invoiceId?: string;
+
+  @Column('uuid', { nullable: true })
+  auctionId?: string;
+
+  @Column('uuid', { nullable: true })
+  paymentId?: string;
+
+  @Column('uuid', { nullable: true })
+  driverId?: string;
+
+  @Column('uuid', { nullable: true })
+  brokerId?: string;
+
+  @Column('uuid', { nullable: true })
+  lenderId?: string;
+
+  // Extra context
+  @Column({ length: 500, nullable: true })
+  location?: string;
+
+  @Column({ nullable: true })
+  incidentDate?: Date;
+
+  @Column('text', { nullable: true })
+  additionalNotes?: string;
+
+  // SLA tracking
+  @Column({ nullable: true })
+  slaFirstResponseDue?: Date;
+
+  @Column({ nullable: true })
+  slaResolutionDue?: Date;
+
+  @Column({ nullable: true })
+  firstResponseAt?: Date;
+
+  @Column({ default: false })
+  slaFirstResponseBreached: boolean;
+
+  @Column({ default: false })
+  slaResolutionBreached: boolean;
+
+  // Escalation tracking
+  @Column({ default: 0 })
+  reopenCount: number;
+
+  @Column({ default: 0 })
+  escalationLevel: number;
+
+  @Column({ type: 'enum', enum: EscalationReason, nullable: true })
+  escalationReason?: EscalationReason;
+
+  @Column({ nullable: true })
+  escalatedAt?: Date;
+
+  @Column('uuid', { nullable: true })
+  escalatedByUserId?: string;
 
   // Timestamps
   @CreateDateColumn()
@@ -136,6 +246,10 @@ export class DisputeV2 {
   @JoinColumn({ name: 'respondentUserId' })
   respondent: User;
 
+  @ManyToOne('User', { nullable: true, eager: false })
+  @JoinColumn({ name: 'assignedToUserId' })
+  assignedTo: User;
+
   @ManyToOne('Trip', { nullable: true, eager: false })
   @JoinColumn({ name: 'tripId' })
   trip: Trip;
@@ -151,6 +265,12 @@ export class DisputeV2 {
 
   @OneToMany('DisputeAuditLog', (l: any) => l.dispute, { cascade: false })
   auditLogs: any[];
+
+  @OneToMany('DisputeAssignment', (a: any) => a.dispute, { cascade: false })
+  assignments: any[];
+
+  @OneToMany('DisputeEscalation', (e: any) => e.dispute, { cascade: false })
+  escalations: any[];
 }
 
 // ─── DisputeMessage ───────────────────────────────────────────────────────────
@@ -284,6 +404,12 @@ export class DisputeAuditLog {
   @Column('text', { nullable: true })
   notes?: string;
 
+  @Column({ nullable: true })
+  ipAddress?: string;
+
+  @Column({ nullable: true })
+  userAgent?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -294,4 +420,78 @@ export class DisputeAuditLog {
   @ManyToOne('User', { eager: false })
   @JoinColumn({ name: 'performedBy' })
   actor: User;
+}
+
+// ─── DisputeAssignment ────────────────────────────────────────────────────────
+
+@Entity('dispute_assignments')
+@Index(['disputeId', 'createdAt'])
+export class DisputeAssignment {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column('uuid')
+  disputeId: string;
+
+  @Column('uuid')
+  assignedByUserId: string;
+
+  @Column('uuid')
+  assignedToUserId: string;
+
+  @Column({ type: 'enum', enum: SupportAssigneeRole, nullable: true })
+  assignedRole?: SupportAssigneeRole;
+
+  @Column('text', { nullable: true })
+  notes?: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ManyToOne('DisputeV2', (d: any) => d.assignments, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'disputeId' })
+  dispute: DisputeV2;
+
+  @ManyToOne('User', { eager: false })
+  @JoinColumn({ name: 'assignedByUserId' })
+  assignedBy: User;
+
+  @ManyToOne('User', { eager: false })
+  @JoinColumn({ name: 'assignedToUserId' })
+  assignedTo: User;
+}
+
+// ─── DisputeEscalation ────────────────────────────────────────────────────────
+
+@Entity('dispute_escalations')
+@Index(['disputeId', 'createdAt'])
+export class DisputeEscalation {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column('uuid')
+  disputeId: string;
+
+  @Column('uuid')
+  escalatedByUserId: string;
+
+  @Column({ type: 'enum', enum: EscalationReason })
+  reason: EscalationReason;
+
+  @Column('text', { nullable: true })
+  notes?: string;
+
+  @Column({ default: 1 })
+  escalationLevel: number;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @ManyToOne('DisputeV2', (d: any) => d.escalations, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'disputeId' })
+  dispute: DisputeV2;
+
+  @ManyToOne('User', { eager: false })
+  @JoinColumn({ name: 'escalatedByUserId' })
+  escalatedBy: User;
 }

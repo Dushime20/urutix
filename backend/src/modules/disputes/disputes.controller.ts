@@ -1,28 +1,10 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-  UseInterceptors,
-  UploadedFile,
-  HttpCode,
-  HttpStatus,
+  Controller, Get, Post, Patch, Delete, Body, Param,
+  Query, UseGuards, Request, UseInterceptors, UploadedFile,
+  HttpCode, HttpStatus,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiConsumes,
-  ApiBody,
-  ApiParam,
-  ApiQuery,
+  ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -31,29 +13,20 @@ import { UserRole } from '../../entities/user.entity';
 import { DisputesService } from './disputes.service';
 import { FileUploadService } from '../file-upload/file-upload.service';
 import {
-  CreateDisputeDto,
-  UpdateDisputeDto,
-  AddCommentDto,
-  ResolveDisputeDto,
-  ChangeStatusDto,
-  DisputeFilterDto,
+  CreateDisputeDto, UpdateDisputeDto, AddCommentDto, ResolveDisputeDto,
+  ChangeStatusDto, DisputeFilterDto, AssignDisputeDto, EscalateDisputeDto,
 } from './dto/dispute.dto';
 
-@ApiTags('Disputes')
+const ALL_SUPPORT_ROLES = [
+  UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN,
+  UserRole.CARGO_OWNER, UserRole.TRUCK_OWNER, UserRole.BROKER,
+  UserRole.LENDER, UserRole.DRIVER, UserRole.FLEET_MANAGER, UserRole.FLEET_DISPATCHER,
+];
+
+@ApiTags('Support Tickets')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(
-  UserRole.SUPER_ADMIN,
-  UserRole.ADMIN,
-  UserRole.TENANT_ADMIN,
-  UserRole.CARGO_OWNER,
-  UserRole.TRUCK_OWNER,
-  UserRole.BROKER,
-  UserRole.LENDER,
-  UserRole.DRIVER,
-  UserRole.FLEET_MANAGER,
-  UserRole.FLEET_DISPATCHER,
-)
+@Roles(...ALL_SUPPORT_ROLES)
 @Controller('disputes')
 export class DisputesController {
   constructor(
@@ -61,92 +34,75 @@ export class DisputesController {
     private readonly fileUploadService: FileUploadService,
   ) {}
 
-  // ─── Disputes CRUD ────────────────────────────────────────────────────────────
+  // ── CRUD ───────────────────────────────────────────────────────────────────
 
   @Post()
-  @ApiOperation({ summary: 'Create a new dispute' })
+  @ApiOperation({ summary: 'Create a new support ticket' })
   async create(@Body() dto: CreateDisputeDto, @Request() req) {
     const dispute = await this.disputesService.create(dto, req.user);
-    return { success: true, message: 'Dispute created successfully', data: dispute };
+    return { success: true, message: 'Support ticket created successfully', data: dispute };
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all disputes (filtered by role/tenant)' })
+  @ApiOperation({ summary: 'Get all tickets (filtered by role/tenant)' })
   async findAll(@Query() filter: DisputeFilterDto, @Request() req) {
     const result = await this.disputesService.findAll(filter, req.user);
     return {
       success: true,
-      message: 'Disputes retrieved',
       data: result.disputes,
       pagination: { total: result.total, page: result.page, limit: result.limit },
     };
   }
 
   @Get('analytics')
-  @ApiOperation({ summary: 'Get dispute analytics — TENANT_ADMIN and SUPER_ADMIN only' })
-  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  @ApiOperation({ summary: 'Get support analytics — TENANT_ADMIN and SUPER_ADMIN only' })
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN, UserRole.ADMIN)
   async getAnalytics(@Query('period') period: string, @Request() req) {
     const data = await this.disputesService.getAnalytics(req.user.tenantId, period);
     return { success: true, data };
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get dispute by ID' })
+  @ApiOperation({ summary: 'Get ticket by ID' })
   async findOne(@Param('id') id: string, @Request() req) {
     const dispute = await this.disputesService.findOne(id, req.user);
     return { success: true, data: dispute };
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update dispute details' })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateDisputeDto,
-    @Request() req,
-  ) {
+  @ApiOperation({ summary: 'Update ticket details' })
+  async update(@Param('id') id: string, @Body() dto: UpdateDisputeDto, @Request() req) {
     const dispute = await this.disputesService.update(id, dto, req.user);
-    return { success: true, message: 'Dispute updated', data: dispute };
+    return { success: true, message: 'Ticket updated', data: dispute };
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete dispute (admin only)' })
+  @ApiOperation({ summary: 'Delete ticket (admin only)' })
   async remove(@Param('id') id: string, @Request() req) {
     await this.disputesService.remove(id, req.user);
-    return { success: true, message: 'Dispute deleted' };
+    return { success: true, message: 'Ticket deleted' };
   }
 
-  // ─── Comments ────────────────────────────────────────────────────────────────
+  // ── Comments ───────────────────────────────────────────────────────────────
 
   @Post(':id/comments')
-  @ApiOperation({ summary: 'Add a comment to a dispute' })
-  async addComment(
-    @Param('id') id: string,
-    @Body() dto: AddCommentDto,
-    @Request() req,
-  ) {
-    const message = await this.disputesService.addComment(id, dto, req.user);
-    return { success: true, message: 'Comment added', data: message };
+  async addComment(@Param('id') id: string, @Body() dto: AddCommentDto, @Request() req) {
+    const msg = await this.disputesService.addComment(id, dto, req.user);
+    return { success: true, message: 'Comment added', data: msg };
   }
 
   @Get(':id/comments')
-  @ApiOperation({ summary: 'Get all comments for a dispute' })
   async getComments(@Param('id') id: string, @Request() req) {
-    const messages = await this.disputesService.getComments(id, req.user);
-    return { success: true, data: messages };
+    const msgs = await this.disputesService.getComments(id, req.user);
+    return { success: true, data: msgs };
   }
 
-  // ─── Attachments ─────────────────────────────────────────────────────────────
+  // ── Attachments ────────────────────────────────────────────────────────────
 
   @Post(':id/attachments')
-  @ApiOperation({ summary: 'Upload an attachment to a dispute' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: { file: { type: 'string', format: 'binary' } },
-    },
-  })
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
   @UseInterceptors(FileInterceptor('file'))
   async uploadAttachment(
     @Param('id') id: string,
@@ -154,89 +110,100 @@ export class DisputesController {
     @Request() req,
   ) {
     if (!file) throw new Error('No file uploaded.');
-
     const uploaded = await this.fileUploadService.uploadFile(file, 'disputes');
     const attachment = await this.disputesService.addAttachment(
       id,
-      {
-        fileName: uploaded.originalFileName,
-        fileUrl: uploaded.fileUrl,
-        fileType: uploaded.mimeType,
-        fileSize: uploaded.fileSize,
-      },
+      { fileName: uploaded.originalFileName, fileUrl: uploaded.fileUrl, fileType: uploaded.mimeType, fileSize: uploaded.fileSize },
       req.user,
     );
     return { success: true, message: 'Attachment uploaded', data: attachment };
   }
 
   @Get(':id/attachments')
-  @ApiOperation({ summary: 'Get all attachments for a dispute' })
   async getAttachments(@Param('id') id: string, @Request() req) {
-    const attachments = await this.disputesService.getAttachments(id, req.user);
-    return { success: true, data: attachments };
+    return { success: true, data: await this.disputesService.getAttachments(id, req.user) };
   }
 
-  // ─── Timeline ────────────────────────────────────────────────────────────────
+  // ── Timeline ───────────────────────────────────────────────────────────────
 
   @Get(':id/timeline')
-  @ApiOperation({ summary: 'Get full timeline for a dispute' })
   async getTimeline(@Param('id') id: string, @Request() req) {
-    const timeline = await this.disputesService.getTimeline(id, req.user);
-    return { success: true, data: timeline };
+    return { success: true, data: await this.disputesService.getTimeline(id, req.user) };
   }
 
-  // ─── Resolutions ─────────────────────────────────────────────────────────────
+  // ── Resolutions ────────────────────────────────────────────────────────────
 
   @Get(':id/resolutions')
-  @ApiOperation({ summary: 'Get resolution history for a dispute' })
   async getResolutions(@Param('id') id: string, @Request() req) {
-    const resolutions = await this.disputesService.getResolutions(id, req.user);
-    return { success: true, data: resolutions };
+    return { success: true, data: await this.disputesService.getResolutions(id, req.user) };
   }
 
-  // ─── Admin Actions ────────────────────────────────────────────────────────────
+  // ── Assignment history ─────────────────────────────────────────────────────
+
+  @Get(':id/assignments')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN, UserRole.ADMIN)
+  async getAssignments(@Param('id') id: string, @Request() req) {
+    return { success: true, data: await this.disputesService.getAssignments(id, req.user) };
+  }
+
+  // ── Escalation history ─────────────────────────────────────────────────────
+
+  @Get(':id/escalations')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN, UserRole.ADMIN)
+  async getEscalations(@Param('id') id: string, @Request() req) {
+    return { success: true, data: await this.disputesService.getEscalations(id, req.user) };
+  }
+
+  // ── Admin actions ──────────────────────────────────────────────────────────
+
+  @Post(':id/assign')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  async assign(@Param('id') id: string, @Body() dto: AssignDisputeDto, @Request() req) {
+    const d = await this.disputesService.assign(id, dto, req.user);
+    return { success: true, message: 'Ticket assigned', data: d };
+  }
+
+  @Post(':id/escalate')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  async escalate(@Param('id') id: string, @Body() dto: EscalateDisputeDto, @Request() req) {
+    const d = await this.disputesService.escalate(id, dto, req.user);
+    return { success: true, message: 'Ticket escalated', data: d };
+  }
 
   @Post(':id/resolve')
-  @ApiOperation({ summary: 'Resolve a dispute — TENANT_ADMIN and SUPER_ADMIN only' })
   @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
-  async resolve(
-    @Param('id') id: string,
-    @Body() dto: ResolveDisputeDto,
-    @Request() req,
-  ) {
-    const dispute = await this.disputesService.resolve(id, dto, req.user);
-    return { success: true, message: 'Dispute resolved', data: dispute };
+  async resolve(@Param('id') id: string, @Body() dto: ResolveDisputeDto, @Request() req) {
+    const d = await this.disputesService.resolve(id, dto, req.user);
+    return { success: true, message: 'Ticket resolved', data: d };
   }
 
   @Post(':id/close')
-  @ApiOperation({ summary: 'Close a dispute — TENANT_ADMIN and SUPER_ADMIN only' })
   @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
   async close(@Param('id') id: string, @Request() req) {
-    const dispute = await this.disputesService.close(id, req.user);
-    return { success: true, message: 'Dispute closed', data: dispute };
+    const d = await this.disputesService.close(id, req.user);
+    return { success: true, message: 'Ticket closed', data: d };
   }
 
   @Post(':id/reopen')
-  @ApiOperation({ summary: 'Reopen a closed/resolved dispute — TENANT_ADMIN and SUPER_ADMIN only' })
   @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
-  async reopen(
-    @Param('id') id: string,
-    @Body() body: { reason?: string },
-    @Request() req,
-  ) {
-    const dispute = await this.disputesService.reopen(id, body.reason ?? '', req.user);
-    return { success: true, message: 'Dispute reopened', data: dispute };
+  async reopen(@Param('id') id: string, @Body() body: { reason?: string }, @Request() req) {
+    const d = await this.disputesService.reopen(id, body.reason ?? '', req.user);
+    return { success: true, message: 'Ticket reopened', data: d };
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Change dispute status — TENANT_ADMIN and SUPER_ADMIN only' })
   @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
-  async changeStatus(
-    @Param('id') id: string,
-    @Body() dto: ChangeStatusDto,
-    @Request() req,
-  ) {
-    const dispute = await this.disputesService.changeStatus(id, dto, req.user);
-    return { success: true, message: 'Status updated', data: dispute };
+  async changeStatus(@Param('id') id: string, @Body() dto: ChangeStatusDto, @Request() req) {
+    const d = await this.disputesService.changeStatus(id, dto, req.user);
+    return { success: true, message: 'Status updated', data: d };
+  }
+
+  // ── SLA check (admin/cron trigger) ─────────────────────────────────────────
+
+  @Post('admin/check-sla')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
+  async checkSla(@Request() req) {
+    const count = await this.disputesService.checkSlaBreaches(req.user.tenantId);
+    return { success: true, message: `${count} SLA breach(es) processed` };
   }
 }
