@@ -238,15 +238,15 @@ export class SubscriptionSchedulerService {
   }
 
   /**
-   * Hourly job: Check for failed payments and retry
-   * Runs every hour
+   * Hourly job: Retry failed subscription payments via ishema.
+   * Finds SUSPENDED subscriptions whose last failure was within the past 24 hours
+   * and attempts to collect again.
    */
   @Cron(CronExpression.EVERY_HOUR)
   async retryFailedPayments() {
-    this.logger.log('Checking for failed payments to retry...');
+    this.logger.log('Checking for failed subscription payments to retry...');
 
     try {
-      // Get subscriptions with failed payments in last 24 hours
       const failedSubscriptions = await this.tenantSubscriptionRepository
         .createQueryBuilder('subscription')
         .where('subscription.status = :status', { status: SubscriptionStatus.SUSPENDED })
@@ -255,16 +255,29 @@ export class SubscriptionSchedulerService {
         })
         .getMany();
 
-      this.logger.log(`Found ${failedSubscriptions.length} subscriptions with failed payments`);
+      this.logger.log(`Found ${failedSubscriptions.length} subscriptions to retry`);
 
       for (const subscription of failedSubscriptions) {
         try {
-          // Retry payment (would integrate with payment gateway)
+          const lastFailure = (subscription.metadata as any)?.lastFailedRenewal;
+          if (lastFailure) {
+            const hoursSinceFailure =
+              (Date.now() - new Date(lastFailure).getTime()) / (1000 * 60 * 60);
+            // Only retry once per 24 hours to avoid hammering the customer's phone
+            if (hoursSinceFailure < 24) {
+              this.logger.log(
+                `Skipping retry for ${subscription.id} — last attempt ${hoursSinceFailure.toFixed(1)}h ago`,
+              );
+              continue;
+            }
+          }
+
           this.logger.log(`Retrying payment for subscription ${subscription.id}`);
-          // TODO: Implement payment retry logic
+          await this.subscriptionService.renewSubscription(subscription.id);
+          this.logger.log(`Retry succeeded for subscription ${subscription.id}`);
         } catch (error) {
           this.logger.error(
-            `Failed to retry payment for ${subscription.id}: ${error.message}`,
+            `Retry failed for subscription ${subscription.id}: ${error.message}`,
           );
         }
       }

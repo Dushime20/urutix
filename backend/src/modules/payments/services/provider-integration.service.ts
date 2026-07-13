@@ -84,7 +84,19 @@ export class ProviderIntegrationService {
   }
 
   /**
-   * Process payment using Mobile Money Payment service
+   * Process payment using Mobile Money Payment service.
+   *
+   * Two patterns are supported via meta fields:
+   *
+   * 1. COLLECTION (user → platform) — used by initiateMobileMoneyPayment
+   *    meta.phoneNumber      = user's phone (payer, gets PIN popup, is charged)
+   *    receiver              = MOBILE_MONEY_ACCOUNT_PHONE (platform ishema account)
+   *
+   * 2. DISBURSEMENT (platform → beneficiary) — used by sendMobileMoneyPayment
+   *    meta.phoneNumber      = MOBILE_MONEY_ACCOUNT_PHONE (payer, platform account)
+   *    meta.receiverPhoneNumber = truck owner / lender phone (receiver)
+   *    (sendMobileMoneyPayment builds transfers itself and calls createTransaction
+   *     directly, so it never reaches this method)
    */
   private async processMobileMoneyPayment(
     amount: number,
@@ -93,41 +105,89 @@ export class ProviderIntegrationService {
     meta: any,
   ): Promise<PaymentProcessingResult> {
     try {
-      const phoneNumber = meta.phoneNumber || meta.phone || meta.payerPhone;
-      // Use referenceNumber from meta if available, otherwise generate one
-      const referenceId = meta.referenceNumber || meta.referenceId || meta.externalId || `MM-${Date.now()}`;
-      const senderMessage = meta.description || meta.senderMessage || meta.message || 'Payment for cargo transportation';
-      // Get callback URL from config or meta
-      const callbackUrl = meta.callbackUrl || this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL');
-      const transfers = meta.transfers; // Optional: for split payments
+      // The payer is always the phone number that will be charged (gets PIN popup)
+      const payerPhone = meta.phoneNumber || meta.phone || meta.payerPhone;
 
-      if (!phoneNumber) {
-        throw new BadRequestException('Phone number is required for Mobile Money payment');
+      if (!payerPhone) {
+        throw new BadRequestException(
+          'Phone number is required for Mobile Money payment.',
+        );
       }
 
-      this.logger.log(`Processing Mobile Money payment: ${amount} ${currency} to ${phoneNumber}, Reference: ${referenceId}`);
+      const referenceId =
+        meta.referenceNumber ||
+        meta.referenceId ||
+        meta.externalId ||
+        `MM-${Date.now()}`;
 
-      const mobileMoneyResponse = await this.mobileMoneyPaymentService.createTransaction(
-        amount,
-        phoneNumber,
-        referenceId,
-        senderMessage,
-        transfers,
-        callbackUrl,
+      const senderMessage =
+        meta.description ||
+        meta.senderMessage ||
+        meta.message ||
+        'Payment for cargo transportation';
+
+      const callbackUrl =
+        meta.callbackUrl ||
+        this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL');
+
+      // --- Resolve transfers ---
+      // If the caller pre-built transfers (e.g. split payments), use them as-is.
+      // Otherwise this is a COLLECTION: user's phone is charged and the platform
+      // account (MOBILE_MONEY_ACCOUNT_PHONE) receives the funds.
+      let transfers: { percentage: number; phoneNumber: string; receiverMessage: string }[];
+
+      if (meta.transfers && meta.transfers.length > 0) {
+        transfers = meta.transfers;
+      } else {
+        const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+        if (!platformPhone) {
+          throw new BadRequestException(
+            'MOBILE_MONEY_ACCOUNT_PHONE is not configured. ' +
+            'This is required as the receiver for user payment collection.',
+          );
+        }
+        // Collection: user pays → money goes to platform's ishema account
+        transfers = [
+          {
+            percentage: 100,
+            phoneNumber: platformPhone,
+            receiverMessage: senderMessage.substring(0, 160),
+          },
+        ];
+      }
+
+      this.logger.log(
+        `Processing Mobile Money COLLECTION: ${amount} ${currency} ` +
+        `| payer: ${payerPhone} ` +
+        `| receiver: ${transfers.map((t) => t.phoneNumber).join(', ')} ` +
+        `| reference: ${referenceId}`,
       );
 
-      const transaction = mobileMoneyResponse.savedTransaction || mobileMoneyResponse.transaction;
-      const status = transaction?.status || 'pending';
-      // Use the externalId from the response, or fall back to the referenceId we sent
-      const transactionId = transaction?.externalId || transaction?.id || referenceId;
+      const mobileMoneyResponse =
+        await this.mobileMoneyPaymentService.createTransaction(
+          amount,
+          payerPhone,
+          referenceId,
+          senderMessage,
+          transfers,
+          callbackUrl,
+        );
 
-      this.logger.log(`Mobile Money transaction created: ${transactionId}, Status: ${status}`);
+      const transaction =
+        mobileMoneyResponse.savedTransaction || mobileMoneyResponse.transaction;
+      const status = transaction?.status || 'pending';
+      const transactionId =
+        transaction?.externalId || transaction?.id || referenceId;
+
+      this.logger.log(
+        `Mobile Money transaction created: ${transactionId}, status: ${status}`,
+      );
 
       return {
-        success: status === 'success' || status === 'pending', // pending means initiated successfully
-        transactionId: transactionId,
+        success: status === 'success' || status === 'pending',
+        transactionId,
         response: JSON.stringify(mobileMoneyResponse),
-        processingFee: 0, // Fees are typically deducted from the amount
+        processingFee: 0,
         error: status === 'failed' ? 'Payment failed' : undefined,
         errorCode: status === 'failed' ? 'MOBILE_MONEY_PAYMENT_FAILED' : undefined,
       };
@@ -135,9 +195,12 @@ export class ProviderIntegrationService {
       this.logger.error('Mobile Money payment processing failed:', error);
       return {
         success: false,
-        response: JSON.stringify(error.response?.data || error),
+        response: JSON.stringify(error.response?.data || error.message || error),
         error: error.message || 'Mobile Money payment failed',
-        errorCode: error.response?.status === 401 ? 'MOBILE_MONEY_AUTH_ERROR' : 'MOBILE_MONEY_PAYMENT_ERROR',
+        errorCode:
+          error.response?.status === 401
+            ? 'MOBILE_MONEY_AUTH_ERROR'
+            : 'MOBILE_MONEY_PAYMENT_ERROR',
       };
     }
   }

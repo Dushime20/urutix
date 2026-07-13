@@ -1,7 +1,8 @@
 
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { SubscriptionPlan } from './../entities/subscription-plan.entity';
 import {
   TenantSubscription,
@@ -12,6 +13,7 @@ import { Tenant } from './../entities/tenant.entity';
 import { CreditService } from './credit.service';
 import { PricingService } from './pricing.service';
 import { Payment, PaymentMethod, PaymentStatus, PaymentType } from '../entities/payment.entity';
+import { MobileMoneyPaymentService, MobileMoneyTransfer } from '../modules/payments/services/mobile-money-payment.service';
 
 export interface CreateSubscriptionDto {
   tenantId: string;
@@ -35,6 +37,8 @@ export interface CancelSubscriptionDto {
 
 @Injectable()
 export class SubscriptionService {
+  private readonly logger = new Logger(SubscriptionService.name);
+
   constructor(
     @InjectRepository(SubscriptionPlan)
     private subscriptionPlanRepository: Repository<SubscriptionPlan>,
@@ -46,6 +50,8 @@ export class SubscriptionService {
     private paymentRepository: Repository<Payment>,
     private creditService: CreditService,
     private pricingService: PricingService,
+    private configService: ConfigService,
+    private mobileMoneyPaymentService: MobileMoneyPaymentService,
   ) { }
 
   /**
@@ -334,82 +340,140 @@ export class SubscriptionService {
   }
 
   /**
-   * Purchase a subscription with payment processing
+   * Purchase a subscription with payment processing via ishema Mobile Money.
+   *
+   * Collection pattern:
+   *   payer   = customer's phone (gets PIN popup, is charged)
+   *   receiver = MOBILE_MONEY_ACCOUNT_PHONE (platform collects the subscription fee)
+   *
+   * The subscription and credits are only activated AFTER the ishema API
+   * confirms the transaction was accepted (status = pending or success).
+   * A PENDING status from ishema is acceptable — it means the PIN popup
+   * was delivered; the webhook will confirm final success.
    */
   async purchaseSubscription(data: {
     tenantId: string;
     userId: string;
     planId: string;
     paymentMethod: 'card' | 'mobile_money';
-    paymentDetails: any;
+    paymentDetails: any; // { phoneNumber: string } for mobile_money
   }): Promise<any> {
-    // Get the plan
     const plan = await this.getPlan(data.planId);
 
-    // Check if this is a partner plan and validate available slots
+    // Partner plan slot check
     if (plan.parentSubscriptionId && plan.creditCostPerPartner) {
-      // This is a partner plan - check available slots
       const purchasedCount = await this.tenantSubscriptionRepository.count({
-        where: {
-          planId: data.planId,
-          status: SubscriptionStatus.ACTIVE,
-        },
+        where: { planId: data.planId, status: SubscriptionStatus.ACTIVE },
       });
-
       if (purchasedCount >= plan.availableSlots) {
         throw new BadRequestException(
           `This partner plan has no available slots. All ${plan.availableSlots} slots have been purchased.`,
         );
       }
-
-      console.log(`[SubscriptionService] Partner plan slot check: ${purchasedCount}/${plan.availableSlots} slots used`);
+      this.logger.log(
+        `[SubscriptionService] Partner plan slot check: ${purchasedCount}/${plan.availableSlots} slots used`,
+      );
     }
 
-    // Determine credits to grant based on plan type
-    // For partner plans (with creditCostPerPartner), grant per-partner credits
-    // For regular plans, grant totalCredits
     const creditsToGrant = plan.creditCostPerPartner || plan.totalCredits;
-    
-    // Calculate total amount based on credits to grant
     const totalAmount = creditsToGrant === -1 ? 0 : Number(plan.pricePerCredit) * creditsToGrant;
 
-    // TODO: Process payment with payment gateway
-    // For now, we'll simulate successful payment
-    const paymentResult = {
-      success: true,
-      transactionId: `TXN-${Date.now()}`,
-      amount: totalAmount,
-      paymentMethod: data.paymentMethod,
-    };
+    // Currency — subscriptions are priced in RWF (align with all other ishema payments)
+    const currency = this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
 
-    if (!paymentResult.success) {
-      throw new BadRequestException('Payment processing failed');
+    let externalTransactionId: string | null = null;
+
+    // ── Real payment via ishema (mobile money) ────────────────────────────
+    if (totalAmount > 0 && data.paymentMethod === 'mobile_money') {
+      const payerPhone: string = data.paymentDetails?.phoneNumber;
+      if (!payerPhone) {
+        throw new BadRequestException(
+          'phoneNumber is required in paymentDetails for mobile_money subscription payment.',
+        );
+      }
+
+      const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+      if (!platformPhone) {
+        throw new BadRequestException(
+          'MOBILE_MONEY_ACCOUNT_PHONE is not configured. Cannot collect subscription payment.',
+        );
+      }
+
+      const referenceId = `SUB-${data.tenantId.slice(-8).toUpperCase()}-${Date.now()}`;
+      const senderMessage =
+        `Subscription: ${plan.name} — ${creditsToGrant} credits (${currency} ${totalAmount})`.substring(0, 160);
+      const callbackUrl = this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL');
+
+      const transfers: MobileMoneyTransfer[] = [
+        {
+          percentage: 100,
+          phoneNumber: platformPhone,
+          receiverMessage: senderMessage,
+        },
+      ];
+
+      this.logger.log(
+        `Initiating subscription payment: ${totalAmount} ${currency} from ${payerPhone} ` +
+        `to platform ${platformPhone} | plan: ${plan.name} | ref: ${referenceId}`,
+      );
+
+      // This throws on failure — no subscription or credits are activated on error
+      const mmResponse = await this.mobileMoneyPaymentService.createTransaction(
+        totalAmount,
+        payerPhone,
+        referenceId,
+        senderMessage,
+        transfers,
+        callbackUrl,
+      );
+
+      const txn = mmResponse.savedTransaction || mmResponse.transaction;
+      externalTransactionId = txn?.externalId || txn?.id || referenceId;
+
+      this.logger.log(
+        `Subscription payment accepted by ishema: externalId=${externalTransactionId}, status=${txn?.status}`,
+      );
     }
 
-    // Create subscription at tenant-level (userId = null) so it applies to the whole tenant
+    // Card payments — not yet integrated; reject explicitly so no fake charges occur
+    if (totalAmount > 0 && data.paymentMethod === 'card') {
+      throw new BadRequestException(
+        'Card payments are not yet supported. Please use mobile_money.',
+      );
+    }
+
+    // ── Activate subscription & credits (payment confirmed or free plan) ──
     const subscription = await this.createSubscription({
       tenantId: data.tenantId,
-      userId: null, // Tenant-level subscription, not tied to a specific user
+      userId: null,
       planId: data.planId,
       billingCycle: BillingCycle.MONTHLY,
-      paymentMethodId: paymentResult.transactionId,
+      paymentMethodId: externalTransactionId || undefined,
       startTrial: false,
     });
 
-    // Grant credits based on plan type — always to tenant-level account
+    // Persist payer phone in subscription metadata for auto-renewal
+    if (data.paymentDetails?.phoneNumber) {
+      await this.tenantSubscriptionRepository.update(subscription.id, {
+        metadata: {
+          ...(subscription.metadata || {}),
+          payerPhone: data.paymentDetails.phoneNumber,
+          paymentMethod: data.paymentMethod,
+        },
+      });
+    }
+
     if (creditsToGrant > 0) {
       await this.creditService.grantSubscriptionCredits(
         data.tenantId,
         creditsToGrant,
         subscription.id,
         subscription.currentPeriodEnd,
-        undefined, // Always credit tenant-level account (userId = null)
+        undefined,
       );
     }
 
-    // Track revenue for tenant admin if this is a partner plan purchase
     if (plan.parentSubscriptionId && plan.creditCostPerPartner) {
-      // This is a partner plan - track revenue for the tenant admin who created it
       await this.creditService.trackPartnerPlanRevenue(
         data.tenantId,
         totalAmount,
@@ -417,41 +481,60 @@ export class SubscriptionService {
       );
     }
 
-    // ── Record payment in payments table ──────────────────────────────────
+    // ── Record payment in payments table ─────────────────────────────────
     if (totalAmount > 0) {
       try {
         const methodMap: Record<string, PaymentMethod> = {
           card: PaymentMethod.CREDIT_CARD,
           mobile_money: PaymentMethod.DIGITAL_WALLET,
         };
+        // Store as PROCESSING for mobile money (webhook confirms); COMPLETED for card (not used yet)
+        const paymentStatus =
+          data.paymentMethod === 'mobile_money'
+            ? PaymentStatus.PROCESSING
+            : PaymentStatus.COMPLETED;
+
         const payment = this.paymentRepository.create({
           tenantId: data.tenantId,
           payerId: data.userId,
           amount: totalAmount,
-          currency: 'USD',
-          paymentMethod: methodMap[data.paymentMethod] ?? PaymentMethod.CREDIT_CARD,
+          currency,
+          paymentMethod: methodMap[data.paymentMethod] ?? PaymentMethod.DIGITAL_WALLET,
           paymentType: PaymentType.SUBSCRIPTION,
-          status: PaymentStatus.COMPLETED,
-          transactionId: paymentResult.transactionId,
+          status: paymentStatus,
+          transactionId: externalTransactionId,
+          referenceNumber: externalTransactionId,
           description: `Subscription: ${plan.name} (${creditsToGrant} credits)`,
-          processedAt: new Date(),
+          processedAt: paymentStatus === PaymentStatus.COMPLETED ? new Date() : undefined,
           metadata: {
             planId: data.planId,
             planName: plan.name,
             subscriptionId: subscription.id,
             creditsGranted: creditsToGrant,
+            payerPhone: data.paymentDetails?.phoneNumber,
           },
         });
         await this.paymentRepository.save(payment);
       } catch (e) {
-        console.error('[SubscriptionService] Failed to save payment record:', e.message);
+        // Non-fatal — payment already accepted by ishema; don't fail the whole request
+        this.logger.error('[SubscriptionService] Failed to save payment record:', e.message);
       }
     }
-    // ─────────────────────────────────────────────────────────────────────
 
     return {
       subscription,
-      payment: paymentResult,
+      payment: {
+        success: true,
+        transactionId: externalTransactionId,
+        amount: totalAmount,
+        currency,
+        paymentMethod: data.paymentMethod,
+        status: totalAmount === 0 ? 'completed' : 'processing',
+        message:
+          totalAmount === 0
+            ? 'Free plan activated'
+            : 'Payment initiated — awaiting PIN confirmation on your mobile phone.',
+      },
       creditsAdded: creditsToGrant,
       plan: {
         name: plan.name,
@@ -623,7 +706,11 @@ export class SubscriptionService {
   }
 
   /**
-   * Renew subscription
+   * Renew subscription — charges the stored phone via ishema and extends the period.
+   * Called by the daily scheduler (2 AM) for auto-renewing subscriptions.
+   *
+   * The phone number is stored in subscription.metadata.payerPhone at purchase time.
+   * If it is missing the renewal is skipped (subscription stays active, no charge).
    */
   async renewSubscription(subscriptionId: string, paymentId?: string): Promise<TenantSubscription> {
     const subscription = await this.tenantSubscriptionRepository.findOne({
@@ -633,14 +720,81 @@ export class SubscriptionService {
 
     if (!subscription) return null;
 
+    // Apply any scheduled plan downgrade
     if (subscription.metadata?.scheduledDowngrade) {
       subscription.planId = subscription.metadata.scheduledDowngrade.planId;
       delete subscription.metadata.scheduledDowngrade;
     }
 
+    const plan = subscription.plan;
+    const creditsToGrant = plan?.includedCredits || 0;
+    const currency = this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
+    const totalAmount =
+      plan && plan.pricePerCredit && creditsToGrant > 0
+        ? Number(plan.pricePerCredit) * creditsToGrant
+        : 0;
+
+    let externalTransactionId: string | null = paymentId || null;
+
+    // ── Charge via ishema for paid plans ──────────────────────────────────
+    if (totalAmount > 0) {
+      const payerPhone: string | undefined =
+        (subscription.metadata as any)?.payerPhone ||
+        (subscription.metadata as any)?.phoneNumber;
+
+      const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+
+      if (!payerPhone || !platformPhone) {
+        this.logger.warn(
+          `[renewSubscription] Cannot charge for subscription ${subscriptionId}: ` +
+          `payerPhone=${payerPhone}, platformPhone=${platformPhone}. Skipping payment.`,
+        );
+        // Do not extend the subscription period without a successful charge
+        return subscription;
+      }
+
+      const referenceId = `RENEW-${subscriptionId.slice(-8).toUpperCase()}-${Date.now()}`;
+      const senderMessage =
+        `Renewal: ${plan.name} — ${creditsToGrant} credits (${currency} ${totalAmount})`.substring(0, 160);
+
+      try {
+        this.logger.log(
+          `[renewSubscription] Charging ${totalAmount} ${currency} from ${payerPhone} ` +
+          `for subscription ${subscriptionId} renewal | ref: ${referenceId}`,
+        );
+
+        const mmResponse = await this.mobileMoneyPaymentService.createTransaction(
+          totalAmount,
+          payerPhone,
+          referenceId,
+          senderMessage,
+          [{ percentage: 100, phoneNumber: platformPhone, receiverMessage: senderMessage }],
+          this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL'),
+        );
+
+        const txn = mmResponse.savedTransaction || mmResponse.transaction;
+        externalTransactionId = txn?.externalId || txn?.id || referenceId;
+        this.logger.log(`[renewSubscription] ishema accepted renewal: externalId=${externalTransactionId}`);
+      } catch (err: any) {
+        this.logger.error(
+          `[renewSubscription] ishema payment failed for subscription ${subscriptionId}: ${err.message}`,
+        );
+        // Mark subscription as suspended so the user knows payment failed
+        subscription.status = SubscriptionStatus.SUSPENDED;
+        subscription.metadata = {
+          ...(subscription.metadata || {}),
+          paymentFailed: true,
+          lastFailedRenewal: new Date().toISOString(),
+          lastFailureReason: err.message,
+        };
+        await this.tenantSubscriptionRepository.save(subscription);
+        return subscription;
+      }
+    }
+
+    // ── Extend the subscription period ────────────────────────────────────
     const now = new Date();
     subscription.currentPeriodStart = now;
-
     if (subscription.billingCycle === BillingCycle.MONTHLY) {
       subscription.currentPeriodEnd = new Date(now);
       subscription.currentPeriodEnd.setMonth(subscription.currentPeriodEnd.getMonth() + 1);
@@ -648,19 +802,57 @@ export class SubscriptionService {
       subscription.currentPeriodEnd = new Date(now);
       subscription.currentPeriodEnd.setFullYear(subscription.currentPeriodEnd.getFullYear() + 1);
     }
-
     subscription.lastPaymentDate = now;
     subscription.nextPaymentDate = subscription.currentPeriodEnd;
+    subscription.status = SubscriptionStatus.ACTIVE;
+    // Clear any previous failure flags
+    if ((subscription.metadata as any)?.paymentFailed) {
+      subscription.metadata = { ...(subscription.metadata || {}) };
+      delete (subscription.metadata as any).paymentFailed;
+      delete (subscription.metadata as any).lastFailedRenewal;
+      delete (subscription.metadata as any).lastFailureReason;
+    }
 
     const updatedSubscription = await this.tenantSubscriptionRepository.save(subscription);
 
-    await this.creditService.grantSubscriptionCredits(
-      subscription.tenantId,
-      subscription.plan.includedCredits,
-      subscription.id,
-      subscription.currentPeriodEnd,
-      undefined, // Always credit tenant-level account on renewal
-    );
+    // Grant credits for the new period
+    if (creditsToGrant > 0) {
+      await this.creditService.grantSubscriptionCredits(
+        subscription.tenantId,
+        creditsToGrant,
+        subscription.id,
+        subscription.currentPeriodEnd,
+        undefined,
+      );
+    }
+
+    // Record renewal payment
+    if (totalAmount > 0 && externalTransactionId) {
+      try {
+        const renewalPayment = this.paymentRepository.create({
+          tenantId: subscription.tenantId,
+          payerId: subscription.userId || subscription.tenantId,
+          amount: totalAmount,
+          currency,
+          paymentMethod: PaymentMethod.DIGITAL_WALLET,
+          paymentType: PaymentType.SUBSCRIPTION,
+          status: PaymentStatus.PROCESSING,
+          transactionId: externalTransactionId,
+          referenceNumber: externalTransactionId,
+          description: `Subscription renewal: ${plan?.name || subscriptionId}`,
+          metadata: {
+            subscriptionId: subscription.id,
+            planId: subscription.planId,
+            planName: plan?.name,
+            creditsGranted: creditsToGrant,
+            renewalPeriodEnd: subscription.currentPeriodEnd,
+          },
+        });
+        await this.paymentRepository.save(renewalPayment);
+      } catch (e) {
+        this.logger.error('[renewSubscription] Failed to save renewal payment record:', e.message);
+      }
+    }
 
     return updatedSubscription;
   }

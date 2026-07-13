@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { HttpModule } from '@nestjs/axios';
+import { ConfigModule } from '@nestjs/config';
 
 // Entities
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
@@ -27,6 +29,7 @@ import { SubscriptionNotificationService } from '../../services/subscription-not
 import { NotificationDeliveryService } from '../../services/notification-delivery.service';
 import { PricingService } from '../../services/pricing.service';
 import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
+import { MobileMoneyPaymentService } from '../payments/services/mobile-money-payment.service';
 
 // Controllers
 import { SubscriptionController } from './subscription.controller';
@@ -54,6 +57,8 @@ import { NotificationPreferencesController } from './notification-preferences.co
       User,
     ]),
     ScheduleModule.forRoot(),
+    HttpModule,
+    ConfigModule,
   ],
   controllers: [
     SubscriptionController, 
@@ -69,6 +74,7 @@ import { NotificationPreferencesController } from './notification-preferences.co
     NotificationDeliveryService,
     PricingService,
     CreditConsumptionListener,
+    MobileMoneyPaymentService,
   ],
   exports: [
     SubscriptionService, 
