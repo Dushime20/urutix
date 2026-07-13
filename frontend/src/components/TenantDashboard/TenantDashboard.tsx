@@ -548,6 +548,12 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
             </motion.div>
           )}
 
+          {!isLoading && selectedView === 'drivers' && (
+            <motion.div key="drivers" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <FleetOverview tenantId={tenantId} />
+            </motion.div>
+          )}
+
           {!isLoading && selectedView === 'cargo' && (
             <motion.div key="cargo" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <CargoAnalytics tenantId={tenantId} />

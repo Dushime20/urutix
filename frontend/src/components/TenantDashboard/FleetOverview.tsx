@@ -166,6 +166,20 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
     return filteredTrucks.slice(start, start + itemsPerPage);
   }, [filteredTrucks, currentPage]);
 
+  // Build chart labels from timeRange — must be BEFORE any early returns
+  const trendLabels = useMemo(() => {
+    const points = trendsData?.fleetUtilization?.length || 0;
+    if (points === 0) return [];
+    const now = new Date();
+    return Array.from({ length: points }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - (points - 1 - i));
+      return timeRange === '7d'
+        ? d.toLocaleDateString('en-US', { weekday: 'short' })
+        : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+  }, [trendsData, timeRange]);
+
   const handleDeleteTruck = (truckId: string) => {
     if (window.confirm(tSync('Are you sure you want to delete this truck?'))) {
       deleteTruckMutation.mutate(truckId);
@@ -252,20 +266,6 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       </div>
     );
   }
-
-  // Build chart labels from timeRange
-  const trendLabels = useMemo(() => {
-    const points = trendsData?.fleetUtilization?.length || 0;
-    if (points === 0) return [];
-    const now = new Date();
-    return Array.from({ length: points }, (_, i) => {
-      const d = new Date(now);
-      d.setDate(now.getDate() - (points - 1 - i));
-      return timeRange === '7d'
-        ? d.toLocaleDateString('en-US', { weekday: 'short' })
-        : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    });
-  }, [trendsData, timeRange]);
 
   const trendValues = trendsData?.fleetUtilization ?? [];
   const hasRealTrendData = trendValues.some(v => v > 0);
