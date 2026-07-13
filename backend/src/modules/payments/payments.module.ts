@@ -9,6 +9,7 @@ import { Load } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
 import { Bid } from '../../entities/bid.entity';
 import { Truck } from '../../entities/truck.entity';
+import { PaymentAuditLog } from '../../entities/payment-audit-log.entity';
 
 import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
@@ -35,7 +36,7 @@ import { TripsModule } from '../trips/trips.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, Trip, Receipt, Invoice, InvoiceItem, Load, User, Bid, Truck]),
+    TypeOrmModule.forFeature([Payment, Trip, Receipt, Invoice, InvoiceItem, Load, User, Bid, Truck, PaymentAuditLog]),
     EventEmitterModule.forRoot(),
     HttpModule,
     NotificationsModule,
