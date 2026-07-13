@@ -264,7 +264,11 @@ export class PaymentProcessingService {
   }
 
   /**
-   * Update transaction state with audit trail
+   * Update transaction state with audit trail.
+   *
+   * NOTE: This method is only used when `initiatePayment` creates a brand-new
+   * payment record.  It must NOT be called for existing payment records — use
+   * `PaymentsService.updatePaymentStatus` for that (it enforces the state machine).
    */
   async updateTransactionState(
     paymentId: string,
@@ -278,6 +282,9 @@ export class PaymentProcessingService {
       if (!payment) {
         throw new BadRequestException(`Payment ${paymentId} not found`);
       }
+
+      // Capture previous status BEFORE applying the mapping.
+      const previousStatus = payment.status;
 
       // Update payment status based on transaction state
       const statusMapping = {
@@ -298,10 +305,10 @@ export class PaymentProcessingService {
 
       const updatedPayment = await this.paymentRepository.save(payment);
 
-      // Log state change
+      // Log state change with the correct previous/new values.
       await this.logAuditTrail(updatedPayment, 'TRANSACTION_STATE_UPDATED', {
-        previousState: payment.status,
-        newState: updatedPayment.status,
+        previousStatus,
+        newStatus: updatedPayment.status,
         transactionState: state,
       });
 

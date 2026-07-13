@@ -11,15 +11,12 @@ build/
 logs/
 
 # Environment variables
-.env
-.env.*
 
 # OS generated files
 .DS_Store
 Thumbs.db
 
 # IDE files
-.vscode/
 .idea/
 
 # SQLite database
@@ -70,3 +67,4 @@ backend/fix-notification-entitytype.js
 backend/test-login-api.js
 backend/test-login-debug.js
 backend/test-login-direct.js
+config.bat

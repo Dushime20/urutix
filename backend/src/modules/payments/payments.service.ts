@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { DataSource, Repository, Between } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Payment } from '../../entities/payment.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
@@ -36,6 +36,7 @@ import { IdempotencyService } from './services/idempotency.service';
 import { ReconciliationService } from './services/reconciliation.service';
 import { InvoiceReceiptService } from './services/invoice-receipt.service';
 import { TripsService } from '../trips/trips.service';
+import { assertValidTransition } from './types/payment-state-machine';
 
 @Injectable()
 export class PaymentsService {
@@ -160,11 +161,12 @@ export class PaymentsService {
       }
     }
 
-    // Idempotency check
+    // Idempotency check — must happen BEFORE the INSERT so we reject the
+    // duplicate request before writing anything to the database.
     if (createPaymentDto.idempotencyKey) {
-      await this.idempotencyService.checkAndSaveKey(
+      await this.idempotencyService.checkKey(
         createPaymentDto.idempotencyKey,
-        createPaymentDto.tripId,
+        tenantId,
       );
     }
 
@@ -250,6 +252,14 @@ export class PaymentsService {
     // Handle case where save might return array (shouldn't happen, but TypeScript thinks it might)
     const savedPayment = Array.isArray(savedPaymentResult) ? savedPaymentResult[0] : savedPaymentResult;
     await this.auditService.log('CREATE_PAYMENT', savedPayment);
+
+    // Stamp the idempotency key onto the saved row (check already passed above).
+    if (createPaymentDto.idempotencyKey) {
+      await this.idempotencyService.saveKey(
+        createPaymentDto.idempotencyKey,
+        savedPayment.id,
+      );
+    }
     // Optionally create final payment record (not paid yet)
     if (final > 0) {
       const finalPaymentData: any = {
@@ -385,6 +395,16 @@ export class PaymentsService {
   ): Promise<Payment> {
     const payment = await this.findOnePayment(id, tenantId, userId);
 
+    // Enforce state machine: reject invalid status transitions.
+    if (
+      updatePaymentStatusDto.status &&
+      updatePaymentStatusDto.status !== payment.status
+    ) {
+      assertValidTransition(payment.status, updatePaymentStatusDto.status);
+    }
+
+    const previousStatus = payment.status;
+
     // Update payment status
     Object.assign(payment, updatePaymentStatusDto);
 
@@ -405,6 +425,11 @@ export class PaymentsService {
     }
 
     const savedPayment = await this.paymentRepository.save(payment);
+
+    // Persist an audit record for this transition.
+    if (updatePaymentStatusDto.status && updatePaymentStatusDto.status !== previousStatus) {
+      await this.auditService.logTransition(savedPayment, previousStatus, savedPayment.status);
+    }
 
     // Handle advance payment completion: Update trip and truck status
     if (
@@ -532,6 +557,22 @@ export class PaymentsService {
   async processPayment(id: string, tenantId: string): Promise<Payment> {
     const payment = await this.findOnePayment(id, tenantId);
 
+    // Guard: only PENDING payments can be submitted to the provider.
+    // PROCESSING means a request is already in-flight.
+    // COMPLETED / FAILED / CANCELLED are terminal or handled by refund/retry flows.
+    if (payment.status !== PaymentStatus.PENDING) {
+      if (payment.status === PaymentStatus.COMPLETED) {
+        // Idempotent: return the completed payment as-is.
+        this.logger.log(
+          `processPayment called on already-completed payment ${id} — returning as-is`,
+        );
+        return payment;
+      }
+      throw new ConflictException(
+        `Payment ${id} cannot be processed: current status is "${payment.status}". Only PENDING payments can be processed.`,
+      );
+    }
+
     // Run fraud detection before processing
     const isFraud = await this.fraudDetectionService.check(payment);
     if (isFraud) {
@@ -542,16 +583,20 @@ export class PaymentsService {
     // Map PaymentMethod to PaymentProvider
     const provider = this.mapPaymentMethodToProvider(payment.paymentMethod);
 
-    // Process payment using the payment processing service
+    // Process payment using the provider integration service directly.
+    // We must NOT call paymentProcessingService.initiatePayment() here because
+    // that method always creates a NEW payment record internally, which would
+    // violate the unique constraint uq_payment_trip_payer_trip_payment_active
+    // when an active payment already exists for the same (tripId, payerId, type).
+    // Instead we submit the existing payment record to the provider directly.
     try {
       const processingResult =
-        await this.paymentProcessingService.initiatePayment({
-          tenant: { id: tenantId } as any, // Simplified for this context
-          paymentType: payment.paymentType,
-          amount: payment.amount,
-          currency: payment.currency,
+        await this.providerIntegrationService.processPayment(
           provider,
-          meta: {
+          payment.paymentType,
+          payment.amount,
+          payment.currency,
+          {
             ...payment.metadata,
             tripId: payment.tripId,
             payerId: payment.payerId,
@@ -561,7 +606,7 @@ export class PaymentsService {
             notes: payment.notes,
             dueDate: payment.dueDate,
           },
-        });
+        );
 
       if (processingResult.success) {
         const isMobileMoney = provider === PaymentProvider.MOBILE_MONEY;
@@ -845,7 +890,10 @@ export class PaymentsService {
       );
     }
 
-    // Create refund payment
+    // Create refund payment record as PENDING — the refund must be submitted to
+    // the provider before it can be marked COMPLETED.  The caller (or a webhook
+    // handler) is responsible for calling processPayment on the refund record
+    // once the provider confirms the reversal.
     const refundPayment = this.paymentRepository.create({
       tripId: originalPayment.tripId,
       amount: -amount, // Negative amount for refund
@@ -856,12 +904,17 @@ export class PaymentsService {
       referenceNumber: `REF_${Date.now()}`,
       tenantId,
       payerId: originalPayment.payerId,
-      status: PaymentStatus.COMPLETED,
-      processedAt: new Date(),
+      status: PaymentStatus.PENDING,  // Not COMPLETED — provider must confirm.
       metadata: { originalPaymentId: originalPayment.id, refundReason: reason },
     });
 
-    return this.paymentRepository.save(refundPayment);
+    const savedRefund = await this.paymentRepository.save(refundPayment);
+    await this.auditService.log('REFUND_CREATED', savedRefund, {
+      originalPaymentId: originalPayment.id,
+      refundAmount: amount,
+      reason,
+    });
+    return savedRefund;
   }
 
   async getPaymentHistory(

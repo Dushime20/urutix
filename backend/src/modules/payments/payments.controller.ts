@@ -7,10 +7,12 @@ import {
   Param,
   UseGuards,
   Request,
+  Headers,
   ParseUUIDPipe,
   Query,
   ValidationPipe,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -32,7 +34,10 @@ import {
   ReconciliationResponseDto,
 } from './dto/provider-payment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '../auth/guards/roles.guard';
+import { UserRole } from '../../entities/user.entity';
 import { RateLimitGuard } from './guards/rate-limit.guard';
+import * as crypto from 'crypto';
 import { Public } from '../../common/decorators/public.decorator';
 import {
   ApiTags,
@@ -1053,7 +1058,8 @@ export class PaymentsController {
   }
 
   @Patch(':id/status')
-  @UseGuards(RateLimitGuard)
+  @UseGuards(RateLimitGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Update payment status',
     description: 'Update the status of a payment (admin/authorized users only)',
@@ -1265,7 +1271,8 @@ export class PaymentsController {
   }
 
   @Post('reconcile')
-  @UseGuards(RateLimitGuard)
+  @UseGuards(RateLimitGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Reconcile payments with provider records',
     description:
@@ -1292,13 +1299,6 @@ export class PaymentsController {
     @Request() req,
   ) {
     try {
-      // Check admin role (simplified - in production, use proper role-based authorization)
-      if (!req.user.roles?.includes('admin')) {
-        throw new BadRequestException(
-          'Admin access required for reconciliation',
-        );
-      }
-
       const mismatches = await this.paymentsService.reconcilePayments(
         reconciliationData.providerPayments,
       );
@@ -1316,6 +1316,8 @@ export class PaymentsController {
   }
 
   @Get('fraud-audit')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Batch fraud analysis',
     description: 'Perform batch fraud analysis on all payments (admin only)',
@@ -1353,11 +1355,6 @@ export class PaymentsController {
   @ApiInternalServerErrorResponse({ description: 'Internal server error' })
   async batchFraudCheck(@Request() req) {
     try {
-      // Check admin role
-      if (!req.user.roles?.includes('admin')) {
-        throw new BadRequestException('Admin access required for fraud audit');
-      }
-
       const results = await this.paymentsService.batchFraudCheck();
       return {
         message: 'Batch fraud analysis completed',
@@ -1524,7 +1521,53 @@ export class PaymentsController {
   @ApiOkResponse({ description: 'Webhook processed successfully' })
   async handleMobileMoneyWebhook(
     @Body() payload: any,
+    @Headers('x-webhook-signature') signature: string,
   ) {
+    // ── Signature verification ──────────────────────────────────────────────
+    // Verify the HMAC-SHA256 signature supplied by the Mobile Money provider to
+    // prevent unauthenticated callers from marking payments as COMPLETED.
+    //
+    // Expected header: X-Webhook-Signature: sha256=<hex-digest>
+    //
+    // The secret is stored in MOBILE_MONEY_WEBHOOK_SECRET env var.
+    // If no secret is configured we log a warning and continue — this allows
+    // local development without breaking production when the secret IS set.
+    const webhookSecret = this.configService.get<string>('MOBILE_MONEY_WEBHOOK_SECRET');
+    if (webhookSecret) {
+      if (!signature) {
+        this.logger.warn(
+          'Mobile Money webhook received without X-Webhook-Signature header — rejected',
+        );
+        return { message: 'Missing webhook signature', received: false };
+      }
+
+      const rawBody = JSON.stringify(payload);
+      const expectedSig =
+        'sha256=' +
+        crypto
+          .createHmac('sha256', webhookSecret)
+          .update(rawBody, 'utf8')
+          .digest('hex');
+
+      // Constant-time comparison to prevent timing attacks.
+      const sigBuffer = Buffer.from(signature);
+      const expectedBuffer = Buffer.from(expectedSig);
+      const signaturesMatch =
+        sigBuffer.length === expectedBuffer.length &&
+        crypto.timingSafeEqual(sigBuffer, expectedBuffer);
+
+      if (!signaturesMatch) {
+        this.logger.warn(
+          'Mobile Money webhook signature mismatch — request rejected',
+        );
+        return { message: 'Invalid webhook signature', received: false };
+      }
+    } else {
+      this.logger.warn(
+        'MOBILE_MONEY_WEBHOOK_SECRET is not configured — webhook signature verification is DISABLED. Set this variable in production.',
+      );
+    }
+
     try {
       // Process the callback
       const callbackData = await this.mobileMoneyPaymentService.processCallback(payload);

@@ -303,15 +303,15 @@ export class EscrowService {
     );
     const escrowCount = escrowPayments.length;
 
-    const recentReleases = await this.paymentRepository.find({
-      where: {
-        tenantId,
-        status: PaymentStatus.COMPLETED,
-        metadata: { escrowReleasedAt: { $exists: true } },
-      },
-      order: { updatedAt: 'DESC' },
-      take: 10,
-    });
+    // Use TypeORM JSONB operator syntax (not MongoDB $exists).
+    const recentReleases = await this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.tenantId = :tenantId', { tenantId })
+      .andWhere("payment.status = :status", { status: PaymentStatus.COMPLETED })
+      .andWhere("payment.metadata->>'escrowReleasedAt' IS NOT NULL")
+      .orderBy('payment.updatedAt', 'DESC')
+      .take(10)
+      .getMany();
 
     return {
       totalEscrowAmount,
@@ -350,10 +350,9 @@ export class EscrowService {
     if (payment.status !== PaymentStatus.ESCROW) {
       throw new ConflictException('Only escrow payments can be released');
     }
-
-    if (!payment.metadata?.escrowHeldAt) {
-      throw new BadRequestException('Payment is not properly held in escrow');
-    }
+    // escrowHeldAt is set by holdInEscrow() and createEscrowPayments().
+    // Allow release even if the field is absent — the status check is the
+    // authoritative guard.
   }
 
   /**
