@@ -903,3 +903,147 @@ ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "insuranceAlerts"    JSONB;
 ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "fuelAlerts"         JSONB;
 ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "tireAlerts"         JSONB;
 ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "complianceAlerts"   JSONB;
+
+-- ---------------------------------------------------------------------------
+-- REFRESH_TOKENS  (auth — login fails without this)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "userId"   UUID NOT NULL,
+  token      VARCHAR NOT NULL UNIQUE,
+  "expiresAt" TIMESTAMPTZ NOT NULL,
+  revoked    BOOLEAN NOT NULL DEFAULT false,
+  "revokedAt" TIMESTAMPTZ,
+  "revokedBy" VARCHAR,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_revoked ON refresh_tokens("userId", revoked, "expiresAt");
+
+-- ---------------------------------------------------------------------------
+-- NOTIFICATIONS  (full schema matching TypeORM entity)
+-- ---------------------------------------------------------------------------
+-- Drop the stub created earlier and replace with the full entity schema.
+-- All via ALTER TABLE ADD COLUMN IF NOT EXISTS — safe on both fresh and
+-- existing tables that already have the base columns.
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "recipientId"       UUID;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "notificationType"  VARCHAR(100);
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS category            VARCHAR(50);
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS priority            VARCHAR(20) NOT NULL DEFAULT 'NORMAL';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS status              VARCHAR(20) NOT NULL DEFAULT 'PENDING';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "shortMessage"      TEXT;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS channels            JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "channelData"       JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS tags                JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "scheduledAt"       TIMESTAMPTZ;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "sentAt"            TIMESTAMPTZ;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "deliveredAt"       TIMESTAMPTZ;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "readAt"            TIMESTAMPTZ;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "expiresAt"         TIMESTAMPTZ;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "isArchived"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "requiresAction"    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "actionUrl"         TEXT;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "actionText"        TEXT;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "actionData"        JSONB DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS attachments         JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "deliveryAttempts"  JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "userPreferences"   JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS analytics           JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "relatedNotifications" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "workflowInfo"      JSONB DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "escalationInfo"    JSONB DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "complianceInfo"    JSONB DEFAULT '{}';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "updatedAt"         TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS deleted_at          TIMESTAMPTZ;
+
+-- Indexes for notifications (all IF NOT EXISTS)
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_read   ON notifications("tenantId", "recipientId", "isRead");
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_status ON notifications("recipientId", status);
+CREATE INDEX IF NOT EXISTS idx_notifications_scheduled        ON notifications("scheduledAt", status);
+
+-- ---------------------------------------------------------------------------
+-- AUCTIONS  (full schema matching TypeORM entity)
+-- ---------------------------------------------------------------------------
+DO $$ BEGIN CREATE TYPE auction_status AS ENUM (
+  'SCHEDULED','ACTIVE','CLOSED','CANCELLED','PAUSED'
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN CREATE TYPE auction_type AS ENUM (
+  'REVERSE','FORWARD','DUTCH','SEALED'
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS auctions (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "loadId"              UUID NOT NULL,
+  "auctionType"         auction_type NOT NULL DEFAULT 'REVERSE',
+  status                auction_status NOT NULL DEFAULT 'SCHEDULED',
+  "auctionStart"        TIMESTAMPTZ NOT NULL,
+  "auctionEnd"          TIMESTAMPTZ NOT NULL,
+  "reservePrice"        DECIMAL(15,2),
+  "minimumBidIncrement" DECIMAL(15,2),
+  "maximumBidAmount"    DECIMAL(15,2),
+  "targetPrice"         DECIMAL(15,2),
+  "maxBudget"           DECIMAL(15,2),
+  "startingPrice"       DECIMAL(15,2),
+  "marketRate"          DECIMAL(15,2),
+  "dropInterval"        INTEGER,
+  "dropAmount"          DECIMAL(15,2),
+  "bidVisibility"       VARCHAR(50) DEFAULT 'HIDDEN',
+  "allowBidRevision"    BOOLEAN DEFAULT false,
+  "selectionCriteria"   VARCHAR(50) DEFAULT 'LOWEST_BID',
+  "autoExtend"          BOOLEAN DEFAULT false,
+  "minimumBidDecrement" DECIMAL(15,2),
+  "totalBids"           INTEGER NOT NULL DEFAULT 0,
+  "uniqueBidders"       INTEGER NOT NULL DEFAULT 0,
+  "currentHighestBid"   DECIMAL(15,2),
+  "winningBidId"        UUID,
+  "winningBidderId"     UUID,
+  "awardedAt"           TIMESTAMPTZ,
+  "auctionRules"        JSONB NOT NULL DEFAULT '{}',
+  "notificationSettings" JSONB NOT NULL DEFAULT '{}',
+  analytics             JSONB NOT NULL DEFAULT '{}',
+  "cancellationReason"  TEXT,
+  "cancelledBy"         UUID,
+  "cancelledAt"         TIMESTAMPTZ,
+  "createdAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at            TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_auctions_load_status  ON auctions("loadId", status);
+CREATE INDEX IF NOT EXISTS idx_auctions_start_end    ON auctions("auctionStart", "auctionEnd");
+
+-- BIDS  (referenced by auctions via winningBidId)
+CREATE TABLE IF NOT EXISTS bids (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"     UUID NOT NULL,
+  "auctionId"    UUID,
+  "loadId"       UUID NOT NULL,
+  "bidderId"     UUID NOT NULL,
+  amount         DECIMAL(15,2) NOT NULL,
+  status         VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+  notes          TEXT,
+  metadata       JSONB NOT NULL DEFAULT '{}',
+  "createdAt"    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at     TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_bids_auction  ON bids("auctionId", status);
+CREATE INDEX IF NOT EXISTS idx_bids_load     ON bids("loadId", status);
+CREATE INDEX IF NOT EXISTS idx_bids_bidder   ON bids("bidderId");
+
+-- AUCTION_VIEWS  (referenced by Auction entity)
+CREATE TABLE IF NOT EXISTS auction_views (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "auctionId" UUID NOT NULL,
+  "viewerId"  UUID,
+  "viewedAt"  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_auction_views_auction ON auction_views("auctionId");
+
+-- AUCTION_WATCHES  (referenced by Auction entity)
+CREATE TABLE IF NOT EXISTS auction_watches (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "auctionId" UUID NOT NULL,
+  "watcherId" UUID NOT NULL,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_auction_watches_uniq ON auction_watches("auctionId", "watcherId");
