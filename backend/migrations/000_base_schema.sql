@@ -1264,8 +1264,21 @@ CREATE TABLE IF NOT EXISTS role_permissions (
   permission_id UUID NOT NULL,
   PRIMARY KEY (role_id, permission_id)
 );
-CREATE INDEX IF NOT EXISTS idx_role_permissions_role       ON role_permissions(role_id);
-CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON role_permissions(permission_id);
+-- role_permissions: add columns if they exist in the table already under different names,
+-- then create indexes only when the columns are confirmed present.
+ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS role_id       UUID;
+ALTER TABLE role_permissions ADD COLUMN IF NOT EXISTS permission_id UUID;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'role_permissions' AND column_name = 'role_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_role_permissions_role       ON role_permissions(role_id);
+    CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON role_permissions(permission_id);
+  END IF;
+END $$;
 
 -- ROLE_INHERITANCE junction table (also defined in Role entity)
 CREATE TABLE IF NOT EXISTS role_inheritance (
@@ -1325,3 +1338,31 @@ BEGIN
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_bids_truck_owner_status ON bids("truckOwnerId", status);
+
+-- ===========================================================================
+-- BATCH: All remaining TypeORM entity tables (added together to end whack-a-mole)
+-- ===========================================================================
+
+-- MAINTENANCE_LOGS
+DO $$ BEGIN CREATE TYPE maintenance_type AS ENUM('ROUTINE','REPAIR','EMERGENCY','INSPECTION','FAULT_REPORT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE maintenance_status AS ENUM('PENDING','IN_PROGRESS','COMPLETED','CANCELLED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS maintenance_logs (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"      UUID NOT NULL,
+  "truckId"       UUID NOT NULL,
+  "driverId"      UUID,
+  type            maintenance_type NOT NULL DEFAULT 'ROUTINE',
+  "taskName"      VARCHAR(255) NOT NULL DEFAULT '',
+  description     TEXT,
+  "serviceDate"   DATE,
+  "providerName"  VARCHAR(255),
+  status          maintenance_status NOT NULL DEFAULT 'PENDING',
+  cost            DECIMAL(12,2) NOT NULL DEFAULT 0,
+  "odometerReading" INTEGER,
+  "partsReplaced" JSONB,
+  notes           TEXT,
+  "createdAt"     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_maintenance_logs_tenant_truck ON maintenance_logs("tenantId","truckId");
+CREATE INDEX IF NOT EXISTS idx_maintenance_logs_truck_status ON maintenance_logs("truckId", status);
