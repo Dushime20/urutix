@@ -712,8 +712,11 @@ DO $$ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_name='epods' AND column_name='status' AND data_type='character varying'
   ) THEN
+    -- Must drop default before changing type, then restore it
+    ALTER TABLE epods ALTER COLUMN status DROP DEFAULT;
     ALTER TABLE epods ALTER COLUMN status TYPE epod_status_enum
       USING status::epod_status_enum;
+    ALTER TABLE epods ALTER COLUMN status SET DEFAULT 'PENDING';
   END IF;
 END $$;
 
