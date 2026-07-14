@@ -1,138 +1,86 @@
--- Migration: Add Load Constraints for Data Integrity
--- Date: 2026-02-17
--- Purpose: Add database-level constraints to ensure data integrity and prevent invalid data
+-- Migration: 014_add_load_constraints.sql
+-- Purpose: Add CHECK constraints and performance indexes to the loads table.
+--
+-- IDEMPOTENCY: every ALTER TABLE ADD CONSTRAINT is wrapped in a DO block that
+-- checks pg_constraint first, so re-running this file is a safe no-op.
 
 -- ============================================================================
--- CHECK CONSTRAINTS
+-- CHECK CONSTRAINTS (all guarded)
 -- ============================================================================
 
--- Ensure weight is positive
-ALTER TABLE loads 
-  ADD CONSTRAINT check_weight_positive 
-  CHECK (weight > 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_weight_positive' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_weight_positive CHECK (weight > 0);
+  END IF;
+END $$;
 
--- Ensure load value is non-negative
-ALTER TABLE loads 
-  ADD CONSTRAINT check_load_value_non_negative 
-  CHECK (load_value >= 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_load_value_non_negative' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_load_value_non_negative CHECK ("loadValue" >= 0);
+  END IF;
+END $$;
 
--- Ensure offered price is non-negative (if provided)
-ALTER TABLE loads 
-  ADD CONSTRAINT check_offered_price_non_negative 
-  CHECK (offered_price IS NULL OR offered_price >= 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_offered_price_non_negative' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_offered_price_non_negative CHECK ("offeredPrice" IS NULL OR "offeredPrice" >= 0);
+  END IF;
+END $$;
 
--- Ensure delivery date is after or equal to pickup date
-ALTER TABLE loads 
-  ADD CONSTRAINT check_dates_logical 
-  CHECK (delivery_date >= pickup_date);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_dates_logical' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_dates_logical CHECK ("deliveryDate" >= "pickupDate" OR "deliveryDate" IS NULL OR "pickupDate" IS NULL);
+  END IF;
+END $$;
 
--- Ensure volume is positive (if provided)
-ALTER TABLE loads 
-  ADD CONSTRAINT check_volume_positive 
-  CHECK (volume IS NULL OR volume > 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_volume_positive' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_volume_positive CHECK (volume IS NULL OR volume > 0);
+  END IF;
+END $$;
 
--- Ensure units required is at least 1
-ALTER TABLE loads 
-  ADD CONSTRAINT check_units_required_positive 
-  CHECK (units_required >= 1);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_units_required_positive' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_units_required_positive CHECK ("unitsRequired" >= 1);
+  END IF;
+END $$;
 
--- Ensure number of pieces is non-negative (if provided)
-ALTER TABLE loads 
-  ADD CONSTRAINT check_number_of_pieces_non_negative 
-  CHECK (number_of_pieces IS NULL OR number_of_pieces >= 0);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_number_of_pieces_non_negative' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_number_of_pieces_non_negative CHECK ("numberOfPieces" IS NULL OR "numberOfPieces" >= 0);
+  END IF;
+END $$;
 
--- Ensure number of pallets is non-negative (if provided)
-ALTER TABLE loads 
-  ADD CONSTRAINT check_number_of_pallets_non_negative 
-  CHECK (number_of_pallets IS NULL OR number_of_pallets >= 0);
-
--- ============================================================================
--- PERFORMANCE INDEXES
--- ============================================================================
-
--- Index for soft delete queries (WHERE deleted_at IS NULL)
-CREATE INDEX IF NOT EXISTS idx_loads_deleted_at 
-  ON loads(deleted_at) 
-  WHERE deleted_at IS NOT NULL;
-
--- Composite index for common tenant + status + pickup date queries
-CREATE INDEX IF NOT EXISTS idx_loads_tenant_status_pickup 
-  ON loads(tenant_id, status, pickup_date) 
-  WHERE deleted_at IS NULL;
-
--- Index for cargo owner queries (my loads)
-CREATE INDEX IF NOT EXISTS idx_loads_cargo_owner_status 
-  ON loads(cargo_owner_id, status, created_at DESC) 
-  WHERE deleted_at IS NULL;
-
--- Index for broker queries
-CREATE INDEX IF NOT EXISTS idx_loads_broker_status 
-  ON loads(broker_id, status, created_at DESC) 
-  WHERE deleted_at IS NULL AND broker_id IS NOT NULL;
-
--- Index for date range queries
-CREATE INDEX IF NOT EXISTS idx_loads_date_range 
-  ON loads(pickup_date, delivery_date) 
-  WHERE deleted_at IS NULL;
-
--- Index for urgency level queries
-CREATE INDEX IF NOT EXISTS idx_loads_urgency_status 
-  ON loads(urgency_level, status, created_at DESC) 
-  WHERE deleted_at IS NULL;
-
--- Index for cargo type queries
-CREATE INDEX IF NOT EXISTS idx_loads_cargo_type_status 
-  ON loads(cargo_type, status, created_at DESC) 
-  WHERE deleted_at IS NULL;
-
--- Index for visibility queries (public/private loads)
-CREATE INDEX IF NOT EXISTS idx_loads_visibility_status 
-  ON loads(visibility, status, created_at DESC) 
-  WHERE deleted_at IS NULL;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'check_number_of_pallets_non_negative' AND conrelid = 'loads'::regclass) THEN
+    ALTER TABLE loads ADD CONSTRAINT check_number_of_pallets_non_negative CHECK ("numberOfPallets" IS NULL OR "numberOfPallets" >= 0);
+  END IF;
+END $$;
 
 -- ============================================================================
--- COMMENTS FOR DOCUMENTATION
+-- PERFORMANCE INDEXES (all IF NOT EXISTS)
 -- ============================================================================
 
-COMMENT ON CONSTRAINT check_weight_positive ON loads IS 
-  'Ensures weight is always positive (greater than 0)';
+CREATE INDEX IF NOT EXISTS idx_loads_deleted_at
+  ON loads(deleted_at) WHERE deleted_at IS NOT NULL;
 
-COMMENT ON CONSTRAINT check_load_value_non_negative ON loads IS 
-  'Ensures load value is non-negative (0 or greater)';
+CREATE INDEX IF NOT EXISTS idx_loads_tenant_status_pickup
+  ON loads("tenantId", status, "pickupDate") WHERE deleted_at IS NULL;
 
-COMMENT ON CONSTRAINT check_dates_logical ON loads IS 
-  'Ensures delivery date is not before pickup date';
+CREATE INDEX IF NOT EXISTS idx_loads_cargo_owner_status
+  ON loads("cargoOwnerId", status, "createdAt" DESC) WHERE deleted_at IS NULL;
 
-COMMENT ON CONSTRAINT check_volume_positive ON loads IS 
-  'Ensures volume is positive when provided';
+CREATE INDEX IF NOT EXISTS idx_loads_broker_status
+  ON loads("brokerId", status, "createdAt" DESC)
+  WHERE deleted_at IS NULL AND "brokerId" IS NOT NULL;
 
-COMMENT ON INDEX idx_loads_tenant_status_pickup IS 
-  'Optimizes queries filtering by tenant, status, and pickup date';
+CREATE INDEX IF NOT EXISTS idx_loads_date_range
+  ON loads("pickupDate", "deliveryDate") WHERE deleted_at IS NULL;
 
-COMMENT ON INDEX idx_loads_cargo_owner_status IS 
-  'Optimizes cargo owner queries for their loads';
+CREATE INDEX IF NOT EXISTS idx_loads_urgency_status
+  ON loads("urgencyLevel", status, "createdAt" DESC) WHERE deleted_at IS NULL;
 
-COMMENT ON INDEX idx_loads_broker_status IS 
-  'Optimizes broker queries for assigned loads';
+CREATE INDEX IF NOT EXISTS idx_loads_cargo_type_status
+  ON loads("cargoType", status, "createdAt" DESC) WHERE deleted_at IS NULL;
 
--- ============================================================================
--- ROLLBACK SCRIPT (for reference)
--- ============================================================================
-
--- To rollback this migration, run:
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_weight_positive;
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_load_value_non_negative;
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_offered_price_non_negative;
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_dates_logical;
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_volume_positive;
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_units_required_positive;
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_number_of_pieces_non_negative;
--- ALTER TABLE loads DROP CONSTRAINT IF EXISTS check_number_of_pallets_non_negative;
--- DROP INDEX IF EXISTS idx_loads_deleted_at;
--- DROP INDEX IF EXISTS idx_loads_tenant_status_pickup;
--- DROP INDEX IF EXISTS idx_loads_cargo_owner_status;
--- DROP INDEX IF EXISTS idx_loads_broker_status;
--- DROP INDEX IF EXISTS idx_loads_date_range;
--- DROP INDEX IF EXISTS idx_loads_urgency_status;
--- DROP INDEX IF EXISTS idx_loads_cargo_type_status;
--- DROP INDEX IF EXISTS idx_loads_visibility_status;
+CREATE INDEX IF NOT EXISTS idx_loads_visibility_status
+  ON loads(visibility, status, "createdAt" DESC) WHERE deleted_at IS NULL;
