@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { X, ChevronDown, Gavel } from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { X, ChevronDown, Gavel, Upload, FileText, Check, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { disputesAPI } from '../../../services/api';
+import { disputesAPI, tripsAPI, paymentsAPI, financialAPI } from '../../../services/api';
 import { CATEGORY_LABELS, PRIORITY_LABELS } from '../../../types/dispute';
 
 interface Props {
