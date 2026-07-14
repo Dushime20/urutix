@@ -842,3 +842,64 @@ CREATE TABLE IF NOT EXISTS dispute_audit_logs (
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_dispute_audit_dispute ON dispute_audit_logs(dispute_id, "createdAt" DESC);
+
+-- ---------------------------------------------------------------------------
+-- APPLICATION-LEVEL TABLES  (TypeORM entities used at startup)
+-- ---------------------------------------------------------------------------
+
+-- SYSTEM_SETTINGS  (read at app init by SystemSettingsService)
+CREATE TABLE IF NOT EXISTS system_settings (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category    VARCHAR(50) NOT NULL,
+  key         VARCHAR(100) NOT NULL,
+  value       JSONB NOT NULL,
+  data_type   VARCHAR(20) NOT NULL DEFAULT 'string',
+  description TEXT,
+  is_public   BOOLEAN NOT NULL DEFAULT false,
+  updated_by  UUID,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_system_settings_category ON system_settings(category);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_system_settings_cat_key ON system_settings(category, key);
+
+-- CURRENCIES  (read at app init by CurrencyService)
+CREATE TABLE IF NOT EXISTS currencies (
+  code        VARCHAR(3) PRIMARY KEY,
+  name        VARCHAR(64) NOT NULL,
+  symbol      VARCHAR(16) NOT NULL,
+  locale      VARCHAR(16) NOT NULL DEFAULT 'en-US',
+  decimals    INTEGER NOT NULL DEFAULT 2,
+  flag        VARCHAR(8) NOT NULL DEFAULT '🏳',
+  "isActive"  BOOLEAN NOT NULL DEFAULT true,
+  "manualRate" DECIMAL(20,8),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- EXCHANGE_RATES  (read at app init by CurrencyService)
+CREATE TABLE IF NOT EXISTS exchange_rates (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "baseCurrency"   VARCHAR(3) NOT NULL DEFAULT 'USD',
+  "targetCurrency" VARCHAR(3) NOT NULL,
+  rate             DECIMAL(20,8) NOT NULL,
+  source           VARCHAR,
+  fetched_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_exchange_rates_currencies ON exchange_rates("baseCurrency", "targetCurrency");
+CREATE INDEX IF NOT EXISTS idx_exchange_rates_fetched    ON exchange_rates(fetched_at);
+
+-- TRUCKS: add columns that TypeORM entity expects but migration didn't add
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "estimatedAvailableTime" TIMESTAMPTZ;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasRefrigeration"  BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasLiftGate"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasGps"             BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasHazmatPermit"    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "trailerType"        VARCHAR(50);
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "roadworthyCertExpiry" DATE;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "fuelEfficiency"     DECIMAL(8,2);
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "inspectionAlerts"   JSONB;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "insuranceAlerts"    JSONB;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "fuelAlerts"         JSONB;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "tireAlerts"         JSONB;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "complianceAlerts"   JSONB;
