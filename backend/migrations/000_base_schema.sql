@@ -706,19 +706,8 @@ ALTER TABLE epods ADD COLUMN IF NOT EXISTS "invoiceId"           UUID;
 DO $$ BEGIN
   ALTER TABLE epods ADD COLUMN "cargoCondition" cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT';
 EXCEPTION WHEN duplicate_column THEN NULL; END $$;
-DO $$ BEGIN
-  -- Convert status column to epod_status_enum if it's varchar
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name='epods' AND column_name='status' AND data_type='character varying'
-  ) THEN
-    -- Must drop default before changing type, then restore it
-    ALTER TABLE epods ALTER COLUMN status DROP DEFAULT;
-    ALTER TABLE epods ALTER COLUMN status TYPE epod_status_enum
-      USING status::epod_status_enum;
-    ALTER TABLE epods ALTER COLUMN status SET DEFAULT 'PENDING';
-  END IF;
-END $$;
+-- Note: if epods.status already exists as VARCHAR, we leave it as-is.
+-- The application and migration 041 handle the enum conversion explicitly.
 
 CREATE INDEX IF NOT EXISTS idx_epods_tenant      ON epods("tenantId");
 CREATE INDEX IF NOT EXISTS idx_epods_cargo_owner ON epods("cargoOwnerId");
