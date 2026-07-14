@@ -267,80 +267,69 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Insert sample AI insights for testing
-INSERT INTO predictive_insights (
-    tenant_id, cargo_owner_id, insight_type, target_entity, target_id,
-    prediction_horizon, predicted_value, confidence_score, model_version,
-    baseline_value, prediction_change, valid_until
-) VALUES
--- Cost forecast for a specific route
-((SELECT id FROM tenants LIMIT 1), 
- (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
- 'cost_forecast', 'route', 'lagos-abuja-route',
- 30, 125000.00, 0.85, 'v1.2',
- 120000.00, 4.17, NOW() + INTERVAL '30 days'),
+-- Sample data inserts are skipped on fresh databases (no tenants/users yet).
+-- They will be populated by the application seed scripts after startup.
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM tenants LIMIT 1) AND EXISTS (SELECT 1 FROM users WHERE role = 'CARGO_OWNER' LIMIT 1) THEN
+    INSERT INTO predictive_insights (
+        tenant_id, cargo_owner_id, insight_type, target_entity, target_id,
+        prediction_horizon, predicted_value, confidence_score, model_version,
+        baseline_value, prediction_change, valid_until
+    ) VALUES
+    ((SELECT id FROM tenants LIMIT 1), 
+     (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
+     'cost_forecast', 'route', 'lagos-abuja-route',
+     30, 125000.00, 0.85, 'v1.2',
+     120000.00, 4.17, NOW() + INTERVAL '30 days'),
+    ((SELECT id FROM tenants LIMIT 1),
+     (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
+     'demand_prediction', 'market', 'oil_gas_sector',
+     60, 1.25, 0.78, 'v1.2',
+     1.00, 25.00, NOW() + INTERVAL '60 days'),
+    ((SELECT id FROM tenants LIMIT 1),
+     (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
+     'risk_alert', 'carrier', 'carrier-xyz-123',
+     14, 0.72, 0.92, 'v1.2',
+     0.85, -15.29, NOW() + INTERVAL '14 days');
 
--- Demand prediction for oil & gas cargo
-((SELECT id FROM tenants LIMIT 1),
- (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
- 'demand_prediction', 'market', 'oil_gas_sector',
- 60, 1.25, 0.78, 'v1.2',
- 1.00, 25.00, NOW() + INTERVAL '60 days'),
+    INSERT INTO ai_recommendations (
+        tenant_id, cargo_owner_id, recommendation_type, title, description,
+        priority, ai_confidence, reasoning, potential_savings, implementation_effort,
+        action_items, estimated_timeline, expires_at
+    ) VALUES
+    ((SELECT id FROM tenants LIMIT 1),
+     (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
+     'cost_optimization', 'Switch to Alternative Route for Lagos-Abuja Shipments',
+     'Analysis shows 15% cost savings by using alternative carriers on this route',
+     'high', 0.87, 'Historical data indicates consistent 15-20% savings with Carrier B vs current Carrier A',
+     45000.00, 'low',
+     '[{"action": "Contact Carrier B for capacity", "priority": 1}, {"action": "Negotiate volume discount", "priority": 2}]',
+     '1-2 weeks', NOW() + INTERVAL '30 days'),
+    ((SELECT id FROM tenants LIMIT 1),
+     (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
+     'carrier_selection', 'Diversify Carrier Portfolio for Risk Reduction',
+     'Current 80% dependency on single carrier creates operational risk',
+     'medium', 0.75, 'Risk analysis shows high concentration risk with current carrier mix',
+     25000.00, 'medium',
+     '[{"action": "Identify 2-3 backup carriers", "priority": 1}, {"action": "Test with small shipments", "priority": 2}]',
+     '3-4 weeks', NOW() + INTERVAL '45 days');
 
--- Risk alert for carrier performance
-((SELECT id FROM tenants LIMIT 1),
- (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
- 'risk_alert', 'carrier', 'carrier-xyz-123',
- 14, 0.72, 0.92, 'v1.2',
- 0.85, -15.29, NOW() + INTERVAL '14 days');
-
--- Insert sample AI recommendations
-INSERT INTO ai_recommendations (
-    tenant_id, cargo_owner_id, recommendation_type, title, description,
-    priority, ai_confidence, reasoning, potential_savings, implementation_effort,
-    action_items, estimated_timeline, expires_at
-) VALUES
--- Cost optimization recommendation
-((SELECT id FROM tenants LIMIT 1),
- (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
- 'cost_optimization', 'Switch to Alternative Route for Lagos-Abuja Shipments',
- 'Analysis shows 15% cost savings by using alternative carriers on this route',
- 'high', 0.87, 'Historical data indicates consistent 15-20% savings with Carrier B vs current Carrier A',
- 45000.00, 'low',
- '[{"action": "Contact Carrier B for capacity", "priority": 1}, {"action": "Negotiate volume discount", "priority": 2}]',
- '1-2 weeks', NOW() + INTERVAL '30 days'),
-
--- Carrier selection recommendation
-((SELECT id FROM tenants LIMIT 1),
- (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
- 'carrier_selection', 'Diversify Carrier Portfolio for Risk Reduction',
- 'Current 80% dependency on single carrier creates operational risk',
- 'medium', 0.75, 'Risk analysis shows high concentration risk with current carrier mix',
- 25000.00, 'medium',
- '[{"action": "Identify 2-3 backup carriers", "priority": 1}, {"action": "Test with small shipments", "priority": 2}]',
- '3-4 weeks', NOW() + INTERVAL '45 days');
-
--- Insert sample analytics alerts
-INSERT INTO analytics_alerts (
-    tenant_id, cargo_owner_id, alert_type, alert_name, description,
-    metric_name, threshold_value, threshold_operator, severity,
-    notification_channels
-) VALUES
--- Cost spike alert
-((SELECT id FROM tenants LIMIT 1),
- (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
- 'cost_spike', 'High Cost Per KM Alert',
- 'Alert when cost per km exceeds 20% above average',
- 'cost_per_km', 50.00, '>', 'high',
- '["email", "in_app"]'),
-
--- Performance drop alert
-((SELECT id FROM tenants LIMIT 1),
- (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
- 'performance_drop', 'On-Time Delivery Drop',
- 'Alert when on-time delivery rate drops below 85%',
- 'on_time_rate', 85.00, '<', 'medium',
- '["email", "in_app"]');
+    INSERT INTO analytics_alerts (
+        tenant_id, cargo_owner_id, alert_type, alert_name, description,
+        metric_name, threshold_value, threshold_operator, severity, notification_channels
+    ) VALUES
+    ((SELECT id FROM tenants LIMIT 1),
+     (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
+     'cost_spike', 'High Cost Per KM Alert',
+     'Alert when cost per km exceeds 20% above average',
+     'cost_per_km', 50.00, '>', 'high', '["email", "in_app"]'),
+    ((SELECT id FROM tenants LIMIT 1),
+     (SELECT id FROM users WHERE role = 'CARGO_OWNER' LIMIT 1),
+     'performance_drop', 'On-Time Delivery Drop',
+     'Alert when on-time delivery rate drops below 85%',
+     'on_time_rate', 85.00, '<', 'medium', '["email", "in_app"]');
+  END IF;
+END $$;
 
 -- Create views for AI insights dashboard
 CREATE OR REPLACE VIEW ai_insights_dashboard AS
@@ -370,14 +359,14 @@ FROM ai_recommendations ar
 WHERE ar.created_at >= CURRENT_DATE - INTERVAL '30 days'
 GROUP BY ar.tenant_id, ar.cargo_owner_id;
 
--- Grant permissions (following existing patterns)
-GRANT SELECT, INSERT, UPDATE, DELETE ON predictive_insights TO urutix_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ai_recommendations TO urutix_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON analytics_alerts TO urutix_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON alert_triggers_log TO urutix_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ai_model_performance TO urutix_app;
-GRANT SELECT ON ai_insights_dashboard TO urutix_app;
-GRANT SELECT ON recommendations_summary TO urutix_app;
+-- Grant permissions (skipped — role urutix_app is not guaranteed to exist)
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON predictive_insights TO urutix_app;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON ai_recommendations TO urutix_app;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON analytics_alerts TO urutix_app;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON alert_triggers_log TO urutix_app;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON ai_model_performance TO urutix_app;
+-- GRANT SELECT ON ai_insights_dashboard TO urutix_app;
+-- GRANT SELECT ON recommendations_summary TO urutix_app;
 
 -- Add comments for documentation
 COMMENT ON TABLE predictive_insights IS 'AI-generated predictions for costs, demand, and risks with confidence intervals';

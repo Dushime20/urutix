@@ -181,6 +181,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Stub functions referenced by fn_process_analytics_stream (avoid undefined function errors)
+CREATE OR REPLACE FUNCTION fn_trigger_cost_alert(p_tenant_id UUID, p_event_data JSONB)
+RETURNS void AS $$ BEGIN NULL; END; $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION fn_trigger_performance_alert(p_tenant_id UUID, p_event_data JSONB)
+RETURNS void AS $$ BEGIN NULL; END; $$ LANGUAGE plpgsql;
+
 -- Indexes for Performance
 CREATE INDEX IF NOT EXISTS idx_ml_models_tenant_status ON ml_models(tenant_id, status);
 CREATE INDEX IF NOT EXISTS idx_ml_models_type_accuracy ON ml_models(model_type, accuracy_score DESC);
@@ -194,8 +201,8 @@ CREATE INDEX IF NOT EXISTS idx_api_usage_key_date ON api_usage_logs(api_key_id, 
 CREATE INDEX IF NOT EXISTS idx_api_usage_endpoint ON api_usage_logs(endpoint, created_at);
 CREATE INDEX IF NOT EXISTS idx_api_usage_time_status ON api_usage_logs(created_at DESC, response_status);
 
--- Update existing analytics permissions for Phase 4
-INSERT INTO permissions (name, resource, action, description, category, created_at) VALUES
+-- Update existing analytics permissions for Phase 4 (skipped — role urutix_app not guaranteed)
+INSERT INTO permissions (name, resource, action, description, category, "createdAt") VALUES
 ('analytics:ml_models', 'analytics', 'ml_models', 'Access to ML models and training', 'analytics', CURRENT_TIMESTAMP),
 ('analytics:realtime', 'analytics', 'realtime', 'Access to real-time analytics streams', 'analytics', CURRENT_TIMESTAMP),
 ('analytics:api_marketplace', 'analytics', 'api_marketplace', 'Access to API marketplace features', 'analytics', CURRENT_TIMESTAMP),

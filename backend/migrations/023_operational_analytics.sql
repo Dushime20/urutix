@@ -34,6 +34,9 @@ CREATE INDEX idx_carrier_metrics_carrier ON carrier_performance_metrics(carrier_
 CREATE INDEX idx_carrier_metrics_cargo_owner ON carrier_performance_metrics(cargo_owner_id);
 CREATE INDEX idx_carrier_metrics_period ON carrier_performance_metrics(evaluation_period);
 CREATE INDEX idx_carrier_metrics_recommendation ON carrier_performance_metrics(recommendation_level);
+-- Unique constraint required for ON CONFLICT upsert in trigger function
+CREATE UNIQUE INDEX IF NOT EXISTS uq_carrier_metrics_tenant_carrier_owner_period
+  ON carrier_performance_metrics(tenant_id, carrier_id, cargo_owner_id, evaluation_period);
 
 -- Route Analytics Table
 CREATE TABLE route_analytics (
@@ -240,12 +243,12 @@ FROM cargo_owner_analytics coa
 WHERE coa.booking_date >= CURRENT_DATE - INTERVAL '30 days'
 GROUP BY coa.tenant_id, coa.cargo_owner_id;
 
--- Grant permissions (following existing patterns)
-GRANT SELECT, INSERT, UPDATE, DELETE ON carrier_performance_metrics TO urutix_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON route_analytics TO urutix_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON market_intelligence_data TO urutix_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON operational_performance_snapshots TO urutix_app;
-GRANT SELECT ON operational_analytics_dashboard TO urutix_app;
+-- Grant permissions (skipped — role urutix_app is not guaranteed to exist)
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON carrier_performance_metrics TO urutix_app;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON route_analytics TO urutix_app;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON market_intelligence_data TO urutix_app;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON operational_performance_snapshots TO urutix_app;
+-- GRANT SELECT ON operational_analytics_dashboard TO urutix_app;
 
 -- Add comments for documentation
 COMMENT ON TABLE carrier_performance_metrics IS 'Stores calculated performance metrics for carriers by cargo owner and time period';

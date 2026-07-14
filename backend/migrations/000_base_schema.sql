@@ -654,3 +654,179 @@ CREATE TABLE IF NOT EXISTS epods (
 );
 CREATE INDEX IF NOT EXISTS idx_epods_tenant ON epods("tenantId");
 
+-- ---------------------------------------------------------------------------
+-- PERMISSIONS & ROLES  (TypeORM RBAC — referenced by 021, 026)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS permissions (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        VARCHAR(100) UNIQUE NOT NULL,
+  resource    VARCHAR(100) NOT NULL,
+  action      VARCHAR(100) NOT NULL,
+  description TEXT,
+  category    VARCHAR(100),
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions(resource, action);
+
+CREATE TABLE IF NOT EXISTS roles (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        VARCHAR(100) UNIQUE NOT NULL,
+  description TEXT,
+  "tenantId"  UUID,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_permission_overrides (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "userId"      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  "permissionId" UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+  granted       BOOLEAN NOT NULL DEFAULT true,
+  "createdAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- TypeORM migrations tracking table (referenced by migration 012)
+CREATE TABLE IF NOT EXISTS migrations (
+  id        SERIAL PRIMARY KEY,
+  timestamp BIGINT NOT NULL,
+  name      VARCHAR(255) NOT NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- NOTIFICATIONS  (TypeORM entity — referenced by 018, 037)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notifications (
+  id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"         UUID NOT NULL,
+  "userId"           UUID REFERENCES users(id) ON DELETE CASCADE,
+  title              VARCHAR(500),
+  message            TEXT,
+  "notificationType" VARCHAR(100),
+  "entityType"       VARCHAR(50) NOT NULL DEFAULT 'SYSTEM',
+  "entityId"         UUID,
+  "isRead"           BOOLEAN NOT NULL DEFAULT false,
+  "readAt"           TIMESTAMPTZ,
+  metadata           JSONB NOT NULL DEFAULT '{}',
+  "createdAt"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_tenant_user  ON notifications("tenantId", "userId");
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read    ON notifications("userId", "isRead");
+CREATE INDEX IF NOT EXISTS idx_notifications_entity       ON notifications("entityType", "entityId");
+
+-- ---------------------------------------------------------------------------
+-- DISPUTES_V2  (referenced by migration 050)
+-- ---------------------------------------------------------------------------
+DO $$ BEGIN CREATE TYPE dispute_status_v2 AS ENUM (
+  'OPEN','IN_REVIEW','RESOLVED','CLOSED','ESCALATED','ASSIGNED','INVESTIGATING'
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN CREATE TYPE dispute_category AS ENUM (
+  'PAYMENT','DAMAGE','DELAY','SERVICE','DOCUMENTATION','OTHER',
+  'TRUCK_BREAKDOWN','AUCTION_ISSUE','BROKER_COMPLAINT','LENDER_COMPLAINT',
+  'IDENTITY_VERIFICATION','INSURANCE_CLAIM','ACCOUNT_SUSPENSION',
+  'TECHNICAL_PROBLEM','BILLING_ISSUE','SUBSCRIPTION_ISSUE',
+  'FEATURE_REQUEST','SECURITY_CONCERN'
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS disputes_v2 (
+  id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"                  UUID NOT NULL,
+  "reportedById"              UUID REFERENCES users(id) ON DELETE SET NULL,
+  "againstId"                 UUID REFERENCES users(id) ON DELETE SET NULL,
+  category                    dispute_category NOT NULL DEFAULT 'OTHER',
+  status                      dispute_status_v2 NOT NULL DEFAULT 'OPEN',
+  subject                     VARCHAR(500),
+  description                 TEXT,
+  resolution                  TEXT,
+  ticket_number               VARCHAR(30),
+  assigned_to_user_id         UUID,
+  assigned_role               VARCHAR(50),
+  assigned_at                 TIMESTAMPTZ,
+  auction_id                  UUID,
+  payment_id                  UUID,
+  driver_id                   UUID,
+  broker_id                   UUID,
+  lender_id                   UUID,
+  location                    VARCHAR(500),
+  incident_date               TIMESTAMPTZ,
+  additional_notes            TEXT,
+  sla_first_response_due      TIMESTAMPTZ,
+  sla_resolution_due          TIMESTAMPTZ,
+  first_response_at           TIMESTAMPTZ,
+  sla_first_response_breached BOOLEAN NOT NULL DEFAULT false,
+  sla_resolution_breached     BOOLEAN NOT NULL DEFAULT false,
+  reopen_count                INTEGER NOT NULL DEFAULT 0,
+  escalation_level            INTEGER NOT NULL DEFAULT 0,
+  escalation_reason           VARCHAR(60),
+  escalated_at                TIMESTAMPTZ,
+  escalated_by_user_id        UUID,
+  metadata                    JSONB NOT NULL DEFAULT '{}',
+  "createdAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_disputes_v2_ticket ON disputes_v2(ticket_number) WHERE ticket_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_disputes_v2_tenant ON disputes_v2("tenantId", status);
+
+CREATE TABLE IF NOT EXISTS dispute_audit_logs (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  dispute_id UUID NOT NULL REFERENCES disputes_v2(id) ON DELETE CASCADE,
+  "userId"   UUID REFERENCES users(id) ON DELETE SET NULL,
+  action     VARCHAR(100) NOT NULL,
+  old_value  JSONB,
+  new_value  JSONB,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_dispute_audit_dispute ON dispute_audit_logs(dispute_id, "createdAt" DESC);
+
+-- ---------------------------------------------------------------------------
+-- EPODS  (full schema — replaces the minimal stub above)
+-- ---------------------------------------------------------------------------
+-- Drop minimal stub if it exists without the required columns, then recreate
+DO $$ BEGIN
+  CREATE TYPE epod_status_enum AS ENUM ('PENDING','CONFIRMED','DISPUTED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE cargo_condition_on_delivery_enum AS ENUM (
+    'INTACT','PARTIAL_DAMAGE','SHORT_DELIVERY','FULL_DAMAGE'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS epods (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"            UUID NOT NULL,
+  "tripId"              UUID UNIQUE,
+  "driverId"            UUID,
+  "cargoOwnerId"        UUID,
+  "recipientName"       VARCHAR(200),
+  "recipientPhone"      VARCHAR(50),
+  "recipientIdNumber"   VARCHAR(100),
+  "recipientCompany"    VARCHAR(200),
+  "signatureFileUrl"    VARCHAR(500),
+  "photoUrls"           JSONB NOT NULL DEFAULT '[]',
+  "deliveredAt"         TIMESTAMPTZ,
+  "deliveryNotes"       TEXT,
+  "odometerReading"     VARCHAR(100),
+  "deliveryAddress"     TEXT,
+  "deliveryCoordinates" JSONB,
+  "cargoCondition"      cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT',
+  "unitsDelivered"      VARCHAR(100),
+  "exceptionNotes"      TEXT,
+  status                epod_status_enum NOT NULL DEFAULT 'PENDING',
+  "submittedAt"         TIMESTAMPTZ,
+  "confirmedAt"         TIMESTAMPTZ,
+  "disputedAt"          TIMESTAMPTZ,
+  "disputeReason"       TEXT,
+  "invoiceId"           UUID,
+  "createdAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_epods_tenant       ON epods("tenantId");
+CREATE INDEX IF NOT EXISTS idx_epods_cargo_owner  ON epods("cargoOwnerId");
+CREATE INDEX IF NOT EXISTS idx_epods_cargo_cond   ON epods("cargoCondition");
+

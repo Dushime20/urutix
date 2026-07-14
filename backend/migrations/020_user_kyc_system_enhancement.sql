@@ -1,7 +1,7 @@
 -- Migration: Enhanced User KYC System
 -- This migration enhances the existing user KYC system to support all user roles
 
--- Add role-specific KYC requirements enum
+-- Add role-specific KYC requirements enum (alias for kyc_requirement_level created in 000)
 DO $$ BEGIN
     CREATE TYPE user_kyc_requirement_level AS ENUM ('BASIC', 'STANDARD', 'ENHANCED', 'PREMIUM');
 EXCEPTION
@@ -9,8 +9,10 @@ EXCEPTION
 END $$;
 
 -- Enhance user_profiles table with additional KYC fields
+-- NOTE: kyc_requirement_level column already uses kyc_requirement_level type from 000_base_schema.
+-- We cast using the base type to avoid type-mismatch when user_kyc_requirement_level is a duplicate.
 ALTER TABLE user_profiles 
-ADD COLUMN IF NOT EXISTS kyc_requirement_level user_kyc_requirement_level DEFAULT 'BASIC',
+ADD COLUMN IF NOT EXISTS kyc_requirement_level kyc_requirement_level DEFAULT 'BASIC',
 ADD COLUMN IF NOT EXISTS kyc_submitted_at TIMESTAMP,
 ADD COLUMN IF NOT EXISTS kyc_reviewed_by UUID REFERENCES users(id),
 ADD COLUMN IF NOT EXISTS kyc_notes TEXT,
@@ -137,13 +139,13 @@ INSERT INTO kyc_role_requirements (role, requirement_level, required_documents, 
 -- Update existing user profiles with appropriate requirement levels based on user roles
 UPDATE user_profiles 
 SET kyc_requirement_level = CASE 
-    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'TRUCK_OWNER') THEN 'ENHANCED'::user_kyc_requirement_level
-    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'CARGO_OWNER') THEN 'STANDARD'::user_kyc_requirement_level
-    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'BROKER') THEN 'ENHANCED'::user_kyc_requirement_level
-    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'DRIVER') THEN 'STANDARD'::user_kyc_requirement_level
-    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'AGENT') THEN 'BASIC'::user_kyc_requirement_level
-    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'LENDER') THEN 'PREMIUM'::user_kyc_requirement_level
-    ELSE 'BASIC'::user_kyc_requirement_level
+    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'TRUCK_OWNER') THEN 'ENHANCED'::kyc_requirement_level
+    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'CARGO_OWNER') THEN 'STANDARD'::kyc_requirement_level
+    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'BROKER') THEN 'ENHANCED'::kyc_requirement_level
+    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'DRIVER') THEN 'STANDARD'::kyc_requirement_level
+    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'AGENT') THEN 'BASIC'::kyc_requirement_level
+    WHEN EXISTS (SELECT 1 FROM users WHERE users.id = user_profiles."userId" AND users.role = 'LENDER') THEN 'PREMIUM'::kyc_requirement_level
+    ELSE 'BASIC'::kyc_requirement_level
 END;
 
 -- Add comments for documentation
