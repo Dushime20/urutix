@@ -1366,3 +1366,496 @@ CREATE TABLE IF NOT EXISTS maintenance_logs (
 );
 CREATE INDEX IF NOT EXISTS idx_maintenance_logs_tenant_truck ON maintenance_logs("tenantId","truckId");
 CREATE INDEX IF NOT EXISTS idx_maintenance_logs_truck_status ON maintenance_logs("truckId", status);
+
+-- EXPENSES
+DO $$ BEGIN CREATE TYPE expense_type AS ENUM('fuel','maintenance','toll','driver','insurance','tax','other'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE expense_status AS ENUM('pending','approved','rejected','paid'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type expense_type NOT NULL,
+  category VARCHAR NOT NULL DEFAULT '',
+  amount DECIMAL(10,2) NOT NULL,
+  date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  description VARCHAR NOT NULL DEFAULT '',
+  "truckId" UUID, "driverId" UUID, "tripId" UUID,
+  receipt VARCHAR, status expense_status NOT NULL DEFAULT 'pending',
+  "approvedBy" UUID, "approvedDate" TIMESTAMPTZ, notes TEXT,
+  "taxDeductible" BOOLEAN NOT NULL DEFAULT true,
+  "allocationCustomerId" UUID, "allocationTripId" UUID,
+  "allocationPercentage" DECIMAL(5,2) NOT NULL DEFAULT 100,
+  "createdBy" UUID NOT NULL, "tenantId" UUID NOT NULL,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_expenses_tenant ON expenses("tenantId");
+
+-- SAFETY_INCIDENTS
+DO $$ BEGIN CREATE TYPE incident_type AS ENUM('accident','near_miss','injury','property_damage','traffic_violation'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE incident_severity AS ENUM('minor','moderate','major','critical'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE incident_status AS ENUM('reported','investigating','resolved','closed'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS safety_incidents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  type incident_type NOT NULL,
+  severity incident_severity NOT NULL,
+  date TIMESTAMPTZ NOT NULL,
+  location VARCHAR(500) NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
+  "driverId" UUID, "driverName" VARCHAR(255),
+  "truckId" UUID, "truckPlate" VARCHAR(50),
+  "weatherConditions" VARCHAR(100), "roadConditions" VARCHAR(100),
+  injuries TEXT, "propertyDamage" DECIMAL(10,2) NOT NULL DEFAULT 0,
+  "policeReport" BOOLEAN NOT NULL DEFAULT false, "reportNumber" VARCHAR(100),
+  status incident_status NOT NULL DEFAULT 'reported',
+  "assignedTo" VARCHAR(255), "correctiveActions" JSON,
+  cost DECIMAL(10,2) NOT NULL DEFAULT 0,
+  "insuranceClaim" BOOLEAN NOT NULL DEFAULT false, "claimNumber" VARCHAR(100),
+  "createdBy" UUID,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "deletedAt" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_safety_incidents_tenant ON safety_incidents("tenantId", date);
+
+-- SAFETY_INSPECTIONS
+DO $$ BEGIN CREATE TYPE inspection_type AS ENUM('pre_trip','post_trip','weekly','monthly','annual','random'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE inspection_status AS ENUM('passed','failed','conditional'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE compliance_status AS ENUM('compliant','non_compliant'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS safety_inspections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  type inspection_type NOT NULL,
+  inspector VARCHAR(255) NOT NULL DEFAULT '',
+  "inspectionDate" TIMESTAMPTZ NOT NULL,
+  "truckId" UUID, "truckPlate" VARCHAR(50),
+  "driverId" UUID, "driverName" VARCHAR(255),
+  status inspection_status NOT NULL,
+  score INTEGER NOT NULL DEFAULT 0, "maxScore" INTEGER NOT NULL DEFAULT 100,
+  items JSON, notes TEXT, "nextInspectionDate" TIMESTAMPTZ,
+  "complianceStatus" compliance_status NOT NULL DEFAULT 'compliant',
+  "createdBy" UUID,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "deletedAt" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_safety_inspections_tenant ON safety_inspections("tenantId","inspectionDate");
+
+-- SAFETY_TRAININGS
+DO $$ BEGIN CREATE TYPE training_type AS ENUM('defensive_driving','hazmat','first_aid','emergency_procedures','regulations','technology'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE training_status AS ENUM('completed','pending','overdue'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE training_frequency AS ENUM('once','annually','biannually','quarterly'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS safety_trainings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  type training_type NOT NULL,
+  title VARCHAR(255) NOT NULL DEFAULT '',
+  description TEXT, duration INTEGER NOT NULL DEFAULT 0,
+  required BOOLEAN NOT NULL DEFAULT false,
+  frequency training_frequency,
+  "lastCompleted" TIMESTAMPTZ, "nextDue" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  status training_status NOT NULL DEFAULT 'pending',
+  "driverId" UUID, "driverName" VARCHAR(255),
+  instructor VARCHAR(255) NOT NULL DEFAULT '',
+  score INTEGER, certificate VARCHAR(100),
+  "scheduledDate" TIMESTAMPTZ, "createdBy" UUID,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "deletedAt" TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_safety_trainings_tenant ON safety_trainings("tenantId", "nextDue");
+
+-- TRACKING_EVENTS
+DO $$ BEGIN CREATE TYPE tracking_event_type AS ENUM('Location','GeofenceEnter','GeofenceExit','Delay','Incident','StatusChange','DocumentUpload','Alert'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE geofence_type AS ENUM('pickup','delivery','custom','restricted'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS tracking_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "loadId" UUID NOT NULL,
+  type tracking_event_type NOT NULL,
+  latitude DECIMAL(10,8), longitude DECIMAL(11,8),
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "speedKph" DECIMAL(5,2), "headingDeg" DECIMAL(5,2),
+  "accuracyM" DECIMAL(5,2), altitude DECIMAL(5,2), "altitudeAccuracy" DECIMAL(5,2),
+  address TEXT, city TEXT, state TEXT, country TEXT, "postalCode" TEXT,
+  "geofenceId" TEXT, "geofenceType" geofence_type, "geofenceName" TEXT,
+  data JSONB, description TEXT, notes TEXT,
+  "reportedBy" UUID, "isAutomated" BOOLEAN NOT NULL DEFAULT false,
+  "requiresAction" BOOLEAN NOT NULL DEFAULT false,
+  "actionTakenAt" TIMESTAMPTZ, "actionTakenBy" UUID, "actionTaken" TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_load ON tracking_events("loadId");
+CREATE INDEX IF NOT EXISTS idx_tracking_events_time ON tracking_events(timestamp);
+
+-- MESSAGES
+DO $$ BEGIN CREATE TYPE message_role AS ENUM('DRIVER','SHIPPER','CARGO_OWNER','TRUCK_OWNER','DISPATCH','SYSTEM'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  thread_id VARCHAR(255) NOT NULL,
+  sender_id UUID NOT NULL,
+  recipient_id UUID NOT NULL,
+  content TEXT NOT NULL,
+  sender_role message_role NOT NULL DEFAULT 'SYSTEM',
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  trip_id UUID, load_id UUID, tenant_id UUID NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_messages_thread ON messages(thread_id);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_recipient ON messages(sender_id, recipient_id);
+
+-- DOCUMENTS
+DO $$ BEGIN CREATE TYPE document_category AS ENUM('IDENTITY','LICENSE','INSURANCE','CERTIFICATION','COMPLIANCE','FINANCIAL','OPERATIONAL','LEGAL','CARGO','DRIVER','OTHER'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE document_priority AS ENUM('LOW','NORMAL','HIGH','URGENT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  "entityType" VARCHAR(50) NOT NULL,
+  "entityId" UUID NOT NULL,
+  "documentType" VARCHAR(100) NOT NULL,
+  category document_category NOT NULL DEFAULT 'OTHER',
+  status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+  priority document_priority NOT NULL DEFAULT 'NORMAL',
+  "documentNumber" VARCHAR,
+  title TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL DEFAULT '',
+  "fileName" TEXT NOT NULL DEFAULT '',
+  "originalFileName" TEXT NOT NULL DEFAULT '',
+  "fileUrl" TEXT NOT NULL DEFAULT '',
+  "thumbnailUrl" TEXT,
+  "fileSize" INTEGER NOT NULL DEFAULT 0,
+  "mimeType" VARCHAR NOT NULL DEFAULT '',
+  "fileExtension" VARCHAR,
+  "issueDate" DATE, "expiryDate" DATE,
+  "isExpired" BOOLEAN NOT NULL DEFAULT false,
+  "requiresRenewal" BOOLEAN NOT NULL DEFAULT false,
+  "renewalReminderDays" INTEGER NOT NULL DEFAULT 30,
+  metadata JSONB NOT NULL DEFAULT '{}',
+  tags JSONB NOT NULL DEFAULT '[]',
+  "uploadedBy" UUID NOT NULL,
+  "verifiedBy" UUID, "verifiedAt" TIMESTAMPTZ, "verificationNotes" TEXT,
+  "verificationData" JSONB NOT NULL DEFAULT '{}',
+  versions JSONB NOT NULL DEFAULT '[]',
+  "currentVersion" INTEGER NOT NULL DEFAULT 1,
+  "accessControl" JSONB NOT NULL DEFAULT '[]',
+  "auditTrail" JSONB NOT NULL DEFAULT '[]',
+  "isPublic" BOOLEAN NOT NULL DEFAULT false,
+  "isConfidential" BOOLEAN NOT NULL DEFAULT false,
+  "encryptionKey" VARCHAR,
+  "ocrData" JSONB NOT NULL DEFAULT '{}',
+  "digitalSignature" JSONB NOT NULL DEFAULT '{}',
+  "complianceInfo" JSONB NOT NULL DEFAULT '{}',
+  "workflowInfo" JSONB NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_documents_entity ON documents("entityType","entityId");
+CREATE INDEX IF NOT EXISTS idx_documents_tenant  ON documents("tenantId","entityType");
+
+-- REVENUE_RECORDS
+CREATE TABLE IF NOT EXISTS revenue_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tripId" UUID NOT NULL UNIQUE,
+  "loadId" UUID NOT NULL,
+  "tenantId" UUID NOT NULL,
+  "brokerId" UUID,
+  "grossAmount" DECIMAL(15,2) NOT NULL,
+  "platformFeeRate" DECIMAL(5,4) NOT NULL DEFAULT 0.05,
+  "platformFeeAmount" DECIMAL(15,2) NOT NULL,
+  "brokerCommissionAmount" DECIMAL(15,2) NOT NULL DEFAULT 0,
+  "netPayoutAmount" DECIMAL(15,2) NOT NULL,
+  currency VARCHAR(10) NOT NULL DEFAULT 'KES',
+  "isSettled" BOOLEAN NOT NULL DEFAULT false,
+  "settledAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_revenue_records_tenant ON revenue_records("tenantId","settledAt");
+
+-- RECEIPTS
+DO $$ BEGIN CREATE TYPE receipt_status AS ENUM('draft','issued','paid','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS receipts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "receiptNumber" VARCHAR NOT NULL UNIQUE,
+  "tenantId" UUID NOT NULL,
+  "lenderId" UUID NOT NULL,
+  "paymentId" UUID NOT NULL,
+  "tripId" UUID NOT NULL,
+  "cargoOwnerId" UUID NOT NULL,
+  "cargoOwnerName" VARCHAR NOT NULL DEFAULT '',
+  "cargoOwnerEmail" VARCHAR, "cargoOwnerPhone" VARCHAR,
+  "cargoName" VARCHAR NOT NULL DEFAULT '',
+  amount DECIMAL(10,2) NOT NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+  status receipt_status NOT NULL DEFAULT 'issued',
+  "paymentMethod" VARCHAR, "transactionId" VARCHAR, "referenceNumber" VARCHAR,
+  "paymentDate" DATE NOT NULL DEFAULT CURRENT_DATE,
+  notes TEXT, metadata JSONB NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_receipts_tenant ON receipts("tenantId");
+
+-- USER_RATINGS
+DO $$ BEGIN CREATE TYPE rating_type AS ENUM('transporter','financing_community','platform'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE rating_category AS ENUM('reliability','payment_punctuality','communication','cargo_condition','professionalism','overall'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS user_ratings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "ratedUserId" UUID NOT NULL,
+  "raterUserId" UUID NOT NULL,
+  "ratingType" rating_type NOT NULL,
+  category rating_category NOT NULL,
+  rating DECIMAL(3,2) NOT NULL,
+  comment TEXT, metadata JSONB,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- USER_REWARDS
+DO $$ BEGIN CREATE TYPE reward_type AS ENUM('transaction_bonus','volume_bonus','loyalty_points','cashback','discount','premium_features'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE reward_status AS ENUM('pending','active','redeemed','expired'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS user_rewards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "userId" UUID NOT NULL,
+  type reward_type NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'KES',
+  description TEXT NOT NULL DEFAULT '',
+  status reward_status NOT NULL DEFAULT 'pending',
+  "validFrom" DATE, "validUntil" DATE,
+  criteria JSONB, metadata JSONB,
+  "redeemedAt" DATE,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- USER_SCORES
+DO $$ BEGIN CREATE TYPE score_category AS ENUM('financial_health','transaction_history','payment_behavior','cargo_quality','communication_score','reliability_score','overall_credit_score'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE score_algorithm AS ENUM('financial_analysis','behavioral_pattern','risk_assessment','comprehensive'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS user_scores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "userId" UUID NOT NULL,
+  "tenantId" UUID,
+  category score_category NOT NULL,
+  score DECIMAL(5,2) NOT NULL,
+  "normalizedScore" DECIMAL(5,2) NOT NULL,
+  algorithm score_algorithm NOT NULL,
+  factors JSONB NOT NULL,
+  metadata JSONB,
+  explanation TEXT,
+  "isActive" BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- LOAN_DISBURSEMENTS
+DO $$ BEGIN CREATE TYPE disbursement_status AS ENUM('initiated','success','failed','pending','approved','disbursed','rejected','on_hold'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS loan_disbursements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  loan_request_id UUID NOT NULL,
+  disbursement_date TIMESTAMPTZ,
+  beneficiaries JSON NOT NULL DEFAULT '[]',
+  status disbursement_status NOT NULL DEFAULT 'initiated',
+  external_txn_ref VARCHAR(255), attempts INTEGER NOT NULL DEFAULT 0,
+  failure_reason TEXT, next_retry_at TIMESTAMPTZ,
+  amount DECIMAL(15,2), priority VARCHAR(20) NOT NULL DEFAULT 'medium',
+  documents JSONB, risk_score DECIMAL(3,1), credit_score INTEGER,
+  collateral_value DECIMAL(15,2),
+  disbursement_method VARCHAR(50) NOT NULL DEFAULT 'bank_transfer',
+  notes TEXT, purpose VARCHAR(500),
+  interest_rate DECIMAL(5,2), term_months INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_loan_disbursements_request ON loan_disbursements(loan_request_id, status);
+
+-- LOAN_REPAYMENTS
+CREATE TABLE IF NOT EXISTS loan_repayments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  loan_request_id UUID NOT NULL,
+  amount DECIMAL(15,2) NOT NULL,
+  interest_paid DECIMAL(15,2) NOT NULL,
+  principal_paid DECIMAL(15,2) NOT NULL,
+  repayment_date TIMESTAMPTZ NOT NULL,
+  external_txn_ref VARCHAR(255) UNIQUE,
+  metadata JSON,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_loan_repayments_request ON loan_repayments(loan_request_id, repayment_date);
+
+-- LOAN_TERMS
+CREATE TABLE IF NOT EXISTS loan_terms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  loan_request_id UUID NOT NULL UNIQUE,
+  lender_id UUID NOT NULL,
+  nominal_rate DECIMAL(7,4),
+  effective_annual_rate DECIMAL(7,4),
+  risk_score DECIMAL(6,2),
+  risk_level VARCHAR(20),
+  credit_score_input INTEGER,
+  interest_rate_policy_id UUID,
+  interest_rate_policy_snapshot JSONB,
+  risk_score_breakdown JSONB,
+  base_rate DECIMAL(7,4), rate_adjustment DECIMAL(7,4),
+  origination_fee_rate DECIMAL(7,4),
+  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+  engine_version VARCHAR(20) NOT NULL DEFAULT '1.0.0',
+  computed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- CARRIER_TIERS
+DO $$ BEGIN CREATE TYPE carrier_tier_level AS ENUM('BRONZE','SILVER','GOLD','PLATINUM'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS carrier_tiers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "truckOwnerId" UUID NOT NULL,
+  "tenantId" UUID NOT NULL,
+  tier carrier_tier_level NOT NULL DEFAULT 'BRONZE',
+  "previousTier" carrier_tier_level,
+  "onTimeRate" DECIMAL(5,2) NOT NULL DEFAULT 0,
+  "damageRate" DECIMAL(5,2) NOT NULL DEFAULT 0,
+  "totalTrips" INTEGER NOT NULL DEFAULT 0,
+  "averageRating" DECIMAL(5,2) NOT NULL DEFAULT 0,
+  "calculatedAt" TIMESTAMPTZ,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_carrier_tiers_owner_tenant ON carrier_tiers("truckOwnerId","tenantId");
+
+-- SHIPMENT_RESERVATIONS
+DO $$ BEGIN CREATE TYPE reservation_status AS ENUM('ACTIVE','RELEASED','REPLACED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS shipment_reservations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  "tripId" UUID NOT NULL,
+  "cargoId" UUID NOT NULL,
+  "truckId" UUID NOT NULL,
+  "driverId" UUID,
+  "pickupDateTime" TIMESTAMPTZ NOT NULL,
+  "deliveryDateTime" TIMESTAMPTZ NOT NULL,
+  status reservation_status NOT NULL DEFAULT 'ACTIVE',
+  "statusReason" VARCHAR,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_shipment_reservations_truck  ON shipment_reservations("truckId", status, "pickupDateTime", "deliveryDateTime");
+CREATE INDEX IF NOT EXISTS idx_shipment_reservations_driver ON shipment_reservations("driverId", status, "pickupDateTime", "deliveryDateTime");
+CREATE INDEX IF NOT EXISTS idx_shipment_reservations_tenant ON shipment_reservations("tenantId", status);
+
+-- WEBHOOK_CONFIGS
+CREATE TABLE IF NOT EXISTS webhook_configs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  "createdBy" UUID NOT NULL,
+  name VARCHAR NOT NULL DEFAULT '',
+  url VARCHAR NOT NULL DEFAULT '',
+  events TEXT NOT NULL DEFAULT '',
+  secret VARCHAR(64),
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "lastDeliveredAt" TIMESTAMPTZ,
+  "failureCount" INTEGER NOT NULL DEFAULT 0,
+  "deliveryLogs" JSONB NOT NULL DEFAULT '[]',
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_webhook_configs_tenant ON webhook_configs("tenantId","isActive");
+
+-- GEOFENCE_ZONES
+DO $$ BEGIN CREATE TYPE geofence_zone_type AS ENUM('DELIVERY_ZONE','RESTRICTED','CUSTOMER_SITE','DEPOT','CHECKPOINT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS geofence_zones (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  name VARCHAR NOT NULL DEFAULT '',
+  type geofence_zone_type NOT NULL DEFAULT 'DELIVERY_ZONE',
+  polygon JSONB NOT NULL DEFAULT '[]',
+  "centerLat" DECIMAL(10,7), "centerLng" DECIMAL(10,7), "radiusMeters" DECIMAL(10,2),
+  "alertOnEnter" BOOLEAN NOT NULL DEFAULT true,
+  "alertOnExit" BOOLEAN NOT NULL DEFAULT true,
+  "linkedLoadId" UUID, "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_geofence_zones_tenant ON geofence_zones("tenantId","isActive");
+
+-- LOAD_DOCUMENTS
+CREATE TABLE IF NOT EXISTS load_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL, "loadId" UUID NOT NULL, "tripId" UUID,
+  "brokerId" UUID, "uploadedById" UUID NOT NULL,
+  "documentType" VARCHAR(100) NOT NULL, status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+  "fileName" VARCHAR NOT NULL DEFAULT '', "fileUrl" VARCHAR NOT NULL DEFAULT '',
+  "fileType" VARCHAR, "fileSize" INTEGER, "mimeType" VARCHAR,
+  "documentContent" TEXT, "documentData" JSONB, signatures JSONB,
+  "signedAt" DATE, "verifiedById" UUID, "verifiedAt" DATE,
+  "verificationNotes" TEXT, "expiresAt" DATE, description TEXT,
+  metadata JSONB NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_load_documents_load   ON load_documents("loadId","documentType");
+CREATE INDEX IF NOT EXISTS idx_load_documents_tenant ON load_documents("tenantId","createdAt");
+
+-- LOAD_MATCHES
+DO $$ BEGIN CREATE TYPE match_status AS ENUM('POTENTIAL','REQUESTED','ACCEPTED','REJECTED','EXPIRED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS load_matches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID, load_id UUID, truck_id UUID,
+  score NUMERIC(5,2), status match_status NOT NULL DEFAULT 'POTENTIAL',
+  match_details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_load_matches_truck ON load_matches(truck_id, status);
+CREATE INDEX IF NOT EXISTS idx_load_matches_load  ON load_matches(load_id, status);
+
+-- LOAD_TEMPLATES
+CREATE TABLE IF NOT EXISTS load_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL, name VARCHAR NOT NULL DEFAULT '',
+  description TEXT, "templateData" JSONB NOT NULL DEFAULT '{}',
+  "createdBy" UUID NOT NULL, "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "usageCount" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
+);
+
+-- PRICE_SUGGESTIONS
+CREATE TABLE IF NOT EXISTS price_suggestions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "loadId" UUID NOT NULL,
+  "pricingModel" VARCHAR(50) NOT NULL DEFAULT 'market_rate',
+  "suggestedAmount" DECIMAL(15,2) NOT NULL,
+  currency VARCHAR(3) NOT NULL DEFAULT 'USD',
+  confidence DECIMAL(3,2) NOT NULL DEFAULT 0.5,
+  "confidenceLevel" VARCHAR(20) NOT NULL DEFAULT 'MEDIUM',
+  status VARCHAR(20) NOT NULL DEFAULT 'draft',
+  "minAmount" DECIMAL(15,2), "maxAmount" DECIMAL(15,2),
+  metadata JSONB, "isAutomated" BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_price_suggestions_load ON price_suggestions("loadId", status);
+
+-- PRIVATE_CARRIER_NETWORKS
+CREATE TABLE IF NOT EXISTS private_carrier_networks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "cargoOwnerId" UUID NOT NULL, "truckOwnerId" UUID NOT NULL,
+  "tenantId" UUID NOT NULL, notes TEXT,
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "addedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pcn_unique ON private_carrier_networks("cargoOwnerId","truckOwnerId","tenantId");
+
+-- RATE_LIMITS
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" VARCHAR(255) NOT NULL,
+  endpoint VARCHAR(100) NOT NULL,
+  "userId" VARCHAR(50), "ipAddress" VARCHAR(50), "userAgent" VARCHAR(100),
+  "requestCount" INTEGER NOT NULL DEFAULT 1,
+  status VARCHAR(20) NOT NULL DEFAULT 'SUCCESS',
+  metadata TEXT, "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "expiresAt" TIMESTAMPTZ, "isBlocked" BOOLEAN NOT NULL DEFAULT false,
+  "blockedUntil" TIMESTAMPTZ, reason VARCHAR(255)
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_tenant ON rate_limits("tenantId", endpoint, "createdAt");
