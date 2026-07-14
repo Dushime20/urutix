@@ -1253,3 +1253,75 @@ ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFiberglass"             BOOLEAN 
 ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasPlastic"                BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasComposite"              BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasInsulated"              BOOLEAN NOT NULL DEFAULT false;
+
+-- ---------------------------------------------------------------------------
+-- ROLE_PERMISSIONS junction table  (TypeORM @ManyToMany JoinTable)
+-- The PermissionService queries: JOIN role_permissions rp ON p.id = rp.permission_id
+-- Our earlier roles table didn't create this junction table at all.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS role_permissions (
+  role_id       UUID NOT NULL,
+  permission_id UUID NOT NULL,
+  PRIMARY KEY (role_id, permission_id)
+);
+CREATE INDEX IF NOT EXISTS idx_role_permissions_role       ON role_permissions(role_id);
+CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON role_permissions(permission_id);
+
+-- ROLE_INHERITANCE junction table (also defined in Role entity)
+CREATE TABLE IF NOT EXISTS role_inheritance (
+  role_id                UUID NOT NULL,
+  inherits_from_role_id  UUID NOT NULL,
+  PRIMARY KEY (role_id, inherits_from_role_id)
+);
+
+-- Roles table: add missing columns the entity expects
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_system   BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- Permissions table: add missing columns the entity expects
+ALTER TABLE permissions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE permissions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+-- ---------------------------------------------------------------------------
+-- BIDS  — replace the minimal stub with the full entity schema
+-- (ADD COLUMN IF NOT EXISTS is safe on existing tables)
+-- ---------------------------------------------------------------------------
+DO $$ BEGIN CREATE TYPE bid_status AS ENUM (
+  'PENDING','ACCEPTED','REJECTED','WITHDRAWN','EXPIRED'
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Add all columns the Bid entity maps to
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "truckOwnerId"              UUID;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidAmount"                 DECIMAL(15,2);
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidCurrency"               VARCHAR(3) NOT NULL DEFAULT 'USD';
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "proposedPickupDate"        TIMESTAMPTZ;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "proposedDeliveryDate"      TIMESTAMPTZ;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidNotes"                  TEXT;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidDetails"                JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "successProbability"        DECIMAL(5,2);
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "riskAssessment"            JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "marketContext"             JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "isAutoBid"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "isCounterOffer"            BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "parentBidId"               UUID;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "advancePaymentPercentage"  DECIMAL(5,2);
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "requireAdvancePayment"     BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "expiresAt"                 TIMESTAMPTZ;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "updatedAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS deleted_at                  TIMESTAMPTZ;
+
+-- Convert bids.status to bid_status enum if it's still varchar
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'bids' AND column_name = 'status' AND data_type = 'character varying'
+  ) THEN
+    ALTER TABLE bids ALTER COLUMN status DROP DEFAULT;
+    ALTER TABLE bids ALTER COLUMN status TYPE bid_status USING status::bid_status;
+    ALTER TABLE bids ALTER COLUMN status SET DEFAULT 'PENDING';
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_bids_truck_owner_status ON bids("truckOwnerId", status);
