@@ -242,6 +242,66 @@ async function showStatus(client) {
   log('');
 }
 
+/**
+ * Bootstrap: unconditionally run 000_base_schema.sql (the foundational schema).
+ *
+ * Problem this solves: on an existing DB whose schema_migrations table already
+ * records 000_base_schema.sql as "executed", but the tables it creates were
+ * subsequently dropped (DB reset, volume swap, partial restore, etc.), later
+ * migrations that reference users / tenants / credit_accounts will fail.
+ *
+ * Because every statement in 000_base_schema.sql uses CREATE TABLE IF NOT EXISTS,
+ * CREATE EXTENSION IF NOT EXISTS, and DO $$ BEGIN … EXCEPTION WHEN duplicate_object
+ * THEN NULL; END $$, re-running it on an intact DB is a safe no-op.
+ *
+ * The bootstrap runs OUTSIDE of migrate.js's normal tracking loop so it:
+ *   1. Executes even when schema_migrations already has a row for it.
+ *   2. Does NOT update that row (avoids double-counting in the summary).
+ *   3. Rolls back and exits on any error so we never proceed with a broken schema.
+ */
+async function bootstrapBaseSchema(client) {
+  const BASE_MIGRATION = '000_base_schema.sql';
+  const basePath = path.join(MIGRATIONS_DIR, BASE_MIGRATION);
+
+  if (!fs.existsSync(basePath)) {
+    logWarning(`${BASE_MIGRATION} not found — skipping bootstrap.`);
+    return;
+  }
+
+  const content = fs.readFileSync(basePath, 'utf8').trim();
+  if (!content) {
+    logWarning(`${BASE_MIGRATION} is empty — skipping bootstrap.`);
+    return;
+  }
+
+  logInfo(`Bootstrap: ensuring base schema (${BASE_MIGRATION}) is applied...`);
+  const t0 = Date.now();
+
+  try {
+    await client.query('BEGIN');
+    await client.query(content);
+    const elapsed = Date.now() - t0;
+    // Record as executed so the normal migration loop skips it cleanly.
+    // Uses ON CONFLICT so this is safe whether the row already exists or not.
+    await client.query(`
+      INSERT INTO ${MIGRATION_TABLE} (migration_name, execution_time_ms, status)
+      VALUES ($1, $2, 'success')
+      ON CONFLICT (migration_name) DO UPDATE
+        SET status            = 'success',
+            executed_at       = CURRENT_TIMESTAMP,
+            execution_time_ms = $2,
+            error_message     = NULL
+    `, [BASE_MIGRATION, elapsed]);
+    await client.query('COMMIT');
+    logSuccess(`Bootstrap complete (${elapsed}ms) — base tables are ready.\n`);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    logError(`Bootstrap FAILED: ${err.message}`);
+    logError('Cannot proceed without the base schema. Aborting.');
+    throw err;   // propagate → runMigrations will exit(1)
+  }
+}
+
 // Run all pending migrations
 async function runMigrations(force = false) {
   logHeader('DATABASE MIGRATION');
@@ -257,7 +317,10 @@ async function runMigrations(force = false) {
     
     await client.connect();
     logSuccess('Connected to database\n');
-    
+
+    // ── Always ensure the foundational schema exists first ──────────────────
+    await bootstrapBaseSchema(client);
+
     await createMigrationTable(client);
     
     const migrationFiles = getMigrationFiles();
