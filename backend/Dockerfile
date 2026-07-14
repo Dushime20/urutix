@@ -61,7 +61,6 @@ COPY --from=builder --chown=nestjs:nodejs /app/package.json    ./package.json
 
 # Migration runner and seed scripts
 COPY --chown=nestjs:nodejs migrate.js              ./migrate.js
-COPY --chown=nestjs:nodejs fix-base-schema.js      ./fix-base-schema.js
 COPY --chown=nestjs:nodejs mark-migrations-done.js ./mark-migrations-done.js
 COPY --chown=nestjs:nodejs seed-admin.js           ./seed-admin.js
 COPY --chown=nestjs:nodejs seed-permissions.js     ./seed-permissions.js
