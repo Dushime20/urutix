@@ -318,10 +318,11 @@ async function runMigrations(force = false) {
     await client.connect();
     logSuccess('Connected to database\n');
 
-    // ── Always ensure the foundational schema exists first ──────────────────
-    await bootstrapBaseSchema(client);
-
+    // ── Order matters: tracking table first, then bootstrap ─────────────────
+    // createMigrationTable uses only pg system tables so it has no dependencies.
+    // bootstrapBaseSchema then inserts into schema_migrations, so it must go second.
     await createMigrationTable(client);
+    await bootstrapBaseSchema(client);
     
     const migrationFiles = getMigrationFiles();
     
