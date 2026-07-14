@@ -640,19 +640,87 @@ CREATE TABLE IF NOT EXISTS routes (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_routes_tenant_name ON routes("tenantId", name) WHERE deleted_at IS NULL;
 
 -- ---------------------------------------------------------------------------
--- EPODS  (TypeORM entity — referenced by migration 041)
+-- EPODS  (full schema — create table then ADD COLUMN IF NOT EXISTS for upgrades)
 -- ---------------------------------------------------------------------------
+DO $$ BEGIN
+  CREATE TYPE epod_status_enum AS ENUM ('PENDING','CONFIRMED','DISPUTED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE cargo_condition_on_delivery_enum AS ENUM (
+    'INTACT','PARTIAL_DAMAGE','SHORT_DELIVERY','FULL_DAMAGE'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 CREATE TABLE IF NOT EXISTS epods (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "tenantId" UUID NOT NULL,
-  "tripId"   UUID UNIQUE,
-  status     VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-  metadata   JSONB NOT NULL DEFAULT '{}',
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  deleted_at  TIMESTAMPTZ
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"            UUID NOT NULL,
+  "tripId"              UUID UNIQUE,
+  "driverId"            UUID,
+  "cargoOwnerId"        UUID,
+  "recipientName"       VARCHAR(200),
+  "recipientPhone"      VARCHAR(50),
+  "recipientIdNumber"   VARCHAR(100),
+  "recipientCompany"    VARCHAR(200),
+  "signatureFileUrl"    VARCHAR(500),
+  "photoUrls"           JSONB NOT NULL DEFAULT '[]',
+  "deliveredAt"         TIMESTAMPTZ,
+  "deliveryNotes"       TEXT,
+  "odometerReading"     VARCHAR(100),
+  "deliveryAddress"     TEXT,
+  "deliveryCoordinates" JSONB,
+  "cargoCondition"      cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT',
+  "unitsDelivered"      VARCHAR(100),
+  "exceptionNotes"      TEXT,
+  status                epod_status_enum NOT NULL DEFAULT 'PENDING',
+  "submittedAt"         TIMESTAMPTZ,
+  "confirmedAt"         TIMESTAMPTZ,
+  "disputedAt"          TIMESTAMPTZ,
+  "disputeReason"       TEXT,
+  "invoiceId"           UUID,
+  "createdAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_epods_tenant ON epods("tenantId");
+
+-- Backfill any columns missing on pre-existing epods tables
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "driverId"            UUID;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "cargoOwnerId"        UUID;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientName"       VARCHAR(200);
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientPhone"      VARCHAR(50);
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientIdNumber"   VARCHAR(100);
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientCompany"    VARCHAR(200);
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "signatureFileUrl"    VARCHAR(500);
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "photoUrls"           JSONB;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "deliveredAt"         TIMESTAMPTZ;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "deliveryNotes"       TEXT;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "odometerReading"     VARCHAR(100);
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "deliveryAddress"     TEXT;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "deliveryCoordinates" JSONB;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "unitsDelivered"      VARCHAR(100);
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "exceptionNotes"      TEXT;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "submittedAt"         TIMESTAMPTZ;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "confirmedAt"         TIMESTAMPTZ;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputedAt"          TIMESTAMPTZ;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputeReason"       TEXT;
+ALTER TABLE epods ADD COLUMN IF NOT EXISTS "invoiceId"           UUID;
+DO $$ BEGIN
+  ALTER TABLE epods ADD COLUMN "cargoCondition" cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT';
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN
+  -- Convert status column to epod_status_enum if it's varchar
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='epods' AND column_name='status' AND data_type='character varying'
+  ) THEN
+    ALTER TABLE epods ALTER COLUMN status TYPE epod_status_enum
+      USING status::epod_status_enum;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_epods_tenant      ON epods("tenantId");
+CREATE INDEX IF NOT EXISTS idx_epods_cargo_owner ON epods("cargoOwnerId");
+CREATE INDEX IF NOT EXISTS idx_epods_cargo_cond  ON epods("cargoCondition");
+
 
 -- ---------------------------------------------------------------------------
 -- PERMISSIONS & ROLES  (TypeORM RBAC — referenced by 021, 026)
@@ -782,51 +850,3 @@ CREATE TABLE IF NOT EXISTS dispute_audit_logs (
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_dispute_audit_dispute ON dispute_audit_logs(dispute_id, "createdAt" DESC);
-
--- ---------------------------------------------------------------------------
--- EPODS  (full schema — replaces the minimal stub above)
--- ---------------------------------------------------------------------------
--- Drop minimal stub if it exists without the required columns, then recreate
-DO $$ BEGIN
-  CREATE TYPE epod_status_enum AS ENUM ('PENDING','CONFIRMED','DISPUTED');
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE TYPE cargo_condition_on_delivery_enum AS ENUM (
-    'INTACT','PARTIAL_DAMAGE','SHORT_DELIVERY','FULL_DAMAGE'
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-CREATE TABLE IF NOT EXISTS epods (
-  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "tenantId"            UUID NOT NULL,
-  "tripId"              UUID UNIQUE,
-  "driverId"            UUID,
-  "cargoOwnerId"        UUID,
-  "recipientName"       VARCHAR(200),
-  "recipientPhone"      VARCHAR(50),
-  "recipientIdNumber"   VARCHAR(100),
-  "recipientCompany"    VARCHAR(200),
-  "signatureFileUrl"    VARCHAR(500),
-  "photoUrls"           JSONB NOT NULL DEFAULT '[]',
-  "deliveredAt"         TIMESTAMPTZ,
-  "deliveryNotes"       TEXT,
-  "odometerReading"     VARCHAR(100),
-  "deliveryAddress"     TEXT,
-  "deliveryCoordinates" JSONB,
-  "cargoCondition"      cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT',
-  "unitsDelivered"      VARCHAR(100),
-  "exceptionNotes"      TEXT,
-  status                epod_status_enum NOT NULL DEFAULT 'PENDING',
-  "submittedAt"         TIMESTAMPTZ,
-  "confirmedAt"         TIMESTAMPTZ,
-  "disputedAt"          TIMESTAMPTZ,
-  "disputeReason"       TEXT,
-  "invoiceId"           UUID,
-  "createdAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "updatedAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_epods_tenant       ON epods("tenantId");
-CREATE INDEX IF NOT EXISTS idx_epods_cargo_owner  ON epods("cargoOwnerId");
-CREATE INDEX IF NOT EXISTS idx_epods_cargo_cond   ON epods("cargoCondition");
-
