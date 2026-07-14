@@ -1128,3 +1128,128 @@ BEGIN
     RAISE NOTICE 'Dropped activity_logs_user_id_fkey FK constraint';
   END IF;
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- PASSWORD_RESET_TOKENS  (user creation / password setup fails without this)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email      VARCHAR NOT NULL,
+  token      VARCHAR NOT NULL UNIQUE,
+  "expiresAt" TIMESTAMPTZ NOT NULL,
+  used       BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_prt_email_used ON password_reset_tokens(email, used, "expiresAt");
+
+-- ---------------------------------------------------------------------------
+-- EMAIL_VERIFICATION_TOKENS  (same pattern — add proactively)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email      VARCHAR NOT NULL,
+  token      VARCHAR NOT NULL UNIQUE,
+  "expiresAt" TIMESTAMPTZ NOT NULL,
+  used       BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_evt_email_used ON email_verification_tokens(email, used, "expiresAt");
+
+-- ---------------------------------------------------------------------------
+-- TRUCKS: add all dimension/feature columns the TypeORM entity expects
+-- TypeORM SELECT queries every mapped column — missing ones crash the query
+-- ---------------------------------------------------------------------------
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "maxLength"                 DECIMAL(8,2);
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "maxWidth"                  DECIMAL(8,2);
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "maxHeight"                 DECIMAL(8,2);
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasSideRails"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTarps"                  BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasStraps"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasChains"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasWinch"                  BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasRam"                    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTailLift"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasSideLift"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasRollerBed"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasDropDeck"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasExtendable"             BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasLowbed"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasStepDeck"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasPowerOnly"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasContainerChassis"       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTanker"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasBulk"                   BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasRefrigerated"           BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasHeated"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasVentilated"             BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasCurtainSide"            BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasBox"                    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasVan"                    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasPlatform"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasCarCarrier"             BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasHeavyHaul"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasOversized"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasHazmat"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasDangerousGoods"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFoodGrade"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasPharmaceutical"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasLiquid"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasDryBulk"                BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasGas"                    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasChemical"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasWaste"                  BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasReefer"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFrozen"                 BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasChilled"                BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasAmbient"                BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasControlledAtmosphere"   BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasHumidityControl"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTemperatureMonitoring"  BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasGPS"                    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTracking"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTelematics"             BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasELD"                    BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasDashCam"                BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasSafetyCameras"          BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasCollisionAvoidance"     BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasLaneDeparture"          BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasAdaptiveCruise"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasBlindSpot"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasBackupCamera"           BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTirePressureMonitoring" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasEngineMonitoring"       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFuelMonitoring"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasMaintenanceAlerts"      BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasDriverMonitoring"       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFatigueMonitoring"      BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasSpeedMonitoring"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasIdleMonitoring"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasRouteOptimization"      BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasRealTimeTracking"       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasGeofencing"             BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTemperatureAlerts"      BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasHumidityAlerts"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasShockMonitoring"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasTiltMonitoring"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasDoorMonitoring"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasCargoMonitoring"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasWeightMonitoring"       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasVolumeMonitoring"       BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasPressureMonitoring"     BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFlowMonitoring"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasLevelMonitoring"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasQualityMonitoring"      BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasContaminationMonitoring" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasLeakDetection"          BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasOverfillProtection"     BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasEmergencyShutdown"      BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFireSuppression"        BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasExplosionProof"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasCorrosionResistant"     BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasStainlessSteel"         BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasAluminum"               BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasCarbonSteel"            BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasFiberglass"             BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasPlastic"                BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasComposite"              BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE trucks ADD COLUMN IF NOT EXISTS "hasInsulated"              BOOLEAN NOT NULL DEFAULT false;
