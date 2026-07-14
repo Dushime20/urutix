@@ -1047,3 +1047,84 @@ CREATE TABLE IF NOT EXISTS auction_watches (
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_auction_watches_uniq ON auction_watches("auctionId", "watcherId");
+
+-- ---------------------------------------------------------------------------
+-- AUDIT_LOGS  (auth service writes here on every login)
+-- ---------------------------------------------------------------------------
+DO $$ BEGIN CREATE TYPE audit_action AS ENUM (
+  'CREATE','UPDATE','DELETE','LOGIN','LOGOUT','PAYMENT','DISPUTE','OTHER'
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"  UUID NOT NULL,
+  "userId"    UUID NOT NULL,
+  action      audit_action NOT NULL DEFAULT 'OTHER',
+  description TEXT NOT NULL DEFAULT '',
+  metadata    JSONB NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_tenant_action ON audit_logs("tenantId", action, "createdAt");
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user         ON audit_logs("userId", "createdAt");
+
+-- ---------------------------------------------------------------------------
+-- LOCATIONS  (FK target for trips.pickupLocationId / deliveryLocationId)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS locations (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"          UUID NOT NULL,
+  name                VARCHAR NOT NULL,
+  address             TEXT NOT NULL DEFAULT '',
+  "cityId"            INTEGER,
+  "postalCode"        VARCHAR,
+  city                VARCHAR,
+  state               VARCHAR,
+  country             VARCHAR,
+  region              VARCHAR,
+  district            VARCHAR,
+  neighborhood        VARCHAR,
+  landmark            VARCHAR,
+  "locationCategory"  VARCHAR,
+  "locationSubCategory" VARCHAR,
+  "businessHours"     VARCHAR,
+  timezone            VARCHAR,
+  "accessType"        VARCHAR,
+  "parkingAvailable"  BOOLEAN,
+  "securityLevel"     VARCHAR,
+  "loadingDockCount"  INTEGER,
+  "maxTruckHeight"    DECIMAL(8,2),
+  "maxTruckWeight"    DECIMAL(8,2),
+  "specialInstructions" VARCHAR,
+  coordinates         geometry(Point,4326),
+  "locationType"      VARCHAR NOT NULL DEFAULT 'GENERAL',
+  "contactInfo"       JSONB NOT NULL DEFAULT '{}',
+  "operatingHours"    JSONB NOT NULL DEFAULT '{}',
+  facilities          JSONB NOT NULL DEFAULT '{}',
+  "accessInstructions" VARCHAR,
+  "isActive"          BOOLEAN NOT NULL DEFAULT true,
+  "createdAt"         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at          TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_locations_tenant ON locations("tenantId", "isActive");
+
+-- TRIPS: add FK columns for pickup/delivery locations
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS "pickupLocationId"  UUID;
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS "deliveryLocationId" UUID;
+
+-- ---------------------------------------------------------------------------
+-- ACTIVITY_LOGS: drop the FK constraint so logging never fails due to
+-- referential integrity (activity logs are observational — they must never
+-- block the primary operation they're recording).
+-- ---------------------------------------------------------------------------
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'activity_logs_user_id_fkey'
+    AND conrelid = 'activity_logs'::regclass
+  ) THEN
+    ALTER TABLE activity_logs DROP CONSTRAINT activity_logs_user_id_fkey;
+    RAISE NOTICE 'Dropped activity_logs_user_id_fkey FK constraint';
+  END IF;
+END $$;
