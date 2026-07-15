@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, IsNull } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { CreditAccount } from './../entities/credit-account.entity';
 import {
   CreditTransaction,
@@ -193,21 +193,22 @@ export class CreditService {
     tenantId: string,
     amount: number,
     subscriptionId: string,
-    expiresAt: Date,
+    expiresAt: Date, // kept in signature for caller compatibility — no longer stored
     userId?: string,
   ): Promise<CreditTransaction> {
     const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
-    // Update account
+    // Update account — credits never expire, they only reduce through business operations
     account.subscriptionCredits += amount;
     account.currentBalance += amount;
     account.lifetimeEarned += amount;
     account.lastRefreshDate = new Date();
+    // nextRefreshDate tracks the subscription renewal date for display only — not for expiry
     account.nextRefreshDate = expiresAt;
 
     await this.creditAccountRepository.save(account);
 
-    // Create transaction
+    // Create transaction — no expiresAt: subscription credits persist until used
     const transaction = this.creditTransactionRepository.create({
       tenantId,
       userId: userId || null,
@@ -215,9 +216,8 @@ export class CreditService {
       type: CreditTransactionType.SUBSCRIPTION_GRANT,
       amount,
       balanceAfter: account.currentBalance,
-      description: `Monthly subscription credits granted`,
+      description: `Subscription credits granted`,
       subscriptionId,
-      expiresAt,
       metadata: { grantedAt: new Date().toISOString() },
     });
 
@@ -241,18 +241,14 @@ export class CreditService {
   ): Promise<CreditTransaction> {
     const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
-    // Purchased credits expire in 12 months
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 12);
-
-    // Update account
+    // Update account — purchased credits never expire
     account.purchasedCredits += amount;
     account.currentBalance += amount;
     account.lifetimeEarned += amount;
 
     await this.creditAccountRepository.save(account);
 
-    // Create transaction
+    // Create transaction — no expiresAt: purchased credits persist until used
     const transaction = this.creditTransactionRepository.create({
       tenantId,
       // userId: userId || null,
@@ -262,7 +258,6 @@ export class CreditService {
       balanceAfter: account.currentBalance,
       description: `Purchased ${packageName}`,
       paymentId,
-      expiresAt,
       metadata: { packageName, purchasedAt: new Date().toISOString() },
     });
 
@@ -281,22 +276,19 @@ export class CreditService {
     tenantId: string,
     amount: number,
     reason: string,
-    expiresAt?: Date,
+    expiresAt?: Date, // kept in signature for caller compatibility — ignored
     userId?: string,
   ): Promise<CreditTransaction> {
     const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
-    // Default expiry: 6 months
-    const expiry = expiresAt || new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000);
-
-    // Update account
+    // Update account — bonus credits never expire
     account.bonusCredits += amount;
     account.currentBalance += amount;
     account.lifetimeEarned += amount;
 
     await this.creditAccountRepository.save(account);
 
-    // Create transaction
+    // Create transaction — no expiresAt: bonus credits persist until used
     const transaction = this.creditTransactionRepository.create({
       tenantId,
       // userId: userId || null,
@@ -305,7 +297,6 @@ export class CreditService {
       amount,
       balanceAfter: account.currentBalance,
       description: reason,
-      expiresAt: expiry,
       metadata: { grantedAt: new Date().toISOString() },
     });
 
@@ -503,62 +494,13 @@ export class CreditService {
   }
 
   /**
-   * Expire old credits (called by scheduled job)
+   * Credit expiry is DISABLED.
+   * Credits only leave an account when consumed by business operations
+   * (trips, bids, marketplace, etc.). No time-based expiry runs.
+   * This method is retained so the scheduler call compiles without change.
    */
   async expireCredits(): Promise<number> {
-    const now = new Date();
-    let totalExpired = 0;
-
-    // Find all transactions with expired credits that haven't been processed
-    const expiredTransactions = await this.creditTransactionRepository.find({
-      where: {
-        expiresAt: LessThan(now),
-        type: CreditTransactionType.SUBSCRIPTION_GRANT,
-      },
-      relations: ['creditAccount'],
-    });
-
-    for (const transaction of expiredTransactions) {
-      // Check if already expired
-      const existingExpiry = await this.creditTransactionRepository.findOne({
-        where: {
-          tenantId: transaction.tenantId,
-          type: CreditTransactionType.EXPIRY,
-          metadata: { originalTransactionId: transaction.id } as any,
-        },
-      });
-
-      if (existingExpiry) continue; // Already processed
-
-      const account = transaction.creditAccount;
-      const expireAmount = Math.min(transaction.amount, account.subscriptionCredits);
-
-      if (expireAmount > 0) {
-        // Deduct from subscription credits
-        account.subscriptionCredits -= expireAmount;
-        account.currentBalance -= expireAmount;
-
-        await this.creditAccountRepository.save(account);
-
-        // Create expiry transaction
-        await this.creditTransactionRepository.save({
-          tenantId: transaction.tenantId,
-          creditAccountId: account.id,
-          type: CreditTransactionType.EXPIRY,
-          amount: -expireAmount,
-          balanceAfter: account.currentBalance,
-          description: `${expireAmount} subscription credits expired`,
-          metadata: {
-            originalTransactionId: transaction.id,
-            expiredAt: now.toISOString(),
-          },
-        });
-
-        totalExpired += expireAmount;
-      }
-    }
-
-    return totalExpired;
+    return 0;
   }
 
   /**

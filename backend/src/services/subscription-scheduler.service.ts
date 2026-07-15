@@ -109,20 +109,15 @@ export class SubscriptionSchedulerService {
   }
 
   /**
-   * Daily job: Expire old credits
-   * Runs at 4:00 AM every day
+   * Credit expiry cron — DISABLED.
+   * Credits never expire by time; they are only consumed through business operations.
+   * The expireCredits() call is kept as a no-op so the method signature is preserved.
    */
-  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  // @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async expireOldCredits() {
-    this.logger.log('Starting credit expiration process...');
-
-    try {
-      const totalExpired = await this.creditService.expireCredits();
-
-      this.logger.log(`Credit expiration complete: ${totalExpired} credits expired`);
-    } catch (error) {
-      this.logger.error('Credit expiration process failed', error.stack);
-    }
+    // No-op: credit expiry is permanently disabled.
+    // Credits remain live until consumed via trips, bids, or marketplace operations.
+    this.logger.log('Credit expiry is disabled — credits only reduce through business operations');
   }
 
   /**
