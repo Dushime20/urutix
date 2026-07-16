@@ -33,6 +33,15 @@ interface MarketplaceStats {
   currentBalance: number;
 }
 
+interface CurrentSubscription {
+  id: string;
+  plan: {
+    name: string;
+    pricePerCredit: number;
+  };
+  status: string;
+}
+
 const CreditMarketplace: React.FC = () => {
   const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const queryClient = useQueryClient();
@@ -40,7 +49,6 @@ const CreditMarketplace: React.FC = () => {
   const [formData, setFormData] = useState({
     minPurchaseAmount: 500,
     maxPurchaseAmount: '',
-    pricePerCredit: 1, // Fixed to 1
     isEnabled: true,
   });
 
@@ -51,6 +59,17 @@ const CreditMarketplace: React.FC = () => {
       const response = await api.get('/credits/marketplace/settings');
       return response.data;
     },
+  });
+
+  // Fetch current active subscription to get the real pricePerCredit
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['current-subscription'],
+    queryFn: async () => {
+      const response = await api.get('/subscriptions/current');
+      return response.data;
+    },
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch marketplace stats
@@ -90,6 +109,14 @@ const CreditMarketplace: React.FC = () => {
   });
 
   const settings: MarketplaceSettings | null = settingsData?.data;
+  const currentSubscription: CurrentSubscription | null = subscriptionData?.data ?? null;
+  // Use the price from the active subscription plan; fall back to settings value, then 1
+  const activePricePerCredit: number =
+    Number(currentSubscription?.plan?.pricePerCredit) ||
+    Number(settings?.pricePerCredit) ||
+    1;
+  const activePlanName: string = currentSubscription?.plan?.name ?? '';
+
   const stats: MarketplaceStats = statsData?.data || {
     totalRevenue: 0,
     totalCreditsSold: 0,
@@ -104,7 +131,6 @@ const CreditMarketplace: React.FC = () => {
       setFormData({
         minPurchaseAmount: settings.minPurchaseAmount,
         maxPurchaseAmount: settings.maxPurchaseAmount?.toString() || '',
-        pricePerCredit: 1, // Fixed to 1
         isEnabled: settings.isEnabled,
       });
     }
@@ -116,7 +142,7 @@ const CreditMarketplace: React.FC = () => {
     const data = {
       minPurchaseAmount: Number(formData.minPurchaseAmount),
       maxPurchaseAmount: formData.maxPurchaseAmount ? Number(formData.maxPurchaseAmount) : undefined,
-      pricePerCredit: 1, // Enforce 1 on submission
+      pricePerCredit: activePricePerCredit, // always sourced from active subscription
       isEnabled: formData.isEnabled,
     };
 
@@ -232,8 +258,11 @@ const CreditMarketplace: React.FC = () => {
             <div className="text-right">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Price per Credit</div>
               <div className="text-3xl font-black text-slate-900">
-                {fmtFull(Number(settings.pricePerCredit))}
+                {fmtFull(activePricePerCredit)}
               </div>
+              {activePlanName && (
+                <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{activePlanName}</div>
+              )}
             </div>
           )}
         </div>
@@ -322,17 +351,20 @@ const CreditMarketplace: React.FC = () => {
                   Price per Credit
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-[#345E85]">$</span>
                   <input
-                    type="number"
-                    value={1}
+                    type="text"
+                    value={fmtFull(activePricePerCredit)}
                     readOnly
-                    className="w-full pl-8 pr-4 py-3 bg-slate-100 border-2 border-slate-100 rounded-xl text-sm font-black text-slate-900 cursor-not-allowed"
-                    placeholder="1.00"
+                    className="w-full pl-4 pr-4 py-3 bg-slate-100 border-2 border-slate-100 rounded-xl text-sm font-black text-slate-900 cursor-not-allowed"
                   />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">Fixed</span>
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-[#345E85] uppercase tracking-widest bg-blue-50 px-2 py-1 rounded-md border border-blue-100">
+                    From Plan
+                  </span>
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">Marketplace price is fixed at {fmtFull(1)} per credit</p>
+                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">
+                  Inherited from your active subscription
+                  {activePlanName ? ` — ${activePlanName}` : ''}
+                </p>
               </div>
 
               <div>
@@ -368,7 +400,7 @@ const CreditMarketplace: React.FC = () => {
                 <div>
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sample (1,000 Credits)</div>
                   <div className="text-lg font-black text-slate-900">
-                    {fmtFull(1000 * formData.pricePerCredit)}
+                    {fmtFull(1000 * activePricePerCredit)}
                   </div>
                 </div>
                 <div>
