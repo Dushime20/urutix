@@ -22,9 +22,10 @@ import ModernLoader from '../../components/common/ModernLoader';
 
 interface CreditTransaction {
   id: string;
-  type: 'DEBIT' | 'CREDIT' | 'PURCHASE' | 'REFUND';
+  type: string;
   amount: number;
-  balance: number;
+  balanceAfter?: number;
+  balance?: number;
   description: string;
   featureName?: string;
   metadata?: any;
@@ -36,6 +37,24 @@ interface CreditBalance {
   totalEarned: number;
   totalSpent: number;
   transactions: CreditTransaction[];
+}
+
+/** Normalize API rows (CONSUMPTION/PURCHASE/…) into credit vs debit for the UI. */
+function normalizeTransaction(raw: any): CreditTransaction {
+  const amount = Number(raw.amount) || 0;
+  const debitTypes = new Set(['CONSUMPTION', 'EXPIRY']);
+  const isDebit = amount < 0 || debitTypes.has(raw.type);
+  return {
+    id: raw.id,
+    type: isDebit ? 'DEBIT' : raw.type === 'PURCHASE' ? 'PURCHASE' : 'CREDIT',
+    amount: Math.abs(amount),
+    balanceAfter: raw.balanceAfter,
+    balance: raw.balanceAfter ?? raw.balance,
+    description: raw.description || 'Transaction',
+    featureName: raw.metadata?.featureCode || raw.featureName,
+    metadata: raw.metadata,
+    createdAt: raw.createdAt,
+  };
 }
 
 const TruckOwnerCredits: React.FC = () => {
@@ -62,7 +81,8 @@ const TruckOwnerCredits: React.FC = () => {
     queryKey: ['truck-owner-transactions', user?.id],
     queryFn: async () => {
       const response = await api.get('/credits/transactions?limit=100');
-      return response.data.data || [];
+      const rows = response.data.data || [];
+      return rows.map(normalizeTransaction);
     },
     enabled: !!user?.id
   });
@@ -79,7 +99,7 @@ const TruckOwnerCredits: React.FC = () => {
     });
   };
 
-  const getTransactionIcon = (type: CreditTransaction['type']) => {
+  const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'CREDIT':
       case 'PURCHASE':
@@ -91,7 +111,7 @@ const TruckOwnerCredits: React.FC = () => {
     }
   };
 
-  const getTransactionColor = (type: CreditTransaction['type']) => {
+  const getTransactionColor = (type: string) => {
     switch (type) {
       case 'CREDIT':
       case 'PURCHASE':
@@ -105,10 +125,11 @@ const TruckOwnerCredits: React.FC = () => {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t: CreditTransaction) => {
-      if (filterType !== 'all' && t.type !== filterType) return false;
+      if (filterType === 'DEBIT' && t.type !== 'DEBIT') return false;
+      if (filterType === 'CREDIT' && t.type === 'DEBIT') return false;
       
       if (dateRange !== 'all') {
-        const days = parseInt(dateRange);
+        const days = parseInt(dateRange, 10);
         const transactionDate = new Date(t.createdAt);
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - days);

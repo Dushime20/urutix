@@ -317,7 +317,7 @@ export class CreditService {
     // Create transaction — no expiresAt: purchased credits persist until used
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      // userId: userId || null,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.PURCHASE,
       amount,
@@ -357,7 +357,7 @@ export class CreditService {
     // Create transaction — no expiresAt: bonus credits persist until used
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      // userId: userId || null,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.BONUS,
       amount,
@@ -439,7 +439,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId: dto.tenantId,
-      // userId: dto.userId || null,
+      userId: dto.userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.CONSUMPTION,
       amount: -dto.amount, // Negative for consumption
@@ -483,7 +483,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      // userId: userId || null,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.REFUND,
       amount,
@@ -539,7 +539,7 @@ export class CreditService {
     // Create transaction
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      // userId: userId || null,
+      userId: userId || null,
       creditAccountId: account.id,
       type: CreditTransactionType.ADJUSTMENT,
       amount,
@@ -570,7 +570,9 @@ export class CreditService {
   }
 
   /**
-   * Get credit transaction history
+   * Get credit transaction history.
+   * When filters.userId is set (truck owners), scope to that user's credit account
+   * so they only see their own activity — not the tenant company wallet.
    */
   async getTransactionHistory(
     tenantId: string,
@@ -582,13 +584,16 @@ export class CreditService {
       .leftJoinAndSelect('creditAccount.tenant', 'tenant')
       .where('transaction.tenantId = :tenantId', { tenantId });
 
-    // Add userId to select if we need to filter by it (since it has select: false in entity)
     if (filters?.userId !== undefined) {
       query.addSelect('transaction.userId');
       if (filters.userId) {
-        query.andWhere('transaction.userId = :userId', { userId: filters.userId });
+        // Ownership is on the credit account; transaction.userId was often left null historically.
+        query.andWhere(
+          '(creditAccount.userId = :userId OR transaction.userId = :userId)',
+          { userId: filters.userId },
+        );
       } else {
-        query.andWhere('transaction.userId IS NULL');
+        query.andWhere('creditAccount.userId IS NULL');
       }
     }
 
@@ -829,7 +834,7 @@ export class CreditService {
 
     const transaction = this.creditTransactionRepository.create({
       tenantId,
-      // userId: userId || null, // Temporarily commented out to fix 500 error as column might be missing in DB
+      userId: userId || null,
       creditAccountId: account.id,
       type: transactionType,
       amount,
@@ -897,7 +902,7 @@ export class CreditService {
     try {
       await this.creditTransactionRepository.save(this.creditTransactionRepository.create({
         tenantId: fromTenantId,
-        // userId: fromUserId,
+        userId: fromUserId || null,
         creditAccountId: fromAccount.id,
         type: CreditTransactionType.ADJUSTMENT,
         amount: -amount,
@@ -918,7 +923,7 @@ export class CreditService {
 
     const transactionIn = this.creditTransactionRepository.create({
       tenantId: toTenantId,
-      // userId: toUserId,
+      userId: toUserId || null,
       creditAccountId: toAccount.id,
       type: CreditTransactionType.PURCHASE, // Treat as purchased for the recipient
       amount,

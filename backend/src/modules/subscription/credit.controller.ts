@@ -116,7 +116,7 @@ export class CreditController {
     if (limit) filters.limit = parseInt(limit);
     if (offset) filters.offset = parseInt(offset);
 
-    // For TRUCK_OWNER role, fetch their personal transactions
+    // For TRUCK_OWNER: only their own credit-account transactions (enforced in service)
     if (userRole === 'TRUCK_OWNER') {
       filters.userId = userId;
     }

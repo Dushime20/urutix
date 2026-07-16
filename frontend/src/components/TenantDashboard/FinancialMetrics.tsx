@@ -49,7 +49,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
   const { tSync } = useTranslation();
   const { format: formatCurrency } = useCurrencyFormat();
   const [timeRange, setTimeRange] = useState('30d');
-  const [activeTab, setActiveTab] = useState<'overview' | 'breakdown' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
 
   // Fetch Credit Balance
   const { data: creditBalance } = useQuery({
@@ -310,7 +310,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
       {/* Navigation Tabs */}
       <div className="px-10 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div className="flex gap-8">
-          {(['overview', 'breakdown', 'history'] as const).map((tab) => (
+          {(['overview', 'history'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -318,7 +318,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
                 }`}
             >
             {tab === 'overview' && tSync('Summary')}
-            {tab === 'breakdown' && tSync('Revenue Breakdown')}
             {tab === 'history' && tSync('Transactions')}
             {activeTab === tab && (
               <motion.div
@@ -489,26 +488,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
             </motion.div>
           )}
 
-          {activeTab === 'breakdown' && (
-            <motion.div
-              key="breakdown"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="py-12 flex flex-col items-center justify-center bg-primary-600 dark:bg-primary-700 rounded-[40px] text-white shadow-xl shadow-primary-100 dark:shadow-slate-950/20 relative overflow-hidden group"
-            >
-              <div className="relative z-10 text-center">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
-                  <PieChart className="w-8 h-8 text-white" />
-                </div>
-                <h4 className="text-xl font-black tracking-tight"><TranslatedText text="Advanced Fiscal Segmentation" /></h4>
-                <p className="text-sm text-white/70 font-medium mb-6 italic px-10"><TranslatedText text="Deep dive into cost centers and revenue streams with multi-dimensional filters." /></p>
-                <button className="bg-white text-primary-600 px-8 py-3 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-xl"><TranslatedText text="Launch Fiscal Lab" /></button>
-              </div>
-              <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 backdrop-blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
-            </motion.div>
-          )}
-
           {activeTab === 'history' && (
             <motion.div
               key="history"
@@ -657,13 +636,5 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
     </div>
   );
 };
-
-// Simple Icon for the empty state
-const PieChart: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-  </svg>
-);
 
 export default FinancialMetrics;
