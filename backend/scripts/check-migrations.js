@@ -26,6 +26,9 @@ const CRITICAL_SCHEMA = {
   users: ['id', 'email', 'role', 'tenantId', 'status'],
   trucks: ['id', 'tenantId', 'status', 'licensePlate'],
   tenants: ['id', 'name', 'status'],
+  // Broker module — created by 054_create_load_contracts_and_broker_commissions.sql
+  load_contracts: ['id', 'tenantId', 'brokerId', 'status', 'createdAt'],
+  broker_commissions: ['id', 'tenantId', 'brokerId', 'loadId', 'status', 'commissionAmount'],
 };
 
 async function checkMigrations() {

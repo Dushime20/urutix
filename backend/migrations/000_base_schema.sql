@@ -1406,6 +1406,56 @@ CREATE TABLE IF NOT EXISTS expenses (
 );
 CREATE INDEX IF NOT EXISTS idx_expenses_tenant ON expenses("tenantId");
 
+-- INVOICES / INVOICE_ITEMS (financial module — required by GET /api/financial/invoices)
+DO $$ BEGIN CREATE TYPE invoices_status_enum AS ENUM('draft','sent','paid','overdue','cancelled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE invoice_items_type_enum AS ENUM('freight','fuel_surcharge','toll','detention','lumper','accessorial'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE TABLE IF NOT EXISTS invoices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "invoiceNumber" VARCHAR NOT NULL,
+  "customerId" VARCHAR NOT NULL,
+  "customerName" VARCHAR NOT NULL,
+  "senderId" VARCHAR,
+  "senderName" VARCHAR,
+  "tripId" VARCHAR,
+  "truckId" VARCHAR,
+  "driverId" VARCHAR,
+  "issueDate" TIMESTAMP NOT NULL,
+  "dueDate" TIMESTAMP NOT NULL,
+  status invoices_status_enum NOT NULL DEFAULT 'draft',
+  subtotal DECIMAL(10,2) NOT NULL,
+  "taxAmount" DECIMAL(10,2) NOT NULL,
+  "totalAmount" DECIMAL(10,2) NOT NULL,
+  currency VARCHAR NOT NULL DEFAULT 'USD',
+  notes TEXT,
+  "paymentTerms" VARCHAR NOT NULL DEFAULT 'Net 30',
+  "paymentMethod" VARCHAR,
+  "paidDate" TIMESTAMP,
+  "lateFees" DECIMAL(10,2),
+  "createdBy" UUID NOT NULL,
+  "tenantId" UUID NOT NULL,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_invoices_invoice_number ON invoices("invoiceNumber");
+CREATE INDEX IF NOT EXISTS idx_invoices_tenant ON invoices("tenantId");
+CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+CREATE INDEX IF NOT EXISTS idx_invoices_issue_date ON invoices("issueDate");
+
+CREATE TABLE IF NOT EXISTS invoice_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  description VARCHAR NOT NULL,
+  quantity INTEGER NOT NULL,
+  "unitPrice" DECIMAL(10,2) NOT NULL,
+  "totalPrice" DECIMAL(10,2) NOT NULL,
+  type invoice_items_type_enum NOT NULL,
+  "tripId" VARCHAR,
+  notes TEXT,
+  "invoiceId" UUID,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items("invoiceId");
+
 -- SAFETY_INCIDENTS
 DO $$ BEGIN CREATE TYPE incident_type AS ENUM('accident','near_miss','injury','property_damage','traffic_violation'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE incident_severity AS ENUM('minor','moderate','major','critical'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;

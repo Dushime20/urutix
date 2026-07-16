@@ -1,0 +1,136 @@
+-- =============================================================================
+-- Migration 053: Create invoices + invoice_items (financial module)
+-- =============================================================================
+-- ROOT CAUSE
+-- ----------
+-- TypeORM Invoice / InvoiceItem entities map to "invoices" / "invoice_items",
+-- but SQL migrations never created them. Docker only runs backend/migrations/*.sql
+-- (migrate.js), so GET /api/financial/invoices fails with:
+--   relation "invoices" does not exist
+--
+-- SAFE / IDEMPOTENT: CREATE TYPE / TABLE IF NOT EXISTS + ADD COLUMN IF NOT EXISTS.
+-- =============================================================================
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'invoices_status_enum') THEN
+    CREATE TYPE "public"."invoices_status_enum" AS ENUM(
+      'draft', 'sent', 'paid', 'overdue', 'cancelled'
+    );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'invoice_items_type_enum') THEN
+    CREATE TYPE "public"."invoice_items_type_enum" AS ENUM(
+      'freight', 'fuel_surcharge', 'toll', 'detention', 'lumper', 'accessorial'
+    );
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS "invoices" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "invoiceNumber" character varying NOT NULL,
+  "customerId" character varying NOT NULL,
+  "customerName" character varying NOT NULL,
+  "senderId" character varying,
+  "senderName" character varying,
+  "tripId" character varying,
+  "truckId" character varying,
+  "driverId" character varying,
+  "issueDate" TIMESTAMP NOT NULL,
+  "dueDate" TIMESTAMP NOT NULL,
+  "status" "public"."invoices_status_enum" NOT NULL DEFAULT 'draft',
+  "subtotal" numeric(10,2) NOT NULL,
+  "taxAmount" numeric(10,2) NOT NULL,
+  "totalAmount" numeric(10,2) NOT NULL,
+  "currency" character varying NOT NULL DEFAULT 'USD',
+  "notes" text,
+  "paymentTerms" character varying NOT NULL DEFAULT 'Net 30',
+  "paymentMethod" character varying,
+  "paidDate" TIMESTAMP,
+  "lateFees" numeric(10,2),
+  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+  "createdBy" uuid NOT NULL,
+  "tenantId" uuid NOT NULL,
+  CONSTRAINT "PK_668cef7c22a427fd822cc1be3ce" PRIMARY KEY ("id")
+);
+
+-- Columns added after initial schema (idempotent for partially created tables)
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "senderId" character varying;
+ALTER TABLE "invoices" ADD COLUMN IF NOT EXISTS "senderName" character varying;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'UQ_bf8e0f9dd4558ef209ec111782d'
+  ) THEN
+    ALTER TABLE "invoices"
+      ADD CONSTRAINT "UQ_bf8e0f9dd4558ef209ec111782d" UNIQUE ("invoiceNumber");
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS "invoice_items" (
+  "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+  "description" character varying NOT NULL,
+  "quantity" integer NOT NULL,
+  "unitPrice" numeric(10,2) NOT NULL,
+  "totalPrice" numeric(10,2) NOT NULL,
+  "type" "public"."invoice_items_type_enum" NOT NULL,
+  "tripId" character varying,
+  "notes" text,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+  "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+  "invoiceId" uuid,
+  CONSTRAINT "PK_53b99f9e0e2945e69de1a12b75a" PRIMARY KEY ("id")
+);
+
+-- FKs (ignore if users/tenants missing or already present)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'FK_916db332df1248d4325ff4e5016'
+      AND table_name = 'invoices'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.tables WHERE table_name = 'users'
+  ) THEN
+    ALTER TABLE "invoices"
+      ADD CONSTRAINT "FK_916db332df1248d4325ff4e5016"
+      FOREIGN KEY ("createdBy") REFERENCES "users"("id")
+      ON DELETE NO ACTION ON UPDATE NO ACTION;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'FK_89c82485e364081f457b210120d'
+      AND table_name = 'invoices'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.tables WHERE table_name = 'tenants'
+  ) THEN
+    ALTER TABLE "invoices"
+      ADD CONSTRAINT "FK_89c82485e364081f457b210120d"
+      FOREIGN KEY ("tenantId") REFERENCES "tenants"("id")
+      ON DELETE NO ACTION ON UPDATE NO ACTION;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'FK_7fb6895fc8fad9f5200e91abb59'
+      AND table_name = 'invoice_items'
+  ) THEN
+    ALTER TABLE "invoice_items"
+      ADD CONSTRAINT "FK_7fb6895fc8fad9f5200e91abb59"
+      FOREIGN KEY ("invoiceId") REFERENCES "invoices"("id")
+      ON DELETE CASCADE ON UPDATE NO ACTION;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS "IDX_invoices_tenantId" ON "invoices" ("tenantId");
+CREATE INDEX IF NOT EXISTS "IDX_invoices_status" ON "invoices" ("status");
+CREATE INDEX IF NOT EXISTS "IDX_invoices_issueDate" ON "invoices" ("issueDate");
+CREATE INDEX IF NOT EXISTS "IDX_invoice_items_invoiceId" ON "invoice_items" ("invoiceId");
