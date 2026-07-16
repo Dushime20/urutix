@@ -70,3 +70,6 @@ backend/fix-notification-entitytype.js
 backend/test-login-api.js
 backend/test-login-debug.js
 backend/test-login-direct.js
+
+# TypeScript build cache
+*.tsbuildinfo
