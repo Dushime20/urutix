@@ -15,6 +15,8 @@ import {
   FaInfoCircle,
 } from 'react-icons/fa';
 import ModernLoader from '../../components/common/ModernLoader';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import CurrencySelector from '../../components/common/CurrencySelector';
 
 interface SubscriptionPlan {
   id: string;
@@ -45,6 +47,7 @@ interface ParentSubscription {
 
 const PartnerPlans: React.FC = () => {
   const queryClient = useQueryClient();
+  const { format: fmtFull } = useCurrencyFormat();
   const [showModal, setShowModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [selectedParent, setSelectedParent] = useState<string>('');
@@ -239,7 +242,9 @@ const PartnerPlans: React.FC = () => {
               </h1>
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-3">
+            <CurrencySelector variant="full" />
+            <button
             onClick={() => handleOpenModal()}
             disabled={parents.length === 0}
             className="px-6 py-3.5 bg-[#345E85] text-white rounded-2xl hover:bg-[#2a4d6d] transition-all font-black text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
@@ -247,7 +252,7 @@ const PartnerPlans: React.FC = () => {
             <FaPlus className="text-xs" />
             Create Partner Plan
           </button>
-        </div>
+          </div>
 
         {/* Parent Subscriptions Summary */}
         {parents.length > 0 && (
@@ -336,7 +341,7 @@ const PartnerPlans: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-600 font-semibold">Price per Credit:</span>
                     <span className="font-black text-[#345E85]">
-                      ${Number(plan.pricePerCredit).toFixed(2)}
+                      {fmtFull(Number(plan.pricePerCredit))}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -451,7 +456,7 @@ const PartnerPlans: React.FC = () => {
                   <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
                     <div className="text-xs text-blue-800">
                       <div className="font-bold mb-1">Inherited Values:</div>
-                      <div>Price per Credit: ${Number(selectedParentDetails.plan.pricePerCredit).toFixed(2)}</div>
+                      <div>Price per Credit: {fmtFull(Number(selectedParentDetails.plan.pricePerCredit))}</div>
                       <div>Credits per Ton: {Number(selectedParentDetails.plan.creditsPerTonTruckOwner).toFixed(1)}</div>
                     </div>
                   </div>

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import CurrencySelector from '../../components/common/CurrencySelector';
 import {
   FaCheck,
   FaTimes,
@@ -59,7 +60,7 @@ interface SubscriptionPlan {
 }
 
 const SubscriptionPlans: React.FC = () => {
-  const { compact: fmtMoney } = useCurrencyFormat();
+  const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions' | 'marketplace'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
@@ -293,6 +294,7 @@ const SubscriptionPlans: React.FC = () => {
                 <FaChartBar className="text-xs" />
                 Compare
               </button>
+              <CurrencySelector variant="full" />
             </div>
           </div>
         )}
@@ -435,7 +437,7 @@ const SubscriptionPlans: React.FC = () => {
                   <div className="mb-8">
                     <div className="flex items-baseline mb-2">
                       <span className="text-5xl font-black text-[#345E85] tracking-tight">
-                        ${Number(plan.pricePerCredit).toFixed(2)}
+                        {fmtFull(Number(plan.pricePerCredit))}
                       </span>
                       <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">/ credit</span>
                     </div>
@@ -446,7 +448,7 @@ const SubscriptionPlans: React.FC = () => {
                         </p>
                         <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-5 py-3 rounded-2xl text-sm font-black uppercase tracking-widest shadow-sm">
                           <FaLightbulb className="text-emerald-500 w-4 h-4" />
-                          Package: ${totalAmount.toFixed(2)}
+                          Package: {fmtFull(totalAmount)}
                         </div>
                       </div>
                     )}
@@ -477,7 +479,7 @@ const SubscriptionPlans: React.FC = () => {
                           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Estimated Cost</div>
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-slate-600">{estimatedTons} tons/month:</span>
-                            <span className="font-black text-emerald-600">${calculateCost(plan).toFixed(2)}</span>
+                            <span className="font-black text-emerald-600">{fmtFull(calculateCost(plan))}</span>
                           </div>
                         </div>
                       )}
@@ -627,7 +629,7 @@ const SubscriptionPlans: React.FC = () => {
                     <td className="py-4 px-4 font-medium text-slate-700">Price per Credit</td>
                     {plans.map(plan => (
                       <td key={plan.id} className="text-center py-4 px-4 font-bold text-indigo-600">
-                        ${Number(plan.pricePerCredit).toFixed(2)}
+                        {fmtFull(Number(plan.pricePerCredit))}
                       </td>
                     ))}
                   </tr>
@@ -1045,14 +1047,14 @@ const SubscriptionPlans: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600 dark:text-slate-400">Price per Credit:</span>
                       <span className="font-bold text-slate-900 dark:text-white">
-                        ${Number(selectedPlan.pricePerCredit).toFixed(2)}
+                        {fmtFull(Number(selectedPlan.pricePerCredit))}
                       </span>
                     </div>
                     <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
                       <div className="flex items-center justify-between">
                         <span className="text-base font-black text-slate-900 dark:text-white">Total Amount:</span>
                         <span className="text-2xl font-black text-[#345E85] dark:text-blue-400">
-                          ${getTotalAmount(selectedPlan).toFixed(2)}
+                          {fmtFull(getTotalAmount(selectedPlan))}
                         </span>
                       </div>
                     </div>
@@ -1237,7 +1239,7 @@ const SubscriptionPlans: React.FC = () => {
                       Processing...
                     </span>
                   ) : (
-                    `Pay $${getTotalAmount(selectedPlan).toFixed(2)}`
+                    `Pay ${fmtFull(getTotalAmount(selectedPlan))}`
                   )}
                 </button>
               </div>

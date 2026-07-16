@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import CurrencySelector from '../../components/common/CurrencySelector';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -33,7 +34,7 @@ interface MarketplaceStats {
 }
 
 const CreditMarketplace: React.FC = () => {
-  const { compact: fmtMoney } = useCurrencyFormat();
+  const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -152,6 +153,9 @@ const CreditMarketplace: React.FC = () => {
             </p>
           </div>
         </div>
+        <div className="mt-4">
+          <CurrencySelector variant="full" />
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -228,7 +232,7 @@ const CreditMarketplace: React.FC = () => {
             <div className="text-right">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Price per Credit</div>
               <div className="text-3xl font-black text-slate-900">
-                ${Number(settings.pricePerCredit).toFixed(2)}
+                {fmtFull(Number(settings.pricePerCredit))}
               </div>
             </div>
           )}
@@ -328,7 +332,7 @@ const CreditMarketplace: React.FC = () => {
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">Fixed</span>
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">Marketplace price is fixed at $1.00 per credit</p>
+                <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-wide">Marketplace price is fixed at {fmtFull(1)} per credit</p>
               </div>
 
               <div>
@@ -364,7 +368,7 @@ const CreditMarketplace: React.FC = () => {
                 <div>
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sample (1,000 Credits)</div>
                   <div className="text-lg font-black text-slate-900">
-                    ${(1000 * formData.pricePerCredit).toFixed(2)}
+                    {fmtFull(1000 * formData.pricePerCredit)}
                   </div>
                 </div>
                 <div>
@@ -410,7 +414,7 @@ const CreditMarketplace: React.FC = () => {
               </div>
               <div className="bg-slate-50 rounded-2xl p-6 border-2 border-slate-100">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Price per Credit</div>
-                <div className="text-2xl font-black text-slate-900 tracking-tight">${Number(settings.pricePerCredit).toFixed(2)}</div>
+                <div className="text-2xl font-black text-slate-900 tracking-tight">{fmtFull(Number(settings.pricePerCredit))}</div>
               </div>
               <div className="bg-slate-50 rounded-2xl p-6 border-2 border-slate-100">
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</div>
