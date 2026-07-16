@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import {
   Headphones, AlertTriangle, Search, Download, Eye, Clock,
   CheckCircle, XCircle, Flag, RefreshCw, Plus, BarChart3,
