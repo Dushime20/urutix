@@ -179,6 +179,11 @@ export class PermissionTableInitService implements OnModuleInit {
       // Analytics & Reports
       ['reports', 'view',   'analytics', 'Access analytics dashboards and reports'],
       ['reports', 'export', 'analytics', 'Export data and generate report files'],
+      ['analytics', 'view_own', 'analytics', 'View own analytics dashboard'],
+      ['analytics', 'view_tenant', 'analytics', 'View tenant-wide analytics'],
+      ['analytics', 'view_all', 'analytics', 'View platform-wide analytics'],
+      ['analytics', 'financial', 'analytics', 'View financial analytics'],
+      ['analytics', 'cost_trends', 'analytics', 'View cost trend analytics'],
       // System Admin
       ['settings',  'view',   'system_admin', 'View system configuration settings'],
       ['settings',  'edit',   'system_admin', 'Modify system configuration'],
@@ -222,6 +227,64 @@ export class PermissionTableInitService implements OnModuleInit {
         VALUES ($1, $2, $3)
         ON CONFLICT ("name") DO NOTHING
       `, [name, description, isSystem]);
+    }
+
+    await this.seedRoleAnalyticsPermissions();
+  }
+
+  /**
+   * Ensure cargo owners (and related roles) can access financial analytics endpoints.
+   * Supports both role_permissions schemas (role varchar vs role_id UUID).
+   */
+  private async seedRoleAnalyticsPermissions() {
+    const rolePerms: Record<string, string[]> = {
+      CARGO_OWNER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+      TRUCK_OWNER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+      TENANT_ADMIN: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+      FLEET_MANAGER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+      FLEET_ACCOUNTANT: ['analytics:view_own', 'analytics:view_tenant', 'analytics:financial', 'analytics:cost_trends'],
+      BROKER: ['analytics:view_own', 'analytics:view_tenant'],
+      DRIVER: ['analytics:view_own'],
+    };
+
+    const columns = await this.dataSource.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'role_permissions'
+         AND column_name IN ('role', 'role_id')`,
+    );
+    const columnNames = new Set(columns.map((c: any) => c.column_name));
+
+    for (const [roleName, permissions] of Object.entries(rolePerms)) {
+      for (const permission of permissions) {
+        const [resource, action] = permission.split(':');
+        const permRows = await this.dataSource.query(
+          `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
+          [resource, action],
+        );
+        if (!permRows.length) continue;
+        const permissionId = permRows[0].id;
+
+        if (columnNames.has('role_id')) {
+          const roleRows = await this.dataSource.query(
+            `SELECT id FROM roles WHERE name = $1 LIMIT 1`,
+            [roleName],
+          );
+          if (!roleRows.length) continue;
+          await this.dataSource.query(
+            `INSERT INTO role_permissions (role_id, permission_id)
+             VALUES ($1, $2)
+             ON CONFLICT DO NOTHING`,
+            [roleRows[0].id, permissionId],
+          );
+        } else if (columnNames.has('role')) {
+          await this.dataSource.query(
+            `INSERT INTO role_permissions (role, permission_id)
+             VALUES ($1, $2)
+             ON CONFLICT ("role", "permission_id") DO NOTHING`,
+            [roleName, permissionId],
+          );
+        }
+      }
     }
   }
 }

@@ -30,6 +30,7 @@ import {
 import { TranslatedText } from '@/components/translated-text';
 import { StatCard } from '../components/EnliteUI';
 import { activityLogsApi, type ActivityLog } from '@/services/activityLogsApi';
+import ModernLoader from '../components/common/ModernLoader';
 
 const AdminHistory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

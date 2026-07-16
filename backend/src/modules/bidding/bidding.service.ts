@@ -335,6 +335,7 @@ export class BiddingService {
     // Create bid
     const bid = this.bidRepository.create({
       ...createBidDto,
+      tenantId,
       truckOwnerId,
       status: BidStatus.PENDING,
       bidCurrency: createBidDto.bidCurrency || 'USD',

@@ -1043,10 +1043,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   required
                 />
 
-                {/* Availability-aware driver select — filtered to cargo date window */}
+                {/* Drivers assigned to the selected truck, available for cargo dates */}
                 <AvailableDriverSelect
                   pickupDateTime={proposedPickupDate}
                   deliveryDateTime={proposedDeliveryDate}
+                  truckId={selectedTruckId || undefined}
                   value={selectedDriverId}
                   onChange={setSelectedDriverId}
                   label="Select Driver"

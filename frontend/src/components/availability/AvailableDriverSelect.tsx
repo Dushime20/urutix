@@ -1,11 +1,13 @@
 import React from 'react';
-import { User, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { useAvailableDrivers } from '../../hooks/useAvailability';
 import { cn } from '../../utils/cn';
 
 interface Props {
   pickupDateTime?: string;
   deliveryDateTime?: string;
+  /** When set, only drivers assigned to this truck are shown */
+  truckId?: string;
   value?: string;
   onChange: (driverId: string) => void;
   className?: string;
@@ -16,6 +18,7 @@ interface Props {
 export const AvailableDriverSelect: React.FC<Props> = ({
   pickupDateTime,
   deliveryDateTime,
+  truckId,
   value,
   onChange,
   className,
@@ -23,10 +26,12 @@ export const AvailableDriverSelect: React.FC<Props> = ({
   required,
 }) => {
   const datesProvided = !!pickupDateTime && !!deliveryDateTime;
+  const truckSelected = !!truckId;
 
   const { data: drivers = [], isLoading, isError } = useAvailableDrivers({
     pickupDateTime,
     deliveryDateTime,
+    truckId,
   });
 
   return (
@@ -36,7 +41,16 @@ export const AvailableDriverSelect: React.FC<Props> = ({
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
 
-      {!datesProvided && (
+      {!truckSelected && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-100 rounded-xl">
+          <AlertTriangle size={12} className="text-amber-500 shrink-0" />
+          <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest">
+            Select a truck first
+          </span>
+        </div>
+      )}
+
+      {truckSelected && !datesProvided && (
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-100 rounded-xl">
           <AlertTriangle size={12} className="text-amber-500 shrink-0" />
           <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest">
@@ -45,14 +59,14 @@ export const AvailableDriverSelect: React.FC<Props> = ({
         </div>
       )}
 
-      {datesProvided && isLoading && (
+      {truckSelected && datesProvided && isLoading && (
         <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
           <Loader2 size={13} className="animate-spin text-slate-400" />
           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Checking availability…</span>
         </div>
       )}
 
-      {datesProvided && isError && (
+      {truckSelected && datesProvided && isError && (
         <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-100 rounded-xl">
           <AlertTriangle size={12} className="text-red-500 shrink-0" />
           <span className="text-[9px] font-black text-red-700 uppercase tracking-widest">
@@ -61,15 +75,15 @@ export const AvailableDriverSelect: React.FC<Props> = ({
         </div>
       )}
 
-      {datesProvided && !isLoading && !isError && (
+      {truckSelected && datesProvided && !isLoading && !isError && (
         <>
           {drivers.length === 0 ? (
             <div className="flex items-center gap-2 px-3 py-3 bg-red-50 border border-red-100 rounded-xl">
               <AlertTriangle size={13} className="text-red-500 shrink-0" />
               <div>
-                <p className="text-[9px] font-black text-red-700 uppercase tracking-widest">No drivers available</p>
+                <p className="text-[9px] font-black text-red-700 uppercase tracking-widest">No assigned drivers available</p>
                 <p className="text-[8px] text-red-600 mt-0.5">
-                  All drivers are assigned during this period. Choose different dates or free a driver.
+                  This truck has no available assigned drivers for these dates. Assign a driver to the truck or choose another truck.
                 </p>
               </div>
             </div>
@@ -78,7 +92,7 @@ export const AvailableDriverSelect: React.FC<Props> = ({
               <div className="flex items-center gap-2 mb-1">
                 <CheckCircle size={11} className="text-emerald-500" />
                 <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">
-                  {drivers.length} driver{drivers.length !== 1 ? 's' : ''} available
+                  {drivers.length} assigned driver{drivers.length !== 1 ? 's' : ''} available
                 </span>
               </div>
               <select

@@ -149,7 +149,7 @@ const FinancialReportsEnlite: React.FC<FinancialReportsEnliteProps> = ({
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Intel Bar */}
+            {/* Intel Bar — derived from live templates / reports only */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Report Library"
@@ -159,23 +159,23 @@ const FinancialReportsEnlite: React.FC<FinancialReportsEnliteProps> = ({
                     color="primary"
                 />
                 <StatCard
-                    title="Active Cycles"
+                    title="Scheduled"
                     value={templates.filter(t => t.isScheduled).length.toString()}
                     subtitle="Automated Pipelines"
                     icon={<Clock size={22} />}
                     color="secondary"
                 />
                 <StatCard
-                    title="Retention Used"
-                    value="24.7 GB"
-                    subtitle="67% Policy Limit"
+                    title="Generated"
+                    value={recentReports.length.toString()}
+                    subtitle="Recent Documents"
                     icon={<Activity size={22} />}
                     color="warning"
                 />
                 <StatCard
-                    title="Generation Score"
-                    value="98.2%"
-                    subtitle="Success Reliability"
+                    title="Completed"
+                    value={recentReports.filter(r => r.status === 'completed').length.toString()}
+                    subtitle="Ready to Download"
                     icon={<CheckCircle2 size={22} />}
                     color="success"
                 />
@@ -263,7 +263,14 @@ const FinancialReportsEnlite: React.FC<FinancialReportsEnliteProps> = ({
 
                             {activeTab === 'templates' ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {filteredTemplates.map(template => (
+                                    {filteredTemplates.length === 0 ? (
+                                        <div className="col-span-2 py-16 text-center">
+                                            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                                                No templates match your filters
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        filteredTemplates.map(template => (
                                         <div key={template.id} className="p-5 bg-white rounded-2xl border border-slate-100 hover:border-[#345E85] hover:shadow-lg hover:shadow-slate-100 transition-all group flex flex-col justify-between min-h-[180px]">
                                             <div>
                                                 <div className="flex items-start justify-between mb-3">
@@ -294,7 +301,8 @@ const FinancialReportsEnlite: React.FC<FinancialReportsEnliteProps> = ({
                                                 </button>
                                             </div>
                                         </div>
-                                    ))}
+                                    ))
+                                    )}
                                 </div>
                             ) : (
                                 <EnhancedTable

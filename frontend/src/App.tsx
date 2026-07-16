@@ -36,8 +36,6 @@ import AgentPasswordSetup from './pages/AgentPasswordSetup';
 // Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
 // Analytics pages
 const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
-const MultiModalTracking = lazy(() => import('./components/Tracking/MultiModalTracking'));
-const MasterNeuralOverview = lazy(() => import('./components/Analytics/MasterNeuralOverview'));
 const PredictiveLogistics = lazy(() => import('./components/Analytics/PredictiveLogistics'));
 
 // Lazy load all page components to reduce initial bundle size
@@ -300,7 +298,7 @@ function App() {
                       <Route path="accepted-matches" element={<AcceptedMatches />} />
                       <Route path="journey" element={<EnhancedJourneyFlow />} />
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
-                      <Route path="analytics" element={<MasterNeuralOverview />} />
+                      <Route path="analytics" element={<Navigate to="/dashboard/analytics/operational" replace />} />
                       <Route path="analytics/operational" element={<UnifiedAnalyticsManagement />} />
                       <Route path="analytics/advanced" element={<UnifiedAnalyticsManagement />} />
                       <Route path="analytics/detailed" element={<UnifiedAnalyticsManagement />} />
@@ -311,7 +309,6 @@ function App() {
                       <Route path="tracking" element={<LiveTracking />} />
                       <Route path="tracking/trips/:tripId" element={<TripTracking />} />
                       <Route path="inspections" element={<UnifiedTrackingManagement />} />
-                      <Route path="multi-modal" element={<MultiModalTracking />} />
                       <Route path="routes" element={<UnifiedTrackingManagement />} />
                       <Route path="profile" element={<CargoOwnerProfile />} />
                       <Route path="settings" element={<UnifiedAccountManagement />} />

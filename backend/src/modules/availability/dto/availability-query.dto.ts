@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional, IsNumber, IsString, Min } from 'class-validator';
+import { IsDateString, IsOptional, IsNumber, IsString, IsUUID, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -32,4 +32,9 @@ export class DriverAvailabilityQueryDto {
   @ApiProperty({ description: 'Delivery date-time (ISO 8601)', example: '2026-07-12T18:00:00Z' })
   @IsDateString()
   deliveryDateTime: string;
+
+  @ApiPropertyOptional({ description: 'When set, only return drivers assigned to this truck' })
+  @IsOptional()
+  @IsUUID()
+  truckId?: string;
 }

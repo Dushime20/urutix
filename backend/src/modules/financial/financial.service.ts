@@ -8,10 +8,17 @@ import { Repository, Between, Like } from 'typeorm';
 import { Invoice, InvoiceItem } from './entities/invoice.entity';
 import { Expense } from './entities/expense.entity';
 import { FinancialPayment } from './entities/payment.entity';
-import { FinancialReport } from './entities/financial-report.entity';
+import {
+  FinancialReport,
+  FinancialReportType,
+  FinancialReportPeriod,
+} from './entities/financial-report.entity';
 import { Budget } from './entities/budget.entity';
 import { TaxRecord } from './entities/tax-record.entity';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
+import { Payment } from '../../entities/payment.entity';
+import { Trip } from '../../entities/trip.entity';
+import { Load } from '../../entities/load.entity';
 
 @Injectable()
 export class FinancialService {
@@ -30,6 +37,12 @@ export class FinancialService {
     private budgetRepository: Repository<Budget>,
     @InjectRepository(TaxRecord)
     private taxRecordRepository: Repository<TaxRecord>,
+    @InjectRepository(Payment)
+    private paymentRepository: Repository<Payment>,
+    @InjectRepository(Trip)
+    private tripRepository: Repository<Trip>,
+    @InjectRepository(Load)
+    private loadRepository: Repository<Load>,
   ) {}
 
   // Invoice methods
@@ -255,28 +268,95 @@ export class FinancialService {
       where.period = query.period;
     }
 
+    const take = query.limit ? Math.min(parseInt(query.limit, 10) || 10, 100) : 50;
+
     return this.financialReportRepository.find({
       where,
       order: { createdAt: 'DESC' },
+      take,
     });
+  }
+
+  async getFinancialReportById(
+    id: string,
+    tenantId: string,
+  ): Promise<FinancialReport> {
+    const report = await this.financialReportRepository.findOne({
+      where: { id, tenant: { id: tenantId } },
+    });
+
+    if (!report) {
+      throw new NotFoundException(`Financial report ${id} not found`);
+    }
+
+    return report;
+  }
+
+  private resolveReportType(rawType: string): FinancialReportType {
+    const normalized = String(rawType || '')
+      .trim()
+      .toLowerCase()
+      .replace(/-/g, '_');
+
+    const aliases: Record<string, FinancialReportType> = {
+      pl_statement: FinancialReportType.PL_STATEMENT,
+      profit_loss: FinancialReportType.PL_STATEMENT,
+      pnl: FinancialReportType.PL_STATEMENT,
+      cash_flow: FinancialReportType.CASH_FLOW,
+      revenue: FinancialReportType.REVENUE,
+      expense: FinancialReportType.EXPENSE,
+      expenses: FinancialReportType.EXPENSE,
+      profitability: FinancialReportType.PROFITABILITY,
+    };
+
+    const resolved = aliases[normalized];
+    if (!resolved) {
+      throw new BadRequestException(
+        `Invalid report type "${rawType}". Allowed: ${Object.values(FinancialReportType).join(', ')}`,
+      );
+    }
+    return resolved;
+  }
+
+  private resolveReportPeriod(rawPeriod: string): FinancialReportPeriod {
+    const normalized = String(rawPeriod || 'monthly').trim().toLowerCase();
+    const allowed = Object.values(FinancialReportPeriod) as string[];
+    if (!allowed.includes(normalized)) {
+      return FinancialReportPeriod.MONTHLY;
+    }
+    return normalized as FinancialReportPeriod;
   }
 
   async generateFinancialReport(
     generateReportDto: any,
     userId: string,
     tenantId: string,
+    role?: string,
   ): Promise<FinancialReport> {
-    // Calculate financial data based on the report type and period
+    const type = this.resolveReportType(generateReportDto.type);
+    const period = this.resolveReportPeriod(generateReportDto.period);
+    const startDate = new Date(generateReportDto.startDate);
+    const endDate = new Date(generateReportDto.endDate);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid startDate or endDate');
+    }
+
     const financialData = await this.calculateFinancialData(
-      generateReportDto.type,
-      generateReportDto.period,
-      generateReportDto.startDate,
-      generateReportDto.endDate,
+      type,
+      period,
+      startDate,
+      endDate,
       tenantId,
+      userId,
+      role,
     );
 
     const report = this.financialReportRepository.create({
-      ...generateReportDto,
+      type,
+      period,
+      startDate,
+      endDate,
       data: financialData,
       generatedAt: new Date(),
       generatedBy: userId,
@@ -289,13 +369,17 @@ export class FinancialService {
   }
 
   private async calculateFinancialData(
-    type: string,
-    period: string,
+    type: FinancialReportType,
+    _period: FinancialReportPeriod,
     startDate: Date,
     endDate: Date,
     tenantId: string,
+    userId: string,
+    role?: string,
   ): Promise<any> {
-    // Get invoices for the period
+    const isCargoOwner = String(role || '').toUpperCase() === 'CARGO_OWNER';
+
+    // Invoices (revenue side for transporters / general tenants)
     const invoices = await this.invoiceRepository.find({
       where: {
         tenant: { id: tenantId },
@@ -303,7 +387,7 @@ export class FinancialService {
       },
     });
 
-    // Get expenses for the period
+    // Explicit expense records
     const expenses = await this.expenseRepository.find({
       where: {
         tenant: { id: tenantId },
@@ -311,38 +395,96 @@ export class FinancialService {
       },
     });
 
-    // Calculate revenue
-    const totalRevenue = invoices.reduce(
-      (sum, invoice) => sum + Number(invoice.totalAmount),
+    // Live freight payments for the period (cargo owners are typically payers)
+    const paymentQb = this.paymentRepository
+      .createQueryBuilder('payment')
+      .where('payment.tenantId = :tenantId', { tenantId })
+      .andWhere('payment.createdAt BETWEEN :start AND :end', {
+        start: startDate,
+        end: endDate,
+      });
+
+    if (isCargoOwner) {
+      paymentQb.andWhere('payment.payerId = :userId', { userId });
+    }
+
+    const payments = await paymentQb.getMany();
+
+    // Trips / loads for cargo-owner spend when payments are sparse
+    const tripQb = this.tripRepository
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.load', 'load')
+      .where('trip.tenantId = :tenantId', { tenantId })
+      .andWhere('trip.plannedStartTime BETWEEN :start AND :end', {
+        start: startDate,
+        end: endDate,
+      });
+
+    if (isCargoOwner) {
+      tripQb.andWhere('load.cargoOwnerId = :userId', { userId });
+    }
+
+    const trips = await tripQb.getMany();
+
+    const invoiceRevenue = invoices.reduce(
+      (sum, invoice) => sum + Number(invoice.totalAmount || 0),
       0,
     );
+
+    const tripFreightSpend = trips.reduce(
+      (sum, trip) => sum + Number(trip.agreedPrice || 0),
+      0,
+    );
+
+    const paymentSpend = payments.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0,
+    );
+
+    const expenseRecords = expenses.reduce(
+      (sum, expense) => sum + Number(expense.amount || 0),
+      0,
+    );
+
+    // Cargo owners: freight spend is the primary cost; transporters: invoice revenue
+    const totalRevenue = isCargoOwner
+      ? 0
+      : invoiceRevenue || tripFreightSpend;
+    const totalExpenses = isCargoOwner
+      ? paymentSpend || tripFreightSpend || expenseRecords
+      : expenseRecords || paymentSpend;
+
     const revenueByCustomer = invoices.reduce((acc, invoice) => {
-      acc[invoice.customerId] =
-        (acc[invoice.customerId] || 0) + Number(invoice.totalAmount);
+      const key = invoice.customerId || 'unknown';
+      acc[key] = (acc[key] || 0) + Number(invoice.totalAmount || 0);
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
-    // Calculate expenses
-    const totalExpenses = expenses.reduce(
-      (sum, expense) => sum + Number(expense.amount),
-      0,
-    );
     const expensesByCategory = expenses.reduce((acc, expense) => {
-      acc[expense.category] =
-        (acc[expense.category] || 0) + Number(expense.amount);
+      const key = String(expense.category || 'other');
+      acc[key] = (acc[key] || 0) + Number(expense.amount || 0);
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
 
-    // Calculate profit
+    if (isCargoOwner && Object.keys(expensesByCategory).length === 0) {
+      expensesByCategory['freight'] = totalExpenses;
+    }
+
+    const tripSpendByLoad = trips.reduce((acc, trip) => {
+      const key = trip.loadId || trip.id;
+      acc[key] = (acc[key] || 0) + Number(trip.agreedPrice || 0);
+      return acc;
+    }, {} as Record<string, number>);
+
     const totalProfit = totalRevenue - totalExpenses;
     const profitMargin =
       totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
-    return {
+    const base = {
       revenue: {
         total: totalRevenue,
         byCustomer: revenueByCustomer,
-        byTrip: {},
+        byTrip: isCargoOwner ? {} : tripSpendByLoad,
         byMonth: {},
       },
       expenses: {
@@ -350,6 +492,7 @@ export class FinancialService {
         byCategory: expensesByCategory,
         byTruck: {},
         byMonth: {},
+        byTrip: isCargoOwner ? tripSpendByLoad : {},
       },
       profit: {
         total: totalProfit,
@@ -363,7 +506,17 @@ export class FinancialService {
         financing: 0,
         netChange: totalRevenue - totalExpenses,
       },
+      meta: {
+        reportType: type,
+        invoiceCount: invoices.length,
+        expenseCount: expenses.length,
+        paymentCount: payments.length,
+        tripCount: trips.length,
+        scopedToCargoOwner: isCargoOwner,
+      },
     };
+
+    return base;
   }
 
   // Analytics methods

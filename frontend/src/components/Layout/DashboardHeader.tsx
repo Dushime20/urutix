@@ -85,7 +85,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Accepted Matches', path: `${basePath}/accepted-matches` },
             { label: 'Freight Bidding', path: `${basePath}/bidding` },
             { label: '🔴 Live Tracking', path: `${basePath}/tracking` },
-            { label: 'Multi-Modal Flow', path: `${basePath}/multi-modal` },
             { label: 'Receiver Directory', path: `${basePath}/receivers` },
             { label: 'Drafts & Templates', path: `${basePath}/cargos/list?status=DRAFT` },
             { label: 'Documents & Contracts', path: `${basePath}/documents` },
@@ -94,10 +93,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
         },
         {
           label: 'Intelligence & Capital',
-          path: `${basePath}/analytics`,
+          path: `${basePath}/analytics/operational`,
           icon: BarChart3,
           subItems: [
-            { label: 'Neural Overview', path: `${basePath}/analytics` },
             { label: 'Operational Insights', path: `${basePath}/analytics/operational` },
             { label: 'Invoice Vault', path: `${basePath}/invoices` },
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },

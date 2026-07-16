@@ -351,26 +351,30 @@ const TruckBidsPage: React.FC = () => {
 		setShowBidModal(true);
 	};
 
-	// Fetch available drivers (not currently in trips) when truck is selected
-	const loadAvailableDrivers = async () => {
-		if (!selectedTruckId) {
+	// Fetch drivers assigned to the selected truck
+	const loadAvailableDrivers = (truckId: string) => {
+		if (!truckId) {
 			setAvailableDrivers([]);
 			return;
 		}
 
 		setLoadingDrivers(true);
 		try {
-			// Get all active drivers
-			const allDrivers = await fleetApi.getDrivers({ status: 'ACTIVE' });
+			const selectedTruck = trucks.find((t: any) => t.id === truckId);
+			const assigned: { driverId: string; driverName: string }[] =
+				selectedTruck?.assignedDrivers || [];
 
-			// Filter to get only available drivers (drivers not currently in trips)
-			// Available drivers are those without currentTripId
-			const available = allDrivers.filter((driver: any) => {
-				// Driver is available if they don't have a currentTripId
-				return !driver.currentTripId;
-			});
+			if (assigned.length === 0) {
+				setAvailableDrivers([]);
+				return;
+			}
 
-			setAvailableDrivers(available || []);
+			const drivers = assigned.map((d: any) => ({
+				id: d.driverId,
+				firstName: d.driverName?.split(' ')[0] || d.driverName || '',
+				lastName: d.driverName?.split(' ').slice(1).join(' ') || '',
+			}));
+			setAvailableDrivers(drivers);
 		} catch (error) {
 			console.error('Error loading available drivers:', error);
 			setAvailableDrivers([]);
@@ -385,7 +389,7 @@ const TruckBidsPage: React.FC = () => {
 		setSelectedTruckId(truckId);
 		setSelectedDriverId(''); // Reset driver selection when truck changes
 		if (truckId) {
-			loadAvailableDrivers();
+			loadAvailableDrivers(truckId);
 		} else {
 			setAvailableDrivers([]);
 		}

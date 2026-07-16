@@ -92,6 +92,7 @@ export class AvailabilityController {
       tenantId,
       pickupDateTime:   new Date(query.pickupDateTime),
       deliveryDateTime: new Date(query.deliveryDateTime),
+      truckId: query.truckId,
     });
 
     return {

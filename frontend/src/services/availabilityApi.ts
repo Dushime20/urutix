@@ -70,10 +70,11 @@ export const availabilityApi = {
     return response.data?.data || [];
   },
 
-  /** Get drivers available for a window */
+  /** Get drivers available for a window (optionally scoped to a truck's assigned drivers) */
   getAvailableDrivers: async (params: {
     pickupDateTime: string;
     deliveryDateTime: string;
+    truckId?: string;
   }): Promise<AvailableDriver[]> => {
     const response = await api.get('/availability/drivers', { params });
     return response.data?.data || [];

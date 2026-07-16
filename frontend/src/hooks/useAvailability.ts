@@ -30,13 +30,15 @@ export function useAvailableTrucks(params: {
 
 /**
  * Fetches available drivers for a date range.
+ * When truckId is provided, only drivers assigned to that truck are returned.
  */
 export function useAvailableDrivers(params: {
   pickupDateTime?: string;
   deliveryDateTime?: string;
+  truckId?: string;
 }) {
-  const { pickupDateTime, deliveryDateTime } = params;
-  const enabled = !!pickupDateTime && !!deliveryDateTime;
+  const { pickupDateTime, deliveryDateTime, truckId } = params;
+  const enabled = !!pickupDateTime && !!deliveryDateTime && !!truckId;
 
   return useQuery({
     queryKey: ['available-drivers', params],
@@ -44,6 +46,7 @@ export function useAvailableDrivers(params: {
       availabilityApi.getAvailableDrivers({
         pickupDateTime: pickupDateTime!,
         deliveryDateTime: deliveryDateTime!,
+        truckId,
       }),
     enabled,
     staleTime: 60_000,

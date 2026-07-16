@@ -55,37 +55,83 @@ export class PermissionHelper {
     /**
      * Get all permissions for a role from database with caching.
      * Falls back to ROLE_PERMISSION_DEFAULTS if tables don't exist.
+     * Always unions DB results with code defaults so incomplete seeds
+     * (e.g. missing analytics:view_own for CARGO_OWNER) cannot lock out
+     * roles that the product explicitly grants access to.
      */
+    private normalizeRole(roleName: string | string[] | undefined | null): string {
+        if (Array.isArray(roleName)) {
+            return String(roleName[0] || '').toUpperCase();
+        }
+        return String(roleName || '').toUpperCase();
+    }
+
     async getRolePermissions(roleName: string): Promise<string[]> {
-        const cached = this.getCachedPermissions(roleName);
+        const role = this.normalizeRole(roleName);
+        const cached = this.getCachedPermissions(role);
         if (cached) return cached;
 
+        const defaults = ROLE_PERMISSION_DEFAULTS[role] || [];
         const tablesExist = await this.checkTablesExist();
 
         if (!tablesExist) {
-            const permissions = ROLE_PERMISSION_DEFAULTS[roleName] || [];
-            this.setCachedPermissions(roleName, permissions);
-            return permissions;
+            this.setCachedPermissions(role, defaults);
+            return defaults;
         }
 
         try {
+            const dbPermissions = await this.fetchRolePermissionsFromDb(role);
+            // Union DB + defaults (defaults win for essential product permissions)
+            const permissions = Array.from(new Set([...dbPermissions, ...defaults]));
+            this.setCachedPermissions(role, permissions);
+            return permissions;
+        } catch (error) {
+            this.logger.warn(`DB permission lookup failed for ${role}, using defaults`);
+            this.setCachedPermissions(role, defaults);
+            return defaults;
+        }
+    }
+
+    /**
+     * Supports both role_permissions schemas used in this codebase:
+     * - role varchar column (PermissionTableInitService / older seeds)
+     * - role_id UUID FK → roles.name (seed-permissions.sql / raw-permission.service)
+     */
+    private async fetchRolePermissionsFromDb(roleName: string): Promise<string[]> {
+        // Prefer role_id schema when that column exists
+        const columns = await this.dataSource.query(
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'role_permissions'
+               AND column_name IN ('role', 'role_id')`,
+        );
+        const columnNames = new Set(columns.map((c: any) => c.column_name));
+
+        if (columnNames.has('role_id')) {
+            const result = await this.dataSource.query(
+                `SELECT p.resource || ':' || p.action as permission
+                 FROM permissions p
+                 INNER JOIN role_permissions rp ON p.id = rp.permission_id
+                 INNER JOIN roles r ON r.id = rp.role_id
+                 WHERE r.name = $1
+                 ORDER BY p.resource, p.action`,
+                [roleName],
+            );
+            return result.map((r: any) => r.permission);
+        }
+
+        if (columnNames.has('role')) {
             const result = await this.dataSource.query(
                 `SELECT p.resource || ':' || p.action as permission
                  FROM permissions p
                  INNER JOIN role_permissions rp ON p.id = rp.permission_id
                  WHERE rp.role = $1
                  ORDER BY p.resource, p.action`,
-                [roleName]
+                [roleName],
             );
-            const permissions = result.map((r: any) => r.permission);
-            this.setCachedPermissions(roleName, permissions);
-            return permissions;
-        } catch (error) {
-            this.logger.warn(`DB permission lookup failed for ${roleName}, using defaults`);
-            const permissions = ROLE_PERMISSION_DEFAULTS[roleName] || [];
-            this.setCachedPermissions(roleName, permissions);
-            return permissions;
+            return result.map((r: any) => r.permission);
         }
+
+        return [];
     }
 
     /**
@@ -94,16 +140,17 @@ export class PermissionHelper {
      *       SUPER_ADMIN has system-level permissions (all tenants)
      */
     async roleHasPermission(roleName: string, permission: string): Promise<boolean> {
+        const role = this.normalizeRole(roleName);
         // SUPER_ADMIN has system-level all permissions
-        if (roleName === 'SUPER_ADMIN') {
+        if (role === 'SUPER_ADMIN') {
             return true;
         }
         // ADMIN has tenant-level all permissions (enforced by TenantGuard)
-        if (roleName === 'ADMIN') {
+        if (role === 'ADMIN') {
             return true;
         }
 
-        const permissions = await this.getRolePermissions(roleName);
+        const permissions = await this.getRolePermissions(role);
         
         // Check for wildcard permission
         if (permissions.includes('*')) {
@@ -117,16 +164,17 @@ export class PermissionHelper {
      * Check if a role has any of the specified permissions
      */
     async roleHasAnyPermission(roleName: string, permissions: string[]): Promise<boolean> {
+        const role = this.normalizeRole(roleName);
         // SUPER_ADMIN has system-level all permissions
-        if (roleName === 'SUPER_ADMIN') {
+        if (role === 'SUPER_ADMIN') {
             return true;
         }
         // ADMIN has tenant-level all permissions (enforced by TenantGuard)
-        if (roleName === 'ADMIN') {
+        if (role === 'ADMIN') {
             return true;
         }
 
-        const rolePermissions = await this.getRolePermissions(roleName);
+        const rolePermissions = await this.getRolePermissions(role);
         
         // Check for wildcard permission
         if (rolePermissions.includes('*')) {
@@ -140,16 +188,17 @@ export class PermissionHelper {
      * Check if a role has all of the specified permissions
      */
     async roleHasAllPermissions(roleName: string, permissions: string[]): Promise<boolean> {
+        const role = this.normalizeRole(roleName);
         // SUPER_ADMIN has system-level all permissions
-        if (roleName === 'SUPER_ADMIN') {
+        if (role === 'SUPER_ADMIN') {
             return true;
         }
         // ADMIN has tenant-level all permissions (enforced by TenantGuard)
-        if (roleName === 'ADMIN') {
+        if (role === 'ADMIN') {
             return true;
         }
 
-        const rolePermissions = await this.getRolePermissions(roleName);
+        const rolePermissions = await this.getRolePermissions(role);
         
         // Check for wildcard permission
         if (rolePermissions.includes('*')) {

@@ -2,14 +2,15 @@ import api from './api';
 
 export interface FinancialReport {
   id: string;
-  type: 'portfolio_summary' | 'pl_statement' | 'cash_flow' | 'balance_sheet';
+  type: string;
   period: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   startDate: string;
   endDate: string;
   data: any;
   generatedBy: string;
+  generatedAt?: string;
   createdAt: string;
-  format?: 'pdf' | 'excel' | 'csv';
+  format?: 'pdf' | 'excel' | 'csv' | 'json';
 }
 
 export interface ReportTemplate {

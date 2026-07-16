@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { PermissionGuard } from '../../../guards/permission.guard';
-import { RequirePermissions } from '../../auth/decorators/require-permissions.decorator';
+import { RolesGuard, Roles } from '../../auth/guards/roles.guard';
+import { UserRole } from '../../../entities/user.entity';
 import { FinancialAnalyticsService } from './../services/financial-analytics.service';
 import {
   CostFiltersDto,
@@ -25,17 +25,26 @@ import {
 @ApiTags('Financial Analytics')
 @ApiBearerAuth()
 @Controller('analytics/financial')
-@UseGuards(JwtAuthGuard, PermissionGuard) // Existing guards
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.TRUCK_OWNER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_ACCOUNTANT,
+  UserRole.CARGO_OWNER,
+  UserRole.BROKER,
+)
 export class FinancialAnalyticsController {
   constructor(
     private readonly financialAnalyticsService: FinancialAnalyticsService,
   ) {}
 
   @Get('cost-trends')
-  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get cost trends analysis' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Cost trends retrieved successfully',
     type: CostTrendsResponseDto,
   })
@@ -43,15 +52,19 @@ export class FinancialAnalyticsController {
     @Request() req,
     @Query() filters: CostFiltersDto,
   ): Promise<CostTrendsResponseDto> {
-    const { tenantId, userId } = req.user; // Existing tenant isolation
-    return this.financialAnalyticsService.getCostTrends(tenantId, userId, filters);
+    const { tenantId, userId, role } = req.user;
+    return this.financialAnalyticsService.getCostTrends(
+      tenantId,
+      userId,
+      filters,
+      role,
+    );
   }
 
   @Get('profitability')
-  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get shipment profitability analysis' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Profitability analysis retrieved successfully',
     type: ProfitabilityAnalysisResponseDto,
   })
@@ -59,15 +72,19 @@ export class FinancialAnalyticsController {
     @Request() req,
     @Query() filters: ProfitabilityFiltersDto,
   ): Promise<ProfitabilityAnalysisResponseDto> {
-    const { tenantId, userId } = req.user;
-    return this.financialAnalyticsService.getShipmentProfitability(tenantId, userId, filters);
+    const { tenantId, userId, role } = req.user;
+    return this.financialAnalyticsService.getShipmentProfitability(
+      tenantId,
+      userId,
+      filters,
+      role,
+    );
   }
 
   @Post('pricing-recommendations')
-  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get pricing recommendations for a route' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Pricing recommendations generated successfully',
     type: PricingRecommendationDto,
   })
@@ -80,10 +97,9 @@ export class FinancialAnalyticsController {
   }
 
   @Get('summary')
-  @RequirePermissions('analytics:view_own', 'analytics:view_tenant', 'analytics:view_all')
   @ApiOperation({ summary: 'Get financial summary for dashboard' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Financial summary retrieved successfully',
     type: FinancialSummaryDto,
   })
@@ -91,7 +107,12 @@ export class FinancialAnalyticsController {
     @Request() req,
     @Query() filters: CostFiltersDto,
   ): Promise<FinancialSummaryDto> {
-    const { tenantId, userId } = req.user;
-    return this.financialAnalyticsService.getFinancialSummary(tenantId, userId, filters);
+    const { tenantId, userId, role } = req.user;
+    return this.financialAnalyticsService.getFinancialSummary(
+      tenantId,
+      userId,
+      filters,
+      role,
+    );
   }
 }

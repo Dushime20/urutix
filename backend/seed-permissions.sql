@@ -149,6 +149,8 @@ INSERT INTO permissions (resource, action, description, category) VALUES
 ('analytics','view_own','View own analytics dashboard','analytics'),
 ('analytics','view_tenant','View tenant-wide analytics','analytics'),
 ('analytics','view_all','View platform-wide analytics','analytics'),
+('analytics','financial','View financial analytics','analytics'),
+('analytics','cost_trends','View cost trend analytics','analytics'),
 ('reports','view','Access analytics dashboards and reports','analytics'),
 ('reports','export','Export data and generate report files','analytics'),
 ('analytics','predictions','View AI predictions and ETA estimates','analytics'),
@@ -408,6 +410,9 @@ SELECT grp('CARGO_OWNER','invoices','create');
 SELECT grp('CARGO_OWNER','lending','view_own');
 SELECT grp('CARGO_OWNER','lending','create_request');
 SELECT grp('CARGO_OWNER','analytics','view_own');
+SELECT grp('CARGO_OWNER','analytics','view_tenant');
+SELECT grp('CARGO_OWNER','analytics','financial');
+SELECT grp('CARGO_OWNER','analytics','cost_trends');
 SELECT grp('CARGO_OWNER','documents','view_own');
 SELECT grp('CARGO_OWNER','documents','upload');
 SELECT grp('CARGO_OWNER','ratings','view');

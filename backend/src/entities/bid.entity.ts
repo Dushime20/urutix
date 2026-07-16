@@ -30,9 +30,13 @@ export enum AuctionType {
 @Entity('bids')
 @Index(['loadId', 'truckOwnerId', 'status'])
 @Index(['createdAt', 'status'])
+@Index(['tenantId', 'status'])
 export class Bid {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column('uuid')
+  tenantId: string;
 
   @Column('uuid')
   loadId: string;

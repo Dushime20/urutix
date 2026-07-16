@@ -88,6 +88,7 @@ export class BiddingIntelligenceService {
     
     // Create new counter-offer bid
     const counterBid = this.bidRepository.create({
+      tenantId,
       loadId: bid.loadId,
       truckOwnerId: bid.truckOwnerId, // Countering back to the same truck owner
       bidAmount: counterAmount,

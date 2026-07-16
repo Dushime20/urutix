@@ -47,6 +47,8 @@ export interface DriverAvailabilityQuery {
   pickupDateTime: Date;
   deliveryDateTime: Date;
   tenantId: string;
+  /** When set, only return drivers assigned to this truck */
+  truckId?: string;
 }
 
 /**
@@ -323,9 +325,27 @@ export class AvailabilityService {
    * Returns all drivers in the tenant that are available for the given window.
    * Excludes drivers with an active overlapping reservation,
    * and drivers that are SUSPENDED, INACTIVE, TERMINATED, or ON_LEAVE.
+   * When truckId is provided, only drivers assigned to that truck are returned.
    */
   async getAvailableDrivers(query: DriverAvailabilityQuery): Promise<Driver[]> {
-    const { pickupDateTime, deliveryDateTime, tenantId } = query;
+    const { pickupDateTime, deliveryDateTime, tenantId, truckId } = query;
+
+    let assignedDriverIds: string[] | null = null;
+    if (truckId) {
+      const truck = await this.truckRepo.findOne({
+        where: { id: truckId, tenantId },
+        select: ['id', 'assignedDrivers'],
+      });
+      if (!truck) {
+        return [];
+      }
+      assignedDriverIds = (Array.isArray(truck.assignedDrivers) ? truck.assignedDrivers : [])
+        .map((d: any) => d?.driverId)
+        .filter(Boolean);
+      if (assignedDriverIds.length === 0) {
+        return [];
+      }
+    }
 
     const busyReservations = await this.reservationRepo
       .createQueryBuilder('r')
@@ -350,6 +370,10 @@ export class AvailabilityService {
           DriverStatus.ON_LEAVE,
         ],
       });
+
+    if (assignedDriverIds) {
+      qb.andWhere('driver.id IN (:...assignedDriverIds)', { assignedDriverIds });
+    }
 
     if (busyDriverIds.length > 0) {
       qb.andWhere('driver.id NOT IN (:...busyDriverIds)', { busyDriverIds });

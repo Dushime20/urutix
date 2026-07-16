@@ -64,26 +64,41 @@ export class FinancialAnalyticsService {
 
   // ── Core queries against real tables ─────────────────────────────────────
 
-  private async getTripsInRange(tenantId: string, dateRange: { start: Date; end: Date }) {
-    return this.tripRepository
+  private scopeToCargoOwner(role?: string): boolean {
+    return String(role || '').toUpperCase() === 'CARGO_OWNER';
+  }
+
+  private async getTripsInRange(
+    tenantId: string,
+    dateRange: { start: Date; end: Date },
+    cargoOwnerId?: string,
+  ) {
+    const qb = this.tripRepository
       .createQueryBuilder('trip')
       .leftJoinAndSelect('trip.load', 'load')
       .leftJoinAndSelect('trip.pickupLocation', 'pickup')
       .leftJoinAndSelect('trip.deliveryLocation', 'delivery')
       .where('trip.tenantId = :tenantId', { tenantId })
-      .andWhere('trip.plannedStartTime BETWEEN :start AND :end', dateRange)
-      .getMany();
+      .andWhere('trip.plannedStartTime BETWEEN :start AND :end', dateRange);
+
+    if (cargoOwnerId) {
+      qb.andWhere('load.cargoOwnerId = :cargoOwnerId', { cargoOwnerId });
+    }
+
+    return qb.getMany();
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
 
   async getCostTrends(
     tenantId: string,
-    _cargoOwnerId: string,
+    cargoOwnerId: string,
     filters: CostFiltersDto,
+    role?: string,
   ): Promise<CostTrendsResponseDto> {
     const dateRange = this.buildDateRange(filters.timeRange, filters.dateRange);
-    const trips = await this.getTripsInRange(tenantId, dateRange);
+    const ownerFilter = this.scopeToCargoOwner(role) ? cargoOwnerId : undefined;
+    const trips = await this.getTripsInRange(tenantId, dateRange, ownerFilter);
 
     // Group by time bucket
     const groupBy = filters.groupBy || GroupBy.WEEK;
@@ -118,7 +133,7 @@ export class FinancialAnalyticsService {
 
     const totalCost = trips.reduce((s, t) => s + Number(t.agreedPrice || 0), 0);
     const prevRange = this.calculatePreviousPeriod(dateRange);
-    const prevTrips = await this.getTripsInRange(tenantId, prevRange);
+    const prevTrips = await this.getTripsInRange(tenantId, prevRange, ownerFilter);
     const prevTotal = prevTrips.reduce((s, t) => s + Number(t.agreedPrice || 0), 0);
 
     return {
@@ -133,11 +148,13 @@ export class FinancialAnalyticsService {
 
   async getShipmentProfitability(
     tenantId: string,
-    _cargoOwnerId: string,
+    cargoOwnerId: string,
     filters: ProfitabilityFiltersDto,
+    role?: string,
   ): Promise<ProfitabilityAnalysisResponseDto> {
     const dateRange = this.buildDateRange(filters.timeRange, filters.dateRange);
-    const trips = await this.getTripsInRange(tenantId, dateRange);
+    const ownerFilter = this.scopeToCargoOwner(role) ? cargoOwnerId : undefined;
+    const trips = await this.getTripsInRange(tenantId, dateRange, ownerFilter);
 
     const shipments = trips.map(trip => {
       const revenue = Number(trip.load?.loadValue || trip.agreedPrice || 0);
@@ -218,15 +235,17 @@ export class FinancialAnalyticsService {
 
   async getFinancialSummary(
     tenantId: string,
-    _cargoOwnerId: string,
+    cargoOwnerId: string,
     filters: CostFiltersDto,
+    role?: string,
   ): Promise<FinancialSummaryDto> {
     const dateRange = this.buildDateRange(filters.timeRange, filters.dateRange);
     const prevRange = this.calculatePreviousPeriod(dateRange);
+    const ownerFilter = this.scopeToCargoOwner(role) ? cargoOwnerId : undefined;
 
     const [trips, prevTrips] = await Promise.all([
-      this.getTripsInRange(tenantId, dateRange),
-      this.getTripsInRange(tenantId, prevRange),
+      this.getTripsInRange(tenantId, dateRange, ownerFilter),
+      this.getTripsInRange(tenantId, prevRange, ownerFilter),
     ]);
 
     const totalSpending = trips.reduce((s, t) => s + Number(t.agreedPrice || 0), 0);

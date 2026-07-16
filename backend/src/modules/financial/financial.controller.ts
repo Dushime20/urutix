@@ -10,7 +10,9 @@ import {
   Request,
   ParseUUIDPipe,
   Query,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -419,103 +421,68 @@ export class FinancialController {
     description: 'Retrieve available financial report templates',
   })
   async getReportTemplates(): Promise<ApiResponseDto> {
+    // Template IDs must match FinancialReportType enum values
     const templates = [
-      {
-        id: 'portfolio-summary',
-        name: 'Portfolio Summary',
-        description: 'Comprehensive overview of loan portfolio performance, active assets, and key metrics.',
-        category: 'portfolio',
-        type: 'summary',
-        frequency: 'on-demand',
-        format: 'pdf',
-        estimatedTime: '2m',
-        dataPoints: ['Total Value', 'Active Loans', 'Disbursed'],
-        isScheduled: true
-      },
       {
         id: 'pl_statement',
         name: 'P&L Statement',
-        description: 'Detailed profit and loss statement showing revenue from interest and fee corridors.',
+        description: 'Profit and loss from freight spend, invoices, and operating costs for the selected period.',
         category: 'financial',
         type: 'detailed',
         frequency: 'monthly',
         format: 'excel',
         estimatedTime: '4m',
         dataPoints: ['Revenue', 'Expenses', 'Net Income'],
-        isScheduled: true
+        isScheduled: true,
       },
       {
         id: 'cash_flow',
         name: 'Cash Flow Analysis',
-        description: 'Track cash inflows and outflows across all operations.',
+        description: 'Track cash inflows and outflows across freight payments and settlements.',
         category: 'financial',
         type: 'detailed',
         frequency: 'monthly',
         format: 'excel',
         estimatedTime: '3m',
         dataPoints: ['Operating Cash Flow', 'Investing', 'Financing'],
-        isScheduled: true
-      },
-      {
-        id: 'risk-assessment',
-        name: 'Risk Audit',
-        description: 'Deep-dive analysis of credit exposure, default patterns, and portfolio risk distribution.',
-        category: 'risk',
-        type: 'analytical',
-        frequency: 'weekly',
-        format: 'pdf',
-        estimatedTime: '6m',
-        dataPoints: ['PD', 'Value at Risk', 'Concentration'],
-        isScheduled: true
-      },
-      {
-        id: 'borrower-performance',
-        name: 'Entity Registry',
-        description: 'Analytical audit of borrower behavior, repayment hygiene, and credit trends.',
-        category: 'performance',
-        type: 'detailed',
-        frequency: 'monthly',
-        format: 'excel',
-        estimatedTime: '3m',
-        dataPoints: ['Repayment Rate', 'Credit Score Trends'],
-        isScheduled: false
+        isScheduled: true,
       },
       {
         id: 'revenue',
         name: 'Revenue Report',
-        description: 'Detailed breakdown of revenue streams and income sources.',
+        description: 'Breakdown of invoice and settlement revenue for your tenant.',
         category: 'financial',
         type: 'detailed',
         frequency: 'monthly',
         format: 'pdf',
         estimatedTime: '3m',
         dataPoints: ['Total Revenue', 'Revenue by Source', 'Growth Rate'],
-        isScheduled: true
+        isScheduled: true,
       },
       {
         id: 'expense',
         name: 'Expense Analysis',
-        description: 'Comprehensive analysis of operational expenses and cost centers.',
+        description: 'Freight spend and operational expenses by category and period.',
         category: 'financial',
         type: 'detailed',
         frequency: 'monthly',
         format: 'excel',
         estimatedTime: '3m',
         dataPoints: ['Total Expenses', 'Expense by Category', 'Cost Trends'],
-        isScheduled: true
+        isScheduled: true,
       },
       {
         id: 'profitability',
         name: 'Profitability Analysis',
-        description: 'Analysis of profit margins, ROI, and overall profitability metrics.',
+        description: 'Margins, ROI, and profitability metrics derived from live shipment and payment data.',
         category: 'financial',
         type: 'analytical',
         frequency: 'quarterly',
         format: 'pdf',
         estimatedTime: '5m',
         dataPoints: ['Gross Profit', 'Net Profit', 'Profit Margins', 'ROI'],
-        isScheduled: true
-      }
+        isScheduled: true,
+      },
     ];
 
     return {
@@ -525,6 +492,27 @@ export class FinancialController {
       statusCode: 200,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  @Get('reports/:id/download')
+  @ApiOperation({
+    summary: 'Download a financial report',
+    description: 'Download a previously generated financial report as JSON',
+  })
+  async downloadFinancialReport(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+    @Res() res: Response,
+  ): Promise<void> {
+    const report = await this.financialService.getFinancialReportById(
+      id,
+      req.user.tenantId,
+    );
+
+    const filename = `financial-report-${report.type}-${id.slice(0, 8)}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(JSON.stringify(report, null, 2));
   }
 
   @Post('reports')
@@ -540,6 +528,7 @@ export class FinancialController {
       generateReportDto,
       req.user.userId,
       req.user.tenantId,
+      req.user.role,
     );
 
     return {
