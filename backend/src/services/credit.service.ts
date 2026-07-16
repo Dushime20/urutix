@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, LessThan } from 'typeorm';
+import { Repository, LessThan, QueryFailedError } from 'typeorm';
 import { CreditAccount } from './../entities/credit-account.entity';
 import {
   CreditTransaction,
@@ -64,39 +64,105 @@ export class CreditService {
   ) { }
 
   /**
-   * Get or create credit account for tenant or user
+   * Find credit account for tenant (tenant-level) or tenant+user (user-level).
    */
-  async getOrCreateCreditAccount(tenantId: string, userId?: string): Promise<CreditAccount> {
-    console.log('[CreditService] Searching for account with tenantId:', tenantId, 'userId:', userId);
-    
-    // Use QueryBuilder for proper NULL handling
+  private async findCreditAccount(tenantId: string, userId?: string): Promise<CreditAccount | null> {
     const queryBuilder = this.creditAccountRepository.createQueryBuilder('account')
       .where('account.tenantId = :tenantId', { tenantId });
-    
+
     if (userId) {
       queryBuilder.andWhere('account.userId = :userId', { userId });
     } else {
       queryBuilder.andWhere('account.userId IS NULL');
     }
-    
-    let account = await queryBuilder.getOne();
+
+    return queryBuilder.getOne();
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+    const driverError = (error as QueryFailedError & { driverError?: { code?: string } }).driverError;
+    const code = driverError?.code || (error as any).code;
+    return code === '23505';
+  }
+
+  /**
+   * Get or create credit account for tenant or user.
+   * Tenant-level accounts use userId = null; truck-owner accounts use userId set.
+   * On unique conflicts (concurrent create or leftover unique(tenant_id)), re-fetches
+   * instead of surfacing a 500.
+   */
+  async getOrCreateCreditAccount(tenantId: string, userId?: string): Promise<CreditAccount> {
+    console.log('[CreditService] Searching for account with tenantId:', tenantId, 'userId:', userId);
+
+    let account = await this.findCreditAccount(tenantId, userId);
     console.log('[CreditService] Found account:', account?.id);
 
-    if (!account) {
-      account = this.creditAccountRepository.create({
-        tenantId,
-        userId: userId || null,
-        currentBalance: 0,
-        subscriptionCredits: 0,
-        purchasedCredits: 0,
-        bonusCredits: 0,
-        lifetimeEarned: 0,
-        lifetimeSpent: 0,
-      });
-      account = await this.creditAccountRepository.save(account);
+    if (account) {
+      return account;
     }
 
-    return account;
+    // Tenant-level request: if the only legacy row still has a user_id, treat it
+    // as the company wallet (pre-user-level schema stored the admin on the row).
+    if (!userId) {
+      const legacyRows = await this.creditAccountRepository.find({
+        where: { tenantId },
+        order: { createdAt: 'ASC' },
+      });
+      if (legacyRows.length === 1 && legacyRows[0].userId != null) {
+        const legacy = legacyRows[0];
+        legacy.userId = null;
+        try {
+          return await this.creditAccountRepository.save(legacy);
+        } catch (e) {
+          console.warn('[CreditService] Could not normalize legacy tenant account:', e);
+          return legacy;
+        }
+      }
+    }
+
+    account = this.creditAccountRepository.create({
+      tenantId,
+      userId: userId || null,
+      currentBalance: 0,
+      subscriptionCredits: 0,
+      purchasedCredits: 0,
+      bonusCredits: 0,
+      lifetimeEarned: 0,
+      lifetimeSpent: 0,
+    });
+
+    try {
+      return await this.creditAccountRepository.save(account);
+    } catch (error) {
+      if (!this.isUniqueViolation(error)) {
+        throw error;
+      }
+
+      // Concurrent create, or obsolete unique(tenant_id) still present.
+      const existing = await this.findCreditAccount(tenantId, userId);
+      if (existing) {
+        console.log('[CreditService] Recovered existing account after unique conflict:', existing.id);
+        return existing;
+      }
+
+      // Under obsolete unique(tenant_id) a truck-owner create collides with the
+      // company wallet. Return that row so balance APIs stop 500'ing; migration
+      // 051 removes the constraint so real per-user accounts can be created.
+      const sole = await this.creditAccountRepository.findOne({ where: { tenantId } });
+      if (sole) {
+        console.warn(
+          '[CreditService] Unique conflict; returning sole tenant account',
+          sole.id,
+          '(apply migration 051_fix_credit_accounts_tenant_unique.sql for user-level accounts)',
+        );
+        return sole;
+      }
+
+      throw error;
+    }
   }
 
   /**

@@ -14,7 +14,10 @@ import { User } from './user.entity';
 import { CreditTransaction } from './credit-transaction.entity';
 
 @Entity('credit_accounts')
-@Index(['tenantId', 'userId'], { unique: true })
+// Uniqueness is enforced in DB via idx_credit_accounts_tenant_user
+// (tenant_id, COALESCE(user_id, nil-uuid)) — see migration 051.
+// Do not add UNIQUE(tenant_id); tenant-level and user-level rows must coexist.
+@Index(['tenantId', 'userId'])
 @Index(['currentBalance'])
 @Index(['nextRefreshDate'])
 export class CreditAccount {
@@ -24,6 +27,7 @@ export class CreditAccount {
   @Column({ type: 'uuid', name: 'tenant_id' })
   tenantId: string;
 
+  /** null = tenant/company wallet; set = per-user wallet (e.g. truck owner) */
   @Column({ type: 'uuid', name: 'user_id', nullable: true })
   @Index()
   userId?: string;
