@@ -1,353 +1,494 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Activity, AlertTriangle, CheckCircle, XCircle, Clock, 
-  Users, Package, TrendingUp, TrendingDown, Server, 
-  Database, Cpu, HardDrive, Wifi, RefreshCw, Bell
+import React, { useState } from 'react';
+import {
+  Activity, AlertTriangle, CheckCircle, XCircle, Clock,
+  Users, Package, Server, Database, Cpu, HardDrive,
+  RefreshCw, Bell, TrendingUp, TrendingDown, Wifi,
+  ChevronDown, Search, Shield, Zap, BarChart3,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import ModernLoader from '../../components/common/ModernLoader';
-import api from '../../services/api';
+import { adminAPI } from '../../services/adminApi';
 
-interface SystemMetric {
-  name: string;
-  value: string | number;
-  status: 'healthy' | 'warning' | 'critical';
-  trend?: 'up' | 'down' | 'stable';
-  icon: any;
-}
+// ── helpers ────────────────────────────────────────────────────────────────────
 
-interface ActivityLog {
-  id: string;
-  timestamp: string;
-  action: string;
-  user: string;
-  status: 'success' | 'warning' | 'error';
-  details?: string;
-}
+const statusColor = (s: string) => {
+  if (['healthy', 'connected', 'operational', 'ok', 'success'].includes(s?.toLowerCase()))
+    return { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500' };
+  if (['warning', 'degraded'].includes(s?.toLowerCase()))
+    return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' };
+  return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' };
+};
 
+const fmtBytes = (mb: number) => (mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb} MB`);
+const fmtUptime = (s: number) => {
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  return [d && `${d}d`, h && `${h}h`, `${m}m`].filter(Boolean).join(' ');
+};
+const fmtNum = (n: number) => n?.toLocaleString() ?? '—';
+
+// ── small stat card ────────────────────────────────────────────────────────────
+const StatCard: React.FC<{
+  label: string; value: React.ReactNode; icon: React.ReactNode;
+  iconBg?: string; sub?: string; trend?: 'up' | 'down';
+}> = ({ label, value, icon, iconBg = 'bg-slate-100 text-slate-600', sub, trend }) => (
+  <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
+    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>{icon}</div>
+    <div className="min-w-0">
+      <p className="text-2xl font-black text-gray-900 leading-none truncate">{value}</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
+      {(sub || trend) && (
+        <div className="flex items-center gap-1 mt-0.5">
+          {trend === 'up' && <TrendingUp className="w-3 h-3 text-green-500" />}
+          {trend === 'down' && <TrendingDown className="w-3 h-3 text-red-500" />}
+          {sub && <p className="text-[10px] text-slate-400">{sub}</p>}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+// ── service row ────────────────────────────────────────────────────────────────
+const ServiceRow: React.FC<{ label: string; status: string; detail?: string }> = ({ label, status, detail }) => {
+  const c = statusColor(status);
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+      <div className="flex items-center gap-2.5">
+        <span className={`w-2 h-2 rounded-full ${c.dot}`} />
+        <span className="text-sm font-medium text-gray-700">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        {detail && <span className="text-xs text-gray-400">{detail}</span>}
+        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border ${c.bg} ${c.text} ${c.border}`}>{status}</span>
+      </div>
+    </div>
+  );
+};
+
+// ── progress bar ───────────────────────────────────────────────────────────────
+const ProgressBar: React.FC<{ label: string; value: number; max?: number; color?: string }> = ({
+  label, value, max = 100, color = 'bg-[#2c5173]',
+}) => {
+  const pct = Math.min(Math.round((value / max) * 100), 100);
+  const barColor = pct > 80 ? 'bg-red-500' : pct > 60 ? 'bg-amber-500' : color;
+  return (
+    <div>
+      <div className="flex justify-between mb-1">
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+        <span className="text-xs font-bold text-gray-900">{pct}%</span>
+      </div>
+      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+};
+
+// ── main component ─────────────────────────────────────────────────────────────
 const MonitoringDashboard: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30000); // 30 seconds
+  const [logSearch, setLogSearch]     = useState('');
+  const [logPage, setLogPage]         = useState(1);
+  const INTERVAL = 30_000;
 
-  // Fetch activity logs
-  const { data: activityLogsResponse, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
-    queryKey: ['activity-logs'],
-    queryFn: async () => {
-      const res = await api.get('/admin/activity-logs?limit=10');
-      return res.data;
-    },
-    refetchInterval: autoRefresh ? refreshInterval : false,
+  // ── queries ────────────────────────────────────────────────────────────────
+  const healthQ = useQuery({
+    queryKey: ['mon-health'],
+    queryFn: () => adminAPI.getSystemHealth().then(r => r.data),
+    refetchInterval: autoRefresh ? INTERVAL : false,
     retry: 1,
   });
 
-  // Safely extract activity logs from response
-  const activityLogs = Array.isArray(activityLogsResponse) 
-    ? activityLogsResponse 
-    : Array.isArray(activityLogsResponse?.data) 
-      ? activityLogsResponse.data 
-      : Array.isArray(activityLogsResponse?.logs)
-        ? activityLogsResponse.logs
-        : [];
+  const metricsQ = useQuery({
+    queryKey: ['mon-metrics'],
+    queryFn: () => adminAPI.getPerformanceMetrics().then(r => r.data),
+    refetchInterval: autoRefresh ? INTERVAL : false,
+    retry: 1,
+  });
 
-  // Mock system metrics (replace with real API calls)
-  const systemMetrics: SystemMetric[] = [
-    {
-      name: 'Active Users',
-      value: '1,234',
-      status: 'healthy',
-      trend: 'up',
-      icon: Users,
-    },
-    {
-      name: 'Active Trips',
-      value: '56',
-      status: 'healthy',
-      trend: 'stable',
-      icon: Package,
-    },
-    {
-      name: 'System Load',
-      value: '45%',
-      status: 'healthy',
-      trend: 'down',
-      icon: Cpu,
-    },
-    {
-      name: 'Database',
-      value: 'Online',
-      status: 'healthy',
-      trend: 'stable',
-      icon: Database,
-    },
-    {
-      name: 'API Response',
-      value: '120ms',
-      status: 'healthy',
-      trend: 'stable',
-      icon: Activity,
-    },
-    {
-      name: 'Storage',
-      value: '67%',
-      status: 'warning',
-      trend: 'up',
-      icon: HardDrive,
-    },
-  ];
+  const userActivityQ = useQuery({
+    queryKey: ['mon-user-activity'],
+    queryFn: () => adminAPI.getUserActivityMetrics().then(r => r.data),
+    refetchInterval: autoRefresh ? INTERVAL : false,
+    retry: 1,
+  });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy':
-      case 'success':
-        return 'text-green-600 bg-green-50';
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-50';
-      case 'critical':
-      case 'error':
-        return 'text-red-600 bg-red-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
+  const dbStatsQ = useQuery({
+    queryKey: ['mon-db-stats'],
+    queryFn: () => adminAPI.getDatabaseStats().then(r => r.data),
+    refetchInterval: autoRefresh ? INTERVAL * 2 : false,
+    retry: 1,
+  });
+
+  const vitalsQ = useQuery({
+    queryKey: ['mon-vitals'],
+    queryFn: () => adminAPI.getSystemVitals().then(r => r.data),
+    refetchInterval: autoRefresh ? INTERVAL : false,
+    retry: 1,
+  });
+
+  const logsQ = useQuery({
+    queryKey: ['mon-audit-logs', logPage, logSearch],
+    queryFn: () => adminAPI.getMonitoringAuditLogs({ page: logPage, limit: 15 }).then(r => r.data),
+    refetchInterval: autoRefresh ? INTERVAL : false,
+    retry: 1,
+  });
+
+  const refetchAll = () => {
+    healthQ.refetch(); metricsQ.refetch(); userActivityQ.refetch();
+    dbStatsQ.refetch(); vitalsQ.refetch(); logsQ.refetch();
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'healthy':
-      case 'success':
-        return CheckCircle;
-      case 'warning':
-        return AlertTriangle;
-      case 'critical':
-      case 'error':
-        return XCircle;
-      default:
-        return Activity;
-    }
-  };
+  // ── derived data ───────────────────────────────────────────────────────────
+  const health   = healthQ.data;
+  const metrics  = metricsQ.data;
+  const activity = userActivityQ.data;
+  const db       = dbStatsQ.data;
+  const vitals   = vitalsQ.data;
+  const logs     = logsQ.data?.data ?? [];
+  const logsPagination = logsQ.data?.pagination;
 
-  const getTrendIcon = (trend?: string) => {
-    switch (trend) {
-      case 'up':
-        return TrendingUp;
-      case 'down':
-        return TrendingDown;
-      default:
-        return null;
-    }
-  };
+  const overallStatus = health?.status ?? 'unknown';
+  const c = statusColor(overallStatus);
 
-  if (logsLoading && activityLogs.length === 0) {
+  const memPct  = health?.resources?.memory?.system?.usagePercent ?? 0;
+  const heapPct = metrics ? Math.round((metrics.memory?.heapUsed / metrics.memory?.heapTotal) * 100) : 0;
+
+  // Filter logs client-side by search
+  const filteredLogs = logs.filter((log: any) => {
+    if (!logSearch) return true;
+    const q = logSearch.toLowerCase();
+    return (
+      log.action?.toLowerCase().includes(q) ||
+      log.user_email?.toLowerCase().includes(q) ||
+      log.permission?.toLowerCase().includes(q)
+    );
+  });
+
+  if (healthQ.isLoading && !health) {
     return (
       <AdminPageLayout
-        title={<TranslatedText text="System Monitoring" />}
+        title={<TranslatedText text="Network Monitoring" />}
         description={<TranslatedText text="Real-time system health and activity monitoring" />}
       >
-        <ModernLoader isLoading={true} type="page" />
+        <ModernLoader isLoading type="page" />
       </AdminPageLayout>
     );
   }
 
   return (
     <AdminPageLayout
-      title={<TranslatedText text="System Monitoring" />}
+      title={<TranslatedText text="Network Monitoring" />}
       description={<TranslatedText text="Real-time system health and activity monitoring" />}
       actions={
-        <>
+        <div className="flex gap-2">
           <button
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all ${
-              autoRefresh
-                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            onClick={() => setAutoRefresh(v => !v)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
+              autoRefresh ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
             }`}
           >
-            <RefreshCw size={14} className={autoRefresh ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">
-              {autoRefresh ? <TranslatedText text="Auto Refresh On" /> : <TranslatedText text="Auto Refresh Off" />}
-            </span>
+            <RefreshCw size={13} className={autoRefresh ? 'animate-spin' : ''} />
+            <span className="hidden sm:inline">{autoRefresh ? 'Live' : 'Paused'}</span>
           </button>
           <button
-            onClick={() => {
-              refetchLogs();
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg font-bold transition-all"
+            onClick={refetchAll}
+            className="flex items-center gap-2 px-3 py-2 bg-[#2c5173] text-white rounded-xl text-sm font-bold hover:bg-[#1e3a54]"
           >
-            <RefreshCw size={14} />
-            <span className="hidden sm:inline"><TranslatedText text="Refresh Now" /></span>
+            <RefreshCw size={13} /> Refresh Now
           </button>
-        </>
+        </div>
       }
     >
-      <div className="safe-bottom space-y-6">
-        {/* System Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {systemMetrics.map((metric) => {
-            const StatusIcon = getStatusIcon(metric.status);
-            const TrendIcon = getTrendIcon(metric.trend);
-            
-            return (
-              <div
-                key={metric.name}
-                className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-lg transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${getStatusColor(metric.status)}`}>
-                    <metric.icon size={20} />
-                  </div>
-                  <StatusIcon size={16} className={getStatusColor(metric.status).split(' ')[0]} />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    {metric.name}
-                  </p>
-                  <p className="text-2xl font-bold text-slate-800">{metric.value}</p>
-                  {TrendIcon && (
-                    <div className="flex items-center gap-1 text-xs text-slate-400">
-                      <TrendIcon size={12} />
-                      <span className="capitalize">{metric.trend}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+      <div className="safe-bottom space-y-5">
+
+        {/* ── Overall Status Banner ─────────────────────────────────────── */}
+        <div className={`flex items-center gap-4 p-4 rounded-2xl border ${c.bg} ${c.border}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${c.bg}`}>
+            {overallStatus === 'healthy' || overallStatus === 'operational'
+              ? <CheckCircle className={`w-5 h-5 ${c.text}`} />
+              : <AlertTriangle className={`w-5 h-5 ${c.text}`} />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-black uppercase tracking-widest ${c.text}`}>
+              System {overallStatus}
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Uptime: <span className="font-bold text-gray-700">
+                {health?.uptime?.formatted ?? fmtUptime(Math.round(vitals?.system?.uptime ?? 0))}
+              </span>
+              {health?.services?.database?.responseTime && (
+                <> &nbsp;·&nbsp; DB response: <span className="font-bold text-gray-700">{health.services.database.responseTime}</span></>
+              )}
+              {health?.platform?.nodeVersion && (
+                <> &nbsp;·&nbsp; Node {health.platform.nodeVersion}</>
+              )}
+            </p>
+          </div>
+          <div className="text-[10px] text-gray-400 whitespace-nowrap hidden sm:block">
+            {health?.timestamp ? new Date(health.timestamp).toLocaleTimeString() : '—'}
+          </div>
         </div>
 
-        {/* Activity Logs */}
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell size={20} className="text-primary-600" />
-                <h2 className="text-lg font-bold text-slate-800">
-                  <TranslatedText text="Recent Activity" />
-                </h2>
+        {/* ── Platform KPI Row ──────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatCard label="Total Users"    value={fmtNum(vitals?.platform?.totalUsers)}   icon={<Users size={16} />}    iconBg="bg-blue-100 text-blue-600" />
+          <StatCard label="Tenants"        value={fmtNum(vitals?.platform?.totalTenants)} icon={<Shield size={16} />}   iconBg="bg-indigo-100 text-indigo-600" />
+          <StatCard label="Total Trips"    value={fmtNum(vitals?.platform?.totalTrips)}   icon={<Package size={16} />}  iconBg="bg-green-100 text-green-600" />
+          <StatCard label="Total Loads"    value={fmtNum(vitals?.platform?.totalLoads)}   icon={<BarChart3 size={16} />} iconBg="bg-amber-100 text-amber-600" />
+          <StatCard label="Trucks"         value={fmtNum(vitals?.platform?.totalTrucks)}  icon={<Activity size={16} />} iconBg="bg-purple-100 text-purple-600" />
+          <StatCard
+            label="Active (24h)"
+            value={fmtNum(activity?.activeUsers?.last24h)}
+            icon={<Zap size={16} />}
+            iconBg="bg-cyan-100 text-cyan-600"
+            sub={`7d: ${fmtNum(activity?.activeUsers?.last7d)}`}
+          />
+        </div>
+
+        {/* ── Services + Resources row ──────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Services */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+              <Server size={13} /> Services
+            </h3>
+            <ServiceRow
+              label="Database"
+              status={health?.services?.database?.status ?? vitals?.database?.status ?? 'unknown'}
+              detail={health?.services?.database?.responseTime}
+            />
+            <ServiceRow
+              label="API Server"
+              status={health?.services?.api?.status ?? 'healthy'}
+              detail={health?.uptime?.formatted ? `up ${health.uptime.formatted}` : undefined}
+            />
+            <ServiceRow
+              label="SSL / Security"
+              status={vitals?.security?.sslActive ? 'healthy' : 'warning'}
+              detail={vitals?.security?.threatLevel ? `Threat: ${vitals.security.threatLevel}` : undefined}
+            />
+            <ServiceRow
+              label="Node Harmony"
+              status={vitals?.security?.nodeHarmony >= 95 ? 'healthy' : vitals?.security?.nodeHarmony >= 80 ? 'warning' : 'critical'}
+              detail={vitals?.security?.nodeHarmony != null ? `${vitals.security.nodeHarmony}%` : undefined}
+            />
+          </div>
+
+          {/* Memory & CPU */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+              <Cpu size={13} /> Resources
+            </h3>
+            <ProgressBar label="System Memory" value={memPct} />
+            <ProgressBar label="Heap Used" value={heapPct} color="bg-purple-500" />
+            {health?.resources?.memory?.system && (
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {(['total', 'used', 'free'] as const).map(k => (
+                  <div key={k} className="text-center bg-gray-50 rounded-xl p-2 border border-gray-100">
+                    <p className="text-sm font-black text-gray-800">{health.resources.memory.system[k]} GB</p>
+                    <p className="text-[10px] text-slate-400 capitalize">{k}</p>
+                  </div>
+                ))}
               </div>
-              <span className="text-xs text-slate-500 font-medium">
-                <TranslatedText text="Last 24 hours" />
-              </span>
+            )}
+            {health?.resources?.cpu && (
+              <div className="text-xs text-gray-500">
+                <span className="font-bold text-gray-700">{health.resources.cpu.cores}</span> cores
+                &nbsp;·&nbsp; Load: <span className="font-bold text-gray-700">{health.resources.cpu.loadAverage?.[0]}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Database stats */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+              <Database size={13} /> Database
+            </h3>
+            {db ? (
+              <>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Size', value: db.database?.size ?? '—' },
+                    { label: 'Active', value: db.connections?.active ?? '—' },
+                    { label: 'Idle', value: db.connections?.idle ?? '—' },
+                  ].map(item => (
+                    <div key={item.label} className="text-center bg-gray-50 rounded-xl p-2 border border-gray-100">
+                      <p className="text-sm font-black text-gray-800">{item.value}</p>
+                      <p className="text-[10px] text-slate-400">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {(db.tables ?? []).slice(0, 8).map((t: any) => (
+                    <div key={t.table} className="flex justify-between text-xs py-0.5">
+                      <span className="text-gray-600 font-mono truncate max-w-[140px]">{t.table}</span>
+                      <span className="text-gray-400 flex-shrink-0">{t.size}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400">{dbStatsQ.isLoading ? 'Loading…' : 'No data'}</p>
+            )}
+          </div>
+        </div>
+
+        {/* ── User activity by role ─────────────────────────────────────── */}
+        {activity && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Users by role */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                <Users size={13} /> Users by Role
+              </h3>
+              <div className="space-y-2">
+                {(activity.usersByRole ?? []).map((r: any) => (
+                  <div key={r.role} className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-gray-500 w-36 truncate">{r.role.replace(/_/g, ' ')}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#2c5173] rounded-full"
+                        style={{ width: `${Math.min((r.count / (activity.usersByRole[0]?.count || 1)) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-gray-700 w-8 text-right">{r.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Users by status + new signups */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                <Activity size={13} /> User Status &amp; Growth
+              </h3>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                  <p className="text-xl font-black text-gray-900">{fmtNum(activity.activeUsers?.last7d)}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest">Active 7d</p>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
+                  <p className="text-xl font-black text-gray-900">{fmtNum(activity.newUsers?.last30d)}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest">New 30d</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {(activity.usersByStatus ?? []).map((s: any) => {
+                  const col = statusColor(s.status === 'ACTIVE' ? 'healthy' : s.status === 'SUSPENDED' ? 'critical' : 'warning');
+                  return (
+                    <div key={s.status} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${col.dot}`} />
+                        <span className="text-xs text-gray-600">{s.status}</span>
+                      </div>
+                      <span className="text-xs font-bold text-gray-800">{fmtNum(s.count)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Audit Logs ────────────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Bell size={15} className="text-[#2c5173]" />
+              <h2 className="text-sm font-black text-gray-800">
+                <TranslatedText text="Audit Logs" />
+              </h2>
+              {logsPagination && (
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black">
+                  {fmtNum(logsPagination.total)} total
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+              <input
+                type="text"
+                placeholder="Filter by action, user, permission…"
+                value={logSearch}
+                onChange={e => setLogSearch(e.target.value)}
+                className="pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#2c5173] w-64"
+              />
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    <TranslatedText text="Time" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider hidden sm:table-cell">
-                    <TranslatedText text="User" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    <TranslatedText text="Action" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider hidden md:table-cell">
-                    <TranslatedText text="Status" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider hidden lg:table-cell">
-                    <TranslatedText text="Details" />
-                  </th>
+                  {['Time', 'User', 'Action', 'Permission', 'Reason'].map(h => (
+                    <th key={h} className="px-5 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 bg-white">
-                {activityLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
-                      <TranslatedText text="No recent activity" />
+              <tbody className="divide-y divide-gray-50">
+                {logsQ.isLoading ? (
+                  <tr><td colSpan={5} className="px-5 py-10 text-center">
+                    <div className="w-6 h-6 border-2 border-[#2c5173] border-t-transparent rounded-full animate-spin mx-auto" />
+                  </td></tr>
+                ) : filteredLogs.length === 0 ? (
+                  <tr><td colSpan={5} className="px-5 py-12 text-center">
+                    <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                    <p className="text-sm text-gray-400">No audit logs found</p>
+                  </td></tr>
+                ) : filteredLogs.map((log: any) => (
+                  <tr key={log.id} className="hover:bg-gray-50/60 transition-colors">
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Clock size={11} className="text-gray-300" />
+                        {new Date(log.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </td>
+                    <td className="px-5 py-3 text-xs text-gray-700 whitespace-nowrap">
+                      {log.user_email ?? log.admin_email ?? log.user_id?.slice(0, 12) ?? 'System'}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black border ${
+                        log.action === 'GRANT'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : log.action === 'REVOKE'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : 'bg-gray-50 text-gray-700 border-gray-200'
+                      }`}>{log.action ?? '—'}</span>
+                    </td>
+                    <td className="px-5 py-3 text-xs font-mono text-gray-500 max-w-[180px] truncate">{log.permission ?? '—'}</td>
+                    <td className="px-5 py-3 text-xs text-gray-500 max-w-[200px] truncate">{log.reason ?? '—'}</td>
                   </tr>
-                ) : (
-                  activityLogs.map((log: any) => {
-                    const StatusIcon = getStatusIcon(log.action?.includes('FAILED') ? 'error' : 'success');
-                    return (
-                      <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2 text-xs text-slate-600">
-                            <Clock size={12} className="text-slate-400" />
-                            {new Date(log.created_at || log.timestamp).toLocaleTimeString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                          <p className="text-sm font-medium text-slate-800">
-                            {log.user?.email || log.user_id || 'System'}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-sm text-slate-800 font-medium break-words">
-                            {log.action}
-                          </p>
-                          <p className="text-xs text-slate-500 sm:hidden break-words">
-                            {log.user?.email || log.user_id || 'System'}
-                          </p>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                              log.action?.includes('FAILED') ? 'error' : 'success'
-                            )}`}
-                          >
-                            <StatusIcon size={12} />
-                            {log.action?.includes('FAILED') ? 'Error' : 'Success'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 hidden lg:table-cell">
-                          <p className="text-xs text-slate-600 max-w-md truncate">
-                            {log.details ? JSON.stringify(log.details).substring(0, 100) : '-'}
-                          </p>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                ))}
               </tbody>
             </table>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-4 text-left transition-all group">
-            <Server size={24} className="text-primary-600 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-sm font-bold text-slate-800">
-              <TranslatedText text="Server Status" />
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              <TranslatedText text="View server health" />
-            </p>
-          </button>
-          
-          <button className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-4 text-left transition-all group">
-            <Database size={24} className="text-green-600 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-sm font-bold text-slate-800">
-              <TranslatedText text="Database" />
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              <TranslatedText text="Check connections" />
-            </p>
-          </button>
-          
-          <button className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-4 text-left transition-all group">
-            <Wifi size={24} className="text-blue-600 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-sm font-bold text-slate-800">
-              <TranslatedText text="API Health" />
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              <TranslatedText text="Monitor endpoints" />
-            </p>
-          </button>
-          
-          <button className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-4 text-left transition-all group">
-            <AlertTriangle size={24} className="text-yellow-600 mb-2 group-hover:scale-110 transition-transform" />
-            <p className="text-sm font-bold text-slate-800">
-              <TranslatedText text="Alerts" />
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              <TranslatedText text="View all alerts" />
-            </p>
-          </button>
+          {/* Pagination */}
+          {logsPagination && logsPagination.totalPages > 1 && (
+            <div className="px-5 py-3 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Page {logsPagination.page} of {logsPagination.totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setLogPage(p => Math.max(1, p - 1))}
+                  disabled={logPage === 1}
+                  className="px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setLogPage(p => Math.min(logsPagination.totalPages, p + 1))}
+                  disabled={logPage === logsPagination.totalPages}
+                  className="px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </AdminPageLayout>

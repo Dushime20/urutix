@@ -231,6 +231,25 @@ export const adminAPI = {
   getRoutes: (filters?: { tenantId?: string; status?: string; search?: string }) => 
     api.get<{ routes: AdminRoute[] }>('/admin/routes', { params: filters }),
 
+  // Monitoring endpoints
+  getSystemHealth: () =>
+    api.get<any>('/admin/monitoring/health'),
+
+  getPerformanceMetrics: () =>
+    api.get<any>('/admin/monitoring/metrics'),
+
+  getUserActivityMetrics: () =>
+    api.get<any>('/admin/monitoring/user-activity'),
+
+  getDatabaseStats: () =>
+    api.get<any>('/admin/monitoring/database-stats'),
+
+  getMonitoringAuditLogs: (params?: {
+    page?: number; limit?: number; userId?: string;
+    action?: string; resource?: string; startDate?: string; endDate?: string;
+  }) =>
+    api.get<any>('/admin/monitoring/audit-logs', { params }),
+
   // Audit and monitoring
   getDisputes: (tenantId?: string) => 
     api.get<{ disputes: AdminDispute[] }>('/admin/disputes', { params: tenantId ? { tenantId } : {} }),
