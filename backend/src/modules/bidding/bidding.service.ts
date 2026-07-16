@@ -355,6 +355,8 @@ export class BiddingService {
     bid.marketContext = await this.calculateMarketContext(createBidDto.loadId);
 
     const savedBid = await this.bidRepository.save(bid);
+    // Attach load so callers (controller event emit) can read cargoOwnerId without a re-fetch
+    savedBid.load = load;
 
     // Update auction analytics
     await this.updateAuctionAnalytics(createBidDto.loadId);

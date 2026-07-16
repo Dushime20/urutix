@@ -42,6 +42,18 @@ export class NotificationService {
   async createNotification(
     createNotificationDto: CreateNotificationRequestDto,
   ): Promise<Notification> {
+    const recipientId = createNotificationDto.recipientId;
+    if (
+      !recipientId ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        recipientId,
+      )
+    ) {
+      throw new BadRequestException(
+        `Invalid notification recipientId: "${recipientId}"`,
+      );
+    }
+
     // Create notification
     const notification = this.notificationRepository.create({
       ...createNotificationDto,

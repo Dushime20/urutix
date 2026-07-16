@@ -268,7 +268,8 @@ export class PredictiveAnalyticsService {
 
   async getCapacityForecast(tenantId: string): Promise<any[]> {
     const incomingTrips = await this.tripRepository.find({ where: { tenantId, status: TripStatus.IN_PROGRESS }, relations: ['deliveryLocation'] });
-    const pendingLoads = await this.loadRepository.find({ where: { tenantId, status: LoadStatus.PUBLISHED }, relations: ['origin'] });
+    // origin is a jsonb column on Load, not a relation
+    const pendingLoads = await this.loadRepository.find({ where: { tenantId, status: LoadStatus.PUBLISHED } });
     const regions = ['Nairobi', 'Mombasa', 'Nakuru', 'Kisumu', 'Eldoret'];
     return regions.map(city => {
       const supply = incomingTrips.filter(t => t.deliveryLocation?.city === city).length;

@@ -29,6 +29,9 @@ const CRITICAL_SCHEMA = {
   // Broker module — created by 054_create_load_contracts_and_broker_commissions.sql
   load_contracts: ['id', 'tenantId', 'brokerId', 'status', 'createdAt'],
   broker_commissions: ['id', 'tenantId', 'brokerId', 'loadId', 'status', 'commissionAmount'],
+  // Bidding — aligned by 055_align_auction_watches_schema.sql
+  auction_watches: ['id', 'auctionId', 'watcherId', 'tenantId', 'isActive'],
+  auction_views: ['id', 'auctionId', 'viewerId', 'tenantId', 'viewedAt'],
 };
 
 async function checkMigrations() {

@@ -27,9 +27,10 @@ export class BiddingIntelligenceService {
    * Evaluates an incoming bid and decides whether to counter-offer or accept via AI
    */
   async evaluateAndNegotiate(bidId: string, tenantId: string) {
+    // origin/destination are jsonb columns on Load, not relations
     const bid = await this.bidRepository.findOne({
       where: { id: bidId },
-      relations: ['load', 'load.origin', 'load.destination'],
+      relations: ['load'],
     });
 
     if (!bid || bid.status !== BidStatus.PENDING) return;

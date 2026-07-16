@@ -317,21 +317,28 @@ export class BiddingController {
       req.user.tenantId,
     );
 
-    // Emit bid.submitted event for notifications (simplified - no load details needed)
+    // Emit bid.submitted event for notifications
     try {
-      this.eventEmitter.emit('bid.submitted', {
-        bidId: bid.id,
-        cargoId: bid.loadId,
-        cargoOwnerId: bid.load?.cargoOwnerId || 'unknown',
-        truckOwnerId: req.user.userId,
-        tenantId: req.user.tenantId,
-        bidDetails: {
-          amount: bid.bidAmount,
-          proposedPickupDate: bid.proposedPickupDate,
-          proposedDeliveryDate: bid.proposedDeliveryDate,
-          notes: bid.bidNotes,
-        },
-      });
+      const cargoOwnerId = bid.load?.cargoOwnerId;
+      if (!cargoOwnerId) {
+        console.warn(
+          `⚠️ Skipping bid.submitted event: missing cargoOwnerId for bid ${bid.id} load ${bid.loadId}`,
+        );
+      } else {
+        this.eventEmitter.emit('bid.submitted', {
+          bidId: bid.id,
+          cargoId: bid.loadId,
+          cargoOwnerId,
+          truckOwnerId: req.user.userId,
+          tenantId: req.user.tenantId,
+          bidDetails: {
+            amount: bid.bidAmount,
+            proposedPickupDate: bid.proposedPickupDate,
+            proposedDeliveryDate: bid.proposedDeliveryDate,
+            notes: bid.bidNotes,
+          },
+        });
+      }
     } catch (eventError) {
       console.warn('⚠️ Failed to emit bid.submitted event (non-critical):', eventError.message);
     }

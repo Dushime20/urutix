@@ -119,6 +119,13 @@ export class CargoNotificationListener {
     this.logger.log(`Handling bid.submitted event for bid ${event.bidId}`);
 
     try {
+      if (!this.isValidUuid(event.cargoOwnerId)) {
+        this.logger.warn(
+          `Skipping bid.submitted notification: invalid cargoOwnerId="${event.cargoOwnerId}" for bid ${event.bidId}`,
+        );
+        return;
+      }
+
       await this.notificationService.createNotification({
         tenantId: event.tenantId,
         recipientId: event.cargoOwnerId,
@@ -326,5 +333,12 @@ export class CargoNotificationListener {
     } catch (error) {
       this.logger.error(`Error handling trip.completed event: ${error.message}`, error.stack);
     }
+  }
+
+  private isValidUuid(value?: string | null): boolean {
+    if (!value || typeof value !== 'string') return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    );
   }
 }
