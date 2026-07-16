@@ -261,8 +261,29 @@ export class UsersController {
   }
 
   @Get('tenant/:tenantId')
-  @ApiOperation({ summary: 'Get all users for a tenant' })
-  async getTenantUsers(@Param('tenantId') tenantId: string) {
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users for a tenant (scoped to caller\'s tenant for TENANT_ADMIN)' })
+  async getTenantUsers(
+    @Param('tenantId') tenantId: string,
+    @Request() req: any,
+  ) {
+    const caller = req.user;
+    const isPlatformAdmin =
+      caller.role === UserRole.SUPER_ADMIN || caller.role === UserRole.ADMIN;
+
+    // TENANT_ADMIN can only read their own tenant
+    if (!isPlatformAdmin) {
+      if (caller.role !== UserRole.TENANT_ADMIN) {
+        throw new ForbiddenException('Access denied.');
+      }
+      if (caller.tenantId !== tenantId) {
+        throw new ForbiddenException(
+          'You can only view users within your own tenant.',
+        );
+      }
+    }
+
     const users = await this.usersService.findUsersByTenant(tenantId);
 
     return {
@@ -274,16 +295,35 @@ export class UsersController {
         role: user.role,
         status: user.status,
         profile: user.profile,
+        phone: user.phone,
       })),
     };
   }
 
   @Get('tenant/:tenantId/role/:role')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get users by tenant and role' })
   async getTenantUsersByRole(
     @Param('tenantId') tenantId: string,
     @Param('role') role: string,
+    @Request() req: any,
   ) {
+    const caller = req.user;
+    const isPlatformAdmin =
+      caller.role === UserRole.SUPER_ADMIN || caller.role === UserRole.ADMIN;
+
+    if (!isPlatformAdmin) {
+      if (caller.role !== UserRole.TENANT_ADMIN) {
+        throw new ForbiddenException('Access denied.');
+      }
+      if (caller.tenantId !== tenantId) {
+        throw new ForbiddenException(
+          'You can only view users within your own tenant.',
+        );
+      }
+    }
+
     const roleEnum = role.toUpperCase() as UserRole;
     const users = await this.usersService.findUsersByTenantAndRole(
       tenantId,
@@ -299,6 +339,7 @@ export class UsersController {
         role: user.role,
         status: user.status,
         profile: user.profile,
+        phone: user.phone,
       })),
     };
   }

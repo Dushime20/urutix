@@ -14,6 +14,7 @@ import { tenantApi } from '../../services/tenantApi';
 import { toast } from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface PartnerProfile {
     firstName: string;
@@ -35,7 +36,12 @@ interface TenantUserManagementProps {
 
 const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId }) => {
     const { tSync } = useTranslation();
+    const { user: authUser } = useAuth();
     const queryClient = useQueryClient();
+
+    // Always scope to the authenticated user's tenantId — never trust the prop alone
+    const scopedTenantId = authUser?.tenantId ?? tenantId;
+
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState<'ALL' | 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER' | 'FLEET_MANAGER'>('ALL');
     const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
@@ -55,15 +61,16 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
     });
 
     const { data: users = [], isLoading } = useQuery({
-        queryKey: ['tenantUsers', tenantId],
-        queryFn: () => tenantApi.getTenantUsers(tenantId),
+        queryKey: ['tenantUsers', scopedTenantId],
+        queryFn: () => tenantApi.getTenantUsers(scopedTenantId),
+        enabled: !!scopedTenantId,
     });
 
     const onboardMutation = useMutation({
-        mutationFn: (data: typeof onboardForm) => tenantApi.createTenantUser(tenantId, data),
+        mutationFn: (data: typeof onboardForm) => tenantApi.createTenantUser(scopedTenantId, data),
         onSuccess: () => {
             toast.success(tSync('Partner onboarded successfully'));
-            queryClient.invalidateQueries({ queryKey: ['tenantUsers', tenantId] });
+            queryClient.invalidateQueries({ queryKey: ['tenantUsers', scopedTenantId] });
             setIsOnboardModalOpen(false);
             setOnboardForm({ email: '', firstName: '', lastName: '', role: 'TRUCK_OWNER', phone: '' });
         },
@@ -412,7 +419,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                             {selectedPartner && (
                                 <PartnerDetailView
                                     partner={selectedPartner as any}
-                                    tenantId={tenantId}
+                                    tenantId={scopedTenantId}
                                     onClose={() => setSelectedPartner(null)}
                                 />
                             )}
