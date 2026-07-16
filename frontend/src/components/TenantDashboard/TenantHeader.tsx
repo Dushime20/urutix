@@ -20,6 +20,7 @@ import {
   FileCheck,
   Menu,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -42,8 +43,8 @@ interface TenantHeaderProps {
   tenant: Tenant;
   onRefresh: () => void;
   isRefreshing?: boolean;
-  selectedView: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc';
-  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc') => void;
+  selectedView: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports';
+  setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports') => void;
 }
 
 const TenantHeader: React.FC<TenantHeaderProps> = ({
@@ -72,6 +73,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
         { id: 'bidding', label: 'Negotiations', icon: DollarSign, description: 'Active bidding & load acquisition' },
         { id: 'fleet', label: 'Fleet Systems', icon: Truck, description: 'Internal asset management' },
         { id: 'cargo', label: 'Inventory Control', icon: Box, description: 'Cargo & specialized storage' },
+        { id: 'reports', label: 'Reports & Disputes', icon: AlertTriangle, description: 'Issues & disputes raised by users' },
       ]
     },
     {

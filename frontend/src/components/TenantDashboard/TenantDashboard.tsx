@@ -54,6 +54,7 @@ import Profile from '../../pages/Profile';
 import TenantLenderManagementPage from '../../pages/TenantLenderManagementPage';
 import TenantCommunication from '../../pages/tenant/TenantCommunication';
 import { EnhancedKycVerificationCenter as KycManagementPage } from '../UserKYC';
+import TenantSupportCenter from '../../pages/support/TenantSupportCenter';
 import { tenantApi } from '../../services/tenantApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
@@ -77,7 +78,7 @@ ChartJS.register(
 interface TenantDashboardProps {
   tenantId?: string;
   className?: string;
-  defaultView?: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc';
+  defaultView?: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports';
 }
 
 const TenantDashboard: React.FC<TenantDashboardProps> = ({
@@ -90,7 +91,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc'>(defaultView);
+  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports'>(defaultView);
   const [trackingActivity, setTrackingActivity] = useState<any>(null);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
 
@@ -644,6 +645,12 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           {!isLoading && selectedView === 'kyc' && (
             <motion.div key="kyc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <KycManagementPage />
+            </motion.div>
+          )}
+
+          {!isLoading && selectedView === 'reports' && (
+            <motion.div key="reports" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <TenantSupportCenter />
             </motion.div>
           )}
         </AnimatePresence>
