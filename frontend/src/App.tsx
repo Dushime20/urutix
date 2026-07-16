@@ -120,6 +120,7 @@ const TenantSupportCenter        = lazy(() => import('./pages/support/TenantSupp
 const SupportAnalyticsDashboard  = lazy(() => import('./pages/support/SupportAnalyticsDashboard'));
 // ─── New Feature Pages ────────────────────────────────────────────────────────
 const RevenueDashboard = lazy(() => import('./pages/admin/RevenueDashboard'));
+const AdminNotificationsHub = lazy(() => import('./pages/admin/AdminNotificationsHub'));
 const ComplianceDashboard = lazy(() => import('./pages/shared/ComplianceDashboard'));
 const GeofenceManager = lazy(() => import('./pages/shared/GeofenceManager'));
 const CarrierMarketplacePage = lazy(() => import('./pages/dashboard/CarrierMarketplacePage'));
@@ -547,6 +548,7 @@ function App() {
                       <Route path="billing" element={<BillingDashboard />} />
                       <Route path="credits" element={<PurchaseCredits />} />
                       <Route path="revenue" element={<RevenueDashboard />} />
+                      <Route path="onboarding" element={<AdminNotificationsHub />} />
                       <Route path="support" element={<TenantSupportCenter />} />
                       <Route path="support/analytics" element={<SupportAnalyticsDashboard onBack={() => window.history.back()} />} />
                     </Route>

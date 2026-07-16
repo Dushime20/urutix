@@ -280,6 +280,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'All Tickets', path: '/admin/support' },
             { label: 'Analytics', path: '/admin/support/analytics' },
+            { label: 'Notifications Hub', path: '/admin/onboarding' },
           ]
         },
       ];
