@@ -363,6 +363,21 @@ export class LoadsService {
         updatedAt: new Date(),
       };
 
+      // check_volume_positive: volume IS NULL OR volume > 0
+      // Coerce 0 / invalid values to null so quick-create and partial payloads don't 500
+      const rawVolume = loadData.volume;
+      if (
+        rawVolume === undefined ||
+        rawVolume === null ||
+        rawVolume === '' ||
+        !Number.isFinite(Number(rawVolume)) ||
+        Number(rawVolume) <= 0
+      ) {
+        loadData.volume = null;
+      } else {
+        loadData.volume = Number(rawVolume);
+      }
+
       // Remove undefined values to avoid TypeORM issues
       Object.keys(loadData).forEach(key => {
         if (loadData[key] === undefined) {

@@ -168,6 +168,15 @@ const sanitizeCargoPayload = (payload: ICargoBody) => {
 
   sanitized.locations = sanitizeLocations(sanitized.locations || []);
 
+  // DB constraint check_volume_positive: volume IS NULL OR volume > 0
+  // Never send 0 — omit so the column stays NULL until the user provides a real value
+  const volume = Number(sanitized.volume);
+  if (!Number.isFinite(volume) || volume <= 0) {
+    delete sanitized.volume;
+  } else {
+    sanitized.volume = volume;
+  }
+
   // Strip non-serializable / non-DTO fields before JSON serialization
   delete sanitized.photos;
   delete sanitized.aiSuggestions;

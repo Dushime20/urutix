@@ -34,6 +34,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
     title: '',
     cargoType: 'GENERAL',
     weight: '',
+    volume: '',
     pickupLocation: '',
     deliveryLocation: '',
     pickupDate: new Date().toISOString().split('T')[0],
@@ -76,6 +77,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         title: `${cargo.title} (Copy)`,
         cargoType: cargo.cargoType || 'GENERAL',
         weight: cargo.weight?.toString() || '',
+        volume: cargo.volume && Number(cargo.volume) > 0 ? cargo.volume.toString() : '',
         pickupLocation: cargo.pickupLocation?.address || cargo.pickupLocation?.name || '',
         deliveryLocation: cargo.deliveryLocation?.address || cargo.deliveryLocation?.name || '',
         pickupDate: new Date().toISOString().split('T')[0], // Reset dates to today/tomorrow
@@ -174,16 +176,23 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         return;
       }
 
+      const parsedVolume = formData.volume ? parseFloat(formData.volume) : undefined;
+      if (parsedVolume !== undefined && (!Number.isFinite(parsedVolume) || parsedVolume <= 0)) {
+        toast.error('Volume must be greater than 0 when provided');
+        setLoading(false);
+        return;
+      }
+
       // Create cargo with minimal data and defaults to satisfy ICargoBody
       const cargoData: ICargoBody = {
         title: formData.title,
         description: `Quick create: ${formData.title}`,
         cargoType: formData.cargoType,
         weight: parseFloat(formData.weight),
-        volume: 0,
+        ...(parsedVolume !== undefined ? { volume: parsedVolume } : {}),
         loadType: 'FTL',
         equipmentType: 'DRY_VAN',
-        visibility: 'PUBLIC',
+        visibility: 'public',
         unitsRequired: 1,
         locations: [
           {
@@ -300,6 +309,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         title: '',
         cargoType: 'GENERAL',
         weight: '',
+        volume: '',
         pickupLocation: '',
         deliveryLocation: '',
         pickupDate: new Date().toISOString().split('T')[0],
@@ -416,7 +426,7 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <EnliteSelect
               label="Cargo Type"
               name="cargoType"
@@ -430,6 +440,9 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
                 { value: 'REFRIGERATED', label: 'Refrigerated' },
               ]}
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <EnliteInput
               id="weight"
               name="weight"
@@ -438,9 +451,20 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
               value={formData.weight}
               onChange={handleChange}
               required
-              min="0"
+              min="0.01"
               step="0.01"
               placeholder="1000"
+            />
+            <EnliteInput
+              id="volume"
+              name="volume"
+              label="Volume (m³)"
+              type="number"
+              value={formData.volume}
+              onChange={handleChange}
+              min="0.01"
+              step="0.01"
+              placeholder="Optional — can add later"
             />
           </div>
 

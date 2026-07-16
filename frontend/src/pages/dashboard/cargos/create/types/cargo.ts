@@ -10,7 +10,8 @@ export interface ICargoBody {
   title: string;
   description: string;
   weight: number;
-  volume: number;
+  /** Optional; omit when unknown. Must be > 0 if provided (DB check_volume_positive). */
+  volume?: number;
   cargoType: string;
   loadType: string;
   equipmentType: string;
