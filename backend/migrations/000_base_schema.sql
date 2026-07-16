@@ -1011,24 +1011,41 @@ CREATE TABLE IF NOT EXISTS auctions (
 CREATE INDEX IF NOT EXISTS idx_auctions_load_status  ON auctions("loadId", status);
 CREATE INDEX IF NOT EXISTS idx_auctions_start_end    ON auctions("auctionStart", "auctionEnd");
 
--- BIDS  (referenced by auctions via winningBidId)
+-- BIDS  (TypeORM Bid entity — single source of truth)
+-- Do NOT create a stub schema here; see migration 052 for dual-schema history.
+DO $$ BEGIN CREATE TYPE bid_status AS ENUM (
+  'PENDING','ACCEPTED','REJECTED','WITHDRAWN','EXPIRED'
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 CREATE TABLE IF NOT EXISTS bids (
-  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "tenantId"     UUID NOT NULL,
-  "auctionId"    UUID,
-  "loadId"       UUID NOT NULL,
-  "bidderId"     UUID NOT NULL,
-  amount         DECIMAL(15,2) NOT NULL,
-  status         VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-  notes          TEXT,
-  metadata       JSONB NOT NULL DEFAULT '{}',
-  "createdAt"    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "updatedAt"    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  deleted_at     TIMESTAMPTZ
+  id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId"                  UUID NOT NULL,
+  "loadId"                    UUID NOT NULL,
+  "truckOwnerId"              UUID NOT NULL,
+  "bidAmount"                 DECIMAL(15,2) NOT NULL,
+  "bidCurrency"               VARCHAR(3) NOT NULL DEFAULT 'USD',
+  "proposedPickupDate"        TIMESTAMPTZ,
+  "proposedDeliveryDate"      TIMESTAMPTZ,
+  status                      bid_status NOT NULL DEFAULT 'PENDING',
+  "bidNotes"                  TEXT,
+  "bidDetails"                JSONB NOT NULL DEFAULT '{}',
+  "successProbability"        DECIMAL(5,2),
+  "riskAssessment"            JSONB NOT NULL DEFAULT '{}',
+  "marketContext"             JSONB NOT NULL DEFAULT '{}',
+  "isAutoBid"                 BOOLEAN NOT NULL DEFAULT false,
+  "isCounterOffer"            BOOLEAN NOT NULL DEFAULT false,
+  "parentBidId"               UUID,
+  "advancePaymentPercentage"  DECIMAL(5,2),
+  "requireAdvancePayment"     BOOLEAN NOT NULL DEFAULT true,
+  "expiresAt"                 TIMESTAMPTZ,
+  "createdAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  deleted_at                  TIMESTAMPTZ
 );
-CREATE INDEX IF NOT EXISTS idx_bids_auction  ON bids("auctionId", status);
-CREATE INDEX IF NOT EXISTS idx_bids_load     ON bids("loadId", status);
-CREATE INDEX IF NOT EXISTS idx_bids_bidder   ON bids("bidderId");
+CREATE INDEX IF NOT EXISTS idx_bids_load             ON bids("loadId", status);
+CREATE INDEX IF NOT EXISTS idx_bids_truck_owner_status ON bids("truckOwnerId", status);
+CREATE INDEX IF NOT EXISTS idx_bids_tenant_status    ON bids("tenantId", status);
+CREATE INDEX IF NOT EXISTS idx_bids_load_owner_status ON bids("loadId", "truckOwnerId", status);
 
 -- AUCTION_VIEWS  (referenced by Auction entity)
 CREATE TABLE IF NOT EXISTS auction_views (
@@ -1297,14 +1314,14 @@ ALTER TABLE permissions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL
 ALTER TABLE permissions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 -- ---------------------------------------------------------------------------
--- BIDS  — replace the minimal stub with the full entity schema
--- (ADD COLUMN IF NOT EXISTS is safe on existing tables)
+-- BIDS  — ensure entity columns exist on older DBs that still have the stub
+-- (CREATE TABLE IF NOT EXISTS above is a no-op when the stub already exists.
+--  Migration 052 fully retires stub columns; this block is a safe fallback.)
 -- ---------------------------------------------------------------------------
 DO $$ BEGIN CREATE TYPE bid_status AS ENUM (
   'PENDING','ACCEPTED','REJECTED','WITHDRAWN','EXPIRED'
 ); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- Add all columns the Bid entity maps to
 ALTER TABLE bids ADD COLUMN IF NOT EXISTS "truckOwnerId"              UUID;
 ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidAmount"                 DECIMAL(15,2);
 ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidCurrency"               VARCHAR(3) NOT NULL DEFAULT 'USD';
