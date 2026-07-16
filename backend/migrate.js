@@ -147,54 +147,144 @@ async function recordMigration(client, migrationName, executionTime, status = 's
 // Execute a single migration
 async function executeMigration(client, migrationFile, force = false) {
   const migrationPath = path.join(MIGRATIONS_DIR, migrationFile);
-  
-  // Check if file is empty
+
   const stats = fs.statSync(migrationPath);
   if (stats.size === 0) {
     logWarning(`Skipping ${migrationFile} (empty file)`);
+    await recordMigration(client, migrationFile, 0, 'success', null, calculateChecksum(''));
     return { skipped: true, reason: 'empty' };
   }
-  
+
   const migrationContent = fs.readFileSync(migrationPath, 'utf8').trim();
-  
+
   if (!migrationContent) {
     logWarning(`Skipping ${migrationFile} (no content)`);
+    await recordMigration(client, migrationFile, 0, 'success', null, calculateChecksum(''));
     return { skipped: true, reason: 'empty' };
   }
-  
+
   const checksum = calculateChecksum(migrationContent);
-  
-  // Check if already executed
+  const noTransaction = /@no-transaction/i.test(migrationContent);
+
   if (!force && await isMigrationExecuted(client, migrationFile)) {
-    logInfo(`Skipping ${migrationFile} (already executed)`);
-    return { skipped: true, reason: 'executed' };
+    const statusResult = await client.query(
+      `SELECT status FROM ${MIGRATION_TABLE} WHERE migration_name = $1`,
+      [migrationFile]
+    );
+    const status = statusResult.rows[0]?.status;
+    if (status === 'success') {
+      logInfo(`Skipping ${migrationFile} (already executed)`);
+      return { skipped: true, reason: 'executed' };
+    }
+    logInfo(`Skipping ${migrationFile} (recorded as ${status}; use: node migrate.js retry-failed)`);
+    return { skipped: true, reason: status || 'executed' };
   }
-  
-  logInfo(`Executing ${migrationFile}...`);
-  
+
+  logInfo(`Executing ${migrationFile}${noTransaction ? ' (no transaction)' : ''}...`);
+
   const startTime = Date.now();
-  
+
   try {
-    await client.query('BEGIN');
+    if (!noTransaction) {
+      await client.query('BEGIN');
+    }
     await client.query(migrationContent);
-    
+
     const executionTime = Date.now() - startTime;
-    
     await recordMigration(client, migrationFile, executionTime, 'success', null, checksum);
-    
-    await client.query('COMMIT');
-    
+
+    if (!noTransaction) {
+      await client.query('COMMIT');
+    }
+
     logSuccess(`${migrationFile} completed (${executionTime}ms)`);
     return { success: true, executionTime };
-    
   } catch (error) {
-    await client.query('ROLLBACK');
-    
+    if (!noTransaction) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
     const executionTime = Date.now() - startTime;
     await recordMigration(client, migrationFile, executionTime, 'failed', error.message, checksum);
-    
+
     logError(`${migrationFile} failed: ${error.message}`);
     return { success: false, error: error.message };
+  }
+}
+
+async function showFailedErrors(client) {
+  logHeader('FAILED MIGRATION ERRORS');
+  const result = await client.query(
+    `SELECT migration_name, error_message, executed_at
+     FROM ${MIGRATION_TABLE}
+     WHERE status = 'failed'
+     ORDER BY executed_at`
+  );
+  if (result.rows.length === 0) {
+    logSuccess('No failed migrations recorded.');
+    return;
+  }
+  for (const row of result.rows) {
+    log(`\n❌ ${row.migration_name}`, colors.red);
+    log(`   at: ${new Date(row.executed_at).toLocaleString()}`, colors.cyan);
+    log(`   error: ${row.error_message || '(no message stored)'}`, colors.yellow);
+  }
+  log('');
+}
+
+async function retryFailedMigrations() {
+  logHeader('RETRY FAILED MIGRATIONS');
+  const config = getDbConfig();
+  const client = new Client(config);
+
+  try {
+    await client.connect();
+    await createMigrationTable(client);
+
+    const result = await client.query(
+      `SELECT migration_name, error_message FROM ${MIGRATION_TABLE} WHERE status = 'failed' ORDER BY id`
+    );
+
+    if (result.rows.length === 0) {
+      logSuccess('No failed migrations to retry.');
+      return;
+    }
+
+    logInfo(`Found ${result.rows.length} failed migration(s) to retry:\n`);
+    for (const row of result.rows) {
+      log(`  - ${row.migration_name}: ${row.error_message || '(no message)'}`, colors.yellow);
+    }
+    log('');
+
+    let ok = 0;
+    let fail = 0;
+
+    for (const row of result.rows) {
+      const file = row.migration_name;
+      if (!fs.existsSync(path.join(MIGRATIONS_DIR, file))) {
+        logWarning(`File missing: ${file} — leaving failed record`);
+        fail++;
+        continue;
+      }
+      // Clear failed record so executeMigration with force rewrites it
+      const run = await executeMigration(client, file, true);
+      if (run.success) ok++;
+      else if (run.skipped) ok++;
+      else fail++;
+    }
+
+    logHeader('RETRY SUMMARY');
+    logSuccess(`Succeeded: ${ok}`);
+    if (fail > 0) {
+      logError(`Still failing: ${fail}`);
+      process.exit(1);
+    }
+  } finally {
+    await client.end();
   }
 }
 
@@ -435,14 +525,25 @@ async function main() {
       await createMigrationTable(client);
       await showStatus(client);
       await client.end();
-      
+
+    } else if (command === 'errors' || command === '--errors') {
+      const config = getDbConfig();
+      const client = new Client(config);
+      await client.connect();
+      await createMigrationTable(client);
+      await showFailedErrors(client);
+      await client.end();
+
+    } else if (command === 'retry-failed' || command === '--retry-failed') {
+      await retryFailedMigrations();
+
     } else if (command === 'create' || command === '--create') {
       createMigration(args[1]);
-      
+
     } else if (command === 'rollback' || command === '--rollback') {
       logError('Rollback not implemented yet');
       logInfo('Please create manual rollback migrations');
-      
+
     } else {
       // Default: run migrations
       const force = args.includes('--force');

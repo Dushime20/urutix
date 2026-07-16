@@ -4,7 +4,7 @@
 -- Date: 2026-03-16
 
 -- Create cargo_owner_analytics table for aggregated shipment insights
-CREATE TABLE cargo_owner_analytics (
+CREATE TABLE IF NOT EXISTS cargo_owner_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     cargo_owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -54,7 +54,7 @@ CREATE TABLE cargo_owner_analytics (
 );
 
 -- Create analytics_insights table for AI-generated insights
-CREATE TABLE analytics_insights (
+CREATE TABLE IF NOT EXISTS analytics_insights (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     cargo_owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

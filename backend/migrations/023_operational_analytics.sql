@@ -3,7 +3,7 @@
 -- Adds carrier performance metrics, route analytics, and market intelligence tables
 
 -- Carrier Performance Metrics Table
-CREATE TABLE carrier_performance_metrics (
+CREATE TABLE IF NOT EXISTS carrier_performance_metrics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     carrier_id UUID NOT NULL,
@@ -39,7 +39,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_carrier_metrics_tenant_carrier_owner_period
   ON carrier_performance_metrics(tenant_id, carrier_id, cargo_owner_id, evaluation_period);
 
 -- Route Analytics Table
-CREATE TABLE route_analytics (
+CREATE TABLE IF NOT EXISTS route_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     cargo_owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -80,7 +80,7 @@ CREATE INDEX idx_route_analytics_period ON route_analytics(evaluation_period);
 CREATE INDEX idx_route_analytics_demand ON route_analytics(demand_level);
 
 -- Market Intelligence Data Table
-CREATE TABLE market_intelligence_data (
+CREATE TABLE IF NOT EXISTS market_intelligence_data (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     data_type VARCHAR(50) NOT NULL, -- pricing, demand, capacity, trends
     geographic_scope VARCHAR(100) NOT NULL, -- city, region, country
@@ -108,7 +108,7 @@ CREATE INDEX idx_market_intelligence_cargo ON market_intelligence_data(cargo_typ
 CREATE INDEX idx_market_intelligence_source ON market_intelligence_data(source);
 
 -- Operational Performance Snapshots Table
-CREATE TABLE operational_performance_snapshots (
+CREATE TABLE IF NOT EXISTS operational_performance_snapshots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     cargo_owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -31,21 +31,8 @@ ON credit_accounts(tenant_id, COALESCE(user_id, '00000000-0000-0000-0000-0000000
 -- ============================================================================
 COMMENT ON COLUMN credit_accounts.user_id IS 'Optional user_id for user-level credit accounts. NULL for tenant-level accounts.';
 
--- ============================================================================
--- MIGRATION TRACKING
--- ============================================================================
+-- Tracking is handled by schema_migrations via migrate.js (do not write TypeORM migrations table).
 DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM migrations WHERE name = '012_add_user_id_to_credit_accounts') THEN
-    INSERT INTO migrations (timestamp, name) 
-    VALUES (EXTRACT(EPOCH FROM NOW())::BIGINT * 1000, '012_add_user_id_to_credit_accounts');
-  END IF;
-END $$;
-
--- ============================================================================
--- SUCCESS MESSAGE
--- ============================================================================
-DO $$ 
 BEGIN
   RAISE NOTICE 'Migration 012: user_id column added to credit_accounts successfully';
 END $$;

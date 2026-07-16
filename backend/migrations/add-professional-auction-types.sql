@@ -38,7 +38,7 @@ COMMENT ON COLUMN auctions."startingPrice" IS 'FORWARD/DUTCH: Starting price for
 COMMENT ON COLUMN auctions."marketRate" IS 'Reference market rate for all types';
 
 -- Verify migration
-DO $
+DO $$
 BEGIN
   RAISE NOTICE 'Migration completed successfully - auction types are ready';
-END $;
+END $$;

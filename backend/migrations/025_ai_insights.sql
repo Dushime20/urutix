@@ -3,7 +3,7 @@
 -- Adds predictive insights, AI recommendations, and alert management tables
 
 -- Predictive Insights Table
-CREATE TABLE predictive_insights (
+CREATE TABLE IF NOT EXISTS predictive_insights (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     cargo_owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -49,7 +49,7 @@ CREATE INDEX idx_predictive_insights_status ON predictive_insights(status);
 CREATE INDEX idx_predictive_insights_confidence ON predictive_insights(confidence_score);
 
 -- AI Recommendations Table
-CREATE TABLE ai_recommendations (
+CREATE TABLE IF NOT EXISTS ai_recommendations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     cargo_owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -96,7 +96,7 @@ CREATE INDEX idx_ai_recommendations_status ON ai_recommendations(status);
 CREATE INDEX idx_ai_recommendations_confidence ON ai_recommendations(ai_confidence);
 
 -- Alert Management Table
-CREATE TABLE analytics_alerts (
+CREATE TABLE IF NOT EXISTS analytics_alerts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     cargo_owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -137,7 +137,7 @@ CREATE INDEX idx_analytics_alerts_active ON analytics_alerts(is_active);
 CREATE INDEX idx_analytics_alerts_severity ON analytics_alerts(severity);
 
 -- Alert Triggers Log Table
-CREATE TABLE alert_triggers_log (
+CREATE TABLE IF NOT EXISTS alert_triggers_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     alert_id UUID NOT NULL REFERENCES analytics_alerts(id) ON DELETE CASCADE,
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -172,7 +172,7 @@ CREATE INDEX idx_alert_triggers_date ON alert_triggers_log(triggered_at);
 CREATE INDEX idx_alert_triggers_resolved ON alert_triggers_log(resolved);
 
 -- AI Model Performance Tracking Table
-CREATE TABLE ai_model_performance (
+CREATE TABLE IF NOT EXISTS ai_model_performance (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     model_name VARCHAR(100) NOT NULL,
     model_version VARCHAR(20) NOT NULL,
