@@ -549,6 +549,50 @@ CREATE TABLE IF NOT EXISTS lenders (
 CREATE INDEX IF NOT EXISTS idx_lenders_tenant_status ON lenders(tenant_id, status);
 
 -- ---------------------------------------------------------------------------
+-- LENDER_POLICIES  (TypeORM entity — Lender.policies OneToMany)
+-- Required by GET /api/lending/tenant/lenders when relations: ['policies']
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lender_policies (
+  id                           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lender_id                    UUID NOT NULL,
+  interest_rate                NUMERIC(5,4) NOT NULL,
+  repayment_term_days          INTEGER NOT NULL,
+  max_advance_per_trip         NUMERIC(15,2) NOT NULL,
+  max_exposure                 NUMERIC(15,2) NOT NULL,
+  advance_percentage           NUMERIC(5,4) NOT NULL DEFAULT 0.7,
+  currency                     VARCHAR(3) NOT NULL DEFAULT 'RWF',
+  min_credit_score             INTEGER,
+  max_dti_ratio                NUMERIC(5,4),
+  min_business_age_months      INTEGER,
+  required_kyc_level           VARCHAR(20) NOT NULL DEFAULT 'basic',
+  max_ltv_ratio                NUMERIC(5,4),
+  origination_fee_rate         NUMERIC(5,4) NOT NULL DEFAULT 0,
+  penalty_rate                 NUMERIC(5,4) NOT NULL DEFAULT 0,
+  grace_period_days            INTEGER NOT NULL DEFAULT 3,
+  early_repayment_penalty_rate NUMERIC(5,4) NOT NULL DEFAULT 0,
+  delinquency_threshold_days   INTEGER NOT NULL DEFAULT 30,
+  default_threshold_days       INTEGER NOT NULL DEFAULT 90,
+  allowed_purposes             JSON,
+  is_active                    BOOLEAN NOT NULL DEFAULT true,
+  created_at                   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at                   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_lender_policies_lender_created
+  ON lender_policies(lender_id, created_at);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'FK_lender_policies_lender_id'
+      AND table_name = 'lender_policies'
+  ) THEN
+    ALTER TABLE lender_policies
+      ADD CONSTRAINT FK_lender_policies_lender_id
+      FOREIGN KEY (lender_id) REFERENCES lenders(id)
+      ON DELETE NO ACTION ON UPDATE NO ACTION;
+  END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
 -- BORROWERS  (TypeORM entity — referenced by loan_requests)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS borrowers (

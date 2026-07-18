@@ -1,114 +1,19 @@
--- Fix: column borrower.company_name does not exist
--- Production borrowers table was created from an older schema (user_id + metadata only).
--- Lending joins that select Borrower entity columns were 500ing.
+-- Migration 057: Create lender_policies if missing
+-- Date: 2026-07-18
 --
--- Also creates lender_policies if missing (root cause of:
---   QueryFailedError: relation "lender_policies" does not exist
--- on GET /api/lending/tenant/lenders) and ensures underwriting columns.
+-- Root cause:
+--   GET /api/lending/tenant/lenders → QueryFailedError: relation "lender_policies" does not exist
+--
+-- Why:
+--   Production DBs bootstrapped from 000_base_schema (or partial lending setup) created
+--   `lenders` but never created `lender_policies`. Running code loads Lender.policies
+--   (LEFT JOIN lender_policies) and 500s.
+--
+-- Note: 056 only ALTERed columns when the table already existed; it did not CREATE it.
+-- This migration is fully idempotent and safe if 056 was later patched.
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE IF NOT EXISTS borrowers (
-  id uuid NOT NULL DEFAULT uuid_generate_v4(),
-  tenant_id uuid NOT NULL,
-  company_name character varying(255) NOT NULL DEFAULT 'Unknown',
-  contact_name character varying(255),
-  email character varying(255),
-  phone character varying(20),
-  business_type character varying(100),
-  registration_number character varying(100),
-  address text,
-  credit_score integer,
-  status character varying(20) NOT NULL DEFAULT 'active',
-  created_at TIMESTAMP NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP NOT NULL DEFAULT now(),
-  CONSTRAINT PK_borrowers_id PRIMARY KEY (id)
-);
-
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'borrowers') THEN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'company_name') THEN
-      ALTER TABLE borrowers ADD COLUMN company_name character varying(255) NOT NULL DEFAULT 'Unknown';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'contact_name') THEN
-      ALTER TABLE borrowers ADD COLUMN contact_name character varying(255);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'email') THEN
-      ALTER TABLE borrowers ADD COLUMN email character varying(255);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'phone') THEN
-      ALTER TABLE borrowers ADD COLUMN phone character varying(20);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'business_type') THEN
-      ALTER TABLE borrowers ADD COLUMN business_type character varying(100);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'registration_number') THEN
-      ALTER TABLE borrowers ADD COLUMN registration_number character varying(100);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'address') THEN
-      ALTER TABLE borrowers ADD COLUMN address text;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'credit_score') THEN
-      ALTER TABLE borrowers ADD COLUMN credit_score integer;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'status') THEN
-      ALTER TABLE borrowers ADD COLUMN status character varying(20) NOT NULL DEFAULT 'active';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'user_id') THEN
-      ALTER TABLE borrowers ADD COLUMN user_id uuid;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'metadata') THEN
-      ALTER TABLE borrowers ADD COLUMN metadata jsonb DEFAULT '{}'::jsonb;
-    END IF;
-  END IF;
-END $$;
-
--- Backfill placeholder company names from linked user profiles when possible.
--- Wrapped so missing profile columns cannot abort the migration.
-DO $$
-BEGIN
-  UPDATE borrowers b
-  SET company_name = COALESCE(
-    (
-      SELECT COALESCE(
-        NULLIF(up."companyName", ''),
-        NULLIF(TRIM(CONCAT(COALESCE(up."firstName", ''), ' ', COALESCE(up."lastName", ''))), ''),
-        u.email
-      )
-      FROM users u
-      LEFT JOIN user_profiles up ON up."userId" = u.id
-      WHERE b.user_id IS NOT NULL AND u.id = b.user_id
-      LIMIT 1
-    ),
-    NULLIF(b.email, ''),
-    'Unknown'
-  )
-  WHERE b.company_name IS NULL
-     OR b.company_name = ''
-     OR b.company_name = 'Unknown';
-EXCEPTION
-  WHEN undefined_column THEN
-    UPDATE borrowers
-    SET company_name = COALESCE(NULLIF(email, ''), 'Unknown')
-    WHERE company_name IS NULL OR company_name = '' OR company_name = 'Unknown';
-  WHEN undefined_table THEN
-    UPDATE borrowers
-    SET company_name = COALESCE(NULLIF(email, ''), 'Unknown')
-    WHERE company_name IS NULL OR company_name = '' OR company_name = 'Unknown';
-END $$;
-
-CREATE INDEX IF NOT EXISTS idx_borrowers_tenant ON borrowers (tenant_id);
-CREATE INDEX IF NOT EXISTS idx_borrowers_email_tenant ON borrowers (email, tenant_id);
-
--- ---------------------------------------------------------------------------
--- LENDER_POLICIES
--- Root cause of GET /api/lending/tenant/lenders 500:
---   relation "lender_policies" does not exist
--- Production DBs bootstrapped from 000_base_schema (or partial lending setup)
--- created lenders but never created lender_policies. TypeORM then LEFT JOINs
--- this table via Lender.policies and crashes.
--- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS lender_policies (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   lender_id uuid NOT NULL,
@@ -154,7 +59,7 @@ BEGIN
   END IF;
 END $$;
 
--- lender_policies underwriting columns (entity added these; older DBs may lack them)
+-- Ensure underwriting columns exist on older tables that were created without them
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'lender_policies') THEN
