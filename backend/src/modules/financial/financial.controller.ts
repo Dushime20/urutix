@@ -541,6 +541,38 @@ export class FinancialController {
   }
 
   // Analytics endpoints
+  @Get('analytics/overview')
+  @ApiOperation({
+    summary: 'Get live financial overview',
+    description:
+      'Compute live revenue/expense/profit totals for the selected period without saving a report',
+  })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    type: String,
+    description: 'week | month | quarter | year',
+  })
+  async getOverviewSummary(
+    @Query('period') period: string,
+    @Request() req,
+  ): Promise<ApiResponseDto> {
+    const summary = await this.financialService.getOverviewSummary(
+      period || 'month',
+      req.user.tenantId,
+      req.user.userId,
+      req.user.role,
+    );
+
+    return {
+      success: true,
+      message: 'Financial overview retrieved successfully',
+      data: { summary },
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get('analytics/performance')
   @ApiOperation({
     summary: 'Get performance metrics',

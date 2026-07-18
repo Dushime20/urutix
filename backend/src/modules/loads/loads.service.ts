@@ -1484,6 +1484,34 @@ export class LoadsService {
 
     const savedLoad = await this.loadRepository.save(load);
 
+    // Sync truck → IN_TRANSIT when load starts (if assigned)
+    if (load.assignedTruckId) {
+      try {
+        const truck = await this.truckRepository.findOne({
+          where: { id: load.assignedTruckId },
+        });
+        if (truck && truck.status !== VehicleStatus.IN_TRANSIT) {
+          truck.status = VehicleStatus.IN_TRANSIT;
+          const relatedTrip = await this.tripRepository.findOne({
+            where: { loadId: load.id, tenantId },
+          });
+          if (relatedTrip) {
+            truck.currentTripId = relatedTrip.id;
+            truck.estimatedAvailableTime =
+              relatedTrip.plannedEndTime || relatedTrip.estimatedEndTime || null;
+          }
+          await this.truckRepository.save(truck);
+          this.logger.log(
+            `[LoadsService] Truck ${truck.id} → IN_TRANSIT on load start ${loadId}`,
+          );
+        }
+      } catch (err) {
+        this.logger.error(
+          `Failed to set truck IN_TRANSIT on load start ${loadId}: ${err.message}`,
+        );
+      }
+    }
+
     // Create audit event
     await this.createAuditEvent({
       loadId: loadId,

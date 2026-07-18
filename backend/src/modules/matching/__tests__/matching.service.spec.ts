@@ -83,14 +83,32 @@ describe('MatchingService Algorithm', () => {
       expect(result).toBeNull();
     });
 
-    it('✅ accepts IN_TRANSIT truck if finishing soon (exception)', async () => {
+    it('✅ accepts IN_TRANSIT truck when cargo pickup is after trip ends', async () => {
       const incomingTruck = { 
         ...baseTruck, 
         status: VehicleStatus.IN_TRANSIT,
-        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60), // 1 hour from now
+        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60), // free in 1h
       };
-      const result = await scoreTruck(incomingTruck, baseLoad);
+      const futureLoad = {
+        ...baseLoad,
+        pickupDate: new Date(Date.now() + 1000 * 60 * 60 * 3), // ships in 3h
+      };
+      const result = await scoreTruck(incomingTruck, futureLoad);
       expect(result).not.toBeNull();
+    });
+
+    it('❌ rejects IN_TRANSIT truck when cargo pickup is before trip ends', async () => {
+      const incomingTruck = { 
+        ...baseTruck, 
+        status: VehicleStatus.IN_TRANSIT,
+        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60 * 24), // free in 24h
+      };
+      const soonLoad = {
+        ...baseLoad,
+        pickupDate: new Date(Date.now() + 1000 * 60 * 60), // ships in 1h
+      };
+      const result = await scoreTruck(incomingTruck, soonLoad);
+      expect(result).toBeNull();
     });
 
     it('❌ rejects when EQUIPMENT (Refrigeration) missing', async () => {

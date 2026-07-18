@@ -266,8 +266,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financial Matrix', path: '/admin/financial' },
             { label: 'Intelligence Analytics', path: '/admin/analytics' },
             { label: 'Reporting Engine', path: '/admin/reports' },
+            { label: 'Account & Settings', path: '/admin/profile' },
             { label: 'Strategic Settings', path: '/admin/advanced-settings' },
-            { label: 'System Configuration', path: '/admin/settings' },
+            { label: 'System Configuration', path: '/admin/system-settings' },
             { label: 'Activity Forensics', path: '/admin/activity-logs' },
           ]
         },

@@ -2196,10 +2196,10 @@ export class LendingService {
       }
     }
 
-    // Primary query: lenders whose tenant_id matches directly
+    // List endpoints do not need policies (avoids schema-mismatch 500s on
+    // lender_policies). Use getLenderById when policies are required.
     const directLenders = await this.lenderRepository.find({
       where: whereCondition,
-      relations: ['policies'],
       order: { created_at: 'DESC' },
     });
 
@@ -2209,7 +2209,7 @@ export class LendingService {
     if (tenantId) {
       const lenderUsersInTenant = await this.userRepository.find({
         where: { tenantId, role: UserRole.LENDER, status: UserStatus.ACTIVE },
-        select: ['email'],
+        select: ['id', 'email'],
       });
 
       if (lenderUsersInTenant.length > 0) {
@@ -2218,7 +2218,6 @@ export class LendingService {
 
         const emailMatchedLenders = await this.lenderRepository.find({
           where: { contact_email: In(emails) },
-          relations: ['policies'],
           order: { created_at: 'DESC' },
         });
 

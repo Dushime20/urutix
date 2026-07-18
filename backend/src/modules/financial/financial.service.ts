@@ -446,12 +446,13 @@ export class FinancialService {
       0,
     );
 
-    // Cargo owners: freight spend is the primary cost; transporters: invoice revenue
+    // Cargo owners: contracted freight is "revenue" (liability side / booked value);
+    // payments + expense records are actual spend.
     const totalRevenue = isCargoOwner
-      ? 0
+      ? tripFreightSpend || invoiceRevenue
       : invoiceRevenue || tripFreightSpend;
     const totalExpenses = isCargoOwner
-      ? paymentSpend || tripFreightSpend || expenseRecords
+      ? (paymentSpend || expenseRecords || tripFreightSpend)
       : expenseRecords || paymentSpend;
 
     const revenueByCustomer = invoices.reduce((acc, invoice) => {
@@ -476,6 +477,55 @@ export class FinancialService {
       return acc;
     }, {} as Record<string, number>);
 
+    const monthKey = (d: Date | string | null | undefined): string | null => {
+      if (!d) return null;
+      const date = d instanceof Date ? d : new Date(d);
+      if (isNaN(date.getTime())) return null;
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    };
+
+    const revenueByMonth: Record<string, number> = {};
+    for (const invoice of invoices) {
+      const key = monthKey(invoice.issueDate);
+      if (!key) continue;
+      revenueByMonth[key] =
+        (revenueByMonth[key] || 0) + Number(invoice.totalAmount || 0);
+    }
+
+    const expensesByMonth: Record<string, number> = {};
+    for (const expense of expenses) {
+      const key = monthKey(expense.date);
+      if (!key) continue;
+      expensesByMonth[key] =
+        (expensesByMonth[key] || 0) + Number(expense.amount || 0);
+    }
+    for (const payment of payments) {
+      const key = monthKey(payment.createdAt);
+      if (!key) continue;
+      expensesByMonth[key] =
+        (expensesByMonth[key] || 0) + Number(payment.amount || 0);
+    }
+    if (isCargoOwner) {
+      for (const trip of trips) {
+        const key = monthKey(trip.plannedStartTime);
+        if (!key) continue;
+        revenueByMonth[key] =
+          (revenueByMonth[key] || 0) + Number(trip.agreedPrice || 0);
+        // Prefer explicit payments; only fall back to trip prices when no payment rows
+        if (payments.length === 0) {
+          expensesByMonth[key] =
+            (expensesByMonth[key] || 0) + Number(trip.agreedPrice || 0);
+        }
+      }
+    } else if (Object.keys(revenueByMonth).length === 0) {
+      for (const trip of trips) {
+        const key = monthKey(trip.plannedStartTime);
+        if (!key) continue;
+        revenueByMonth[key] =
+          (revenueByMonth[key] || 0) + Number(trip.agreedPrice || 0);
+      }
+    }
+
     const totalProfit = totalRevenue - totalExpenses;
     const profitMargin =
       totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
@@ -485,13 +535,13 @@ export class FinancialService {
         total: totalRevenue,
         byCustomer: revenueByCustomer,
         byTrip: isCargoOwner ? {} : tripSpendByLoad,
-        byMonth: {},
+        byMonth: revenueByMonth,
       },
       expenses: {
         total: totalExpenses,
         byCategory: expensesByCategory,
         byTruck: {},
-        byMonth: {},
+        byMonth: expensesByMonth,
         byTrip: isCargoOwner ? tripSpendByLoad : {},
       },
       profit: {
@@ -517,6 +567,55 @@ export class FinancialService {
     };
 
     return base;
+  }
+
+  /**
+   * Live overview totals for the Financial Hub (no persisted report row).
+   */
+  async getOverviewSummary(
+    period: string,
+    tenantId: string,
+    userId: string,
+    role?: string,
+  ): Promise<any> {
+    const now = new Date();
+    const endDate = new Date(now);
+    const startDate = new Date(now);
+
+    switch (String(period || 'month').toLowerCase()) {
+      case 'week':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case 'quarter':
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      case 'month':
+      default:
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+    }
+
+    const reportPeriod =
+      period === 'week'
+        ? FinancialReportPeriod.WEEKLY
+        : period === 'quarter'
+          ? FinancialReportPeriod.QUARTERLY
+          : period === 'year'
+            ? FinancialReportPeriod.YEARLY
+            : FinancialReportPeriod.MONTHLY;
+
+    return this.calculateFinancialData(
+      FinancialReportType.PL_STATEMENT,
+      reportPeriod,
+      startDate,
+      endDate,
+      tenantId,
+      userId,
+      role,
+    );
   }
 
   // Analytics methods

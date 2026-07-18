@@ -27,6 +27,17 @@ import { CommissionQueryDto } from './dto/commission-query.dto';
 import { CreatePayoutRequestDto, UpdatePayoutRequestDto } from './dto/commission-payout.dto';
 import { ContractService } from './services/contract.service';
 import { LoadContract, ContractStatus, ContractType } from '../../entities/load-contract.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { SmsService } from '../notifications/services/sms.service';
+import { MessengerService } from '../messenger/messenger.service';
+import {
+  NotificationType,
+  NotificationCategory,
+  NotificationChannel,
+  NotificationPriority,
+  EntityType,
+} from '../../entities/notification.entity';
+import { MessageRole } from '../../entities/message.entity';
 
 @Injectable()
 export class BrokersService {
@@ -50,6 +61,9 @@ export class BrokersService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly contractService: ContractService,
+    private readonly notificationsService: NotificationsService,
+    private readonly smsService: SmsService,
+    private readonly messengerService: MessengerService,
   ) { }
 
   /**
@@ -428,27 +442,148 @@ export class BrokersService {
       throw new ConflictException(`Broker assigned, but contract creation failed: ${error.message}`);
     }
 
-    // Send email notification to broker
-    if (broker.email) {
-      try {
-        await this.emailService.sendBrokerLoadAssignmentEmail(
-          broker.email,
-          broker.profile?.firstName || 'Broker',
-          load.title || 'Load',
-          load.id,
-          commissionRate,
-          commissionAmount,
-        );
-        this.logger.log(`✅ Assignment email sent to broker ${broker.email}`);
-      } catch (error) {
-        this.logger.error(`Failed to send assignment email: ${error.message}`);
-      }
-    }
+    // Notify broker via in-app, email, SMS, and messenger (fire-and-forget)
+    this.sendBrokerAssignmentNotifications(
+      load,
+      broker,
+      tenantId,
+      commissionRate,
+      commissionAmount,
+    ).catch((err) =>
+      this.logger.error(
+        `Failed to send broker assignment notifications: ${err.message}`,
+        err.stack,
+      ),
+    );
 
     return this.loadRepository.findOne({
       where: { id: loadId },
       relations: ['broker', 'broker.profile'],
     });
+  }
+
+  /**
+   * Notify broker on cargo assignment: in-app, email, SMS, and messenger.
+   */
+  private async sendBrokerAssignmentNotifications(
+    load: Load,
+    broker: User,
+    tenantId: string,
+    commissionRate: number,
+    commissionAmount: number,
+  ): Promise<void> {
+    const brokerName =
+      broker.profile?.firstName ||
+      broker.profile?.companyName ||
+      broker.email ||
+      'Broker';
+    const loadTitle = load.title || load.cargoType || 'Cargo';
+    const currency = load.currencyCode || 'KES';
+    const origin =
+      load.origin?.city ||
+      load.origin?.address ||
+      load.pickupLocation?.locationData?.city ||
+      load.pickupLocation?.locationData?.name ||
+      'TBD';
+    const destination =
+      load.destination?.city ||
+      load.destination?.address ||
+      load.deliveryLocation?.locationData?.city ||
+      load.deliveryLocation?.locationData?.name ||
+      'TBD';
+    const route = `${origin} → ${destination}`;
+    const commissionLabel = `${commissionRate}% (${currency} ${Number(commissionAmount).toLocaleString()})`;
+    const actionUrl = '/dashboard/broker/loads';
+    const clearMessage =
+      `You have been assigned as broker for cargo "${loadTitle}" (${route}). ` +
+      `Commission: ${commissionLabel}. ` +
+      `A contract is waiting for your acceptance before you can manage this load.`;
+
+    // 1. In-app notification (persisted + WebSocket)
+    try {
+      await this.notificationsService.createNotification(
+        {
+          type: NotificationType.BROKER_ASSIGNMENT,
+          category: NotificationCategory.CARGO,
+          channel: NotificationChannel.IN_APP,
+          priority: NotificationPriority.HIGH,
+          entityType: EntityType.CARGO,
+          entityId: load.id,
+          userId: broker.id,
+          tenantId,
+          subject: 'New cargo assignment',
+          content: clearMessage,
+          actionUrl,
+          actionText: 'View assignment',
+          templateId: 'broker-assignment-notification',
+          metadata: {
+            loadId: load.id,
+            loadTitle,
+            commissionRate,
+            commissionAmount,
+            entityType: EntityType.CARGO,
+            entityId: load.id,
+          },
+        },
+        tenantId,
+      );
+      this.logger.log(`In-app assignment notification sent to broker ${broker.id}`);
+    } catch (error) {
+      this.logger.error(`Failed to create in-app assignment notification: ${error.message}`);
+    }
+
+    // 2. Email
+    if (broker.email) {
+      try {
+        await this.emailService.sendBrokerLoadAssignmentEmail(
+          broker.email,
+          brokerName,
+          loadTitle,
+          load.id,
+          commissionRate,
+          commissionAmount,
+          route,
+          currency,
+        );
+        this.logger.log(`Assignment email sent to broker ${broker.email}`);
+      } catch (error) {
+        this.logger.error(`Failed to send assignment email: ${error.message}`);
+      }
+    }
+
+    // 3. SMS / text message
+    const phone = broker.phone?.trim();
+    if (phone) {
+      try {
+        const smsBody =
+          `UrutiX: You were assigned as broker for "${loadTitle}" (${route}). ` +
+          `Commission ${commissionLabel}. Accept the contract in your broker dashboard to proceed.`;
+        await this.smsService.sendSms(phone, smsBody);
+        this.logger.log(`Assignment SMS sent to broker ${phone}`);
+      } catch (error) {
+        this.logger.error(`Failed to send assignment SMS: ${error.message}`);
+      }
+    } else {
+      this.logger.warn(`Broker ${broker.id} has no phone; skipping SMS assignment notification`);
+    }
+
+    // 4. In-app messenger message from cargo owner (or system)
+    try {
+      const senderId = load.cargoOwnerId || broker.id;
+      await this.messengerService.sendMessage(
+        senderId,
+        broker.id,
+        clearMessage,
+        tenantId,
+        {
+          loadId: load.id,
+          senderRole: load.cargoOwnerId ? MessageRole.CARGO_OWNER : MessageRole.SYSTEM,
+        },
+      );
+      this.logger.log(`Assignment messenger message sent to broker ${broker.id}`);
+    } catch (error) {
+      this.logger.error(`Failed to send assignment messenger message: ${error.message}`);
+    }
   }
 
   /**

@@ -186,6 +186,8 @@ export const financialAPI = {
   generateFinancialReport: (data: any) => api.post('/financial/reports', data),
   
   // Analytics
+  getOverviewSummary: (params?: { period?: string }) =>
+    api.get('/financial/analytics/overview', { params }),
   getPerformanceMetrics: (params?: any) => api.get('/financial/analytics/performance', { params }),
   getCustomerAnalytics: (params?: any) => api.get('/financial/analytics/customers', { params }),
   getDriverAnalytics: (params?: any) => api.get('/financial/analytics/drivers', { params }),

@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,7 +19,8 @@ import { Epod, EpodStatus, CargoConditionOnDelivery } from '../../entities/epod.
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
-import { Driver } from '../../entities/driver.entity';
+import { Driver, DriverStatus } from '../../entities/driver.entity';
+import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Invoice, InvoiceItem, InvoiceStatus, InvoiceItemType } from '../financial/entities/invoice.entity';
 import { Tenant } from '../../entities/tenant.entity';
@@ -31,6 +33,7 @@ import {
 import { EmailService } from '../auth/services/email.service';
 import { SubmitEpodDto } from './dto/submit-epod.dto';
 import { TripCompletionService } from './services/trip-completion.service';
+import { AvailabilityService } from '../availability/availability.service';
 
 @Injectable()
 export class EpodService {
@@ -48,6 +51,8 @@ export class EpodService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
     @InjectRepository(UserProfile)
     private readonly profileRepository: Repository<UserProfile>,
     @InjectRepository(Invoice)
@@ -59,6 +64,7 @@ export class EpodService {
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
     private readonly tripCompletionService: TripCompletionService,
+    @Optional() private readonly availabilityService?: AvailabilityService,
   ) {
     this.uploadDir = this.configService.get<string>('UPLOAD_DIR', './uploads');
   }
@@ -150,12 +156,17 @@ export class EpodService {
     const savedEpod = await this.epodRepository.save(epod);
     this.logger.log(`ePOD ${savedEpod.id} submitted for trip ${tripId}`);
 
-    // 7. Mark trip as COMPLETED
+    // 7. Mark trip as COMPLETED and free the truck for bidding / smart matching
     trip.status = TripStatus.COMPLETED;
     trip.actualEndTime = new Date();
     trip.completedAt = new Date();
     await this.tripRepository.save(trip);
     this.logger.log(`Trip ${tripId} marked COMPLETED via ePOD`);
+
+    await this.releaseTruckAndDriverAfterTrip(trip);
+    this.availabilityService?.releaseReservation(tripId, 'Trip completed via ePOD').catch(err =>
+      this.logger.error(`Failed to release reservation on ePOD complete: ${err.message}`),
+    );
 
     // 8. Generate invoice (async, non-blocking)
     this.generateInvoiceForTrip(savedEpod, trip, load, tenantId)
@@ -218,6 +229,33 @@ export class EpodService {
     );
 
     return savedEpod;
+  }
+
+  /**
+   * After ePOD marks the trip COMPLETED: truck → AVAILABLE, driver → ACTIVE
+   * so the truck can re-enter bidding and smart matching.
+   */
+  private async releaseTruckAndDriverAfterTrip(trip: Trip): Promise<void> {
+    if (trip.truckId) {
+      const truck = await this.truckRepository.findOne({ where: { id: trip.truckId } });
+      if (truck) {
+        if (!truck.currentTripId || truck.currentTripId === trip.id) {
+          truck.status = VehicleStatus.AVAILABLE;
+          truck.currentTripId = null;
+          truck.estimatedAvailableTime = null;
+          await this.truckRepository.save(truck);
+          this.logger.log(`[EpodService] Truck ${truck.id} → AVAILABLE after ePOD trip ${trip.id}`);
+        }
+      }
+    }
+    if (trip.driverId) {
+      const driver = await this.driverRepository.findOne({ where: { id: trip.driverId } });
+      if (driver) {
+        driver.status = DriverStatus.ACTIVE;
+        await this.driverRepository.save(driver);
+        this.logger.log(`[EpodService] Driver ${driver.id} → ACTIVE after ePOD trip ${trip.id}`);
+      }
+    }
   }
 
   // ── Get ePOD ───────────────────────────────────────────────────────────────

@@ -11,7 +11,12 @@ import {
   NotificationStatus,
   EntityType,
 } from '../../../entities/notification.entity';
+import { User, UserRole, UserStatus } from '../../../entities/user.entity';
+import { MessageRole } from '../../../entities/message.entity';
 import { EventsGateway } from '../../events/events.gateway';
+import { EmailService } from '../../auth/services/email.service';
+import { SmsService } from '../services/sms.service';
+import { MessengerService } from '../../messenger/messenger.service';
 
 interface AuctionBidReceivedPayload {
   auctionId: string;
@@ -45,6 +50,20 @@ interface SmartMatchSelectedPayload {
   estimatedPrice?: number;
 }
 
+interface AuctionCreatedPayload {
+  auctionId: string;
+  loadId: string;
+  tenantId: string;
+  cargoOwnerId: string;
+  cargoTitle: string;
+  route: string;
+  auctionStart: Date | string;
+  auctionEnd: Date | string;
+  reservePrice?: number | string;
+  currency?: string;
+  status?: string;
+}
+
 @Injectable()
 export class AuctionNotificationListener {
   private readonly logger = new Logger(AuctionNotificationListener.name);
@@ -52,8 +71,185 @@ export class AuctionNotificationListener {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly eventsGateway: EventsGateway,
+    private readonly emailService: EmailService,
+    private readonly smsService: SmsService,
+    private readonly messengerService: MessengerService,
   ) {}
+
+  /**
+   * All truck owners in the same tenant: new auction available — ready to bid
+   */
+  @OnEvent('auction.created')
+  async handleAuctionCreated(payload: AuctionCreatedPayload) {
+    this.logger.log(
+      `Handling auction.created for auction ${payload.auctionId} in tenant ${payload.tenantId}`,
+    );
+
+    try {
+      const truckOwners = await this.userRepository.find({
+        where: {
+          tenantId: payload.tenantId,
+          role: UserRole.TRUCK_OWNER,
+          status: UserStatus.ACTIVE,
+        },
+        relations: ['profile'],
+      });
+
+      if (!truckOwners.length) {
+        this.logger.log(
+          `No active truck owners in tenant ${payload.tenantId} to notify about auction ${payload.auctionId}`,
+        );
+        return;
+      }
+
+      const currency = payload.currency || 'KES';
+      const auctionEndDate = payload.auctionEnd
+        ? new Date(payload.auctionEnd)
+        : null;
+      const auctionEndLabel = auctionEndDate
+        ? auctionEndDate.toLocaleString('en-US', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })
+        : 'See dashboard';
+      const reserveLabel =
+        payload.reservePrice != null && payload.reservePrice !== ''
+          ? `${currency} ${Number(payload.reservePrice).toLocaleString()}`
+          : undefined;
+      const clearMessage =
+        `New auction available for cargo "${payload.cargoTitle}" (${payload.route}). ` +
+        `Be ready to bid — auction ends ${auctionEndLabel}` +
+        (reserveLabel ? `. Reserve/target: ${reserveLabel}` : '') +
+        `. Open Bidding to place your bid.`;
+
+      this.logger.log(
+        `Notifying ${truckOwners.length} truck owner(s) about auction ${payload.auctionId}`,
+      );
+
+      for (const truckOwner of truckOwners) {
+        const ownerName =
+          truckOwner.profile?.firstName ||
+          truckOwner.profile?.companyName ||
+          truckOwner.email ||
+          'Truck Owner';
+
+        // 1. In-app + WebSocket
+        try {
+          const notification = this.notificationRepository.create({
+            recipientId: truckOwner.id,
+            tenantId: payload.tenantId,
+            notificationType: NotificationType.AUCTION_CREATED,
+            category: NotificationCategory.AUCTION,
+            priority: NotificationPriority.HIGH,
+            title: 'New auction — ready to bid',
+            message: clearMessage,
+            shortMessage: `New auction: ${payload.cargoTitle}`,
+            entityType: EntityType.AUCTION,
+            entityId: payload.auctionId,
+            channels: [
+              NotificationChannel.IN_APP,
+              NotificationChannel.EMAIL,
+              NotificationChannel.SMS,
+            ],
+            status: NotificationStatus.SENT,
+            isRead: false,
+            requiresAction: true,
+            actionUrl: '/dashboard/bidding',
+            actionText: 'View auction & bid',
+            metadata: {
+              auctionId: payload.auctionId,
+              loadId: payload.loadId,
+              cargoTitle: payload.cargoTitle,
+              route: payload.route,
+              cargoOwnerId: payload.cargoOwnerId,
+            },
+            userPreferences: {
+              emailEnabled: true,
+              smsEnabled: true,
+              pushEnabled: true,
+            },
+            analytics: {
+              openCount: 0,
+              clickCount: 0,
+            },
+          });
+
+          const saved = await this.notificationRepository.save(notification);
+          this.eventsGateway.emitNotification(truckOwner.id, saved);
+        } catch (error) {
+          this.logger.error(
+            `Failed in-app notify truck owner ${truckOwner.id}: ${error.message}`,
+          );
+        }
+
+        // 2. Email
+        if (truckOwner.email) {
+          try {
+            await this.emailService.sendAuctionCreatedTruckOwnerEmail(
+              truckOwner.email,
+              ownerName,
+              payload.cargoTitle,
+              payload.route,
+              payload.auctionId,
+              auctionEndLabel,
+              reserveLabel,
+            );
+          } catch (error) {
+            this.logger.error(
+              `Failed email notify truck owner ${truckOwner.email}: ${error.message}`,
+            );
+          }
+        }
+
+        // 3. SMS
+        const phone = truckOwner.phone?.trim();
+        if (phone) {
+          try {
+            const smsBody =
+              `UrutiX: New auction for "${payload.cargoTitle}" (${payload.route}). ` +
+              `Be ready to bid — ends ${auctionEndLabel}. Open Bidding to compete.`;
+            await this.smsService.sendSms(phone, smsBody);
+          } catch (error) {
+            this.logger.error(
+              `Failed SMS notify truck owner ${phone}: ${error.message}`,
+            );
+          }
+        }
+
+        // 4. Messenger
+        if (payload.cargoOwnerId && payload.cargoOwnerId !== truckOwner.id) {
+          try {
+            await this.messengerService.sendMessage(
+              payload.cargoOwnerId,
+              truckOwner.id,
+              clearMessage,
+              payload.tenantId,
+              {
+                loadId: payload.loadId,
+                senderRole: MessageRole.CARGO_OWNER,
+              },
+            );
+          } catch (error) {
+            this.logger.error(
+              `Failed messenger notify truck owner ${truckOwner.id}: ${error.message}`,
+            );
+          }
+        }
+      }
+
+      this.logger.log(
+        `Finished auction.created notifications for ${truckOwners.length} truck owner(s)`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to handle auction.created: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
 
   /**
    * Cargo Owner receives: New bid submitted on auction

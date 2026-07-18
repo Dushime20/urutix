@@ -36,6 +36,8 @@ import { TrackingEvent } from '../../entities/tracking-event.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { MessengerModule } from '../messenger/messenger.module';
 
 @Module({
   imports: [
@@ -61,6 +63,8 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
       PasswordResetToken,
     ]),
     EnhancedAuthModule,
+    NotificationsModule,
+    MessengerModule,
   ],
   controllers: [
     BrokersController,

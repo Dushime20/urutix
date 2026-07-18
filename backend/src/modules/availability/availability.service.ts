@@ -97,10 +97,20 @@ export class AvailabilityService {
     const conflicts: ConflictInfo[] = [];
 
     if (truckId) {
-      const truckConflict = await this.findTruckConflict(
-        truckId, pickupDateTime, deliveryDateTime, excludeTripId,
+      // Hard block only for MAINTENANCE / OUT_OF_SERVICE.
+      // IN_TRANSIT is time-windowed: conflict only if cargo pickup is before the truck is free.
+      const statusConflict = await this.findTruckStatusConflict(
+        truckId,
+        pickupDateTime,
       );
-      if (truckConflict) conflicts.push(truckConflict);
+      if (statusConflict) {
+        conflicts.push(statusConflict);
+      } else {
+        const truckConflict = await this.findTruckConflict(
+          truckId, pickupDateTime, deliveryDateTime, excludeTripId,
+        );
+        if (truckConflict) conflicts.push(truckConflict);
+      }
     }
 
     if (driverId) {
@@ -111,6 +121,82 @@ export class AvailabilityService {
     }
 
     return conflicts;
+  }
+
+  /**
+   * Status gate for bidding/matching:
+   * - MAINTENANCE / OUT_OF_SERVICE → always unavailable
+   * - IN_TRANSIT → unavailable only if cargo pickup is before the current trip ends
+   *   (i.e. shipping time must be after estimatedAvailableTime / trip planned end)
+   */
+  private async findTruckStatusConflict(
+    truckId: string,
+    pickupDateTime: Date,
+  ): Promise<ConflictInfo | null> {
+    const truck = await this.truckRepo.findOne({ where: { id: truckId } });
+    if (!truck) return null;
+
+    if (
+      truck.status === VehicleStatus.MAINTENANCE ||
+      truck.status === VehicleStatus.OUT_OF_SERVICE
+    ) {
+      const now = new Date();
+      return {
+        type: 'TRUCK',
+        resourceId: truckId,
+        conflictingTripId: truck.currentTripId || 'status-block',
+        conflictingCargoId: truck.status,
+        existingPickup: now,
+        existingDelivery: now,
+      };
+    }
+
+    if (truck.status !== VehicleStatus.IN_TRANSIT) {
+      return null;
+    }
+
+    // Resolve when the truck becomes free for the next cargo
+    let freeFrom = truck.estimatedAvailableTime
+      ? new Date(truck.estimatedAvailableTime)
+      : null;
+
+    if (!freeFrom && truck.currentTripId) {
+      const currentTrip = await this.tripRepo.findOne({
+        where: { id: truck.currentTripId },
+      });
+      if (currentTrip?.plannedEndTime || currentTrip?.estimatedEndTime) {
+        freeFrom = new Date(
+          currentTrip.plannedEndTime || currentTrip.estimatedEndTime,
+        );
+      }
+    }
+
+    // Unknown end time while in transit → treat as busy for this pickup
+    if (!freeFrom) {
+      const now = new Date();
+      return {
+        type: 'TRUCK',
+        resourceId: truckId,
+        conflictingTripId: truck.currentTripId || 'status-block',
+        conflictingCargoId: VehicleStatus.IN_TRANSIT,
+        existingPickup: now,
+        existingDelivery: now,
+      };
+    }
+
+    // Future cargo that starts after this trip ends → no status conflict
+    if (new Date(pickupDateTime).getTime() >= freeFrom.getTime()) {
+      return null;
+    }
+
+    return {
+      type: 'TRUCK',
+      resourceId: truckId,
+      conflictingTripId: truck.currentTripId || 'status-block',
+      conflictingCargoId: VehicleStatus.IN_TRANSIT,
+      existingPickup: new Date(),
+      existingDelivery: freeFrom,
+    };
   }
 
   private async findTruckConflict(
@@ -185,6 +271,29 @@ export class AvailabilityService {
     if (conflicts.length === 0) return;
 
     const c = conflicts[0];
+
+    // Status-based / time-window block
+    if (
+      c.type === 'TRUCK' &&
+      (c.conflictingCargoId === VehicleStatus.IN_TRANSIT ||
+        c.conflictingCargoId === VehicleStatus.MAINTENANCE ||
+        c.conflictingCargoId === VehicleStatus.OUT_OF_SERVICE)
+    ) {
+      if (c.conflictingCargoId === VehicleStatus.IN_TRANSIT) {
+        const freeAfter = c.existingDelivery
+          ? new Date(c.existingDelivery).toISOString().slice(0, 10)
+          : 'unknown';
+        throw new ConflictException(
+          `This truck is currently in transit and will only be free after ${freeAfter}. ` +
+          `Choose a cargo shipping time after that date, or pick another truck.`,
+        );
+      }
+      throw new ConflictException(
+        `This truck is currently ${c.conflictingCargoId.replace(/_/g, ' ').toLowerCase()} ` +
+        `and cannot be used for bidding or matching.`,
+      );
+    }
+
     const pickup   = c.existingPickup.toISOString().slice(0, 10);
     const delivery = c.existingDelivery.toISOString().slice(0, 10);
 
@@ -298,7 +407,12 @@ export class AvailabilityService {
       .where('truck.tenantId = :tenantId', { tenantId })
       .andWhere('truck.isActive = true')
       .andWhere('truck.status NOT IN (:...unavailableStatuses)', {
-        unavailableStatuses: [VehicleStatus.MAINTENANCE, VehicleStatus.OUT_OF_SERVICE],
+        // IN_TRANSIT trucks can still be selected for future windows that start
+        // after the current trip ends; reservation + status time checks enforce that.
+        unavailableStatuses: [
+          VehicleStatus.MAINTENANCE,
+          VehicleStatus.OUT_OF_SERVICE,
+        ],
       });
 
     if (busyTruckIds.length > 0) {

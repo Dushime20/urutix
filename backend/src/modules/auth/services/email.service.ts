@@ -345,23 +345,63 @@ export class EmailService {
     });
   }
 
+  async sendAuctionCreatedTruckOwnerEmail(
+    recipientEmail: string,
+    truckOwnerName: string,
+    cargoTitle: string,
+    route: string,
+    auctionId: string,
+    auctionEnd: string,
+    reservePrice?: string,
+  ): Promise<void> {
+    const reserveLine = reservePrice
+      ? `<strong>Reserve / target price:</strong> ${reservePrice}<br>`
+      : '';
+    await this.sendAndLog('sendAuctionCreatedTruckOwnerEmail', recipientEmail, {
+      subject: `New auction available: ${cargoTitle} — UrutiX`,
+      htmlBody: this.renderEmail({
+        title: 'New auction — ready to bid',
+        greeting: `Hello ${truckOwnerName},`,
+        body: `A new cargo auction is available in your tenant. Get ready to place your bid.<br><br>
+          <strong>Cargo:</strong> ${cargoTitle}<br>
+          <strong>Route:</strong> ${route}<br>
+          ${reserveLine}
+          <strong>Auction ends:</strong> ${auctionEnd}<br>
+          <strong>Auction ID:</strong> ${auctionId}<br><br>
+          Open bidding now to compete for this load.`,
+        ctaLabel: 'View auction & bid',
+        ctaUrl: `${this.getFrontendUrl()}/dashboard/bidding`,
+        ctaColor: '#345E85',
+        note: 'This notice was sent to truck owners in the same tenant as the cargo.',
+      }),
+    });
+  }
+
   // ─── Broker / commission emails ────────────────────────────────────────────
 
   async sendBrokerLoadAssignmentEmail(
     recipientEmail: string, brokerName: string, loadTitle: string,
     loadId: string, commissionRate: number, commissionAmount: number,
+    route?: string, currency?: string,
   ): Promise<void> {
+    const currencyCode = currency || 'KES';
+    const routeLine = route ? `<strong>Route:</strong> ${route}<br>` : '';
     await this.sendAndLog('sendBrokerLoadAssignmentEmail', recipientEmail, {
-      subject: `New Load Assignment: ${loadTitle} — UrutiX`,
+      subject: `New cargo assignment: ${loadTitle} — UrutiX`,
       htmlBody: this.renderEmail({
-        title: 'New Load Assignment', greeting: `Hello ${brokerName},`,
-        body: `You have been assigned to a new load:<br><br>
-          <strong>Load:</strong> ${loadTitle}<br>
+        title: 'New cargo assignment',
+        greeting: `Hello ${brokerName},`,
+        body: `You have been assigned as the broker for a cargo load. Please review and accept the contract to begin managing this load.<br><br>
+          <strong>Cargo:</strong> ${loadTitle}<br>
+          ${routeLine}
           <strong>Load ID:</strong> ${loadId}<br>
-          <strong>Commission Rate:</strong> ${commissionRate}%<br>
-          <strong>Commission Amount:</strong> ${commissionAmount}`,
-        ctaLabel: 'View Load', ctaUrl: `${this.getFrontendUrl()}/dashboard/broker`,
-        ctaColor: '#059669', note: 'Thank you for your work with UrutiX.',
+          <strong>Commission rate:</strong> ${commissionRate}%<br>
+          <strong>Estimated commission:</strong> ${currencyCode} ${Number(commissionAmount).toLocaleString()}<br><br>
+          Next step: open your broker dashboard and accept the pending contract.`,
+        ctaLabel: 'View assignment',
+        ctaUrl: `${this.getFrontendUrl()}/dashboard/broker/loads`,
+        ctaColor: '#059669',
+        note: 'You must accept the contract before you can run auctions, bidding, or matching for this cargo.',
       }),
     });
   }

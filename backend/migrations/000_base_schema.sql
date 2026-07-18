@@ -552,14 +552,24 @@ CREATE INDEX IF NOT EXISTS idx_lenders_tenant_status ON lenders(tenant_id, statu
 -- BORROWERS  (TypeORM entity — referenced by loan_requests)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS borrowers (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id  UUID NOT NULL,
-  user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
-  metadata   JSONB NOT NULL DEFAULT '{}',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id            UUID NOT NULL,
+  user_id              UUID REFERENCES users(id) ON DELETE SET NULL,
+  company_name         VARCHAR(255) NOT NULL DEFAULT 'Unknown',
+  contact_name         VARCHAR(255),
+  email                VARCHAR(255),
+  phone                VARCHAR(20),
+  business_type        VARCHAR(100),
+  registration_number  VARCHAR(100),
+  address              TEXT,
+  credit_score         INTEGER,
+  status               VARCHAR(20) NOT NULL DEFAULT 'active',
+  metadata             JSONB NOT NULL DEFAULT '{}',
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_borrowers_tenant ON borrowers(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_borrowers_email_tenant ON borrowers(email, tenant_id);
 
 -- ---------------------------------------------------------------------------
 -- LOAN_REQUESTS  (TypeORM entity — referenced by loan_disbursements, loan_repayments)

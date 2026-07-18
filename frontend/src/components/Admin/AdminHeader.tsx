@@ -144,15 +144,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                 onClick={() => setShowUserMenu(false)}
                             >
                                 <User size={16} />
-                                <span><TranslatedText text="Administrative Profile" /></span>
-                            </Link>
-                            <Link
-                                to="/admin/settings"
-                                className="w-full px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-primary-950/30 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-3 transition-colors"
-                                onClick={() => setShowUserMenu(false)}
-                            >
-                                <Settings size={16} />
-                                <span><TranslatedText text="Platform Settings" /></span>
+                                <span><TranslatedText text="Account & Settings" /></span>
                             </Link>
 
                             <div className="h-px bg-slate-50 dark:bg-slate-800 mx-4 my-2"></div>

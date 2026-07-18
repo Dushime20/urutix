@@ -201,7 +201,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                       Next Steps:
                     </p>
                     <ul className="text-blue-700 text-sm space-y-1 list-disc list-inside">
-                      <li>The broker will receive a notification about the assignment</li>
+                      <li>The broker will receive an in-app notification, email, and message about this assignment</li>
                       <li>A contract has been created with status: PENDING_BROKER_ACCEPTANCE</li>
                       <li>The broker must accept the contract before they can manage this load</li>
                       <li>Once accepted, the broker will have full control over auctions, bidding, and matching</li>

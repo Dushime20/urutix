@@ -148,6 +148,14 @@ export class BiddingController {
       tenantId,
     });
 
+    const statusBlocked = conflicts.some(
+      (c) =>
+        c.type === 'TRUCK' &&
+        (c.conflictingCargoId === 'IN_TRANSIT' ||
+          c.conflictingCargoId === 'MAINTENANCE' ||
+          c.conflictingCargoId === 'OUT_OF_SERVICE'),
+    );
+
     const available = conflicts.length === 0;
     const fmt = (d: Date) =>
       new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -156,21 +164,31 @@ export class BiddingController {
       success: true,
       data: {
         available,
-        conflicts: conflicts.map(c => ({
-          type:               c.type,
-          resourceId:         c.resourceId,
-          conflictingTripId:  c.conflictingTripId,
-          conflictingCargoId: c.conflictingCargoId,
-          existingPickup:     c.existingPickup,
-          existingDelivery:   c.existingDelivery,
-          message:
-            c.type === 'TRUCK'
-              ? `This truck is already assigned to another shipment (${fmt(c.existingPickup)} → ${fmt(c.existingDelivery)}).`
-              : `This driver is already assigned to another shipment (${fmt(c.existingPickup)} → ${fmt(c.existingDelivery)}).`,
-        })),
+        conflicts: conflicts.map(c => {
+          const isStatusBlock =
+            c.type === 'TRUCK' &&
+            ['IN_TRANSIT', 'MAINTENANCE', 'OUT_OF_SERVICE'].includes(c.conflictingCargoId);
+          return {
+            type:               c.type,
+            resourceId:         c.resourceId,
+            conflictingTripId:  c.conflictingTripId,
+            conflictingCargoId: c.conflictingCargoId,
+            existingPickup:     c.existingPickup,
+            existingDelivery:   c.existingDelivery,
+            message: isStatusBlock
+              ? c.conflictingCargoId === 'IN_TRANSIT'
+                ? `This truck is in transit until ${fmt(c.existingDelivery)}. Use it only for cargo shipping after that date.`
+                : `This truck is currently ${c.conflictingCargoId.replace(/_/g, ' ').toLowerCase()} and cannot be used for bidding.`
+              : c.type === 'TRUCK'
+                ? `This truck is already assigned to another shipment (${fmt(c.existingPickup)} → ${fmt(c.existingDelivery)}).`
+                : `This driver is already assigned to another shipment (${fmt(c.existingPickup)} → ${fmt(c.existingDelivery)}).`,
+          };
+        }),
         message: available
           ? 'Truck and driver are available for the selected window.'
-          : `${conflicts.length} scheduling conflict(s) detected. Choose a different truck or driver.`,
+          : statusBlocked
+            ? 'Selected truck is not free for this shipping window (in transit until a later date, or out of service).'
+            : `${conflicts.length} scheduling conflict(s) detected. Choose a different truck or driver.`,
       },
       statusCode: 200,
       timestamp: new Date().toISOString(),

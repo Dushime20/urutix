@@ -1068,11 +1068,12 @@ export class MatchingService {
       await this.loadRepository.save(load);
       this.logger.log(`✅ Load ${load.id} status updated to ASSIGNED`);
 
-      // Step 3: Update Truck status
-      truck.status = VehicleStatus.IN_TRANSIT;
-      truck.updatedAt = new Date();
-      await this.truckRepository.save(truck);
-      this.logger.log(`✅ Truck ${truck.id} status updated to IN_TRANSIT`);
+      // Step 3: Keep truck AVAILABLE until the trip actually starts.
+      // IN_TRANSIT is set by TripsService when status → IN_PROGRESS.
+      // Premature IN_TRANSIT would block bidding and smart matching for other loads.
+      this.logger.log(
+        `✅ Truck ${truck.id} remains ${truck.status} until trip start (match accepted)`,
+      );
 
       // Step 4: Create Trip record
       const trip = await this.createTripFromMatch(load, truck, match);
@@ -1492,11 +1493,7 @@ export class MatchingService {
             await this.loadRepository.save(load);
           }
 
-          // Update truck status if needed
-          if (truck.status !== VehicleStatus.IN_TRANSIT) {
-            truck.status = VehicleStatus.IN_TRANSIT;
-            await this.truckRepository.save(truck);
-          }
+          // Do not set IN_TRANSIT here — truck stays AVAILABLE until trip start
 
           this.logger.log(`✅ Created trip ${tripNumber} for load ${load.id}`);
           created++;
@@ -1557,10 +1554,7 @@ export class MatchingService {
       await this.loadRepository.save(load);
     }
 
-    if (truck.status !== VehicleStatus.IN_TRANSIT) {
-      truck.status = VehicleStatus.IN_TRANSIT;
-      await this.truckRepository.save(truck);
-    }
+    // Do not set IN_TRANSIT here — truck stays AVAILABLE until trip start
 
     return trip;
   }
@@ -1575,10 +1569,8 @@ export class MatchingService {
       console.log('📦 Load weight:', load.weight);
       console.log('🏢 TenantId:', tenantId);
 
-      // Build dynamic query based on load requirements.
-      // We include AVAILABLE and IN_TRANSIT trucks — IN_TRANSIT trucks can still be
-      // booked for upcoming loads and will score lower on the availability dimension.
-      // Only MAINTENANCE and OUT_OF_SERVICE trucks are excluded entirely.
+      // AVAILABLE always; IN_TRANSIT allowed when cargo pickup is after the current trip ends.
+      // MAINTENANCE / OUT_OF_SERVICE are excluded. Schedule overlap is filtered below.
       const matchableStatuses = [VehicleStatus.AVAILABLE, VehicleStatus.IN_TRANSIT];
       const queryBuilder = this.truckRepository
         .createQueryBuilder('truck')
@@ -1591,7 +1583,7 @@ export class MatchingService {
         tenantId,
         statuses: matchableStatuses,
         isActive: true,
-        note: 'AVAILABLE + IN_TRANSIT trucks included; MAINTENANCE/OUT_OF_SERVICE excluded',
+        note: 'AVAILABLE + IN_TRANSIT (time-windowed); MAINTENANCE/OUT_OF_SERVICE excluded',
       });
 
       // Only add capacity filter if load.weight is valid
@@ -1736,6 +1728,7 @@ export class MatchingService {
       // ── Schedule-based availability filter ───────────────────────────────────
       // Exclude trucks that have a confirmed shipment whose window overlaps
       // the requested load's pickup → delivery period.
+      // Also exclude IN_TRANSIT trucks whose current trip ends after load pickup.
       const loadPickup   = load.pickupDate   ? new Date(load.pickupDate)   : null;
       const loadDelivery = load.deliveryDate ? new Date(load.deliveryDate) : null;
 
@@ -1746,19 +1739,31 @@ export class MatchingService {
           loadDelivery,
         );
 
-        if (busyTruckIds.size > 0) {
-          const beforeCount = filteredTrucks.length;
-          const scheduleFiltered = filteredTrucks.filter(t => !busyTruckIds.has(t.id));
-          console.log(
-            `📅 Schedule filter removed ${beforeCount - scheduleFiltered.length} busy truck(s) for window ` +
-            `${loadPickup.toISOString()} → ${loadDelivery.toISOString()}`,
-          );
-          return scheduleFiltered;
-        }
-      }
-      // ─────────────────────────────────────────────────────────────────────────
+        const beforeCount = filteredTrucks.length;
+        const scheduleFiltered = filteredTrucks.filter((t) => {
+          if (busyTruckIds.has(t.id)) return false;
 
-      return filteredTrucks;
+          // Time-window: IN_TRANSIT truck is only eligible if cargo ships after it is free
+          if (t.status === VehicleStatus.IN_TRANSIT) {
+            const freeFrom = t.estimatedAvailableTime
+              ? new Date(t.estimatedAvailableTime)
+              : null;
+            if (!freeFrom || loadPickup.getTime() < freeFrom.getTime()) {
+              return false;
+            }
+          }
+          return true;
+        });
+        console.log(
+          `📅 Schedule/time filter removed ${beforeCount - scheduleFiltered.length} truck(s) for window ` +
+          `${loadPickup.toISOString()} → ${loadDelivery.toISOString()}`,
+        );
+        return scheduleFiltered;
+      }
+
+      // No load window → keep AVAILABLE only (cannot safely schedule IN_TRANSIT)
+      return filteredTrucks.filter((t) => t.status === VehicleStatus.AVAILABLE);
+      // ─────────────────────────────────────────────────────────────────────────
     } catch (error) {
       console.error('❌ Error in getAvailableTrucks:', error);
       console.error('Error message:', error.message);
@@ -1981,14 +1986,27 @@ export class MatchingService {
         return null;
       }
 
-      // 2. AVAILABILITY CONSTRAINT
+      // 2. AVAILABILITY CONSTRAINT — time-windowed for IN_TRANSIT
       if (truck.status !== VehicleStatus.AVAILABLE) {
-        // Exception: If truck is incoming and will be available soon (within 2 hours)
-        const isIncoming = truck.status === VehicleStatus.IN_TRANSIT &&
-          truck.estimatedAvailableTime &&
-          (new Date(truck.estimatedAvailableTime).getTime() - Date.now()) < 2 * 60 * 60 * 1000;
+        if (truck.status === VehicleStatus.IN_TRANSIT) {
+          const loadPickup = load.pickupDate ? new Date(load.pickupDate) : null;
+          const freeFrom = truck.estimatedAvailableTime
+            ? new Date(truck.estimatedAvailableTime)
+            : null;
+          // Eligible only when cargo shipping starts after the current trip ends
+          const canTakeFutureLoad =
+            !!loadPickup &&
+            !!freeFrom &&
+            loadPickup.getTime() >= freeFrom.getTime();
 
-        if (!isIncoming) {
+          if (!canTakeFutureLoad) {
+            this.logger.debug(
+              `❌ Rejected: IN_TRANSIT — cargo pickup ${loadPickup?.toISOString() ?? 'n/a'} ` +
+              `is not after free-from ${freeFrom?.toISOString() ?? 'unknown'}`,
+            );
+            return null;
+          }
+        } else {
           this.logger.debug(`❌ Rejected: Status is ${truck.status}`);
           return null;
         }
@@ -2528,16 +2546,16 @@ export class MatchingService {
         (new Date(truck.estimatedAvailableTime).getTime() - Date.now()) /
         (1000 * 60 * 60);
 
-      if (hoursUntilAvailable <= 2) return 0.9;
+      if (hoursUntilAvailable <= 0) return 0.95;
       if (hoursUntilAvailable <= 6) return 0.8;
-      if (hoursUntilAvailable <= 12) return 0.6;
-      if (hoursUntilAvailable <= 24) return 0.4;
-      if (hoursUntilAvailable <= 48) return 0.2;
-      return 0.1;
+      if (hoursUntilAvailable <= 12) return 0.65;
+      if (hoursUntilAvailable <= 24) return 0.5;
+      if (hoursUntilAvailable <= 48) return 0.35;
+      return 0.2;
     }
 
-    if (truck.status === VehicleStatus.MAINTENANCE) return 0.1;
-    return 0.2;
+    if (truck.status === VehicleStatus.MAINTENANCE) return 0;
+    return 0;
   }
 
   // =====================================================

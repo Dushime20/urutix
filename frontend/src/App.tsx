@@ -105,6 +105,7 @@ const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
 const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
 const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
+const AdminAccountHub = lazy(() => import('./pages/admin/AdminAccountHub'));
 const ComponentShowcase = lazy(() => import('./pages/admin/ComponentShowcase'));
 const BulkEmail = lazy(() => import('./pages/admin/BulkEmail'));
 
@@ -540,8 +541,8 @@ function App() {
                       <Route path="bulk-email" element={<BulkEmail />} />
                       <Route path="reports" element={<Analytics />} />
                       <Route path="help" element={<Settings />} />
-                      <Route path="profile" element={<Profile />} />
-                      <Route path="settings" element={<Settings />} />
+                      <Route path="profile" element={<AdminAccountHub />} />
+                      <Route path="settings" element={<AdminAccountHub />} />
                       <Route path="billing" element={<BillingDashboard />} />
                       <Route path="credits" element={<PurchaseCredits />} />
                       <Route path="revenue" element={<RevenueDashboard />} />

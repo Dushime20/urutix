@@ -29,17 +29,21 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { financialAPI } from '@/services/api';
 import { fuelApi } from '@/services/fuelApi';
 import { tenantApi } from '@/services/tenantApi';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatLocation } from '@/utils/formatLocation';
 
 const FinancialDashboard: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const isFleet = location.pathname.includes('/fleet');
+  const isCargoOwner =
+    user?.role === 'CARGO_OWNER' || location.pathname.includes('/cargo-owner');
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
 
   // Fleet-specific data
@@ -71,64 +75,66 @@ const FinancialDashboard: React.FC = () => {
     refetchInterval: 60000,
   });
 
-  // Fetch real performance metrics
-  const { isLoading } = useQuery({
-    queryKey: ['financial-performance', timeRange],
+  // Live overview for selected period (does not depend on saved report rows)
+  const { data: reportData, isLoading } = useQuery({
+    queryKey: ['financial-overview-summary', timeRange],
     queryFn: async () => {
-      const response = await financialAPI.getPerformanceMetrics({ period: timeRange });
-      return response.data?.data || response.data || [];
-    }
+      const response = await financialAPI.getOverviewSummary({ period: timeRange });
+      const payload = response.data?.data ?? response.data;
+      return payload?.summary ?? payload ?? null;
+    },
   });
 
-  // Fetch detailed reports for P&L
-  const { data: reportData } = useQuery({
-    queryKey: ['financial-report-summary'],
-    queryFn: async () => {
-      const response = await financialAPI.getFinancialReports({ limit: 1 });
-      const reports = response.data?.data || response.data || [];
-      return reports[0]?.data || null;
-    }
-  });
-
-  // Fetch recent transactions (Invoices + Payments + Expenses)
+  // Recent invoices (API returns { invoices: [...] })
   const { data: recentInvoices } = useQuery({
     queryKey: ['recent-invoices'],
     queryFn: async () => {
       const response = await financialAPI.getInvoices({ limit: 5 });
-      return response.data?.data || response.data || [];
-    }
+      const payload = response.data?.data ?? response.data;
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload?.invoices)) return payload.invoices;
+      return [];
+    },
   });
 
   const stats = useMemo(() => {
     if (!reportData) return { revenue: 0, expenses: 0, profit: 0, margin: 0 };
     return {
-      revenue: reportData.revenue?.total || 0,
-      expenses: reportData.expenses?.total || 0,
-      profit: reportData.profit?.total || 0,
-      margin: reportData.profit?.margin || 0
+      revenue: Number(reportData.revenue?.total || 0),
+      expenses: Number(reportData.expenses?.total || 0),
+      profit: Number(reportData.profit?.total || 0),
+      margin: Number(reportData.profit?.margin || 0),
     };
   }, [reportData]);
 
   const categoryBreakdown = useMemo(() => {
     if (!reportData?.expenses?.byCategory) return [];
     const colors = ['#2c5173', '#EC4899', '#F59E0B', '#4a7fa5', '#10B981', '#8B5CF6'];
-    return Object.entries(reportData.expenses.byCategory).map(([name, value], i) => ({
-      name,
-      value: Number(value),
-      color: colors[i % colors.length]
-    }));
+    return Object.entries(reportData.expenses.byCategory)
+      .map(([name, value], i) => ({
+        name,
+        value: Number(value),
+        color: colors[i % colors.length],
+      }))
+      .filter((d) => d.value > 0);
+  }, [reportData]);
+
+  const expenditureSeries = useMemo(() => {
+    const byMonth = reportData?.expenses?.byMonth || {};
+    return Object.entries(byMonth)
+      .map(([month, total]) => ({ month, total: Number(total) }))
+      .sort((a, b) => a.month.localeCompare(b.month));
   }, [reportData]);
 
   const recentTransactions = useMemo(() => {
     const invoices = Array.isArray(recentInvoices) ? recentInvoices : [];
-    
     return invoices.slice(0, 5).map((inv: any) => ({
       id: inv.id,
       description: `Invoice ${inv.invoiceNumber}`,
       amount: inv.totalAmount,
       date: inv.issueDate,
       status: inv.status,
-      type: 'invoice'
+      type: 'invoice',
     }));
   }, [recentInvoices]);
 
@@ -143,6 +149,68 @@ const FinancialDashboard: React.FC = () => {
       { name: 'Rejected',   value: advanceStats.rejectedAmount  || 0, color: '#EF4444' },
     ].filter(d => d.value > 0);
   }, [advanceStats]);
+
+  const primaryCards = isCargoOwner
+    ? [
+        {
+          title: 'Freight Spend',
+          value: formatCurrency(stats.expenses),
+          trend: `${reportData?.meta?.tripCount ?? 0} trips`,
+          trendDirection: 'neutral' as const,
+          icon: <Wallet size={24} />,
+        },
+        {
+          title: 'Contracted Value',
+          value: formatCurrency(stats.revenue || stats.expenses),
+          trend: `${reportData?.meta?.paymentCount ?? 0} payments`,
+          trendDirection: 'up' as const,
+          icon: <TrendingUp size={24} />,
+        },
+        {
+          title: 'Net Outflow',
+          value: formatCurrency(Math.abs(stats.profit || stats.expenses)),
+          trend: 'Period spend',
+          trendDirection: 'down' as const,
+          icon: <ArrowUpRight size={24} />,
+        },
+        {
+          title: 'Activity',
+          value: `${(reportData?.meta?.tripCount ?? 0) + (reportData?.meta?.paymentCount ?? 0)}`,
+          trend: 'Audit Ready',
+          trendDirection: 'neutral' as const,
+          icon: <PieChartIcon size={24} />,
+        },
+      ]
+    : [
+        {
+          title: 'Total Revenue',
+          value: formatCurrency(stats.revenue),
+          trend: '+12%',
+          trendDirection: 'up' as const,
+          icon: <TrendingUp size={24} />,
+        },
+        {
+          title: 'Total Expenses',
+          value: formatCurrency(stats.expenses),
+          trend: '+5%',
+          trendDirection: 'down' as const,
+          icon: <Wallet size={24} />,
+        },
+        {
+          title: 'Net Profit',
+          value: formatCurrency(stats.profit),
+          trend: 'Peak',
+          trendDirection: 'up' as const,
+          icon: <ArrowUpRight size={24} />,
+        },
+        {
+          title: 'Profit Margin',
+          value: `${stats.margin.toFixed(1)}%`,
+          trend: 'Audit Ready',
+          trendDirection: 'neutral' as const,
+          icon: <PieChartIcon size={24} />,
+        },
+      ];
 
   if (isLoading) {
     return (
@@ -289,6 +357,9 @@ const FinancialDashboard: React.FC = () => {
                     RECONCILED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
                   };
                   const StatusIcon = adv.status === 'APPROVED' ? CheckCircle : adv.status === 'REJECTED' ? XCircle : Clock;
+                  const routeLabel = adv.trip
+                    ? `${formatLocation(adv.trip.origin, '?')} → ${formatLocation(adv.trip.destination, '?')}`
+                    : 'No trip';
                   return (
                     <div key={adv.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all group">
                       <div className="flex items-center gap-4">
@@ -298,9 +369,7 @@ const FinancialDashboard: React.FC = () => {
                         <div>
                           <p className="text-sm font-black uppercase tracking-tight">{driverName}</p>
                           <div className="flex items-center gap-3 mt-0.5 opacity-40">
-                            <span className="text-[9px] font-black uppercase tracking-widest">
-                              {adv.trip ? `${adv.trip.origin?.city || '?'} → ${adv.trip.destination?.city || '?'}` : 'No trip'}
-                            </span>
+                            <span className="text-[9px] font-black uppercase tracking-widest">{routeLabel}</span>
                             <span className="w-1 h-1 bg-white rounded-full" />
                             <span className="text-[9px] font-black uppercase tracking-widest">{new Date(adv.advanceDate).toLocaleDateString()}</span>
                           </div>
@@ -360,42 +429,18 @@ const FinancialDashboard: React.FC = () => {
 
       {/* Primary Metrics Vector Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-10 bg-white/40 dark:bg-gray-800/20 rounded-[3rem] border border-slate-100/50 dark:border-gray-700/50 transition-colors">
-        <StatCard 
-          title="Total Revenue" 
-          value={formatCurrency(stats.revenue)} 
-          trend="+12%"
-          trendDirection="up"
-          icon={<TrendingUp size={24} />} 
-          color="primary" 
-          variant="classic"
-        />
-        <StatCard 
-          title="Total Expenses" 
-          value={formatCurrency(stats.expenses)} 
-          trend="+5%"
-          trendDirection="down"
-          icon={<Wallet size={24} />} 
-          color="primary" 
-          variant="classic"
-        />
-        <StatCard 
-          title="Net Profit" 
-          value={formatCurrency(stats.profit)} 
-          trend="Peak"
-          trendDirection="up"
-          icon={<ArrowUpRight size={24} />} 
-          color="primary" 
-          variant="classic"
-        />
-        <StatCard 
-          title="Profit Margin" 
-          value={`${stats.margin.toFixed(1)}%`} 
-          trend="Audit Ready"
-          trendDirection="neutral"
-          icon={<PieChartIcon size={24} />} 
-          color="primary" 
-          variant="classic"
-        />
+        {primaryCards.map((card) => (
+          <StatCard
+            key={card.title}
+            title={card.title}
+            value={card.value}
+            trend={card.trend}
+            trendDirection={card.trendDirection}
+            icon={card.icon}
+            color="primary"
+            variant="classic"
+          />
+        ))}
       </div>
 
       {/* Analytics Architecture */}
@@ -410,33 +455,39 @@ const FinancialDashboard: React.FC = () => {
             <BarChart3 className="text-[#2c5173] w-6 h-6 opacity-40" />
           </div>
           <div className="h-[300px] w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={reportData?.expenses?.byMonth ? Object.entries(reportData.expenses.byMonth).map(([month, total]) => ({ month, total })) : []}>
-                <defs>
-                  <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2c5173" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#2c5173" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-gray-700" vertical={false} />
-                <XAxis dataKey="month" stroke="#94a3b8" className="dark:stroke-gray-500" fontSize={10} axisLine={false} tickLine={false} />
-                <YAxis stroke="#94a3b8" className="dark:stroke-gray-500" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
-                <Tooltip
-                  contentStyle={{ 
-                    borderRadius: '1rem', 
-                    border: 'none', 
-                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', 
-                    fontWeight: 900, 
-                    textTransform: 'uppercase', 
-                    fontSize: '10px',
-                    backgroundColor: 'var(--tooltip-bg, #fff)',
-                    color: 'var(--tooltip-color, #000)'
-                  }}
-                  itemStyle={{ color: 'inherit' }}
-                />
-                <Area type="monotone" dataKey="total" stroke="#2c5173" strokeWidth={3} fillOpacity={1} fill="url(#colorPrimary)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {expenditureSeries.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={expenditureSeries}>
+                  <defs>
+                    <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2c5173" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#2c5173" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-gray-700" vertical={false} />
+                  <XAxis dataKey="month" stroke="#94a3b8" className="dark:stroke-gray-500" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#94a3b8" className="dark:stroke-gray-500" fontSize={10} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value / 1000}k`} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '1rem',
+                      border: 'none',
+                      boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                      fontWeight: 900,
+                      textTransform: 'uppercase',
+                      fontSize: '10px',
+                      backgroundColor: 'var(--tooltip-bg, #fff)',
+                      color: 'var(--tooltip-color, #000)',
+                    }}
+                    itemStyle={{ color: 'inherit' }}
+                  />
+                  <Area type="monotone" dataKey="total" stroke="#2c5173" strokeWidth={3} fillOpacity={1} fill="url(#colorPrimary)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">
+                No expenditure data for this period
+              </div>
+            )}
           </div>
         </div>
 
@@ -450,37 +501,43 @@ const FinancialDashboard: React.FC = () => {
             <PieChartIcon className="text-[#2c5173] w-6 h-6 opacity-40" />
           </div>
           <div className="flex items-center h-[300px]">
-            <ResponsiveContainer width="60%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryBreakdown}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={8}
-                  dataKey="value"
-                >
-                  {categoryBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+            {categoryBreakdown.length > 0 ? (
+              <>
+                <ResponsiveContainer width="60%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={8}
+                      dataKey="value"
+                    >
+                      {categoryBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex-1 space-y-4 max-h-[250px] overflow-y-auto pr-4 scrollbar-hide">
+                  {categoryBreakdown.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between group cursor-default">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-[9px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest group-hover:text-slate-900 dark:group-hover:text-white transition-colors truncate max-w-[100px]">{item.name}</span>
+                      </div>
+                      <span className="text-[10px] font-black text-slate-900 dark:text-white">{formatCurrency(item.value)}</span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex-1 space-y-4 max-h-[250px] overflow-y-auto pr-4 scrollbar-hide">
-              {categoryBreakdown.length > 0 ? categoryBreakdown.map((item, index) => (
-                <div key={index} className="flex items-center justify-between group cursor-default">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-[9px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest group-hover:text-slate-900 dark:group-hover:text-white transition-colors truncate max-w-[100px]">{item.name}</span>
-                  </div>
-                  <span className="text-[10px] font-black text-slate-900 dark:text-white">{formatCurrency(item.value)}</span>
                 </div>
-              )) : (
-                <div className="text-center py-10 opacity-30 text-[10px] font-black uppercase tracking-widest">No Sector Data</div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="w-full text-center py-10 opacity-30 text-[10px] font-black uppercase tracking-widest">
+                No sector data for this period
+              </div>
+            )}
           </div>
         </div>
       </div>

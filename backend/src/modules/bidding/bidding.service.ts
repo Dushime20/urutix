@@ -17,7 +17,7 @@ import { Load, LoadStatus } from '../../entities/load.entity';
 import { Location } from '../../entities/location.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
-import { Truck } from '../../entities/truck.entity';
+import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { AuctionWatch } from '../../entities/auction-watch.entity';
@@ -332,6 +332,20 @@ export class BiddingService {
     console.log(`  - Rate: ${creditsPerTonTruckOwner} credits/ton (from tenant admin's plan)`);
     console.log(`  - Credits needed: ${truckOwnerCreditsNeeded}`);
 
+    // Time-window eligibility for the selected truck (IN_TRANSIT OK if cargo ships later)
+    const bidTruckId = createBidDto.bidDetails?.truckSpecifications?.truckId;
+    if (bidTruckId) {
+      const proposedPickup =
+        createBidDto.proposedPickupDate ||
+        load.pickupDate ||
+        new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await this.assertTruckAvailableForBidding(
+        bidTruckId,
+        truckOwnerId,
+        new Date(proposedPickup),
+      );
+    }
+
     // Create bid
     const bid = this.bidRepository.create({
       ...createBidDto,
@@ -508,11 +522,61 @@ export class BiddingService {
   }
 
   /**
-   * Checks whether the truck/driver specified in a new bid are already occupied
-   * during the proposed shipment window.  If a conflict is found, an in-app
-   * notification is sent to the truck owner immediately — the bid is NOT blocked.
-   * The hard block happens at bid acceptance.
+   * Hard-reject MAINTENANCE / OUT_OF_SERVICE / inactive.
+   * IN_TRANSIT is allowed only when cargo pickup is on/after the truck's free-from time.
    */
+  private assertTruckStatusAvailable(truck: Truck, pickupDateTime?: Date): void {
+    if (!truck.isActive) {
+      throw new BadRequestException(
+        'This truck is inactive and cannot be used for bidding.',
+      );
+    }
+    if (
+      truck.status === VehicleStatus.MAINTENANCE ||
+      truck.status === VehicleStatus.OUT_OF_SERVICE
+    ) {
+      throw new BadRequestException(
+        `This truck is currently ${truck.status.replace(/_/g, ' ').toLowerCase()} and cannot be used for bidding.`,
+      );
+    }
+    if (truck.status === VehicleStatus.IN_TRANSIT) {
+      const freeFrom = truck.estimatedAvailableTime
+        ? new Date(truck.estimatedAvailableTime)
+        : null;
+      const pickup = pickupDateTime ? new Date(pickupDateTime) : null;
+
+      if (!pickup || !freeFrom || pickup.getTime() < freeFrom.getTime()) {
+        const freeLabel = freeFrom
+          ? freeFrom.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : 'the current trip ends';
+        throw new BadRequestException(
+          `This truck is currently in transit and will be free after ${freeLabel}. ` +
+          `You can bid with it only for cargo whose shipping time starts after that.`,
+        );
+      }
+    }
+  }
+
+  private async assertTruckAvailableForBidding(
+    truckId: string,
+    ownerId: string,
+    pickupDateTime?: Date,
+  ): Promise<void> {
+    const truck = await this.truckRepository.findOne({
+      where: { id: truckId, ownerId },
+    });
+    if (!truck) {
+      throw new NotFoundException(
+        'Truck specified in bid not found or does not belong to the truck owner',
+      );
+    }
+    this.assertTruckStatusAvailable(truck, pickupDateTime);
+  }
+
   private async sendAvailabilityWarningIfNeeded(
     bidId: string,
     truckOwnerId: string,
@@ -630,6 +694,10 @@ export class BiddingService {
     // Get truck ID from bid details
     let truckId = bid.bidDetails?.truckSpecifications?.truckId;
     let truck;
+    const acceptPickup =
+      bid.load?.pickupDate ||
+      bid.proposedPickupDate ||
+      new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     if (truckId) {
       // Verify truck exists and belongs to the truck owner
@@ -640,14 +708,38 @@ export class BiddingService {
       if (!truck) {
         throw new NotFoundException('Truck specified in bid not found or does not belong to the truck owner');
       }
+      this.assertTruckStatusAvailable(truck, new Date(acceptPickup));
     } else {
-      // For quick bids that don't specify a truck, auto-assign their first available truck
+      // Prefer AVAILABLE; fall back to IN_TRANSIT only if cargo ships after that trip ends
       truck = await this.truckRepository.findOne({
-        where: { ownerId: bid.truckOwnerId },
+        where: {
+          ownerId: bid.truckOwnerId,
+          status: VehicleStatus.AVAILABLE,
+          isActive: true,
+        },
       });
 
       if (!truck) {
-        throw new BadRequestException('Truck owner must have at least one registered truck to receive a load assignment');
+        const inTransitCandidates = await this.truckRepository.find({
+          where: {
+            ownerId: bid.truckOwnerId,
+            status: VehicleStatus.IN_TRANSIT,
+            isActive: true,
+          },
+        });
+        const pickupMs = new Date(acceptPickup).getTime();
+        truck = inTransitCandidates.find((t) => {
+          const freeFrom = t.estimatedAvailableTime
+            ? new Date(t.estimatedAvailableTime).getTime()
+            : null;
+          return freeFrom !== null && pickupMs >= freeFrom;
+        });
+      }
+
+      if (!truck) {
+        throw new BadRequestException(
+          'Truck owner must have a truck that is available for this cargo shipping window',
+        );
       }
       truckId = truck.id;
     }
@@ -1052,7 +1144,41 @@ export class BiddingService {
       status: auctionStatus,
     });
 
-    return this.auctionRepository.save(auction);
+    const savedAuction = await this.auctionRepository.save(auction);
+
+    // Notify same-tenant truck owners to bid (fire-and-forget via event)
+    try {
+      const origin =
+        load.origin?.city ||
+        load.origin?.address ||
+        (load as any).pickupLocation?.locationData?.city ||
+        (load as any).pickupLocation?.locationData?.name ||
+        'TBD';
+      const destination =
+        load.destination?.city ||
+        load.destination?.address ||
+        (load as any).deliveryLocation?.locationData?.city ||
+        (load as any).deliveryLocation?.locationData?.name ||
+        'TBD';
+
+      this.eventEmitter.emit('auction.created', {
+        auctionId: savedAuction.id,
+        loadId: load.id,
+        tenantId: load.tenantId,
+        cargoOwnerId: load.cargoOwnerId,
+        cargoTitle: load.title || load.cargoType || 'Cargo',
+        route: `${origin} → ${destination}`,
+        auctionStart: savedAuction.auctionStart,
+        auctionEnd: savedAuction.auctionEnd,
+        reservePrice: savedAuction.reservePrice,
+        currency: load.currencyCode || 'KES',
+        status: savedAuction.status,
+      });
+    } catch (error) {
+      console.error('Failed to emit auction.created event:', error);
+    }
+
+    return savedAuction;
   }
 
   async updateAuction(

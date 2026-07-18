@@ -344,6 +344,7 @@ export class TripsService {
 
   /**
    * When driver starts a trip: set truck → IN_TRANSIT, driver → IN_TRANSIT.
+   * Also stamp estimatedAvailableTime so future loads can be matched/bid after this trip ends.
    */
   private async updateTruckAndDriverOnStart(trip: Trip): Promise<void> {
     if (trip.truckId) {
@@ -351,8 +352,15 @@ export class TripsService {
       if (truck) {
         truck.status = VehicleStatus.IN_TRANSIT;
         truck.currentTripId = trip.id;
+        truck.estimatedAvailableTime =
+          trip.plannedEndTime || trip.estimatedEndTime || null;
         await this.truckRepository.save(truck);
-        this.logger.log(`[TripsService] Truck ${truck.id} → IN_TRANSIT for trip ${trip.id}`);
+        this.logger.log(
+          `[TripsService] Truck ${truck.id} → IN_TRANSIT for trip ${trip.id}` +
+          (truck.estimatedAvailableTime
+            ? ` (free after ${new Date(truck.estimatedAvailableTime).toISOString()})`
+            : ''),
+        );
       }
     }
     if (trip.driverId) {
@@ -372,10 +380,14 @@ export class TripsService {
     if (trip.truckId) {
       const truck = await this.truckRepository.findOne({ where: { id: trip.truckId } });
       if (truck) {
-        truck.status = VehicleStatus.AVAILABLE;
-        truck.currentTripId = null;
-        await this.truckRepository.save(truck);
-        this.logger.log(`[TripsService] Truck ${truck.id} → AVAILABLE after trip ${trip.id}`);
+        // Only free this truck if it is still tied to this trip (avoid clobbering a newer assignment)
+        if (!truck.currentTripId || truck.currentTripId === trip.id) {
+          truck.status = VehicleStatus.AVAILABLE;
+          truck.currentTripId = null;
+          truck.estimatedAvailableTime = null;
+          await this.truckRepository.save(truck);
+          this.logger.log(`[TripsService] Truck ${truck.id} → AVAILABLE after trip ${trip.id}`);
+        }
       }
     }
     if (trip.driverId) {

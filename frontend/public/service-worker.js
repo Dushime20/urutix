@@ -1,90 +1,110 @@
-// Urutix Service Worker
-const CACHE_NAME = 'urutix-v1.0.0';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
-  '/manifest.json'
-];
+// Urutix Service Worker — Vite-aware caching
+// Bump CACHE_VERSION on every production release that ships new hashed assets.
+const CACHE_VERSION = 'urutix-v2026-07-18';
+const SHELL_CACHE = `${CACHE_VERSION}-shell`;
+const ASSET_CACHE = `${CACHE_VERSION}-assets`;
 
-// Install event - cache essential files
+const PRECACHE_URLS = ['/manifest.json', '/logo-urutix.svg'];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[Service Worker] Caching app shell');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => self.skipWaiting())
+    caches
+      .open(SHELL_CACHE)
+      .then((cache) => cache.addAll(PRECACHE_URLS).catch(() => undefined))
+      .then(() => self.skipWaiting()),
   );
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[Service Worker] Removing old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((names) =>
+        Promise.all(
+          names
+            .filter((name) => name !== SHELL_CACHE && name !== ASSET_CACHE)
+            .map((name) => caches.delete(name)),
+        ),
+      )
+      .then(() => self.clients.claim()),
   );
 });
 
-// Fetch event - serve from cache, fallback to network
-self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
+function isNavigationRequest(request) {
+  return (
+    request.mode === 'navigate' ||
+    (request.method === 'GET' &&
+      request.headers.get('accept') &&
+      request.headers.get('accept').includes('text/html'))
+  );
+}
 
-  // Skip API calls (always fetch fresh)
-  if (event.request.url.includes('/api/')) {
-    return fetch(event.request);
+function isHashedAsset(url) {
+  return (
+    url.pathname.startsWith('/assets/') &&
+    /\.[a-f0-9]{6,}\.(js|css|woff2?|png|jpg|jpeg|gif|svg|webp)$/i.test(url.pathname)
+  );
+}
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // Always network for API / sockets
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io')) {
+    return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return cached response
-        if (response) {
-          // Update cache in background
-          fetch(event.request).then((fetchResponse) => {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, fetchResponse.clone());
-            });
-          });
-          return response;
-        }
-
-        // Network request
-        return fetch(event.request).then((fetchResponse) => {
-          // Don't cache if not a valid response
-          if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
-            return fetchResponse;
+  // HTML / navigations: network-first so users never keep a stale index.html
+  // that points at deleted Vite chunk hashes after a deploy.
+  if (isNavigationRequest(request) || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(SHELL_CACHE).then((cache) => cache.put('/index.html', copy));
           }
+          return response;
+        })
+        .catch(() => caches.match('/index.html')),
+    );
+    return;
+  }
 
-          // Clone the response
-          const responseToCache = fetchResponse.clone();
-
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-
-          return fetchResponse;
+  // Content-hashed Vite assets: cache-first (safe because hash changes on rebuild)
+  if (isHashedAsset(url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(ASSET_CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
         });
+      }),
+    );
+    return;
+  }
+
+  // Everything else: network with cache fallback
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response && response.ok && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(SHELL_CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
       })
-      .catch(() => {
-        // Offline fallback
-        return caches.match('/index.html');
-      })
+      .catch(() => caches.match(request)),
   );
 });
 
-// Push notification event
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data ? event.data.text() : 'New update available',
@@ -92,37 +112,13 @@ self.addEventListener('push', (event) => {
     badge: '/logo192.png',
     vibrate: [200, 100, 200],
     tag: 'urutix-notification',
-    requireInteraction: false
+    requireInteraction: false,
   };
 
-  event.waitUntil(
-    self.registration.showNotification('Urutix', options)
-  );
+  event.waitUntil(self.registration.showNotification('Urutix', options));
 });
 
-// Notification click event
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
-  event.waitUntil(
-    clients.openWindow('/')
-  );
+  event.waitUntil(clients.openWindow('/'));
 });
-
-// Background sync
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-shipments') {
-    event.waitUntil(syncShipments());
-  }
-});
-
-// Helper function for background sync
-async function syncShipments() {
-  try {
-    // Sync logic here
-    console.log('[Service Worker] Background sync completed');
-  } catch (error) {
-    console.error('[Service Worker] Background sync failed:', error);
-  }
-}
-

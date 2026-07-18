@@ -604,10 +604,11 @@ export class EnhancedTruckMatchingService {
       tenantId,
     };
 
-    // Update truck and driver availability
+    // Update truck availability — booking confirmed, but keep AVAILABLE until trip starts
+    // IN_TRANSIT is set by TripsService when the driver starts the trip
     await this.truckRepository.update(
       { id: bookingData.truckId, tenantId },
-      { status: VehicleStatus.IN_TRANSIT },
+      { updatedAt: new Date() },
     );
 
     return booking;

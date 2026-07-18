@@ -24,6 +24,7 @@ import { PaymentNotificationListener } from './listeners/payment-notification.li
 import { PaymentNotificationService } from './services/payment-notification.service';
 import { EventsModule } from '../events/events.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { MessengerModule } from '../messenger/messenger.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     // Because notifications/services/email.service re-exports that same class,
     // Nest resolves them as the same token — no duplicate provider needed.
     EnhancedAuthModule,
+    MessengerModule,
   ],
   controllers: [NotificationsController],
   providers: [
