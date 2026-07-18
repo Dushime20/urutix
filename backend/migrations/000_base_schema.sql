@@ -595,6 +595,12 @@ END $$;
 -- ---------------------------------------------------------------------------
 -- BORROWERS  (TypeORM entity — referenced by loan_requests)
 -- ---------------------------------------------------------------------------
+-- IMPORTANT: production may already have an older borrowers table
+-- (id, tenant_id, user_id, metadata only). CREATE TABLE IF NOT EXISTS is a
+-- no-op in that case, so we must ADD missing columns before any indexes that
+-- reference them — otherwise bootstrap fails with:
+--   column "email" does not exist  (ComputeIndexAttrs)
+-- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS borrowers (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id            UUID NOT NULL,
@@ -612,8 +618,56 @@ CREATE TABLE IF NOT EXISTS borrowers (
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'borrowers') THEN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'company_name') THEN
+      ALTER TABLE borrowers ADD COLUMN company_name VARCHAR(255) NOT NULL DEFAULT 'Unknown';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'contact_name') THEN
+      ALTER TABLE borrowers ADD COLUMN contact_name VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'email') THEN
+      ALTER TABLE borrowers ADD COLUMN email VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'phone') THEN
+      ALTER TABLE borrowers ADD COLUMN phone VARCHAR(20);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'business_type') THEN
+      ALTER TABLE borrowers ADD COLUMN business_type VARCHAR(100);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'registration_number') THEN
+      ALTER TABLE borrowers ADD COLUMN registration_number VARCHAR(100);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'address') THEN
+      ALTER TABLE borrowers ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'credit_score') THEN
+      ALTER TABLE borrowers ADD COLUMN credit_score INTEGER;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'status') THEN
+      ALTER TABLE borrowers ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'user_id') THEN
+      ALTER TABLE borrowers ADD COLUMN user_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'borrowers' AND column_name = 'metadata') THEN
+      ALTER TABLE borrowers ADD COLUMN metadata JSONB NOT NULL DEFAULT '{}';
+    END IF;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_borrowers_tenant ON borrowers(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_borrowers_email_tenant ON borrowers(email, tenant_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'borrowers' AND column_name = 'email'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_borrowers_email_tenant ON borrowers(email, tenant_id)';
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- LOAN_REQUESTS  (TypeORM entity — referenced by loan_disbursements, loan_repayments)

@@ -387,6 +387,12 @@ async function bootstrapBaseSchema(client) {
   } catch (err) {
     await client.query('ROLLBACK');
     logError(`Bootstrap FAILED: ${err.message}`);
+    if (err.code === '42703' || /column .* does not exist/i.test(err.message || '')) {
+      logError(
+        'Hint: an existing table is missing a column that 000_base_schema.sql indexes. ' +
+        'CREATE TABLE IF NOT EXISTS is a no-op on old tables — ensure ADD COLUMN runs before CREATE INDEX.',
+      );
+    }
     logError('Cannot proceed without the base schema. Aborting.');
     throw err;   // propagate → runMigrations will exit(1)
   }
