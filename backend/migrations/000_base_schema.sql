@@ -579,17 +579,27 @@ CREATE TABLE IF NOT EXISTS lender_policies (
 );
 CREATE INDEX IF NOT EXISTS idx_lender_policies_lender_created
   ON lender_policies(lender_id, created_at);
+-- Idempotent FK: information_schema stores unquoted names lowercased, and an
+-- older FK (TypeORM hash name) may already cover lender_id. Skip if any FK
+-- already exists on lender_policies.lender_id; also catch duplicate_object.
 DO $$ BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'FK_lender_policies_lender_id'
-      AND table_name = 'lender_policies'
+    SELECT 1
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+     AND tc.table_schema = kcu.table_schema
+    WHERE tc.table_name = 'lender_policies'
+      AND tc.constraint_type = 'FOREIGN KEY'
+      AND kcu.column_name = 'lender_id'
   ) THEN
     ALTER TABLE lender_policies
-      ADD CONSTRAINT FK_lender_policies_lender_id
+      ADD CONSTRAINT fk_lender_policies_lender_id
       FOREIGN KEY (lender_id) REFERENCES lenders(id)
       ON DELETE NO ACTION ON UPDATE NO ACTION;
   END IF;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
 END $$;
 
 -- ---------------------------------------------------------------------------

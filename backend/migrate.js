@@ -393,6 +393,12 @@ async function bootstrapBaseSchema(client) {
         'CREATE TABLE IF NOT EXISTS is a no-op on old tables — ensure ADD COLUMN runs before CREATE INDEX.',
       );
     }
+    if (err.code === '42710' || /already exists/i.test(err.message || '')) {
+      logError(
+        'Hint: bootstrap hit a duplicate constraint/object. ' +
+        'Ensure ADD CONSTRAINT blocks catch duplicate_object and check existing FKs by column, not exact name casing.',
+      );
+    }
     logError('Cannot proceed without the base schema. Aborting.');
     throw err;   // propagate → runMigrations will exit(1)
   }

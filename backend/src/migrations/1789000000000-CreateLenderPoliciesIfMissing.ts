@@ -55,15 +55,22 @@ export class CreateLenderPoliciesIfMissing1789000000000
         IF EXISTS (
           SELECT 1 FROM information_schema.tables WHERE table_name = 'lenders'
         ) AND NOT EXISTS (
-          SELECT 1 FROM information_schema.table_constraints
-          WHERE constraint_name = 'FK_d5433e3c9e1a61a66a2f7b678b0'
-            AND table_name = 'lender_policies'
+          SELECT 1
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+           AND tc.table_schema = kcu.table_schema
+          WHERE tc.table_name = 'lender_policies'
+            AND tc.constraint_type = 'FOREIGN KEY'
+            AND kcu.column_name = 'lender_id'
         ) THEN
           ALTER TABLE "lender_policies"
             ADD CONSTRAINT "FK_d5433e3c9e1a61a66a2f7b678b0"
             FOREIGN KEY ("lender_id") REFERENCES "lenders"("id")
             ON DELETE NO ACTION ON UPDATE NO ACTION;
         END IF;
+      EXCEPTION
+        WHEN duplicate_object THEN NULL;
       END $$;
     `);
 
