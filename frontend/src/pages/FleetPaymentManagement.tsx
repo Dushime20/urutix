@@ -5,6 +5,7 @@ import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { ReceiptModal, type Receipt } from '../components/FleetDashboard/ReceiptModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { formatLocation } from '../utils/formatLocation';
 
 interface InTransitTruck {
   id: string;
@@ -20,8 +21,8 @@ interface InTransitTruck {
   };
   cargo: {
     title: string;
-    origin: string;
-    destination: string;
+    origin: string | Record<string, unknown>;
+    destination: string | Record<string, unknown>;
     cargoOwner: string;
   };
   price: number;
@@ -320,11 +321,11 @@ const FleetPaymentManagement: React.FC = () => {
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              <span className="truncate max-w-[120px]" title={truck.cargo.origin}>{truck.cargo.origin}</span>
+                              <span className="truncate max-w-[120px]" title={formatLocation(truck.cargo.origin)}>{formatLocation(truck.cargo.origin)}</span>
                             </div>
                             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                              <span className="truncate max-w-[120px]" title={truck.cargo.destination}>{truck.cargo.destination}</span>
+                              <span className="truncate max-w-[120px]" title={formatLocation(truck.cargo.destination)}>{formatLocation(truck.cargo.destination)}</span>
                             </div>
                           </div>
                         </td>
@@ -407,11 +408,11 @@ const FleetPaymentManagement: React.FC = () => {
                       <div className="flex-1 space-y-3">
                         <div>
                           <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Origin</p>
-                          <p className="text-xs font-bold text-[#0f172a] uppercase">{truck.cargo.origin}</p>
+                          <p className="text-xs font-bold text-[#0f172a] uppercase">{formatLocation(truck.cargo.origin)}</p>
                         </div>
                         <div>
                           <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Target</p>
-                          <p className="text-xs font-bold text-[#0f172a] uppercase">{truck.cargo.destination}</p>
+                          <p className="text-xs font-bold text-[#0f172a] uppercase">{formatLocation(truck.cargo.destination)}</p>
                         </div>
                       </div>
                     </div>

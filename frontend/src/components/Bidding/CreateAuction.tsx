@@ -5,13 +5,14 @@ import { biddingAPI } from '../../services/biddingApi';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import AuctionTypeSelector, { AuctionType } from './AuctionTypeSelector';
+import { formatLocation } from '../../utils/formatLocation';
 
 interface Cargo {
   id: string;
   title?: string;
   description?: string;
-  origin?: string;
-  destination?: string;
+  origin?: string | Record<string, unknown>;
+  destination?: string | Record<string, unknown>;
   status?: string;
   brokerId?: string;
   broker?: {
@@ -286,7 +287,7 @@ const CreateAuction: React.FC = () => {
                     {cargos.map((cargo) => (
                       <option key={cargo.id} value={cargo.id} className="dark:bg-slate-900">
                         {cargo.title || cargo.description || `CARGO - ${cargo.id.slice(0, 8)} `}
-                        {cargo.origin && cargo.destination && ` [${cargo.origin} >> ${cargo.destination}]`}
+                        {cargo.origin && cargo.destination && ` [${formatLocation(cargo.origin)} >> ${formatLocation(cargo.destination)}]`}
                       </option>
                     ))}
                   </select>

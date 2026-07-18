@@ -7,6 +7,7 @@ import { Search, Grid, Table, Package, User, Eye, X } from 'lucide-react';
 import CargoDetailsModal from '../../components/CargoDetailsModal';
 import FilterSelect from '../../components/common/FilterSelect';
 import { cn } from '../../utils/cn';
+import { formatLocation } from '../../utils/formatLocation';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface Cargo {
@@ -14,8 +15,8 @@ interface Cargo {
   title?: string;
   description?: string;
   cargoType: string;
-  pickupLocation: string;
-  deliveryLocation: string;
+  pickupLocation: string | Record<string, unknown>;
+  deliveryLocation: string | Record<string, unknown>;
   pickupDate: string;
   deliveryDate?: string;
   status: string;
@@ -502,9 +503,9 @@ const ReceiverCargosPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{cargo.pickupLocation}</div>
+                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.pickupLocation, 'N/A')}</div>
                         <div className="text-[10px] text-slate-200 my-0.5">↓</div>
-                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{cargo.deliveryLocation}</div>
+                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.deliveryLocation, 'N/A')}</div>
                       </td>
                        <td className="px-6 py-5 whitespace-nowrap">
                         <div className="text-[10px] text-slate-600 font-bold">

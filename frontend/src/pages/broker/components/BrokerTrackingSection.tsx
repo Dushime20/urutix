@@ -1,11 +1,12 @@
 import React from 'react';
 import { Navigation, RefreshCw, Route, History } from "lucide-react";
+import { formatLocation } from '../../../utils/formatLocation';
 
 interface TrackingEvent {
     id: string;
     loadId: string;
     status: string;
-    location: string;
+    location: string | Record<string, unknown>;
     timestamp: string;
     description?: string;
     latitude?: number;
@@ -62,7 +63,7 @@ const BrokerTrackingSection: React.FC<BrokerTrackingSectionProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="bg-white rounded-lg p-3 border border-emerald-200 dark:bg-slate-900">
                                     <span className="text-xs text-gray-500 font-medium">Last Location</span>
-                                    <p className="text-sm font-semibold text-gray-900">{latestEvent?.location || 'Unknown'}</p>
+                                    <p className="text-sm font-semibold text-gray-900">{formatLocation(latestEvent?.location, 'Unknown')}</p>
                                 </div>
                                 <div className="bg-white rounded-lg p-3 border border-emerald-200 dark:bg-slate-900">
                                     <span className="text-xs text-gray-500 font-medium">Last Update</span>
@@ -92,7 +93,7 @@ const BrokerTrackingSection: React.FC<BrokerTrackingSectionProps> = ({
                                                     {new Date(event.timestamp).toLocaleDateString()}
                                                 </time>
                                             </div>
-                                            <div className="text-slate-500 text-sm mb-1 dark:text-slate-400">{event.location}</div>
+                                            <div className="text-slate-500 text-sm mb-1 dark:text-slate-400">{formatLocation(event.location)}</div>
                                             {event.description && <div className="text-slate-500 text-xs italic dark:text-slate-400">{event.description}</div>}
                                         </div>
                                     </div>

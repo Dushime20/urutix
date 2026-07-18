@@ -8,6 +8,7 @@ import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';import { cn } from '../utils/cn';
+import { formatLocation } from '../utils/formatLocation';
 import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
 import ModernLoader from '../components/common/ModernLoader';
 
@@ -423,16 +424,16 @@ const UnifiedFleetManagement: React.FC = () => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        {trip.origin && (
+                        {formatLocation(trip.origin) && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Origin:</span>
-                            <span className="text-gray-900">{trip.origin}</span>
+                            <span className="text-gray-900">{formatLocation(trip.origin)}</span>
                           </div>
                         )}
-                        {trip.destination && (
+                        {formatLocation(trip.destination) && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Destination:</span>
-                            <span className="text-gray-900">{trip.destination}</span>
+                            <span className="text-gray-900">{formatLocation(trip.destination)}</span>
                           </div>
                         )}
                         {trip.agreedPrice && (

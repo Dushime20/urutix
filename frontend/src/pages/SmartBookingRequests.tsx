@@ -5,6 +5,7 @@ import { smartBookingApi, type BookingRequest } from '../services/smartBookingAp
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';
 import { cn } from '../utils/cn';
+import { formatLocation } from '../utils/formatLocation';
 
 type TabType = 'pending' | 'accepted' | 'rejected' | 'all';
 
@@ -217,14 +218,14 @@ const SmartBookingRequests: React.FC = () => {
                                         <FaMapMarkerAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 mt-0.5 flex-shrink-0" />
                                         <div className="flex-1 min-w-0">
                                             <span className="text-xs font-medium text-gray-500 uppercase">Origin</span>
-                                            <p className="text-xs sm:text-sm text-gray-900 truncate">{request.origin}</p>
+                                            <p className="text-xs sm:text-sm text-gray-900 truncate">{formatLocation(request.origin, '—')}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-2">
                                         <FaMapMarkerAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 mt-0.5 flex-shrink-0" />
                                         <div className="flex-1 min-w-0">
                                             <span className="text-xs font-medium text-gray-500 uppercase">Destination</span>
-                                            <p className="text-xs sm:text-sm text-gray-900 truncate">{request.destination}</p>
+                                            <p className="text-xs sm:text-sm text-gray-900 truncate">{formatLocation(request.destination, '—')}</p>
                                         </div>
                                     </div>
                                 </div>

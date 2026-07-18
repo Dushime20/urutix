@@ -1,13 +1,14 @@
 import React from 'react';
 import { Package, Search, Filter, MoreVertical, MapPin } from 'lucide-react';
 import { Button } from '../../components/ui';
+import { formatLocation } from '../../utils/formatLocation';
 
 interface Cargo {
   id: string;
   title: string;
   status: string;
-  origin: string;
-  destination: string;
+  origin: string | Record<string, unknown>;
+  destination: string | Record<string, unknown>;
   date: string;
 }
 
@@ -76,8 +77,8 @@ export const AssignedCargoManagement: React.FC<AssignedCargoManagementProps> = (
                         <div className="w-2 h-2 rounded-full border-2 border-emerald-500"></div>
                       </div>
                       <div className="flex flex-col gap-1 text-xs">
-                        <span className="text-gray-900 dark:text-gray-300">{cargo.origin}</span>
-                        <span className="text-gray-900 dark:text-gray-300">{cargo.destination}</span>
+                        <span className="text-gray-900 dark:text-gray-300">{formatLocation(cargo.origin, '—')}</span>
+                        <span className="text-gray-900 dark:text-gray-300">{formatLocation(cargo.destination, '—')}</span>
                       </div>
                     </div>
                   </td>

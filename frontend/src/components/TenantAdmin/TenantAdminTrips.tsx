@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fa';
 import ActiveTrips from '../TenantDashboard/ActiveTrips';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
+import { formatLocation } from '../../utils/formatLocation';
 
 interface Trip {
   id: string;
@@ -344,10 +345,10 @@ const TenantAdminTrips: React.FC = () => {
                         {trip.routeName || (
                           <span className="flex items-center gap-1 text-xs">
                             <FaMapMarkerAlt className="w-3 h-3 text-green-500" />
-                            {trip.origin || 'N/A'}
+                            {formatLocation(trip.origin, 'N/A')}
                             <span className="mx-1">→</span>
                             <FaMapMarkerAlt className="w-3 h-3 text-red-500" />
-                            {trip.destination || 'N/A'}
+                            {formatLocation(trip.destination, 'N/A')}
                           </span>
                         )}
                       </div>

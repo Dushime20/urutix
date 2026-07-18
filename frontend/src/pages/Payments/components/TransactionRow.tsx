@@ -3,6 +3,7 @@ import { Eye, Download } from 'lucide-react';
 import type { CompletedTransaction } from '../types';
 import { formatCurrency, formatDate, getPaymentTypeIcon, getPaymentTypeLabel } from '../utils';
 import { cn } from '@/utils/cn';
+import { formatLocation } from '@/utils/formatLocation';
 
 interface TransactionRowProps {
   transaction: CompletedTransaction;
@@ -64,7 +65,7 @@ const TransactionRow: React.FC<TransactionRowProps> = ({
           )}
           {(transaction.trip?.load?.origin || transaction.trip?.load?.destination) && (
             <p className="text-[10px] text-slate-400 mt-0.5 truncate">
-              {transaction.trip.load?.origin ?? '—'} → {transaction.trip.load?.destination ?? '—'}
+              {formatLocation(transaction.trip.load?.origin, '—')} → {formatLocation(transaction.trip.load?.destination, '—')}
             </p>
           )}
           {transaction.isLenderPayment && transaction.lenderName && (

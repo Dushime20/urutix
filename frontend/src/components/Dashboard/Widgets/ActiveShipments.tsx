@@ -1,6 +1,7 @@
 import { Truck, Package, MapPin, FileText, Phone, ChevronDown, Clock, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { formatLocation } from '@/utils/formatLocation';
 
 interface ActiveShipmentsProps {
     cargos?: any[];
@@ -18,22 +19,26 @@ const ActiveShipments = ({ cargos = [] }: ActiveShipmentsProps) => {
     const activeShipments = cargos
         .filter(c => ['IN_TRANSIT', 'ASSIGNED', 'PUBLISHED', 'PICKED_UP'].includes(c.status))
         .slice(0, 3) // Show top 3
-        .map(c => ({
+        .map(c => {
+            const origin = formatLocation(c.pickupLocation) || formatLocation(c.origin) || 'Unknown';
+            const destination = formatLocation(c.deliveryLocation) || formatLocation(c.destination) || 'Unknown';
+            return {
             id: c.id,
-            origin: c.pickupLocation?.city || c.pickupLocation?.name || 'Unknown',
-            destination: c.deliveryLocation?.city || c.deliveryLocation?.name || 'Unknown',
+            origin,
+            destination,
             status: c.status,
             statusColor: c.status === 'IN_TRANSIT' ? 'blue' : (c.status === 'PUBLISHED' ? 'amber' : 'green'),
             progress: c.status === 'IN_TRANSIT' ? 50 : (c.status === 'DELIVERED' ? 100 : 10),
             stages: [
-                c.pickupLocation?.city || 'Origin',
+                origin,
                 'In Transit',
-                c.deliveryLocation?.city || 'Destination'
+                destination
             ],
             eta: c.deliveryDate ? new Date(c.deliveryDate).toLocaleDateString() : 'TBD',
             driver: c.driver?.name || 'Unassigned',
             icon: c.cargoType === 'VEHICLES' ? Truck : Package
-        }));
+        };
+        });
 
     // If no active shipments, show a placeholder or empty state
     const hasShipments = activeShipments.length > 0;

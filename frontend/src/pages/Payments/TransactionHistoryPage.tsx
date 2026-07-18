@@ -5,6 +5,7 @@ import { pendingPaymentsApi } from '../../services/pendingPaymentsApi';
 import CompletedTransactionsSection from './components/CompletedTransactionsSection';
 import type { CompletedTransaction } from './types';
 import { PaymentType } from './types';
+import { formatLocation } from '../../utils/formatLocation';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -66,8 +67,8 @@ const TransactionHistoryPage = () => {
               ? {
                   title: p.trip.load.title,
                   cargoType: p.trip.load.cargoType,
-                  origin: p.trip.load.origin,
-                  destination: p.trip.load.destination,
+                  origin: formatLocation(p.trip.load.origin) || null,
+                  destination: formatLocation(p.trip.load.destination) || null,
                 }
               : null,
           }
