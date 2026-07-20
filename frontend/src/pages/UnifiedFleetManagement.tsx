@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { FaTruck, FaPlus, FaRoute, FaList, FaSpinner, FaEye, FaMapMarkerAlt, FaSync, FaSearch } from 'react-icons/fa';
 import { TrucksList } from '../components/FleetDashboard/TrucksList';
 import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import { fleetApi } from '../services/fleetApi';
-import { tripsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useFleetTrucksQuery, useActiveTripsQuery } from '../hooks/useFleetQueries';
+import { queryKeys } from '../lib/queryKeys';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';import { cn } from '../utils/cn';
 import { formatLocation } from '../utils/formatLocation';
@@ -15,106 +17,30 @@ import ModernLoader from '../components/common/ModernLoader';
 const UnifiedFleetManagement: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
   const { user: _user } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'add-truck' | 'my-trucks' | 'active-trips' | 'view-trucks'>('my-trucks');
   const [showTruckForm, setShowTruckForm] = useState(false);
   const [editingTruck, setEditingTruck] = useState<any>(null);
-  const [activeTrips, setActiveTrips] = useState<any[]>([]);
-  const [loadingTrips, setLoadingTrips] = useState(false);
-  const [trucks, setTrucks] = useState<any[]>([]);
-  const [loadingTrucks, setLoadingTrucks] = useState(false);
   const [trucksListRefreshKey, setTrucksListRefreshKey] = useState(0);
   const [viewTrucksSearch, setViewTrucksSearch] = useState('');
 
-  // ... (rest of the file)
+  const {
+    data: trucks = [],
+    isLoading: loadingTrucks,
+    refetch: refetchTrucks,
+  } = useFleetTrucksQuery(true);
 
+  const {
+    data: activeTrips = [],
+    isLoading: loadingTrips,
+    refetch: refetchActiveTrips,
+  } = useActiveTripsQuery(activeTab === 'active-trips');
 
-  // Load active trips
-  const loadActiveTrips = useCallback(async () => {
-    setLoadingTrips(true);
-    try {
-      // Try the dedicated active endpoint first
-      try {
-        const response = await tripsAPI.getActive();
-        const tripsData = response.data?.data || response.data || [];
-        setActiveTrips(Array.isArray(tripsData) ? tripsData : []);
-      } catch (activeError: any) {
-        // If active endpoint fails (404), fallback to filtering getAll
-        if (activeError?.response?.status === 404) {
-          console.warn('Active trips endpoint not available (404), using fallback with status filter');
-          try {
-            // Try with IN_PROGRESS status first
-            const response = await tripsAPI.getAll({
-              status: 'IN_PROGRESS',
-              limit: 100
-            });
-            let allTrips = response.data?.data || response.data?.trips || response.data || [];
-
-            // If response is paginated, extract trips array
-            if (allTrips && !Array.isArray(allTrips) && allTrips.trips) {
-              allTrips = allTrips.trips;
-            }
-
-            // Filter for active statuses (handle various status formats)
-            const activeTripsData = Array.isArray(allTrips)
-              ? allTrips.filter((trip: any) => {
-                const status = (trip.status || '').toUpperCase().replace(/\s+/g, '_');
-                return ['IN_PROGRESS', 'IN_TRANSIT', 'ACTIVE', 'ONGOING', 'IN_TRANSIT'].includes(status);
-              })
-              : [];
-            setActiveTrips(activeTripsData);
-          } catch (fallbackError: any) {
-            console.error('Fallback also failed:', fallbackError);
-            setActiveTrips([]);
-          }
-        } else {
-          // For other errors, throw to be caught by outer catch
-          throw activeError;
-        }
-      }
-    } catch (error: any) {
-      console.error('Error loading active trips:', error);
-      // Only show error toast if it's not a 404 (endpoint might not exist)
-      if (error?.response?.status !== 404) {
-        toast.error(getApiErrorMessage(error));
-      }
-      setActiveTrips([]);
-    } finally {
-      setLoadingTrips(false);
-    }
-  }, []);
-
-  // Load trucks for reference
-  const loadTrucks = useCallback(async () => {
-    setLoadingTrucks(true);
-    try {
-      // fleetApi.getTrucks() already returns the trucks array directly
-      const trucksData = await fleetApi.getTrucks({});
-      console.log('🚛 UnifiedFleetManagement - Trucks data:', trucksData);
-      console.log('🚛 UnifiedFleetManagement - Trucks length:', Array.isArray(trucksData) ? trucksData.length : 'N/A');
-      setTrucks(Array.isArray(trucksData) ? trucksData : []);
-    } catch (error: any) {
-      console.error('Error loading trucks:', error);
-      setTrucks([]);
-    } finally {
-      setLoadingTrucks(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Load trucks count on mount
-    loadTrucks();
-  }, [loadTrucks]);
-
-  useEffect(() => {
-    if (activeTab === 'active-trips') {
-      loadActiveTrips();
-    }
-    if (activeTab === 'my-trucks') {
-      loadTrucks();
-      // Also trigger TrucksList refresh when switching to my-trucks tab
-      setTrucksListRefreshKey(prev => prev + 1);
-    }
-  }, [activeTab, loadActiveTrips, loadTrucks]);
+  const invalidateFleet = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.fleet.trucks });
+    void queryClient.invalidateQueries({ queryKey: [...queryKeys.trips.all, 'active'] });
+    setTrucksListRefreshKey((prev) => prev + 1);
+  };
 
   const handleCreateTruck = () => {
     setEditingTruck(null);
@@ -134,8 +60,7 @@ const UnifiedFleetManagement: React.FC = () => {
     }
 
     // Refresh trucks list after form closes
-    loadTrucks();
-    setTrucksListRefreshKey(prev => prev + 1);
+    invalidateFleet();
   };
 
   const handleTruckFormSubmit = async (truckData: any) => {
@@ -150,12 +75,9 @@ const UnifiedFleetManagement: React.FC = () => {
       }
       setShowTruckForm(false);
       setEditingTruck(null);
-      
-      // Refresh trucks list - wait for it to complete
-      await loadTrucks();
-      
-      // Trigger TrucksList component refresh
-      setTrucksListRefreshKey(prev => prev + 1);
+
+      await refetchTrucks();
+      invalidateFleet();
       
       // Switch to my trucks tab to see the new/updated truck
       setActiveTab('my-trucks');
@@ -256,7 +178,7 @@ const UnifiedFleetManagement: React.FC = () => {
                 />
               </div>
               <button
-                onClick={loadTrucks}
+                onClick={() => { void refetchTrucks(); invalidateFleet(); }}
                 className="px-5 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 active:bg-primary-700 transition-all duration-200 flex items-center gap-2.5 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
                 disabled={loadingTrucks}
               >
@@ -377,7 +299,7 @@ const UnifiedFleetManagement: React.FC = () => {
           <div className="mb-4 flex items-center justify-between">
             <h2>Active Trips</h2>
             <button
-              onClick={loadActiveTrips}
+              onClick={() => { void refetchActiveTrips(); }}
               className="px-4 py-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 active:bg-primary-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md font-medium text-sm"
               disabled={loadingTrips}
             >

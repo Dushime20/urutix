@@ -34,11 +34,10 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchCargos } from '../services/cargoApi';
 import { cargoOwnerAPI } from '../services/cargoOwnerAPI';
 import api from '../services/api';
-import receiverService from '../services/receiverService';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { useDashboardCargos } from '../hooks/useDashboardCargos';
 
 // Feature Components
 import UnifiedFinancialManagement from './dashboard/financial/UnifiedFinancialManagement';
@@ -103,9 +102,8 @@ const CargoOwnerDashboard = () => {
 
   const [activeTab, setActiveTab] = useState('Overview');
   const [chartPeriod, setChartPeriod] = useState<'7' | '30'>('7');
-  const [cargos, setCargos] = useState<any[]>([]);
+  const { data: cargos = [], isLoading: cargosLoading, refetch: refetchCargos } = useDashboardCargos(user);
   const [dashboardAnalytics, setDashboardAnalytics] = useState<any>(null);
-  const [, setLoading] = useState(true);
   const [showQuickCreate, setShowQuickCreate] = useState(false);
   const [showQuickActionPanel, setShowQuickActionPanel] = useState(false);
   const [showQuickActionFlow, setShowQuickActionFlow] = useState(false);
@@ -172,195 +170,111 @@ const CargoOwnerDashboard = () => {
 
   // Receiver-specific stats (for CARGO_RECEIVER role)
   const [, setReceiverStats] = useState({
-    totalReceived: 0,    // Cargos with completed inspection
-    activeCargos: 0,     // Cargos pending inspection
+    totalReceived: 0,
+    activeCargos: 0,
     loading: true,
   });
 
-
-  // Auto-refresh cargos every 30 seconds
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        if (user?.role === 'CARGO_RECEIVER') {
-          // Fetch receiver's assigned cargos
-          const receiverCargos = await receiverService.getMyCargos();
-          const cargosArray = Array.isArray(receiverCargos) ? receiverCargos : [];
+    if (user?.role !== 'CARGO_RECEIVER') return;
+    const inspected = cargos.filter((c: any) =>
+      c.inspectionStatus === 'COMPLETED' || c.status === 'DELIVERED' || c.status === 'COMPLETED'
+    ).length;
+    const pending = cargos.filter((c: any) =>
+      c.inspectionStatus !== 'COMPLETED' && c.status !== 'DELIVERED' && c.status !== 'COMPLETED'
+    ).length;
+    setReceiverStats({
+      totalReceived: inspected,
+      activeCargos: pending,
+      loading: cargosLoading,
+    });
+  }, [cargos, cargosLoading, user?.role]);
 
-          // Calculate receiver stats
-          const inspected = cargosArray.filter((c: any) =>
-            c.inspectionStatus === 'COMPLETED' || c.status === 'DELIVERED' || c.status === 'COMPLETED'
-          ).length;
-          const pending = cargosArray.filter((c: any) =>
-            c.inspectionStatus !== 'COMPLETED' && c.status !== 'DELIVERED' && c.status !== 'COMPLETED'
-          ).length;
-
-          setReceiverStats({
-            totalReceived: inspected,
-            activeCargos: pending,
-            loading: false,
-          });
-          setCargos(cargosArray);
-        } else {
-          const data = await fetchCargos(1, '', { limit: 50 });
-          setCargos(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        console.error('Error refreshing cargos:', error);
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [user]);
-
-  // Fetch cargos and related data on mount
+  // Derive bidding & matching metrics when cargo list updates
   useEffect(() => {
-    const loadDashboardData = async () => {
+    if (user?.role === 'CARGO_RECEIVER' || cargos.length === 0) return;
+
+    const loadBiddingAndMatching = async () => {
       try {
-        setLoading(true);
-
-        // Different data fetching for CARGO_RECEIVER
-        if (user?.role === 'CARGO_RECEIVER') {
-          // Fetch receiver's assigned cargos
-          const receiverCargos = await receiverService.getMyCargos();
-          const cargosArray = Array.isArray(receiverCargos) ? receiverCargos : [];
-
-          // Calculate receiver stats based on inspection status
-          const inspected = cargosArray.filter((c: any) =>
-            c.inspectionStatus === 'COMPLETED' || c.status === 'DELIVERED' || c.status === 'COMPLETED'
-          ).length;
-          const pending = cargosArray.filter((c: any) =>
-            c.inspectionStatus !== 'COMPLETED' && c.status !== 'DELIVERED' && c.status !== 'COMPLETED'
-          ).length;
-
-          setReceiverStats({
-            totalReceived: inspected,
-            activeCargos: pending,
-            loading: false,
-          });
-          setCargos(cargosArray);
-          setLoading(false);
-          return; // Exit early for receivers
-        }
-
-
-        // Fetch analytics
-        try {
-          const analyticsRes = await cargoOwnerAPI.getDashboardAnalytics('all');
-          setDashboardAnalytics(analyticsRes.data);
-        } catch (e) {
-          console.error('Failed to fetch analytics', e);
-        }
-
-        // Fetch cargos for cargo owners (fetch more for recent activity)
-        const cargoData = await fetchCargos(1, '', { limit: 50 });
-        setCargos(Array.isArray(cargoData) ? cargoData : []);
-
-        // Calculate bidding data from cargos
-        try {
-          // Get all bids for user's cargos
-          const allBids: any[] = [];
-          const cargoIds = Array.isArray(cargoData) ? cargoData.map((c: any) => c.id) : [];
-
-          // Try to fetch bids for each cargo (limit to first 10 to avoid too many requests)
-          for (const cargoId of cargoIds.slice(0, 10)) {
-            try {
-              const bidsResponse = await cargoOwnerAPI.getBids(cargoId);
-              if (Array.isArray(bidsResponse.data)) {
-                allBids.push(...bidsResponse.data);
-              }
-            } catch (err) {
-              // Silently skip if endpoint doesn't exist for this cargo
+        const allBids: any[] = [];
+        for (const cargoId of cargos.slice(0, 10).map((c: any) => c.id)) {
+          try {
+            const bidsResponse = await cargoOwnerAPI.getBids(cargoId);
+            if (Array.isArray(bidsResponse.data)) {
+              allBids.push(...bidsResponse.data);
             }
+          } catch {
+            // skip cargos without bids endpoint
           }
+        }
 
-          const activeAuctions = Array.isArray(cargoData)
-            ? cargoData.filter((c: any) => c.status === 'PUBLISHED' || c.status === 'CREATED').length
-            : 0;
-          const pendingBids = allBids.filter((b: any) => b.status === 'PENDING').length;
-          const acceptedBids = allBids.filter((b: any) => b.status === 'ACCEPTED').length;
-          const totalBids = allBids.length;
-          const averageBidAmount = allBids.length > 0
+        const activeAuctions = cargos.filter(
+          (c: any) => c.status === 'PUBLISHED' || c.status === 'CREATED',
+        ).length;
+
+        setBiddingData({
+          activeAuctions,
+          pendingBids: allBids.filter((b: any) => b.status === 'PENDING').length,
+          acceptedBids: allBids.filter((b: any) => b.status === 'ACCEPTED').length,
+          totalBids: allBids.length,
+          averageBidAmount: allBids.length > 0
             ? allBids.reduce((sum: number, b: any) => sum + (Number(b.bidAmount) || 0), 0) / allBids.length
-            : 0;
+            : 0,
+          recentBids: allBids.slice(0, 5),
+        });
 
-          setBiddingData({
-            activeAuctions,
-            pendingBids,
-            acceptedBids,
-            totalBids,
-            averageBidAmount,
-            recentBids: allBids.slice(0, 5),
-          });
-        } catch (error) {
-          // Calculate from cargos if API fails
-          const activeAuctions = Array.isArray(cargoData)
-            ? cargoData.filter((c: any) => c.status === 'PUBLISHED' || c.status === 'CREATED').length
-            : 0;
-          setBiddingData({
-            activeAuctions,
-            pendingBids: 0,
-            acceptedBids: 0,
-            totalBids: 0,
-            averageBidAmount: 0,
-            recentBids: [],
-          });
-        }
+        const matchedCargos = cargos.filter((c: any) => c.assignedTruckId && !c.brokerId);
+        const potentialMatches = cargos.filter(
+          (c: any) =>
+            (c.status === 'PUBLISHED' || c.status === 'CREATED') &&
+            !c.assignedTruckId &&
+            !c.brokerId,
+        ).length;
+        const acceptedMatches = matchedCargos.length;
+        const totalMatchable = acceptedMatches + potentialMatches;
 
-        // Calculate matching data from cargos
-        try {
-          // Cargos that were assigned via matching (have assignedTruckId but no brokerId)
-          const matchedCargos = Array.isArray(cargoData)
-            ? cargoData.filter((c: any) => c.assignedTruckId && !c.brokerId)
-            : [];
-          const acceptedMatches = matchedCargos.length;
-
-          // Estimate recommendations (cargos that could use matching)
-          const potentialMatches = Array.isArray(cargoData)
-            ? cargoData.filter((c: any) =>
-              (c.status === 'PUBLISHED' || c.status === 'CREATED') &&
-              !c.assignedTruckId &&
-              !c.brokerId
-            ).length
-            : 0;
-
-          const totalMatchable = acceptedMatches + potentialMatches;
-          const matchSuccessRate = totalMatchable > 0 ? (acceptedMatches / totalMatchable) * 100 : 0;
-
-          setMatchingData({
-            matchRecommendations: potentialMatches,
-            acceptedMatches,
-            matchSuccessRate,
-            recentMatches: matchedCargos.slice(0, 5),
-          });
-        } catch (error) {
-          // Set defaults if calculation fails
-          setMatchingData({
-            matchRecommendations: 0,
-            acceptedMatches: 0,
-            matchSuccessRate: 0,
-            recentMatches: [],
-          });
-        }
-
-        // Calculate broker data from cargos (not currently used)
-        // This section can be removed or re-enabled when broker features are needed
-        try {
-          // Broker data calculation removed since it's not being used
-        } catch (error) {
-          // Set defaults if calculation fails
-        }
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        setCargos([]);
-      } finally {
-        setLoading(false);
+        setMatchingData({
+          matchRecommendations: potentialMatches,
+          acceptedMatches,
+          matchSuccessRate: totalMatchable > 0 ? (acceptedMatches / totalMatchable) * 100 : 0,
+          recentMatches: matchedCargos.slice(0, 5),
+        });
+      } catch {
+        setBiddingData({
+          activeAuctions: cargos.filter((c: any) => c.status === 'PUBLISHED' || c.status === 'CREATED').length,
+          pendingBids: 0,
+          acceptedBids: 0,
+          totalBids: 0,
+          averageBidAmount: 0,
+          recentBids: [],
+        });
+        setMatchingData({
+          matchRecommendations: 0,
+          acceptedMatches: 0,
+          matchSuccessRate: 0,
+          recentMatches: [],
+        });
       }
     };
-    loadDashboardData();
 
-    // Fetch loads ready for payment (status = LOADED)
+    void loadBiddingAndMatching();
+  }, [cargos, user?.role]);
+
+  // Fetch analytics, payments, and financial summary on mount
+  useEffect(() => {
+    if (user?.role === 'CARGO_RECEIVER') return;
+
+    const fetchAnalytics = async () => {
+      try {
+        const analyticsRes = await cargoOwnerAPI.getDashboardAnalytics('all');
+        setDashboardAnalytics(analyticsRes.data);
+      } catch (e) {
+        console.error('Failed to fetch analytics', e);
+      }
+    };
+
+    void fetchAnalytics();
+
     const fetchLoadedCargos = async () => {
       if (!user?.id) return;
 
@@ -1342,16 +1256,7 @@ const CargoOwnerDashboard = () => {
         isOpen={showQuickCreate}
         onClose={() => setShowQuickCreate(false)}
         onSuccess={() => {
-          // Refresh cargo data
-          const refreshData = async () => {
-            try {
-              const cargoData = await fetchCargos(1, '', { limit: 50 });
-              setCargos(Array.isArray(cargoData) ? cargoData : []);
-            } catch (error) {
-              console.error('Error refreshing cargos:', error);
-            }
-          };
-          refreshData();
+          void refetchCargos();
         }}
       />
 
@@ -1361,16 +1266,7 @@ const CargoOwnerDashboard = () => {
         onClose={() => setShowQuickActionFlow(false)}
         onComplete={() => {
           markFeatureDiscovered('quick-action-flow');
-          // Refresh cargo data
-          const refreshData = async () => {
-            try {
-              const cargoData = await fetchCargos(1, '', { limit: 50 });
-              setCargos(Array.isArray(cargoData) ? cargoData : []);
-            } catch (error) {
-              console.error('Error refreshing cargos:', error);
-            }
-          };
-          refreshData();
+          void refetchCargos();
         }}
       />
 
@@ -1390,16 +1286,7 @@ const CargoOwnerDashboard = () => {
         isOpen={showQuickActionPanel}
         onClose={() => setShowQuickActionPanel(false)}
         onComplete={() => {
-          // Refresh cargo data and optionally navigate to matches/bids
-          const refreshData = async () => {
-            try {
-              const cargoData = await fetchCargos(1, '', { limit: 50 });
-              setCargos(Array.isArray(cargoData) ? cargoData : []);
-            } catch (error) {
-              console.error('Error refreshing cargos:', error);
-            }
-          };
-          refreshData();
+          void refetchCargos();
         }}
       />
 

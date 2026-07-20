@@ -385,18 +385,76 @@ export class BiddingService {
       const userProfile = await this.userProfileRepository.findOne({
         where: { userId: truckOwnerId },
       });
-      const bidderName = userProfile && userProfile.firstName
-        ? `${userProfile.firstName} ${userProfile.lastName || ''}`.trim()
-        : 'A truck owner';
+      const bidderName = userProfile?.companyName
+        ? userProfile.companyName
+        : userProfile?.firstName
+          ? `${userProfile.firstName} ${userProfile.lastName || ''}`.trim()
+          : 'A truck owner';
+
+      const truckSpec = savedBid.bidDetails?.truckSpecifications;
+      let truckInfo: string | undefined;
+      if (truckSpec?.truckId) {
+        const truck = await this.truckRepository.findOne({
+          where: { id: truckSpec.truckId, tenantId },
+        });
+        if (truck) {
+          truckInfo = truckSpec.truckType
+            ? `${truck.plateNumber} (${truckSpec.truckType})`
+            : truck.plateNumber;
+        } else if (truckSpec.truckType) {
+          truckInfo = truckSpec.truckType;
+        }
+      } else if (truckSpec?.truckType) {
+        truckInfo = truckSpec.truckType;
+      }
+
+      const formatLocation = (type: 'PICKUP' | 'DELIVERY'): string | undefined => {
+        const loc = load.locations?.find((l) => l.type === type);
+        if (loc?.locationData) {
+          const d = loc.locationData as {
+            city?: string;
+            state?: string;
+            country?: string;
+            address?: string;
+            name?: string;
+          };
+          return (
+            [d.city, d.state, d.country].filter(Boolean).join(', ') ||
+            d.address ||
+            d.name ||
+            undefined
+          );
+        }
+        const addr = type === 'PICKUP' ? load.origin : load.destination;
+        if (addr) {
+          return (
+            [addr.city, addr.state, addr.country].filter(Boolean).join(', ') ||
+            addr.address ||
+            undefined
+          );
+        }
+        return undefined;
+      };
 
       this.eventEmitter.emit('auction.bid.received', {
         auctionId: auction.id,
+        bidId: savedBid.id,
+        loadId: load.id,
         bidderId: truckOwnerId,
         bidderName,
         amount: savedBid.bidAmount,
+        bidCurrency: savedBid.bidCurrency || load.currencyCode || 'USD',
         cargoOwnerId: load.cargoOwnerId,
+        brokerId: load.brokerId || undefined,
         tenantId,
         cargoTitle: load.title || load.cargoType,
+        cargoReference: load.reference,
+        pickupLocation: formatLocation('PICKUP'),
+        deliveryLocation: formatLocation('DELIVERY'),
+        pickupDate: savedBid.proposedPickupDate || load.pickupDate,
+        deliveryDate: savedBid.proposedDeliveryDate || load.deliveryDate,
+        truckInfo,
+        submittedAt: savedBid.createdAt || new Date(),
       });
     } catch (error) {
       console.error('Failed to emit auction.bid.received event:', error);

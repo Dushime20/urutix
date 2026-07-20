@@ -211,7 +211,7 @@ const UnifiedCargoManagement = () => {
 
   // Real-time status updates via WebSocket
   useEffect(() => {
-    const token = localStorage.getItem('jwtToken');
+    const token = localStorage.getItem('accessToken');
     if (!token || !loadsData || loadsData.length === 0) {
       return;
     }
@@ -230,7 +230,7 @@ const UnifiedCargoManagement = () => {
 
           // Update the query cache with the new status
           queryClient.setQueryData(
-            ["loads", searchTerm, statusFilter, cargoTypeFilter],
+            ["loads", searchTerm, statusFilter, cargoTypeFilter, isReceiver],
             (oldData: any) => {
               if (!oldData) return oldData;
 

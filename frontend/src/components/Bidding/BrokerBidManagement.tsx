@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Gavel, ChevronDown, ChevronUp, Check, X, Eye, RefreshCw,
   Loader2, Star, TrendingDown, User, Calendar, Truck, Clock,
@@ -423,9 +424,10 @@ interface AuctionBidPanelProps {
   auction: Auction;
   onAcceptBid: (bidId: string, auctionId: string) => void;
   accepting: string | null;
+  highlightBidId?: string | null;
 }
 
-function AuctionBidPanel({ auction, onAcceptBid, accepting }: AuctionBidPanelProps) {
+function AuctionBidPanel({ auction, onAcceptBid, accepting, highlightBidId }: AuctionBidPanelProps) {
   const queryClient = useQueryClient();
   const [sortKey, setSortKey] = useState<SortKey>('amount');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -448,6 +450,14 @@ function AuctionBidPanel({ auction, onAcceptBid, accepting }: AuctionBidPanelPro
   // CLOSED = bidding period ended, broker still picks winner from PENDING bids
   // Only CANCELLED blocks acceptance entirely
   const auctionClosed = auction.status === 'CANCELLED';
+
+  useEffect(() => {
+    if (!highlightBidId || !bids.length) return;
+    const targetBid = bids.find((b) => b.id === highlightBidId);
+    if (targetBid) {
+      setViewBid(targetBid);
+    }
+  }, [highlightBidId, bids]);
 
   const filtered = bids.filter(b => bidFilter === 'all' || b.status === bidFilter);
 
@@ -578,9 +588,10 @@ interface AuctionCardProps {
   onToggle: () => void;
   onAcceptBid: (bidId: string, auctionId: string) => void;
   accepting: string | null;
+  highlightBidId?: string | null;
 }
 
-function AuctionCard({ auction, isExpanded, onToggle, onAcceptBid, accepting }: AuctionCardProps) {
+function AuctionCard({ auction, isExpanded, onToggle, onAcceptBid, accepting, highlightBidId }: AuctionCardProps) {
   const { formatIn } = useCurrencyFormat();
   const currency = auction.load?.currencyCode || 'USD';
   const bidCount = auction.totalBids ?? 0;
@@ -640,7 +651,7 @@ function AuctionCard({ auction, isExpanded, onToggle, onAcceptBid, accepting }: 
       {/* Expanded bids panel */}
       {isExpanded && (
         <div className="border-t border-slate-100 dark:border-slate-800 px-5 py-5 bg-slate-50/30 dark:bg-slate-900/50">
-          <AuctionBidPanel auction={auction} onAcceptBid={onAcceptBid} accepting={accepting} />
+          <AuctionBidPanel auction={auction} onAcceptBid={onAcceptBid} accepting={accepting} highlightBidId={highlightBidId} />
         </div>
       )}
     </div>
@@ -653,9 +664,12 @@ const BrokerBidManagement: React.FC = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { confirm, DialogComponent } = useConfirmDialog();
+  const [searchParams] = useSearchParams();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [accepting, setAccepting] = useState<string | null>(null);
+  const deepLinkLoadId = searchParams.get('loadId');
+  const deepLinkBidId = searchParams.get('bidId');
 
   // Fetch auctions where this broker is assigned to the load
   const { data: auctionsData, isLoading, error, refetch } = useQuery({
@@ -673,6 +687,14 @@ const BrokerBidManagement: React.FC = () => {
   });
 
   const auctions: Auction[] = auctionsData ?? [];
+
+  useEffect(() => {
+    if (!deepLinkLoadId || !auctions.length) return;
+    const targetAuction = auctions.find((a) => a.loadId === deepLinkLoadId);
+    if (targetAuction) {
+      setExpandedId(targetAuction.id);
+    }
+  }, [deepLinkLoadId, auctions]);
 
   const displayed = statusFilter === 'all' ? auctions : auctions.filter(a => a.status === statusFilter);
 
@@ -792,6 +814,7 @@ const BrokerBidManagement: React.FC = () => {
               onToggle={() => setExpandedId(prev => prev === auction.id ? null : auction.id)}
               onAcceptBid={handleAcceptBid}
               accepting={accepting}
+              highlightBidId={auction.loadId === deepLinkLoadId ? deepLinkBidId : null}
             />
           ))}
         </div>

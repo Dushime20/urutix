@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { biddingAPI } from '../../services/biddingApi';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { RefreshCw, RotateCcw, Calendar, DollarSign, Package, MapPin, AlertCircle } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { useInactiveAuctionsQuery, useReactivateAuctionMutation } from '../../hooks/useBiddingQueries';
 
 interface InactiveAuction {
   id: string;
@@ -28,34 +28,15 @@ interface InactiveAuction {
 }
 
 const InactiveAuctions: React.FC = () => {
-  const [auctions, setAuctions] = useState<InactiveAuction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: auctions = [], isLoading: loading, refetch, isFetching } = useInactiveAuctionsQuery();
+  const reactivateMutation = useReactivateAuctionMutation();
   const [reactivating, setReactivating] = useState<string | null>(null);
-
-  const loadInactiveAuctions = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await biddingAPI.getInactiveAuctions();
-      setAuctions(response.data);
-    } catch (error: any) {
-      console.error('Error loading inactive auctions:', error);
-      toast.error(error.response?.data?.message || 'Failed to load inactive auctions');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadInactiveAuctions();
-  }, [loadInactiveAuctions]);
 
   const handleReactivate = async (auctionId: string) => {
     try {
       setReactivating(auctionId);
-      await biddingAPI.reactivateAuction(auctionId);
+      await reactivateMutation.mutateAsync(auctionId);
       toast.success('Auction reactivated successfully!');
-      // Remove from inactive list
-      setAuctions(auctions.filter(a => a.id !== auctionId));
     } catch (error: any) {
       console.error('Error reactivating auction:', error);
       const message = error.response?.data?.message || 'Failed to reactivate auction';
@@ -119,17 +100,18 @@ const InactiveAuctions: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={loadInactiveAuctions}
-          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+          onClick={() => void refetch()}
+          disabled={isFetching}
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={cn('w-4 h-4', isFetching && 'animate-spin')} />
           <span className="text-sm font-medium">Refresh</span>
         </button>
       </div>
 
       {/* Auctions List */}
       <div className="grid grid-cols-1 gap-4">
-        {auctions.map((auction) => (
+        {(auctions as InactiveAuction[]).map((auction) => (
           <div
             key={auction.id}
             className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 hover:shadow-lg transition-all"
@@ -165,19 +147,15 @@ const InactiveAuctions: React.FC = () => {
                       </p>
                     </div>
                   </div>
-
-                  {auction.reservePrice && (
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-slate-400" />
-                      <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Reserve Price</p>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          ${auction.reservePrice.toLocaleString()}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Reserve Price</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {auction.reservePrice ? `$${auction.reservePrice.toLocaleString()}` : 'N/A'}
+                      </p>
                     </div>
-                  )}
-
+                  </div>
                   <div className="flex items-center gap-2">
                     <Package className="w-4 h-4 text-slate-400" />
                     <div>
@@ -187,65 +165,49 @@ const InactiveAuctions: React.FC = () => {
                       </p>
                     </div>
                   </div>
-
-                  {auction.load.weight && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-slate-400" />
-                      <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Weight</p>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          {auction.load.weight} kg
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Cancellation Reason */}
-                {auction.cancellationReason && (
-                  <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-slate-400" />
                     <div>
-                      <p className="text-xs font-semibold text-amber-900 dark:text-amber-300">Cancellation Reason</p>
-                      <p className="text-sm text-amber-800 dark:text-amber-400 mt-0.5">
-                        {auction.cancellationReason}
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Load Status</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {auction.load.status}
                       </p>
                     </div>
                   </div>
-                )}
-
-                {/* Auction Period */}
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  <span className="font-medium">Period:</span> {formatDate(auction.auctionStart)} → {formatDate(auction.auctionEnd)}
                 </div>
+
+                {auction.cancellationReason && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Cancellation Reason</p>
+                      <p className="text-sm text-amber-700 dark:text-amber-400">{auction.cancellationReason}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Reactivate Button */}
-              <div className="flex flex-col gap-2">
+              {/* Actions */}
+              <div className="flex flex-col gap-2 lg:items-end">
                 <button
                   onClick={() => handleReactivate(auction.id)}
                   disabled={reactivating === auction.id}
-                  className={cn(
-                    "flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all",
-                    reactivating === auction.id
-                      ? "bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
-                      : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg hover:shadow-xl"
-                  )}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-[#345E85] hover:bg-[#2a4d6e] text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
                 >
                   {reactivating === auction.id ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Reactivating...</span>
+                      Reactivating...
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-4 h-4" />
-                      <span>Reactivate</span>
+                      Reactivate
                     </>
                   )}
                 </button>
-                <p className="text-xs text-center text-slate-500 dark:text-slate-400">
-                  Restore this auction
+                <p className="text-xs text-slate-500 dark:text-slate-400 text-center lg:text-right">
+                  Original end: {formatDate(auction.auctionEnd)}
                 </p>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Package,
   Search,
@@ -20,34 +20,17 @@ import {
   getPreTripStatusFromLoad,
   PreTripInspectionWorkflowStatus,
 } from './preTripInspection';
+import { usePreTripInspectionLoads } from '../../hooks/useDriverQueries';
 
 interface PreTripInspectionHubProps {
   driverId: string;
 }
 
 export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driverId }) => {
-  const [loads, setLoads] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: loads = [], isLoading: loading, refetch } = usePreTripInspectionLoads(driverId);
   const [selectedLoadId, setSelectedLoadId] = useState<string | null>(null);
   const [historyLoadId, setHistoryLoadId] = useState<string | null>(null);
   const [history, setHistory] = useState<any[]>([]);
-
-  const fetchLoads = async () => {
-    if (!driverId) return;
-    try {
-      setLoading(true);
-      const data = await driverApi.getPreTripInspectionLoads(driverId);
-      setLoads(data);
-    } catch (error: any) {
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLoads();
-  }, [driverId]);
 
   const openHistory = async (loadId: string) => {
     try {
@@ -65,7 +48,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
         cargoId={selectedLoadId}
         driverId={driverId}
         onInspectionComplete={async () => {
-          await fetchLoads();
+          await refetch();
           setSelectedLoadId(null);
         }}
         onCancel={() => setSelectedLoadId(null)}

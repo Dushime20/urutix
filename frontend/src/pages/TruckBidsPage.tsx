@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import { biddingAPI, biddingHelpers } from '../services/biddingApi';
@@ -6,6 +6,12 @@ import { fleetApi } from '../services/fleetApi';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { localToUTC } from '../utils/dateTime';
+import {
+	useAuctionsQuery,
+	useWatchedAuctionIds,
+	useToggleAuctionWatch,
+	useSubmitBidMutation,
+} from '../hooks/useBiddingQueries';
 import { FaTimes, FaStar, FaRegStar, FaUser, FaArrowRight, FaClock } from 'react-icons/fa';
 import { Grid, Table, Clock, Search, Filter, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -14,12 +20,21 @@ import ModernLoader from '../components/common/ModernLoader';
 const TruckBidsPage: React.FC = () => {
 	const { compact: fmtBid } = useCurrencyFormat();
 	const { user } = useAuth();
-	const [auctions, setAuctions] = useState<any[]>([]);
-	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState('');
-	const [status, setStatus] = useState('all'); // Show all statuses by default
+	const [status, setStatus] = useState('all');
 	const [page, setPage] = useState(1);
 	const [limit] = useState(10);
+
+	const {
+		data: auctions = [],
+		isLoading: loading,
+		isFetching,
+		refetch: refetchAuctions,
+	} = useAuctionsQuery({ page, limit, status });
+
+	const { data: watchedIds = new Set<string>() } = useWatchedAuctionIds();
+	const toggleWatchMutation = useToggleAuctionWatch();
+	const submitBidMutation = useSubmitBidMutation();
 	const [showBidModal, setShowBidModal] = useState(false);
 	const [showQuickBidModal, setShowQuickBidModal] = useState(false);
 	const [selectedAuction, setSelectedAuction] = useState<any | null>(null);
@@ -37,7 +52,6 @@ const TruckBidsPage: React.FC = () => {
 	const [loadingDrivers, setLoadingDrivers] = useState(false);
 	const [selectedTruckId, setSelectedTruckId] = useState<string>('');
 	const [selectedDriverId, setSelectedDriverId] = useState<string>('');
-	const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 	const [showWatchedOnly, setShowWatchedOnly] = useState(false);
 	const [view, setView] = useState<'cards' | 'table'>('cards');
 
@@ -101,76 +115,6 @@ const TruckBidsPage: React.FC = () => {
 		return fullName;
 	};
 
-
-	const loadAuctions = useCallback(async () => {
-		setLoading(true);
-		try {
-			// Fetch auctions from cargo owners in the same tenant
-			const params: any = { page, limit };
-			if (status && status !== 'all') {
-				params.status = status;
-			}
-			const response = await biddingAPI.getAuctions(params);
-			// Handle different response structures
-			let auctionsList: any[] = [];
-			if (Array.isArray(response?.data)) {
-				auctionsList = response.data;
-			} else if (Array.isArray(response?.data?.auctions)) {
-				auctionsList = response.data.auctions;
-			} else if (Array.isArray(response?.data?.data)) {
-				auctionsList = response.data.data;
-			} else if (Array.isArray(response)) {
-				auctionsList = response;
-			}
-
-			console.log('📦 Auctions loaded:', auctionsList.length);
-			setAuctions(auctionsList);
-
-			// Record views for loaded auctions (best-effort)
-			try {
-				await Promise.all(auctionsList.slice(0, 10).map((a: any) =>
-					biddingAPI.recordAuctionView(a.id)
-				)).catch(() => { });
-			} catch { }
-
-			// Load watched auctions
-			try {
-				const watched = await biddingAPI.getWatchedAuctions();
-				const ids = Array.isArray(watched?.data?.auctions)
-					? watched.data.auctions.map((a: any) => a.id)
-					: (Array.isArray(watched?.data) ? watched.data.map((a: any) => a.id) : []);
-				setWatchedIds(new Set(ids));
-			} catch { }
-		} catch (e: any) {
-			console.error('Error loading auctions:', e);
-			if (e?.response?.status === 401) {
-				toast.error('Session expired. Please login again.');
-				// window.location.href = '/login';
-			} else {
-				toast.error('Failed to load auctions.');
-			}
-			setAuctions([]);
-		} finally {
-			setLoading(false);
-		}
-	}, [status, page, limit]);
-
-	useEffect(() => {
-		loadAuctions();
-	}, [status, page, limit]);
-
-	// Auto-refresh auctions every 30 seconds to see new bids from cargo owners
-	useEffect(() => {
-		if (status === 'ACTIVE') {
-			const interval = setInterval(() => {
-				loadAuctions();
-			}, 30000); // Refresh every 30 seconds
-
-			return () => clearInterval(interval);
-		}
-	}, [status, loadAuctions]);
-
-
 	const filtered = useMemo(() => {
 		const q = search.trim().toLowerCase();
 		let list = auctions;
@@ -191,19 +135,8 @@ const TruckBidsPage: React.FC = () => {
 	const toggleWatch = async (auction: any) => {
 		const isWatched = watchedIds.has(auction.id);
 		try {
-			if (isWatched) {
-				await biddingAPI.unwatchAuction(auction.id);
-				setWatchedIds((prev) => {
-					const next = new Set(prev);
-					next.delete(auction.id);
-					return next;
-				});
-				toast.success('Removed from watched');
-			} else {
-				await biddingAPI.watchAuction(auction.id);
-				setWatchedIds((prev) => new Set(prev).add(auction.id));
-				toast.success('Added to watched');
-			}
+			await toggleWatchMutation.mutateAsync({ auctionId: auction.id, isWatched });
+			toast.success(isWatched ? 'Removed from watched' : 'Added to watched');
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to toggle watch');
 		}
@@ -266,7 +199,7 @@ const TruckBidsPage: React.FC = () => {
 		}
 
 		try {
-			await biddingAPI.submitBid({
+			await submitBidMutation.mutateAsync({
 				loadId: selectedAuction.loadId,
 				bidAmount: amountNum,
 				bidCurrency: 'USD',
@@ -287,8 +220,6 @@ const TruckBidsPage: React.FC = () => {
 			setQuickRequireAdvancePayment(true);
 			setProposedPickupDate('');
 			setProposedDeliveryDate('');
-			// Refresh auctions and myBids
-			await Promise.all([loadAuctions()]);
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to submit bid');
 		}
@@ -443,7 +374,7 @@ const TruckBidsPage: React.FC = () => {
 		}
 
 		try {
-			await biddingAPI.submitBid({
+			await submitBidMutation.mutateAsync({
 				loadId: selectedAuction.loadId,
 				bidAmount: amountNum,
 				bidCurrency: 'USD',
@@ -459,8 +390,6 @@ const TruckBidsPage: React.FC = () => {
 			});
 			toast.success('Bid submitted successfully! View it in My Bids tab.');
 			setShowBidModal(false);
-			// Refresh auctions and myBids
-			await Promise.all([loadAuctions()]);
 		} catch (e: any) {
 			toast.error(e?.response?.data?.message || 'Failed to submit bid');
 		}
@@ -483,11 +412,11 @@ const TruckBidsPage: React.FC = () => {
 							<p className="text-sm text-gray-600">Real-time marketplace for active shipments</p>
 						</div>
 						<button
-							onClick={() => { loadAuctions(); }}
-							disabled={loading}
+							onClick={() => { void refetchAuctions(); }}
+							disabled={loading || isFetching}
 							className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors shadow-sm"
 						>
-							<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+							<RefreshCw size={16} className={loading || isFetching ? 'animate-spin' : ''} />
 							<span className="hidden sm:inline">Refresh</span>
 						</button>
 					</div>

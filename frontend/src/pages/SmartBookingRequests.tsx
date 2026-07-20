@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { FaSearch, FaSpinner, FaTruck, FaMapMarkerAlt, FaDollarSign } from 'react-icons/fa';
 import { smartBookingApi, type BookingRequest } from '../services/smartBookingApi';
@@ -6,48 +7,67 @@ import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';
 import { cn } from '../utils/cn';
 import { formatLocation } from '../utils/formatLocation';
+import { queryKeys } from '../lib/queryKeys';
 
 type TabType = 'pending' | 'accepted' | 'rejected' | 'all';
 
 const SmartBookingRequests: React.FC = () => {
     const { compact: fmtMoney } = useCurrencyFormat();
     const [activeTab, setActiveTab] = useState<TabType>('pending');
-    const [bookingRequests, setBookingRequests] = useState<BookingRequest[]>([]);
-    const [filteredRequests, setFilteredRequests] = useState<BookingRequest[]>([]);
-    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
-    const [processingId, setProcessingId] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadBookingRequests();
-    }, []);
+    const {
+        data: bookingRequests = [],
+        isLoading: loading,
+        isError,
+    } = useQuery({
+        queryKey: queryKeys.matching.bookingRequests,
+        queryFn: () => smartBookingApi.getBookingRequests(),
+    });
 
-    useEffect(() => {
-        filterRequests();
-    }, [activeTab, search, bookingRequests]);
-
-    const loadBookingRequests = async () => {
-        setLoading(true);
-        try {
-            const requests = await smartBookingApi.getBookingRequests();
-            setBookingRequests(requests);
-        } catch (error: any) {
-            console.error('Error loading booking requests:', error);
+    const acceptMutation = useMutation({
+        mutationFn: ({ requestId, truckId }: { requestId: string; truckId: string }) =>
+            smartBookingApi.acceptBookingRequest(requestId, truckId),
+        onSuccess: () => {
+            toast.success('Booking request accepted successfully!');
+        },
+        onError: (error: unknown) => {
+            console.error('Error accepting booking:', error);
             toast.error(getApiErrorMessage(error));
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+    });
 
-    const filterRequests = () => {
+    const rejectMutation = useMutation({
+        mutationFn: (requestId: string) => smartBookingApi.rejectBookingRequest(requestId),
+        onSuccess: () => {
+            toast.success('Booking request rejected');
+        },
+        onError: (error: unknown) => {
+            console.error('Error rejecting booking:', error);
+            toast.error(getApiErrorMessage(error));
+        },
+    });
+
+    const processingId =
+        acceptMutation.isPending
+            ? acceptMutation.variables?.requestId ?? null
+            : rejectMutation.isPending
+                ? rejectMutation.variables ?? null
+                : null;
+
+    useEffect(() => {
+        if (isError) {
+            toast.error('Failed to load booking requests');
+        }
+    }, [isError]);
+
+    const filteredRequests = useMemo(() => {
         let filtered = bookingRequests;
 
-        // Filter by tab
         if (activeTab !== 'all') {
             filtered = filtered.filter(req => req.status.toLowerCase() === activeTab);
         }
 
-        // Filter by search
         if (search) {
             const searchLower = search.toLowerCase();
             filtered = filtered.filter(req =>
@@ -57,35 +77,15 @@ const SmartBookingRequests: React.FC = () => {
             );
         }
 
-        setFilteredRequests(filtered);
-    };
+        return filtered;
+    }, [activeTab, search, bookingRequests]);
 
     const handleAccept = async (request: BookingRequest) => {
-        setProcessingId(request.id);
-        try {
-            await smartBookingApi.acceptBookingRequest(request.id, request.truckId);
-            toast.success('Booking request accepted successfully!');
-            await loadBookingRequests();
-        } catch (error: any) {
-            console.error('Error accepting booking:', error);
-            toast.error(getApiErrorMessage(error));
-        } finally {
-            setProcessingId(null);
-        }
+        await acceptMutation.mutateAsync({ requestId: request.id, truckId: request.truckId });
     };
 
     const handleReject = async (request: BookingRequest) => {
-        setProcessingId(request.id);
-        try {
-            await smartBookingApi.rejectBookingRequest(request.id);
-            toast.success('Booking request rejected');
-            await loadBookingRequests();
-        } catch (error: any) {
-            console.error('Error rejecting booking:', error);
-            toast.error(getApiErrorMessage(error));
-        } finally {
-            setProcessingId(null);
-        }
+        await rejectMutation.mutateAsync(request.id);
     };
 
     const getStatusColor = (status: string) => {
@@ -198,87 +198,67 @@ const SmartBookingRequests: React.FC = () => {
                                             </span>
                                         </div>
                                         <h3 className="text-base sm:text-lg font-semibold text-gray-900 line-clamp-2">
-                                            {request.cargoType}
+                                            {request.cargoType} — {request.cargoOwnerName}
                                         </h3>
-                                        <p className="text-xs sm:text-sm text-gray-600 truncate mt-0.5">
-                                            {request.cargoOwnerName}
-                                        </p>
                                     </div>
-                                    <div className="flex flex-col items-end flex-shrink-0">
-                                        <div className="text-xl sm:text-2xl font-bold text-primary-600">
-                                            {request.matchScore}%
-                                        </div>
-                                        <span className="text-xs text-gray-500 whitespace-nowrap">Match Score</span>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-xs text-gray-500">Match</p>
+                                        <p className="text-lg font-bold text-primary-600">{request.matchScore}%</p>
                                     </div>
                                 </div>
 
                                 {/* Route */}
                                 <div className="space-y-2 mb-4">
-                                    <div className="flex items-start gap-2">
-                                        <FaMapMarkerAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <span className="text-xs font-medium text-gray-500 uppercase">Origin</span>
-                                            <p className="text-xs sm:text-sm text-gray-900 truncate">{formatLocation(request.origin, '—')}</p>
-                                        </div>
+                                    <div className="flex items-start gap-2 text-sm">
+                                        <FaMapMarkerAlt className="text-green-500 mt-0.5 shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
+                                        <span className="text-gray-700 line-clamp-2">{formatLocation(request.origin) || request.origin}</span>
                                     </div>
-                                    <div className="flex items-start gap-2">
-                                        <FaMapMarkerAlt className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <span className="text-xs font-medium text-gray-500 uppercase">Destination</span>
-                                            <p className="text-xs sm:text-sm text-gray-900 truncate">{formatLocation(request.destination, '—')}</p>
-                                        </div>
+                                    <div className="flex items-start gap-2 text-sm">
+                                        <FaMapMarkerAlt className="text-red-500 mt-0.5 shrink-0 w-3 h-3 sm:w-4 sm:h-4" />
+                                        <span className="text-gray-700 line-clamp-2">{formatLocation(request.destination) || request.destination}</span>
                                     </div>
                                 </div>
 
                                 {/* Details */}
-                                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4 pt-4 border-t border-gray-100">
+                                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
                                     <div>
-                                        <span className="text-xs font-medium text-gray-500">Offered Price</span>
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <FaDollarSign className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                                                <span className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                                                {fmtMoney(request.offeredPrice)}
-                                            </span>
-                                        </div>
+                                        <p className="text-gray-500 text-xs">Offered Price</p>
+                                        <p className="font-semibold text-gray-900 flex items-center gap-1">
+                                            <FaDollarSign className="text-green-600 w-3 h-3" />
+                                            {fmtMoney(request.offeredPrice)}
+                                        </p>
                                     </div>
                                     <div>
-                                        <span className="text-xs font-medium text-gray-500">Requested For</span>
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <FaTruck className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                                            <span className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                                                {request.requestedFor}
-                                            </span>
-                                        </div>
+                                        <p className="text-gray-500 text-xs">Requested For</p>
+                                        <p className="font-medium text-gray-900">
+                                            {new Date(request.requestedFor).toLocaleDateString()}
+                                        </p>
                                     </div>
                                 </div>
 
                                 {/* Actions */}
                                 {request.status === 'PENDING' && (
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                        <button
-                                            onClick={() => handleReject(request)}
-                                            disabled={processingId === request.id}
-                                            className="flex-1 px-4 py-2.5 sm:py-2 text-sm sm:text-base border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
-                                        >
-                                            {processingId === request.id ? (
-                                                <FaSpinner className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                'Reject'
-                                            )}
-                                        </button>
+                                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 border-t border-gray-100">
                                         <button
                                             onClick={() => handleAccept(request)}
                                             disabled={processingId === request.id}
-                                            className="flex-1 px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+                                            className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                                         >
-                                            {processingId === request.id ? (
-                                                <FaSpinner className="w-4 h-4 animate-spin" />
+                                            {processingId === request.id && acceptMutation.isPending ? (
+                                                <FaSpinner className="animate-spin mx-auto" />
                                             ) : (
-                                                <>
-                                                    <FaTruck className="w-4 h-4" />
-                                                    <span className="hidden sm:inline">Accept Booking</span>
-                                                    <span className="sm:hidden">Accept</span>
-                                                </>
+                                                'Accept'
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => handleReject(request)}
+                                            disabled={processingId === request.id}
+                                            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                                        >
+                                            {processingId === request.id && rejectMutation.isPending ? (
+                                                <FaSpinner className="animate-spin mx-auto" />
+                                            ) : (
+                                                'Reject'
                                             )}
                                         </button>
                                     </div>

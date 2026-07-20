@@ -28,6 +28,12 @@ import { AvailableTruckSelect } from '../availability/AvailableTruckSelect';
 import { AvailableDriverSelect } from '../availability/AvailableDriverSelect';
 import { BidAvailabilityChecker } from '../availability/BidAvailabilityChecker';
 import { localToUTC } from '../../utils/dateTime';
+import {
+  useAuctionsQuery,
+  useWatchedAuctionIds,
+  useToggleAuctionWatch,
+  useSubmitBidMutation,
+} from '../../hooks/useBiddingQueries';
 
 interface LoadLocation {
   id: string;
@@ -97,9 +103,6 @@ interface AuctionListProps {
 }
 
 const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = false }) => {
-  const [auctions, setAuctions] = useState<Auction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -109,7 +112,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     maxValue: '',
     showWatchedOnly: false,
   });
-  const [watchedAuctions, setWatchedAuctions] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsAuction, setDetailsAuction] = useState<Auction | null>(null);
@@ -164,57 +166,26 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const [selectedTruckId, setSelectedTruckId] = useState<string>('');
   const [selectedDriverId, setSelectedDriverId] = useState<string>('');
 
-  useEffect(() => {
-    loadAuctions();
-    loadWatchedAuctions();
-  }, [filters]);
+  const {
+    data: auctions = [],
+    isLoading: loading,
+    isError,
+    error: queryError,
+  } = useAuctionsQuery({ filters });
+
+  const { data: watchedAuctions = new Set<string>() } = useWatchedAuctionIds();
+  const toggleWatchMutation = useToggleAuctionWatch();
+  const submitBidMutation = useSubmitBidMutation();
+
+  const error = isError
+    ? (queryError instanceof Error ? queryError.message : 'Failed to load auctions. Please try again.')
+    : null;
 
   useEffect(() => {
     if (showWatchedOnly) {
       setFilters(prev => ({ ...prev, showWatchedOnly: true }));
     }
   }, [showWatchedOnly]);
-
-  const loadWatchedAuctions = async () => {
-    try {
-      const response = await biddingAPI.getWatchedAuctions();
-      const watchedIds = new Set<string>(response.data.map((auction: Auction) => auction.id));
-      setWatchedAuctions(watchedIds);
-    } catch (error) {
-      console.error('Load watched auctions error:', error);
-      // If API fails, start with empty watched set
-      setWatchedAuctions(new Set());
-    }
-  };
-
-  const loadAuctions = async () => {
-    setLoading(true);
-    try {
-      let response;
-      if (filters.showWatchedOnly) {
-        // If showing watched only, get watched auctions
-        response = await biddingAPI.getWatchedAuctions();
-      } else {
-        // Clean filters before sending
-        const apiFilters: any = {};
-        if (filters.status && filters.status !== 'all') apiFilters.status = filters.status;
-        if (filters.auctionType && filters.auctionType !== 'all') apiFilters.auctionType = filters.auctionType;
-        if (filters.minValue) apiFilters.minValue = filters.minValue;
-        if (filters.maxValue) apiFilters.maxValue = filters.maxValue;
-
-        // Get all auctions with filters
-        response = await biddingAPI.getAuctions(apiFilters);
-      }
-      setAuctions(response.data);
-    } catch (error) {
-      console.error('Load auctions error:', error);
-      setError('Failed to load auctions. Please try again.');
-      setAuctions([]);
-      // Mock data removed to enforce API integration testing
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleExport = async () => {
     try {
@@ -355,7 +326,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     }
     const advancePercentage = quickAdvancePaymentPercentage ? Number(quickAdvancePaymentPercentage) : undefined;
     try {
-      await biddingAPI.submitBid({
+      await submitBidMutation.mutateAsync({
         loadId: selectedAuction.loadId,
         bidAmount: amountNum,
         bidCurrency: 'USD',
@@ -368,7 +339,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       });
       toast.success('Bid submitted successfully!');
       setShowQuickBidModal(false);
-      loadAuctions();
     } catch (e: any) {
       toast.error(e?.response?.data?.message || 'Failed to submit bid');
     }
@@ -388,7 +358,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     }
     const advancePercentage = advancePaymentPercentage ? Number(advancePaymentPercentage) : undefined;
     try {
-      await biddingAPI.submitBid({
+      await submitBidMutation.mutateAsync({
         loadId: selectedAuction.loadId,
         bidAmount: amountNum,
         bidCurrency: 'USD',
@@ -404,7 +374,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       });
       toast.success('Bid submitted successfully!');
       setShowBidModal(false);
-      loadAuctions();
     } catch (e: any) {
       toast.error(e?.response?.data?.message || 'Failed to submit bid');
     }
@@ -413,20 +382,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const toggleWatch = async (auctionId: string) => {
     const isWatched = watchedAuctions.has(auctionId);
     try {
-      if (isWatched) {
-        await biddingAPI.unwatchAuction(auctionId);
-        setWatchedAuctions((prev) => {
-          const next = new Set(prev);
-          next.delete(auctionId);
-          return next;
-        });
-        toast.success('Removed from watched');
-      } else {
-        await biddingAPI.watchAuction(auctionId);
-        setWatchedAuctions((prev) => new Set(prev).add(auctionId));
-        toast.success('Added to watched');
-      }
-    } catch (e: any) {
+      await toggleWatchMutation.mutateAsync({ auctionId, isWatched });
+      toast.success(isWatched ? 'Removed from watched' : 'Added to watched');
+    } catch {
       toast.error('Failed to toggle watch');
     }
   };

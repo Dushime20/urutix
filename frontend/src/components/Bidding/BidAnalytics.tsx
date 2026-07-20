@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   BarChart2,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
-import api from '@/services/api';
+import { useBidAnalyticsQuery } from '../../hooks/useBiddingQueries';
 
 interface LoadPerformance {
   title: string;
@@ -28,81 +28,20 @@ interface BidAnalyticsProps {
 }
 
 const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
-  const [analytics, setAnalytics] = useState<{
-    totalBids: number;
-    successfulBids: number;
-    averageBidAmount: number;
-    totalValue: number;
-    successRate: number;
-    averageResponseTime: number;
-    topPerformingLoads: LoadPerformance[];
-    bidTrends: any[];
-  }>({
+  const { data: analyticsData, isLoading: loading, isError } = useBidAnalyticsQuery();
+
+  const error = isError ? 'Failed to load analytics data' : null;
+  const analytics = analyticsData ?? {
     totalBids: 0,
     successfulBids: 0,
     averageBidAmount: 0,
     totalValue: 0,
     successRate: 0,
     averageResponseTime: 0,
-    topPerformingLoads: [],
+    topPerformingLoads: [] as LoadPerformance[],
     bidTrends: [],
-  });
-
-  useEffect(() => {
-    loadAnalytics();
-  }, []);
-
-  const loadAnalytics = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Use existing authenticated endpoints
-      const [bidsRes, statsRes] = await Promise.all([
-        api.get('/bidding/bids'),
-        api.get('/bidding/dashboard/stats'),
-      ]);
-
-      const bids: any[] = bidsRes.data?.bids || bidsRes.data?.data || bidsRes.data || [];
-      const stats = statsRes.data?.stats || statsRes.data?.data || statsRes.data || {};
-
-      const successfulBids = bids.filter((b: any) => b.status === 'ACCEPTED' || b.status === 'WON');
-      const totalValue = bids.reduce((sum: number, b: any) => sum + (Number(b.amount) || 0), 0);
-      const avgAmount = bids.length > 0 ? totalValue / bids.length : 0;
-      const successRate = bids.length > 0 ? Math.round((successfulBids.length / bids.length) * 100) : 0;
-
-      // Group by load for top performing loads
-      const loadMap: Record<string, any> = {};
-      bids.forEach((b: any) => {
-        const key = b.loadId || b.auctionId || 'unknown';
-        if (!loadMap[key]) {
-          loadMap[key] = { title: b.load?.title || b.auction?.load?.title || `Load ${key.slice(0,6)}`, totalBids: 0, finalPrice: 0, status: b.status };
-        }
-        loadMap[key].totalBids++;
-        if (b.status === 'ACCEPTED' || b.status === 'WON') loadMap[key].finalPrice = Number(b.amount);
-      });
-
-      setAnalytics({
-        totalBids: stats.totalBids ?? bids.length,
-        successfulBids: stats.wonBids ?? successfulBids.length,
-        averageBidAmount: stats.averageBidAmount ?? avgAmount,
-        totalValue: stats.totalValue ?? totalValue,
-        successRate: stats.winRate ?? successRate,
-        averageResponseTime: stats.averageResponseTime ?? 0,
-        topPerformingLoads: Object.values(loadMap).slice(0, 5),
-        bidTrends: stats.trends || [],
-      });
-    } catch (error) {
-      console.error('Analytics error:', error);
-      setError('Failed to load analytics data');
-    } finally {
-      setLoading(false);
-    }
   };
-
-
 
   const formatCurrency = (amount: number) => fmtFull(amount);
 

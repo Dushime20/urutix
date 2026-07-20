@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Gavel,
   Users,
@@ -23,6 +24,7 @@ import { cn } from '@/utils/cn';
 import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useLocation } from 'react-router-dom';
 import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN';
@@ -43,15 +45,30 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         ? 'my-auctions' 
         : 'auctions'
   );
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({
+
+  const { data: stats = {
     totalAuctions: 0,
     participatedAuctions: 0,
     activeBids: 0,
     totalValue: 0,
     successRate: 0,
+  }, isLoading: loading, isError } = useQuery({
+    queryKey: queryKeys.bidding.stats,
+    queryFn: async () => {
+      const response = await biddingAPI.getDashboardStats();
+      return response.data;
+    },
+    refetchInterval: 30_000,
   });
+
+  useEffect(() => {
+    if (isError) {
+      setError('Failed to load dashboard statistics');
+    } else {
+      setError(null);
+    }
+  }, [isError]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -60,23 +77,6 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       setActiveTab(viewParam);
     }
   }, [location.search]);
-
-  const loadDashboardStats = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await biddingAPI.getDashboardStats();
-      setStats(response.data);
-    } catch (error) {
-      setError('Failed to load dashboard statistics');
-      console.error('Dashboard stats error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadDashboardStats();
-  }, [loadDashboardStats]);
 
   const renderCargoOwnerStats = () => (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">

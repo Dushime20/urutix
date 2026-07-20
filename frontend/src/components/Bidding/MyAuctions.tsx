@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
     Gavel,
@@ -20,10 +20,16 @@ import {
     TrendingDown,
     Info,
 } from 'lucide-react';
-import { biddingAPI } from '../../services/biddingApi';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import {
+    useMyAuctionsQuery,
+    useLoadBidsQuery,
+    useAcceptBidMutation,
+    useUpdateAuctionMutation,
+    useDeleteAuctionMutation,
+} from '../../hooks/useBiddingQueries';
 
 interface Bid {
     id: string;
@@ -83,11 +89,18 @@ const MyAuctions: React.FC = () => {
     const { compact: _fmtCompact } = useCurrencyFormat();
     const formatCurrency = (amount?: number) =>
         amount == null ? '—' : _fmtCompact(amount);
-    const [auctions, setAuctions] = useState<Auction[]>([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        data: auctions = [],
+        isLoading: loading,
+        refetch: refetchAuctions,
+        isFetching,
+    } = useMyAuctionsQuery();
     const [expandedAuction, setExpandedAuction] = useState<string | null>(null);
-    const [auctionBids, setAuctionBids] = useState<{ [auctionId: string]: Bid[] }>({});
-    const [loadingBids, setLoadingBids] = useState<{ [auctionId: string]: boolean }>({});
+    const [bidsLoadId, setBidsLoadId] = useState<string | undefined>();
+    const { data: activeBids = [], isLoading: loadingActiveBids } = useLoadBidsQuery(bidsLoadId);
+    const acceptBidMutation = useAcceptBidMutation();
+    const updateAuctionMutation = useUpdateAuctionMutation();
+    const deleteAuctionMutation = useDeleteAuctionMutation();
     const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const { confirm, DialogComponent } = useConfirmDialog();
@@ -106,63 +119,34 @@ const MyAuctions: React.FC = () => {
     });
     const [savingEdit, setSavingEdit] = useState(false);
 
-    useEffect(() => {
-        loadAuctions();
-    }, []);
+    const resolveLoadId = (auction: Auction) => auction.loadId || auction.load?.id;
 
-    const loadAuctions = async () => {
-        setLoading(true);
-        try {
-            const response = await biddingAPI.getAuctions();
-            const auctionData = response.data?.auctions || response.data?.items || response.data || [];
-            setAuctions(Array.isArray(auctionData) ? auctionData : []);
-        } catch (error) {
-            console.error('Failed to load auctions:', error);
-            toast.error('Failed to load your auctions');
-        } finally {
-            setLoading(false);
-        }
+    const getBidsForAuction = (auction: Auction): Bid[] => {
+        const loadId = resolveLoadId(auction);
+        if (!loadId || loadId !== bidsLoadId) return [];
+        return activeBids as Bid[];
     };
 
-    const loadBidsForAuction = async (auction: Auction) => {
-        const loadId = auction.loadId || auction.load?.id;
-        if (!loadId) return;
-
-        setLoadingBids(prev => ({ ...prev, [auction.id]: true }));
-        try {
-            const response = await biddingAPI.getBidsForLoad(loadId);
-            const bids = response.data?.bids || response.data?.items || response.data || [];
-            setAuctionBids(prev => ({ ...prev, [auction.id]: Array.isArray(bids) ? bids : [] }));
-        } catch (error) {
-            console.error('Failed to load bids:', error);
-            setAuctionBids(prev => ({ ...prev, [auction.id]: [] }));
-        } finally {
-            setLoadingBids(prev => ({ ...prev, [auction.id]: false }));
-        }
+    const isLoadingBidsFor = (auction: Auction) => {
+        const loadId = resolveLoadId(auction);
+        return !!loadId && loadId === bidsLoadId && loadingActiveBids;
     };
 
     const toggleAuction = (auctionId: string, auction: Auction) => {
         if (expandedAuction === auctionId) {
             setExpandedAuction(null);
+            setBidsLoadId(undefined);
         } else {
             setExpandedAuction(auctionId);
-            if (!auctionBids[auctionId]) {
-                loadBidsForAuction(auction);
-            }
+            setBidsLoadId(resolveLoadId(auction));
         }
     };
 
     const handleAcceptBid = async (bidId: string) => {
         setAcceptingBid(bidId);
         try {
-            await biddingAPI.acceptBid(bidId);
+            await acceptBidMutation.mutateAsync(bidId);
             toast.success('Bid accepted successfully!');
-            loadAuctions();
-            // Refresh bids for the expanded auction
-            if (expandedAuction) {
-                const auction = auctions.find(a => a.id === expandedAuction);
-                if (auction) loadBidsForAuction(auction);
-            }
         } catch (error: any) {
             console.error('Failed to accept bid:', error);
             const errorMessage = error?.response?.data?.message || 'Failed to accept bid';
@@ -187,9 +171,12 @@ const MyAuctions: React.FC = () => {
 
         try {
             toast.loading('Deleting auction...', { id: 'deleteAuction' });
-            await biddingAPI.deleteAuction(auctionId);
+            await deleteAuctionMutation.mutateAsync(auctionId);
             toast.success('Auction deleted successfully', { id: 'deleteAuction' });
-            setAuctions(prev => prev.filter(a => a.id !== auctionId));
+            if (expandedAuction === auctionId) {
+                setExpandedAuction(null);
+                setBidsLoadId(undefined);
+            }
         } catch (error) {
             console.error('Failed to delete auction:', error);
             toast.error('Failed to delete auction', { id: 'deleteAuction' });
@@ -220,11 +207,10 @@ const MyAuctions: React.FC = () => {
             if (editForm.reservePrice !== '') payload.reservePrice = parseFloat(editForm.reservePrice);
             if (editForm.minimumBidIncrement !== '') payload.minimumBidIncrement = parseFloat(editForm.minimumBidIncrement);
 
-            await biddingAPI.updateAuction(editAuction.id, payload);
+            await updateAuctionMutation.mutateAsync({ auctionId: editAuction.id, data: payload });
             toast.success('Auction updated successfully');
             setShowEditModal(false);
             setEditAuction(null);
-            loadAuctions();
         } catch (error: any) {
             const msg = error?.response?.data?.message || 'Failed to update auction';
             toast.error(msg);
@@ -237,10 +223,7 @@ const MyAuctions: React.FC = () => {
         e.stopPropagation();
         setViewAuction(auction);
         setShowViewModal(true);
-        // Also load bids for this auction if not already loaded
-        if (!auctionBids[auction.id]) {
-            loadBidsForAuction(auction);
-        }
+        setBidsLoadId(resolveLoadId(auction));
     };
 
     const getStatusBadge = (status: string) => {
@@ -338,10 +321,11 @@ const MyAuctions: React.FC = () => {
                 })}
 
                 <button
-                    onClick={loadAuctions}
-                    className="ml-auto px-4 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-[#345E85] dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all flex items-center gap-2"
+                    onClick={() => void refetchAuctions()}
+                    disabled={isFetching}
+                    className="ml-auto px-4 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-[#345E85] dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
-                    <RefreshCw size={14} />
+                    <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
                     Refresh
                 </button>
             </div>
@@ -359,8 +343,8 @@ const MyAuctions: React.FC = () => {
                 <div className="space-y-4">
                     {filteredAuctions.map(auction => {
                         const isExpanded = expandedAuction === auction.id;
-                        const bids = auctionBids[auction.id] || [];
-                        const isLoadingBids = loadingBids[auction.id];
+                        const bids = getBidsForAuction(auction);
+                        const isLoadingBids = isLoadingBidsFor(auction);
                         const bidCount = auction.totalBids || bids.length;
                         const pendingBids = bids.filter(b => b.status === 'PENDING');
 
@@ -827,7 +811,7 @@ const MyAuctions: React.FC = () => {
                                     <div>
                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pending Bids</p>
                                         <p className="text-2xl font-black text-amber-500">
-                                            {(auctionBids[viewAuction.id] || []).filter(b => b.status === 'PENDING').length}
+                                            {(viewAuction ? getBidsForAuction(viewAuction) : []).filter(b => b.status === 'PENDING').length}
                                         </p>
                                     </div>
                                 </div>

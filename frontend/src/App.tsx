@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { PermissionProvider } from './contexts/PermissionContext';
@@ -8,6 +9,7 @@ import { I18nProvider } from './contexts/i18n-context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from 'react-hot-toast';
 import { lazy, Suspense } from 'react';
+import { MutationSyncProvider } from './components/MutationSyncProvider';
 
 // Keep essential components that are needed immediately (layouts, auth, home)
 import CargoOwnerLayout from './components/Layout/CargoOwnerLayout';
@@ -242,19 +244,10 @@ const PageLoadingFallback = () => (
   </div>
 );
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <MutationSyncProvider>
       <I18nProvider
         defaultLanguage="en"
         googleTranslateApiKey={import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}
@@ -740,6 +733,7 @@ function App() {
           containerClassName="!z-[9999999]"
         />
       </I18nProvider>
+      </MutationSyncProvider>
     </QueryClientProvider>
   );
 }

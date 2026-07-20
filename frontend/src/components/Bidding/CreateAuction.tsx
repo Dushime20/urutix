@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Gavel, Loader2, AlertCircle, CheckCircle2, X, PlusCircle, Info, Calendar, DollarSign, Settings, Truck, ArrowRight, TrendingDown, Clock, Zap } from 'lucide-react';
-import { loadsAPI } from '../../services/load';
-import { biddingAPI } from '../../services/biddingApi';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import AuctionTypeSelector, { AuctionType } from './AuctionTypeSelector';
 import { formatLocation } from '../../utils/formatLocation';
+import { useAuctionableCargosQuery, useCreateAuctionMutation } from '../../hooks/useBiddingQueries';
 
 interface Cargo {
   id: string;
@@ -23,8 +22,8 @@ interface Cargo {
 
 const CreateAuction: React.FC = () => {
   const { user } = useAuth();
-  const [cargos, setCargos] = useState<Cargo[]>([]);
-  const [loadingCargos, setLoadingCargos] = useState(false);
+  const { data: cargos = [], isLoading: loadingCargos } = useAuctionableCargosQuery(user);
+  const createAuctionMutation = useCreateAuctionMutation();
   const [formData, setFormData] = useState({
     loadId: '',
     auctionType: 'REVERSE' as AuctionType,
@@ -52,79 +51,6 @@ const CreateAuction: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadCargos();
-  }, [user]);
-
-  const loadCargos = async () => {
-    if (!user) return;
-
-    setLoadingCargos(true);
-    try {
-      const response = await loadsAPI.getAll();
-
-      // Fetch existing auctions to filter out cargos that are already being auctioned
-      const activeAuctionLoadIds = new Set<string>();
-      try {
-        const auctionsResponse = await biddingAPI.getAuctions({ limit: 1000 });
-        const auctions = auctionsResponse.data || [];
-        // Filter for auctions that are active, scheduled, or paused
-        // We assume CLOSED or CANCELLED auctions allow the cargo to be re-auctioned if the load status permits
-        auctions.forEach((auction: any) => {
-          if (['ACTIVE', 'SCHEDULED', 'PAUSED'].includes(auction.status)) {
-            activeAuctionLoadIds.add(auction.loadId);
-          }
-        });
-      } catch (err) {
-        console.error('Error loading auctions for filtering:', err);
-        // Continue without filtering if auctions fail to load, or handle error?
-        // Ideally we should warn, but for now we proceed.
-      }
-
-      // Handle different response structures
-      let cargosList: Cargo[] = [];
-      if (response.data?.items) {
-        cargosList = response.data.items;
-      } else if (response.data?.cargos) {
-        cargosList = response.data.cargos;
-      } else if (Array.isArray(response.data)) {
-        cargosList = response.data;
-      } else if (Array.isArray(response)) {
-        cargosList = response;
-      }
-
-      // Filter cargos that can be auctioned (CREATED, PUBLISHED status)
-      // Logic depends on user role:
-      // - Brokers should see loads assigned to them
-      // - Cargo Owners should see loads NOT assigned to a broker (broker manages those)
-      const availableCargos = cargosList.filter((cargo: Cargo) => {
-        // First check if cargo is already being auctioned
-        if (activeAuctionLoadIds.has(cargo.id)) return false;
-
-        const validStatus = cargo.status === 'CREATED' || cargo.status === 'PUBLISHED' || !cargo.status;
-
-        if (!validStatus) return false;
-
-        // Check user role (assuming 'BROKER' is the value)
-        if (user?.role === 'BROKER') {
-          // Broker sees loads where they are the assigned broker
-          return cargo.brokerId === user.id || cargo.broker?.id === user.id;
-        } else {
-          // Cargo Owner (or others) sees loads NOT assigned to a broker
-          return !cargo.brokerId && !cargo.broker;
-        }
-      });
-
-      setCargos(availableCargos);
-    } catch (err: any) {
-      console.error('Error loading cargos:', err);
-      toast.error('Failed to load cargos. Please try again.');
-      setCargos([]);
-    } finally {
-      setLoadingCargos(false);
-    }
-  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -186,7 +112,7 @@ const CreateAuction: React.FC = () => {
       if (formData.marketRate) auctionData.marketRate = parseFloat(formData.marketRate);
       auctionData.autoExtend = formData.autoExtend;
 
-      await biddingAPI.createAuction(auctionData);
+      await createAuctionMutation.mutateAsync(auctionData);
 
       toast.success('Auction created successfully!');
       setSuccess('Auction created successfully!');
@@ -209,9 +135,6 @@ const CreateAuction: React.FC = () => {
         marketRate: '',
         autoExtend: false,
       });
-
-      // Reload cargos to refresh the list
-      await loadCargos();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || 'Failed to create auction. Please try again.';
       setError(errorMessage);

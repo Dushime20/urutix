@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getApiBaseUrl } from '../config/environment';
 import { getSubdomain } from '../utils/subdomain';
+import { handleMutationResponse } from '../lib/mutationSync';
 import type { IPaginatedRes } from '../types/apiResponse';
 import type { Tenant, TenantSearchParams } from '../types/tenant';
 
@@ -77,8 +78,15 @@ api.interceptors.request.use(
   }
 );
 
-// Note: Response interceptor removed to prevent conflicts with AuthContext
-// The AuthContext handles 401 errors and token refresh automatically
+// Sync React Query cache after successful mutations (POST/PUT/PATCH/DELETE).
+// Auth 401 handling remains in AuthContext — this interceptor does not touch errors.
+api.interceptors.response.use(
+  (response) => {
+    handleMutationResponse(response);
+    return response;
+  },
+  (error) => Promise.reject(error),
+);
 
 // Auth API
 export const authAPI = {

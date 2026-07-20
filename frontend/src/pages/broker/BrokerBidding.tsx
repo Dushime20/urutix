@@ -1,5 +1,6 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { biddingAPI } from '../../services/biddingApi';
 import AuctionList from '../../components/Bidding/AuctionList';
 import BidHistory from '../../components/Bidding/BidHistory';
@@ -12,6 +13,7 @@ import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const BrokerBidding: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('bids');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +27,12 @@ const BrokerBidding: React.FC = () => {
   useEffect(() => {
     loadDashboardStats();
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get('loadId') || searchParams.get('bidId')) {
+      setActiveTab('bids');
+    }
+  }, [searchParams]);
 
   const loadDashboardStats = async () => {
     setLoading(true);

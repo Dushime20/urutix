@@ -20,12 +20,23 @@ import { MessengerService } from '../../messenger/messenger.service';
 
 interface AuctionBidReceivedPayload {
   auctionId: string;
+  bidId?: string;
+  loadId?: string;
   bidderId: string;
   bidderName: string;
   amount: number;
+  bidCurrency?: string;
   cargoOwnerId: string;
+  brokerId?: string;
   tenantId: string;
   cargoTitle?: string;
+  cargoReference?: string;
+  pickupLocation?: string;
+  deliveryLocation?: string;
+  pickupDate?: Date | string;
+  deliveryDate?: Date | string;
+  truckInfo?: string;
+  submittedAt?: Date | string;
 }
 
 interface AuctionWinnerSelectedPayload {
@@ -274,7 +285,8 @@ export class AuctionNotificationListener {
   }
 
   /**
-   * Cargo Owner receives: New bid submitted on auction
+   * Cargo Owner receives: New bid submitted on auction.
+   * Assigned Broker also receives notification when cargo has brokerId set.
    */
   @OnEvent('auction.bid.received')
   async handleBidReceived(payload: AuctionBidReceivedPayload) {
@@ -283,6 +295,8 @@ export class AuctionNotificationListener {
     );
 
     try {
+      const currency = payload.bidCurrency || 'USD';
+      const cargoLabel = this.formatCargoLabel(payload);
       const notification = this.notificationRepository.create({
         recipientId: payload.cargoOwnerId,
         tenantId: payload.tenantId,
@@ -290,8 +304,8 @@ export class AuctionNotificationListener {
         category: NotificationCategory.AUCTION,
         priority: NotificationPriority.HIGH,
         title: 'New Bid Received',
-        message: `${payload.bidderName} has placed a bid of ${payload.amount.toLocaleString()} RWF on your auction${payload.cargoTitle ? ` for "${payload.cargoTitle}"` : ''}.`,
-        shortMessage: `New bid: ${payload.amount.toLocaleString()} RWF`,
+        message: `${payload.bidderName} has placed a bid of ${payload.amount.toLocaleString()} ${currency} on your auction${payload.cargoTitle ? ` for "${payload.cargoTitle}"` : ''}.`,
+        shortMessage: `New bid: ${payload.amount.toLocaleString()} ${currency}`,
         entityType: EntityType.AUCTION,
         entityId: payload.auctionId,
         channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
@@ -301,11 +315,18 @@ export class AuctionNotificationListener {
         actionUrl: `/dashboard/bidding`,
         actionText: 'View Bid',
         metadata: {
+          eventType: 'BID_SUBMITTED',
           auctionId: payload.auctionId,
+          bidId: payload.bidId,
+          loadId: payload.loadId,
           bidderId: payload.bidderId,
           bidderName: payload.bidderName,
           amount: payload.amount,
+          bidCurrency: currency,
           cargoTitle: payload.cargoTitle,
+          cargoReference: payload.cargoReference,
+          recipientRole: 'CARGO_OWNER',
+          deliveryStatus: NotificationStatus.SENT,
         },
         userPreferences: {
           emailEnabled: true,
@@ -326,12 +347,146 @@ export class AuctionNotificationListener {
       this.logger.log(
         `Successfully sent bid received notification to cargo owner ${payload.cargoOwnerId}`,
       );
+
+      if (payload.brokerId) {
+        await this.notifyBrokerOfBidReceived(payload, currency, cargoLabel);
+      }
     } catch (error) {
       this.logger.error(
         `Failed to send bid received notification: ${error.message}`,
         error.stack,
       );
     }
+  }
+
+  /**
+   * Assigned Broker receives notification when a truck owner submits a bid
+   * on broker-managed cargo.
+   */
+  private async notifyBrokerOfBidReceived(
+    payload: AuctionBidReceivedPayload,
+    currency: string,
+    cargoLabel: string,
+  ): Promise<void> {
+    const loadId = payload.loadId;
+    const bidId = payload.bidId;
+    const actionUrl =
+      loadId && bidId
+        ? `/dashboard/broker/bidding?loadId=${loadId}&bidId=${bidId}`
+        : loadId
+          ? `/dashboard/broker/bidding?loadId=${loadId}`
+          : '/dashboard/broker/bidding';
+
+    const routeDetail =
+      payload.pickupLocation && payload.deliveryLocation
+        ? ` Route: ${payload.pickupLocation} → ${payload.deliveryLocation}.`
+        : '';
+    const scheduleDetail = this.formatScheduleDetail(payload);
+    const truckDetail = payload.truckInfo
+      ? ` Truck: ${payload.truckInfo}.`
+      : '';
+
+    const message =
+      `A truck owner has submitted a new bid for ${cargoLabel} assigned to you.` +
+      ` ${payload.bidderName} bid ${payload.amount.toLocaleString()} ${currency}.` +
+      routeDetail +
+      scheduleDetail +
+      truckDetail +
+      ' Review the bid details and take necessary action.';
+
+    try {
+      const notification = this.notificationRepository.create({
+        recipientId: payload.brokerId!,
+        tenantId: payload.tenantId,
+        notificationType: NotificationType.AUCTION_BID_RECEIVED,
+        category: NotificationCategory.AUCTION,
+        priority: NotificationPriority.HIGH,
+        title: 'New Bid Received',
+        message,
+        shortMessage: `New bid on ${cargoLabel}: ${payload.amount.toLocaleString()} ${currency}`,
+        entityType: EntityType.CARGO,
+        entityId: loadId || payload.auctionId,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        status: NotificationStatus.SENT,
+        isRead: false,
+        requiresAction: true,
+        actionUrl,
+        actionText: 'Review Bid',
+        metadata: {
+          eventType: 'BID_SUBMITTED',
+          cargoId: loadId,
+          bidId,
+          truckOwnerId: payload.bidderId,
+          brokerId: payload.brokerId,
+          cargoReference: payload.cargoReference,
+          cargoTitle: payload.cargoTitle,
+          bidderName: payload.bidderName,
+          bidAmount: payload.amount,
+          bidCurrency: currency,
+          pickupLocation: payload.pickupLocation,
+          deliveryLocation: payload.deliveryLocation,
+          pickupDate: payload.pickupDate,
+          deliveryDate: payload.deliveryDate,
+          truckInfo: payload.truckInfo,
+          submittedAt: payload.submittedAt || new Date().toISOString(),
+          auctionId: payload.auctionId,
+          recipientRole: 'BROKER',
+          deliveryStatus: NotificationStatus.SENT,
+        },
+        tags: ['bid', 'broker', 'auction'],
+        userPreferences: {
+          emailEnabled: true,
+          smsEnabled: false,
+          pushEnabled: true,
+        },
+        analytics: {
+          openCount: 0,
+          clickCount: 0,
+        },
+      });
+
+      const saved = await this.notificationRepository.save(notification);
+      this.eventsGateway.emitNotification(payload.brokerId!, saved);
+
+      this.logger.log(
+        `[BID_SUBMITTED] Broker ${payload.brokerId} notified for bid ${bidId} on cargo ${loadId} (status: ${NotificationStatus.SENT})`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `[BID_SUBMITTED] Failed to notify broker ${payload.brokerId} for bid ${bidId}: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  private formatCargoLabel(payload: AuctionBidReceivedPayload): string {
+    if (payload.cargoReference) {
+      return `cargo #${payload.cargoReference}`;
+    }
+    if (payload.loadId) {
+      return `cargo #${payload.loadId.slice(0, 8).toUpperCase()}`;
+    }
+    return payload.cargoTitle ? `"${payload.cargoTitle}"` : 'your assigned cargo';
+  }
+
+  private formatScheduleDetail(payload: AuctionBidReceivedPayload): string {
+    const parts: string[] = [];
+    if (payload.pickupDate) {
+      parts.push(`Pickup: ${this.formatDate(payload.pickupDate)}`);
+    }
+    if (payload.deliveryDate) {
+      parts.push(`Delivery: ${this.formatDate(payload.deliveryDate)}`);
+    }
+    return parts.length ? ` ${parts.join('. ')}.` : '';
+  }
+
+  private formatDate(value: Date | string): string {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   }
 
   /**

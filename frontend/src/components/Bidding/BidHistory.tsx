@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   Eye,
@@ -16,10 +16,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import toast from 'react-hot-toast';
-import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
 import { createPortal } from 'react-dom';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../../utils/paymentCalculations';
+import {
+  useBidHistoryQuery,
+  useWithdrawBidMutation,
+  useAcceptBidMutation,
+} from '../../hooks/useBiddingQueries';
 
 interface Bid {
   id: string;
@@ -73,9 +77,6 @@ interface BidHistoryProps {
 const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }) => {
   const { compactIn: fmtBid, format: fmtFull } = useCurrencyFormat();
   const formatCurrency = (amount: number, _currency?: string) => fmtFull(amount);
-  const [bids, setBids] = useState<Bid[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -87,93 +88,23 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
   const { confirm, DialogComponent } = useConfirmDialog();
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
 
-  useEffect(() => {
-    loadBidHistory();
-  }, [filters]);
+  const {
+    data: bids = [],
+    isLoading: loading,
+    isError,
+  } = useBidHistoryQuery(userRole, filters);
 
-  const loadBidHistory = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Use admin endpoint for admin users, otherwise use regular endpoint
-      const response = (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN')
-        ? await biddingAPI.getAllBidsForAdmin()
-        : await biddingAPI.getMyBids();
-      const bidsData = response.data || response;
-
-      // Filter bids based on status filter
-      let filteredBids = Array.isArray(bidsData) ? bidsData : [];
-      if (filters.status && filters.status !== 'all') {
-        filteredBids = filteredBids.filter((bid: Bid) => bid.status === filters.status);
-      }
-
-      setBids(filteredBids);
-    } catch (error) {
-      setError('Failed to load bid history');
-      console.error('Bid history error:', error);
-
-      // Set demo bid history when API fails
-      setBids([
-        {
-          id: 'bid-1',
-          loadId: 'load-1',
-          bidAmount: 1500,
-          bidCurrency: 'USD',
-          status: 'PENDING',
-          proposedPickupDate: '2024-01-15',
-          proposedDeliveryDate: '2024-01-18',
-          bidNotes: 'Experienced driver with refrigerated truck',
-          successProbability: 85,
-          createdAt: '2024-01-10T10:30:00Z',
-          load: {
-            id: 'load-1',
-            title: 'Electronics Shipment',
-            weight: 500,
-            loadValue: 5000,
-          },
-          auction: {
-            id: 'auction-1',
-            auctionType: 'REVERSE',
-            status: 'ACTIVE',
-            auctionEnd: '2024-01-20T18:00:00Z',
-          },
-        },
-        {
-          id: 'bid-2',
-          loadId: 'load-2',
-          bidAmount: 1800,
-          bidCurrency: 'USD',
-          status: 'ACCEPTED',
-          proposedPickupDate: '2024-01-12',
-          proposedDeliveryDate: '2024-01-15',
-          bidNotes: 'Flatbed truck available',
-          successProbability: 100,
-          createdAt: '2024-01-08T14:20:00Z',
-          load: {
-            id: 'load-2',
-            title: 'Furniture Delivery',
-            weight: 1200,
-            loadValue: 3000,
-          },
-          auction: {
-            id: 'auction-2',
-            auctionType: 'FORWARD',
-            status: 'COMPLETED',
-            auctionEnd: '2024-01-15T18:00:00Z',
-          },
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const withdrawBidMutation = useWithdrawBidMutation();
+  const acceptBidMutation = useAcceptBidMutation();
+  const error = isError ? 'Failed to load bid history' : null;
 
   const handleWithdrawBid = async (bidId: string) => {
     try {
-      await biddingAPI.withdrawBid(bidId);
-      loadBidHistory(); // Refresh the list
+      await withdrawBidMutation.mutateAsync(bidId);
+      toast.success('Bid withdrawn');
     } catch (error) {
       console.error('Withdraw bid error:', error);
+      toast.error('Failed to withdraw bid');
     }
   };
 
@@ -196,9 +127,8 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
     if (!confirmed) return;
 
     try {
-      await biddingAPI.acceptBid(bidId);
+      await acceptBidMutation.mutateAsync(bidId);
       toast.success('Bid accepted successfully! The load has been assigned to the truck owner. The assigned driver will see it in their cargo management dashboard.');
-      loadBidHistory(); // Refresh the list
     } catch (error: any) {
       console.error('Accept bid error:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to accept bid';
