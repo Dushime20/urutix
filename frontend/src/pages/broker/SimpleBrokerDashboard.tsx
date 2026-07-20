@@ -19,7 +19,8 @@ import {
   Zap,
   ChevronRight,
   Target,
-  Sparkles
+  Sparkles,
+  ClipboardCheck,
 } from 'lucide-react';
 
 const SimpleBrokerDashboard: React.FC = () => {
@@ -68,6 +69,7 @@ const SimpleBrokerDashboard: React.FC = () => {
         <div className="flex flex-wrap gap-4">
            {[
              { label: 'Asset Pipeline', icon: Package, path: '/dashboard/broker/loads', color: 'bg-slate-900' },
+             { label: 'Cargo Inspections', icon: ClipboardCheck, path: '/dashboard/broker/customs-inspections', color: 'bg-emerald-600' },
              { label: 'Bidding', icon: Gavel, path: '/dashboard/broker/bidding', color: 'bg-primary-600' },
              { label: 'Vector Analysis', icon: MapPin, path: '/dashboard/broker/tracking', color: 'bg-indigo-600' },
            ].map((btn, i) => (
@@ -126,6 +128,7 @@ const SimpleBrokerDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  {[
                    { label: 'Asset Pipeline', icon: Package, desc: 'Manage assigned units', path: '/dashboard/broker/loads' },
+                   { label: 'Cargo Inspections', icon: ClipboardCheck, desc: 'Pre-trip & delivery checks', path: '/dashboard/broker/customs-inspections' },
                    { label: 'Bidding System', icon: Gavel, desc: 'Manage proposals', path: '/dashboard/broker/bidding' },
                    { label: 'Vector Analysis', icon: MapPin, desc: 'Track field assets', path: '/dashboard/broker/tracking' },
                    { label: 'Yield Records', icon: DollarSign, desc: 'Commission analytics', path: '/dashboard/broker/commissions' }

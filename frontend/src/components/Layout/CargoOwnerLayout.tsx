@@ -29,7 +29,12 @@ const CargoOwnerLayout: React.FC = () => {
       } else if (user.role === 'LENDER') {
         navigate('/lender');
       } else if (user.role === 'BROKER') {
-        navigate('/dashboard/broker');
+        if (location.pathname.startsWith('/dashboard/customs-inspections')) {
+          const suffix = location.pathname.replace('/dashboard/customs-inspections', '');
+          navigate(`/dashboard/broker/customs-inspections${suffix}`, { replace: true });
+        } else {
+          navigate('/dashboard/broker');
+        }
       }
     }
   }, [user, isLoading, navigate, location]);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Package, Bell, User, PlusCircle, Activity, DollarSign, MessageSquare, ShieldCheck, Search, Radio } from 'lucide-react';
+import { Home, Package, Bell, User, PlusCircle, Activity, DollarSign, MessageSquare, ShieldCheck, Search, Radio, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { cn } from '../../utils/cn';
@@ -104,6 +104,7 @@ const MobileBottomNav: React.FC = () => {
         navItems.push({ icon: Activity, label: 'Trips', path: '/dashboard/trips' });
     } else if (user?.role === 'BROKER') {
         navItems.push({ icon: Package, label: 'Loads', path: '/dashboard/broker/loads' });
+        navItems.push({ icon: ClipboardCheck, label: 'Inspect', path: '/dashboard/broker/customs-inspections' });
         navItems.push({ icon: Radio, label: 'Track', path: getTrackingPath() });
     } else if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') {
         navItems.push({ icon: Activity, label: 'Ops', path: '/admin/monitoring' });

@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio, Headphones } from 'lucide-react';
+import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ClipboardCheck, ShoppingCart, MessageSquare, Radio, Headphones } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import CurrencySelector from '../common/CurrencySelector';
@@ -88,7 +88,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Receiver Directory', path: `${basePath}/receivers` },
             { label: 'Drafts & Templates', path: `${basePath}/cargos/list?status=DRAFT` },
             { label: 'Documents & Contracts', path: `${basePath}/documents` },
-            { label: 'Customs Inspections', path: `${basePath}/customs-inspections` },
+            { label: 'Cargo Inspections', path: `${basePath}/customs-inspections` },
           ]
         },
         {
@@ -126,6 +126,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Bidding', path: '/dashboard/broker/bidding' },
             { label: '🔴 Live Tracking', path: '/dashboard/broker/tracking' },
           ]
+        },
+        {
+          label: 'Inspections',
+          path: '/dashboard/broker/customs-inspections',
+          icon: ClipboardCheck,
         },
         {
           label: 'Financials',

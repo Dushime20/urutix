@@ -612,6 +612,21 @@ export class LoadsV2Controller {
     }
   }
 
+  @Get('my-cargo-inspections')
+  @ApiOperation({
+    summary: 'Get cargo inspection overview for cargo owner or broker',
+    description:
+      'Returns pre-trip and post-delivery inspections scoped to the authenticated user\'s own cargo (cargo owner) or brokered loads (broker).',
+  })
+  async getMyCargoInspections(@Request() req) {
+    const userId = req.user.userId || req.user.id;
+    return this.preTripInspectionService.getCargoOwnerInspectionOverview(
+      userId,
+      req.user.tenantId,
+      req.user.role,
+    );
+  }
+
   @Patch(':id/pre-trip-inspection/ready-for-reinspection')
   @ApiOperation({
     summary: 'Mark pre-trip inspection issues as resolved and ready for re-inspection',
@@ -643,6 +658,7 @@ export class LoadsV2Controller {
     return this.preTripInspectionService.getInspectionHistory(
       id,
       req.user.tenantId,
+      req.user.userId || req.user.id,
     );
   }
 

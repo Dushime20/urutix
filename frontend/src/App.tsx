@@ -669,6 +669,8 @@ function App() {
                       <Route index element={<SimpleBrokerDashboard />} />
                       <Route path="loads" element={<BrokerLoadsPage />} />
                       <Route path="loads/:loadId" element={<BrokerLoadDetail />} />
+                      <Route path="customs-inspections" element={<CargoCustomsInspectionsPage />} />
+                      <Route path="customs-inspections/:id" element={<CargoCustomsInspectionsPage />} />
                       <Route path="loads/:loadId/tracking" element={<LoadTracking />} />
                       <Route path="bidding" element={<BrokerBidding />} />
                       <Route path="tracking" element={<LiveTracking />} />
