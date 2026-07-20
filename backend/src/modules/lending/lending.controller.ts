@@ -649,6 +649,47 @@ export class LendingController {
     return await this.lendingService.approveLoanRequest(loanId, approvalDto);
   }
 
+  @Post('lending/loan-requests/:loanId/accept-terms')
+  @ApiOperation({
+    summary: 'Borrower accepts formal loan terms',
+    description:
+      'Borrower electronic consent — required before lender can disburse funds (TILA / IFRS 9).',
+  })
+  async acceptLoanTerms(
+    @Param('loanId', ParseUUIDPipe) loanId: string,
+    @Body() body: import('./dto/loan-offer.dto').AcceptLoanTermsDto,
+    @Request() req,
+  ) {
+    return await this.lendingService.acceptLoanTerms(
+      loanId,
+      req.user.userId,
+      body.consent_reference,
+    );
+  }
+
+  @Post('lending/loan-requests/:loanId/decline-terms')
+  @ApiOperation({ summary: 'Borrower declines formal loan terms' })
+  async declineLoanTerms(
+    @Param('loanId', ParseUUIDPipe) loanId: string,
+    @Body() body: import('./dto/loan-offer.dto').DeclineLoanTermsDto,
+    @Request() req,
+  ) {
+    return await this.lendingService.declineLoanTerms(
+      loanId,
+      req.user.userId,
+      body.reason,
+    );
+  }
+
+  @Get('lending/loan-requests/:loanId/offer-disclosure')
+  @ApiOperation({
+    summary: 'Get TILA-style loan offer disclosure',
+    description: 'Full terms breakdown for borrower review before acceptance.',
+  })
+  async getLoanOfferDisclosure(@Param('loanId', ParseUUIDPipe) loanId: string) {
+    return await this.lendingService.getLoanOfferDisclosure(loanId);
+  }
+
   // ===== DISBURSEMENT ENDPOINTS =====
 
   @Post('lending/loan-requests/:loanId/disburse')

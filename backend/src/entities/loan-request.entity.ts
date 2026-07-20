@@ -176,6 +176,26 @@ export class LoanRequest {
   @Column({ type: 'decimal', precision: 6, scale: 4, nullable: true })
   expected_loss: number;
 
+  /** When the lender formally offered terms to the borrower (TILA disclosure sent) */
+  @Column({ type: 'timestamp', nullable: true })
+  terms_offered_at: Date | null;
+
+  /** When the borrower accepted the offered terms — required before disbursement */
+  @Column({ type: 'timestamp', nullable: true })
+  borrower_accepted_at: Date | null;
+
+  /** When the borrower declined the offered terms */
+  @Column({ type: 'timestamp', nullable: true })
+  terms_declined_at: Date | null;
+
+  /** Borrower's reason for declining offered terms */
+  @Column({ type: 'text', nullable: true })
+  terms_decline_reason: string | null;
+
+  /** Agreed repayment term in months at origination */
+  @Column({ type: 'int', nullable: true })
+  loan_term_months: number | null;
+
   /** Date loan was fully repaid */
   @Column({ type: 'timestamp', nullable: true })
   repaid_at: Date;

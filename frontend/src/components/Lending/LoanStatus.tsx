@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   FaDollarSign, 
@@ -12,13 +12,15 @@ import {
   FaCalendarAlt
 } from 'react-icons/fa';
 import { lendingApi, LoanRequest } from '../../services/lending/lendingApi';
+import LoanTermsAcceptanceModal from './LoanTermsAcceptanceModal';
 
 interface LoanStatusProps {
   loanId: string;
 }
 
 const LoanStatus: React.FC<LoanStatusProps> = ({ loanId }) => {
-  const { data: loan, isLoading, error } = useQuery({
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const { data: loan, isLoading, error, refetch } = useQuery({
     queryKey: ['loan-request', loanId],
     queryFn: () => lendingApi.getLoanRequest(loanId),
     refetchInterval: 30000, // Refetch every 30 seconds for status updates
@@ -29,7 +31,9 @@ const LoanStatus: React.FC<LoanStatusProps> = ({ loanId }) => {
       case 'pending':
         return <FaClock className="text-yellow-500" />;
       case 'approved':
-        return <FaCheckCircle className="text-blue-500" />;
+        return loan?.borrower_accepted_at
+          ? <FaCheckCircle className="text-green-500" />
+          : <FaClock className="text-amber-500" />;
       case 'rejected':
         return <FaTimesCircle className="text-red-500" />;
       case 'disbursed':
@@ -278,6 +282,31 @@ const LoanStatus: React.FC<LoanStatusProps> = ({ loanId }) => {
           </div>
         </div>
 
+        {/* Borrower action — accept terms if offer pending */}
+        {loan.status === 'approved' &&
+          loan.terms_offered_at &&
+          !loan.borrower_accepted_at &&
+          !loan.terms_declined_at && (
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5">
+            <h3 className="font-bold text-amber-900 mb-2">Action Required — Review Loan Offer</h3>
+            <p className="text-sm text-amber-800 mb-4">
+              Your lender has sent formal loan terms. Review the full disclosure and accept before funds are disbursed.
+            </p>
+            <button
+              onClick={() => setShowAcceptModal(true)}
+              className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-sm font-bold hover:bg-[#2a4d6d] transition-colors"
+            >
+              Review &amp; Accept Terms
+            </button>
+          </div>
+        )}
+
+        {loan.status === 'approved' && loan.borrower_accepted_at && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+            Terms accepted on {formatDate(loan.borrower_accepted_at)}. Awaiting lender disbursement.
+          </div>
+        )}
+
         {/* Due Date */}
         {loan.due_date && (
           <div className="bg-yellow-50 p-4 rounded-lg">
@@ -295,6 +324,14 @@ const LoanStatus: React.FC<LoanStatusProps> = ({ loanId }) => {
           </div>
         )}
       </div>
+
+      {showAcceptModal && (
+        <LoanTermsAcceptanceModal
+          loanId={loanId}
+          onClose={() => setShowAcceptModal(false)}
+          onAccepted={() => { setShowAcceptModal(false); refetch(); }}
+        />
+      )}
     </div>
   );
 };

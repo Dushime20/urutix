@@ -13,7 +13,9 @@ import {
     Shield,
     CreditCard,
     FileText,
-    Activity
+    Activity,
+    Send,
+    Hourglass,
 } from 'lucide-react';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
@@ -21,6 +23,7 @@ import { StatCard } from '../EnliteUI';
 import ExportModal from '../ExportModal/ExportModal';
 import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
 import LoanApprovalModal from './LoanApprovalModal';
+import LoanDisbursementModal from './LoanDisbursementModal';
 import type { LoanApprovalPayload } from './LoanApprovalModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -48,6 +51,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     const { format: formatAmount, compact: compactAmount } = useCurrencyFormat();
     const [showExportModal, setShowExportModal] = useState(false);
     const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
+    const [disburseLoan, setDisburseLoan] = useState<any | null>(null);
 
     const handleExport = () => {
         setShowExportModal(true);
@@ -185,7 +189,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                             <button
                                 onClick={() => setApprovalLoan(row)}
                                 className="p-1.5 hover:bg-[#2c5173]/10 rounded text-[#2c5173] transition-colors"
-                                title="Approve"
+                                title="Prepare Offer"
                             >
                                 <Check className="w-4 h-4" />
                             </button>
@@ -200,6 +204,25 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                                 <X className="w-4 h-4" />
                             </button>
                         </>
+                    )}
+
+                    {row.status === 'approved' && !row.borrower_accepted_at && (
+                        <span
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-wider"
+                            title="Waiting for borrower to accept terms"
+                        >
+                            <Hourglass className="w-3 h-3" /> Awaiting Acceptance
+                        </span>
+                    )}
+
+                    {row.status === 'approved' && row.borrower_accepted_at && (
+                        <button
+                            onClick={() => setDisburseLoan(row)}
+                            className="p-1.5 hover:bg-emerald-100 rounded text-emerald-700 transition-colors"
+                            title="Disburse Funds"
+                        >
+                            <Send className="w-4 h-4" />
+                        </button>
                     )}
 
                     {row.status === 'disbursed' && (
@@ -269,6 +292,17 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     onSuccess={(loanId) => {
                         setApprovalLoan(null);
                         onApprove(loanId, { approvedAmount: approvalLoan.approved_amount ?? approvalLoan.requested_amount, loanTermMonths: approvalLoan.loan_term_months ?? 3, dueDate: approvalLoan.due_date ?? '' });
+                    }}
+                />
+            )}
+
+            {disburseLoan && (
+                <LoanDisbursementModal
+                    loan={disburseLoan}
+                    onClose={() => setDisburseLoan(null)}
+                    onSuccess={() => {
+                        setDisburseLoan(null);
+                        onApprove(disburseLoan.id, { approvedAmount: disburseLoan.approved_amount, loanTermMonths: disburseLoan.loan_term_months ?? 3, dueDate: disburseLoan.due_date ?? '' });
                     }}
                 />
             )}

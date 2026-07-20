@@ -9,6 +9,10 @@ export interface LoanRequest {
   requested_amount: number;
   approved_amount?: number;
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'failed' | 'defaulted';
+  terms_offered_at?: string | null;
+  borrower_accepted_at?: string | null;
+  terms_declined_at?: string | null;
+  loan_term_months?: number | null;
   idempotency_key: string;
   interest_amount?: number;
   due_date?: string;
@@ -289,8 +293,27 @@ export const lendingApi = {
     approved_amount: number;
     interest_rate?: number;
     due_date?: string;
+    loan_term_months?: number;
   }) => {
-    const response = await api.post(`/lending/loan-requests/${loanId}/approve`, data);
+    const response = await api.post(`/lending/loan-requests/${loanId}/approve`, {
+      status: 'approved',
+      ...data,
+    });
+    return response.data;
+  },
+
+  getLoanOfferDisclosure: async (loanId: string) => {
+    const response = await api.get(`/lending/loan-requests/${loanId}/offer-disclosure`);
+    return response.data;
+  },
+
+  acceptLoanTerms: async (loanId: string, data?: { consent_reference?: string }) => {
+    const response = await api.post(`/lending/loan-requests/${loanId}/accept-terms`, data ?? {});
+    return response.data;
+  },
+
+  declineLoanTerms: async (loanId: string, data?: { reason?: string }) => {
+    const response = await api.post(`/lending/loan-requests/${loanId}/decline-terms`, data ?? {});
     return response.data;
   },
 

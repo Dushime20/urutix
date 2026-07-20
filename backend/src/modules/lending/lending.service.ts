@@ -69,6 +69,9 @@ import * as bcrypt from 'bcryptjs';
 import axios from 'axios';
 import { encryptString, decryptString } from '../../common/utils/crypto.util';
 import { LoanNotificationService } from './services/loan-notification.service';
+import { CurrencyService } from '../currency/currency.service';
+import { ConfigService } from '@nestjs/config';
+import { SubmitLoanOfferDto } from './dto/loan-offer.dto';
 
 @Injectable()
 export class LendingService {
@@ -131,6 +134,8 @@ export class LendingService {
 
     private lendingPoliciesService: LendingPoliciesService,
     private loanNotificationService: LoanNotificationService,
+    private currencyService: CurrencyService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -1287,75 +1292,425 @@ export class LendingService {
 
   async approveLoanRequest(
     loanId: string,
-    approval: LoanApprovalDto,
+    approval: LoanApprovalDto | SubmitLoanOfferDto,
+  ): Promise<LoanRequest> {
+    return this.submitLoanOffer(loanId, approval as SubmitLoanOfferDto);
+  }
+
+  /**
+   * Step 1 — Lender submits a formal loan offer (TILA / IFRS 9 disclosure).
+   * Does NOT disburse funds. Borrower must accept before disbursement.
+   */
+  async submitLoanOffer(
+    loanId: string,
+    offer: SubmitLoanOfferDto,
   ): Promise<LoanRequest> {
     return await this.dataSource.transaction(async (manager) => {
       const loan = await manager.findOne(LoanRequest, {
         where: { id: loanId },
         relations: ['borrower'],
       } as any);
+
       if (!loan) {
         throw new NotFoundException('Loan request not found');
       }
 
-      loan.status = LoanRequestStatus.APPROVED;
-      loan.approved_amount = approval.approved_amount;
-      loan.external_loan_ref = approval.external_loan_ref;
-      loan.interest_amount = approval.interest_amount;
-      const anyApproval: any = approval as any;
-      if (anyApproval.due_date) {
-        loan.due_date = new Date(anyApproval.due_date);
+      if (loan.status !== LoanRequestStatus.PENDING) {
+        throw new BadRequestException(
+          `Cannot offer terms on a loan with status "${loan.status}". Only pending applications can receive an offer.`,
+        );
       }
 
-      // Compute interest_rate and risk_score from lender's active policies.
-      // Only compute if no loan_terms record exists yet (origination snapshot takes precedence).
-      if (loan.lender_id) {
-        const existingTerms = await this.loanTermsRepository.findOne({
-          where: { loan_request_id: loanId },
-        });
-        if (!existingTerms) {
-          const borrowerCreditScore = (loan as any).borrower?.credit_score ?? null;
-          const terms = await this.computeLoanTerms(
-            loan.lender_id,
-            borrowerCreditScore,
-            loanId,
-          );
-          loan.metadata = {
-            ...(loan.metadata || {}),
-            interest_rate: terms.interest_rate,
-            effective_annual_rate: terms.effective_annual_rate,
-            risk_score: terms.risk_score,
-            risk_level: terms.risk_level,
-            credit_score: borrowerCreditScore,
-          };
-        }
+      if (!offer.approved_amount || offer.approved_amount <= 0) {
+        throw new BadRequestException('Approved amount must be greater than zero.');
       }
+
+      if (offer.approved_amount > loan.requested_amount + 0.01) {
+        throw new BadRequestException(
+          `Approved amount (${offer.approved_amount}) cannot exceed the requested amount (${loan.requested_amount}).`,
+        );
+      }
+
+      if (!offer.due_date) {
+        throw new BadRequestException('Repayment due date is required.');
+      }
+
+      const dueDate = new Date(offer.due_date);
+      const minDue = new Date();
+      minDue.setDate(minDue.getDate() + 7);
+      if (dueDate < minDue) {
+        throw new BadRequestException('Due date must be at least 7 days from today.');
+      }
+
+      const termMonths = offer.loan_term_months ?? 3;
+      const financials = await this.computeOfferFinancials(
+        loan,
+        offer.approved_amount,
+        termMonths,
+        loanId,
+      );
+
+      loan.status = LoanRequestStatus.APPROVED;
+      loan.approved_amount = offer.approved_amount;
+      loan.external_loan_ref = offer.external_loan_ref ?? loan.external_loan_ref;
+      loan.interest_amount = financials.interest_amount;
+      loan.due_date = dueDate;
+      loan.loan_term_months = termMonths;
+      loan.apr = financials.apr;
+      loan.origination_fee_amount = financials.origination_fee_amount;
+      loan.total_cost_of_credit = financials.total_cost_of_credit;
+      loan.terms_offered_at = new Date();
+      loan.borrower_accepted_at = null;
+      loan.terms_declined_at = null;
+      loan.terms_decline_reason = null;
+
+      loan.metadata = {
+        ...(loan.metadata || {}),
+        interest_rate: financials.nominal_rate,
+        effective_annual_rate: financials.effective_annual_rate,
+        risk_score: financials.risk_score,
+        risk_level: financials.risk_level,
+        offer_snapshot: {
+          offered_at: new Date().toISOString(),
+          approved_amount: offer.approved_amount,
+          requested_amount: loan.requested_amount,
+          is_partial_approval: offer.approved_amount < loan.requested_amount,
+          loan_term_months: termMonths,
+          due_date: offer.due_date,
+          interest_amount: financials.interest_amount,
+          total_repayable: financials.total_repayable,
+          currency: loan.currency,
+        },
+      };
 
       const updatedLoan = await manager.save(LoanRequest, loan);
 
-      if (approval.disbursement_instruction?.mode === 'platform_initiated') {
-        await this.initiateDisbursement(loanId);
-      }
-
-      // Notify cargo owner of approval
+      // Notify borrower with full terms disclosure — disbursement blocked until acceptance
       try {
-        const lender = await this.lenderRepository.findOne({ where: { id: updatedLoan.lender_id } });
-        const creatorUser = await this.userRepository.findOne({ where: { id: updatedLoan.created_by } });
+        const lender = loan.lender_id
+          ? await this.lenderRepository.findOne({ where: { id: loan.lender_id } })
+          : null;
+        const creatorUser = await this.userRepository.findOne({
+          where: { id: updatedLoan.created_by },
+        });
         if (creatorUser) {
-          await this.loanNotificationService.notifyCargoOwnerLoanApproved(
+          await this.loanNotificationService.notifyBorrowerTermsOffered(
             creatorUser.id,
             updatedLoan.tenant_id,
             updatedLoan.id,
-            updatedLoan.approved_amount || updatedLoan.requested_amount,
-            lender?.name || 'Lender',
+            {
+              lenderName: lender?.name || 'Lender',
+              approvedAmount: updatedLoan.approved_amount,
+              requestedAmount: updatedLoan.requested_amount,
+              interestAmount: updatedLoan.interest_amount,
+              totalRepayable: financials.total_repayable,
+              dueDate: updatedLoan.due_date,
+              loanTermMonths: termMonths,
+              apr: financials.apr,
+              currency: updatedLoan.currency,
+              loanNumber: updatedLoan.loan_number,
+            },
           );
         }
       } catch (notifErr) {
-        this.logger.warn(`Could not send loan approval notification: ${notifErr.message}`);
+        this.logger.warn(`Could not send loan offer notification: ${notifErr.message}`);
       }
 
       return updatedLoan;
     });
+  }
+
+  /** Step 2 — Borrower accepts the lender's formal offer (electronic consent). */
+  async acceptLoanTerms(
+    loanId: string,
+    userId: string,
+    consentReference?: string,
+  ): Promise<LoanRequest> {
+    const loan = await this.loanRequestRepository.findOne({
+      where: { id: loanId },
+      relations: ['lender'],
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan request not found');
+    }
+
+    if (loan.created_by !== userId) {
+      throw new BadRequestException('Only the borrower can accept loan terms.');
+    }
+
+    if (loan.status !== LoanRequestStatus.APPROVED) {
+      throw new BadRequestException(
+        `Loan is not awaiting acceptance (status: ${loan.status}).`,
+      );
+    }
+
+    if (!loan.terms_offered_at) {
+      throw new BadRequestException('No formal terms offer exists for this loan.');
+    }
+
+    if (loan.borrower_accepted_at) {
+      throw new ConflictException('Loan terms have already been accepted.');
+    }
+
+    if (loan.terms_declined_at) {
+      throw new BadRequestException(
+        'These terms were declined. The lender must submit a new offer.',
+      );
+    }
+
+    loan.borrower_accepted_at = new Date();
+    loan.metadata = {
+      ...(loan.metadata || {}),
+      borrower_consent: {
+        accepted_at: loan.borrower_accepted_at.toISOString(),
+        consent_reference: consentReference ?? null,
+        accepted_by: userId,
+      },
+    };
+
+    const saved = await this.loanRequestRepository.save(loan);
+
+    try {
+      if (loan.lender_id) {
+        const lenderUsers = await this.lenderUserRepository.find({
+          where: { lender_id: loan.lender_id, status: LenderUserStatus.ACTIVE },
+          take: 5,
+        });
+        for (const lu of lenderUsers) {
+          await this.loanNotificationService.notifyLenderTermsAccepted(
+            lu.id,
+            loan.tenant_id,
+            loan.id,
+            loan.approved_amount || loan.requested_amount,
+            loan.loan_number,
+          );
+        }
+      }
+    } catch (notifErr) {
+      this.logger.warn(`Could not notify lender of terms acceptance: ${notifErr.message}`);
+    }
+
+    return saved;
+  }
+
+  /** Borrower declines the lender's formal offer. */
+  async declineLoanTerms(
+    loanId: string,
+    userId: string,
+    reason?: string,
+  ): Promise<LoanRequest> {
+    const loan = await this.loanRequestRepository.findOne({ where: { id: loanId } });
+
+    if (!loan) {
+      throw new NotFoundException('Loan request not found');
+    }
+
+    if (loan.created_by !== userId) {
+      throw new BadRequestException('Only the borrower can decline loan terms.');
+    }
+
+    if (loan.status !== LoanRequestStatus.APPROVED || !loan.terms_offered_at) {
+      throw new BadRequestException('No pending terms offer to decline.');
+    }
+
+    if (loan.borrower_accepted_at) {
+      throw new ConflictException('Terms already accepted — cannot decline.');
+    }
+
+    loan.terms_declined_at = new Date();
+    loan.terms_decline_reason = reason || 'Borrower declined offered terms';
+    loan.status = LoanRequestStatus.REJECTED;
+    loan.rejection_reason = loan.terms_decline_reason;
+
+    const saved = await this.loanRequestRepository.save(loan);
+
+    try {
+      if (loan.lender_id) {
+        const lenderUsers = await this.lenderUserRepository.find({
+          where: { lender_id: loan.lender_id, status: LenderUserStatus.ACTIVE },
+          take: 5,
+        });
+        for (const lu of lenderUsers) {
+          await this.loanNotificationService.notifyLenderTermsDeclined(
+            lu.id,
+            loan.tenant_id,
+            loan.id,
+            reason,
+          );
+        }
+      }
+    } catch (notifErr) {
+      this.logger.warn(`Could not notify lender of terms decline: ${notifErr.message}`);
+    }
+
+    return saved;
+  }
+
+  /** Full TILA-style disclosure for borrower review before acceptance. */
+  async getLoanOfferDisclosure(loanId: string): Promise<any> {
+    const loan = await this.loanRequestRepository.findOne({
+      where: { id: loanId },
+      relations: ['lender', 'loanTerms'],
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan request not found');
+    }
+
+    const approvedAmount = loan.approved_amount ?? loan.requested_amount;
+    const interestAmount = loan.interest_amount ?? 0;
+    const originationFee = loan.origination_fee_amount ?? 0;
+    const totalRepayable = approvedAmount + interestAmount + originationFee;
+
+    return {
+      loan_id: loan.id,
+      loan_number: loan.loan_number,
+      status: loan.status,
+      currency: loan.currency,
+      requested_amount: loan.requested_amount,
+      approved_amount: approvedAmount,
+      interest_amount: interestAmount,
+      origination_fee_amount: originationFee,
+      total_repayable: totalRepayable,
+      apr: loan.apr,
+      nominal_rate: loan.metadata?.interest_rate ?? loan.loanTerms?.[0]?.nominal_rate,
+      effective_annual_rate:
+        loan.metadata?.effective_annual_rate ?? loan.loanTerms?.[0]?.effective_annual_rate,
+      loan_term_months: loan.loan_term_months,
+      due_date: loan.due_date,
+      terms_offered_at: loan.terms_offered_at,
+      borrower_accepted_at: loan.borrower_accepted_at,
+      terms_declined_at: loan.terms_declined_at,
+      lender_name: loan.lender?.name,
+      can_accept:
+        loan.status === LoanRequestStatus.APPROVED &&
+        !!loan.terms_offered_at &&
+        !loan.borrower_accepted_at &&
+        !loan.terms_declined_at,
+      can_disburse:
+        loan.status === LoanRequestStatus.APPROVED &&
+        !!loan.borrower_accepted_at &&
+        !loan.terms_declined_at,
+      offer_snapshot: loan.metadata?.offer_snapshot,
+    };
+  }
+
+  private async computeOfferFinancials(
+    loan: LoanRequest,
+    approvedAmount: number,
+    termMonths: number,
+    loanId: string,
+  ): Promise<{
+    interest_amount: number;
+    origination_fee_amount: number;
+    total_cost_of_credit: number;
+    total_repayable: number;
+    apr: number | null;
+    nominal_rate: number | null;
+    effective_annual_rate: number | null;
+    risk_score: number | null;
+    risk_level: string | null;
+  }> {
+    const borrowerCreditScore = (loan as any).borrower?.credit_score ?? null;
+    let nominal_rate: number | null = null;
+    let effective_annual_rate: number | null = null;
+    let risk_score: number | null = null;
+    let risk_level: string | null = null;
+
+    if (loan.lender_id) {
+      const terms = await this.computeLoanTerms(
+        loan.lender_id,
+        borrowerCreditScore,
+        loanId,
+      );
+      nominal_rate = terms.interest_rate;
+      effective_annual_rate = terms.effective_annual_rate;
+      risk_score = terms.risk_score;
+      risk_level = terms.risk_level;
+    }
+
+    const ratePct = nominal_rate ?? 10;
+    const interest_amount =
+      Math.round(approvedAmount * (ratePct / 100) * (termMonths / 12) * 100) / 100;
+
+    const originationFeeRate =
+      loan.origination_fee_rate ??
+      loan.metadata?.origination_fee_rate ??
+      0;
+    const origination_fee_amount =
+      Math.round(approvedAmount * Number(originationFeeRate) * 100) / 100;
+
+    const total_cost_of_credit = interest_amount + origination_fee_amount;
+    const total_repayable = approvedAmount + total_cost_of_credit;
+    const apr = effective_annual_rate ?? ratePct;
+
+    return {
+      interest_amount,
+      origination_fee_amount,
+      total_cost_of_credit,
+      total_repayable,
+      apr,
+      nominal_rate,
+      effective_annual_rate,
+      risk_score,
+      risk_level,
+    };
+  }
+
+  private assertReadyForDisbursement(loan: LoanRequest): void {
+    if (loan.status !== LoanRequestStatus.APPROVED) {
+      throw new BadRequestException(
+        `Loan must be approved before disbursement (current: ${loan.status}).`,
+      );
+    }
+    if (!loan.terms_offered_at) {
+      throw new BadRequestException(
+        'Formal terms must be offered to the borrower before disbursement.',
+      );
+    }
+    if (!loan.borrower_accepted_at) {
+      throw new BadRequestException(
+        'Borrower must accept the loan terms before funds can be disbursed. ' +
+        'This is required for regulatory compliance (TILA / consumer credit disclosure).',
+      );
+    }
+    if (loan.terms_declined_at) {
+      throw new BadRequestException('Borrower declined the offered terms.');
+    }
+    if (!loan.approved_amount || loan.approved_amount <= 0) {
+      throw new BadRequestException('Approved amount is not set.');
+    }
+  }
+
+  /** Convert loan amount to MoMo provider currency when needed. */
+  private async resolveDisbursementAmount(
+    amount: number,
+    loanCurrency: string,
+  ): Promise<{ amount: number; currency: string; exchangeRate?: number }> {
+    const momoCurrency =
+      this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
+    const fromCurrency = loanCurrency || 'RWF';
+
+    if (fromCurrency === momoCurrency) {
+      return { amount: Math.round(amount), currency: momoCurrency };
+    }
+
+    try {
+      const converted = await this.currencyService.convert(
+        amount,
+        fromCurrency,
+        momoCurrency,
+      );
+      return {
+        amount: Math.round(converted.convertedAmount),
+        currency: momoCurrency,
+        exchangeRate: converted.exchangeRate,
+      };
+    } catch (err) {
+      this.logger.warn(`Currency conversion failed, using original amount: ${err.message}`);
+      return { amount: Math.round(amount), currency: fromCurrency };
+    }
   }
 
   async rejectLoanRequest(
@@ -1412,6 +1767,8 @@ export class LendingService {
           'Loan must be approved before disbursement',
         );
       }
+
+      this.assertReadyForDisbursement(loan);
 
       // Provide default beneficiaries if requested_split is null
       const beneficiaries = loan.requested_split && Array.isArray(loan.requested_split) && loan.requested_split.length > 0
@@ -1490,13 +1847,11 @@ export class LendingService {
         throw new NotFoundException('Loan request not found');
       }
 
-      if (loan.status !== LoanRequestStatus.APPROVED) {
-        throw new BadRequestException(
-          'Loan must be approved before disbursement',
-        );
-      }
+      this.assertReadyForDisbursement(loan);
 
-      // Get trip from loan
+      // Disbursement amount is locked to the agreed approved_amount — no edits at pay time
+      const lockedAmount = Number(loan.approved_amount);
+
       const trip = await manager.findOne('Trip', {
         where: { id: loan.trip_id },
         relations: ['load'],
@@ -1553,7 +1908,7 @@ export class LendingService {
         : [{
             recipientId: trip.truckId || trip.load?.assignedTruckId || null,
             recipientType: 'truck_owner',
-            amount: loan.approved_amount || loan.requested_amount,
+            amount: lockedAmount,
             percentage: 100,
             phoneNumber: truckOwnerPhone || null,
           }];
@@ -1570,171 +1925,241 @@ export class LendingService {
 
       const savedDisbursement = await manager.save(LoanDisbursement, disbursement);
 
+      const { amount: disburseAmount, currency: disburseCurrency, exchangeRate } =
+        await this.resolveDisbursementAmount(lockedAmount, loan.currency || 'RWF');
+
       // Process payment via mobile money if requested
       if (paymentDto.paymentMethod === 'mobile_money' && truckOwnerPhone) {
         try {
-          // Dynamically import PaymentsService to avoid circular dependency
+          const MobileMoneyModule = await import('../payments/services/mobile-money-payment.service');
+          const MobileMoneyClass = MobileMoneyModule.MobileMoneyPaymentService;
+          const mobileMoneyService = this.moduleRef.get(MobileMoneyClass, { strict: false });
+
+          if (!mobileMoneyService) {
+            throw new BadRequestException('Mobile Money payment service is not available.');
+          }
+
+          const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+          if (!platformPhone) {
+            throw new BadRequestException(
+              'MOBILE_MONEY_ACCOUNT_PHONE is not configured.',
+            );
+          }
+
+          const referenceNumber = `LOAN-${loan.id.slice(0, 8).toUpperCase()}-DISB-${Date.now()}`;
+          const paymentMessage =
+            `Loan disbursement #${loan.loan_number || loan.id.slice(0, 8)} — ${disburseAmount} ${disburseCurrency}`;
+
+          const transfers = [{
+            percentage: 100,
+            phoneNumber: truckOwnerPhone,
+            receiverMessage: paymentMessage.substring(0, 160),
+          }];
+
+          this.logger.log(
+            `Disbursing loan ${loan.id}: ${disburseAmount} ${disburseCurrency} ` +
+            `(locked principal: ${lockedAmount} ${loan.currency}) → ${truckOwnerPhone}`,
+          );
+
+          const momoResponse = await mobileMoneyService.createTransaction(
+            disburseAmount,
+            platformPhone,
+            referenceNumber,
+            paymentMessage,
+            transfers,
+            this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL'),
+          );
+
+          const transaction =
+            momoResponse.savedTransaction || momoResponse.transaction;
+          const transactionId =
+            transaction?.externalId || transaction?.id || referenceNumber;
+          const txnStatus = transaction?.status || 'pending';
+
+          if (txnStatus === 'failed') {
+            throw new BadRequestException('Mobile Money disbursement was rejected by the provider.');
+          }
+
+          // Record payment via PaymentsService for audit trail
           const PaymentsServiceModule = await import('../payments/payments.service');
           const PaymentsServiceClass = PaymentsServiceModule.PaymentsService;
-          
-          // Get PaymentsService from the current module context
-          // Since PaymentsModule is imported in LendingModule, it should be available
-          if (this.moduleRef) {
-            const paymentsService = this.moduleRef.get(PaymentsServiceClass, { strict: false });
-            
-            if (paymentsService) {
-              const { PaymentMethod, PaymentType } = await import('../../entities/payment.entity');
-              
-              // Validate trip exists
-              if (!trip || !trip.id) {
-                throw new BadRequestException('Trip not found or invalid for this loan');
-              }
+          const paymentsService = this.moduleRef.get(PaymentsServiceClass, { strict: false });
 
-              // Validate amount
-              const paymentAmount = loan.approved_amount || loan.requested_amount;
-              if (!paymentAmount || paymentAmount <= 0) {
-                throw new BadRequestException('Invalid loan amount for payment');
-              }
-              
-              const createPaymentDto = {
-                tripId: trip.id,
-                amount: paymentAmount,
-                currency: 'RWF',
-                paymentMethod: PaymentMethod.DIGITAL_WALLET,
-                paymentType: PaymentType.TRIP_PAYMENT,
-                description: `Loan disbursement payment for loan ${loan.id}`,
-                referenceNumber: `LOAN-${loan.id}-DISB-${Date.now()}`,
-                metadata: {
-                  lenderId: loan.lender_id,
-                  lenderName: loan.lender?.name,
-                  financedAmount: paymentAmount,
-                  isLenderPayment: true,
-                  phoneNumber: truckOwnerPhone,
-                  loanId: loan.id,
-                  disbursementId: savedDisbursement.id,
-                },
-              };
+          let processedPayment: any = null;
+          if (paymentsService) {
+            const { PaymentMethod, PaymentType } = await import('../../entities/payment.entity');
+            const createPaymentDto = {
+              tripId: trip.id,
+              amount: lockedAmount,
+              currency: loan.currency || 'RWF',
+              paymentMethod: PaymentMethod.DIGITAL_WALLET,
+              paymentType: PaymentType.TRIP_PAYMENT,
+              description: paymentMessage,
+              referenceNumber,
+              metadata: {
+                lenderId: loan.lender_id,
+                lenderName: loan.lender?.name,
+                financedAmount: lockedAmount,
+                isLenderPayment: true,
+                receiverPhoneNumber: truckOwnerPhone,
+                loanId: loan.id,
+                loanNumber: loan.loan_number,
+                disbursementId: savedDisbursement.id,
+                momoTransactionId: transactionId,
+                momoAmount: disburseAmount,
+                momoCurrency: disburseCurrency,
+                exchangeRate: exchangeRate ?? null,
+              },
+            };
 
-              this.logger.log(`Creating payment for loan ${loan.id}, amount: ${paymentAmount}, tripId: ${trip.id}`);
-              
-              const payment = await paymentsService.createPayment(
-                createPaymentDto,
-                tenantId,
-                lenderUserId,
+            const payment = await paymentsService.createPayment(
+              createPaymentDto,
+              tenantId,
+              lenderUserId,
+            );
+
+            processedPayment = await paymentsService.updatePaymentStatus(
+              payment.id,
+              {
+                status: 'completed' as any,
+                transactionId,
+                gatewayResponse: 'Loan disbursement completed via Mobile Money.',
+                processedAt: new Date(),
+              },
+              tenantId,
+            );
+          }
+
+          disbursement.status = DisbursementStatus.DISBURSED;
+          disbursement.disbursement_date = new Date();
+          disbursement.external_txn_ref = transactionId;
+          loan.status = LoanRequestStatus.DISBURSED;
+          loan.metadata = {
+            ...(loan.metadata || {}),
+            disbursement: {
+              disbursed_at: new Date().toISOString(),
+              amount: lockedAmount,
+              currency: loan.currency,
+              momo_amount: disburseAmount,
+              momo_currency: disburseCurrency,
+              beneficiary_phone: truckOwnerPhone,
+              transaction_id: transactionId,
+            },
+          };
+          await manager.save(LoanDisbursement, disbursement);
+          await manager.save(LoanRequest, loan);
+
+          // Notify borrower (cargo owner) and beneficiary (truck owner)
+          try {
+            await this.loanNotificationService.notifyCargoOwnerLoanDisbursed(
+              loan.created_by,
+              loan.tenant_id,
+              loan.id,
+              lockedAmount,
+              loan.lender?.name || 'Lender',
+              loan.currency,
+            );
+            const truckOwnerId =
+              beneficiaries.find((b: any) => b.recipientId)?.recipientId ??
+              beneficiaries.find((b: any) => b.id)?.id;
+            if (truckOwnerId) {
+              await this.loanNotificationService.notifyTruckOwnerLenderPaid(
+                truckOwnerId,
+                loan.tenant_id,
+                loan.id,
+                lockedAmount,
+                loan.lender?.name || 'Lender',
               );
+            }
+          } catch (notifErr) {
+            this.logger.warn(`Disbursement notifications failed: ${notifErr.message}`);
+          }
 
-              this.logger.log(`Payment created successfully: ${payment.id}, processing payment...`);
+          const cargoOwnerId: string = loan.created_by;
+          const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } = await import('../../entities/payment.entity');
 
-              // Process the payment
-              const processedPayment = await paymentsService.processPayment(
-                payment.id,
-                tenantId,
-              );
+          const existingTripPayment = await manager.findOne(PaymentEntity, {
+            where: {
+              tripId: trip.id,
+              payerId: cargoOwnerId,
+              paymentType: PmtType.TRIP_PAYMENT,
+              status: PmtStatus.PENDING,
+            } as any,
+          });
+          if (existingTripPayment) {
+            existingTripPayment.status = PmtStatus.CANCELLED;
+            (existingTripPayment.metadata as any) = {
+              ...(existingTripPayment.metadata || {}),
+              cancelledReason: 'Replaced by lender disbursement obligation',
+              loanId: loan.id,
+              cancelledAt: new Date().toISOString(),
+            };
+            await manager.save(PaymentEntity, existingTripPayment);
+          }
 
-              this.logger.log(`Payment processed, status: ${processedPayment.status}`);
+          const dueDate = loan.due_date
+            ? new Date(loan.due_date)
+            : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
+          const obligationAmount =
+            Number(loan.approved_amount) + Number(loan.interest_amount || 0);
+          const obligationPayment = manager.create(PaymentEntity, {
+            tripId: trip.id,
+            tenantId: loan.tenant_id,
+            payerId: cargoOwnerId,
+            payeeId: lenderUserId,
+            amount: obligationAmount,
+            currency: loan.currency || 'RWF',
+            paymentMethod: PmtMethod.BANK_TRANSFER,
+            paymentType: PmtType.TRIP_PAYMENT,
+            status: PmtStatus.PENDING,
+            dueDate,
+            description: `Loan repayment to lender — ${loan.loan_number || loan.id.slice(0, 8)}`,
+            referenceNumber: `LREP-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
+            metadata: {
+              isLoanRepaymentObligation: true,
+              isLenderPayment: false,
+              loanId: loan.id,
+              lenderName: loan.lender?.name ?? null,
+              lenderId: loan.lender_id,
+              cargoOwnerId,
+              originalDisbursementPaymentId: processedPayment?.id,
+              paymentSource: 'lender_disbursement',
+              automaticallyCreated: true,
+            },
+          } as any);
+          await manager.save(PaymentEntity, obligationPayment);
 
-              if (processedPayment.status === 'completed' || processedPayment.status === 'processing') {
-                disbursement.status = DisbursementStatus.DISBURSED;
-                disbursement.disbursement_date = new Date();
-                disbursement.external_txn_ref = processedPayment.transactionId || `DISB-${Date.now()}`;
-                loan.status = LoanRequestStatus.DISBURSED;
-                await manager.save(LoanDisbursement, disbursement);
-                await manager.save(LoanRequest, loan);
-
-                // ── Cargo owner obligation ────────────────────────────────────
-                // The lender just paid the truck owner on the cargo owner's behalf.
-                // 1. Cancel any existing PENDING trip payment for this trip that was
-                //    auto-created at trip completion (cargo owner → truck owner debt
-                //    is now replaced by cargo owner → lender debt).
-                // 2. Create a new PENDING payment record so the cargo owner can see
-                //    and settle their obligation to the lender from /pending-payments.
-                const cargoOwnerId: string = loan.created_by;
-                const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } = await import('../../entities/payment.entity');
-
-                // 1. Cancel the old trip-payment obligation if it exists
-                const existingTripPayment = await manager.findOne(PaymentEntity, {
-                  where: {
-                    tripId: trip.id,
-                    payerId: cargoOwnerId,
-                    paymentType: PmtType.TRIP_PAYMENT,
-                    status: PmtStatus.PENDING,
-                  } as any,
-                });
-                if (existingTripPayment) {
-                  existingTripPayment.status = PmtStatus.CANCELLED;
-                  (existingTripPayment.metadata as any) = {
-                    ...(existingTripPayment.metadata || {}),
-                    cancelledReason: 'Replaced by lender disbursement obligation',
-                    loanId: loan.id,
-                    cancelledAt: new Date().toISOString(),
-                  };
-                  await manager.save(PaymentEntity, existingTripPayment);
-                  this.logger.log(`Cancelled existing trip payment ${existingTripPayment.id} — replaced by lender obligation`);
-                }
-
-                // 2. Create cargo owner → lender repayment obligation
-                const dueDate = loan.due_date ? new Date(loan.due_date) : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
-                const obligationAmount = Number(loan.approved_amount || loan.requested_amount) + Number(loan.interest_amount || 0);
-                const obligationPayment = manager.create(PaymentEntity, {
-                  tripId: trip.id,
-                  tenantId: loan.tenant_id,
-                  payerId: cargoOwnerId,
-                  payeeId: lenderUserId,           // lender user id as payee
-                  amount: obligationAmount,
-                  currency: 'RWF',
-                  paymentMethod: PmtMethod.BANK_TRANSFER,
-                  paymentType: PmtType.TRIP_PAYMENT,
-                  status: PmtStatus.PENDING,
-                  dueDate,
-                  description: `Loan repayment to lender for trip ${trip.id.slice(-8).toUpperCase()}`,
-                  referenceNumber: `LREP-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
-                  metadata: {
-                    isLoanRepaymentObligation: true,
-                    isLenderPayment: false,
-                    loanId: loan.id,
-                    lenderName: loan.lender?.name ?? null,
-                    lenderId: loan.lender_id,
-                    cargoOwnerId,
-                    originalDisbursementPaymentId: processedPayment.id,
-                    paymentSource: 'lender_disbursement',
-                    automaticallyCreated: true,
-                  },
-                } as any);
-                await manager.save(PaymentEntity, obligationPayment);
-                this.logger.log(`Created cargo owner obligation payment ${obligationPayment.id} for loan ${loan.id}`);
-                // ─────────────────────────────────────────────────────────────
-              } else {
-                throw new BadRequestException(`Payment processing failed with status: ${processedPayment.status}`);
-              }
-
-              return {
-                success: true,
-                disbursement: savedDisbursement,
-                payment: {
+          return {
+            success: true,
+            disbursement: savedDisbursement,
+            payment: processedPayment
+              ? {
                   id: processedPayment.id,
                   status: processedPayment.status,
                   transactionId: processedPayment.transactionId,
-                },
-              };
-            } else {
-              this.logger.error('PaymentsService not available from ModuleRef');
-              throw new BadRequestException('PaymentsService not available');
-            }
-          } else {
-            this.logger.error('ModuleRef not available');
-            throw new BadRequestException('ModuleRef not available');
-          }
+                }
+              : { transactionId },
+            disbursedAmount: lockedAmount,
+            disbursedCurrency: loan.currency,
+            momoAmount: disburseAmount,
+            momoCurrency: disburseCurrency,
+          };
         } catch (error: any) {
-          this.logger.error(`Mobile money payment failed for disbursement: ${error.message}`, error.stack);
-          // Re-throw with more context
+          savedDisbursement.status = DisbursementStatus.FAILED;
+          savedDisbursement.failure_reason = error.message;
+          await manager.save(LoanDisbursement, savedDisbursement);
+          this.logger.error(`Mobile money disbursement failed: ${error.message}`, error.stack);
           if (error instanceof BadRequestException || error instanceof NotFoundException) {
             throw error;
           }
-          throw new BadRequestException(`Payment processing failed: ${error.message || 'Unknown error'}`);
+          throw new BadRequestException(
+            `Disbursement failed: ${error.message || 'Unknown error'}`,
+          );
         }
       }
 
-      // Fallback to regular disbursement
+      // Bank transfer path — manual confirmation, still locked amount
+      beneficiaries[0].amount = lockedAmount;
       await this.processDisbursementToBeneficiaries(savedDisbursement);
       loan.status = LoanRequestStatus.DISBURSED;
       await manager.save(LoanRequest, loan);
@@ -1773,12 +2198,12 @@ export class LendingService {
           payerId: cargoOwnerId,
           payeeId: lenderUserId,
           amount: obligationAmount,
-          currency: 'RWF',
+          currency: loan.currency || 'RWF',
           paymentMethod: PmtMethod.BANK_TRANSFER,
           paymentType: PmtType.TRIP_PAYMENT,
           status: PmtStatus.PENDING,
           dueDate,
-          description: `Loan repayment to lender for trip ${trip.id.slice(-8).toUpperCase()}`,
+          description: `Loan repayment to lender — ${loan.loan_number || loan.id.slice(0, 8)}`,
           referenceNumber: `LREP-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
           metadata: {
             isLoanRepaymentObligation: true,

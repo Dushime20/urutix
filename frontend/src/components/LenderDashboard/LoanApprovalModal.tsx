@@ -70,58 +70,11 @@ const Field: React.FC<{ label: string; value: React.ReactNode; sub?: string; acc
 // ────────────────────────────────────────────────────────────────────────────
 
 const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
-  const { format: fmtUSD, currency } = useCurrencyFormat();
+  const { format: fmtUSD, formatIn, currency } = useCurrencyFormat();
+  const loanCurrency = loan?.currency || 'RWF';
+  const fmt = (amount: number) => formatIn(amount, currency, loanCurrency);
   const [step, setStep] = useState<'terms' | 'preview' | 'processing' | 'success' | 'error'>('terms');
   const [errorMsg, setErrorMsg] = useState('');
-
-  // ── Disbursement method (Step 2) ────────────────────────────────────────
-  const [disbursementMethod, setDisbursementMethod] = useState<'momo' | 'card'>('momo');
-  const [momoProvider, setMomoProvider] = useState<'mtn' | 'airtel' | 'mpesa'>('mtn');
-
-  // Auto-resolve beneficiary (truck owner) from loan's requested_split
-  // The split has {type: "truck_owner", id: <userId>, amount: N} — no phone yet
-  const beneficiaryFromSplit: { type: string; phone?: string; amount?: number; id?: string } | null =
-    (loan?.requested_split as any[])?.find(
-      (s: any) => s.type === 'truck_owner' || s.phone || s.phoneNumber,
-    ) ?? null;
-
-  const autoPhone: string =
-    beneficiaryFromSplit?.phone ??
-    (beneficiaryFromSplit as any)?.phoneNumber ??
-    loan?.metadata?.beneficiary_phone ??
-    loan?.metadata?.truck_owner_phone ??
-    loan?.borrower?.phone ??
-    '';
-  const autoName: string =
-    (beneficiaryFromSplit as any)?.name ??
-    loan?.metadata?.beneficiary_name ??
-    loan?.borrower?.contact_name ??
-    loan?.borrower?.company_name ??
-    '';
-
-  const [momoPhone, setMomoPhone] = useState(autoPhone);
-  const [bankAccount, setBankAccount] = useState('');
-  const [bankName, setBankName] = useState(autoName);
-
-  // ── Fetch truck owner's phone from their user record if not in split ──
-  // The split only carries {type, id, amount} — we look up the phone via /users/:id
-  const truckOwnerUserId: string | null = beneficiaryFromSplit?.id ?? null;
-  useEffect(() => {
-    if (autoPhone || !truckOwnerUserId) return; // already have phone, skip
-    api.get(`/users/${truckOwnerUserId}`)
-      .then(res => {
-        const userData = res.data?.data;
-        // Phone lives on user.phone, or in profile.preferences.paymentInfo
-        const phone =
-          userData?.phone ||
-          userData?.profile?.preferences?.paymentInfo?.phoneNumber ||
-          userData?.profile?.preferences?.paymentInfo?.momoCode ||
-          '';
-        if (phone) setMomoPhone(phone);
-      })
-      .catch(() => { /* non-fatal — lender can type it manually */ });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [truckOwnerUserId]);
 
   // ── Lender-editable fields ──────────────────────────────────────────────
   const [approvedAmount, setApprovedAmount] = useState<number>(
@@ -209,124 +162,29 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
     return d.toISOString().split('T')[0];
   })();
 
-  // ── Submit — calls backend directly, no secondary payment modal ─────────
+  // ── Submit offer — notifies borrower; NO disbursement at this stage ───────
   const handleConfirm = async () => {
-    if (disbursementMethod === 'momo' && !momoPhone.trim()) {
-      toast.error('Please enter the phone number for mobile money disbursement.');
+    if (approvedAmount <= 0) {
+      toast.error('Approved amount must be greater than zero.');
       return;
     }
-    if (disbursementMethod === 'card' && (!bankAccount.trim() || !bankName.trim())) {
-      toast.error('Please enter bank account details.');
+    if (approvedAmount > loan.requested_amount + 0.01) {
+      toast.error(`Approved amount cannot exceed requested amount (${fmt(loan.requested_amount)}).`);
       return;
     }
     setStep('processing');
     try {
-      // Step 1: Approve the loan
       await lendingApi.approveLoanRequest(loan.id, {
         approved_amount: approvedAmount,
         due_date: dueDate,
+        loan_term_months: loanTermMonths,
       });
 
-      // Step 2: Disburse funds directly to the truck owner on behalf of the cargo owner
-      if (disbursementMethod === 'momo') {
-        await api.post('/payments/mobile-money/send', {
-          receiverPhoneNumber: momoPhone.trim(),
-          amount: approvedAmount,
-          currency: loan.currency || 'RWF',
-          tripId: loan.trip_id,
-          message: `Loan disbursement for trip — ${loan.loan_number || loan.id}. Paid by ${loan.lender?.name || 'Lender'} on behalf of cargo owner.`,
-          metadata: {
-            isLenderPayment: true,
-            lenderId: loan.lender_id ?? loan.lender?.id,
-            lenderName: loan.lender?.name || loan.lender?.contact_email || 'Lender',
-            loanId: loan.id,
-            loanNumber: loan.loan_number,
-            truckOwnerId: truckOwnerUserId ?? beneficiaryFromSplit?.id,
-            provider: momoProvider,
-          },
-        });
-      }
-      // Bank transfer: approval is sufficient — physical transfer handled off-platform
-
-      // Step 3: Notify the truck owner (beneficiary) — in-app + email, fire-and-forget
-      const beneficiaryId = truckOwnerUserId ?? beneficiaryFromSplit?.id;
-      const lenderName   = loan.lender?.name || loan.lender?.contact_email || 'Your lender';
-      const loanRef      = loan.loan_number || loan.id?.slice(0, 8).toUpperCase();
-      const dueDateFmt   = new Date(dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      const methodLabel  = disbursementMethod === 'momo'
-        ? `mobile money (${momoPhone.trim()})`
-        : `bank transfer to ${bankName.trim()}`;
-
-      if (beneficiaryId) {
-        const sharedMeta = {
-          loanId:    loan.id,
-          loanRef,
-          amount:    approvedAmount,
-          disbursementMethod,
-          lenderName,
-          dueDate,
-        };
-
-        // ── In-app notification ──────────────────────────────────────────
-        api.post('/notifications', {
-          type:       'TRUCK_OWNER_PAYMENT_RECEIVED',
-          entityType: 'LOAN',
-          entityId:   loan.id,
-          userId:     beneficiaryId,
-          tenantId:   loan.tenant_id,
-          channel:    'IN_APP',
-          priority:   'HIGH',
-          category:   'FINANCIAL',
-          subject:    `💰 Funds received — ${fmtUSD(approvedAmount)}`,
-          content:    `${fmtUSD(approvedAmount)} has been disbursed to you via ${methodLabel} for loan #${loanRef}. ` +
-                      `Repayment of ${fmtUSD(approvedAmount)} is due by ${dueDateFmt}. ` +
-                      `Please confirm receipt and contact ${lenderName} if you have any questions.`,
-          metadata:   sharedMeta,
-        }).catch(() => {});
-
-        // ── Email notification ───────────────────────────────────────────
-        api.post('/notifications', {
-          type:           'TRUCK_OWNER_PAYMENT_RECEIVED',
-          entityType:     'LOAN',
-          entityId:       loan.id,
-          userId:         beneficiaryId,
-          tenantId:       loan.tenant_id,
-          channel:        'EMAIL',
-          priority:       'HIGH',
-          category:       'FINANCIAL',
-          recipientEmail: loan.borrower_email || loan.borrower?.email,
-          recipientName:  loan.borrower_name  || loan.borrower?.contact_name,
-          subject:        `[Urutix] Loan disbursement confirmed — ${fmtUSD(approvedAmount)} sent to you`,
-          content: [
-            `Dear ${loan.borrower_name || 'Valued Customer'},`,
-            ``,
-            `We are pleased to inform you that your loan (Ref: #${loanRef}) has been approved and ${fmtUSD(approvedAmount)} has been successfully disbursed to your account via ${methodLabel}.`,
-            ``,
-            `Loan Summary`,
-            `────────────────────────────`,
-            `• Loan Reference : #${loanRef}`,
-            `• Disbursed Amount: ${fmtUSD(approvedAmount)}`,
-            `• Disbursement Method: ${disbursementMethod === 'momo' ? `Mobile Money — ${momoPhone.trim()}` : `Bank Transfer — ${bankName.trim()}`}`,
-            `• Repayment Due Date: ${dueDateFmt}`,
-            `• Lender: ${lenderName}`,
-            ``,
-            `Please check your ${disbursementMethod === 'momo' ? 'mobile money account' : 'bank account'} to confirm receipt of the funds.`,
-            ``,
-            `If you did not receive the funds or have any questions, please contact ${lenderName} immediately or reach out to our support team.`,
-            ``,
-            `Thank you for using Urutix.`,
-            `The Urutix Finance Team`,
-          ].join('\n'),
-          metadata: sharedMeta,
-        }).catch(() => {});
-      }
-
-      toast.success('Loan approved and funds disbursed!');
-      // Auto-close and refresh — no need for a "Done" screen
+      toast.success('Loan offer sent to borrower. Disbursement unlocks after they accept.');
       onSuccess?.(loan.id);
       onClose();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Failed to approve loan.';
+      const msg = err?.response?.data?.message || err?.message || 'Failed to submit loan offer.';
       setErrorMsg(msg);
       toast.error(msg);
       setStep('error');
@@ -349,34 +207,15 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               </div>
               <div className="absolute inset-0 rounded-full border-4 border-[#345E85]/20 border-t-[#345E85] animate-spin" style={{ animationDuration: '1.5s' }} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Approving &amp; Disbursing</h3>
+            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Sending Offer to Borrower</h3>
             <p className="text-sm text-slate-500 text-center max-w-xs">
-              Please wait while we approve the loan and send{' '}
-              <span className="font-bold text-slate-700">{fmtUSD(approvedAmount)}</span> to the borrower.
+              Submitting formal terms of{' '}
+              <span className="font-bold text-slate-700">{fmt(approvedAmount)}</span> for borrower review…
             </p>
           </div>
         )}
 
         {/* ━━━━━━━━━━━━━━━━━━━━━ SUCCESS ━━━━━━━━━━━━━━━━━━━━━ */}
-        {step === 'success' && (
-          <div className="flex flex-col items-center justify-center py-24 px-8">
-            <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6">
-              <CheckCircle className="w-10 h-10 text-emerald-600" />
-            </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Loan Approved!</h3>
-            <p className="text-sm text-slate-500 text-center max-w-xs mb-8">
-              {disbursementMethod === 'momo'
-                ? <>Funds of <span className="font-bold text-slate-700">{fmtUSD(approvedAmount)}</span> have been sent via mobile money to the borrower.</>
-                : <>Loan approved. Bank transfer of <span className="font-bold text-slate-700">{fmtUSD(approvedAmount)}</span> should be processed manually.</>
-              }
-            </p>
-            <button onClick={onClose}
-              className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#2a4d6d] transition-all border-b-4 border-indigo-900/20">
-              Done
-            </button>
-          </div>
-        )}
-
         {/* ━━━━━━━━━━━━━━━━━━━━━ ERROR ━━━━━━━━━━━━━━━━━━━━━ */}
         {step === 'error' && (
           <div className="flex flex-col items-center justify-center py-32 px-8">
@@ -411,9 +250,9 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-[#345E85]/5 to-indigo-50 shrink-0 flex items-center justify-between">
               <div>
                 <p className="text-[9px] font-black text-[#345E85] uppercase tracking-widest mb-1">
-                  Step 1 of 2 — Loan Terms
+                  Step 1 of 2 — Set Offer Terms
                 </p>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Approve Loan Request</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Prepare Loan Offer</h2>
                 <p className="text-sm text-slate-500 mt-0.5">
                   <span className="font-bold text-slate-700">{loan.borrower_name || 'Borrower'}</span>
                   {loan.borrower_company && <span className="text-slate-400"> · {loan.borrower_company}</span>}
@@ -431,7 +270,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-center">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Requested</p>
-                  <p className="text-base font-black text-slate-900">{fmtUSD(loan.requested_amount)}</p>
+                  <p className="text-base font-black text-slate-900">{fmt(loan.requested_amount)}</p>
                 </div>
                 <div className="bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-center">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk Score</p>
@@ -480,7 +319,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                     </div>
                     {approvedAmount < loan.requested_amount && (
                       <p className="text-[10px] text-amber-600 font-semibold mt-1">
-                        Partial approval — borrower requested {fmtUSD(loan.requested_amount)}
+                        Partial approval — borrower requested {fmt(loan.requested_amount)}
                       </p>
                     )}
                   </div>
@@ -546,9 +385,9 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
             <div className="p-6 border-b border-slate-100 bg-slate-50 shrink-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Review &amp; Proceed to Payment</h2>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Review Offer Before Sending</h2>
                   <p className="text-sm text-slate-500 mt-1">
-                    {loan.borrower_name || 'Borrower'}{loan.borrower_company ? ` · ${loan.borrower_company}` : ''}
+                    Borrower will receive full disclosure and must accept before you can disburse.
                   </p>
                 </div>
                 <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors shrink-0">
@@ -574,18 +413,18 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-blue-800/60 uppercase">Principal:</span>
-                    <span className="text-sm font-black text-blue-900">{fmtUSD(approvedAmount)}</span>
+                    <span className="text-sm font-black text-blue-900">{fmt(approvedAmount)}</span>
                   </div>
                   {totalInterest != null && (
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-blue-800/60 uppercase">Interest ({fmtPct(nominalRate)} · {loanTermMonths}m):</span>
-                      <span className="text-sm font-black text-blue-900">+{fmtUSD(totalInterest)}</span>
+                      <span className="text-sm font-black text-blue-900">+{fmt(totalInterest)}</span>
                     </div>
                   )}
                   {originationFee != null && (
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-blue-800/60 uppercase">Origination Fee:</span>
-                      <span className="text-sm font-black text-blue-900">+{fmtUSD(originationFee)}</span>
+                      <span className="text-sm font-black text-blue-900">+{fmt(originationFee)}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
@@ -594,114 +433,31 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                   </div>
                   <div className="pt-4 border-t-2 border-dashed border-blue-200">
                     <div className="flex items-center justify-between">
-                      <span className="text-base font-black text-blue-900 uppercase">Total Disbursed:</span>
-                      <span className="text-3xl font-black text-[#345E85]">{fmtUSD(approvedAmount)}</span>
+                      <span className="text-base font-black text-blue-900 uppercase">Total Repayable:</span>
+                      <span className="text-3xl font-black text-[#345E85]">
+                        {totalRepayable != null ? fmt(totalRepayable) : fmt(approvedAmount)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* ── Payment Method Selection ── */}
-              <div>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                  Disbursement Method
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setDisbursementMethod('momo')}
-                    className={`p-6 rounded-2xl border-2 transition-all ${
-                      disbursementMethod === 'momo'
-                        ? 'border-[#345E85] bg-blue-50'
-                        : 'border-slate-100 bg-white hover:border-slate-200'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-3xl mb-3">📱</div>
-                      <div className="text-xs font-black text-slate-900 uppercase tracking-widest">Mobile Money</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setDisbursementMethod('card')}
-                    className={`p-6 rounded-2xl border-2 transition-all ${
-                      disbursementMethod === 'card'
-                        ? 'border-[#345E85] bg-blue-50'
-                        : 'border-slate-100 bg-white hover:border-slate-200'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-3xl mb-3">🏦</div>
-                      <div className="text-xs font-black text-slate-900 uppercase tracking-widest">Bank Transfer</div>
-                    </div>
-                  </button>
+              {/* ── Workflow notice ── */}
+              <div className="flex items-start gap-4 bg-amber-50 rounded-2xl p-5 border-2 border-amber-100">
+                <Info className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-sm font-black text-amber-900 mb-1 uppercase tracking-tight">
+                    3-Step Compliant Workflow
+                  </div>
+                  <ol className="text-[11px] font-bold text-amber-800 leading-relaxed list-decimal list-inside space-y-1">
+                    <li><strong>Now:</strong> You send this formal offer to the borrower</li>
+                    <li><strong>Next:</strong> Borrower reviews TILA disclosure and accepts or declines</li>
+                    <li><strong>Then:</strong> You disburse the locked amount via the Disburse action</li>
+                  </ol>
                 </div>
               </div>
 
-              {/* ── Mobile Money form ── */}
-              {disbursementMethod === 'momo' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                      Mobile Provider
-                    </label>
-                    <select
-                      value={momoProvider}
-                      onChange={e => setMomoProvider(e.target.value as 'mtn' | 'airtel' | 'mpesa')}
-                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all appearance-none"
-                    >
-                      <option value="mtn">MTN Mobile Money</option>
-                      <option value="airtel">Airtel Money</option>
-                      <option value="mpesa">M-Pesa</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="+250 7XX XXX XXX"
-                      value={momoPhone}
-                      onChange={e => setMomoPhone(e.target.value)}
-                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-                    />
-                    <p className="text-xs text-slate-500 mt-2">
-                      Funds will be sent directly to this mobile money account.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Bank Transfer form ── */}
-              {disbursementMethod === 'card' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                      Bank Account Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 1234567890"
-                      value={bankAccount}
-                      onChange={e => setBankAccount(e.target.value)}
-                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
-                      Account Holder Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. John Doe"
-                      value={bankName}
-                      onChange={e => setBankName(e.target.value)}
-                      className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* ── Rate details (collapsed) ── */}
+              {/* ── Rate details ── */}
               <div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                   <TrendingUp className="w-3.5 h-3.5" /> Policy-Driven Rate Breakdown
@@ -719,7 +475,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                   />
                   <Field
                     label="Monthly Instalment"
-                    value={monthlyInstalment != null ? fmtUSD(monthlyInstalment) : '—'}
+                    value={monthlyInstalment != null ? fmt(monthlyInstalment) : '—'}
                     sub={`× ${loanTermMonths} payments`}
                     accent
                   />
@@ -734,8 +490,9 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                     Secure Disbursement Protocol
                   </div>
                   <p className="text-[11px] font-bold text-emerald-700 leading-relaxed">
-                    By confirming, you commit to disburse <strong>{fmtUSD(approvedAmount)}</strong> to the borrower.
-                    This action is encrypted, logged, and immutable — compliant with Basel II / IFRS 9 standards.
+                    By confirming, you send a formal offer of <strong>{fmt(approvedAmount)}</strong> to{' '}
+                    <strong>{loan.borrower_name || 'the borrower'}</strong>.
+                    No funds will move until they accept. Compliant with TILA / IFRS 9 disclosure standards.
                   </p>
                 </div>
               </div>
@@ -749,7 +506,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               </button>
               <button onClick={handleConfirm}
                 className="flex-1 px-8 py-4 text-xs font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all uppercase tracking-widest border-b-4 border-indigo-900/20">
-                Confirm &amp; Disburse · {fmtUSD(approvedAmount)}
+                Send Offer to Borrower · {fmt(approvedAmount)}
               </button>
             </div>
           </>

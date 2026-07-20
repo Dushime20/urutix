@@ -43,7 +43,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { LoanNotificationService } from './services/loan-notification.service';
 import { LoanEventListener } from './listeners/loan-event.listener';
 import { Notification } from '../../entities/notification.entity';
-// import { PaymentsModule } from '../payments/payments.module'; // Temporarily comment out to avoid circular dependency
+import { CurrencyModule } from '../currency/currency.module';
 
 @Module({
   imports: [
@@ -73,6 +73,7 @@ import { Notification } from '../../entities/notification.entity';
       Notification,
     ]),
     EnhancedAuthModule,
+    CurrencyModule,
     // PaymentsModule, // Temporarily comment out
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),

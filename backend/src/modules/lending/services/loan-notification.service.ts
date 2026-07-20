@@ -227,4 +227,104 @@ export class LoanNotificationService {
       { loanId, dueDate, amount },
     );
   }
+
+  /** Borrower receives formal terms offer — must accept before disbursement (TILA). */
+  async notifyBorrowerTermsOffered(
+    cargoOwnerId: string,
+    tenantId: string,
+    loanId: string,
+    details: {
+      lenderName: string;
+      approvedAmount: number;
+      requestedAmount: number;
+      interestAmount: number;
+      totalRepayable: number;
+      dueDate: Date;
+      loanTermMonths: number;
+      apr: number | null;
+      currency: string;
+      loanNumber?: string;
+    },
+  ) {
+    const ref = details.loanNumber || loanId.slice(0, 8).toUpperCase();
+    await this.send(
+      cargoOwnerId,
+      tenantId,
+      NotificationType.LOAN_TERMS_OFFERED,
+      NotificationCategory.LOAN,
+      NotificationPriority.HIGH,
+      'Loan Terms Offer — Action Required',
+      `${details.lenderName} has offered you a loan of ${details.approvedAmount.toLocaleString()} ${details.currency} ` +
+      `(total repayable: ${details.totalRepayable.toLocaleString()} ${details.currency}, due ${new Date(details.dueDate).toLocaleDateString()}). ` +
+      `Please review and accept the terms before funds are disbursed.`,
+      loanId,
+      `/dashboard/loan-requests?loan=${loanId}`,
+      { ...details, loanRef: ref },
+    );
+  }
+
+  async notifyLenderTermsAccepted(
+    lenderUserId: string,
+    tenantId: string,
+    loanId: string,
+    amount: number,
+    loanNumber?: string,
+  ) {
+    await this.send(
+      lenderUserId,
+      tenantId,
+      NotificationType.LOAN_TERMS_ACCEPTED,
+      NotificationCategory.LOAN,
+      NotificationPriority.HIGH,
+      'Borrower Accepted Loan Terms',
+      `The borrower has accepted the loan terms${loanNumber ? ` (#${loanNumber})` : ''}. ` +
+      `You may now disburse ${amount.toLocaleString()}.`,
+      loanId,
+      `/lending/loan-requests/${loanId}`,
+      { loanId, amount, loanNumber },
+    );
+  }
+
+  async notifyLenderTermsDeclined(
+    lenderUserId: string,
+    tenantId: string,
+    loanId: string,
+    reason?: string,
+  ) {
+    await this.send(
+      lenderUserId,
+      tenantId,
+      NotificationType.LOAN_TERMS_DECLINED,
+      NotificationCategory.LOAN,
+      NotificationPriority.HIGH,
+      'Borrower Declined Loan Terms',
+      `The borrower declined the offered loan terms.${reason ? ` Reason: ${reason}` : ''}`,
+      loanId,
+      `/lending/loan-requests/${loanId}`,
+      { loanId, reason },
+    );
+  }
+
+  async notifyCargoOwnerLoanDisbursed(
+    cargoOwnerId: string,
+    tenantId: string,
+    loanId: string,
+    amount: number,
+    lenderName: string,
+    currency: string = 'RWF',
+  ) {
+    await this.send(
+      cargoOwnerId,
+      tenantId,
+      NotificationType.LOAN_DISBURSED,
+      NotificationCategory.LOAN,
+      NotificationPriority.HIGH,
+      'Loan Disbursed',
+      `${lenderName} has disbursed ${amount.toLocaleString()} ${currency} on your behalf. ` +
+      `Your repayment obligation is now active.`,
+      loanId,
+      `/dashboard/loan-requests?loan=${loanId}`,
+      { loanId, amount, lenderName, currency },
+    );
+  }
 }
