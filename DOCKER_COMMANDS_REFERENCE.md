@@ -7,7 +7,7 @@ Complete command reference for managing UrutiX Smart Logistics in both developme
 ## Table of Contents
 - [Development Commands](#development-commands)
 - [Production Commands](#production-commands)
-- [Database Commands](#database-commands)
+- [Database Commands](#database-commandsc)
 - [Migration Commands](#migration-commands)
 - [Troubleshooting Commands](#troubleshooting-commands)
 - [Maintenance Commands](#maintenance-commands)

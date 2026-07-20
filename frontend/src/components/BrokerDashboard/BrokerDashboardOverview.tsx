@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   CheckCircle,
   DollarSign, FileText, Scale,
@@ -10,7 +10,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { brokerAPI } from '../../services/brokerApi';
+import { brokerAPI, getPickupAddress, getDeliveryAddress, type BrokerLoad } from '../../services/brokerApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -45,6 +45,23 @@ interface BrokerActivityItem {
   iconBg: string;
 }
 
+const getLoadStatusStyle = (status: string) => {
+  switch (status) {
+    case 'IN_TRANSIT': return 'bg-indigo-50 text-indigo-700 border border-indigo-100';
+    case 'DELIVERED':
+    case 'COMPLETED': return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+    case 'CANCELLED': return 'bg-rose-50 text-rose-700 border border-rose-100';
+    case 'ASSIGNED': return 'bg-primary-50 text-primary-700 border border-primary-100';
+    default: return 'bg-gray-50 text-gray-600 border border-gray-200';
+  }
+};
+
+const formatRoute = (load: BrokerLoad) => {
+  const origin = getPickupAddress(load) || load.origin?.city || 'Origin TBD';
+  const destination = getDeliveryAddress(load) || load.destination?.city || 'Destination TBD';
+  return `${origin} → ${destination}`;
+};
+
 // ─── main component ────────────────────────────────────────────────────────────
 interface BrokerDashboardOverviewProps {
   stats: {
@@ -57,10 +74,12 @@ interface BrokerDashboardOverviewProps {
 
 export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = ({ stats }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { compact: fmt } = useCurrencyFormat();
 
   // ── extended stats from API ──────────────────────────────────────────────────
   const [brokerStats, setBrokerStats] = useState<any>(null);
+  const [assignments, setAssignments] = useState<BrokerLoad[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
   const [disputes, setDisputes] = useState<any[]>([]);
@@ -71,14 +90,20 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
     if (!user?.id) return;
     Promise.allSettled([
       brokerAPI.getBrokerStatistics(user.id),
+      brokerAPI.getBrokerLoads(user.id),
       brokerAPI.getBrokerCommissions(user.id),
       brokerAPI.getContracts(),
       brokerAPI.getDisputes(),
       brokerAPI.getEscrows(),
-    ]).then(([statsRes, comRes, conRes, disRes, escRes]) => {
+    ]).then(([statsRes, loadsRes, comRes, conRes, disRes, escRes]) => {
       if (statsRes.status === 'fulfilled') {
         const d = statsRes.value?.data;
         setBrokerStats(d?.data ?? d ?? null);
+      }
+      if (loadsRes.status === 'fulfilled') {
+        const d = loadsRes.value?.data;
+        const loads = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : [];
+        setAssignments(loads);
       }
       if (comRes.status === 'fulfilled') {
         const d = comRes.value?.data;
@@ -158,6 +183,11 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
     count: disputes.filter(d => d.category === cat).length,
   })).filter(d => d.count > 0);
 
+  const recentAssignments = React.useMemo(
+    () => [...assignments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [assignments],
+  );
+
   const recentCommissions = React.useMemo(
     () => [...commissions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [commissions],
@@ -165,6 +195,17 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
 
   const recentActivities = React.useMemo(() => {
     const items: BrokerActivityItem[] = [];
+
+    recentAssignments.forEach(load => {
+      items.push({
+        id: `assignment-${load.id}`,
+        title: 'Cargo assigned',
+        description: `${load.title || 'Shipment'} · ${formatRoute(load)}`,
+        timestamp: load.createdAt,
+        icon: <Package className="w-4 h-4" />,
+        iconBg: 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400',
+      });
+    });
 
     recentCommissions.forEach(c => {
       const loadLabel = c.load?.title || `Load ${(c.loadId || '').slice(0, 8)}`;
@@ -222,7 +263,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
       .filter(item => item.timestamp)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 6);
-  }, [recentCommissions, contracts, disputes, escrows, fmt]);
+  }, [recentAssignments, recentCommissions, contracts, disputes, escrows, fmt]);
 
   return (
     <div className="space-y-6">
@@ -281,18 +322,18 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
         />
       </div>
 
-      {/* ── Row 2: Recent commissions & activity (priority at top) ──────────── */}
+      {/* ── Row 2: Recent assignments & activity (priority at top) ──────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* Recent commissions — 2/3 width */}
+        {/* Recent assignments — 2/3 width */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Recent Commissions</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Your latest commission records</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Recent Assignments</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Your latest assigned cargo loads</p>
             </div>
             <Link
-              to="/dashboard/broker/commissions"
+              to="/dashboard/broker/loads"
               className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
             >
               View all
@@ -300,49 +341,53 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
             </Link>
           </div>
           {loading ? (
-            <div className="flex items-center justify-center h-40 text-gray-400 text-xs">Loading commissions...</div>
-          ) : recentCommissions.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-gray-400 text-xs">Loading assignments...</div>
+          ) : recentAssignments.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-400">
-              <DollarSign className="w-8 h-8 opacity-40" />
-              <p className="text-xs font-medium">No commission records yet</p>
+              <Package className="w-8 h-8 opacity-40" />
+              <p className="text-xs font-medium">No assigned cargo yet</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
-                    {['Load', 'Load Value', 'Rate', 'Commission', 'Status', 'Date'].map(h => (
+                    {['Cargo', 'Route', 'Value', 'Commission', 'Status', 'Assigned'].map(h => (
                       <th key={h} className="text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider pb-3 pr-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {recentCommissions.slice(0, 6).map((c: any) => {
-                    const statusColors: Record<string, string> = {
-                      PAID: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
-                      APPROVED: 'bg-blue-50 text-blue-700 border border-blue-100',
-                      PENDING: 'bg-amber-50 text-amber-700 border border-amber-100',
-                      CANCELLED: 'bg-gray-50 text-gray-600 border border-gray-200',
-                    };
-                    return (
-                      <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200 max-w-[120px] truncate">
-                          {c.load?.title || `Load ${(c.loadId || '').slice(0, 8)}`}
-                        </td>
-                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{fmt(c.loadAmount)}</td>
-                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{Number(c.commissionRate || 0).toFixed(1)}%</td>
-                        <td className="py-3 pr-4 font-bold text-gray-900 dark:text-white">{fmt(c.commissionAmount)}</td>
-                        <td className="py-3 pr-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[c.status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
-                            {c.status}
-                          </span>
-                        </td>
-                        <td className="py-3 text-gray-500">
-                          {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {recentAssignments.slice(0, 6).map((load) => (
+                    <tr
+                      key={load.id}
+                      className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
+                    >
+                      <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200 max-w-[140px] truncate">
+                        {load.title || `Load ${load.id.slice(0, 8)}`}
+                      </td>
+                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400 max-w-[180px] truncate">
+                        {formatRoute(load)}
+                      </td>
+                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{fmt(load.loadValue ?? 0)}</td>
+                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
+                        {load.brokerCommissionRate
+                          ? `${Number(load.brokerCommissionRate).toFixed(1)}%`
+                          : load.brokerCommissionAmount
+                            ? fmt(load.brokerCommissionAmount)
+                            : '—'}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${getLoadStatusStyle(load.status)}`}>
+                          {String(load.status || 'ASSIGNED').replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td className="py-3 text-gray-500">
+                        {new Date(load.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -354,7 +399,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Recent Activity</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Commissions, contracts & disputes</p>
+              <p className="text-xs text-gray-500 mt-0.5">Assignments, contracts & disputes</p>
             </div>
             <Activity className="w-4 h-4 text-gray-400" />
           </div>
