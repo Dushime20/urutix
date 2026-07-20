@@ -247,13 +247,13 @@ const PageLoadingFallback = () => (
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <MutationSyncProvider>
       <I18nProvider
         defaultLanguage="en"
         googleTranslateApiKey={import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}
       >
         <ThemeProvider>
           <AuthProvider>
+          <MutationSyncProvider>
           <PermissionProvider>
           <CurrencyProvider>
             <NotificationProvider>
@@ -725,6 +725,7 @@ function App() {
             </NotificationProvider>
           </CurrencyProvider>
           </PermissionProvider>
+          </MutationSyncProvider>
         </AuthProvider>
       </ThemeProvider>
       <Toaster
@@ -733,7 +734,6 @@ function App() {
           containerClassName="!z-[9999999]"
         />
       </I18nProvider>
-      </MutationSyncProvider>
     </QueryClientProvider>
   );
 }

@@ -122,7 +122,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Activity,
           subItems: [
             { label: 'My Assignments', path: '/dashboard/broker/loads' },
-            { label: 'Auctions', path: '/dashboard/broker/bidding' },
             { label: 'Smart Matching', path: '/dashboard/broker/smart-matching' },
             { label: 'Bidding', path: '/dashboard/broker/bidding' },
             { label: '🔴 Live Tracking', path: '/dashboard/broker/tracking' },
