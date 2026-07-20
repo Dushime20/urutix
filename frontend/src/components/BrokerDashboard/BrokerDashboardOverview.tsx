@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  TrendingUp, CheckCircle,
+  CheckCircle,
   DollarSign, FileText, Scale,
   Clock, ShieldCheck, Banknote, BarChart2, Activity, Package, Navigation,
+  ChevronRight,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -19,6 +21,29 @@ const pct = (a: number, b: number) =>
   b === 0 ? 0 : Math.round(((a - b) / b) * 100);
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+
+const formatRelativeTime = (date: string | Date) => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const diff = Date.now() - dateObj.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+interface BrokerActivityItem {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  icon: React.ReactNode;
+  iconBg: string;
+}
 
 // ─── main component ────────────────────────────────────────────────────────────
 interface BrokerDashboardOverviewProps {
@@ -133,6 +158,72 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
     count: disputes.filter(d => d.category === cat).length,
   })).filter(d => d.count > 0);
 
+  const recentCommissions = React.useMemo(
+    () => [...commissions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [commissions],
+  );
+
+  const recentActivities = React.useMemo(() => {
+    const items: BrokerActivityItem[] = [];
+
+    recentCommissions.forEach(c => {
+      const loadLabel = c.load?.title || `Load ${(c.loadId || '').slice(0, 8)}`;
+      const statusLabel = c.status === 'PAID' ? 'paid' : c.status === 'APPROVED' ? 'approved' : 'recorded';
+      items.push({
+        id: `commission-${c.id}`,
+        title: `Commission ${statusLabel}`,
+        description: `${loadLabel} · ${fmt(c.commissionAmount)}`,
+        timestamp: c.updatedAt || c.createdAt,
+        icon: <DollarSign className="w-4 h-4" />,
+        iconBg: c.status === 'PAID'
+          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
+          : c.status === 'APPROVED'
+            ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400'
+            : 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
+      });
+    });
+
+    contracts.forEach(c => {
+      items.push({
+        id: `contract-${c.id}`,
+        title: `Contract ${String(c.status || 'updated').replace(/_/g, ' ').toLowerCase()}`,
+        description: `Load ${(c.loadId || '').slice(0, 8)} · ${fmt(c.commissionAmount || c.agreedRate || 0)}`,
+        timestamp: c.updatedAt || c.createdAt,
+        icon: <FileText className="w-4 h-4" />,
+        iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
+      });
+    });
+
+    disputes.forEach(d => {
+      items.push({
+        id: `dispute-${d.id}`,
+        title: `Dispute ${String(d.status || 'opened').replace(/_/g, ' ').toLowerCase()}`,
+        description: `${String(d.category || 'General').toLowerCase()} · Load ${(d.loadId || '').slice(0, 8)}`,
+        timestamp: d.resolvedAt || d.createdAt,
+        icon: <Scale className="w-4 h-4" />,
+        iconBg: ['OPEN', 'ESCALATED'].includes(d.status)
+          ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+          : 'bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+      });
+    });
+
+    escrows.forEach(e => {
+      items.push({
+        id: `escrow-${e.id}`,
+        title: `Escrow ${String(e.status || 'updated').replace(/_/g, ' ').toLowerCase()}`,
+        description: `Load ${(e.loadId || '').slice(0, 8)} · ${fmt(e.totalAmount || 0)}`,
+        timestamp: e.fundedAt || e.createdAt,
+        icon: <ShieldCheck className="w-4 h-4" />,
+        iconBg: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400',
+      });
+    });
+
+    return items
+      .filter(item => item.timestamp)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 6);
+  }, [recentCommissions, contracts, disputes, escrows, fmt]);
+
   return (
     <div className="space-y-6">
 
@@ -190,7 +281,113 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
         />
       </div>
 
-      {/* ── Row 2: Commission Analytics ─────────────────────────────────────── */}
+      {/* ── Row 2: Recent commissions & activity (priority at top) ──────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Recent commissions — 2/3 width */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Recent Commissions</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Your latest commission records</p>
+            </div>
+            <Link
+              to="/dashboard/broker/commissions"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
+            >
+              View all
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-40 text-gray-400 text-xs">Loading commissions...</div>
+          ) : recentCommissions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-400">
+              <DollarSign className="w-8 h-8 opacity-40" />
+              <p className="text-xs font-medium">No commission records yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    {['Load', 'Load Value', 'Rate', 'Commission', 'Status', 'Date'].map(h => (
+                      <th key={h} className="text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider pb-3 pr-4">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {recentCommissions.slice(0, 6).map((c: any) => {
+                    const statusColors: Record<string, string> = {
+                      PAID: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+                      APPROVED: 'bg-blue-50 text-blue-700 border border-blue-100',
+                      PENDING: 'bg-amber-50 text-amber-700 border border-amber-100',
+                      CANCELLED: 'bg-gray-50 text-gray-600 border border-gray-200',
+                    };
+                    return (
+                      <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200 max-w-[120px] truncate">
+                          {c.load?.title || `Load ${(c.loadId || '').slice(0, 8)}`}
+                        </td>
+                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{fmt(c.loadAmount)}</td>
+                        <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{Number(c.commissionRate || 0).toFixed(1)}%</td>
+                        <td className="py-3 pr-4 font-bold text-gray-900 dark:text-white">{fmt(c.commissionAmount)}</td>
+                        <td className="py-3 pr-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[c.status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="py-3 text-gray-500">
+                          {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Recent activity — 1/3 width */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Recent Activity</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Commissions, contracts & disputes</p>
+            </div>
+            <Activity className="w-4 h-4 text-gray-400" />
+          </div>
+          {loading ? (
+            <div className="flex items-center justify-center flex-1 min-h-[160px] text-gray-400 text-xs">Loading activity...</div>
+          ) : recentActivities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center flex-1 min-h-[160px] gap-2 text-gray-400">
+              <Activity className="w-8 h-8 opacity-40" />
+              <p className="text-xs font-medium text-center">No recent activity</p>
+            </div>
+          ) : (
+            <div className="space-y-3 flex-1">
+              {recentActivities.map(item => (
+                <div key={item.id} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${item.iconBg}`}>
+                    {item.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{item.title}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">{item.description}</p>
+                    <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatRelativeTime(item.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Row 3: Commission Analytics ─────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Commission trend — 2/3 width */}
@@ -258,7 +455,7 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
         </div>
       </div>
 
-      {/* ── Row 3: Operations ─────────────────────────────────────────────── */}
+      {/* ── Row 4: Operations ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Cargo status pie — 1/2 width */}
@@ -342,58 +539,6 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
           </div>
         </div>
       </div>
-
-      {/* ── Row 4: Recent commissions activity table ─────────────────────────── */}
-      {commissions.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Recent Commissions</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Latest 8 commission records</p>
-            </div>
-            <TrendingUp className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  {['Load', 'Load Value', 'Rate', 'Commission', 'Status', 'Date'].map(h => (
-                    <th key={h} className="text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider pb-3 pr-4">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {commissions.slice(0, 8).map((c: any) => {
-                  const statusColors: Record<string, string> = {
-                    PAID: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
-                    APPROVED: 'bg-blue-50 text-blue-700 border border-blue-100',
-                    PENDING: 'bg-amber-50 text-amber-700 border border-amber-100',
-                    CANCELLED: 'bg-gray-50 text-gray-600 border border-gray-200',
-                  };
-                  return (
-                    <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                      <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200 max-w-[120px] truncate">
-                        {c.load?.title || `Load ${(c.loadId || '').slice(0, 8)}`}
-                      </td>
-                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{fmt(c.loadAmount)}</td>
-                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{Number(c.commissionRate || 0).toFixed(1)}%</td>
-                      <td className="py-3 pr-4 font-bold text-gray-900 dark:text-white">{fmt(c.commissionAmount)}</td>
-                      <td className="py-3 pr-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColors[c.status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}>
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="py-3 text-gray-500">
-                        {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
