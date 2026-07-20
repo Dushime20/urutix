@@ -73,6 +73,7 @@ interface InspectionIssue {
 interface CargoInspectionProps {
   cargoId: string;
   driverId?: string;
+  embedded?: boolean;
   onInspectionComplete: (result: InspectionResult) => void;
   onCancel: () => void;
 }
@@ -80,6 +81,7 @@ interface CargoInspectionProps {
 export const CargoInspection: React.FC<CargoInspectionProps> = ({
   cargoId,
   driverId,
+  embedded = false,
   onInspectionComplete,
   onCancel
 }) => {
@@ -429,17 +431,21 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-tight">Pre-Trip Cargo Inspection</h2>
-          <p className="text-slate-400 font-medium text-xs sm:text-sm">Mandatory verification before loading and trip start</p>
-        </div>
-        <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+    <div className={embedded ? 'space-y-4' : 'space-y-5'}>
+      {!embedded && (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-tight">Pre-Trip Cargo Inspection</h2>
+              <p className="text-slate-400 font-medium text-xs sm:text-sm">Mandatory verification before loading and trip start</p>
+            </div>
+            <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Stepper */}
       <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm overflow-x-auto">

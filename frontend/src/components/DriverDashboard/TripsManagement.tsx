@@ -30,11 +30,18 @@ import toast from 'react-hot-toast';
 import { CurrentTrip } from './CurrentTrip';
 import { motion } from 'framer-motion';
 import { TripChecklist } from './TripChecklist';
+import { TripStartFlow } from './TripStartFlow';
 import { AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import { ProofOfDelivery } from './ProofOfDelivery';
+import {
+  getInspectionStatusLabel,
+  getInspectionStatusStyles,
+  getPreTripStatusFromLoad,
+} from './preTripInspection';
+import type { Trip } from '../../services/driverApi';
 
 interface TripsManagementProps {
   driverId: string;
@@ -44,6 +51,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
   const queryClient = useQueryClient();
   const { format: formatCurrency } = useCurrencyFormat();
   const [selectedTripForChecklist, setSelectedTripForChecklist] = useState<string | null>(null);
+  const [selectedTripForStart, setSelectedTripForStart] = useState<Trip | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'previous'>('active');
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null);
   const [selectedTripDetail, setSelectedTripDetail] = useState<string | null>(null);
@@ -83,6 +91,19 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
     queryFn: () => driverApi.getTripHistory(driverId, 'all'),
     enabled: !!driverId,
   });
+
+  // Pre-trip inspection status for upcoming trip cards
+  const { data: preTripLoads } = useQuery({
+    queryKey: ['driver-pre-trip-inspections', driverId],
+    queryFn: () => driverApi.getPreTripInspectionLoads(driverId),
+    enabled: !!driverId,
+  });
+
+  const getLoadInspectionStatus = (loadId?: string) => {
+    if (!loadId || !preTripLoads) return 'PENDING';
+    const load = preTripLoads.find((l: any) => l.id === loadId);
+    return getPreTripStatusFromLoad(load || {});
+  };
 
   const handleStartTrip = async (tripId: string) => {
     try {
@@ -351,6 +372,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <div className="flex items-center gap-3 mb-1">
                               <span className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">Mission ID</span>
                               <span className="px-2 py-0.5 bg-blue-50 text-[#345E85] text-[9px] font-black uppercase rounded">ORD-{trip.tripNumber}</span>
+                              {trip.loadId && (
+                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${getInspectionStatusStyles(getLoadInspectionStatus(trip.loadId))}`}>
+                                  {getInspectionStatusLabel(getLoadInspectionStatus(trip.loadId))}
+                                </span>
+                              )}
                             </div>
                             <p className="text-xl font-black text-[#0f172a] uppercase tracking-tight">{trip.origin.city} to {trip.destination.city}</p>
                           </div>
@@ -405,11 +431,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
 
                       <div className="lg:w-48 lg:border-l lg:border-slate-50 lg:pl-8 flex flex-row lg:flex-col justify-end lg:justify-center gap-3">
                         <button 
-                          onClick={() => setSelectedTripForChecklist(trip.id)}
+                          onClick={() => setSelectedTripForStart(trip)}
                           className="flex-1 px-6 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-lg group/btn active:scale-95"
                         >
-                          Start
-                          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                          Start Trip
+                          <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                         </button>
                         <button
                           onClick={() => setSelectedTripDetail(trip.id)}
@@ -502,7 +528,24 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
         )}
       </AnimatePresence>
 
-      {/* Pre-Trip Checklist Modal */}
+      {/* Trip Start Flow — Vehicle Check → Cargo Inspection → Launch */}
+      <AnimatePresence>
+        {selectedTripForStart && (
+          <TripStartFlow
+            trip={selectedTripForStart}
+            driverId={driverId}
+            isOpen={true}
+            onClose={() => setSelectedTripForStart(null)}
+            onTripStarted={() => {
+              queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
+              queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] });
+              queryClient.invalidateQueries({ queryKey: ['driver-pre-trip-inspections'] });
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Legacy standalone checklist (kept for other entry points) */}
       <AnimatePresence>
         {selectedTripForChecklist && (
           <TripChecklist 
@@ -756,7 +799,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     <button
                       onClick={() => {
                         setSelectedTripDetail(null);
-                        setSelectedTripForChecklist(trip.id);
+                        setSelectedTripForStart(trip);
                       }}
                       className="flex-1 px-6 py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-slate-900 transition-all shadow-lg active:scale-95"
                     >

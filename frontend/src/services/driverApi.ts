@@ -50,6 +50,7 @@ export interface DriverStats {
 export interface Trip {
   id: string;
   tripNumber: string;
+  loadId?: string;
   status: string;
   origin: {
     address: string;
@@ -130,6 +131,7 @@ function normalizeTrip(raw: any): Trip {
   return {
     id: raw.id,
     tripNumber: raw.tripNumber,
+    loadId: raw.loadId || load.id,
     status: raw.status,
     origin: {
       address: pickup.address || pickup.name || 'N/A',
