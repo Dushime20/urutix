@@ -59,6 +59,10 @@ import {
 import { CacheService } from './services/cache.service';
 import { MarketIntelligenceService } from './services/market-intelligence.service';
 import { AvailabilityService } from '../availability/availability.service';
+import {
+  BidConflictResolutionService,
+  CommitmentTrigger,
+} from '../availability/services/bid-conflict-resolution.service';
 import { MLPredictionService } from './services/ml-prediction.service';
 import { NotificationService } from '../notifications/notification.service';
 import {
@@ -245,6 +249,7 @@ export class MatchingService {
     private readonly eventEmitter: EventEmitter2,
     private readonly emailService: EmailService,
     private readonly availabilityService: AvailabilityService,
+    private readonly bidConflictResolutionService: BidConflictResolutionService,
   ) {
     this.hungarianAlgorithm = new HungarianAlgorithm();
     this.geneticAlgorithm = new GeneticAlgorithm([], []);
@@ -1061,6 +1066,22 @@ export class MatchingService {
         throw new NotFoundException('Load or Truck not found for match acceptance');
       }
 
+      const scheduleWindow = this.bidConflictResolutionService.resolveScheduleWindow(load);
+
+      await this.bidConflictResolutionService.assertTruckAvailableForCommitment({
+        trigger: CommitmentTrigger.SMART_MATCH_CONFIRMED,
+        truckId: truck.id,
+        truckOwnerId: truck.ownerId,
+        tenantId: match.tenantId,
+        confirmedLoadId: load.id,
+        pickupDateTime: scheduleWindow.pickupDateTime,
+        deliveryDateTime: scheduleWindow.deliveryDateTime,
+        excludeMatchId: match.id,
+        assignmentId: match.id,
+        confirmedCargoTitle: load.title || load.cargoType,
+        driverId: truck.currentDriverId,
+      });
+
       // Step 2: Update Load status
       load.status = LoadStatus.ASSIGNED;
       load.assignedTruckId = truck.id;
@@ -1081,6 +1102,21 @@ export class MatchingService {
 
       // Step 5: Send notifications (implement notification service integration)
       await this.sendAcceptanceNotifications(load, truck, trip);
+
+      await this.bidConflictResolutionService.resolveAfterCommitment({
+        trigger: CommitmentTrigger.SMART_MATCH_CONFIRMED,
+        truckId: truck.id,
+        truckOwnerId: truck.ownerId,
+        tenantId: match.tenantId,
+        confirmedLoadId: load.id,
+        pickupDateTime: scheduleWindow.pickupDateTime,
+        deliveryDateTime: scheduleWindow.deliveryDateTime,
+        excludeMatchId: match.id,
+        tripId: trip.id,
+        assignmentId: match.id,
+        confirmedCargoTitle: load.title || load.cargoType,
+        driverId: truck.currentDriverId,
+      });
 
       // Step 6: Initialize tracking (if tracking service is available)
       // await this.initializeTracking(trip);
@@ -1212,13 +1248,19 @@ export class MatchingService {
   /**
    * Create a Trip record from an accepted match
    */
-  private async createTripFromMatch(load: Load, truck: Truck, match: LoadMatch): Promise<any> {
+  private async createTripFromMatch(load: Load, truck: Truck, match: LoadMatch): Promise<Trip> {
     const tripNumber = `TRIP-${Date.now()}-${load.id.substring(0, 8)}`;
 
-    // Calculate estimated times
-    const now = new Date();
     const pickupDate = new Date(load.pickupDate);
     const deliveryDate = new Date(load.deliveryDate);
+
+    await this.availabilityService.assertNoConflict({
+      truckId: truck.id,
+      driverId: truck.currentDriverId || undefined,
+      pickupDateTime: pickupDate,
+      deliveryDateTime: deliveryDate,
+      tenantId: load.tenantId,
+    });
 
     const tripData = {
       tenantId: load.tenantId,
@@ -1234,10 +1276,27 @@ export class MatchingService {
       notes: `Auto-created from Smart Matching (Match Score: ${match.score})`,
     };
 
-    // Use Trip entity class for proper type safety and to avoid lookup errors
     const tripRepository = this.loadRepository.manager.getRepository(Trip);
     const trip = tripRepository.create(tripData);
-    return await tripRepository.save(trip);
+    const savedTrip = await tripRepository.save(trip);
+
+    try {
+      await this.availabilityService.createReservation(
+        load.tenantId,
+        savedTrip.id,
+        load.id,
+        truck.id,
+        truck.currentDriverId,
+        pickupDate,
+        deliveryDate,
+      );
+    } catch (reservationError: any) {
+      this.logger.error(
+        `Failed to create reservation for smart-match trip ${savedTrip.id}: ${reservationError.message}`,
+      );
+    }
+
+    return savedTrip;
   }
 
   /**

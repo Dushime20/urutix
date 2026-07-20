@@ -100,6 +100,15 @@ export class Bid {
       message?: string;
       validatedAt?: string;
     };
+    autoCancellation?: {
+      reason: string;
+      triggerEvent: string;
+      conflictingLoadId: string;
+      conflictingAssignmentId?: string;
+      cancelledAt: string;
+      cancelledBy: string;
+    };
+    rejectionReason?: string;
   };
 
   @Column('decimal', { precision: 5, scale: 2, nullable: true })

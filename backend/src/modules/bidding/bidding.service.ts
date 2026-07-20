@@ -31,6 +31,10 @@ import { CreditService } from '../../services/credit.service';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { TenantSubscription, SubscriptionStatus } from '../../entities/tenant-subscription.entity';
 import { AvailabilityService } from '../availability/availability.service';
+import {
+  BidConflictResolutionService,
+  CommitmentTrigger,
+} from '../availability/services/bid-conflict-resolution.service';
 
 export interface CreateBidDto {
   loadId: string;
@@ -160,6 +164,7 @@ export class BiddingService {
     private readonly eventEmitter: EventEmitter2,
     private readonly bidValidationService: BidValidationService,
     private readonly availabilityService: AvailabilityService,
+    private readonly bidConflictResolutionService: BidConflictResolutionService,
   ) { }
 
   async createBid(
@@ -748,6 +753,35 @@ export class BiddingService {
       throw new BadRequestException('Cannot accept bid that is in its current status');
     }
 
+    const plannedStartTime =
+      bid.load.pickupDate ||
+      bid.proposedPickupDate ||
+      new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const plannedEndTime =
+      bid.load.deliveryDate ||
+      bid.proposedDeliveryDate ||
+      new Date(plannedStartTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const driverIdFromBid = bid.bidDetails?.driverInfo?.driverId;
+    let preCheckDriverId: string | null = driverIdFromBid || null;
+    if (!preCheckDriverId && truck.currentDriverId) {
+      preCheckDriverId = truck.currentDriverId;
+    }
+
+    await this.bidConflictResolutionService.assertTruckAvailableForCommitment({
+      trigger: CommitmentTrigger.BID_ACCEPTED,
+      truckId,
+      truckOwnerId: bid.truckOwnerId,
+      tenantId,
+      confirmedLoadId: bid.loadId,
+      pickupDateTime: new Date(plannedStartTime),
+      deliveryDateTime: new Date(plannedEndTime),
+      excludeBidId: bidId,
+      actorUserId: cargoOwnerId,
+      confirmedCargoTitle: bid.load.title || bid.load.cargoType,
+      driverId: preCheckDriverId,
+    });
+
     // NOTE: Credit deduction is no longer applied here.
     // Credits are deducted when the driver starts the trip (status → IN_PROGRESS).
     // See TripsService.updateTripStatus() for the credit deduction logic.
@@ -766,7 +800,7 @@ export class BiddingService {
     });
 
     // Auto-assign driver if driverId is specified in bid details
-    const driverId = bid.bidDetails?.driverInfo?.driverId;
+    const driverId = driverIdFromBid;
     if (driverId) {
       try {
         const driver = await this.driverRepository.findOne({
@@ -826,24 +860,14 @@ export class BiddingService {
       },
     );
 
-    // Reject all other pending bids for this load
-    await this.bidRepository
-      .createQueryBuilder()
-      .update(Bid)
-      .set({ status: BidStatus.REJECTED })
-      .where('loadId = :loadId', { loadId: bid.loadId })
-      .andWhere('status = :status', { status: BidStatus.PENDING })
-      .andWhere('id != :bidId', { bidId })
-      .execute();
-
     // Automatically create a trip when bid is accepted
     // Check if trip already exists for this load
     const existingTrip = await this.tripRepository.findOne({
       where: { loadId: bid.loadId, tenantId },
     });
 
-    let tripId = existingTrip?.id;
-    let finalDriverId: string | null = existingTrip?.driverId || null;
+    let tripId: string | undefined = existingTrip?.id;
+    let finalDriverId: string | null = existingTrip?.driverId || preCheckDriverId;
 
     if (!existingTrip) {
       try {
@@ -869,16 +893,6 @@ export class BiddingService {
         }
 
         // Use load pickup/delivery dates for planned start/end times
-        // If not available, use bid proposed dates or default to reasonable times
-        const plannedStartTime = bid.load.pickupDate ||
-          bid.proposedPickupDate ||
-          new Date(Date.now() + 24 * 60 * 60 * 1000); // Default to tomorrow
-
-        const plannedEndTime = bid.load.deliveryDate ||
-          bid.proposedDeliveryDate ||
-          new Date(plannedStartTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Default to 7 days after start
-
-        // Use bid amount as agreed price, fallback to load offered price
         const agreedPrice = bid.bidAmount || bid.load.offeredPrice || bid.load.loadValue;
 
         // Generate unique trip number
@@ -939,6 +953,30 @@ export class BiddingService {
     } else {
       console.log(`Trip ${existingTrip.id} already exists for load ${bid.loadId}`);
     }
+
+    await this.bidConflictResolutionService.rejectRemainingAuctionBids(
+      bid.loadId,
+      bidId,
+      tenantId,
+      bid.load.title || bid.load.cargoType,
+      cargoOwnerId,
+    );
+
+    await this.bidConflictResolutionService.resolveAfterCommitment({
+      trigger: CommitmentTrigger.BID_ACCEPTED,
+      truckId,
+      truckOwnerId: bid.truckOwnerId,
+      tenantId,
+      confirmedLoadId: bid.loadId,
+      pickupDateTime: new Date(plannedStartTime),
+      deliveryDateTime: new Date(plannedEndTime),
+      excludeBidId: bidId,
+      tripId,
+      assignmentId: bidId,
+      actorUserId: cargoOwnerId,
+      confirmedCargoTitle: bid.load.title || bid.load.cargoType,
+      driverId: finalDriverId,
+    });
 
     // Send notifications
     try {

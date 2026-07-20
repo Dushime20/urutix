@@ -50,6 +50,28 @@ interface SmartMatchSelectedPayload {
   estimatedPrice?: number;
 }
 
+interface BidAutoCancelledPayload {
+  bidId: string;
+  truckOwnerId: string;
+  cargoOwnerId?: string;
+  brokerId?: string;
+  loadId: string;
+  tenantId: string;
+  cargoTitle?: string;
+  confirmedCargoTitle?: string;
+  reason: string;
+  trigger: string;
+}
+
+interface BidAuctionLostPayload {
+  bidId: string;
+  truckOwnerId: string;
+  loadId: string;
+  tenantId: string;
+  cargoTitle?: string;
+  reason: string;
+}
+
 interface AuctionCreatedPayload {
   auctionId: string;
   loadId: string;
@@ -526,6 +548,99 @@ export class AuctionNotificationListener {
     } catch (error) {
       this.logger.error(
         `Failed to send smart match notification: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
+   * Truck Owner: bid auto-cancelled due to schedule conflict with another commitment
+   */
+  @OnEvent('bid.auto-cancelled')
+  async handleBidAutoCancelled(payload: BidAutoCancelledPayload) {
+    this.logger.log(`Handling bid.auto-cancelled for bid ${payload.bidId}`);
+
+    try {
+      const cargoRef = payload.cargoTitle || `Cargo #${payload.loadId.slice(0, 8)}`;
+      const truckOwnerMessage =
+        payload.trigger === 'SMART_MATCH_CONFIRMED'
+          ? `Your bid for ${cargoRef} has been automatically cancelled because your truck has been assigned to another shipment through Smart Matching during the same pickup and delivery period.`
+          : `Your bid for ${cargoRef} has been automatically cancelled because your truck has been assigned to another shipment during the same pickup and delivery period.`;
+
+      const truckOwnerNotification = this.notificationRepository.create({
+        recipientId: payload.truckOwnerId,
+        tenantId: payload.tenantId,
+        notificationType: NotificationType.GENERAL,
+        category: NotificationCategory.AUCTION,
+        priority: NotificationPriority.HIGH,
+        title: 'Bid Automatically Cancelled',
+        message: truckOwnerMessage,
+        shortMessage: `Bid cancelled: ${cargoRef}`,
+        entityType: EntityType.CARGO,
+        entityId: payload.loadId,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH, NotificationChannel.EMAIL],
+        status: NotificationStatus.SENT,
+        isRead: false,
+        requiresAction: false,
+        actionUrl: '/dashboard/bidding',
+        actionText: 'View Bids',
+        metadata: {
+          bidId: payload.bidId,
+          reason: payload.reason,
+          trigger: payload.trigger,
+        },
+      });
+
+      const savedTruckOwner = await this.notificationRepository.save(
+        truckOwnerNotification,
+      );
+      this.eventsGateway.emitNotification(payload.truckOwnerId, savedTruckOwner);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send bid auto-cancelled notification: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  /**
+   * Truck Owner: bid rejected because another bidder won the auction
+   */
+  @OnEvent('bid.auction.lost')
+  async handleBidAuctionLost(payload: BidAuctionLostPayload) {
+    this.logger.log(`Handling bid.auction.lost for bid ${payload.bidId}`);
+
+    try {
+      const notification = this.notificationRepository.create({
+        recipientId: payload.truckOwnerId,
+        tenantId: payload.tenantId,
+        notificationType: NotificationType.AUCTION_LOST,
+        category: NotificationCategory.AUCTION,
+        priority: NotificationPriority.NORMAL,
+        title: 'Bid Not Selected',
+        message: payload.reason,
+        shortMessage: payload.cargoTitle
+          ? `Not selected: ${payload.cargoTitle}`
+          : 'Bid not selected',
+        entityType: EntityType.CARGO,
+        entityId: payload.loadId,
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        status: NotificationStatus.SENT,
+        isRead: false,
+        requiresAction: false,
+        actionUrl: '/dashboard/bidding',
+        actionText: 'View Bids',
+        metadata: {
+          bidId: payload.bidId,
+          reason: payload.reason,
+        },
+      });
+
+      const saved = await this.notificationRepository.save(notification);
+      this.eventsGateway.emitNotification(payload.truckOwnerId, saved);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send auction lost notification: ${error.message}`,
         error.stack,
       );
     }
