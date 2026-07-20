@@ -5,7 +5,13 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Bid, BidStatus } from '../../../entities/bid.entity';
 import { Load } from '../../../entities/load.entity';
 import { LoadMatch, MatchStatus } from '../../../entities/load-match.entity';
+import { Trip } from '../../../entities/trip.entity';
+import { Truck } from '../../../entities/truck.entity';
 import { AvailabilityService } from '../availability.service';
+import {
+  TruckAvailabilityEngine,
+  ScheduleComparisonAudit,
+} from './truck-availability.engine';
 import { NotificationService } from '../../notifications/notification.service';
 import { ActivityLogService } from '../../../services/activity-log.service';
 import {
@@ -64,7 +70,12 @@ export class BidConflictResolutionService {
     private readonly loadRepository: Repository<Load>,
     @InjectRepository(LoadMatch)
     private readonly loadMatchRepository: Repository<LoadMatch>,
+    @InjectRepository(Trip)
+    private readonly tripRepository: Repository<Trip>,
+    @InjectRepository(Truck)
+    private readonly truckRepository: Repository<Truck>,
     private readonly availabilityService: AvailabilityService,
+    private readonly availabilityEngine: TruckAvailabilityEngine,
     private readonly notificationService: NotificationService,
     private readonly activityLogService: ActivityLogService,
     private readonly eventEmitter: EventEmitter2,
@@ -110,6 +121,19 @@ export class BidConflictResolutionService {
       pickupDateTime: ctx.pickupDateTime,
       deliveryDateTime: ctx.deliveryDateTime,
       tenantId: ctx.tenantId,
+    });
+
+    const confirmedLoad = await this.loadRepository.findOne({
+      where: { id: ctx.confirmedLoadId },
+    });
+
+    await this.availabilityService.assertLogisticsFeasible({
+      truckId: ctx.truckId,
+      driverId: ctx.driverId || undefined,
+      pickupDateTime: ctx.pickupDateTime,
+      deliveryDateTime: ctx.deliveryDateTime,
+      tenantId: ctx.tenantId,
+      newLoad: confirmedLoad || undefined,
     });
 
     const conflictingAcceptedBids = await this.findConflictingAcceptedBids(ctx);
@@ -220,26 +244,32 @@ export class BidConflictResolutionService {
       relations: ['load'],
     });
 
-    const conflicting = candidateBids.filter((bid) => {
-      if (ctx.excludeBidId && bid.id === ctx.excludeBidId) return false;
+    const conflicting: Bid[] = [];
+    for (const bid of candidateBids) {
+      if (ctx.excludeBidId && bid.id === ctx.excludeBidId) continue;
       const bidTruckId = bid.bidDetails?.truckSpecifications?.truckId;
-      if (bidTruckId && bidTruckId !== ctx.truckId) return false;
-      const window = this.resolveScheduleWindow(bid.load, bid);
-      return this.schedulesOverlap(
-        ctx.pickupDateTime,
-        ctx.deliveryDateTime,
-        window.pickupDateTime,
-        window.deliveryDateTime,
-      );
-    });
+      if (bidTruckId && bidTruckId !== ctx.truckId) continue;
+      if (await this.bidConflictsWithCommitment(ctx, bid.load, bid)) {
+        conflicting.push(bid);
+      }
+    }
 
     const cancelled: Bid[] = [];
+    const truck = await this.truckRepository.findOne({ where: { id: ctx.truckId } });
 
     for (const bid of conflicting) {
-      const reason =
-        ctx.trigger === CommitmentTrigger.SMART_MATCH_CONFIRMED
+      const bidWindow = this.resolveScheduleWindow(bid.load, bid);
+      const auditDetails = await this.buildCancellationAudit(
+        ctx,
+        bid.load,
+        bidWindow,
+        truck?.status,
+      );
+
+      const reason = auditDetails.conflictReason ||
+        (ctx.trigger === CommitmentTrigger.SMART_MATCH_CONFIRMED
           ? 'Truck confirmed through Smart Matching for another shipment during the same schedule.'
-          : 'Truck assigned to another shipment during the same pickup and delivery period.';
+          : 'Truck assigned to another shipment during the same pickup and delivery period.');
 
       bid.status = BidStatus.WITHDRAWN;
       bid.bidDetails = {
@@ -251,6 +281,7 @@ export class BidConflictResolutionService {
           conflictingAssignmentId: ctx.assignmentId,
           cancelledAt: new Date().toISOString(),
           cancelledBy: ctx.actorUserId || 'SYSTEM',
+          scheduleComparison: auditDetails,
         },
       };
       await this.bidRepository.save(bid);
@@ -269,6 +300,7 @@ export class BidConflictResolutionService {
           tripId: ctx.tripId,
           assignmentId: ctx.assignmentId,
           reason,
+          scheduleComparison: auditDetails,
           actor: ctx.actorUserId ? 'USER' : 'SYSTEM',
         },
       });
@@ -318,14 +350,7 @@ export class BidConflictResolutionService {
       if (!load) continue;
 
       const window = this.resolveScheduleWindow(load);
-      if (
-        !this.schedulesOverlap(
-          ctx.pickupDateTime,
-          ctx.deliveryDateTime,
-          window.pickupDateTime,
-          window.deliveryDateTime,
-        )
-      ) {
+      if (!(await this.loadConflictsWithCommitment(ctx, load, window))) {
         continue;
       }
 
@@ -400,14 +425,7 @@ export class BidConflictResolutionService {
       });
       if (!load) continue;
       const window = this.resolveScheduleWindow(load);
-      if (
-        this.schedulesOverlap(
-          ctx.pickupDateTime,
-          ctx.deliveryDateTime,
-          window.pickupDateTime,
-          window.deliveryDateTime,
-        )
-      ) {
+      if (await this.loadConflictsWithCommitment(ctx, load, window)) {
         conflicting.push(match);
       }
     }
@@ -426,18 +444,99 @@ export class BidConflictResolutionService {
       relations: ['load'],
     });
 
-    return acceptedBids.filter((bid) => {
-      if (ctx.excludeBidId && bid.id === ctx.excludeBidId) return false;
+    const conflicting: Bid[] = [];
+    for (const bid of acceptedBids) {
+      if (ctx.excludeBidId && bid.id === ctx.excludeBidId) continue;
       const bidTruckId = bid.bidDetails?.truckSpecifications?.truckId;
-      if (bidTruckId && bidTruckId !== ctx.truckId) return false;
-      const window = this.resolveScheduleWindow(bid.load, bid);
-      return this.schedulesOverlap(
+      if (bidTruckId && bidTruckId !== ctx.truckId) continue;
+      if (await this.bidConflictsWithCommitment(ctx, bid.load, bid)) {
+        conflicting.push(bid);
+      }
+    }
+    return conflicting;
+  }
+
+  /**
+   * Check whether a pending/accepted bid genuinely conflicts with a new commitment,
+   * considering actual trip completion times for existing truck assignments.
+   */
+  private async bidConflictsWithCommitment(
+    ctx: CommitmentContext,
+    load: Load,
+    bid?: Bid | null,
+  ): Promise<boolean> {
+    const bidWindow = this.resolveScheduleWindow(load, bid);
+    return this.loadConflictsWithCommitment(ctx, load, bidWindow);
+  }
+
+  private async loadConflictsWithCommitment(
+    ctx: CommitmentContext,
+    load: Load,
+    targetWindow: ScheduleWindow,
+  ): Promise<boolean> {
+    // Check if an existing trip for this load is already completed — no conflict
+    const existingTrip = await this.tripRepository.findOne({
+      where: { loadId: load.id, truckId: ctx.truckId },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (existingTrip) {
+      const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(
+        existingTrip,
+        load,
+      );
+      if (!effectiveWindow.isBlocking) {
+        return false;
+      }
+      return this.availabilityEngine.schedulesOverlap(
+        effectiveWindow.pickupDateTime,
+        effectiveWindow.deliveryDateTime,
         ctx.pickupDateTime,
         ctx.deliveryDateTime,
-        window.pickupDateTime,
-        window.deliveryDateTime,
       );
+    }
+
+    return this.schedulesOverlap(
+      ctx.pickupDateTime,
+      ctx.deliveryDateTime,
+      targetWindow.pickupDateTime,
+      targetWindow.deliveryDateTime,
+    );
+  }
+
+  private async buildCancellationAudit(
+    ctx: CommitmentContext,
+    cancelledLoad: Load,
+    cancelledWindow: ScheduleWindow,
+    truckStatus?: string,
+  ): Promise<ScheduleComparisonAudit> {
+    const confirmedTrip = ctx.tripId
+      ? await this.tripRepository.findOne({ where: { id: ctx.tripId } })
+      : null;
+    const confirmedLoad = await this.loadRepository.findOne({
+      where: { id: ctx.confirmedLoadId },
     });
+
+    const confirmedEffective = this.availabilityEngine.resolveEffectiveWindow(
+      confirmedTrip,
+      confirmedLoad,
+    );
+
+    const reason =
+      `Bid cancelled because truck was assigned to ${ctx.trigger === CommitmentTrigger.SMART_MATCH_CONFIRMED ? 'Smart Match' : 'another shipment'}. ` +
+      `Confirmed schedule: ${confirmedEffective.plannedPickupDateTime.toISOString()} → ${confirmedEffective.plannedDeliveryDateTime.toISOString()}. ` +
+      `Cancelled bid schedule: ${cancelledWindow.pickupDateTime.toISOString()} → ${cancelledWindow.deliveryDateTime.toISOString()}.` +
+      (confirmedEffective.actualDeliveryDateTime
+        ? ` Actual completion: ${confirmedEffective.actualDeliveryDateTime.toISOString()}.`
+        : ` Trip completion estimated: ${confirmedEffective.plannedDeliveryDateTime.toISOString()}.`);
+
+    return this.availabilityEngine.buildConflictAuditDetails(
+      confirmedEffective,
+      cancelledWindow.pickupDateTime,
+      cancelledWindow.deliveryDateTime,
+      truckStatus,
+      reason,
+    );
   }
 
   private async notifyTruckOwnerOfCancelledBids(

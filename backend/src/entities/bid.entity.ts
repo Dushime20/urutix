@@ -107,6 +107,19 @@ export class Bid {
       conflictingAssignmentId?: string;
       cancelledAt: string;
       cancelledBy: string;
+      scheduleComparison?: {
+        conflictReason: string;
+        plannedPickup: string;
+        plannedDelivery: string;
+        actualPickup?: string;
+        actualDelivery?: string;
+        tripStatus?: string;
+        loadStatus?: string;
+        truckStatus?: string;
+        operationalPhase: string;
+        timeSource: string;
+        decisionTimestamp: string;
+      };
     };
     rejectionReason?: string;
   };

@@ -85,6 +85,7 @@ import { MatchingService } from '../matching/matching.service';
 import { MatchRequestDto } from '../matching/dto/match-request.dto';
 import { BrokersService } from '../brokers/brokers.service';
 import { FileUploadService } from '../file-upload/file-upload.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export interface LoadsQueryOptions {
   page?: number;
@@ -198,6 +199,7 @@ export class LoadsService {
     @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
     @Optional() private readonly brokersService?: BrokersService, // Optional - BrokersService from BrokersModule
     @Optional() private readonly fileUploadService?: FileUploadService,
+    @Optional() private readonly eventEmitter?: EventEmitter2,
   ) { }
 
   /**
@@ -1623,7 +1625,7 @@ export class LoadsService {
       // Find the trip associated with this load
       const trip = await this.tripRepository.findOne({
         where: { loadId, tenantId },
-        relations: ['truck'],
+        relations: ['truck', 'load'],
       });
 
       if (!trip) {
@@ -1675,6 +1677,20 @@ export class LoadsService {
         description: 'Trip completed and truck made available',
         before: { tripStatus: trip.status, truckStatus: trip.truck?.status },
         after: { tripStatus: TripStatus.COMPLETED, truckStatus: VehicleStatus.AVAILABLE },
+      });
+
+      // Emit events so availability engine releases reservation and recalculates free time
+      this.eventEmitter?.emit('trip.completed', {
+        tripId: trip.id,
+        tenantId,
+        cargoOwnerId: trip.load?.cargoOwnerId,
+        truckOwnerId: trip.truck?.ownerId,
+        completedAt: trip.actualEndTime || new Date(),
+      });
+      this.eventEmitter?.emit('load.delivered', {
+        loadId,
+        tripId: trip.id,
+        tenantId,
       });
     } catch (error) {
       this.logger.error(

@@ -10,6 +10,8 @@ import { LoadMatch } from '../../entities/load-match.entity';
 import { AvailabilityService } from './availability.service';
 import { AvailabilityController } from './availability.controller';
 import { BidConflictResolutionService } from './services/bid-conflict-resolution.service';
+import { TruckAvailabilityEngine } from './services/truck-availability.engine';
+import { AvailabilityReconciliationListener } from './listeners/availability-reconciliation.listener';
 import { NotificationModule } from '../notifications/notification.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
@@ -27,8 +29,13 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     NotificationModule,
     EnhancedAuthModule,
   ],
-  providers: [AvailabilityService, BidConflictResolutionService],
+  providers: [
+    TruckAvailabilityEngine,
+    AvailabilityService,
+    BidConflictResolutionService,
+    AvailabilityReconciliationListener,
+  ],
   controllers: [AvailabilityController],
-  exports: [AvailabilityService, BidConflictResolutionService],
+  exports: [AvailabilityService, BidConflictResolutionService, TruckAvailabilityEngine],
 })
 export class AvailabilityModule {}

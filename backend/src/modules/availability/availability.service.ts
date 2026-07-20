@@ -13,6 +13,12 @@ import {
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
+import { Load } from '../../entities/load.entity';
+import {
+  TruckAvailabilityEngine,
+  EffectiveAvailabilityWindow,
+  OperationalTripPhase,
+} from './services/truck-availability.engine';
 
 export interface ConflictInfo {
   type: 'TRUCK' | 'DRIVER';
@@ -21,6 +27,19 @@ export interface ConflictInfo {
   conflictingCargoId: string;
   existingPickup: Date;
   existingDelivery: Date;
+  /** Effective window details for audit / UI */
+  effectiveWindow?: EffectiveAvailabilityWindow;
+  auditReason?: string;
+}
+
+export interface LogisticsCheckParams {
+  truckId: string;
+  driverId?: string;
+  pickupDateTime: Date;
+  deliveryDateTime: Date;
+  tenantId: string;
+  /** Load being assigned — used for pickup location feasibility check */
+  newLoad?: Load;
 }
 
 export interface AvailabilityCheckParams {
@@ -79,6 +98,9 @@ export class AvailabilityService {
     private readonly truckRepo: Repository<Truck>,
     @InjectRepository(Driver)
     private readonly driverRepo: Repository<Driver>,
+    @InjectRepository(Load)
+    private readonly loadRepo: Repository<Load>,
+    private readonly availabilityEngine: TruckAvailabilityEngine,
   ) {}
 
   // ─── Core Overlap Query ─────────────────────────────────────────────────────
@@ -148,6 +170,7 @@ export class AvailabilityService {
         conflictingCargoId: truck.status,
         existingPickup: now,
         existingDelivery: now,
+        auditReason: `Truck is ${truck.status} and unavailable for assignment.`,
       };
     }
 
@@ -155,36 +178,37 @@ export class AvailabilityService {
       return null;
     }
 
-    // Resolve when the truck becomes free for the next cargo
-    let freeFrom = truck.estimatedAvailableTime
-      ? new Date(truck.estimatedAvailableTime)
-      : null;
+    let currentTrip: Trip | null = null;
+    let currentLoad: Load | null = null;
 
-    if (!freeFrom && truck.currentTripId) {
-      const currentTrip = await this.tripRepo.findOne({
-        where: { id: truck.currentTripId },
-      });
-      if (currentTrip?.plannedEndTime || currentTrip?.estimatedEndTime) {
-        freeFrom = new Date(
-          currentTrip.plannedEndTime || currentTrip.estimatedEndTime,
-        );
+    if (truck.currentTripId) {
+      currentTrip = await this.tripRepo.findOne({ where: { id: truck.currentTripId } });
+      if (currentTrip?.loadId) {
+        currentLoad = await this.loadRepo.findOne({ where: { id: currentTrip.loadId } });
       }
     }
 
-    // Unknown end time while in transit → treat as busy for this pickup
-    if (!freeFrom) {
-      const now = new Date();
-      return {
-        type: 'TRUCK',
-        resourceId: truckId,
-        conflictingTripId: truck.currentTripId || 'status-block',
-        conflictingCargoId: VehicleStatus.IN_TRANSIT,
-        existingPickup: now,
-        existingDelivery: now,
-      };
+    const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(
+      currentTrip,
+      currentLoad,
+    );
+
+    // Trip completed early — truck is free immediately at actual completion
+    if (!effectiveWindow.isBlocking) {
+      const freeFrom = this.availabilityEngine.resolveTruckFreeTime(
+        truck,
+        currentTrip,
+        currentLoad,
+      );
+      if (freeFrom && new Date(pickupDateTime).getTime() >= freeFrom.getTime()) {
+        return null;
+      }
     }
 
-    // Future cargo that starts after this trip ends → no status conflict
+    const freeFrom =
+      this.availabilityEngine.resolveTruckFreeTime(truck, currentTrip, currentLoad) ||
+      effectiveWindow.deliveryDateTime;
+
     if (new Date(pickupDateTime).getTime() >= freeFrom.getTime()) {
       return null;
     }
@@ -193,9 +217,14 @@ export class AvailabilityService {
       type: 'TRUCK',
       resourceId: truckId,
       conflictingTripId: truck.currentTripId || 'status-block',
-      conflictingCargoId: VehicleStatus.IN_TRANSIT,
-      existingPickup: new Date(),
+      conflictingCargoId: currentLoad?.id || VehicleStatus.IN_TRANSIT,
+      existingPickup: effectiveWindow.pickupDateTime,
       existingDelivery: freeFrom,
+      effectiveWindow,
+      auditReason:
+        effectiveWindow.timeSource === 'ACTUAL'
+          ? `Truck committed until actual completion at ${freeFrom.toISOString()}.`
+          : `Truck in transit — estimated free after ${freeFrom.toISOString()}.`,
     };
   }
 
@@ -205,29 +234,57 @@ export class AvailabilityService {
     deliveryDateTime: Date,
     excludeTripId?: string,
   ): Promise<ConflictInfo | null> {
-    const qb = this.reservationRepo
-      .createQueryBuilder('r')
-      .where('r.truckId = :truckId', { truckId })
-      .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-      // Overlap condition
-      .andWhere('r.pickupDateTime < :deliveryDateTime', { deliveryDateTime })
-      .andWhere('r.deliveryDateTime > :pickupDateTime', { pickupDateTime });
+    const activeReservations = await this.reservationRepo.find({
+      where: { truckId, status: ReservationStatus.ACTIVE },
+    });
 
-    if (excludeTripId) {
-      qb.andWhere('r.tripId != :excludeTripId', { excludeTripId });
+    for (const reservation of activeReservations) {
+      if (excludeTripId && reservation.tripId === excludeTripId) continue;
+
+      const [trip, load] = await Promise.all([
+        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
+        this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
+      ]);
+
+      // Auto-release stale reservations for completed/cancelled trips
+      if (this.availabilityEngine.shouldReleaseStaleReservation(trip, load)) {
+        await this.releaseReservation(
+          reservation.tripId,
+          'Auto-released: trip completed or cancelled — truck now available',
+        );
+        continue;
+      }
+
+      const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(
+        trip,
+        load,
+        reservation,
+      );
+
+      if (!effectiveWindow.isBlocking) continue;
+
+      const overlaps = this.availabilityEngine.schedulesOverlap(
+        effectiveWindow.pickupDateTime,
+        effectiveWindow.deliveryDateTime,
+        pickupDateTime,
+        deliveryDateTime,
+      );
+
+      if (overlaps) {
+        return {
+          type: 'TRUCK',
+          resourceId: truckId,
+          conflictingTripId: reservation.tripId,
+          conflictingCargoId: reservation.cargoId,
+          existingPickup: effectiveWindow.pickupDateTime,
+          existingDelivery: effectiveWindow.deliveryDateTime,
+          effectiveWindow,
+          auditReason: this.buildAuditMessage(effectiveWindow, trip, load),
+        };
+      }
     }
 
-    const conflict = await qb.getOne();
-    if (!conflict) return null;
-
-    return {
-      type: 'TRUCK',
-      resourceId: truckId,
-      conflictingTripId: conflict.tripId,
-      conflictingCargoId: conflict.cargoId,
-      existingPickup: conflict.pickupDateTime,
-      existingDelivery: conflict.deliveryDateTime,
-    };
+    return null;
   }
 
   private async findDriverConflict(
@@ -236,28 +293,80 @@ export class AvailabilityService {
     deliveryDateTime: Date,
     excludeTripId?: string,
   ): Promise<ConflictInfo | null> {
-    const qb = this.reservationRepo
-      .createQueryBuilder('r')
-      .where('r.driverId = :driverId', { driverId })
-      .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-      .andWhere('r.pickupDateTime < :deliveryDateTime', { deliveryDateTime })
-      .andWhere('r.deliveryDateTime > :pickupDateTime', { pickupDateTime });
+    const activeReservations = await this.reservationRepo.find({
+      where: { driverId, status: ReservationStatus.ACTIVE },
+    });
 
-    if (excludeTripId) {
-      qb.andWhere('r.tripId != :excludeTripId', { excludeTripId });
+    for (const reservation of activeReservations) {
+      if (excludeTripId && reservation.tripId === excludeTripId) continue;
+
+      const [trip, load] = await Promise.all([
+        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
+        this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
+      ]);
+
+      if (this.availabilityEngine.shouldReleaseStaleReservation(trip, load)) {
+        await this.releaseReservation(
+          reservation.tripId,
+          'Auto-released: trip completed or cancelled — driver now available',
+        );
+        continue;
+      }
+
+      const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(
+        trip,
+        load,
+        reservation,
+      );
+
+      if (!effectiveWindow.isBlocking) continue;
+
+      const overlaps = this.availabilityEngine.schedulesOverlap(
+        effectiveWindow.pickupDateTime,
+        effectiveWindow.deliveryDateTime,
+        pickupDateTime,
+        deliveryDateTime,
+      );
+
+      if (overlaps) {
+        return {
+          type: 'DRIVER',
+          resourceId: driverId,
+          conflictingTripId: reservation.tripId,
+          conflictingCargoId: reservation.cargoId,
+          existingPickup: effectiveWindow.pickupDateTime,
+          existingDelivery: effectiveWindow.deliveryDateTime,
+          effectiveWindow,
+          auditReason: this.buildAuditMessage(effectiveWindow, trip, load),
+        };
+      }
     }
 
-    const conflict = await qb.getOne();
-    if (!conflict) return null;
+    return null;
+  }
 
-    return {
-      type: 'DRIVER',
-      resourceId: driverId,
-      conflictingTripId: conflict.tripId,
-      conflictingCargoId: conflict.cargoId,
-      existingPickup: conflict.pickupDateTime,
-      existingDelivery: conflict.deliveryDateTime,
-    };
+  private buildAuditMessage(
+    window: EffectiveAvailabilityWindow,
+    trip?: Trip | null,
+    load?: Load | null,
+  ): string {
+    const plannedEnd = window.plannedDeliveryDateTime.toISOString();
+    const actualEnd = window.actualDeliveryDateTime?.toISOString();
+    if (window.operationalPhase === OperationalTripPhase.COMPLETED && actualEnd) {
+      return (
+        `Previous trip completed at ${actualEnd} (planned delivery was ${plannedEnd}). ` +
+        `Truck is available for assignments after actual completion.`
+      );
+    }
+    if (trip?.status === TripStatus.IN_PROGRESS || load?.status === 'IN_TRANSIT') {
+      return (
+        `Truck assigned to active trip. ` +
+        `Trip completion estimated: ${plannedEnd}` +
+        (actualEnd ? `; actual completion: ${actualEnd}` : '') +
+        `.`
+      );
+    }
+    return `Truck reserved for planned schedule ${window.plannedPickupDateTime.toISOString()} → ${plannedEnd}.`;
   }
 
   // ─── Assertion helper (throws if conflict found) ─────────────────────────────
@@ -298,17 +407,105 @@ export class AvailabilityService {
     const delivery = c.existingDelivery.toISOString().slice(0, 10);
 
     if (c.type === 'TRUCK') {
+      const detail = c.auditReason ? ` ${c.auditReason}` : '';
       throw new ConflictException(
         `This truck is already scheduled for another shipment during the selected transportation period. ` +
-        `Conflict: Cargo ${c.conflictingCargoId} — ${pickup} → ${delivery}. ` +
+        `Conflict: Cargo ${c.conflictingCargoId} — ${pickup} → ${delivery}.${detail} ` +
         `Choose another truck or reschedule.`,
       );
     } else {
+      const detail = c.auditReason ? ` ${c.auditReason}` : '';
       throw new ConflictException(
         `This driver is already assigned to another shipment during the selected transportation period. ` +
-        `Conflict: Cargo ${c.conflictingCargoId} — ${pickup} → ${delivery}. ` +
+        `Conflict: Cargo ${c.conflictingCargoId} — ${pickup} → ${delivery}.${detail} ` +
         `Choose another driver or reschedule.`,
       );
+    }
+  }
+
+  /**
+   * Validates driver rest/hours and physical travel feasibility between shipments.
+   */
+  async assertLogisticsFeasible(params: LogisticsCheckParams): Promise<void> {
+    const { truckId, driverId, pickupDateTime, newLoad } = params;
+
+    if (driverId) {
+      const driver = await this.driverRepo.findOne({ where: { id: driverId } });
+      const driverCheck = this.availabilityEngine.validateDriverAvailability(
+        driver,
+        pickupDateTime,
+      );
+      if (!driverCheck.available) {
+        throw new ConflictException(driverCheck.reason);
+      }
+    }
+
+    const truck = await this.truckRepo.findOne({ where: { id: truckId } });
+    if (!truck?.currentTripId || !newLoad) return;
+
+    const currentTrip = await this.tripRepo.findOne({ where: { id: truck.currentTripId } });
+    if (!currentTrip) return;
+
+    const previousLoad = await this.loadRepo.findOne({ where: { id: currentTrip.loadId } });
+    const previousWindow = this.availabilityEngine.resolveEffectiveWindow(
+      currentTrip,
+      previousLoad,
+    );
+
+    const availableFrom = previousWindow.isBlocking
+      ? previousWindow.deliveryDateTime
+      : previousWindow.actualDeliveryDateTime ||
+        previousWindow.deliveryDateTime ||
+        new Date();
+
+    const feasibility = this.availabilityEngine.validateLocationFeasibility(
+      this.availabilityEngine.extractDeliveryCoords(previousLoad),
+      this.availabilityEngine.extractPickupCoords(newLoad),
+      availableFrom,
+      pickupDateTime,
+    );
+
+    if (!feasibility.feasible) {
+      throw new ConflictException(feasibility.reason);
+    }
+  }
+
+  /**
+   * Reconcile reservation window and truck free-time when trip/load status changes.
+   * Called on trip start, delivery, completion, cancellation, and schedule changes.
+   */
+  async reconcileReservationForTrip(tripId: string, reason: string): Promise<void> {
+    const trip = await this.tripRepo.findOne({ where: { id: tripId } });
+    if (!trip) return;
+
+    const load = trip.loadId
+      ? await this.loadRepo.findOne({ where: { id: trip.loadId } })
+      : null;
+
+    if (this.availabilityEngine.shouldReleaseStaleReservation(trip, load)) {
+      await this.releaseReservation(tripId, reason);
+      return;
+    }
+
+    const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(trip, load);
+    const reservation = await this.reservationRepo.findOne({
+      where: { tripId, status: ReservationStatus.ACTIVE },
+    });
+
+    if (reservation && effectiveWindow.isBlocking) {
+      reservation.pickupDateTime = effectiveWindow.pickupDateTime;
+      reservation.deliveryDateTime = effectiveWindow.deliveryDateTime;
+      await this.reservationRepo.save(reservation);
+      this.logger.log(
+        `Updated reservation for trip ${tripId}: ${reason} — ` +
+        `effective window ${effectiveWindow.pickupDateTime.toISOString()} → ${effectiveWindow.deliveryDateTime.toISOString()}`,
+      );
+    }
+
+    if (trip.truckId && effectiveWindow.isBlocking) {
+      await this.truckRepo.update(trip.truckId, {
+        estimatedAvailableTime: effectiveWindow.deliveryDateTime,
+      });
     }
   }
 
@@ -389,17 +586,9 @@ export class AvailabilityService {
   async getAvailableTrucks(query: TruckAvailabilityQuery): Promise<Truck[]> {
     const { pickupDateTime, deliveryDateTime, tenantId, capacityWeight, truckType, ownerId } = query;
 
-    // 1. Find all truck IDs that have a conflicting reservation
-    const busyReservations = await this.reservationRepo
-      .createQueryBuilder('r')
-      .select('r.truckId', 'truckId')
-      .where('r.tenantId = :tenantId', { tenantId })
-      .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-      .andWhere('r.pickupDateTime < :deliveryDateTime', { deliveryDateTime })
-      .andWhere('r.deliveryDateTime > :pickupDateTime', { pickupDateTime })
-      .getRawMany<{ truckId: string }>();
-
-    const busyTruckIds = busyReservations.map(r => r.truckId);
+    const busyTruckIds = Array.from(
+      await this.getBusyTruckIds(tenantId, pickupDateTime, deliveryDateTime),
+    );
 
     // 2. Query trucks excluding busy ones and unavailable statuses
     const qb = this.truckRepo
@@ -505,16 +694,43 @@ export class AvailabilityService {
     pickupDateTime: Date,
     deliveryDateTime: Date,
   ): Promise<Set<string>> {
-    const rows = await this.reservationRepo
-      .createQueryBuilder('r')
-      .select('r.truckId', 'truckId')
-      .where('r.tenantId = :tenantId', { tenantId })
-      .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-      .andWhere('r.pickupDateTime < :deliveryDateTime', { deliveryDateTime })
-      .andWhere('r.deliveryDateTime > :pickupDateTime', { pickupDateTime })
-      .getRawMany<{ truckId: string }>();
+    const activeReservations = await this.reservationRepo.find({
+      where: { tenantId, status: ReservationStatus.ACTIVE },
+    });
 
-    return new Set(rows.map(r => r.truckId));
+    const busyIds = new Set<string>();
+
+    for (const reservation of activeReservations) {
+      const [trip, load] = await Promise.all([
+        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
+        this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
+      ]);
+
+      if (this.availabilityEngine.shouldReleaseStaleReservation(trip, load)) {
+        continue;
+      }
+
+      const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(
+        trip,
+        load,
+        reservation,
+      );
+
+      if (!effectiveWindow.isBlocking) continue;
+
+      if (
+        this.availabilityEngine.schedulesOverlap(
+          effectiveWindow.pickupDateTime,
+          effectiveWindow.deliveryDateTime,
+          pickupDateTime,
+          deliveryDateTime,
+        )
+      ) {
+        busyIds.add(reservation.truckId);
+      }
+    }
+
+    return busyIds;
   }
 
   /**
@@ -525,17 +741,45 @@ export class AvailabilityService {
     pickupDateTime: Date,
     deliveryDateTime: Date,
   ): Promise<Set<string>> {
-    const rows = await this.reservationRepo
-      .createQueryBuilder('r')
-      .select('r.driverId', 'driverId')
-      .where('r.tenantId = :tenantId', { tenantId })
-      .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-      .andWhere('r.driverId IS NOT NULL')
-      .andWhere('r.pickupDateTime < :deliveryDateTime', { deliveryDateTime })
-      .andWhere('r.deliveryDateTime > :pickupDateTime', { pickupDateTime })
-      .getRawMany<{ driverId: string }>();
+    const activeReservations = await this.reservationRepo.find({
+      where: { tenantId, status: ReservationStatus.ACTIVE },
+    });
 
-    return new Set(rows.map(r => r.driverId).filter(Boolean));
+    const busyIds = new Set<string>();
+
+    for (const reservation of activeReservations) {
+      if (!reservation.driverId) continue;
+
+      const [trip, load] = await Promise.all([
+        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
+        this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
+      ]);
+
+      if (this.availabilityEngine.shouldReleaseStaleReservation(trip, load)) {
+        continue;
+      }
+
+      const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(
+        trip,
+        load,
+        reservation,
+      );
+
+      if (!effectiveWindow.isBlocking) continue;
+
+      if (
+        this.availabilityEngine.schedulesOverlap(
+          effectiveWindow.pickupDateTime,
+          effectiveWindow.deliveryDateTime,
+          pickupDateTime,
+          deliveryDateTime,
+        )
+      ) {
+        busyIds.add(reservation.driverId);
+      }
+    }
+
+    return busyIds;
   }
 
   // ─── Resource utilization summary ───────────────────────────────────────────
