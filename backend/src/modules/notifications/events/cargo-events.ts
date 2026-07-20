@@ -101,6 +101,21 @@ export class TripCompletedEvent {
   ) {}
 }
 
+export class CargoReceiverAssignedEvent {
+  constructor(
+    public readonly cargoId: string,
+    public readonly receiverId: string,
+    public readonly cargoOwnerId: string,
+    public readonly tenantId: string,
+    public readonly assignmentDetails: {
+      cargoTitle: string;
+      origin: string;
+      destination: string;
+      cargoOwnerName: string;
+    },
+  ) {}
+}
+
 export class DriverBreakStartedEvent {
   constructor(
     public readonly driverId: string,

@@ -11,6 +11,7 @@ import { OcrModule } from '../ocr/ocr.module';
 import { NotificationModule } from '../notifications/notification.module';
 import { LoadsModule } from '../loads/loads.module';
 import { TripsModule } from '../trips/trips.module';
+import { PreTripInspectionModule } from './pre-trip-inspection.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { TripsModule } from '../trips/trips.module';
     NotificationModule,
     LoadsModule,
     TripsModule,
+    PreTripInspectionModule,
   ],
   controllers: [DriverController],
   providers: [DriverService],

@@ -27,6 +27,7 @@ import { CreditService } from '../../services/credit.service';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { TrackingModule } from '../tracking/tracking.module';
 import { AvailabilityModule } from '../availability/availability.module';
+import { PreTripInspectionModule } from '../drivers/pre-trip-inspection.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AvailabilityModule } from '../availability/availability.module';
     EnhancedAuthModule,
     TrackingModule,
     AvailabilityModule,
+    PreTripInspectionModule,
   ],
   providers: [TripsService, CreditService, EpodService, TripCompletionService],
   controllers: [TripsController, EpodController],

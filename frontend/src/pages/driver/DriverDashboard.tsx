@@ -18,6 +18,7 @@ import {
   DollarSign,
   FileText,
   Package,
+  ClipboardCheck,
 } from 'lucide-react';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,6 +40,7 @@ import { SafetyRecords } from '../../components/DriverDashboard/SafetyRecords';
 import { UpcomingTrips } from '../../components/DriverDashboard/UpcomingTrips';
 import { QuickActions } from '../../components/DriverDashboard/QuickActions';
 import { CargoManagement } from '../../components/DriverDashboard/CargoManagement';
+import { PreTripInspectionHub } from '../../components/DriverDashboard/PreTripInspectionHub';
 import { DriverProfile } from '../../components/DriverDashboard/DriverProfile';
 import { DriverSettings } from '../../components/DriverDashboard/DriverSettings';
 import { DriverAnnouncements } from '../../components/DriverDashboard/DriverAnnouncements';
@@ -94,6 +96,7 @@ const DriverDashboard: React.FC = () => {
     const path = location.pathname;
     if (path.endsWith('/missions') || path.endsWith('/trips')) setActiveTab('missions');
     else if (path.endsWith('/cargo')) setActiveTab('cargo');
+    else if (path.endsWith('/inspection')) setActiveTab('inspection');
     else if (path.endsWith('/finance') || path.endsWith('/earnings')) setActiveTab('finance');
     else if (path.endsWith('/safety')) setActiveTab('safety');
     else if (path.endsWith('/documents')) setActiveTab('documents');
@@ -213,7 +216,8 @@ const DriverDashboard: React.FC = () => {
       icon: Route,
       subItems: [
         { id: 'trips', label: 'My Assignments', icon: Route },
-        { id: 'cargo', label: 'Cargo & Inspection', icon: Package },
+        { id: 'cargo', label: 'Cargo', icon: Package },
+        { id: 'inspection', label: 'Inspection', icon: ClipboardCheck },
         { id: 'leaderboard', label: 'Elite League', icon: Trophy },
         { id: 'announcements', label: 'Announcements', icon: Bell },
       ]
@@ -513,6 +517,7 @@ const DriverDashboard: React.FC = () => {
         )}
 
         {activeTab === 'cargo' && <CargoManagement driverId={driverId} />}
+        {activeTab === 'inspection' && <PreTripInspectionHub driverId={driverId} />}
         {(activeTab === 'missions' || activeTab === 'trips') && <TripsManagement driverId={driverId} />}
         {(activeTab === 'finance' || activeTab === 'earnings') && <EarningsOverview driverId={driverId} />}
         {activeTab === 'wallet' && <WalletAdvances driverId={driverId} />}

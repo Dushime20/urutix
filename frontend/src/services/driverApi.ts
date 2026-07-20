@@ -918,6 +918,38 @@ class DriverApiService {
     const response = await api.get(`/maintenance/${id}`);
     return response.data;
   }
+
+  async getPreTripInspectionLoads(driverId: string): Promise<any[]> {
+    const response = await api.get(`/drivers/${driverId}/pre-trip-inspections`);
+    return response.data;
+  }
+
+  async getPreTripInspectionQueue(driverId: string): Promise<any[]> {
+    const response = await api.get(`/drivers/${driverId}/pre-trip-inspections/queue`);
+    return response.data;
+  }
+
+  async getPreTripInspectionForm(driverId: string, loadId: string): Promise<any> {
+    const response = await api.get(`/drivers/${driverId}/loads/${loadId}/pre-trip-inspection`);
+    return response.data;
+  }
+
+  async submitPreTripInspection(
+    driverId: string,
+    loadId: string,
+    payload: Record<string, any>,
+  ): Promise<any> {
+    const response = await api.post(
+      `/drivers/${driverId}/loads/${loadId}/pre-trip-inspection`,
+      payload,
+    );
+    return response.data;
+  }
+
+  async getPreTripInspectionHistory(driverId: string, loadId: string): Promise<any[]> {
+    const response = await api.get(`/drivers/${driverId}/loads/${loadId}/pre-trip-inspection/history`);
+    return response.data;
+  }
 }
 
 export const driverApi = new DriverApiService();

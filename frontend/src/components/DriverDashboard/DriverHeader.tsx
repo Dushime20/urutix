@@ -299,7 +299,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
               setIsMobileMenuOpen(true);
             }}
             className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-all ${
-              ['missions','trips','checklist','post_trip','cargo','leaderboard','announcements'].includes(activeTab)
+              ['missions','trips','checklist','post_trip','cargo','inspection','leaderboard','announcements'].includes(activeTab)
                 ? 'text-primary-600 dark:text-primary-400' : 'text-slate-400 dark:text-slate-500'}`}
           >
             {React.createElement(tabs.find(t => t.id === 'missions')?.icon || (() => null), { size: 20 })}

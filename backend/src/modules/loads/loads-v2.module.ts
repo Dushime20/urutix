@@ -13,11 +13,14 @@ import { LoadsV2Controller } from './loads-v2.controller';
 import { LoadValidationV2Service } from './services/load-validation-v2.service';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { PreTripInspectionModule } from '../drivers/pre-trip-inspection.module';
+import { MarkReadyForReInspectionDto } from '../drivers/dto/pre-trip-inspection.dto';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Load, Location, User, Truck, Driver, LoanRequest, Lender]),
     EnhancedAuthModule,
+    PreTripInspectionModule,
   ],
   controllers: [LoadsV2Controller],
   providers: [LoadsV2Service, LoadValidationV2Service],

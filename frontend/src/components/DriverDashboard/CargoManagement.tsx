@@ -21,9 +21,15 @@ import { CargoInspection } from './CargoInspection';
 import { ProofOfDelivery } from './ProofOfDelivery';
 import { CargoHealthModal } from './CargoHealthModal';
 import { driverApi } from '../../services/driverApi';
-import api from '../../services/api';
 import toast from 'react-hot-toast';
-import { getApiErrorMessage } from '../../config/errorMessages';
+import {
+  canProceedWithLoad,
+  getInspectionStatusLabel,
+  getInspectionStatusStyles,
+  getPreTripStatusFromLoad,
+  PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
+  PreTripInspectionWorkflowStatus,
+} from './preTripInspection';
 
 interface CargoItem {
   id: string;
@@ -56,7 +62,7 @@ interface CargoItem {
     phone: string;
     email: string;
   };
-  inspectionStatus?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  inspectionStatus?: PreTripInspectionWorkflowStatus;
   inspectionResult?: any;
   notes: string[];
   documents: string[];
@@ -128,7 +134,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
 
       try {
         setLoading(true);
-        const loads = await driverApi.getAssignedLoads(driverId);
+        const loads = await driverApi.getPreTripInspectionLoads(driverId);
 
         // Map Load entity to CargoItem interface
         const mappedCargos: CargoItem[] = loads.map((load: any) => {
@@ -162,7 +168,8 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
               phone: load.cargoOwner?.phone || load.contactPhone || 'N/A',
               email: load.cargoOwner?.email || load.contactEmail || 'N/A'
             },
-            inspectionStatus: load.metadata?.inspectionStatus || 'PENDING',
+            inspectionStatus: getPreTripStatusFromLoad(load),
+            inspectionResult: load.metadata?.inspectionResult,
             notes: load.specialInstructions ? [load.specialInstructions] : [],
             documents: load.requiredDocuments || [],
             pod: load.metadata?.pod || undefined,
@@ -216,35 +223,54 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
     setViewMode('details');
   };
 
-  const handleInspectionComplete = async (result: any) => {
-    if (!selectedCargo) return;
-
+  const handleInspectionComplete = async () => {
+    setViewMode('list');
+    setSelectedCargo(null);
+    // Refresh list after inspection submitted from cargo details flow
     try {
-      await api.patch(`/loads-v2/${selectedCargo.id}`, {
-        metadata: {
-          inspectionStatus: 'COMPLETED',
-          inspectionResult: result,
-          inspectionCompletedAt: new Date().toISOString(),
-        },
+      const loads = await driverApi.getPreTripInspectionLoads(driverId);
+      const mappedCargos: CargoItem[] = loads.map((load: any) => {
+        const pickupLoc = load.pickupLocation || load.locations?.find((l: any) => l.type === 'PICKUP');
+        const deliveryLoc = load.deliveryLocation || load.locations?.find((l: any) => l.type === 'DELIVERY');
+        return {
+          id: load.id,
+          name: load.title || load.cargoType || 'Cargo',
+          description: load.description || load.cargoDescription || '',
+          status: load.status === 'ASSIGNED' ? 'PENDING' : load.status,
+          priority: load.urgencyLevel || 'MEDIUM',
+          category: load.cargoType || 'General',
+          weight: load.weight || load.cargoWeight || 0,
+          dimensions: {
+            length: load.length || load.dimensions?.length || 0,
+            width: load.width || load.dimensions?.width || 0,
+            height: load.height || load.dimensions?.height || 0,
+          },
+          pickupLocation: formatLocation(pickupLoc),
+          deliveryLocation: formatLocation(deliveryLoc),
+          pickupTime: load.pickupDate || load.pickupTime || '',
+          deliveryTime: load.deliveryDate || load.deliveryTime || '',
+          value: load.value || load.cargoValue || 0,
+          fragility: load.fragility || 'MEDIUM',
+          temperature: load.temperatureRequirements || { min: null, max: null, unit: 'C' },
+          hazardous: load.hazardous || false,
+          shipper: {
+            name: load.cargoOwner?.companyName || `${load.cargoOwner?.firstName || ''} ${load.cargoOwner?.lastName || ''}`.trim() || 'N/A',
+            contact: `${load.cargoOwner?.firstName || ''} ${load.cargoOwner?.lastName || ''}`.trim() || 'N/A',
+            phone: load.cargoOwner?.phone || load.contactPhone || 'N/A',
+            email: load.cargoOwner?.email || load.contactEmail || 'N/A',
+          },
+          inspectionStatus: getPreTripStatusFromLoad(load),
+          inspectionResult: load.metadata?.inspectionResult,
+          notes: load.specialInstructions ? [load.specialInstructions] : [],
+          documents: load.requiredDocuments || [],
+          pod: load.metadata?.pod || undefined,
+          createdAt: load.createdAt || new Date().toISOString(),
+          updatedAt: load.updatedAt || new Date().toISOString(),
+        };
       });
-
-      setCargos(prev => prev.map(cargo =>
-        cargo.id === selectedCargo.id
-          ? {
-            ...cargo,
-            inspectionStatus: 'COMPLETED',
-            inspectionResult: result,
-            status: result.status === 'PASSED' ? 'APPROVED' : 'REJECTED',
-            updatedAt: new Date().toISOString()
-          }
-          : cargo
-      ));
-      toast.success('Inspection completed and saved!');
-      setViewMode('list');
-      setSelectedCargo(null);
-    } catch (error: any) {
-      console.error('Error saving inspection:', error);
-      toast.error(getApiErrorMessage(error));
+      setCargos(mappedCargos);
+    } catch {
+      // list refresh is best-effort
     }
   };
 
@@ -282,9 +308,9 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
     const target = cargoToLoad || selectedCargo;
     if (!target || !driverId) return;
 
-    // Enforce inspection before loading
-    if (target.inspectionStatus !== 'COMPLETED') {
-      toast.error('Mandatory inspection must be completed before loading cargo.');
+    const inspectionStatus = target.inspectionStatus || 'PENDING';
+    if (!canProceedWithLoad(inspectionStatus)) {
+      toast.error(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE);
       return;
     }
 
@@ -340,12 +366,13 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       return;
     }
 
-    // Verify all selected cargos are inspected
-    const selectedCargosData = cargos.filter(c => checkedCargos.has(c.id));
-    const pendingInspections = selectedCargosData.filter(c => c.inspectionStatus !== 'COMPLETED');
+    const selectedCargosData = cargos.filter((c) => checkedCargos.has(c.id));
+    const blocked = selectedCargosData.filter(
+      (c) => !canProceedWithLoad(c.inspectionStatus || 'PENDING'),
+    );
 
-    if (pendingInspections.length > 0) {
-      toast.error(`Mandatory inspection required for ${pendingInspections.length} cargo item(s) before starting journey.`);
+    if (blocked.length > 0) {
+      toast.error(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE);
       return;
     }
 
@@ -414,6 +441,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
     return (
       <CargoInspection
         cargoId={selectedCargo.id}
+        driverId={driverId}
         onInspectionComplete={handleInspectionComplete}
         onCancel={() => setViewMode('list')}
       />
@@ -584,15 +612,16 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                     </div>
                     {cargo.description && <p className="text-xs text-slate-500 line-clamp-2">{cargo.description}</p>}
                     <div className="mt-1.5">
-                      {cargo.inspectionStatus === 'COMPLETED' ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border border-emerald-100">
-                          <CheckCircle className="w-3 h-3" /> Inspected
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border border-amber-100 animate-pulse">
-                          <AlertTriangle className="w-3 h-3" /> Inspection Required
-                        </span>
-                      )}
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border ${getInspectionStatusStyles(cargo.inspectionStatus || 'PENDING')}`}
+                      >
+                        {cargo.inspectionStatus === 'APPROVED' ? (
+                          <CheckCircle className="w-3 h-3" />
+                        ) : (
+                          <AlertTriangle className="w-3 h-3" />
+                        )}
+                        {getInspectionStatusLabel(cargo.inspectionStatus || 'PENDING')}
+                      </span>
                     </div>
                   </div>
 
@@ -653,10 +682,15 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
 
                   {cargo.status === 'PENDING' && (<>
                     <button onClick={() => handleInspectCargo(cargo)}
-                      className={`flex-1 min-w-[90px] px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border ${cargo.inspectionStatus === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100 animate-pulse'}`}>
-                      <Search className="w-3 h-3" />{cargo.inspectionStatus === 'COMPLETED' ? 'Re-inspect' : 'Inspect'}
+                      className={`flex-1 min-w-[90px] px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border ${
+                        canProceedWithLoad(cargo.inspectionStatus || 'PENDING')
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'
+                          : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
+                      }`}>
+                      <Search className="w-3 h-3" />
+                      {cargo.inspectionStatus === 'READY_FOR_RE_INSPECTION' ? 'Re-Inspect' : 'Inspect'}
                     </button>
-                    {cargo.inspectionStatus === 'COMPLETED' && (
+                    {canProceedWithLoad(cargo.inspectionStatus || 'PENDING') && (
                       <button onClick={() => { setSelectedCargo(cargo); handleAcceptCargo(cargo); }}
                         className="flex-1 min-w-[100px] px-3 py-2.5 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-900 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20">
                         <Truck className="w-3 h-3" /> Load & Confirm

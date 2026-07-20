@@ -16,6 +16,21 @@ export enum InspectionStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
   DISPUTED = 'DISPUTED',
+  FAILED = 'FAILED',
+  AWAITING_RESOLUTION = 'AWAITING_RESOLUTION',
+  READY_FOR_RE_INSPECTION = 'READY_FOR_RE_INSPECTION',
+  APPROVED = 'APPROVED',
+}
+
+export enum CargoInspectionType {
+  PRE_TRIP = 'PRE_TRIP',
+  DELIVERY = 'DELIVERY',
+}
+
+export enum InspectionDecision {
+  PASSED = 'PASSED',
+  FAILED = 'FAILED',
+  CONDITIONAL = 'CONDITIONAL',
 }
 
 export interface InspectionChecklistItem {
@@ -30,6 +45,8 @@ export interface InspectionChecklistItem {
 
 @Entity('cargo_inspections')
 @Index(['loadId', 'receiverId'])
+@Index(['loadId', 'driverId'])
+@Index(['loadId', 'inspectionType'])
 @Index(['status', 'createdAt'])
 export class CargoInspection {
   @PrimaryGeneratedColumn('uuid')
@@ -38,8 +55,28 @@ export class CargoInspection {
   @Column('uuid')
   loadId: string;
 
-  @Column('uuid')
-  receiverId: string;
+  @Column({
+    type: 'enum',
+    enum: CargoInspectionType,
+    default: CargoInspectionType.DELIVERY,
+  })
+  inspectionType: CargoInspectionType;
+
+  @Column('uuid', { nullable: true })
+  receiverId?: string;
+
+  @Column('uuid', { nullable: true })
+  driverId?: string;
+
+  @Column({
+    type: 'enum',
+    enum: InspectionDecision,
+    nullable: true,
+  })
+  decision?: InspectionDecision;
+
+  @Column({ default: 1 })
+  attemptNumber: number;
 
   @Column({
     type: 'enum',
@@ -87,6 +124,21 @@ export class CargoInspection {
     uploadedAt: string;
   }>;
 
+  @Column('jsonb', { nullable: true, default: [] })
+  issues?: Array<{
+    id: string;
+    type: string;
+    severity: string;
+    description: string;
+    location?: string;
+    actionRequired?: string;
+    resolved: boolean;
+    resolutionNotes?: string;
+  }>;
+
+  @Column('jsonb', { nullable: true })
+  verificationData?: Record<string, any>;
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -98,8 +150,12 @@ export class CargoInspection {
   @JoinColumn({ name: 'loadId' })
   load: Load;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: true })
   @JoinColumn({ name: 'receiverId' })
-  receiver: User;
+  receiver?: User;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'driverId' })
+  driver?: User;
 }
 

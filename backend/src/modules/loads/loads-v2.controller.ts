@@ -38,6 +38,8 @@ import {
 import { LoadResponseV2Dto } from './dto/load-response-v2.dto';
 import { User } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PreTripInspectionService } from '../drivers/pre-trip-inspection.service';
+import { MarkReadyForReInspectionDto } from '../drivers/dto/pre-trip-inspection.dto';
 
 @ApiTags('loads-v2')
 @Controller('loads-v2')
@@ -46,7 +48,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @UseInterceptors(ClassSerializerInterceptor)
 @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class LoadsV2Controller {
-  constructor(private readonly loadsV2Service: LoadsV2Service) {}
+  constructor(
+    private readonly loadsV2Service: LoadsV2Service,
+    private readonly preTripInspectionService: PreTripInspectionService,
+  ) {}
 
   // Test endpoint removed - using the existing test/health endpoint
 
@@ -605,6 +610,40 @@ export class LoadsV2Controller {
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Patch(':id/pre-trip-inspection/ready-for-reinspection')
+  @ApiOperation({
+    summary: 'Mark pre-trip inspection issues as resolved and ready for re-inspection',
+    description: 'Cargo owners and brokers use this after correcting reported issues.',
+  })
+  @ApiParam({ name: 'id', description: 'Load ID' })
+  async markReadyForReInspection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: MarkReadyForReInspectionDto,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.markReadyForReInspection(
+      id,
+      req.user.userId || req.user.id,
+      req.user.tenantId,
+      body,
+    );
+  }
+
+  @Get(':id/pre-trip-inspection/history')
+  @ApiOperation({
+    summary: 'Get pre-trip inspection history for a load',
+  })
+  @ApiParam({ name: 'id', description: 'Load ID' })
+  async getPreTripInspectionHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.getInspectionHistory(
+      id,
+      req.user.tenantId,
+    );
   }
 
   @Get('test/health')

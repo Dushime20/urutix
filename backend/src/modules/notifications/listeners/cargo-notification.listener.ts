@@ -4,6 +4,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../../entities/user.entity';
 import { NotificationService } from '../notification.service';
+import { EmailService } from '../../auth/services/email.service';
+import { SmsService } from '../services/sms.service';
+import { MessengerService } from '../../messenger/messenger.service';
+import { EventsGateway } from '../../events/events.gateway';
 import {
   CargoCreatedEvent,
   BidSubmittedEvent,
@@ -11,14 +15,18 @@ import {
   DriverAssignedEvent,
   TripStartedEvent,
   TripCompletedEvent,
+  CargoReceiverAssignedEvent,
 } from '../events/cargo-events';
 import {
+  Notification,
   NotificationType,
   NotificationPriority,
   NotificationCategory,
   NotificationChannel,
+  NotificationStatus,
   EntityType,
 } from '../../../entities/notification.entity';
+import { MessageRole } from '../../../entities/message.entity';
 
 @Injectable()
 export class CargoNotificationListener {
@@ -28,6 +36,12 @@ export class CargoNotificationListener {
     private readonly notificationService: NotificationService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
+    private readonly emailService: EmailService,
+    private readonly smsService: SmsService,
+    private readonly messengerService: MessengerService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   @OnEvent('cargo.created')
@@ -332,6 +346,135 @@ export class CargoNotificationListener {
       this.logger.log(`Successfully sent trip completed notifications`);
     } catch (error) {
       this.logger.error(`Error handling trip.completed event: ${error.message}`, error.stack);
+    }
+  }
+
+  @OnEvent('cargo.receiver.assigned')
+  async handleCargoReceiverAssigned(event: CargoReceiverAssignedEvent) {
+    this.logger.log(
+      `Handling cargo.receiver.assigned for cargo ${event.cargoId} → receiver ${event.receiverId}`,
+    );
+
+    try {
+      const receiver = await this.userRepository.findOne({
+        where: { id: event.receiverId },
+        relations: ['profile'],
+      });
+
+      if (!receiver) {
+        this.logger.warn(`Receiver ${event.receiverId} not found — skipping notification`);
+        return;
+      }
+
+      const receiverName =
+        [receiver.profile?.firstName, receiver.profile?.lastName]
+          .filter(Boolean)
+          .join(' ') || receiver.email;
+      const route = `${event.assignmentDetails.origin} → ${event.assignmentDetails.destination}`;
+      const title = 'Cargo Assigned for Delivery Inspection';
+      const message =
+        `${event.assignmentDetails.cargoOwnerName} assigned you to receive cargo ` +
+        `"${event.assignmentDetails.cargoTitle}" (${route}). ` +
+        `Please review the cargo details and complete the delivery inspection when it arrives.`;
+      const shortMessage = `New cargo assigned: ${event.assignmentDetails.cargoTitle}`;
+
+      const notification = this.notificationRepository.create({
+        recipientId: event.receiverId,
+        tenantId: event.tenantId,
+        notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+        category: NotificationCategory.CARGO,
+        priority: NotificationPriority.HIGH,
+        title,
+        message,
+        shortMessage,
+        entityType: EntityType.CARGO,
+        entityId: event.cargoId,
+        channels: [
+          NotificationChannel.IN_APP,
+          NotificationChannel.EMAIL,
+          NotificationChannel.SMS,
+        ],
+        status: NotificationStatus.SENT,
+        isRead: false,
+        requiresAction: true,
+        actionUrl: '/dashboard/receiver/cargos',
+        actionText: 'View Assigned Cargo',
+        metadata: {
+          cargoId: event.cargoId,
+          cargoOwnerId: event.cargoOwnerId,
+          cargoTitle: event.assignmentDetails.cargoTitle,
+          origin: event.assignmentDetails.origin,
+          destination: event.assignmentDetails.destination,
+          recipientEmail: receiver.email,
+          recipientPhone: receiver.phone,
+        },
+        userPreferences: {
+          emailEnabled: true,
+          smsEnabled: true,
+          pushEnabled: true,
+        },
+        analytics: {
+          openCount: 0,
+          clickCount: 0,
+        },
+      });
+
+      const saved = await this.notificationRepository.save(notification);
+      this.eventsGateway.emitNotification(event.receiverId, saved);
+
+      if (receiver.email) {
+        try {
+          await this.emailService.sendGenericEmail({
+            to: receiver.email,
+            subject: title,
+            textBody: message,
+          });
+        } catch (error) {
+          this.logger.error(
+            `Failed email notify receiver ${receiver.email}: ${error.message}`,
+          );
+        }
+      }
+
+      const phone = receiver.phone?.trim();
+      if (phone) {
+        try {
+          await this.smsService.sendSms(
+            phone,
+            `UrutiX: ${shortMessage}. Route: ${route}. Open your dashboard to review.`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Failed SMS notify receiver ${phone}: ${error.message}`,
+          );
+        }
+      }
+
+      try {
+        await this.messengerService.sendMessage(
+          event.cargoOwnerId,
+          event.receiverId,
+          message,
+          event.tenantId,
+          {
+            loadId: event.cargoId,
+            senderRole: MessageRole.CARGO_OWNER,
+          },
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed messenger notify receiver ${event.receiverId}: ${error.message}`,
+        );
+      }
+
+      this.logger.log(
+        `Successfully sent cargo assignment notifications to receiver ${receiverName} (${event.receiverId})`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error handling cargo.receiver.assigned event: ${error.message}`,
+        error.stack,
+      );
     }
   }
 

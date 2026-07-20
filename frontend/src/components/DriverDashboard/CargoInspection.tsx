@@ -72,12 +72,14 @@ interface InspectionIssue {
 
 interface CargoInspectionProps {
   cargoId: string;
+  driverId?: string;
   onInspectionComplete: (result: InspectionResult) => void;
   onCancel: () => void;
 }
 
 export const CargoInspection: React.FC<CargoInspectionProps> = ({
   cargoId,
+  driverId,
   onInspectionComplete,
   onCancel
 }) => {
@@ -112,6 +114,23 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; file?: File; id: string }>>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [documentStatus, setDocumentStatus] = useState<Record<string, 'verified' | 'missing' | null>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [verification, setVerification] = useState({
+    identityVerified: false,
+    quantityVerified: false,
+    actualQuantity: 0,
+    weightVerified: false,
+    actualWeight: 0,
+    dimensionsVerified: false,
+    actualLength: 0,
+    actualWidth: 0,
+    actualHeight: 0,
+    packagingVerified: false,
+    conditionVerified: false,
+    documentationVerified: false,
+    sealVerified: false,
+    sealNumber: '',
+  });
 
   useEffect(() => {
     const fetchCargoData = async () => {
@@ -154,6 +173,14 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         };
 
         setCargo(mappedCargo);
+        setVerification((prev) => ({
+          ...prev,
+          actualQuantity: mappedCargo.quantity,
+          actualWeight: mappedCargo.weight,
+          actualLength: mappedCargo.dimensions.length,
+          actualWidth: mappedCargo.dimensions.width,
+          actualHeight: mappedCargo.dimensions.height,
+        }));
       } catch (error: any) {
         console.error('Error fetching cargo data:', error);
         toast.error('Failed to load cargo details');
@@ -285,12 +312,95 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     }
   };
 
-  const handleInspectionComplete = () => {
-    if (inspectionResult.status && inspectionResult.notes) {
-      onInspectionComplete(inspectionResult as InspectionResult);
-    } else {
-      toast.error("Please add inspection notes before completing.");
+  const buildChecklistPayload = () => {
+    const physicalItems = [
+      'packaging', 'seals', 'labels', 'contents', 'security', 'straps', 'weightDist', 'blocking', 'currentTemp', 'currentHumidity', 'tarping', 'temperature'
+    ];
+    return physicalItems.map((itemId) => ({
+      id: itemId,
+      label: itemId.replace(/([A-Z])/g, ' $1'),
+      verified: checklistStatus[itemId] === 'passed',
+      discrepancy: checklistStatus[itemId] === 'failed',
+      notes: checklistStatus[itemId] === 'failed' ? 'Failed during inspection' : undefined,
+    }));
+  };
+
+  const submitInspection = async (decision: 'PASSED' | 'FAILED') => {
+    if (!inspectionResult.notes?.trim()) {
+      toast.error('Please add inspection notes before submitting.');
+      return;
     }
+
+    if (decision === 'FAILED' && (!inspectionResult.issues || inspectionResult.issues.length === 0)) {
+      toast.error('Please report at least one issue when failing an inspection.');
+      return;
+    }
+
+    const payload = {
+      decision,
+      notes: inspectionResult.notes,
+      checklist: buildChecklistPayload(),
+      verification: {
+        identityVerified: verification.identityVerified,
+        quantityVerified: verification.quantityVerified,
+        actualQuantity: verification.actualQuantity,
+        weightVerified: verification.weightVerified,
+        actualWeight: verification.actualWeight,
+        dimensionsVerified: verification.dimensionsVerified,
+        actualDimensions: {
+          length: verification.actualLength,
+          width: verification.actualWidth,
+          height: verification.actualHeight,
+        },
+        packagingVerified: verification.packagingVerified,
+        conditionVerified: verification.conditionVerified,
+        documentationVerified: verification.documentationVerified,
+        sealVerified: verification.sealVerified,
+        sealNumber: verification.sealNumber || undefined,
+      },
+      issues: (inspectionResult.issues || []).map((issue) => ({
+        type: issue.type,
+        severity: issue.severity,
+        description: issue.description,
+        location: issue.location,
+        actionRequired: issue.actionRequired,
+      })),
+      photos: inspectionResult.photos || [],
+    };
+
+    try {
+      setSubmitting(true);
+      if (driverId) {
+        await driverApi.submitPreTripInspection(driverId, cargoId, payload);
+        toast.success(
+          decision === 'PASSED'
+            ? 'Pre-trip inspection approved!'
+            : 'Inspection failed — shipment blocked pending resolution.',
+        );
+        onInspectionComplete({
+          ...(inspectionResult as InspectionResult),
+          status: decision === 'PASSED' ? 'PASSED' : 'FAILED',
+        });
+        return;
+      }
+
+      onInspectionComplete({
+        ...(inspectionResult as InspectionResult),
+        status: decision === 'PASSED' ? 'PASSED' : 'FAILED',
+      });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to submit inspection');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleInspectionComplete = () => {
+    submitInspection('PASSED');
+  };
+
+  const handleInspectionFail = () => {
+    submitInspection('FAILED');
   };
 
   if (loading) {
@@ -323,8 +433,8 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-tight">Cargo Inspection</h2>
-          <p className="text-slate-400 font-medium text-xs sm:text-sm">Follow protocol to ensure safe transport</p>
+          <h2 className="text-xl sm:text-2xl font-black text-[#0f172a] uppercase tracking-tight">Pre-Trip Cargo Inspection</h2>
+          <p className="text-slate-400 font-medium text-xs sm:text-sm">Mandatory verification before loading and trip start</p>
         </div>
         <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
           <X className="w-5 h-5" />
@@ -394,7 +504,54 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                     </div>
                   ))}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Verification Fields</h4>
+                  {[
+                    { key: 'identityVerified', label: 'Cargo identity verified' },
+                    { key: 'quantityVerified', label: 'Quantity verified' },
+                    { key: 'weightVerified', label: 'Weight verified' },
+                    { key: 'dimensionsVerified', label: 'Dimensions verified' },
+                    { key: 'packagingVerified', label: 'Packaging inspected' },
+                    { key: 'conditionVerified', label: 'Cargo condition acceptable' },
+                    { key: 'documentationVerified', label: 'Documentation verified' },
+                    { key: 'sealVerified', label: 'Container seal verified' },
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={verification[key as keyof typeof verification] as boolean}
+                        onChange={(e) => setVerification(prev => ({ ...prev, [key]: e.target.checked }))}
+                        className="rounded border-slate-300"
+                      />
+                      <span className="text-xs font-semibold text-slate-700">{label}</span>
+                    </label>
+                  ))}
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      placeholder="Actual qty"
+                      value={verification.actualQuantity || ''}
+                      onChange={(e) => setVerification(prev => ({ ...prev, actualQuantity: Number(e.target.value) }))}
+                      className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Actual weight (kg)"
+                      value={verification.actualWeight || ''}
+                      onChange={(e) => setVerification(prev => ({ ...prev, actualWeight: Number(e.target.value) }))}
+                      className="h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Seal number (if applicable)"
+                    value={verification.sealNumber}
+                    onChange={(e) => setVerification(prev => ({ ...prev, sealNumber: e.target.value }))}
+                    className="h-9 px-3 w-full bg-white border border-slate-200 rounded-lg text-xs"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2 mb-6">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Special Handling</h4>
                   <div className="flex flex-wrap gap-1.5">
                     {cargo.specialRequirements.map((req, i) => (
@@ -409,7 +566,6 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                       <span className="text-xs text-slate-400 italic">None</span>
                     )}
                   </div>
-                </div>
               </div>
               <div className="flex justify-end">
                 <button onClick={() => setInspectionStep('physical')}
@@ -654,15 +810,23 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
                   Back
                 </button>
                 <button
+                  onClick={handleInspectionFail}
+                  disabled={submitting || !inspectionResult.notes}
+                  className="flex-1 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all bg-rose-600 text-white hover:bg-rose-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <XCircle className="w-3.5 h-3.5" /> Fail Inspection
+                </button>
+                <button
                   onClick={handleInspectionComplete}
-                  disabled={!inspectionResult.notes}
+                  disabled={submitting || !inspectionResult.notes}
                   className={`flex-1 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all ${
-                    !inspectionResult.notes
+                    !inspectionResult.notes || submitting
                       ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                       : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/20'
                   }`}
                 >
-                  <Save className="w-3.5 h-3.5" /> Submit Inspection
+                  <Save className="w-3.5 h-3.5" />
+                  {submitting ? 'Submitting...' : 'Approve Inspection'}
                 </button>
               </div>
             </div>

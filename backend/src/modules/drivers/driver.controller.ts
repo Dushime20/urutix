@@ -46,6 +46,11 @@ import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { UserRole } from '../../entities/user.entity';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { OcrService } from '../ocr/ocr.service';
+import { PreTripInspectionService } from './pre-trip-inspection.service';
+import {
+  MarkReadyForReInspectionDto,
+  SubmitPreTripInspectionDto,
+} from './dto/pre-trip-inspection.dto';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -65,6 +70,7 @@ export class DriverController {
   constructor(
     private readonly driverService: DriverService,
     private readonly ocrService: OcrService,
+    private readonly preTripInspectionService: PreTripInspectionService,
   ) { }
 
   @Post()
@@ -636,6 +642,85 @@ export class DriverController {
   ) {
     await this.driverService.proceedWithJourney(id, body.loadIds, req.user.tenantId);
     return { message: 'Journey started successfully' };
+  }
+
+  @Get(':id/pre-trip-inspections')
+  @ApiOperation({
+    summary: 'Get assigned cargos with pre-trip inspection status',
+    description: 'Returns all assigned loads with their pre-trip inspection workflow status and history summary',
+  })
+  async getPreTripInspections(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.getAssignedLoadsWithInspectionStatus(
+      id,
+      req.user.tenantId,
+    );
+  }
+
+  @Get(':id/pre-trip-inspections/queue')
+  @ApiOperation({
+    summary: 'Get cargos requiring pre-trip inspection action',
+  })
+  async getPreTripInspectionQueue(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.getInspectionQueue(
+      id,
+      req.user.tenantId,
+    );
+  }
+
+  @Get(':id/loads/:loadId/pre-trip-inspection')
+  @ApiOperation({
+    summary: 'Get pre-trip inspection form data and history for a load',
+  })
+  async getPreTripInspectionForm(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('loadId', ParseUUIDPipe) loadId: string,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.getInspectionForm(
+      loadId,
+      id,
+      req.user.tenantId,
+    );
+  }
+
+  @Post(':id/loads/:loadId/pre-trip-inspection')
+  @ApiOperation({
+    summary: 'Submit a pre-trip cargo inspection',
+    description: 'Creates an immutable inspection record. Failed inspections block loading and trip start until resolved.',
+  })
+  async submitPreTripInspection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('loadId', ParseUUIDPipe) loadId: string,
+    @Body() body: SubmitPreTripInspectionDto,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.submitInspection(
+      id,
+      loadId,
+      body,
+      req.user.tenantId,
+    );
+  }
+
+  @Get(':id/loads/:loadId/pre-trip-inspection/history')
+  @ApiOperation({
+    summary: 'Get pre-trip inspection history for a load',
+  })
+  async getPreTripInspectionHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('loadId', ParseUUIDPipe) loadId: string,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.getInspectionHistory(
+      loadId,
+      req.user.tenantId,
+    );
   }
 
   @Post(':id/complete-delivery')

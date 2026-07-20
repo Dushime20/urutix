@@ -25,6 +25,11 @@ import { driverApi } from '../../services/driverApi';
 import { documentApi, type Document as CargoDocument } from '../../services/documents/documentApi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  canProceedWithLoad,
+  getPreTripStatusFromLoad,
+  PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
+} from './preTripInspection';
 
 interface CargoDetailsProps {
   cargoId: string;
@@ -322,7 +327,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             currentHumidity: 45,
             lastUpdated: new Date().toISOString()
           } : undefined,
-          inspectionStatus: load.metadata?.inspectionStatus || 'PENDING',
+          inspectionStatus: getPreTripStatusFromLoad(load),
         };
 
         setCargo(mappedCargo);
@@ -470,12 +475,17 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
               </button>
               <button
                 onClick={onAccept}
-                disabled={cargo.inspectionStatus !== 'COMPLETED'}
-                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-blue-900/10 ${cargo.inspectionStatus === 'COMPLETED'
+                disabled={!canProceedWithLoad(cargo.inspectionStatus || 'PENDING')}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-blue-900/10 ${
+                  canProceedWithLoad(cargo.inspectionStatus || 'PENDING')
                   ? 'bg-[#345E85] text-white hover:bg-[#2a4b6d] active:scale-95'
                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   }`}
-                title={cargo.inspectionStatus !== 'COMPLETED' ? 'Please complete inspection first' : ''}
+                title={
+                  !canProceedWithLoad(cargo.inspectionStatus || 'PENDING')
+                    ? PRE_TRIP_INSPECTION_BLOCKED_MESSAGE
+                    : ''
+                }
               >
                 <CheckCircle className="w-4 h-4" />
                 Accept & Load

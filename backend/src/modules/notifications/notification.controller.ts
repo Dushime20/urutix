@@ -269,6 +269,7 @@ export class NotificationController {
     UserRole.TENANT_ADMIN,
     UserRole.MANAGER,
     UserRole.CARGO_OWNER,
+    UserRole.CARGO_RECEIVER,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
     UserRole.AGENT,
@@ -311,6 +312,7 @@ export class NotificationController {
     UserRole.TENANT_ADMIN,
     UserRole.MANAGER,
     UserRole.CARGO_OWNER,
+    UserRole.CARGO_RECEIVER,
     UserRole.TRUCK_OWNER,
     UserRole.DRIVER,
     UserRole.AGENT,
@@ -489,6 +491,7 @@ export class NotificationController {
     UserRole.DRIVER,
     UserRole.BROKER,
     UserRole.CARGO_OWNER,
+    UserRole.CARGO_RECEIVER,
     UserRole.LENDER,
     UserRole.AGENT,
   )

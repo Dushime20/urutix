@@ -48,6 +48,7 @@ import {
 import { LoadsService } from '../loads/loads.service';
 import { TripsService } from '../trips/trips.service';
 import { CompleteDeliveryDto } from './dto/driver.dto';
+import { PreTripInspectionService } from './pre-trip-inspection.service';
 import {
   DriverBreakStartedEvent,
   DriverBreakEndedEvent,
@@ -73,6 +74,7 @@ export class DriverService {
     private readonly loadsService: LoadsService,
     private readonly tripsService: TripsService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly preTripInspectionService: PreTripInspectionService,
   ) {}
 
   async createDriver(createDto: CreateDriverDto): Promise<Driver> {
@@ -1260,6 +1262,8 @@ export class DriverService {
         throw new BadRequestException(`Cannot accept load. Current status: ${load.status}`);
       }
 
+      this.preTripInspectionService.assertPreTripInspectionApproved(load);
+
       // Update load status to LOADED
       await this.loadRepository.update(loadId, {
         status: LoadStatus.LOADED,
@@ -1312,6 +1316,24 @@ export class DriverService {
 
       if (!driver.currentTruckId) {
         throw new BadRequestException('Driver is not assigned to any truck');
+      }
+
+      const loads = await this.loadRepository.find({
+        where: {
+          id: In(loadIds),
+          assignedTruckId: driver.currentTruckId,
+          tenantId,
+        },
+      });
+
+      if (loads.length !== loadIds.length) {
+        throw new BadRequestException(
+          'One or more loads were not found or are not assigned to your truck',
+        );
+      }
+
+      for (const load of loads) {
+        this.preTripInspectionService.assertPreTripInspectionApproved(load);
       }
 
       // Update load statuses to IN_TRANSIT

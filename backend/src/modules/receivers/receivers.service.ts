@@ -7,11 +7,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Load } from '../../entities/load.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
-import { CargoInspection, InspectionStatus } from '../../entities/cargo-inspection.entity';
+import { CargoInspection, InspectionStatus, CargoInspectionType } from '../../entities/cargo-inspection.entity';
 import { Epod, EpodStatus } from '../../entities/epod.entity';
 import { EmailService } from '../auth/services/email.service';
 import { ConfigService } from '@nestjs/config';
@@ -21,6 +22,7 @@ import * as bcrypt from 'bcryptjs';
 import { CreateReceiverDto } from './dto/create-receiver.dto';
 import { SubmitCargoInspectionDto } from './dto/cargo-inspection.dto';
 import { AssignCargoDto } from './dto/assign-cargo.dto';
+import { CargoReceiverAssignedEvent } from '../notifications/events/cargo-events';
 
 @Injectable()
 export class ReceiversService {
@@ -42,6 +44,7 @@ export class ReceiversService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly tripCompletionService: TripCompletionService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -289,10 +292,43 @@ export class ReceiversService {
     cargo.receiverId = receiver.id;
     await this.loadRepository.save(cargo);
 
-    return this.loadRepository.findOne({
+    const assignedCargo = await this.loadRepository.findOne({
       where: { id: cargoId },
-      relations: ['receiver', 'receiver.profile'],
+      relations: [
+        'receiver',
+        'receiver.profile',
+        'cargoOwner',
+        'cargoOwner.profile',
+      ],
     });
+
+    if (assignedCargo) {
+      const cargoOwnerName =
+        [
+          assignedCargo.cargoOwner?.profile?.firstName,
+          assignedCargo.cargoOwner?.profile?.lastName,
+        ]
+          .filter(Boolean)
+          .join(' ') || assignedCargo.cargoOwner?.email || 'Cargo owner';
+
+      this.eventEmitter.emit(
+        'cargo.receiver.assigned',
+        new CargoReceiverAssignedEvent(
+          assignedCargo.id,
+          receiver.id,
+          cargoOwnerId,
+          assignedCargo.tenantId,
+          {
+            cargoTitle: assignedCargo.title,
+            origin: this.formatLoadAddress(assignedCargo.origin),
+            destination: this.formatLoadAddress(assignedCargo.destination),
+            cargoOwnerName,
+          },
+        ),
+      );
+    }
+
+    return assignedCargo;
   }
 
   /**
@@ -372,10 +408,21 @@ export class ReceiversService {
     // Fetch inspection status for each cargo
     const cargosWithInspection = await Promise.all(
       cargos.map(async (cargo) => {
-        const inspection = await this.cargoInspectionRepository.findOne({
-          where: { loadId: cargo.id, receiverId },
-        });
-        
+        let inspection: CargoInspection | null = null;
+        try {
+          inspection = await this.cargoInspectionRepository.findOne({
+            where: {
+              loadId: cargo.id,
+              receiverId,
+              inspectionType: CargoInspectionType.DELIVERY,
+            },
+          });
+        } catch (error) {
+          this.logger.warn(
+            `Could not load inspection for cargo ${cargo.id}: ${error.message}`,
+          );
+        }
+
         return {
           ...cargo,
           inspectionStatus: inspection?.status || 'PENDING',
@@ -422,7 +469,7 @@ export class ReceiversService {
 
     // Fetch existing inspection so the UI shows the real status
     const existingInspection = await this.cargoInspectionRepository.findOne({
-      where: { loadId: cargoId, receiverId },
+      where: { loadId: cargoId, receiverId, inspectionType: CargoInspectionType.DELIVERY },
     });
 
     // Build inspection checklist from cargo details
@@ -647,7 +694,7 @@ export class ReceiversService {
 
     // Check if inspection already exists
     let inspection = await this.cargoInspectionRepository.findOne({
-      where: { loadId: cargoId, receiverId },
+      where: { loadId: cargoId, receiverId, inspectionType: CargoInspectionType.DELIVERY },
     });
 
     const verifiedCount = inspectionData.checklist.filter((item) => item.verified).length;
@@ -692,6 +739,7 @@ export class ReceiversService {
       inspection = this.cargoInspectionRepository.create({
         loadId: cargoId,
         receiverId,
+        inspectionType: CargoInspectionType.DELIVERY,
         checklist: inspectionData.checklist.map((item) => ({
           id: item.id,
           label: item.label,
@@ -794,11 +842,26 @@ export class ReceiversService {
 
     // Get inspection
     const inspection = await this.cargoInspectionRepository.findOne({
-      where: { loadId: cargoId, receiverId },
+      where: { loadId: cargoId, receiverId, inspectionType: CargoInspectionType.DELIVERY },
       relations: ['load', 'receiver'],
     });
 
     return inspection;
+  }
+
+  private formatLoadAddress(
+    address?: { city?: string; country?: string; address?: string } | null,
+  ): string {
+    if (!address) {
+      return 'N/A';
+    }
+
+    const parts = [address.city, address.country].filter(Boolean);
+    if (parts.length > 0) {
+      return parts.join(', ');
+    }
+
+    return address.address || 'N/A';
   }
 }
 

@@ -14,6 +14,7 @@ import { WebhookService } from './services/webhook.service';
 import { CargoNotificationListener } from './listeners/cargo-notification.listener';
 import { DriverBreakNotificationListener } from './listeners/driver-break-notification.listener';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
+import { MessengerModule } from '../messenger/messenger.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
     EventEmitterModule.forRoot(),
     // Provides EmailService (with ConfigService/SMTP properly initialized)
     EnhancedAuthModule,
+    MessengerModule,
   ],
   controllers: [NotificationController],
   providers: [

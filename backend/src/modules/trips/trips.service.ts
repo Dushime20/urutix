@@ -22,6 +22,7 @@ import { EmergencyRematchService } from '../matching/services/emergency-rematch.
 import { TripLocation } from '../tracking/entities/trip-location.entity';
 import { TrackingGateway } from '../tracking/tracking.gateway';
 import { AvailabilityService } from '../availability/availability.service';
+import { PreTripInspectionService } from '../drivers/pre-trip-inspection.service';
 
 @Injectable()
 export class TripsService {
@@ -46,6 +47,7 @@ export class TripsService {
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
     private readonly emailService: EmailService,
+    private readonly preTripInspectionService: PreTripInspectionService,
     @Optional() private readonly emergencyRematchService?: EmergencyRematchService,
     @Optional() @InjectRepository(TripLocation)
     private readonly tripLocationRepository?: Repository<TripLocation>,
@@ -251,6 +253,16 @@ export class TripsService {
   ): Promise<Trip> {
     const trip = await this.findOne(id, tenantId);
     const oldStatus = trip.status;
+
+    if (
+      updateTripStatusDto.status === TripStatus.IN_PROGRESS &&
+      oldStatus !== TripStatus.IN_PROGRESS
+    ) {
+      await this.preTripInspectionService.assertPreTripInspectionApprovedByLoadId(
+        trip.loadId,
+        tenantId,
+      );
+    }
 
     trip.status = updateTripStatusDto.status;
     if (updateTripStatusDto.actualStartTime) {

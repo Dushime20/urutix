@@ -61,6 +61,10 @@ import {
   PricingStatus,
 } from '../../entities/price-suggestion.entity';
 import { Location } from '../../entities/location.entity';
+import {
+  isPreTripInspectionApproved,
+  PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
+} from '../drivers/pre-trip-inspection.types';
 import { User, UserRole } from '../../entities/user.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { Bid, BidStatus } from '../../entities/bid.entity';
@@ -1410,6 +1414,10 @@ export class LoadsService {
       throw new BadRequestException(
         'Load cannot be started. Please ensure carrier and truck are assigned.',
       );
+    }
+
+    if (!isPreTripInspectionApproved(load.metadata)) {
+      throw new BadRequestException(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE);
     }
 
     // Check if advance payment is required before starting the trip
