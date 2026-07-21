@@ -119,6 +119,8 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [documentStatus, setDocumentStatus] = useState<Record<string, 'verified' | 'missing' | null>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [inspectionAllowed, setInspectionAllowed] = useState(true);
+  const [inspectionBlockReason, setInspectionBlockReason] = useState<string | null>(null);
   const [verification, setVerification] = useState({
     identityVerified: false,
     quantityVerified: false,
@@ -140,6 +142,30 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     const fetchCargoData = async () => {
       try {
         setLoading(true);
+
+        if (driverId) {
+          try {
+            const form = await driverApi.getPreTripInspectionForm(driverId, cargoId);
+            if (form.canInspect === false) {
+              setInspectionAllowed(false);
+              setInspectionBlockReason(
+                form.workflowStatus === 'AWAITING_RESOLUTION' || form.workflowStatus === 'FAILED'
+                  ? t('Cargo owner must resolve reported issues before you can re-inspect.')
+                  : t('This shipment is not available for inspection at this time.'),
+              );
+            } else {
+              setInspectionAllowed(true);
+              setInspectionBlockReason(null);
+            }
+          } catch (error: any) {
+            setInspectionAllowed(false);
+            setInspectionBlockReason(
+              error.response?.data?.message ||
+                t('This shipment is not available for inspection at this time.'),
+            );
+          }
+        }
+
         const load = await driverApi.getLoadById(cargoId);
 
         const mappedCargo: CargoItem = {
@@ -330,6 +356,11 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
   };
 
   const submitInspection = async (decision: 'PASSED' | 'FAILED') => {
+    if (!inspectionAllowed) {
+      toast.error(inspectionBlockReason || t('This shipment is not available for inspection at this time.'));
+      return;
+    }
+
     if (!inspectionResult.notes?.trim()) {
       toast.error(t('Please add inspection notes before submitting.'));
       return;
@@ -420,6 +451,26 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
       <div className="text-center py-12">
         <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
         <p className="text-slate-500 font-medium">Cargo not found</p>
+      </div>
+    );
+  }
+
+  if (!inspectionAllowed) {
+    return (
+      <div className="text-center py-10 px-4">
+        <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <p className="text-slate-800 font-semibold mb-2">
+          <TranslatedText text="Inspection Not Available" />
+        </p>
+        <p className="text-sm text-slate-600 max-w-md mx-auto">
+          {inspectionBlockReason || t('This shipment is not available for inspection at this time.')}
+        </p>
+        <button
+          onClick={onCancel}
+          className="mt-6 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+        >
+          <TranslatedText text="Go Back" />
+        </button>
       </div>
     );
   }

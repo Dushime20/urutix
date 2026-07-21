@@ -90,6 +90,9 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
     }
   };
 
+  const canOpenInspectionForm = (status: PreTripInspectionWorkflowStatus) =>
+    ['PENDING', 'IN_PROGRESS', 'READY_FOR_RE_INSPECTION'].includes(status);
+
   const launchTrip = async () => {
     setStep('launching');
     try {
@@ -126,6 +129,11 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
 
     if (canProceedWithLoad(status)) {
       await launchTrip();
+      return;
+    }
+
+    if (!canOpenInspectionForm(status)) {
+      setStep('blocked');
       return;
     }
 
@@ -284,7 +292,18 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                     )}
 
                     <button
-                      onClick={() => setShowInspectionForm(true)}
+                      onClick={async () => {
+                        const status = await fetchInspectionStatus();
+                        if (!canOpenInspectionForm(status)) {
+                          if (status === 'AWAITING_RESOLUTION' || status === 'FAILED') {
+                            setStep('blocked');
+                          } else {
+                            toast.error(t('This shipment is not available for inspection right now.'));
+                          }
+                          return;
+                        }
+                        setShowInspectionForm(true);
+                      }}
                       className="w-full py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-slate-900 transition-all shadow-lg"
                     >
                       {inspectionStatus === 'READY_FOR_RE_INSPECTION' ? <TranslatedText text="Begin Re-Inspection" /> : <TranslatedText text="Begin Cargo Inspection" />}

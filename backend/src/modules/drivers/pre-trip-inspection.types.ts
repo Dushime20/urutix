@@ -61,7 +61,22 @@ export const PRE_TRIP_INSPECTION_BLOCKED_MESSAGE =
 export function getPreTripInspectionMetadata(
   metadata?: Record<string, any>,
 ): PreTripInspectionMetadata {
-  const stored = metadata?.preTripInspection;
+  const stored = metadata?.preTripInspection as
+    | PreTripInspectionMetadata
+    | undefined;
+  const inspectionStatus = metadata?.inspectionStatus;
+
+  if (
+    stored?.status === PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION ||
+    inspectionStatus === 'READY_FOR_RE_INSPECTION' ||
+    inspectionStatus === PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION
+  ) {
+    return {
+      ...(stored || {}),
+      status: PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION,
+    };
+  }
+
   if (stored?.status) {
     const result = stored as PreTripInspectionMetadata;
     if (result.status === PreTripInspectionWorkflowStatus.FAILED) {
@@ -74,7 +89,7 @@ export function getPreTripInspectionMetadata(
   }
 
   // Backward compatibility with legacy metadata.inspectionStatus
-  if (metadata?.inspectionStatus === 'COMPLETED') {
+  if (inspectionStatus === 'COMPLETED') {
     const legacyResult = metadata?.inspectionResult;
     if (legacyResult?.status === 'PASSED') {
       return { status: PreTripInspectionWorkflowStatus.APPROVED };
@@ -85,8 +100,12 @@ export function getPreTripInspectionMetadata(
     return { status: PreTripInspectionWorkflowStatus.APPROVED };
   }
 
-  if (metadata?.inspectionStatus === 'FAILED') {
+  if (inspectionStatus === 'FAILED') {
     return { status: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION };
+  }
+
+  if (inspectionStatus === 'IN_PROGRESS') {
+    return { status: PreTripInspectionWorkflowStatus.IN_PROGRESS };
   }
 
   return { status: PreTripInspectionWorkflowStatus.PENDING };

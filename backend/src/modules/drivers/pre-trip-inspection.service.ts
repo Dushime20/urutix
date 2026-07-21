@@ -97,8 +97,18 @@ export class PreTripInspectionService {
   ) {
     const driver = await this.resolveDriver(driverIdOrUserId, tenantId);
     const load = await this.getAssignedLoadForDriver(loadId, driver, tenantId);
+    let workflow = getPreTripInspectionMetadata(load.metadata);
+
+    if (
+      workflow.status === PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION
+    ) {
+      workflow = await this.persistPreTripWorkflow(load, {
+        ...workflow,
+        status: PreTripInspectionWorkflowStatus.IN_PROGRESS,
+      });
+    }
+
     const history = await this.getInspectionHistoryRecords(loadId);
-    const workflow = getPreTripInspectionMetadata(load.metadata);
 
     return {
       cargo: load,
@@ -339,7 +349,13 @@ export class PreTripInspectionService {
 
     if (!this.canDriverInspect(workflow.status)) {
       throw new BadRequestException(
-        'This shipment is not available for inspection at this time.',
+        workflow.status === PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION ||
+        workflow.status === PreTripInspectionWorkflowStatus.FAILED
+          ? 'This shipment is awaiting corrective action from the cargo owner or broker before you can re-inspect.'
+          : workflow.status ===
+              PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL
+            ? 'This shipment is awaiting cargo owner or broker approval. You cannot submit another inspection yet.'
+            : 'This shipment is not available for inspection at this time.',
       );
     }
 
@@ -615,14 +631,11 @@ export class PreTripInspectionService {
       resolvedById: userId,
     };
 
-    await this.loadRepository.update(loadId, {
-      metadata: {
-        ...(load.metadata || {}),
-        preTripInspection: nextWorkflow,
-        inspectionStatus: 'READY_FOR_RE_INSPECTION',
-      } as Record<string, any>,
-      updatedAt: new Date(),
-    });
+    await this.persistPreTripWorkflow(
+      load,
+      nextWorkflow,
+      'READY_FOR_RE_INSPECTION',
+    );
 
     await this.notifyReadyForReInspection(
       load,
@@ -743,17 +756,45 @@ export class PreTripInspectionService {
     ];
   }
 
+  private async persistPreTripWorkflow(
+    load: Load,
+    workflow: PreTripInspectionMetadata,
+    inspectionStatus?: string,
+  ): Promise<PreTripInspectionMetadata> {
+    const nextMetadata = {
+      ...(load.metadata || {}),
+      preTripInspection: {
+        ...(load.metadata?.preTripInspection || {}),
+        ...workflow,
+        status: workflow.status,
+      },
+      inspectionStatus: inspectionStatus ?? workflow.status,
+    };
+
+    await this.loadRepository.update(load.id, {
+      metadata: nextMetadata as Record<string, any>,
+      updatedAt: new Date(),
+    });
+
+    load.metadata = nextMetadata;
+    return getPreTripInspectionMetadata(nextMetadata);
+  }
+
   private async updateLoadWorkflow(
     load: Load,
     workflow: PreTripInspectionMetadata,
     dto: SubmitPreTripInspectionDto,
     passed: boolean,
   ) {
+    await this.persistPreTripWorkflow(
+      load,
+      workflow,
+      passed ? 'COMPLETED' : 'FAILED',
+    );
+
     await this.loadRepository.update(load.id, {
       metadata: {
         ...(load.metadata || {}),
-        preTripInspection: workflow,
-        inspectionStatus: passed ? 'COMPLETED' : 'FAILED',
         inspectionResult: {
           status: passed ? 'PASSED' : 'FAILED',
           notes: dto.notes,

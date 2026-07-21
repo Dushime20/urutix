@@ -11,13 +11,27 @@ export const PRE_TRIP_INSPECTION_BLOCKED_MESSAGE =
   'This shipment cannot proceed until the driver completes the pre-trip inspection and the assigned Cargo Owner or Broker gives approval to start shipping.';
 
 export function getPreTripStatusFromLoad(load: any): PreTripInspectionWorkflowStatus {
-  const workflow = load?.preTripInspection?.status || load?.metadata?.preTripInspection?.status;
+  const workflow =
+    load?.preTripInspection?.status ||
+    load?.metadata?.preTripInspection?.status;
   if (workflow) return workflow;
+
+  const inspectionStatus = load?.metadata?.inspectionStatus;
+  if (inspectionStatus === 'READY_FOR_RE_INSPECTION') {
+    return 'READY_FOR_RE_INSPECTION';
+  }
+  if (inspectionStatus === 'IN_PROGRESS') {
+    return 'IN_PROGRESS';
+  }
 
   if (load?.metadata?.inspectionStatus === 'COMPLETED') {
     const result = load?.metadata?.inspectionResult?.status;
     if (result === 'FAILED') return 'FAILED';
     return 'APPROVED';
+  }
+
+  if (inspectionStatus === 'FAILED') {
+    return 'AWAITING_RESOLUTION';
   }
 
   return 'PENDING';
