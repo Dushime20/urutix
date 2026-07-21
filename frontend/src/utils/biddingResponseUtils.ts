@@ -22,9 +22,16 @@ export function parseWatchedAuctionIds(response: unknown): Set<string> {
   return new Set(ids);
 }
 
-/** Record auction views without blocking the UI. */
+/** Auction IDs already reported this session — avoids duplicate POSTs on refetch. */
+const recordedViewIds = new Set<string>();
+
+/** Record auction views without blocking the UI or triggering cache refresh loops. */
 export function recordAuctionViews(auctions: { id: string }[]): void {
   auctions.slice(0, 10).forEach((a) => {
-    biddingAPI.recordAuctionView(a.id).catch(() => undefined);
+    if (recordedViewIds.has(a.id)) return;
+    recordedViewIds.add(a.id);
+    biddingAPI.recordAuctionView(a.id).catch(() => {
+      recordedViewIds.delete(a.id);
+    });
   });
 }

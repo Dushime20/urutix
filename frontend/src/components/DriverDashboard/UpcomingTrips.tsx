@@ -7,6 +7,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Trip {
   id: string;
@@ -52,6 +54,7 @@ interface UpcomingTripsProps {
 }
 
 export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) => {
+  const { tSync: t } = useTranslation();
   const [showAll, setShowAll] = useState(false);
 
   const currentTrips = trips || [];
@@ -94,15 +97,15 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
             <Calendar size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Upcoming Trips</h3>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Schedule</p>
+            <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Upcoming Trips" /></h3>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1"><TranslatedText text="Schedule" /></p>
           </div>
         </div>
         <button
           onClick={() => setShowAll(!showAll)}
           className="w-full sm:w-auto px-6 py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm"
         >
-          {showAll ? 'Collapse' : `View All (${currentTrips.length})`}
+          {showAll ? <TranslatedText text="Collapse" /> : `${t('View All')} (${currentTrips.length})`}
         </button>
       </div>
 
@@ -121,39 +124,38 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
 
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div className="flex-1 space-y-8">
-                  {/* Header Info */}
                   <div className="flex items-center gap-4">
                     <span className={cn("px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border", getPriorityColor(trip.priority))}>
-                      {trip.priority} Priority
+                      <TranslatedText text={trip.priority} /> <TranslatedText text="Priority" />
                     </span>
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Trip ID: {trip.tripNumber}</span>
+                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+                      <TranslatedText text="Trip ID:" /> {trip.tripNumber}
+                    </span>
                   </div>
 
-                  {/* Node Trajectory */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <div className="flex gap-4">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#345E85] mt-2 flex-shrink-0" />
                       <div>
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Pickup</p>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Pickup" /></p>
                         <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{trip.origin.address}</p>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                          {(trip.pickupTime || trip.scheduledDeparture) ? formatDateTime(trip.pickupTime || trip.scheduledDeparture) : 'TBD'}
+                          {(trip.pickupTime || trip.scheduledDeparture) ? formatDateTime(trip.pickupTime || trip.scheduledDeparture) : t('TBD')}
                         </p>
                       </div>
                     </div>
                     <div className="flex gap-4">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0" />
                       <div>
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Delivery</p>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Delivery" /></p>
                         <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{trip.destination.address}</p>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
-                          {(trip.deliveryTime || trip.estimatedArrival) ? formatDateTime(trip.deliveryTime || trip.estimatedArrival) : 'TBD'}
+                          {(trip.deliveryTime || trip.estimatedArrival) ? formatDateTime(trip.deliveryTime || trip.estimatedArrival) : t('TBD')}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Stats Matrix */}
                   <div className="flex flex-wrap gap-8 items-center border-t border-slate-50 pt-8 mt-auto">
                     <div className="flex items-center gap-2">
                       <TrendingUp size={14} className="text-[#345E85]" />
@@ -168,7 +170,7 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
 
                 <div className="flex items-center gap-3">
                   <button className="h-16 px-10 bg-white border border-slate-100 text-[#345E85] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
-                    View Details
+                    <TranslatedText text="View Details" />
                   </button>
                   <button className="h-16 w-16 bg-[#345E85] text-white rounded-2xl flex items-center justify-center hover:bg-slate-800 transition-all shadow-lg active:scale-95 group/btn">
                     <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -183,7 +185,7 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
       {!currentTrips.length && (
         <div className="p-20 text-center">
           <Calendar className="w-20 h-20 text-slate-100 mx-auto mb-6" />
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">No Upcoming Trips</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]"><TranslatedText text="No Upcoming Trips" /></p>
         </div>
       )}
     </motion.div>

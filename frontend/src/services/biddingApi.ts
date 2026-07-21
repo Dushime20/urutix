@@ -1,4 +1,5 @@
 import api from './api';
+import { SKIP_MUTATION_SYNC_HEADER } from '../lib/mutationSync';
 
 export interface BidData {
   loadId: string;
@@ -187,7 +188,10 @@ export const biddingAPI = {
     }),
 
   // Views & My bids
-  recordAuctionView: (auctionId: string) => api.post(`/bidding/auctions/${auctionId}/view`),
+  recordAuctionView: (auctionId: string) =>
+    api.post(`/bidding/auctions/${auctionId}/view`, null, {
+      headers: { [SKIP_MUTATION_SYNC_HEADER]: 'true' },
+    }),
   getMyBids: () => api.get('/bidding/bids'),
   
   // Admin endpoints

@@ -42,12 +42,15 @@ import {
   getPreTripStatusFromLoad,
 } from './preTripInspection';
 import type { Trip } from '../../services/driverApi';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface TripsManagementProps {
   driverId: string;
 }
 
 export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) => {
+  const { tSync: t } = useTranslation();
   const queryClient = useQueryClient();
   const { format: formatCurrency } = useCurrencyFormat();
   const [selectedTripForChecklist, setSelectedTripForChecklist] = useState<string | null>(null);
@@ -108,11 +111,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
   const handleStartTrip = async (tripId: string) => {
     try {
       await driverApi.startTrip(tripId);
-      toast.success('Trip started successfully!');
+      toast.success(t('Trip started successfully!'));
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] });
     } catch (error: any) {
-      toast.error(getApiErrorMessage(error));
+      toast.error(t(getApiErrorMessage(error)));
     }
   };
 
@@ -130,34 +133,34 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
       <div>
         <div className="flex items-center gap-3 mb-2">
           <span className="px-3 py-1 bg-blue-50 text-[#345E85] text-[10px] font-black uppercase tracking-[0.2em] rounded-lg">
-            Movement
+            <TranslatedText text="Movement" />
           </span>
           <span className="w-1 h-1 rounded-full bg-slate-300" />
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            {currentTrip ? '1 ACTIVE' : 'NO ACTIVE MISSION'}
+            {currentTrip ? <TranslatedText text="1 ACTIVE" /> : <TranslatedText text="NO ACTIVE MISSION" />}
           </span>
         </div>
-        <h2 className="text-3xl font-black text-[#0f172a] uppercase tracking-tight">Trip Management</h2>
-        <p className="text-slate-400 font-medium mt-1 mb-8">Execute your assignments and monitor trip metrics in real-time</p>
+        <h2 className="text-3xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Trip Management" /></h2>
+        <p className="text-slate-400 font-medium mt-1 mb-8"><TranslatedText text="Execute your assignments and monitor trip metrics in real-time" /></p>
         
         <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit border border-slate-200/60 shadow-inner">
           <button 
             onClick={() => setActiveTab('active')} 
             className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${activeTab === 'active' ? 'bg-white text-[#345E85] shadow-md shadow-slate-200/50 border border-slate-200/50 scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 scale-95 hover:scale-100'}`}
           >
-            Active Mission
+            <TranslatedText text="Active Mission" />
           </button>
           <button 
             onClick={() => setActiveTab('upcoming')} 
             className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${activeTab === 'upcoming' ? 'bg-white text-[#345E85] shadow-md shadow-slate-200/50 border border-slate-200/50 scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 scale-95 hover:scale-100'}`}
           >
-            Upcoming Assignments
+            <TranslatedText text="Upcoming Assignments" />
           </button>
           <button 
             onClick={() => setActiveTab('previous')} 
             className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${activeTab === 'previous' ? 'bg-white text-[#345E85] shadow-md shadow-slate-200/50 border border-slate-200/50 scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 scale-95 hover:scale-100'}`}
           >
-            Previous Missions
+            <TranslatedText text="Previous Missions" />
           </button>
         </div>
       </div>
@@ -171,14 +174,14 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             <Truck size={18} className="text-[#345E85]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Your Assigned Vehicle</p>
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5"><TranslatedText text="Your Assigned Vehicle" /></p>
             <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight truncate">
               {[assignedTruck.make, assignedTruck.model].filter(Boolean).join(' ') || 'Vehicle'}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <div className="text-right">
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Plate</p>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Plate" /></p>
               <p className="text-xs font-black text-slate-700 uppercase tracking-widest">{assignedTruck.plateNumber}</p>
             </div>
             <div className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${
@@ -186,14 +189,14 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                 : 'bg-amber-50 text-amber-600 border-amber-100'
             }`}>
-              {assignedTruck.status?.replace('_', ' ') || 'Active'}
+              <TranslatedText text={assignedTruck.status?.replace('_', ' ') || 'Active'} />
             </div>
           </div>
         </div>
       ) : driverProfile && !driverProfile.currentTruckId ? (
         <div className="flex items-center gap-3 px-5 py-4 bg-amber-50 border border-amber-100 rounded-2xl">
           <AlertCircle size={16} className="text-amber-500 shrink-0" />
-          <p className="text-xs font-bold text-amber-700">No truck has been assigned to you yet. Contact your fleet manager.</p>
+          <p className="text-xs font-bold text-amber-700"><TranslatedText text="No truck has been assigned to you yet. Contact your fleet manager." /></p>
         </div>
       ) : null}
 
@@ -216,7 +219,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 <div className="flex items-center justify-between px-5 py-3 bg-[#0f172a]">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">In Progress</span>
+                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest"><TranslatedText text="In Progress" /></span>
                     <span className="text-slate-600 mx-1">·</span>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">#{currentTrip.tripNumber}</span>
                   </div>
@@ -325,8 +328,8 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-100">
                   <Route size={22} className="text-slate-300" />
                 </div>
-                <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-1">No Active Trip</h4>
-                <p className="text-xs text-slate-400 mb-4">No trip is currently in progress.</p>
+                <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-1"><TranslatedText text="No Active Trip" /></h4>
+                <p className="text-xs text-slate-400 mb-4"><TranslatedText text="No trip is currently in progress." /></p>
                 <button
                   onClick={() => setActiveTab('upcoming')}
                   className="px-5 py-2.5 bg-[#345E85] text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-[#2a4d6d] transition-all active:scale-95 inline-flex items-center gap-1.5"
@@ -350,7 +353,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             className="space-y-6"
           >
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Upcoming Assignments</h3>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Upcoming Assignments" /></h3>
             </div>
             
             {upcomingLoading ? (
@@ -454,7 +457,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-inner">
                   <Calendar className="text-slate-300" size={32} />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">No Upcoming Assignments</h4>
+                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="No Upcoming Assignments" /></h4>
                 <p className="text-sm font-medium text-slate-400 mt-1">You currently have no scheduled trips in the queue.</p>
               </div>
             )}
@@ -472,7 +475,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             className="space-y-6"
           >
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Previous Missions</h3>
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Previous Missions" /></h3>
             </div>
             
             {historyLoading ? (
@@ -488,7 +491,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
                         <div className="flex items-center gap-2">
                           <CheckCircle size={14} className="text-emerald-500" />
-                          <span className="text-xs font-black text-emerald-600 uppercase tracking-widest">Completed</span>
+                          <span className="text-xs font-black text-emerald-600 uppercase tracking-widest"><TranslatedText text="Completed" /></span>
                           {trip.pod && (
                             <span className="ml-2 px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
                               <ShieldCheck size={8} />
@@ -520,8 +523,8 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 shadow-inner">
                   <CheckCircle className="text-slate-300" size={32} />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">No Trip History</h4>
-                <p className="text-sm font-medium text-slate-400 mt-1">Completed missions will appear here.</p>
+                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="No Trip History" /></h4>
+                <p className="text-sm font-medium text-slate-400 mt-1"><TranslatedText text="Completed missions will appear here." /></p>
               </div>
             )}
           </motion.section>

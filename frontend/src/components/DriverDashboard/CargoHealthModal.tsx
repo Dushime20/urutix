@@ -11,6 +11,8 @@ import {
   Info
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../translated-text';
+import { TranslatedText } from '../translated-text';
 
 interface CargoHealthModalProps {
   isOpen: boolean;
@@ -94,10 +96,10 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Telemetry Scan</p>
-                <div className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[8px] font-black rounded uppercase border border-emerald-500/30">Live Link Enabled</div>
+                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]"><TranslatedText text="Telemetry Scan" /></p>
+                <div className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[8px] font-black rounded uppercase border border-emerald-500/30"><TranslatedText text="Live Link Enabled" /></div>
               </div>
-              <h3 className="text-2xl font-black uppercase tracking-tight">Cargo Health Monitoring</h3>
+              <h3 className="text-2xl font-black uppercase tracking-tight"><TranslatedText text="Cargo Health Monitoring" /></h3>
             </div>
           </div>
         </div>
@@ -107,12 +109,12 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
           
           <div className="flex items-center justify-between px-2">
             <div>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Asset Reference</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Asset Reference" /></p>
                  <h4 className="text-sm font-black text-[#0f172a] uppercase">{cargo.name}</h4>
             </div>
             <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Last Update</p>
-                <p className="text-sm font-black text-[#0f172a] uppercase">2 Mins Ago</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Last Update" /></p>
+                <p className="text-sm font-black text-[#0f172a] uppercase"><TranslatedText text="2 Mins Ago" /></p>
             </div>
           </div>
 
@@ -123,14 +125,14 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-6", sensor.bg, sensor.color)}>
                     <sensor.icon size={20} />
                  </div>
-                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{sensor.label}</p>
+                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text={sensor.label} /></p>
                  <h4 className="text-xl font-black text-[#0f172a] tracking-tight mb-2">{sensor.value}</h4>
                  <div className="flex items-center gap-2">
                     <span className={cn("px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest", sensor.bg, sensor.color)}>
-                        {sensor.status}
+                        <TranslatedText text={sensor.status} />
                     </span>
                  </div>
-                 <p className="text-[8px] font-bold text-slate-400 mt-4 uppercase tracking-tighter">Limit: {sensor.range}</p>
+                 <p className="text-[8px] font-bold text-slate-400 mt-4 uppercase tracking-tighter"><TranslatedText text="Limit:" /> {sensor.range}</p>
               </div>
             ))}
           </div>
@@ -145,11 +147,11 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
                     <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
                         <TrendingUp size={16} />
                     </div>
-                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Stability Analysis</span>
+                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest"><TranslatedText text="Stability Analysis" /></span>
                 </div>
-                <h4 className="text-lg font-black text-emerald-900 uppercase tracking-tight mb-2">Internal Payload Stable</h4>
+                <h4 className="text-lg font-black text-emerald-900 uppercase tracking-tight mb-2"><TranslatedText text="Internal Payload Stable" /></h4>
                 <p className="text-[11px] font-bold text-emerald-700/70 leading-relaxed max-w-md italic">
-                    "Sensors indicate 100% containment integrity. Ambient vibration is within safety thresholds. No atmospheric drift detected since pickup in {cargo.pickupLocation}."
+                    "<TranslatedText text={`Sensors indicate 100% containment integrity. Ambient vibration is within safety thresholds. No atmospheric drift detected since pickup in ${cargo.pickupLocation}.`} />"
                 </p>
              </div>
           </div>
@@ -160,13 +162,13 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
         <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 <Info size={14} className="text-blue-500" />
-                Telemetry provided by Uruti-Sense IoT
+                <TranslatedText text="Telemetry provided by Uruti-Sense IoT" />
             </div>
             <button 
                 onClick={onClose}
                 className="px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95"
             >
-                Dimiss
+                <TranslatedText text="Dismiss" />
             </button>
         </div>
       </motion.div>

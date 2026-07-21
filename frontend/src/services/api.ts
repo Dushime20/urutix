@@ -36,14 +36,6 @@ api.interceptors.request.use(
     // Get subdomain for multi-tenant routing
     const subdomain = getSubdomain();
     
-    console.log('🔐 API Request Debug:');
-    console.log('URL:', config.url);
-    console.log('Method:', config.method);
-    console.log('Token found:', !!token);
-    console.log('Token preview:', token ? `${token.substring(0, 20)}...` : 'No token');
-    console.log('Tenant ID:', tenantId || 'None');
-    console.log('Subdomain:', subdomain || 'None');
-    
     // If sending FormData, remove the default Content-Type so axios auto-sets
     // multipart/form-data with the correct boundary
     if (config.data instanceof FormData) {
@@ -52,24 +44,18 @@ api.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('✅ Authorization header added');
-    } else {
-      console.log('❌ No token found in localStorage');
     }
-    
+
     if (tenantId) {
       // Add multi-tenant header for backend routing
       (config.headers as any)['X-Tenant-ID'] = tenantId;
-      console.log('✅ X-Tenant-ID header added');
     }
-    
+
     if (subdomain) {
       // Add subdomain header for backend tenant resolution
       (config.headers as any)['X-Tenant-Subdomain'] = subdomain;
-      console.log('✅ X-Tenant-Subdomain header added');
     }
-    
-    console.log('Final headers:', config.headers);
+
     return config;
   },
   (error) => {

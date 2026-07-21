@@ -306,7 +306,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       setSelectedCargo(null);
     } catch (error: any) {
       console.error('Error completing delivery:', error);
-      toast.error(getApiErrorMessage(error));
+      toast.error(t(getApiErrorMessage(error)));
     }
   };
 
@@ -341,7 +341,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       setSelectedCargo(null);
     } catch (error: any) {
       console.error('Error accepting cargo:', error);
-      toast.error(getApiErrorMessage(error));
+      toast.error(t(getApiErrorMessage(error)));
     }
   };
 
@@ -471,14 +471,14 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-1 bg-blue-50 text-[#345E85] text-[10px] font-black uppercase tracking-[0.2em] rounded-lg">
-              Logistics
+              <TranslatedText text="Logistics" />
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-[#0f172a] uppercase tracking-tight">
-            Cargo Management
+            <TranslatedText text="Cargo Management" />
           </h2>
           <p className="text-sm text-slate-400 font-medium mt-0.5">
-            Manage your assigned loads and consignments
+            <TranslatedText text="Manage your assigned loads and consignments" />
           </p>
         </div>
 
@@ -493,7 +493,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
             ) : (
               <Truck className="w-4 h-4" />
             )}
-            Start Trip ({checkedCargos.size})
+            {`${t('Start Trip')} (${checkedCargos.size})`}
           </button>
         )}
       </div>
@@ -502,53 +502,53 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Status</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]"><TranslatedText text="Status" /></label>
             <div className="relative">
               <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
                 className="w-full h-10 pl-3 pr-8 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer">
-                <option value="all">All Statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="INSPECTED">Inspected</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-                <option value="LOADED">Loaded</option>
-                <option value="IN_TRANSIT">In Transit</option>
-                <option value="DELIVERED">Delivered</option>
+                <option value="all">{t('All Statuses')}</option>
+                <option value="PENDING">{t('Pending')}</option>
+                <option value="INSPECTED">{t('Inspected')}</option>
+                <option value="APPROVED">{t('Approved')}</option>
+                <option value="REJECTED">{t('Rejected')}</option>
+                <option value="LOADED">{t('Loaded')}</option>
+                <option value="IN_TRANSIT">{t('In Transit')}</option>
+                <option value="DELIVERED">{t('Delivered')}</option>
               </select>
               <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Priority</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]"><TranslatedText text="Priority" /></label>
             <div className="relative">
               <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}
                 className="w-full h-10 pl-3 pr-8 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer">
-                <option value="all">All Priorities</option>
-                <option value="URGENT">Urgent</option>
-                <option value="HIGH">High</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="LOW">Low</option>
+                <option value="all">{t('All Priorities')}</option>
+                <option value="URGENT">{t('Urgent')}</option>
+                <option value="HIGH">{t('High')}</option>
+                <option value="MEDIUM">{t('Medium')}</option>
+                <option value="LOW">{t('Low')}</option>
               </select>
               <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Sort By</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]"><TranslatedText text="Sort By" /></label>
             <div className="relative">
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}
                 className="w-full h-10 pl-3 pr-8 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer">
-                <option value="priority">Priority</option>
-                <option value="pickupTime">Pickup Time</option>
-                <option value="value">Value</option>
-                <option value="createdAt">Created Date</option>
+                <option value="priority">{t('Priority')}</option>
+                <option value="pickupTime">{t('Pickup Time')}</option>
+                <option value="value">{t('Value')}</option>
+                <option value="createdAt">{t('Created Date')}</option>
               </select>
             </div>
           </div>
           <div className="space-y-1.5 col-span-2 lg:col-span-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Search</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]"><TranslatedText text="Search" /></label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-              <input type="text" placeholder="Search by name or ID..." value={searchTerm}
+              <input type="text" placeholder={t('Search by name or ID...')} value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#345E85] placeholder:text-slate-400" />
             </div>
@@ -560,7 +560,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.15em]">
-            Consignments <span className="text-[#345E85] ml-1">{sortedCargos.length}</span>
+            <TranslatedText text="Consignments" /> <span className="text-[#345E85] ml-1">{sortedCargos.length}</span>
           </h3>
           {sortedCargos.length > 0 && (
             <label className="flex items-center gap-2 cursor-pointer group">
@@ -575,7 +575,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                 <div className="w-4 h-4 border-2 border-slate-300 rounded-md peer-checked:bg-[#345E85] peer-checked:border-[#345E85] transition-all" />
                 <CheckCircle className="w-3 h-3 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-all" />
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-[#345E85] transition-colors">Select All</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-[#345E85] transition-colors"><TranslatedText text="Select All" /></span>
             </label>
           )}
         </div>
@@ -605,14 +605,14 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                     <div className="flex flex-wrap items-center gap-1.5 mb-1">
                       <h4 className="text-base font-bold text-[#0f172a] group-hover:text-[#345E85] transition-colors">{cargo.name}</h4>
                       <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border flex-shrink-0 ${getStatusColor(cargo.status)}`}>
-                        {cargo.status.replace('_', ' ')}
+                        <TranslatedText text={cargo.status.replace('_', ' ')} />
                       </span>
                       <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border flex-shrink-0 ${getPriorityColor(cargo.priority)}`}>
-                        {cargo.priority}
+                        <TranslatedText text={cargo.priority} />
                       </span>
                       {cargo.status === 'DELIVERED' && (
                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-1 flex-shrink-0">
-                          <ShieldCheck size={9} /> POD
+                          <ShieldCheck size={9} /> <TranslatedText text="POD" />
                         </span>
                       )}
                     </div>
@@ -626,14 +626,14 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                         ) : (
                           <AlertTriangle className="w-3 h-3" />
                         )}
-                        {getInspectionStatusLabel(cargo.inspectionStatus || 'PENDING')}
+                        <TranslatedText text={getInspectionStatusLabel(cargo.inspectionStatus || 'PENDING')} />
                       </span>
                     </div>
                   </div>
 
                   {/* Value — sm+ only */}
                   <div className="hidden sm:block text-right flex-shrink-0 pl-2">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Value</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block"><TranslatedText text="Value" /></span>
                     <span className="text-base font-black text-emerald-600">{formatCurrency(cargo.value)}</span>
                   </div>
                 </div>
@@ -641,15 +641,15 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                 {/* Meta grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 p-3 bg-slate-50 rounded-xl border border-slate-100/60">
                   <div>
-                    <div className="flex items-center gap-1 text-slate-400 mb-0.5"><Weight className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-wider">Weight</span></div>
+                    <div className="flex items-center gap-1 text-slate-400 mb-0.5"><Weight className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-wider"><TranslatedText text="Weight" /></span></div>
                     <p className="text-xs font-bold text-slate-700">{cargo.weight} kg</p>
                   </div>
                   <div>
-                    <div className="flex items-center gap-1 text-slate-400 mb-0.5"><Ruler className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-wider">Dims</span></div>
+                    <div className="flex items-center gap-1 text-slate-400 mb-0.5"><Ruler className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-wider"><TranslatedText text="Dims" /></span></div>
                     <p className="text-xs font-bold text-slate-700">{cargo.dimensions.length}×{cargo.dimensions.width}×{cargo.dimensions.height}</p>
                   </div>
                   <div className="col-span-2">
-                    <div className="flex items-center gap-1 text-slate-400 mb-0.5"><Calendar className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-wider">Schedule</span></div>
+                    <div className="flex items-center gap-1 text-slate-400 mb-0.5"><Calendar className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-wider"><TranslatedText text="Schedule" /></span></div>
                     <p className="text-xs font-bold text-slate-700">
                       {cargo.pickupTime ? new Date(cargo.pickupTime).toLocaleDateString() : '—'}
                       <span className="text-slate-300 mx-1">→</span>
@@ -661,11 +661,11 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                 {/* Route */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2.5">
                   <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100/50">
-                    <div className="flex items-center gap-1.5 text-[#345E85] mb-0.5"><div className="w-2 h-2 rounded-full bg-[#345E85]" /><span className="text-[9px] font-black uppercase tracking-wider">Pickup</span></div>
+                    <div className="flex items-center gap-1.5 text-[#345E85] mb-0.5"><div className="w-2 h-2 rounded-full bg-[#345E85]" /><span className="text-[9px] font-black uppercase tracking-wider"><TranslatedText text="Pickup" /></span></div>
                     <p className="text-xs font-semibold text-slate-700 truncate">{cargo.pickupLocation}</p>
                   </div>
                   <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-100/50">
-                    <div className="flex items-center gap-1.5 text-emerald-600 mb-0.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[9px] font-black uppercase tracking-wider">Delivery</span></div>
+                    <div className="flex items-center gap-1.5 text-emerald-600 mb-0.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[9px] font-black uppercase tracking-wider"><TranslatedText text="Delivery" /></span></div>
                     <p className="text-xs font-semibold text-slate-700 truncate">{cargo.deliveryLocation}</p>
                   </div>
                 </div>
@@ -673,8 +673,8 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                 {/* Tags */}
                 {(cargo.hazardous || cargo.fragility !== 'LOW' || cargo.temperature.min !== null) && (
                   <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {cargo.hazardous && <span className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Hazardous</span>}
-                    {cargo.fragility !== 'LOW' && <span className="px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-1"><Package className="w-3 h-3" /> {cargo.fragility} Fragility</span>}
+                    {cargo.hazardous && <span className="px-2 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> <TranslatedText text="Hazardous" /></span>}
+                    {cargo.fragility !== 'LOW' && <span className="px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-1"><Package className="w-3 h-3" /> <TranslatedText text={cargo.fragility} /> <TranslatedText text="Fragility" /></span>}
                     {cargo.temperature.min !== null && <span className="px-2 py-0.5 bg-cyan-50 text-cyan-600 border border-cyan-100 rounded-lg text-[9px] font-black uppercase flex items-center gap-1"><Thermometer className="w-3 h-3" />{cargo.temperature.min}°–{cargo.temperature.max}° {cargo.temperature.unit}</span>}
                   </div>
                 )}
@@ -683,7 +683,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                 <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-50">
                   <button onClick={() => handleViewDetails(cargo)}
                     className="flex-1 min-w-[80px] px-3 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-[#345E85] hover:text-white transition-all flex items-center justify-center gap-1.5">
-                    Details <ArrowRight className="w-3 h-3" />
+                    <TranslatedText text="Details" /> <ArrowRight className="w-3 h-3" />
                   </button>
 
                   {cargo.status === 'PENDING' && (<>
@@ -694,12 +694,12 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                           : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
                       }`}>
                       <Search className="w-3 h-3" />
-                      {cargo.inspectionStatus === 'READY_FOR_RE_INSPECTION' ? 'Re-Inspect' : 'Inspect'}
+                      {cargo.inspectionStatus === 'READY_FOR_RE_INSPECTION' ? <TranslatedText text="Re-Inspect" /> : <TranslatedText text="Inspect" />}
                     </button>
                     {canProceedWithLoad(cargo.inspectionStatus || 'PENDING') && (
                       <button onClick={() => { setSelectedCargo(cargo); handleAcceptCargo(cargo); }}
                         className="flex-1 min-w-[100px] px-3 py-2.5 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-900 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20">
-                        <Truck className="w-3 h-3" /> Load & Confirm
+                        <Truck className="w-3 h-3" /> <TranslatedText text="Load & Confirm" />
                       </button>
                     )}
                   </>)}
@@ -707,17 +707,17 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                   {(cargo.status === 'IN_TRANSIT' || cargo.status === 'LOADED') && (
                     <button onClick={() => handleDeliverCargo(cargo)}
                       className="flex-1 min-w-[120px] px-3 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 transition-all flex items-center justify-center gap-1.5 animate-pulse shadow-md shadow-emerald-900/10">
-                      <CheckCircle className="w-3.5 h-3.5" /> Complete Delivery
+                      <CheckCircle className="w-3.5 h-3.5" /> <TranslatedText text="Complete Delivery" />
                     </button>
                   )}
 
                   <button onClick={() => { setHealthCargo(cargo); setShowHealthModal(true); }}
-                    className="px-3 py-2.5 bg-blue-50 border border-blue-100 text-blue-500 rounded-xl hover:bg-blue-100 transition-all flex items-center justify-center" title="Telemetry Health Scan">
+                    className="px-3 py-2.5 bg-blue-50 border border-blue-100 text-blue-500 rounded-xl hover:bg-blue-100 transition-all flex items-center justify-center" title={t('Telemetry Health Scan')}>
                     <Activity className="w-4 h-4" />
                   </button>
 
                   <button onClick={handleContactShipper}
-                    className="px-3 py-2.5 bg-white border border-slate-200 text-slate-400 rounded-xl hover:border-slate-300 hover:text-slate-600 transition-all flex items-center justify-center" title="Contact Shipper">
+                    className="px-3 py-2.5 bg-white border border-slate-200 text-slate-400 rounded-xl hover:border-slate-300 hover:text-slate-600 transition-all flex items-center justify-center" title={t('Contact Shipper')}>
                     <MessageSquare className="w-4 h-4" />
                   </button>
                 </div>

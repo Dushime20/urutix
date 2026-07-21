@@ -339,7 +339,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
         setCargo(mappedCargo);
       } catch (error: any) {
         console.error('Error fetching cargo data:', error);
-        toast.error('Failed to load cargo details');
+        toast.error(t('Failed to load cargo details'));
       } finally {
         setLoading(false);
       }
@@ -373,7 +373,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      toast.error('Failed to download document');
+      toast.error(t('Failed to download document'));
     }
   };
 
@@ -389,8 +389,8 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
     return (
       <div className="text-center py-20">
         <AlertTriangle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-        <h3 className="text-xl font-black text-slate-700">Cargo Not Found</h3>
-        <p className="text-slate-400">The requested cargo details could not be retrieved.</p>
+        <h3 className="text-xl font-black text-slate-700"><TranslatedText text="Cargo Not Found" /></h3>
+        <p className="text-slate-400"><TranslatedText text="The requested cargo details could not be retrieved." /></p>
       </div>
     );
   }
@@ -418,14 +418,15 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
     }
   };
 
-  const formatDisplay = (value: any, fallback: string = 'Not Available'): string => {
+  const formatDisplay = (value: any, fallback?: string): string => {
+    const fb = fallback ?? t('Not Available');
     if (value === null || value === undefined || value === '' ||
       (Array.isArray(value) && value.length === 0) ||
       (typeof value === 'object' && Object.keys(value).length === 0)) {
-      return fallback;
+      return fb;
     }
     if (Array.isArray(value)) {
-      return value.length > 0 ? value.join(', ') : fallback;
+      return value.length > 0 ? value.join(', ') : fb;
     }
     return String(value);
   };
@@ -453,14 +454,14 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                   <ArrowLeft className="w-4 h-4 text-slate-600" />
                 </button>
                 <span className="px-3 py-1 bg-blue-50 text-[#345E85] text-[10px] font-black uppercase tracking-[0.2em] rounded-lg">
-                  Consignment Details
+                  <TranslatedText text="Consignment Details" />
                 </span>
               </div>
               <div>
                 <h2 className="text-3xl font-black text-[#0f172a] mb-2">{cargo.name}</h2>
                 <div className="flex items-center gap-2 text-slate-400 font-medium font-mono text-sm">
                   <Package className="w-4 h-4" />
-                  ID: {cargo.id}
+                  <TranslatedText text="ID:" /> {cargo.id}
                 </div>
               </div>
             </div>
@@ -470,14 +471,14 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                 onClick={() => setShowRejectModal(true)}
                 className="px-5 py-2.5 text-rose-600 border border-slate-200 rounded-xl hover:bg-rose-50 hover:border-rose-200 transition-all text-xs font-black uppercase tracking-wider"
               >
-                Reject Cargo
+                <TranslatedText text="Reject Cargo" />
               </button>
               <button
                 onClick={onInspect}
                 className="px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:border-[#345E85] hover:bg-blue-50 transition-all text-xs font-black uppercase tracking-wider flex items-center gap-2"
               >
                 <Shield className="w-4 h-4" />
-                Inspect
+                <TranslatedText text="Inspect" />
               </button>
               <button
                 onClick={onAccept}
@@ -489,12 +490,12 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                   }`}
                 title={
                   !canProceedWithLoad(cargo.inspectionStatus || 'PENDING')
-                    ? PRE_TRIP_INSPECTION_BLOCKED_MESSAGE
+                    ? t(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE)
                     : ''
                 }
               >
                 <CheckCircle className="w-4 h-4" />
-                Accept & Load
+                <TranslatedText text="Accept & Load" />
               </button>
             </div>
           </div>
@@ -511,7 +512,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                     }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-[#345E85]' : 'text-slate-400'}`} />
-                  {tab.label}
+                  <TranslatedText text={tab.label} />
                   {isActive && (
                     <motion.div
                       layoutId="activeTabIndicator"
@@ -542,25 +543,25 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <Info className="w-4 h-4 text-slate-400" />
-                    Cargo Specifications
+                    <TranslatedText text="Cargo Specifications" />
                   </h3>
                   <div className="grid grid-cols-2 gap-y-6 gap-x-8">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Quantity</span>
-                      <p className="text-base font-bold text-slate-700">{cargo.quantity > 0 ? `${cargo.quantity} ${cargo.unit}` : 'N/A'}</p>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Quantity" /></span>
+                      <p className="text-base font-bold text-slate-700">{cargo.quantity > 0 ? `${cargo.quantity} ${cargo.unit}` : t('N/A')}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Weight</span>
-                      <p className="text-base font-bold text-slate-700">{cargo.weight > 0 ? `${cargo.weight} kg` : 'N/A'}</p>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Weight" /></span>
+                      <p className="text-base font-bold text-slate-700">{cargo.weight > 0 ? `${cargo.weight} kg` : t('N/A')}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dimensions</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Dimensions" /></span>
                       <p className="text-base font-bold text-slate-700">
-                        {cargo.dimensions.length > 0 ? `${cargo.dimensions.length}×${cargo.dimensions.width}×${cargo.dimensions.height} cm` : 'N/A'}
+                        {cargo.dimensions.length > 0 ? `${cargo.dimensions.length}×${cargo.dimensions.width}×${cargo.dimensions.height} cm` : t('N/A')}
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Category</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Category" /></span>
                       <p className="text-base font-bold text-slate-700">{formatDisplay(cargo.category)}</p>
                     </div>
                   </div>
@@ -569,7 +570,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                 <div className="pt-6 border-t border-slate-50">
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
                     <User className="w-4 h-4 text-slate-400" />
-                    Shipper Information
+                    <TranslatedText text="Shipper Information" />
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
@@ -584,7 +585,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                       </div>
                       <div className="flex gap-2">
                         <button onClick={onContactShipper} className="flex-1 px-3 py-2 bg-blue-50 text-[#345E85] rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-blue-100 transition-colors">
-                          Message
+                          <TranslatedText text="Message" />
                         </button>
                         <button className="px-3 py-2 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
                           <Phone className="w-4 h-4" />
@@ -609,14 +610,14 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
               <div className="space-y-6">
                 {/* Valuables Card */}
                 <div className="bg-slate-900 text-white rounded-[1.5rem] p-6 shadow-xl shadow-slate-900/10">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Financials</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6"><TranslatedText text="Financials" /></h4>
                   <div className="space-y-6">
                     <div>
-                      <span className="text-slate-400 text-xs font-semibold mb-1 block">Declared Value</span>
+                      <span className="text-slate-400 text-xs font-semibold mb-1 block"><TranslatedText text="Declared Value" /></span>
                       <div className="text-3xl font-black text-emerald-400">{formatCurrency(cargo.value)}</div>
                     </div>
                     <div>
-                      <span className="text-slate-400 text-xs font-semibold mb-1 block">Insurance Coverage</span>
+                      <span className="text-slate-400 text-xs font-semibold mb-1 block"><TranslatedText text="Insurance Coverage" /></span>
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-emerald-400" />
                         <span className="font-bold text-lg">{formatCurrency(cargo.insurance.amount)}</span>
@@ -627,23 +628,23 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
 
                 {/* Requirements Card */}
                 <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-lg shadow-slate-200/50 p-6">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Requirements</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6"><TranslatedText text="Requirements" /></h4>
                   <div className="space-y-3">
                     <div className={`flex items-center justify-between p-3 rounded-xl border ${cargo.hazardous ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
-                      <span className="text-xs font-bold text-slate-700">Hazardous</span>
+                      <span className="text-xs font-bold text-slate-700"><TranslatedText text="Hazardous" /></span>
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${cargo.hazardous ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-600'}`}>
-                        {cargo.hazardous ? 'YES' : 'NO'}
+                        {cargo.hazardous ? <TranslatedText text="YES" /> : <TranslatedText text="NO" />}
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-xl border bg-slate-50 border-slate-100">
-                      <span className="text-xs font-bold text-slate-700">Fragility</span>
+                      <span className="text-xs font-bold text-slate-700"><TranslatedText text="Fragility" /></span>
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border ${getFragilityColor(cargo.fragility)}`}>
-                        {cargo.fragility}
+                        <TranslatedText text={cargo.fragility} />
                       </span>
                     </div>
                     {cargo.temperature.min !== null && (
                       <div className="flex items-center justify-between p-3 rounded-xl border bg-cyan-50 border-cyan-100">
-                        <span className="text-xs font-bold text-slate-700">Temp Control</span>
+                        <span className="text-xs font-bold text-slate-700"><TranslatedText text="Temp Control" /></span>
                         <div className="flex items-center gap-1 text-cyan-700 font-bold text-xs">
                           {getTemperatureIcon()}
                           {cargo.temperature.min}° - {cargo.temperature.max}°{cargo.temperature.unit}
@@ -656,19 +657,19 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                             <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-900/10">
                                <Activity className="w-4 h-4" />
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Sensor Intel</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800"><TranslatedText text="Sensor Intel" /></span>
                          </div>
                          <div className="grid grid-cols-2 gap-4">
                             <div>
-                               <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest mb-1">Live Temp</p>
+                               <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest mb-1"><TranslatedText text="Live Temp" /></p>
                                <p className="text-lg font-black text-emerald-900">{cargo.environmentalStats.currentTemp}°{cargo.temperature.unit}</p>
                             </div>
                             <div>
-                               <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest mb-1">Humidity</p>
+                               <p className="text-[9px] font-black text-emerald-600/60 uppercase tracking-widest mb-1"><TranslatedText text="Humidity" /></p>
                                <p className="text-lg font-black text-emerald-900">{cargo.environmentalStats.currentHumidity}%</p>
                             </div>
                          </div>
-                         <p className="text-[9px] font-bold text-emerald-600/40 uppercase mt-3 text-right">Updated {new Date(cargo.environmentalStats.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                         <p className="text-[9px] font-bold text-emerald-600/40 uppercase mt-3 text-right"><TranslatedText text="Updated" /> {new Date(cargo.environmentalStats.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     )}
                   </div>
@@ -690,24 +691,24 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                     <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#345E85]" />
                     </div>
-                    Pickup Location
+                    <TranslatedText text="Pickup Location" />
                   </h4>
                   <div className="pl-4 border-l-2 border-blue-100 space-y-4">
                     <p className="text-lg font-bold text-slate-800">{formatDisplay(cargo.route.pickup.address)}</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-slate-50 p-3 rounded-xl">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Time Window</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Time Window" /></span>
                         <p className="font-mono text-xs font-bold text-slate-700">{formatDisplay(cargo.route.pickup.timeWindow)}</p>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-xl">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Contact</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Contact" /></span>
                         <p className="text-xs font-bold text-slate-700">{formatDisplay(cargo.route.pickup.contact)}</p>
                       </div>
                     </div>
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">Instructions</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2"><TranslatedText text="Instructions" /></span>
                       <p className="text-sm font-medium text-slate-600 italic bg-blue-50/50 p-3 rounded-xl border border-blue-50">
-                        "{formatDisplay(cargo.route.pickup.instructions, 'None')}"
+                        "{formatDisplay(cargo.route.pickup.instructions, t('None'))}"
                       </p>
                     </div>
                   </div>
@@ -719,24 +720,24 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                     <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                     </div>
-                    Delivery Location
+                    <TranslatedText text="Delivery Location" />
                   </h4>
                   <div className="pl-4 border-l-2 border-emerald-100 space-y-4">
                     <p className="text-lg font-bold text-slate-800">{formatDisplay(cargo.route.delivery.address)}</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-slate-50 p-3 rounded-xl">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Time Window</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Time Window" /></span>
                         <p className="font-mono text-xs font-bold text-slate-700">{formatDisplay(cargo.route.delivery.timeWindow)}</p>
                       </div>
                       <div className="bg-slate-50 p-3 rounded-xl">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Contact</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Contact" /></span>
                         <p className="text-xs font-bold text-slate-700">{formatDisplay(cargo.route.delivery.contact)}</p>
                       </div>
                     </div>
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">Instructions</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2"><TranslatedText text="Instructions" /></span>
                       <p className="text-sm font-medium text-slate-600 italic bg-emerald-50/50 p-3 rounded-xl border border-emerald-50">
-                        "{formatDisplay(cargo.route.delivery.instructions, 'None')}"
+                        "{formatDisplay(cargo.route.delivery.instructions, t('None'))}"
                       </p>
                     </div>
                   </div>
@@ -751,18 +752,18 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
               <div className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-lg shadow-slate-200/50">
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
                   <Truck className="w-4 h-4 text-slate-400" />
-                  Equipment Required
+                  <TranslatedText text="Equipment Required" />
                 </h3>
                 <div className="space-y-3">
                   {cargo.handling.loadingEquipment.length > 0 ? (
                     cargo.handling.loadingEquipment.map((eq, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                         <div className="w-2 h-2 rounded-full bg-[#345E85]" />
-                        <span className="font-bold text-slate-700 text-sm">{eq}</span>
+                        <span className="font-bold text-slate-700 text-sm"><TranslatedText text={eq} /></span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-slate-400 italic text-sm">No special equipment specified.</p>
+                    <p className="text-slate-400 italic text-sm"><TranslatedText text="No special equipment specified." /></p>
                   )}
                 </div>
               </div>
@@ -770,18 +771,18 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
               <div className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-lg shadow-slate-200/50">
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
                   <Shield className="w-4 h-4 text-slate-400" />
-                  Safety Gear
+                  <TranslatedText text="Safety Gear" />
                 </h3>
                 <div className="space-y-3">
                   {cargo.handling.safetyGear.length > 0 ? (
                     cargo.handling.safetyGear.map((gear, i) => (
                       <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="font-bold text-slate-700 text-sm">{gear}</span>
+                        <span className="font-bold text-slate-700 text-sm"><TranslatedText text={gear} /></span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-slate-400 italic text-sm">Standard safety gear only.</p>
+                    <p className="text-slate-400 italic text-sm"><TranslatedText text="Standard safety gear only." /></p>
                   )}
                 </div>
               </div>
@@ -793,30 +794,30 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             <div className="bg-white rounded-[1.5rem] p-8 border border-slate-100 shadow-lg shadow-slate-200/50">
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-slate-400" />
-                Compliance Checklist
+                <TranslatedText text="Compliance Checklist" />
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-widest text-[#345E85] mb-4">Required Certifications</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-[#345E85] mb-4"><TranslatedText text="Required Certifications" /></h4>
                   <ul className="space-y-3">
                     {cargo.compliance.certifications.length > 0 ? cargo.compliance.certifications.map((c, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5" />
-                        <span className="text-sm font-medium text-slate-700">{c}</span>
+                        <span className="text-sm font-medium text-slate-700"><TranslatedText text={c} /></span>
                       </li>
-                    )) : <li className="text-slate-400 text-sm italic">None required</li>}
+                    )) : <li className="text-slate-400 text-sm italic"><TranslatedText text="None required" /></li>}
                   </ul>
                 </div>
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-widest text-[#345E85] mb-4">Permits & Regulations</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-[#345E85] mb-4"><TranslatedText text="Permits & Regulations" /></h4>
                   <ul className="space-y-3">
                     {cargo.compliance.permits.concat(cargo.compliance.regulations).length > 0 ?
                       cargo.compliance.permits.concat(cargo.compliance.regulations).map((c, i) => (
                         <li key={i} className="flex items-start gap-3">
                           <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5" />
-                          <span className="text-sm font-medium text-slate-700">{c}</span>
+                          <span className="text-sm font-medium text-slate-700"><TranslatedText text={c} /></span>
                         </li>
-                      )) : <li className="text-slate-400 text-sm italic">Standard regulations adhere</li>}
+                      )) : <li className="text-slate-400 text-sm italic"><TranslatedText text="Standard regulations adhere" /></li>}
                   </ul>
                 </div>
               </div>
@@ -828,7 +829,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             <div className="bg-white rounded-[1.5rem] p-8 border border-slate-100 shadow-lg shadow-slate-200/50">
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-slate-400" />
-                Attached Documents
+                <TranslatedText text="Attached Documents" />
               </h3>
 
               {loadingDocuments ? (
@@ -855,7 +856,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
               ) : (
                 <div className="text-center py-12 border-2 border-dashed border-slate-100 rounded-xl">
                   <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500 font-medium">No documents available</p>
+                  <p className="text-slate-500 font-medium"><TranslatedText text="No documents available" /></p>
                 </div>
               )}
             </div>
@@ -872,7 +873,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             className="bg-white rounded-[2rem] max-w-md w-full p-6 shadow-2xl"
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight">Reject Cargo</h3>
+              <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Reject Cargo" /></h3>
               <button
                 onClick={() => setShowRejectModal(false)}
                 className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
@@ -882,12 +883,12 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             </div>
 
             <p className="text-slate-500 text-sm font-medium mb-4">
-              Please provide a reason for rejecting this cargo. This will be sent to dispatch.
+              <TranslatedText text="Please provide a reason for rejecting this cargo. This will be sent to dispatch." />
             </p>
 
             <textarea
               className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 resize-none transition-all"
-              placeholder="Enter rejection reason..."
+              placeholder={t('Enter rejection reason...')}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
@@ -897,14 +898,14 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                 onClick={() => setShowRejectModal(false)}
                 className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors"
               >
-                Cancel
+                <TranslatedText text="Cancel" />
               </button>
               <button
                 onClick={handleReject}
                 disabled={!rejectReason.trim()}
                 className="flex-1 py-3 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Reject
+                <TranslatedText text="Confirm Reject" />
               </button>
             </div>
           </motion.div>

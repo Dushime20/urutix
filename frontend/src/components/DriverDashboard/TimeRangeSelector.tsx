@@ -2,6 +2,7 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../translated-text';
 
 interface TimeRangeSelectorProps {
   value: string;
@@ -28,7 +29,9 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100">
           <Calendar className="w-4 h-4" />
         </div>
-        <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Time Range:</span>
+        <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">
+          <TranslatedText text="Time Range:" />
+        </span>
       </div>
       <div className="flex items-center gap-1 bg-white/50 backdrop-blur-md rounded-2xl border border-slate-100 p-1 shadow-sm overflow-x-auto no-scrollbar scroll-smooth">
         {ranges.map((range) => (
@@ -44,7 +47,7 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 : 'text-slate-400 hover:text-[#345E85] hover:bg-white'
             )}
           >
-            {range.label}
+            <TranslatedText text={range.label} />
           </motion.button>
         ))}
       </div>

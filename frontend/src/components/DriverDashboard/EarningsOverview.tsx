@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   BarChart3,
   Download,
@@ -42,6 +43,7 @@ interface EarningsOverviewProps {
 
 export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) => {
   const { compact: formatCurrency } = useCurrencyFormat();
+  const { tSync: t } = useTranslation();
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [showDetails, setShowDetails] = useState(false);
 
@@ -110,7 +112,7 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
     labels: currentData.map(d => d.period),
     datasets: [
       {
-        label: 'Net Earnings',
+        label: t('Net Earnings'),
         data: currentData.map(d => d.netEarnings),
         borderColor: '#345E85',
         backgroundColor: (ctx: any) => {
@@ -124,7 +126,7 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
         pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
       },
       {
-        label: 'Bonuses',
+        label: t('Bonuses'),
         data: currentData.map(d => d.bonuses),
         borderColor: '#10b981', backgroundColor: 'transparent',
         borderWidth: 2, borderDash: [5, 5], tension: 0.4,
@@ -132,16 +134,16 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
         pointRadius: 0, pointHoverRadius: 4,
       },
     ],
-  }), [currentData]);
+  }), [currentData, t]);
 
   const breakdownChartData = useMemo(() => ({
     labels: currentData.map(d => d.period),
     datasets: [
-      { label: 'Base', data: currentData.map(d => d.earnings), backgroundColor: '#345E85', borderRadius: 6, barThickness: 12 },
-      { label: 'Bonus', data: currentData.map(d => d.bonuses), backgroundColor: '#10b981', borderRadius: 6, barThickness: 12 },
-      { label: 'Deductions', data: currentData.map(d => -d.deductions), backgroundColor: '#ef4444', borderRadius: 6, barThickness: 12 },
+      { label: t('Base'), data: currentData.map(d => d.earnings), backgroundColor: '#345E85', borderRadius: 6, barThickness: 12 },
+      { label: t('Bonus'), data: currentData.map(d => d.bonuses), backgroundColor: '#10b981', borderRadius: 6, barThickness: 12 },
+      { label: t('Deductions'), data: currentData.map(d => -d.deductions), backgroundColor: '#ef4444', borderRadius: 6, barThickness: 12 },
     ],
-  }), [currentData]);
+  }), [currentData, t]);
 
   if (isLoading) {
     return (
@@ -158,11 +160,11 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
         <div>
           <div className="flex items-center gap-3 mb-2">
             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-lg border border-emerald-100">
-              Financials
+              <TranslatedText text="Financials" />
             </span>
           </div>
-          <h2 className="text-3xl font-black text-[#0f172a] uppercase tracking-tight">Earnings Report</h2>
-          <p className="text-slate-400 font-medium mt-1">Your income from completed trips</p>
+          <h2 className="text-3xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Earnings Report" /></h2>
+          <p className="text-slate-400 font-medium mt-1"><TranslatedText text="Your income from completed trips" /></p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -172,16 +174,16 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
               onChange={(e) => setPeriod(e.target.value as any)}
               className="h-10 pl-4 pr-10 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
             >
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
+              <option value="week">{t('This Week')}</option>
+              <option value="month">{t('This Month')}</option>
+              <option value="quarter">{t('This Quarter')}</option>
+              <option value="year">{t('This Year')}</option>
             </select>
             <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
           </div>
           <button className="h-10 px-4 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10">
             <Download className="w-4 h-4" />
-            Export
+            <TranslatedText text="Export" />
           </button>
         </div>
       </div>
@@ -190,8 +192,8 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
       {!hasData && (
         <div className="bg-white rounded-[2rem] border border-slate-100 p-16 flex flex-col items-center justify-center gap-4 text-center">
           <DollarSign size={40} className="text-slate-200" />
-          <p className="text-lg font-black text-slate-400 uppercase tracking-widest">No earnings data yet</p>
-          <p className="text-sm text-slate-300">Complete trips to see your earnings breakdown here</p>
+          <p className="text-lg font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="No earnings data yet" /></p>
+          <p className="text-sm text-slate-300"><TranslatedText text="Complete trips to see your earnings breakdown here" /></p>
         </div>
       )}
 
@@ -217,8 +219,8 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
                 </div>
                 <div>
                   <h3 className="text-3xl font-black text-slate-800 tracking-tight">{card.value}</h3>
-                  <p className="text-sm font-bold text-slate-600">{card.label}</p>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{card.sub}</p>
+                  <p className="text-sm font-bold text-slate-600"><TranslatedText text={card.label} /></p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text={card.sub} /></p>
                 </div>
               </motion.div>
             ))}
@@ -229,14 +231,14 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
             <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h3 className="text-lg font-black text-slate-800">Income Trend</h3>
-                  <p className="text-slate-400 text-sm font-medium">Net earnings vs bonuses</p>
+                  <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Income Trend" /></h3>
+                  <p className="text-slate-400 text-sm font-medium"><TranslatedText text="Net earnings vs bonuses" /></p>
                 </div>
                 <div className="flex gap-2">
                   {['Net', 'Bonus'].map((l, i) => (
                     <div key={l} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg">
                       <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-[#345E85]' : 'bg-emerald-500'}`} />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">{l}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase"><TranslatedText text={l} /></span>
                     </div>
                   ))}
                 </div>
@@ -249,8 +251,8 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
             <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h3 className="text-lg font-black text-slate-800">Revenue Breakdown</h3>
-                  <p className="text-slate-400 text-sm font-medium">Base · Bonus · Deductions</p>
+                  <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Revenue Breakdown" /></h3>
+                  <p className="text-slate-400 text-sm font-medium"><TranslatedText text="Base · Bonus · Deductions" /></p>
                 </div>
                 <div className="p-2 bg-slate-50 rounded-xl">
                   <BarChart3 className="w-5 h-5 text-slate-400" />
@@ -267,7 +269,7 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
             <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm lg:col-span-2">
               <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
                 <CreditCard className="w-5 h-5 text-[#345E85]" />
-                Financial Summary
+                <TranslatedText text="Financial Summary" />
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
@@ -281,7 +283,7 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
                     </div>
                     <div>
                       <span className={`text-xl font-black block leading-none ${item.color}`}>{item.value}</span>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mt-1 block">{item.label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mt-1 block"><TranslatedText text={item.label} /></span>
                     </div>
                   </div>
                 ))}
@@ -291,7 +293,7 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
                   onClick={() => setShowDetails(!showDetails)}
                   className="w-full py-4 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                 >
-                  {showDetails ? 'Hide' : 'View'} Detailed Ledger
+                  {showDetails ? <TranslatedText text="Hide" /> : <TranslatedText text="View" />} <TranslatedText text="Detailed Ledger" />
                   {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               </div>
@@ -301,19 +303,19 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
               <div>
                 <h3 className="text-lg font-black text-slate-800 flex items-center gap-2 mb-6">
                   <Zap className="w-5 h-5 text-[#345E85]" />
-                  Efficiency
+                  <TranslatedText text="Efficiency" />
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center pb-4 border-b border-slate-50">
-                    <span className="text-sm font-bold text-slate-500">Hourly Rate</span>
+                    <span className="text-sm font-bold text-slate-500"><TranslatedText text="Hourly Rate" /></span>
                     <span className="text-base font-black text-slate-800">{formatCurrency(avgPerHour)}/hr</span>
                   </div>
                   <div className="flex justify-between items-center pb-4 border-b border-slate-50">
-                    <span className="text-sm font-bold text-slate-500">Per KM</span>
+                    <span className="text-sm font-bold text-slate-500"><TranslatedText text="Per KM" /></span>
                     <span className="text-base font-black text-slate-800">{formatCurrency(avgPerKm)}/km</span>
                   </div>
                   <div className="flex justify-between items-center pb-4 border-b border-slate-50">
-                    <span className="text-sm font-bold text-slate-500">Total Distance</span>
+                    <span className="text-sm font-bold text-slate-500"><TranslatedText text="Total Distance" /></span>
                     <span className="text-base font-black text-slate-800">{totalDistance.toLocaleString()} km</span>
                   </div>
                 </div>
@@ -331,13 +333,13 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
                 className="overflow-hidden"
               >
                 <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-lg shadow-slate-200/50 mt-4">
-                  <h3 className="text-lg font-black text-slate-800 mb-6">Ledger Details</h3>
+                  <h3 className="text-lg font-black text-slate-800 mb-6"><TranslatedText text="Ledger Details" /></h3>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b-2 border-slate-100">
                           {['Period', 'Trips', 'Hours', 'Distance', 'Base', 'Bonus', 'Ded.', 'Net Earned'].map(h => (
-                            <th key={h} className={`pb-4 text-[10px] font-black text-slate-400 uppercase tracking-wider ${h === 'Period' ? 'text-left' : 'text-right'}`}>{h}</th>
+                            <th key={h} className={`pb-4 text-[10px] font-black text-slate-400 uppercase tracking-wider ${h === 'Period' ? 'text-left' : 'text-right'}`}><TranslatedText text={h} /></th>
                           ))}
                         </tr>
                       </thead>

@@ -212,6 +212,8 @@ function shouldSkipSync(config: InternalAxiosRequestConfig): boolean {
   const path = normalizePath(config.url);
   // Auth and read-only profile checks should not trigger global refresh
   if (/^\/auth(\/|$)/.test(path)) return true;
+  // Analytics/view tracking must not invalidate bidding + availability caches
+  if (/\/view$/.test(path)) return true;
   return false;
 }
 
@@ -234,7 +236,8 @@ export function resolveInvalidationKeys(path: string): QueryKeyPrefix[] {
 }
 
 /**
- * Invalidate and refetch active queries affected by a successful mutation.
+ * Invalidate active queries affected by a successful mutation.
+ * React Query refetches mounted queries after invalidation automatically.
  */
 export async function syncAfterMutation(
   method: string | undefined,
@@ -252,15 +255,11 @@ export async function syncAfterMutation(
   if (keys.length === 0) return;
 
   try {
+    // invalidateQueries already refetches active mounted queries; avoid a second
+    // refetch pass that can multiply concurrent requests after mutations.
     await Promise.all(
       keys.map((queryKey) =>
         queryClient.invalidateQueries({ queryKey }),
-      ),
-    );
-
-    await Promise.all(
-      keys.map((queryKey) =>
-        queryClient.refetchQueries({ queryKey, type: 'active' }),
       ),
     );
   } catch (error) {

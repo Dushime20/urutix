@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   ArrowRight,
 } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { driverApi } from '../../services/driverApi';
@@ -27,6 +29,7 @@ interface PreTripInspectionHubProps {
 }
 
 export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driverId }) => {
+  const { tSync: t } = useTranslation();
   const { data: loads = [], isLoading: loading, refetch } = usePreTripInspectionLoads(driverId);
   const [selectedLoadId, setSelectedLoadId] = useState<string | null>(null);
   const [historyLoadId, setHistoryLoadId] = useState<string | null>(null);
@@ -38,7 +41,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
       setHistory(records);
       setHistoryLoadId(loadId);
     } catch (error: any) {
-      toast.error(getApiErrorMessage(error));
+      toast.error(t(getApiErrorMessage(error)));
     }
   };
 
@@ -69,14 +72,14 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
       <div>
         <div className="flex items-center gap-2 mb-1.5">
           <span className="px-2.5 py-1 bg-blue-50 text-[#345E85] text-[10px] font-black uppercase tracking-[0.2em] rounded-lg">
-            Mission Hub
+            <TranslatedText text="Mission Hub" />
           </span>
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-[#0f172a] uppercase tracking-tight">
-          Pre-Trip Inspection
+          <TranslatedText text="Pre-Trip Inspection" />
         </h2>
         <p className="text-sm text-slate-400 font-medium mt-0.5">
-          Mandatory cargo verification before loading and trip start
+          <TranslatedText text="Mandatory cargo verification before loading and trip start" />
         </p>
       </div>
 
@@ -84,7 +87,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
         {loads.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-2xl border border-slate-100">
             <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 font-medium">No assigned cargo requiring inspection.</p>
+            <p className="text-slate-500 font-medium"><TranslatedText text="No assigned cargo requiring inspection." /></p>
           </div>
         ) : (
           loads.map((load, index) => {
@@ -109,16 +112,16 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                       <span
                         className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border ${getInspectionStatusStyles(status)}`}
                       >
-                        {getInspectionStatusLabel(status)}
+                        <TranslatedText text={getInspectionStatusLabel(status)} />
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">
-                      {load.description || 'Assigned shipment awaiting pre-trip verification'}
+                      {load.description || <TranslatedText text="Assigned shipment awaiting pre-trip verification" />}
                     </p>
                     {load.preTripInspection?.historyCount > 0 && (
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2 flex items-center gap-1">
                         <History className="w-3 h-3" />
-                        {load.preTripInspection.historyCount} inspection attempt(s) on record
+                        {load.preTripInspection.historyCount} <TranslatedText text="inspection attempt(s) on record" />
                       </p>
                     )}
                   </div>
@@ -128,7 +131,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                       onClick={() => openHistory(load.id)}
                       className="px-3 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-100 transition-all flex items-center gap-1.5"
                     >
-                      <History className="w-3 h-3" /> History
+                      <History className="w-3 h-3" /> <TranslatedText text="History" />
                     </button>
                     {canInspect ? (
                       <button
@@ -136,20 +139,20 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                         className="px-4 py-2.5 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-md"
                       >
                         <Search className="w-3 h-3" />
-                        {status === 'READY_FOR_RE_INSPECTION' ? 'Re-Inspect' : 'Start Inspection'}
+                        {status === 'READY_FOR_RE_INSPECTION' ? <TranslatedText text="Re-Inspect" /> : <TranslatedText text="Start Inspection" />}
                         <ArrowRight className="w-3 h-3" />
                       </button>
                     ) : status === 'AWAITING_RESOLUTION' ? (
                       <span className="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" /> Blocked — Awaiting Owner
+                        <Clock className="w-3 h-3" /> <TranslatedText text="Blocked — Awaiting Owner" />
                       </span>
                     ) : status === 'APPROVED' ? (
                       <span className="px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                        <CheckCircle className="w-3 h-3" /> Approved
+                        <CheckCircle className="w-3 h-3" /> <TranslatedText text="Approved" />
                       </span>
                     ) : (
                       <span className="px-4 py-2.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                        <AlertTriangle className="w-3 h-3" /> Action Required
+                        <AlertTriangle className="w-3 h-3" /> <TranslatedText text="Action Required" />
                       </span>
                     )}
                   </div>
@@ -168,17 +171,17 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
           />
           <div className="relative w-full sm:max-w-lg bg-white rounded-t-[2rem] sm:rounded-2xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <History className="w-4 h-4" /> Inspection Timeline
+              <History className="w-4 h-4" /> <TranslatedText text="Inspection Timeline" />
             </h3>
             {history.length === 0 ? (
-              <p className="text-sm text-slate-500">No inspection records yet.</p>
+              <p className="text-sm text-slate-500"><TranslatedText text="No inspection records yet." /></p>
             ) : (
               <div className="space-y-3">
                 {history.map((record) => (
                   <div key={record.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                        Attempt #{record.attemptNumber}
+                        <TranslatedText text="Attempt #" />{record.attemptNumber}
                       </span>
                       <span
                         className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border ${
@@ -187,10 +190,10 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                             : 'text-rose-600 bg-rose-50 border-rose-100'
                         }`}
                       >
-                        {record.decision || record.status}
+                        <TranslatedText text={record.decision || record.status} />
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600">{record.overallNotes || 'No notes recorded'}</p>
+                    <p className="text-xs text-slate-600">{record.overallNotes || <TranslatedText text="No notes recorded" />}</p>
                     <p className="text-[10px] text-slate-400 mt-2">
                       {record.completedAt
                         ? new Date(record.completedAt).toLocaleString()
@@ -204,7 +207,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
               onClick={() => setHistoryLoadId(null)}
               className="mt-4 w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider"
             >
-              Close
+              <TranslatedText text="Close" />
             </button>
           </div>
         </div>
