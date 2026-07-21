@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { tripsAPI } from '../../services/api';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type CargoCondition = 'INTACT' | 'PARTIAL_DAMAGE' | 'FULL_DAMAGE' | 'SHORT_DELIVERY';
@@ -63,6 +65,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
   tripId, tripNumber, cargoTitle, origin, destination, cargoWeight,
   onComplete, onCancel,
 }) => {
+  const { tSync: t } = useTranslation();
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const [step,       setStep]       = useState<number>(1);
   const [isDrawing,  setIsDrawing]  = useState(false);
@@ -140,7 +143,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
   // ── Photos ────────────────────────────────────────────────────────────────
   const addPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    if (photos.length + files.length > 8) { toast.error('Maximum 8 photos allowed'); return; }
+    if (photos.length + files.length > 8) { toast.error(t('Maximum 8 photos allowed')); return; }
     setPhotos(p => [...p, ...files]);
     setPreviews(p => [...p, ...files.map(f => URL.createObjectURL(f))]);
     e.target.value = '';
@@ -166,8 +169,8 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!form.recipientName.trim()) { toast.error('Recipient name is required'); setStep(2); return; }
-    if (!hasSig) { toast.error('Recipient signature is required'); return; }
+    if (!form.recipientName.trim()) { toast.error(t('Recipient name is required')); setStep(2); return; }
+    if (!hasSig) { toast.error(t('Recipient signature is required')); return; }
 
     setSubmitting(true);
     try {
@@ -201,10 +204,10 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
       await tripsAPI.submitEpod(tripId, fd);
 
       setSubmitted(true);
-      toast.success('ePOD submitted — trip completed & invoice generated.', { duration: 6000 });
+      toast.success(t('ePOD submitted — trip completed & invoice generated.'), { duration: 6000 });
       setTimeout(onComplete, 2500);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err.message || 'Failed to submit ePOD');
+      toast.error(err?.response?.data?.message || err.message || t('Failed to submit ePOD'));
     } finally {
       setSubmitting(false);
     }
@@ -218,12 +221,11 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
         <CheckCircle2 className="w-12 h-12 text-emerald-600" />
       </div>
       <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100 mb-4">
-        ePOD Confirmed
+        <TranslatedText text="ePOD Confirmed" />
       </span>
-      <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-3">Delivery Verified</h2>
+      <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-3"><TranslatedText text="Delivery Verified" /></h2>
       <p className="text-slate-500 text-sm max-w-sm leading-relaxed">
-        Electronic Proof of Delivery submitted successfully. Trip is marked <strong>COMPLETED</strong>,
-        invoice generated, and cargo owner notified.
+        <TranslatedText text="Electronic Proof of Delivery submitted successfully. Trip is marked COMPLETED, invoice generated, and cargo owner notified." />
       </p>
     </motion.div>
   );
@@ -242,11 +244,11 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <FileCheck size={16} className="text-emerald-400" />
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Electronic Proof of Delivery
+                <TranslatedText text="Electronic Proof of Delivery" />
               </span>
             </div>
             <h2 className="text-xl font-black text-white uppercase tracking-tight">
-              {tripNumber ? `Trip #${tripNumber}` : 'Trip Completion'}
+              {tripNumber ? <><TranslatedText text="Trip #" />{tripNumber}</> : <TranslatedText text="Trip Completion" />}
             </h2>
             {cargoTitle && (
               <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-xs">{cargoTitle}</p>
@@ -281,7 +283,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                     ${active ? 'bg-white text-emerald-600' : done ? 'bg-emerald-500 text-white' : 'bg-white/10 text-slate-500'}`}>
                     {done ? '✓' : s.id}
                   </span>
-                  <span className="hidden sm:inline">{s.label}</span>
+                  <span className="hidden sm:inline"><TranslatedText text={s.label} /></span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <div className={`flex-1 h-0.5 rounded ${step > s.id ? 'bg-emerald-500/40' : 'bg-white/10'}`} />
@@ -301,7 +303,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s1" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 1 of 5</p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Delivery Details</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Delivery Details" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5">Record when and where the cargo was delivered.</p>
               </div>
 
@@ -313,14 +315,14 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                 </div>
                 <div>
                   <label className={lbl}><Gauge size={10} className="inline mr-1"/>Odometer at Delivery (km)</label>
-                  <input type="number" placeholder="e.g. 125430" value={form.odometerReading}
+                  <input type="number" placeholder={t('e.g. 125430')} value={form.odometerReading}
                     onChange={e => set('odometerReading', e.target.value)} className={inp} />
                 </div>
               </div>
 
               <div>
                 <label className={lbl}><MapPin size={10} className="inline mr-1"/>Actual Delivery Address</label>
-                <input type="text" placeholder="Full delivery address if different from scheduled destination"
+                <input type="text" placeholder={t('Full delivery address if different from scheduled destination')}
                   value={form.deliveryAddress} onChange={e => set('deliveryAddress', e.target.value)} className={inp} />
               </div>
 
@@ -349,13 +351,13 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s2" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 2 of 5</p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Recipient Information</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recipient Information" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5">Identity of the person who physically accepted the cargo.</p>
               </div>
 
               <div>
                 <label className={lbl}><User size={10} className="inline mr-1"/>Full Legal Name *</label>
-                <input type="text" placeholder="Full name as on ID" value={form.recipientName}
+                <input type="text" placeholder={t('Full name as on ID')} value={form.recipientName}
                   onChange={e => set('recipientName', e.target.value)} className={inp} />
               </div>
 
@@ -457,7 +459,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s4" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 4 of 5</p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Delivery Evidence</h3>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Delivery Evidence" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5">Photographic proof of delivery — recommended for all cargo.</p>
               </div>
 
@@ -517,8 +519,8 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s5" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 5 of 5</p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Recipient Sign-Off</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Recipient must sign to legally acknowledge receipt of cargo.</p>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recipient Sign-Off" /></h3>
+                <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Recipient must sign to legally acknowledge receipt of cargo." /></p>
               </div>
 
               {/* Signature pad */}
