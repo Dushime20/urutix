@@ -197,8 +197,8 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                            <Zap size={20} />
                         </div>
                         <div>
-                           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Route Analytics</h3>
-                           <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Prime Intelligence</p>
+                           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1"><TranslatedText text="Route Analytics" /></h3>
+                           <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Prime Intelligence" /></p>
                         </div>
                      </div>
                      <button 
@@ -212,13 +212,13 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                   <div className="grid grid-cols-2 gap-4">
                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                           <Clock size={10} /> Estimated Time
+                           <Clock size={10} /> <TranslatedText text="Estimated Time" />
                         </p>
-                        <p className="text-sm font-black text-[#0f172a] italic">{insight.estimatedTime} Hours</p>
+                        <p className="text-sm font-black text-[#0f172a] italic">{insight.estimatedTime} <TranslatedText text="Hours" /></p>
                      </div>
                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                           <Navigation size={10} /> Distance
+                           <Navigation size={10} /> <TranslatedText text="Distance" />
                         </p>
                         <p className="text-sm font-black text-[#0f172a] italic">{insight.distance} KM</p>
                      </div>
@@ -227,7 +227,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                   <div className="space-y-4">
                      <div>
                         <div className="flex justify-between items-center mb-2">
-                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Traffic Intensity</span>
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Traffic Intensity" /></span>
                            <span className={cn(
                               "px-2 py-0.5 rounded text-[8px] font-black uppercase",
                               insight.trafficLevel === 'heavy' ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"
@@ -245,18 +245,18 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
                            <CloudRain size={48} />
                         </div>
-                        <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-3">Live Weather Stats</h4>
+                        <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-3"><TranslatedText text="Live Weather Stats" /></h4>
                         <div className="grid grid-cols-3 gap-4">
                            <div className="flex flex-col">
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">Temp</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase"><TranslatedText text="Temp" /></span>
                               <span className="font-black text-xs">24°C</span>
                            </div>
                            <div className="flex flex-col border-x border-white/10 px-4">
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">Wind</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase"><TranslatedText text="Wind" /></span>
                               <span className="font-black text-xs">12 km/h</span>
                            </div>
                            <div className="flex flex-col pl-4 text-right">
-                              <span className="text-[8px] font-bold text-slate-400 uppercase">Rain</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase"><TranslatedText text="Rain" /></span>
                               <span className="font-black text-xs">15%</span>
                            </div>
                         </div>
@@ -273,7 +273,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                         </p>
                      </div>
                      <button className="flex items-center gap-1.5 text-[9px] font-black text-[#345E85] uppercase tracking-widest group">
-                        Full Intel <ArrowRight size={10} className="group-hover:translate-x-1 transition-transform" />
+                        <TranslatedText text="Full Intel" /> <ArrowRight size={10} className="group-hover:translate-x-1 transition-transform" />
                      </button>
                   </div>
                </div>

@@ -355,7 +355,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
             {currentTrip.progress !== undefined && (
               <div className="mb-8 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
                 <div className="flex justify-between items-end mb-3">
-                  <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest">Mission Progress</span>
+                  <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest"><TranslatedText text="Mission Progress" /></span>
                   <span className="text-xl font-black text-[#0f172a]">{currentTrip.progress}%</span>
                 </div>
                 <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
@@ -376,7 +376,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                   <div className="w-3 h-3 rounded-full bg-primary-500 ring-4 ring-primary-50" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Origin Point</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1"><TranslatedText text="Origin Point" /></span>
                   <p className="font-black text-[#0f172a] text-lg uppercase">{currentTrip.origin?.city}</p>
                   <p className="text-slate-500 text-xs font-medium">{currentTrip.origin?.address}</p>
                 </div>
@@ -386,7 +386,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                   <MapPin className="w-4 h-4 text-slate-400" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Destination Vector</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1"><TranslatedText text="Destination Vector" /></span>
                   <p className="font-black text-[#0f172a] text-lg uppercase">{currentTrip.destination?.city}</p>
                   <p className="text-slate-500 text-xs font-medium">{currentTrip.destination?.address}</p>
                 </div>
@@ -613,9 +613,9 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="flex items-center gap-3 mb-3">
                       <Box className="w-4 h-4 text-slate-400" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Cargo</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400"><TranslatedText text="Cargo" /></span>
                     </div>
-                    <p className="text-sm font-bold text-primary-900">{selectedTrip.cargo?.type || 'Standard Freight'}</p>
+                    <p className="text-sm font-bold text-primary-900">{selectedTrip.cargo?.type || t('Standard Freight')}</p>
                     <p className="text-xs text-slate-500 mt-1">
                       {selectedTrip.cargo?.weight?.toLocaleString() || 0} kg
                     </p>
@@ -623,10 +623,10 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="flex items-center gap-3 mb-3">
                       <User className="w-4 h-4 text-slate-400" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Customer</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400"><TranslatedText text="Customer" /></span>
                     </div>
-                    <p className="text-sm font-bold text-primary-900">{selectedTrip.customer?.name || 'Authorized Proxy'}</p>
-                    <p className="text-xs text-slate-500 mt-1 truncate">{selectedTrip.customer?.phone || 'Contact Available'}</p>
+                    <p className="text-sm font-bold text-primary-900">{selectedTrip.customer?.name || t('Authorized Proxy')}</p>
+                    <p className="text-xs text-slate-500 mt-1 truncate">{selectedTrip.customer?.phone || t('Contact Available')}</p>
                   </div>
                 </div>
               </div>
@@ -634,7 +634,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
               {/* Footer */}
               <div className="bg-slate-50 p-6 flex items-center justify-between border-t border-slate-100">
                 <div>
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Total Value</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5"><TranslatedText text="Total Value" /></span>
                   <p className="text-xl font-black text-primary-500">
                     {fmtMoney(Number(selectedTrip.earnings || 0))}
                   </p>
@@ -643,7 +643,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                   onClick={() => setShowDetailsModal(false)}
                   className="px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm"
                 >
-                  Close
+                  <TranslatedText text="Close" />
                 </button>
               </div>
             </div>
@@ -655,7 +655,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
         isOpen={showFuelModal}
         onClose={() => setShowFuelModal(false)}
         onSuccess={() => {
-          toast.success('Fuel entry recorded successfully');
+          toast.success(t('Fuel entry recorded successfully'));
           setShowFuelModal(false);
           queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
         }}

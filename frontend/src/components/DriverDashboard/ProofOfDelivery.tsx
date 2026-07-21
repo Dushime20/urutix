@@ -302,26 +302,26 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
           {step === 1 && (
             <motion.div key="s1" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
-                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 1 of 5</p>
+                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 1 of 5" /></p>
                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Delivery Details" /></h3>
-                <p className="text-xs text-slate-400 mt-0.5">Record when and where the cargo was delivered.</p>
+                <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Record when and where the cargo was delivered." /></p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className={lbl}><Clock size={10} className="inline mr-1"/>Actual Delivery Date & Time *</label>
+                  <label className={lbl}><Clock size={10} className="inline mr-1"/><TranslatedText text="Actual Delivery Date & Time *" /></label>
                   <input type="datetime-local" value={form.deliveredAt}
                     onChange={e => set('deliveredAt', e.target.value)} className={inp} />
                 </div>
                 <div>
-                  <label className={lbl}><Gauge size={10} className="inline mr-1"/>Odometer at Delivery (km)</label>
+                  <label className={lbl}><Gauge size={10} className="inline mr-1"/><TranslatedText text="Odometer at Delivery (km)" /></label>
                   <input type="number" placeholder={t('e.g. 125430')} value={form.odometerReading}
                     onChange={e => set('odometerReading', e.target.value)} className={inp} />
                 </div>
               </div>
 
               <div>
-                <label className={lbl}><MapPin size={10} className="inline mr-1"/>Actual Delivery Address</label>
+                <label className={lbl}><MapPin size={10} className="inline mr-1"/><TranslatedText text="Actual Delivery Address" /></label>
                 <input type="text" placeholder={t('Full delivery address if different from scheduled destination')}
                   value={form.deliveryAddress} onChange={e => set('deliveryAddress', e.target.value)} className={inp} />
               </div>
@@ -333,13 +333,13 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                 gpsStatus === 'loading' ? 'bg-blue-50   border-blue-100   text-blue-700'   :
                 'bg-slate-50 border-slate-200 text-slate-500'}`}>
                 <MapPin size={14} className="shrink-0" />
-                {gpsStatus === 'ok'      && `GPS captured: ${gps!.lat.toFixed(5)}, ${gps!.lng.toFixed(5)}`}
-                {gpsStatus === 'loading' && 'Capturing GPS coordinates…'}
-                {gpsStatus === 'denied'  && 'GPS unavailable — delivery will proceed without geo-stamp'}
-                {gpsStatus === 'idle'    && 'GPS location will be captured automatically'}
+                {gpsStatus === 'ok'      && `${t('GPS captured:')} ${gps!.lat.toFixed(5)}, ${gps!.lng.toFixed(5)}`}
+                {gpsStatus === 'loading' && t('Capturing GPS coordinates…')}
+                {gpsStatus === 'denied'  && t('GPS unavailable — delivery will proceed without geo-stamp')}
+                {gpsStatus === 'idle'    && t('GPS location will be captured automatically')}
                 {gpsStatus === 'denied' && (
                   <button onClick={captureGps} className="ml-auto px-3 py-1 bg-amber-100 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-200 transition-all">
-                    Retry
+                    <TranslatedText text="Retry" />
                   </button>
                 )}
               </div>
@@ -350,40 +350,40 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
           {step === 2 && (
             <motion.div key="s2" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
-                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 2 of 5</p>
+                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 2 of 5" /></p>
                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recipient Information" /></h3>
-                <p className="text-xs text-slate-400 mt-0.5">Identity of the person who physically accepted the cargo.</p>
+                <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Identity of the person who physically accepted the cargo." /></p>
               </div>
 
               <div>
-                <label className={lbl}><User size={10} className="inline mr-1"/>Full Legal Name *</label>
+                <label className={lbl}><User size={10} className="inline mr-1"/><TranslatedText text="Full Legal Name *" /></label>
                 <input type="text" placeholder={t('Full name as on ID')} value={form.recipientName}
                   onChange={e => set('recipientName', e.target.value)} className={inp} />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className={lbl}><Phone size={10} className="inline mr-1"/>Phone Number</label>
+                  <label className={lbl}><Phone size={10} className="inline mr-1"/><TranslatedText text="Phone Number" /></label>
                   <input type="tel" placeholder="+250 7XX XXX XXX" value={form.recipientPhone}
                     onChange={e => set('recipientPhone', e.target.value)} className={inp} />
                 </div>
                 <div>
-                  <label className={lbl}><Hash size={10} className="inline mr-1"/>ID / Passport Number</label>
-                  <input type="text" placeholder="National ID or passport" value={form.recipientIdNumber}
+                  <label className={lbl}><Hash size={10} className="inline mr-1"/><TranslatedText text="ID / Passport Number" /></label>
+                  <input type="text" placeholder={t('National ID or passport')} value={form.recipientIdNumber}
                     onChange={e => set('recipientIdNumber', e.target.value)} className={inp} />
                 </div>
               </div>
 
               <div>
-                <label className={lbl}><Building2 size={10} className="inline mr-1"/>Company / Organisation</label>
-                <input type="text" placeholder="Company name (if receiving on behalf of)" value={form.recipientCompany}
+                <label className={lbl}><Building2 size={10} className="inline mr-1"/><TranslatedText text="Company / Organisation" /></label>
+                <input type="text" placeholder={t('Company name (if receiving on behalf of)')} value={form.recipientCompany}
                   onChange={e => set('recipientCompany', e.target.value)} className={inp} />
               </div>
 
               <div className="flex items-start gap-3 p-3.5 bg-blue-50 border border-blue-100 rounded-xl">
                 <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700 leading-relaxed">
-                  Recipient details form part of the legally binding ePOD record. Ensure the name matches the individual who signs.
+                  <TranslatedText text="Recipient details form part of the legally binding ePOD record. Ensure the name matches the individual who signs." />
                 </p>
               </div>
             </motion.div>
@@ -393,9 +393,9 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
           {step === 3 && (
             <motion.div key="s3" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
-                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 3 of 5</p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Cargo Condition</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Declare the state of goods at point of delivery.</p>
+                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 3 of 5" /></p>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Cargo Condition" /></h3>
+                <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Declare the state of goods at point of delivery." /></p>
               </div>
 
               {/* Condition selector */}
@@ -418,36 +418,36 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                       className={`text-left p-4 rounded-xl border-2 transition-all shadow-sm ${colors[c.color]}`}>
                       <div className="flex items-center gap-3 mb-1">
                         <Icon size={16} className={iconColors[c.color]} />
-                        <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{c.label}</span>
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-tight"><TranslatedText text={c.label} /></span>
                         {active && <CheckCircle2 size={13} className={`ml-auto ${iconColors[c.color]}`} />}
                       </div>
-                      <p className="text-[10px] text-slate-400 leading-tight">{c.desc}</p>
+                      <p className="text-[10px] text-slate-400 leading-tight"><TranslatedText text={c.desc} /></p>
                     </button>
                   );
                 })}
               </div>
 
               <div>
-                <label className={lbl}><Package size={10} className="inline mr-1"/>Units / Pieces Delivered</label>
-                <input type="number" placeholder="Actual units delivered (leave blank if full quantity)"
+                <label className={lbl}><Package size={10} className="inline mr-1"/><TranslatedText text="Units / Pieces Delivered" /></label>
+                <input type="number" placeholder={t('Actual units delivered (leave blank if full quantity)')}
                   value={form.unitsDelivered} onChange={e => set('unitsDelivered', e.target.value)} className={inp} />
               </div>
 
               {form.cargoCondition !== 'INTACT' && (
                 <div>
                   <label className={lbl}><AlertTriangle size={10} className="inline mr-1 text-amber-500"/>
-                    Exception Details *
-                    <span className="ml-1 text-red-400">(required for non-intact deliveries)</span>
+                    <TranslatedText text="Exception Details *" />
+                    <span className="ml-1 text-red-400">(<TranslatedText text="required for non-intact deliveries" />)</span>
                   </label>
-                  <textarea rows={3} placeholder="Describe the damage, shortage, or exception in detail..."
+                  <textarea rows={3} placeholder={t('Describe the damage, shortage, or exception in detail...')}
                     value={form.exceptionNotes} onChange={e => set('exceptionNotes', e.target.value)}
                     className="w-full bg-slate-50 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all resize-none" />
                 </div>
               )}
 
               <div>
-                <label className={lbl}>General Delivery Remarks</label>
-                <textarea rows={3} placeholder="Any additional notes, access instructions, or remarks for the record..."
+                <label className={lbl}><TranslatedText text="General Delivery Remarks" /></label>
+                <textarea rows={3} placeholder={t('Any additional notes, access instructions, or remarks for the record...')}
                   value={form.deliveryNotes} onChange={e => set('deliveryNotes', e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-all resize-none" />
               </div>
@@ -458,9 +458,9 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
           {step === 4 && (
             <motion.div key="s4" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
-                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 4 of 5</p>
+                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 4 of 5" /></p>
                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Delivery Evidence" /></h3>
-                <p className="text-xs text-slate-400 mt-0.5">Photographic proof of delivery — recommended for all cargo.</p>
+                <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Photographic proof of delivery — recommended for all cargo." /></p>
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -482,7 +482,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                     <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center transition-all">
                       <Plus size={16} className="text-slate-400 group-hover:text-[#345E85]" />
                     </div>
-                    <span className="text-[9px] font-black text-slate-400 group-hover:text-[#345E85] uppercase tracking-widest">Add Photo</span>
+                    <span className="text-[9px] font-black text-slate-400 group-hover:text-[#345E85] uppercase tracking-widest"><TranslatedText text="Add Photo" /></span>
                     <input type="file" accept="image/*" multiple className="hidden" onChange={addPhotos} />
                   </label>
                 )}
@@ -490,16 +490,16 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
 
               <div className="grid grid-cols-2 gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
-                  <Camera size={13} className="text-[#345E85]" />Cargo unloaded at destination
+                  <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Cargo unloaded at destination" />
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
-                  <Camera size={13} className="text-[#345E85]" />Delivery location / dock
+                  <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Delivery location / dock" />
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
-                  <Camera size={13} className="text-[#345E85]" />Condition of packaging
+                  <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Condition of packaging" />
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
-                  <Camera size={13} className="text-[#345E85]" />Any damage (if applicable)
+                  <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Any damage (if applicable)" />
                 </div>
               </div>
 
@@ -507,7 +507,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                 <div className="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-100 rounded-xl">
                   <AlertCircle size={14} className="text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700 leading-relaxed">
-                    No photos attached. Photos are <strong>strongly recommended</strong> for all deliveries — they protect both driver and cargo owner in case of disputes.
+                    <TranslatedText text="No photos attached. Photos are strongly recommended for all deliveries — they protect both driver and cargo owner in case of disputes." />
                   </p>
                 </div>
               )}
@@ -518,7 +518,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
           {step === 5 && (
             <motion.div key="s5" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
-                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5">Step 5 of 5</p>
+                <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 5 of 5" /></p>
                 <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recipient Sign-Off" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Recipient must sign to legally acknowledge receipt of cargo." /></p>
               </div>
@@ -526,10 +526,10 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
               {/* Signature pad */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className={lbl}><PenTool size={10} className="inline mr-1"/>Recipient Signature *</label>
+                  <label className={lbl}><PenTool size={10} className="inline mr-1"/><TranslatedText text="Recipient Signature *" /></label>
                   <button onClick={clearSig}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-lg text-[9px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-200 transition-all">
-                    <RotateCcw size={10} /> Clear
+                    <RotateCcw size={10} /> <TranslatedText text="Clear" />
                   </button>
                 </div>
                 <div className="relative h-48 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden hover:border-[#345E85]/50 transition-colors group">
@@ -542,19 +542,19 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                   {!hasSig && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
                       <PenTool size={24} className="text-slate-200 group-hover:text-slate-300 transition-colors" />
-                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Sign here</p>
+                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]"><TranslatedText text="Sign here" /></p>
                     </div>
                   )}
                 </div>
                 <p className="text-[9px] text-slate-400 mt-2 leading-relaxed text-center">
-                  By signing, the recipient confirms the cargo was received in the declared condition and the carrier's liability is released.
+                  <TranslatedText text="By signing, the recipient confirms the cargo was received in the declared condition and the carrier's liability is released." />
                 </p>
               </div>
 
               {/* Final summary */}
               <div className="bg-slate-50 rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
                 <div className="px-4 py-2.5 bg-slate-100">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ePOD Submission Summary</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest"><TranslatedText text="ePOD Submission Summary" /></p>
                 </div>
                 {[
                   { label: 'Trip',           value: tripNumber ? `#${tripNumber}` : '—'  },
@@ -568,7 +568,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                   { label: 'Signature',      value: hasSig ? '✓ Captured' : '✗ Required', color: hasSig ? 'text-emerald-600' : 'text-red-500' },
                 ].map(row => (
                   <div key={row.label} className="flex justify-between items-center px-4 py-2.5">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{row.label}</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={row.label} /></span>
                     <span className={`text-xs font-bold text-right ${(row as any).color || 'text-slate-700'}`}>{row.value}</span>
                   </div>
                 ))}
@@ -584,15 +584,15 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
         {step > 1 && (
           <button onClick={() => setStep(s => s - 1)}
             className="h-12 px-6 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
-            Back
+            <TranslatedText text="Back" />
           </button>
         )}
 
         {step < 5 ? (
           <button onClick={() => {
               if (!stepValid(step)) {
-                if (step === 2) toast.error('Recipient full name is required');
-                if (step === 3 && form.cargoCondition !== 'INTACT') toast.error('Exception details are required for non-intact deliveries');
+                if (step === 2) toast.error(t('Recipient full name is required'));
+                if (step === 3 && form.cargoCondition !== 'INTACT') toast.error(t('Exception details are required for non-intact deliveries'));
                 return;
               }
               setStep(s => s + 1);
@@ -601,8 +601,8 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
               ${stepValid(step)
                 ? 'bg-[#345E85] text-white hover:bg-[#0f172a] shadow-lg shadow-blue-900/10'
                 : 'bg-slate-100 text-slate-400'}`}>
-            Continue
-            <span className="text-[9px] opacity-60">Step {step + 1} of 5</span>
+            <TranslatedText text="Continue" />
+            <span className="text-[9px] opacity-60"><TranslatedText text="Step" /> {step + 1} <TranslatedText text="of 5" /></span>
           </button>
         ) : (
           <button onClick={handleSubmit} disabled={submitting || !hasSig}
@@ -611,8 +611,8 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                 ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-900/10'
                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
             {submitting
-              ? <><Loader2 size={16} className="animate-spin" /> Submitting ePOD…</>
-              : <><ShieldCheck size={16} /> Submit ePOD &amp; Complete Trip</>}
+              ? <><Loader2 size={16} className="animate-spin" /> {t('Submitting ePOD…')}</>
+              : <><ShieldCheck size={16} /> <TranslatedText text="Submit ePOD & Complete Trip" /></>}
           </button>
         )}
       </div>

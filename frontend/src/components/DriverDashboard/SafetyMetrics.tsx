@@ -317,11 +317,11 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             <div className="flex items-center gap-2">
               <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.drivingScore)}`}>{data.drivingScore}</h3>
               <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.drivingScore)}`}>
-                Behavior
+                <TranslatedText text="Behavior" />
               </span>
             </div>
-            <p className="text-sm font-bold text-[#345E85]">Driving Score</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">On-Road</p>
+            <p className="text-sm font-bold text-[#345E85]"><TranslatedText text="Driving Score" /></p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text="On-Road" /></p>
           </div>
         </motion.div>
 
@@ -339,11 +339,11 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             <div className="flex items-center gap-2">
               <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.complianceScore)}`}>{data.complianceScore}</h3>
               <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.complianceScore)}`}>
-                Logs
+                <TranslatedText text="Logs" />
               </span>
             </div>
-            <p className="text-sm font-bold text-[#345E85]">Compliance</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Regulatory</p>
+            <p className="text-sm font-bold text-[#345E85]"><TranslatedText text="Compliance" /></p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text="Regulatory" /></p>
           </div>
         </motion.div>
 
@@ -361,11 +361,11 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             <div className="flex items-center gap-2">
               <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.vehicleScore)}`}>{data.vehicleScore}</h3>
               <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.vehicleScore)}`}>
-                Health
+                <TranslatedText text="Health" />
               </span>
             </div>
-            <p className="text-sm font-bold text-[#345E85]">Vehicle Score</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Maintenance</p>
+            <p className="text-sm font-bold text-[#345E85]"><TranslatedText text="Vehicle Score" /></p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text="Maintenance" /></p>
           </div>
         </motion.div>
       </div>
@@ -376,7 +376,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           <div className="p-2 bg-slate-50 rounded-xl">
             <TrendingUp className="w-5 h-5 text-slate-500" />
           </div>
-          <h3 className="text-lg font-black text-slate-800">Performance Trends</h3>
+          <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Performance Trends" /></h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {data.trends.map((trend, index) => (
@@ -399,19 +399,19 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-rose-500" />
-              Recent Violations
+              <TranslatedText text="Recent Violations" />
             </h3>
             <button
               onClick={() => setShowViolations(!showViolations)}
               className="px-3 py-1 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors"
             >
-              {showViolations ? 'Hide' : 'View All'}
+              {showViolations ? t('Hide') : t('View All')}
             </button>
           </div>
 
           <div className="space-y-4">
             {data.violations.length === 0 ? (
-              <div className="text-center py-8 text-slate-400">No recent violations</div>
+              <div className="text-center py-8 text-slate-400"><TranslatedText text="No recent violations" /></div>
             ) : (
               data.violations.slice(0, showViolations ? undefined : 2).map((violation) => (
                 <div key={violation.id} className="p-4 rounded-2xl border border-slate-100 hover:border-rose-100 hover:bg-rose-50/30 transition-all cursor-default group">
@@ -441,19 +441,19 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
               <Award className="w-5 h-5 text-[#345E85]" />
-              Certifications
+              <TranslatedText text="Certifications" />
             </h3>
             <button
               onClick={() => setShowCertifications(!showCertifications)}
               className="px-3 py-1 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors"
             >
-              {showCertifications ? 'Hide' : 'View All'}
+              {showCertifications ? t('Hide') : t('View All')}
             </button>
           </div>
 
           <div className="space-y-4">
             {data.certifications.length === 0 ? (
-              <div className="text-center py-8 text-slate-400">No certifications found</div>
+              <div className="text-center py-8 text-slate-400"><TranslatedText text="No certifications found" /></div>
             ) : (
               data.certifications.slice(0, showCertifications ? undefined : 2).map((cert) => (
                 <div key={cert.id} className="p-4 rounded-2xl border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all cursor-default group">
@@ -469,10 +469,10 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
                     {getCertificationStatusIcon(cert.status)}
                   </div>
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-                    <span className="text-xs text-slate-400 font-medium">Expires: {formatDate(cert.expiryDate)}</span>
+                    <span className="text-xs text-slate-400 font-medium"><TranslatedText text="Expires:" /> {formatDate(cert.expiryDate)}</span>
                     {cert.status === 'EXPIRING_SOON' && (
                       <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                        {getDaysUntilExpiry(cert.expiryDate)} days left
+                        {getDaysUntilExpiry(cert.expiryDate)} <TranslatedText text="days left" />
                       </span>
                     )}
                   </div>
@@ -489,16 +489,16 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           <div className="p-2 bg-blue-50 rounded-xl">
             <FileText className="w-5 h-5 text-[#345E85]" />
           </div>
-          <h3 className="text-lg font-black text-slate-800">Recent Inspections</h3>
+          <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Recent Inspections" /></h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b-2 border-slate-50">
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Result</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Notes</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Type" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Date" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Result" /></th>
+                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Notes" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -536,27 +536,27 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
                 <div className="p-2 bg-amber-50 rounded-xl">
                   <AlertTriangle className="w-5 h-5 text-amber-500" />
                 </div>
-                <h3 className="text-lg font-black text-slate-800">Safety Alerts</h3>
+                <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Safety Alerts" /></h3>
               </div>
               <div className="space-y-4">
                 {data.certifications.some(cert => cert.status === 'EXPIRING_SOON') && (
                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-50 border border-amber-100">
                     <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
-                    <span className="text-sm font-bold text-amber-800">Certifications expiring soon - Action Required</span>
+                    <span className="text-sm font-bold text-amber-800"><TranslatedText text="Certifications expiring soon - Action Required" /></span>
                   </div>
                 )}
 
                 {data.violations.some(violation => ['HIGH', 'CRITICAL'].includes(violation.severity)) && (
                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-rose-50 border border-rose-100">
                     <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
-                    <span className="text-sm font-bold text-rose-800">High severity violations detected - Review Immediately</span>
+                    <span className="text-sm font-bold text-rose-800"><TranslatedText text="High severity violations detected - Review Immediately" /></span>
                   </div>
                 )}
 
                 {data.overallScore < 80 && (
                   <div className="flex items-center gap-4 p-4 rounded-2xl bg-orange-50 border border-orange-100">
                     <div className="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
-                    <span className="text-sm font-bold text-orange-800">Safety score below recommended threshold</span>
+                    <span className="text-sm font-bold text-orange-800"><TranslatedText text="Safety score below recommended threshold" /></span>
                   </div>
                 )}
               </div>
@@ -566,22 +566,22 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
 
       {/* Quick Actions */}
       <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
-        <h3 className="text-lg font-black text-slate-800 mb-6">Quick Actions</h3>
+        <h3 className="text-lg font-black text-slate-800 mb-6"><TranslatedText text="Quick Actions" /></h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
             <Eye className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span>View Full Report</span>
+            <span><TranslatedText text="View Full Report" /></span>
           </button>
           <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
             <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span>Download Docs</span>
+            <span><TranslatedText text="Download Docs" /></span>
           </button>
           <button 
             onClick={onReportIncident}
             className="py-4 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-rose-100 shadow-sm"
           >
             <AlertTriangle className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span>Report Incident</span>
+            <span><TranslatedText text="Report Incident" /></span>
           </button>
         </div>
       </div>
