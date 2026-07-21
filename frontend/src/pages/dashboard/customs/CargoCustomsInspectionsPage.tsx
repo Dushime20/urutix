@@ -107,8 +107,11 @@ function IssueResolutionPanel({
   const canSubmit = resolutionNotes.trim().length >= 10 && allAcknowledged;
 
   return (
-    <div className={cn('border border-amber-200 rounded-xl overflow-hidden', className)}>
-      <div className="bg-amber-50 px-4 py-3">
+    <div className={cn(
+      'border border-amber-200 rounded-xl overflow-hidden flex flex-col max-h-[min(62vh,560px)]',
+      className,
+    )}>
+      <div className="bg-amber-50 px-4 py-3 shrink-0">
         <div className="flex items-start gap-3">
           <div className="p-2 bg-amber-100 rounded-lg shrink-0">
             <ShieldCheck className="w-4 h-4 text-amber-700" />
@@ -122,8 +125,9 @@ function IssueResolutionPanel({
         </div>
       </div>
 
-      <div className="px-4 py-4 space-y-4 bg-white">
-        <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div className="px-4 py-4 space-y-4 bg-white">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 sticky top-0 bg-white pb-2 z-10">
           <span className={cn('flex items-center gap-1', issues.length > 0 && allAcknowledged ? 'text-amber-700' : '')}>
             <ListChecks className="w-3.5 h-3.5" /> 1. Acknowledge Issues
           </span>
@@ -138,11 +142,12 @@ function IssueResolutionPanel({
         </div>
 
         {issues.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+          <div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
               Reported Issues ({issues.length})
             </p>
-            {issues.map((issue) => {
+            <div className="max-h-72 overflow-y-auto overscroll-contain space-y-3 pr-1 rounded-xl border border-gray-100 bg-gray-50/50 p-2">
+              {issues.map((issue) => {
               const acknowledged = acknowledgedIssues.has(issue.id);
               return (
                 <div
@@ -198,8 +203,9 @@ function IssueResolutionPanel({
                 </div>
               );
             })}
-          </div>
-        )}
+              </div>
+            </div>
+          )}
 
         <div>
           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
@@ -229,6 +235,7 @@ function IssueResolutionPanel({
             }
           </button>
         )}
+        </div>
       </div>
     </div>
   );
@@ -605,7 +612,7 @@ function ShipmentDetailModal({
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 p-4">
       <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
             <h2 className="font-semibold text-gray-900">{shipment.loadTitle}</h2>
             <p className="text-xs text-gray-500">
@@ -619,6 +626,7 @@ function ShipmentDetailModal({
           </button>
         </div>
 
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         {canResolve && (
           <IssueResolutionPanel
             className="mx-6 mt-4"
@@ -720,7 +728,7 @@ function ShipmentDetailModal({
           ))}
         </div>
 
-        <div className="overflow-y-auto flex-1 px-6 py-4">
+        <div className="px-6 py-4">
           {activeTab === 'timeline' && (
             <div className="space-y-1">
               <TimelineStep
@@ -781,8 +789,9 @@ function ShipmentDetailModal({
             />
           )}
         </div>
+        </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0 bg-white rounded-b-2xl">
           <div className="text-xs text-gray-500">
             {canResolve && 'Complete corrective actions above to release the driver for re-inspection.'}
             {canApprove && 'Review the inspection and approve when ready to start shipping.'}
