@@ -75,8 +75,6 @@ const scoreColor = (score: number | null): string => {
     return 'text-rose-600';
 };
 
-const formatAmount = (amount: number | null): string => amount === null ? '—' : amount.toLocaleString(); // replaced by hook inside component
-
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', {
@@ -92,6 +90,10 @@ const RiskAnalysisEnlite: React.FC<RiskAnalysisEnliteProps> = ({
     activeTab,
     onTabChange,
 }) => {
+    const { format } = useCurrencyFormat();
+    const formatAmount = (amount: number | null): string =>
+        amount === null ? '—' : format(amount, 'RWF');
+
     const [searchTerm, setSearchTerm]   = useState('');
     const [tierFilter, setTierFilter]   = useState('all');
     const [detailLoan, setDetailLoan]   = useState<any | null>(null);

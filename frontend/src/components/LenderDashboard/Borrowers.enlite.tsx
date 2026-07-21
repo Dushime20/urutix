@@ -73,8 +73,6 @@ const scoreColor = (score: number | null): string => {
     return 'text-rose-600';
 };
 
-const formatAmount = (amount: number | null | undefined): string => amount == null ? '—' : amount.toLocaleString(); // replaced by hook inside component
-
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', {
@@ -92,6 +90,10 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
     onSearchChange,
     onStatusFilterChange,
 }) => {
+    const { format } = useCurrencyFormat();
+    const formatAmount = (amount: number | null | undefined): string =>
+        amount == null ? '—' : format(amount, 'RWF');
+
     // ── Derived stats — only from real data ───────────────────────────────────
 
     const totalBorrowers = borrowers.length;

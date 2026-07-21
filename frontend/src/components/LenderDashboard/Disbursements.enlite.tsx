@@ -61,8 +61,6 @@ const statusStyle: Record<string, string> = {
     on_hold:   'bg-orange-50 text-orange-700 border-orange-100',
 };
 
-const formatAmount = (amount: number | null): string => amount === null ? '—' : amount.toLocaleString(); // placeholder — real fmt injected in components
-
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', {
@@ -207,6 +205,10 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
     onDisburse,
     onReject,
 }) => {
+    const { format } = useCurrencyFormat();
+    const formatAmount = (amount: number | null): string =>
+        amount === null ? '—' : format(amount, 'RWF');
+
     const [detailLoan, setDetailLoan]         = useState<any | null>(null);
     const [rejectTarget, setRejectTarget]     = useState<DisbursementEntry | null>(null);
     const [disburseTarget, setDisburseTarget] = useState<DisbursementEntry | null>(null);

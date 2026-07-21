@@ -52,8 +52,6 @@ const statusStyle: Record<string, string> = {
     completed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
 };
 
-const formatAmount = (amount: number | null): string => amount === null ? '—' : amount.toLocaleString(); // replaced by hook inside component
-
 const formatDate = (iso: string | null): string => {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-US', {
@@ -67,6 +65,10 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
     loading,
     repayments,
 }) => {
+    const { format } = useCurrencyFormat();
+    const formatAmount = (amount: number | null): string =>
+        amount === null ? '—' : format(amount, 'RWF');
+
     const [searchTerm, setSearchTerm]     = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [detailLoan, setDetailLoan]     = useState<any | null>(null);

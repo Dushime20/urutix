@@ -14,6 +14,7 @@ import {
 import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 export interface ReceiptData {
     id: string;
@@ -56,6 +57,10 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
     onDownload,
     onPrint
 }) => {
+    const { format } = useCurrencyFormat();
+    const formatMoney = (amount: number, fromCurrency = 'RWF') =>
+        format(amount, fromCurrency);
+
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'paid': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
@@ -139,7 +144,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
             render: (_: unknown, r: ReceiptData) => (
                 <div className="flex flex-col">
                     <span className="font-black text-slate-900 text-[11px]">
-                        {r.currency} {r.amount.toLocaleString()}
+                        {formatMoney(r.amount, r.currency || 'RWF')}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
                         via {r.paymentMethod || 'Wire'}
@@ -214,7 +219,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
                 />
                 <StatCard
                     title="Settled Capital"
-                    value={`$${stats.paidAmount.toLocaleString()}`}
+                    value={formatMoney(stats.paidAmount)}
                     trend="+8% this quarter"
                     trendDirection="up"
                     icon={<CheckCircle2 size={24} />}
@@ -222,14 +227,14 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
                 />
                 <StatCard
                     title="Outstanding Volume"
-                    value={`$${stats.pendingAmount.toLocaleString()}`}
+                    value={formatMoney(stats.pendingAmount)}
                     subtitle="Awaiting Settlement"
                     icon={<Clock size={24} />}
                     color="warning"
                 />
                 <StatCard
                     title="Aggregate Flow"
-                    value={`$${stats.totalVolume.toLocaleString()}`}
+                    value={formatMoney(stats.totalVolume)}
                     subtitle="Network Value"
                     icon={<DollarSign size={24} />}
                     color="primary"

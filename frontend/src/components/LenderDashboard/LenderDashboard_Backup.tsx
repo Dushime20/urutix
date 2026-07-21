@@ -13,6 +13,7 @@ import {
 } from 'chart.js';
 import { lendingApi } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 ChartJS.register(
   CategoryScale,
@@ -47,6 +48,7 @@ interface ChartData {
 
 const LenderDashboard: React.FC = () => {
   const { user, accessToken } = useAuth();
+  const { format: fmtCurrency } = useCurrencyFormat();
   const [stats, setStats] = useState<DashboardStats>({
     totalLoans: 0,
     totalAmount: 0,
@@ -320,7 +322,7 @@ const LenderDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600 mb-1">Total Amount</p>
-              <p className="text-3xl font-bold text-gray-800 mb-2">RWF {stats.totalAmount.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-800 mb-2">{fmtCurrency(stats.totalAmount, 'RWF')}</p>
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
@@ -412,7 +414,7 @@ const LenderDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600 mb-1">Average Amount</p>
-              <p className="text-3xl font-bold text-gray-800 mb-2">RWF {stats.averageAmount.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gray-800 mb-2">{fmtCurrency(stats.averageAmount, 'RWF')}</p>
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
@@ -477,7 +479,7 @@ const LenderDashboard: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">John Doe</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">RWF 15,000,000</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{fmtCurrency(15000000, 'RWF')}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Equipment Purchase</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-warning-100 text-warning-800">
@@ -488,7 +490,7 @@ const LenderDashboard: React.FC = () => {
                   </tr>
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Jane Smith</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">RWF 25,000,000</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{fmtCurrency(25000000, 'RWF')}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Working Capital</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-success-100 text-success-800">
@@ -499,7 +501,7 @@ const LenderDashboard: React.FC = () => {
                   </tr>
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Mike Johnson</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">RWF 8,000,000</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{fmtCurrency(8000000, 'RWF')}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Inventory</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-secondary-100 text-secondary-800">

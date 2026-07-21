@@ -271,7 +271,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
               type: 'number',
               step: '0.01',
               required: true,
-              hint: 'Fixed RWF amount or % of outstanding balance'
+              hint: 'Fixed amount or % of outstanding balance'
             },
             {
               key: 'penalty_rate',
@@ -321,7 +321,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
             },
             {
               key: 'maxLoanAmount',
-              label: 'Max Loan Amount (RWF)',
+              label: 'Max Loan Amount',
               type: 'number',
               required: true
             },
@@ -338,14 +338,14 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
             { key: 'name', label: 'Configuration Name', type: 'text', required: true },
             {
               key: 'autoApprovalLimit',
-              label: 'Auto-Approval Limit (RWF)',
+              label: 'Auto-Approval Limit',
               type: 'number',
               required: true,
               hint: 'Loans below this amount are approved automatically'
             },
             {
               key: 'manualReviewThreshold',
-              label: 'Manual Review Threshold (RWF)',
+              label: 'Manual Review Threshold',
               type: 'number',
               required: true,
               hint: 'Loans above this amount require a human reviewer'

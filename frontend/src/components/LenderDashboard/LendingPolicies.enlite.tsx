@@ -18,6 +18,7 @@ import {
 import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // Reuse interfaces from the original page
 export interface InterestRatePolicy {
@@ -145,6 +146,10 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
     onEdit,
     onAdd
 }) => {
+    const { format, compact } = useCurrencyFormat();
+    const fmtRwf = (amount: number) => format(amount, 'RWF');
+    const cptRwf = (amount: number) => compact(amount, 'RWF');
+
     const tabs = [
         { id: 'interest-rates', label: 'INTEREST RATES', icon: <Percent size={14} />, category: 'interestRates' },
         { id: 'loan-limits', label: 'LOAN LIMITS', icon: <DollarSign size={14} />, category: 'loanLimits' },
@@ -293,16 +298,16 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     },
                     {
                         key: 'limits',
-                        label: 'FUNDING LIMITS (RWF)',
+                        label: 'FUNDING LIMITS',
                         render: (_: any, p: LoanLimitPolicy) => (
                             <div className="flex items-center gap-4">
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Min</p>
-                                    <p className="text-[11px] font-black">{(p.minAmount / 1000).toLocaleString()}K</p>
+                                    <p className="text-[11px] font-black">{cptRwf(p.minAmount)}</p>
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Max</p>
-                                    <p className="text-[11px] font-black text-rose-600">{(p.maxAmount / 1000000).toFixed(1)}M</p>
+                                    <p className="text-[11px] font-black text-rose-600">{cptRwf(p.maxAmount)}</p>
                                 </div>
                             </div>
                         )
@@ -359,14 +364,14 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                         <p className="text-[11px] font-black text-slate-900 uppercase">Auto-Approval Limit</p>
                                         <p className="text-[10px] text-slate-500 font-bold">Requests below this bypass manual check</p>
                                     </div>
-                                    <p className="text-sm font-black text-[#345E85]">RWF {(policies.globalSettings.autoApprovalLimit / 1000).toLocaleString()}K</p>
+                                    <p className="text-sm font-black text-[#345E85]">{cptRwf(policies.globalSettings.autoApprovalLimit)}</p>
                                 </div>
                                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                                     <div>
                                         <p className="text-[11px] font-black text-slate-900 uppercase">Manual Review Threshold</p>
                                         <p className="text-[10px] text-slate-500 font-bold">Critical review for large amounts</p>
                                     </div>
-                                    <p className="text-sm font-black text-rose-600">RWF {(policies.globalSettings.manualReviewThreshold / 1000).toLocaleString()}K</p>
+                                    <p className="text-sm font-black text-rose-600">{cptRwf(policies.globalSettings.manualReviewThreshold)}</p>
                                 </div>
                             </div>
                         </div>
@@ -563,7 +568,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                     <p className="text-[11px] font-bold text-rose-600">
                                         {p.lateFeeType === 'percentage'
                                             ? `${(p.lateFee ?? 0)}%`
-                                            : `RWF ${(p.lateFee ?? 0).toLocaleString()}`}
+                                            : fmtRwf(p.lateFee ?? 0)}
                                     </p>
                                 </div>
                             </div>
@@ -645,7 +650,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="flex flex-col">
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Max Amount</p>
-                                    <p className="text-[11px] font-black text-rose-600">RWF {(p.maxLoanAmount / 1000000).toFixed(1)}M</p>
+                                    <p className="text-[11px] font-black text-rose-600">{cptRwf(p.maxLoanAmount)}</p>
                                 </div>
                                 <div className="mt-1">
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Risk Multiplier</p>
@@ -742,7 +747,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                 />
                 <StatCard
                     title="Max Exposure"
-                    value={`RWF ${(policies.globalSettings.manualReviewThreshold / 1000000).toFixed(1)}M`}
+                    value={cptRwf(policies.globalSettings.manualReviewThreshold)}
                     subtitle="System Soft-Limit"
                     icon={<Shield size={24} />}
                     color="success"

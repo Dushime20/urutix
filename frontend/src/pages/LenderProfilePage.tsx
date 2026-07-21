@@ -4,6 +4,7 @@ import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { lendingApi } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
 import CurrencySelector from '../components/common/CurrencySelector';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import {
   User,
   Building,
@@ -1206,16 +1207,12 @@ const LenderProfilePage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-              <select
-                value={profile.preferences.language}
-                onChange={(e) => handleInputChange('preferences', 'language', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="English">English</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-                <option value="German">German</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <LanguageSwitcher />
+                <span className="text-[10px] text-gray-400">
+                  Applies to dashboard text immediately.
+                </span>
+              </div>
             </div>
 
             <div>
