@@ -31,6 +31,9 @@ import {
   PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
 } from './preTripInspection';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
+import { getApiErrorMessage } from '../../config/errorMessages';
 
 interface CargoDetailsProps {
   cargoId: string;
@@ -139,6 +142,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
   onContactShipper
 }) => {
   const { format: formatCurrency } = useCurrencyFormat();
+  const { tSync: t } = useTranslation();
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'route' | 'handling' | 'compliance' | 'documents'>('overview');

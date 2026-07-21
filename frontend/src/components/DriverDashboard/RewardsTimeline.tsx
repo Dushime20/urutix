@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface RewardStep {
   id: string;
@@ -22,6 +24,7 @@ interface RewardStep {
 
 export const RewardsTimeline: React.FC = () => {
   const { format: formatCurrency } = useCurrencyFormat();
+  const { tSync: t } = useTranslation();
   const steps: RewardStep[] = [
     { 
       id: '1', 
@@ -61,12 +64,12 @@ export const RewardsTimeline: React.FC = () => {
               <Gift size={22} />
            </div>
            <div>
-              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1">Driver Perks</p>
-              <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Rewards Roadmap</h3>
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1"><TranslatedText text="Driver Perks" /></p>
+              <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Rewards Roadmap" /></h3>
            </div>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100">
-            Current Level: 14
+            <TranslatedText text="Current Level" />: 14
         </div>
       </div>
 
@@ -95,17 +98,17 @@ export const RewardsTimeline: React.FC = () => {
             <div className="flex-1 pt-1">
                 <div className="flex items-center justify-between mb-1">
                     <h4 className={`text-sm font-black uppercase tracking-tight ${step.status === 'locked' ? 'text-slate-400' : 'text-[#0f172a]'}`}>
-                        {step.title}
+                        <TranslatedText text={step.title} />
                     </h4>
                     {step.status === 'unlocked' && (
-                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest animate-pulse">Claim Now!</span>
+                        <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest animate-pulse"><TranslatedText text="Claim Now!" /></span>
                     )}
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{step.requirement}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text={step.requirement} /></p>
                 
                 {step.status === 'unlocked' && (
                     <button className="mt-3 flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:gap-3 transition-all">
-                        View Prize <ArrowRight size={12} />
+                        <TranslatedText text="View Prize" /> <ArrowRight size={12} />
                     </button>
                 )}
             </div>
@@ -115,15 +118,15 @@ export const RewardsTimeline: React.FC = () => {
 
       <div className="mt-10 p-6 bg-slate-900 rounded-[2rem] relative overflow-hidden">
          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
-         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">Next Big Reward</p>
-         <h4 className="text-white font-black uppercase tracking-tight text-lg mb-1 relative z-10">{formatCurrency(100)} Performance Bonus</h4>
+         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10"><TranslatedText text="Next Big Reward" /></p>
+         <h4 className="text-white font-black uppercase tracking-tight text-lg mb-1 relative z-10">{formatCurrency(100)} <TranslatedText text="Performance Bonus" /></h4>
          <div className="w-full h-1.5 bg-white/10 rounded-full mt-4 overflow-hidden relative z-10">
             <motion.div 
                 animate={{ width: '85%' }}
                 className="h-full bg-emerald-500 rounded-full"
             />
          </div>
-         <p className="text-[9px] font-bold text-emerald-400 mt-2 uppercase tracking-widest relative z-10">85% Complete • 15 more missions to go</p>
+         <p className="text-[9px] font-bold text-emerald-400 mt-2 uppercase tracking-widest relative z-10"><TranslatedText text="85% Complete • 15 more missions to go" /></p>
       </div>
     </div>
   );

@@ -31,6 +31,9 @@ import {
   PreTripInspectionWorkflowStatus,
 } from './preTripInspection';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
+import { getApiErrorMessage } from '../../config/errorMessages';
 
 interface CargoItem {
   id: string;
@@ -83,6 +86,7 @@ interface CargoManagementProps {
 
 export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) => {
   const { format: formatCurrency } = useCurrencyFormat();
+  const { tSync: t } = useTranslation();
   const [cargos, setCargos] = useState<CargoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCargo, setSelectedCargo] = useState<CargoItem | null>(null);
@@ -183,7 +187,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
         setCargos(mappedCargos);
       } catch (error: any) {
         console.error('Error fetching assigned loads:', error);
-        toast.error(getApiErrorMessage(error));
+        toast.error(t(getApiErrorMessage(error)));
       } finally {
         setLoading(false);
       }
@@ -285,7 +289,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
     if (!selectedCargo) return;
 
     try {
-      toast.loading('Uploading Proof of Delivery...', { id: 'pod-upload' });
+      toast.loading(t('Uploading Proof of Delivery...'), { id: 'pod-upload' });
       
       // 1. In a real app, we would upload the photoFile and signature to the server
       // For now, call the finish delivery endpoint
@@ -297,7 +301,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
           : cargo
       ));
       
-      toast.success('Delivery finalized! Proof of Delivery transmitted.', { id: 'pod-upload' });
+      toast.success(t('Delivery finalized! Proof of Delivery transmitted.'), { id: 'pod-upload' });
       setViewMode('list');
       setSelectedCargo(null);
     } catch (error: any) {
@@ -312,7 +316,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
 
     const inspectionStatus = target.inspectionStatus || 'PENDING';
     if (!canProceedWithLoad(inspectionStatus)) {
-      toast.error(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE);
+      toast.error(t(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE));
       return;
     }
 
@@ -332,7 +336,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
           ? { ...cargo, status: 'LOADED', updatedAt: new Date().toISOString() }
           : cargo
       ));
-      toast.success('Cargo loaded! Owners have been notified.');
+      toast.success(t('Cargo loaded! Owners have been notified.'));
       setViewMode('list');
       setSelectedCargo(null);
     } catch (error: any) {
@@ -364,7 +368,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
 
   const handleProceedJourney = async () => {
     if (checkedCargos.size === 0) {
-      toast.error('Please select at least one cargo to proceed');
+      toast.error(t('Please select at least one cargo to proceed'));
       return;
     }
 
@@ -374,19 +378,19 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
     );
 
     if (blocked.length > 0) {
-      toast.error(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE);
+      toast.error(t(PRE_TRIP_INSPECTION_BLOCKED_MESSAGE));
       return;
     }
 
     try {
       setProceeding(true);
       await driverApi.proceedWithJourney(driverId, Array.from(checkedCargos));
-      toast.success(`Journey started successfully for ${checkedCargos.size} cargo item(s)`);
+      toast.success(`${t('Journey started successfully for')} ${checkedCargos.size} ${t('cargo item(s)')}`);
       setCheckedCargos(new Set());
       // Refresh logic would go here
     } catch (error: any) {
       console.error('Error proceeding with journey:', error);
-      toast.error(error.response?.data?.message || 'Failed to proceed with journey');
+      toast.error(t(error.response?.data?.message || 'Failed to proceed with journey'));
     } finally {
       setProceeding(false);
     }

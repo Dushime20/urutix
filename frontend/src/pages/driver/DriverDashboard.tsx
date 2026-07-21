@@ -55,9 +55,12 @@ import { DriverRouteMap } from '../../components/DriverDashboard/DriverRouteMap'
 import { DriverMessenger } from '../../components/DriverDashboard/DriverMessenger';
 import { CommunicationRelay } from '../../components/DriverDashboard/CommunicationRelay';
 import { messengerApi } from '../../services/messengerApi';
+import { TranslatedText } from '../../components/translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 
 const DriverDashboard: React.FC = () => {
+  const { tSync: t } = useTranslation();
   const { compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -169,7 +172,7 @@ const DriverDashboard: React.FC = () => {
 
   const handleTripAction = async (action: 'start' | 'pause' | 'resume' | 'complete') => {
     if (!currentTrip?.id) {
-       toast.error("No active trip to perform action on");
+       toast.error(t('No active trip to perform action on'));
        return;
     }
     try {
@@ -180,10 +183,10 @@ const DriverDashboard: React.FC = () => {
       }
 
       const actionLabels = {
-        'start': 'Starting trip...',
-        'pause': 'Pausing trip...',
-        'resume': 'Resuming trip...',
-        'complete': 'Completing trip...' // Kept for type safety though bypassed
+        'start': t('Starting trip...'),
+        'pause': t('Pausing trip...'),
+        'resume': t('Resuming trip...'),
+        'complete': t('Completing trip...') // Kept for type safety though bypassed
       };
       toast.loading(actionLabels[action], { id: 'trip-action' });
       switch (action) {
@@ -191,18 +194,18 @@ const DriverDashboard: React.FC = () => {
         case 'pause': await driverApi.pauseTrip(currentTrip.id); break;
         case 'resume': await driverApi.resumeTrip(currentTrip.id); break;
       }
-      toast.success(`Trip ${action}ed successfully`, { id: 'trip-action' });
+      toast.success(t(`Trip ${action}ed successfully`), { id: 'trip-action' });
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
     } catch (error) {
        console.error(`Error during trip ${action}:`, error);
-       toast.error(`Failed to ${action} trip`, { id: 'trip-action' });
+       toast.error(t(`Failed to ${action} trip`), { id: 'trip-action' });
     }
   };
 
   const handleEmergency = async (type: 'call' | 'accident') => {
      if (type === 'call') {
         window.location.href = 'tel:911'; 
-        toast.success("Initiating emergency call...");
+        toast.success(t('Initiating emergency call...'));
      } else {
         setShowIncidentModal(true);
      }
@@ -279,10 +282,11 @@ const DriverDashboard: React.FC = () => {
             {/* Header */}
             <div className="mb-8 px-4">
               <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">
-                Overview
+                <TranslatedText text="Overview" />
               </h1>
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                {driver ? `${driver.firstName} ${driver.lastName}` : 'Active Personnel'} &nbsp;&bull;&nbsp; ID: {driverId.slice(-6).toUpperCase() || 'SYS-01'}
+                {driver ? `${driver.firstName} ${driver.lastName}` : <TranslatedText text="Active Personnel" />}{' '}
+                &nbsp;&bull;&nbsp; <TranslatedText text="ID:" /> {driverId.slice(-6).toUpperCase() || 'SYS-01'}
               </p>
             </div>
 
@@ -292,28 +296,28 @@ const DriverDashboard: React.FC = () => {
               {/* Top Row: Quick KPIs */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <StatCard
-                  title="Total Trips"
+                  title={<TranslatedText text="Total Trips" />}
                   value={statsLoading ? '...' : (stats?.totalTrips ?? 0)}
                   icon={<Route size={20} />}
                   variant="classic"
                   color="primary"
                 />
                 <StatCard
-                  title="On-Time Rate"
+                  title={<TranslatedText text="On-Time Rate" />}
                   value={statsLoading ? '...' : `${Math.round(stats?.onTimeDeliveryRate ?? 0)}%`}
                   icon={<CheckCircle size={20} />}
                   variant="classic"
                   color="success"
                 />
                 <StatCard
-                  title="Safety Score"
+                  title={<TranslatedText text="Safety Score" />}
                   value={statsLoading ? '...' : `${Math.round(stats?.safetyScore ?? 100)}`}
                   icon={<Shield size={20} />}
                   variant="classic"
                   color="primary"
                 />
                 <StatCard
-                  title="Rating"
+                  title={<TranslatedText text="Rating" />}
                   value={statsLoading ? '...' : Number(stats?.rating ?? 0).toFixed(1)}
                   icon={<Trophy size={20} />}
                   variant="classic"
@@ -323,7 +327,7 @@ const DriverDashboard: React.FC = () => {
 
               {/* Action Hub — horizontal tab strip above Active Mission */}
               <div className="bg-white dark:bg-slate-800 rounded-[2rem] px-4 py-3 sm:px-6 sm:py-4">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Action Hub</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1"><TranslatedText text="Action Hub" /></p>
                 {/* Scrollable on very small screens, wraps on sm+ */}
                 <div className="flex items-stretch gap-2 overflow-x-auto pb-1 snap-x snap-mandatory sm:flex-wrap sm:overflow-x-visible sm:pb-0 scrollbar-none">
                   <button
@@ -331,35 +335,35 @@ const DriverDashboard: React.FC = () => {
                     className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
                   >
                     <MessageIcon size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Dispatch</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Dispatch" /></span>
                   </button>
                   <button
                     onClick={() => handleEmergency('accident')}
                     className="snap-start shrink-0 flex items-center gap-2.5 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white text-rose-600 dark:text-rose-400 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
                   >
                     <Shield size={16} className="shrink-0 transition-colors" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Emergency</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Emergency" /></span>
                   </button>
                   <button
                     onClick={() => setActiveTab('fuel')}
                     className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
                   >
                     <FuelIcon size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Fuel Log</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Fuel Log" /></span>
                   </button>
                   <button
                     onClick={() => setActiveTab('missions')}
                     className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
                   >
                     <Route size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">My Trips</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="My Trips" /></span>
                   </button>
                   <button
                     onClick={() => setActiveTab('cargo')}
                     className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
                   >
                     <Package size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Cargo</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Cargo" /></span>
                   </button>
                 </div>
               </div>
@@ -367,14 +371,14 @@ const DriverDashboard: React.FC = () => {
               {/* Active Mission — full width, map gets all remaining space */}
               <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between min-h-[320px]">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Mission</h2>
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Active Mission" /></h2>
                   {analytics?.hos && (
                     <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
                       analytics.hos.status === 'Rest Required' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                       analytics.hos.status === 'Caution' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                       'bg-emerald-50 text-emerald-600 border-emerald-100'
                     }`}>
-                      HOS: {analytics.hos.consecutiveDrivingHours.toFixed(1)}h / {analytics.hos.maxHoursPerShift}h
+                      <TranslatedText text="HOS:" /> {analytics.hos.consecutiveDrivingHours.toFixed(1)}h / {analytics.hos.maxHoursPerShift}h
                     </span>
                   )}
                 </div>
@@ -385,23 +389,23 @@ const DriverDashboard: React.FC = () => {
                     <div className="flex flex-col justify-between md:w-72 lg:w-80 shrink-0">
                       <div>
                         <p className="text-[10px] font-black text-[#2b5271] uppercase tracking-widest mb-2">
-                          Trip #{currentTrip.tripNumber || 'ACTIVE'}
+                          <TranslatedText text="Trip #" />{currentTrip.tripNumber || <TranslatedText text="ACTIVE" />}
                         </p>
                         <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
-                          {currentTrip.origin.city || 'Origin'}{' '}
+                          {currentTrip.origin.city || <TranslatedText text="Origin" />}{' '}
                           <span className="text-slate-300 mx-1">→</span>{' '}
-                          {currentTrip.destination.city || 'Destination'}
+                          {currentTrip.destination.city || <TranslatedText text="Destination" />}
                         </h3>
                         <div className="flex flex-wrap gap-x-4 gap-y-3 mb-4">
                           <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Status</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Status" /></p>
                             <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
                               {currentTrip.status.replace('_', ' ')}
                             </p>
                           </div>
                           {currentTrip.estimatedArrival && (
                             <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ETA</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="ETA" /></p>
                               <p className="text-xs font-black text-[#2b5271] dark:text-white">
                                 {new Date(currentTrip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
@@ -409,13 +413,13 @@ const DriverDashboard: React.FC = () => {
                           )}
                           {currentTrip.distance > 0 && (
                             <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Distance</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Distance" /></p>
                               <p className="text-xs font-black text-slate-700 dark:text-white">{currentTrip.distance} km</p>
                             </div>
                           )}
                           {currentTrip.earnings > 0 && (
                             <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Earnings</p>
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Earnings" /></p>
                               <p className="text-xs font-black text-emerald-600">{fmtMoney(Number(currentTrip.earnings))}</p>
                             </div>
                           )}
@@ -423,7 +427,7 @@ const DriverDashboard: React.FC = () => {
                         {currentTrip.progress > 0 && (
                           <div className="mb-4">
                             <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                              <span>Progress</span>
+                              <span><TranslatedText text="Progress" /></span>
                               <span>{currentTrip.progress}%</span>
                             </div>
                             <div className="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
@@ -447,7 +451,7 @@ const DriverDashboard: React.FC = () => {
                             onClick={() => handleTripAction('start')}
                             className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
                           >
-                            Start Trip
+                            <TranslatedText text="Start Trip" />
                           </button>
                         )}
                         {currentTrip.status === 'IN_PROGRESS' && (
@@ -456,13 +460,13 @@ const DriverDashboard: React.FC = () => {
                               onClick={() => handleTripAction('pause')}
                               className="bg-amber-50 text-amber-600 border border-amber-100 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-colors"
                             >
-                              Pause
+                              <TranslatedText text="Pause" />
                             </button>
                             <button
                               onClick={() => handleTripAction('complete')}
                               className="bg-emerald-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors"
                             >
-                              Complete
+                              <TranslatedText text="Complete" />
                             </button>
                           </>
                         )}
@@ -477,13 +481,13 @@ const DriverDashboard: React.FC = () => {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center py-12">
                     <Route size={40} className="text-slate-200 dark:text-slate-700 mb-4" />
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2">No Active Mission</h3>
-                    <p className="text-sm font-bold text-slate-500 mb-6">You are currently unassigned.</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight mb-2"><TranslatedText text="No Active Mission" /></h3>
+                    <p className="text-sm font-bold text-slate-500 mb-6"><TranslatedText text="You are currently unassigned." /></p>
                     <button
                       onClick={() => setActiveTab('missions')}
                       className="bg-[#2b5271] text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
                     >
-                      View Schedule
+                      <TranslatedText text="View Schedule" />
                     </button>
                   </div>
                 )}
@@ -492,7 +496,7 @@ const DriverDashboard: React.FC = () => {
               {/* Bottom Row: Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 h-[400px]">
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Earnings Trend</h2>
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6"><TranslatedText text="Earnings Trend" /></h2>
                   <div className="-mx-6 -my-6 sm:-mx-8 sm:-my-8 h-full">
                     <DriverEarningsChart
                       isLoading={analyticsLoading}
@@ -502,7 +506,7 @@ const DriverDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 h-[400px]">
-                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Performance Grade</h2>
+                  <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6"><TranslatedText text="Performance Grade" /></h2>
                   <div className="-mx-6 -my-6 sm:-mx-8 sm:-my-8 h-full">
                     <DriverPerformanceChart
                       data={analytics?.performance}
@@ -600,7 +604,7 @@ const DriverDashboard: React.FC = () => {
                   queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
                   queryClient.invalidateQueries({ queryKey: ['driver-stats'] });
                   setActiveTab('overview');
-                  toast.success('Mission finalized — ePOD submitted & invoice generated.', { duration: 5000 });
+                  toast.success(t('Mission finalized — ePOD submitted & invoice generated.'), { duration: 5000 });
                 }}
                 onCancel={() => setShowPostTripModal(false)}
               />
