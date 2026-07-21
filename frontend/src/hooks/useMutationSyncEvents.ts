@@ -32,7 +32,12 @@ export function useMutationSyncEvents() {
       });
     };
 
-    socket.on('notification', (payload: { type?: string; notificationType?: string; data?: { type?: string } }) => {
+    socket.on('notification', (payload: {
+      type?: string;
+      notificationType?: string;
+      data?: { type?: string };
+      metadata?: { event?: string };
+    }) => {
       const type = (
         payload?.notificationType ||
         payload?.type ||
@@ -76,6 +81,19 @@ export function useMutationSyncEvents() {
           queryKeys.matching.bookingRequests,
           queryKeys.matching.all,
           queryKeys.availability.trucks,
+        ]);
+        return;
+      }
+
+      if (
+        type.includes('DRIVER_ALERT') ||
+        type.includes('INSPECTION') ||
+        payload?.metadata?.event === 'PRE_TRIP_READY_FOR_RE_INSPECTION'
+      ) {
+        invalidate([
+          queryKeys.drivers.preTripInspections(),
+          queryKeys.drivers.all,
+          queryKeys.loads.all,
         ]);
       }
     });

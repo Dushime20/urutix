@@ -38,6 +38,7 @@ import {
   NotificationPriority,
   NotificationType,
 } from '../../entities/notification.entity';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class PreTripInspectionService {
@@ -53,6 +54,7 @@ export class PreTripInspectionService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly notificationService: NotificationService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async getAssignedLoadsWithInspectionStatus(
@@ -622,7 +624,13 @@ export class PreTripInspectionService {
       updatedAt: new Date(),
     });
 
-    await this.notifyReadyForReInspection(load, dto.resolutionNotes.trim(), userId);
+    await this.notifyReadyForReInspection(
+      load,
+      inspection,
+      dto.resolutionNotes.trim(),
+      userId,
+      openIssues.length,
+    );
 
     return {
       loadId,
@@ -1014,33 +1022,74 @@ export class PreTripInspectionService {
     }
   }
 
+  private async resolveDriverForLoad(
+    load: Load,
+    inspection?: CargoInspection | null,
+  ): Promise<Driver | null> {
+    if (load.assignedTruckId) {
+      const driverByTruck = await this.driverRepository.findOne({
+        where: { currentTruckId: load.assignedTruckId, tenantId: load.tenantId },
+      });
+      if (driverByTruck) {
+        return driverByTruck;
+      }
+    }
+
+    if (inspection?.driverId) {
+      const driverByUser = await this.driverRepository.findOne({
+        where: { userId: inspection.driverId, tenantId: load.tenantId },
+      });
+      if (driverByUser) {
+        return driverByUser;
+      }
+    }
+
+    return null;
+  }
+
   private async notifyReadyForReInspection(
     load: Load,
-    resolutionNotes: string | undefined,
+    inspection: CargoInspection,
+    resolutionNotes: string,
     resolvedById: string,
+    resolvedIssueCount: number,
   ) {
     const resolverName = await this.getUserDisplayName(resolvedById);
     const shipmentLabel = load.title || 'shipment';
-    const notesSuffix = resolutionNotes ? `: ${resolutionNotes}` : '';
+    const issueLabel =
+      resolvedIssueCount === 1
+        ? '1 reported issue'
+        : `${resolvedIssueCount} reported issues`;
 
-    const driver = await this.driverRepository.findOne({
-      where: { currentTruckId: load.assignedTruckId, tenantId: load.tenantId },
-    });
+    const driver = await this.resolveDriverForLoad(load, inspection);
 
     if (driver) {
       await this.safeNotify({
         recipientId: driver.userId,
         tenantId: load.tenantId,
-        title: 'Ready for Re-Inspection',
-        message: `${resolverName} resolved the reported issues for "${shipmentLabel}"${notesSuffix}. Please perform a re-inspection before loading.`,
+        title: 'Issues Resolved — Re-Inspection Required',
+        message: `${resolverName} resolved ${issueLabel} for "${shipmentLabel}". Corrective actions: ${resolutionNotes}. Please perform a new pre-trip inspection before loading.`,
+        shortMessage: `Re-inspect "${shipmentLabel}" — issues resolved by cargo owner.`,
         notificationType: NotificationType.DRIVER_ALERT,
         priority: NotificationPriority.HIGH,
         entityId: load.id,
         actionUrl: '/dashboard/driver/inspection',
-        actionText: 'Re-Inspect Cargo',
-        metadata: { resolutionNotes, resolvedById },
+        actionText: 'Start Re-Inspection',
+        metadata: {
+          loadId: load.id,
+          inspectionId: inspection.id,
+          resolutionNotes,
+          resolvedById,
+          resolvedIssueCount,
+          workflowStatus: PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION,
+          event: 'PRE_TRIP_READY_FOR_RE_INSPECTION',
+        },
         requiresAction: true,
       });
+    } else {
+      this.logger.warn(
+        `No driver found to notify for load ${load.id} re-inspection release`,
+      );
     }
 
     for (const recipientId of this.getOwnerRecipientIds(load)) {
@@ -1052,14 +1101,19 @@ export class PreTripInspectionService {
           ? 'Resolution Submitted — Driver Notified'
           : 'Inspection Issues Resolved — Re-Inspection Pending',
         message: isResolver
-          ? `You marked the reported issues for "${shipmentLabel}" as resolved${notesSuffix}. The driver has been notified to re-inspect.`
-          : `${resolverName} resolved the reported issues for "${shipmentLabel}"${notesSuffix}. The driver will perform a re-inspection.`,
+          ? `You marked ${issueLabel} for "${shipmentLabel}" as resolved. The driver has been notified to re-inspect.`
+          : `${resolverName} resolved ${issueLabel} for "${shipmentLabel}". The driver will perform a re-inspection.`,
         notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
         priority: NotificationPriority.NORMAL,
         entityId: load.id,
         actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
         actionText: 'View Inspection',
-        metadata: { resolutionNotes, resolvedById },
+        metadata: {
+          resolutionNotes,
+          resolvedById,
+          resolvedIssueCount,
+          event: 'PRE_TRIP_READY_FOR_RE_INSPECTION',
+        },
       });
     }
   }
@@ -1069,6 +1123,7 @@ export class PreTripInspectionService {
     tenantId: string;
     title: string;
     message: string;
+    shortMessage?: string;
     notificationType: NotificationType;
     priority: NotificationPriority;
     entityId: string;
@@ -1078,11 +1133,12 @@ export class PreTripInspectionService {
     requiresAction?: boolean;
   }) {
     try {
-      await this.notificationService.createNotification({
+      const saved = await this.notificationService.createNotification({
         recipientId: payload.recipientId,
         tenantId: payload.tenantId,
         title: payload.title,
         message: payload.message,
+        shortMessage: payload.shortMessage,
         notificationType: payload.notificationType,
         category: NotificationCategory.CARGO,
         priority: payload.priority,
@@ -1093,6 +1149,13 @@ export class PreTripInspectionService {
         actionText: payload.actionText,
         metadata: payload.metadata,
         requiresAction: payload.requiresAction ?? false,
+      });
+
+      this.eventsGateway.emitNotification(payload.recipientId, {
+        ...saved,
+        type: payload.notificationType,
+        notificationType: payload.notificationType,
+        data: payload.metadata,
       });
     } catch (error) {
       this.logger.error(`Failed to send notification: ${error.message}`);

@@ -541,7 +541,7 @@ function ShipmentDetailModal({
     mutationFn: (payload: MarkReadyForReInspectionPayload) =>
       cargoInspectionApi.markReadyForReInspection(shipment.loadId, payload),
     onSuccess: () => {
-      toast.success('Corrective actions recorded. Driver has been notified to re-inspect.');
+      toast.success('Corrective actions recorded. The assigned driver has been notified to re-inspect.');
       setResolutionNotes('');
       setAcknowledgedIssues(new Set());
       setCorrectiveActions({});

@@ -65,20 +65,12 @@ export const useNotifications = () => {
     const token = localStorage.getItem('accessToken');
     const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'http://localhost:3001';
 
-    const newSocket = io(wsUrl, {
+    const newSocket = io(`${wsUrl}/events`, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
 
-    newSocket.on('connect', () => {
-      setIsConnected(true);
-      newSocket.emit('join:user', { userId: user.id });
-    });
-
-    newSocket.on('disconnect', () => setIsConnected(false));
-
-    newSocket.on('notification:new', (data: any) => {
-      // Role-based filter: LOW_BALANCE is only for TRUCK_OWNER and TENANT_ADMIN
+    const handleRealtimeNotification = (data: any) => {
       const notifType = ((data as any).notificationType || (data as any).type || '').toUpperCase();
       const creditBalanceRoles = ['TRUCK_OWNER', 'TENANT_ADMIN'];
       if (
@@ -86,26 +78,45 @@ export const useNotifications = () => {
         user &&
         !creditBalanceRoles.includes(user.role)
       ) {
-        return; // Suppress for roles that don't manage TRX credits
+        return;
       }
+
       queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
+
+      const metadata = data?.metadata || data?.data || {};
+      const isPreTripReInspection =
+        metadata?.event === 'PRE_TRIP_READY_FOR_RE_INSPECTION' ||
+        (notifType === 'DRIVER_ALERT' &&
+          String(data?.title || '').toLowerCase().includes('re-inspection'));
+
+      if (isPreTripReInspection) {
+        queryClient.invalidateQueries({ queryKey: ['driver-pre-trip-inspections'] });
+        toast.success(data.message || 'Cargo owner resolved issues. You can re-inspect now.', {
+          icon: '✅',
+          duration: 8000,
+        });
+        return;
+      }
+
       toast(data.title || 'New notification', {
         icon: '🔔',
         duration: 5000,
       });
+    };
+
+    newSocket.on('connect', () => {
+      setIsConnected(true);
     });
 
-    // Also listen on the events namespace event name used by NotificationContext
-    newSocket.on('notification', (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
-    });
+    newSocket.on('disconnect', () => setIsConnected(false));
+
+    newSocket.on('notification:new', handleRealtimeNotification);
+    newSocket.on('notification', handleRealtimeNotification);
 
     setSocket(newSocket);
 
     return () => {
-      newSocket.emit('leave:user', { userId: user.id });
       newSocket.close();
     };
   }, [user, queryClient]);
