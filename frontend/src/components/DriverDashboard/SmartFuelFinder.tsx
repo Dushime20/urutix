@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../services/api';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Station {
   id: string;
@@ -32,6 +34,7 @@ interface SmartFuelFinderProps {
 }
 
 export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation }) => {
+  const { tSync: t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +54,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
       if (raw.length > 0) raw[0].isNearest = true;
       setStations(raw);
     } catch {
-      setError('Could not load nearby stations. Please try again.');
+      setError(t('Could not load nearby stations. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -59,7 +62,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
 
   const requestBrowserLocation = () => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
+      setError(t('Geolocation is not supported by your browser.'));
       return;
     }
     setLoading(true);
@@ -70,9 +73,9 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
         setLoading(false);
         if (err.code === err.PERMISSION_DENIED) {
           setLocationDenied(true);
-          setError('Location access denied. Enable location permissions to find nearby stations.');
+          setError(t('Location access denied. Enable location permissions to find nearby stations.'));
         } else {
-          setError('Could not determine your location. Please try again.');
+          setError(t('Could not determine your location. Please try again.'));
         }
       },
       { timeout: 10000, maximumAge: 60000 },
@@ -127,8 +130,8 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
             <Droplets size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none mb-1">Nearby</p>
-            <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Fuel Stations</h3>
+            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none mb-1"><TranslatedText text="Nearby" /></p>
+            <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Fuel Stations" /></h3>
           </div>
         </div>
         <button
@@ -137,7 +140,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
           className="px-4 py-2 bg-blue-50 text-[#345E85] rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-100 flex items-center gap-2 hover:bg-[#345E85] hover:text-white transition-all disabled:opacity-50"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <LocateFixed size={14} />}
-          {loading ? 'Locating…' : 'Refresh'}
+          {loading ? <TranslatedText text="Locating…" /> : <TranslatedText text="Refresh" />}
         </button>
       </div>
 
@@ -146,7 +149,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
         <input
           type="text"
-          placeholder="Search stations or brands..."
+          placeholder={t('Search stations or brands...')}
           className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -158,7 +161,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
         {loading && (
           <div className="flex flex-col items-center justify-center py-16 gap-4">
             <Loader2 size={32} className="animate-spin text-[#345E85]" />
-            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Finding nearby stations…</p>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Finding nearby stations…" /></p>
           </div>
         )}
 
@@ -168,29 +171,29 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
             <p className="text-sm font-bold text-slate-500">{error}</p>
             {locationDenied && (
               <p className="text-xs text-slate-400">
-                Go to your browser settings and allow location access for this site.
+                <TranslatedText text="Go to your browser settings and allow location access for this site." />
               </p>
             )}
             <button
               onClick={handleRefresh}
               className="mt-2 px-6 py-2 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition-all"
             >
-              Try Again
+              <TranslatedText text="Try Again" />
             </button>
           </div>
         )}
 
         {!loading && !error && filtered.length === 0 && stations.length > 0 && (
           <div className="text-center py-12 text-slate-400 text-sm font-medium">
-            No stations match your search.
+            <TranslatedText text="No stations match your search." />
           </div>
         )}
 
         {!loading && !error && stations.length === 0 && !locationDenied && (
           <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
             <MapPin size={32} className="text-slate-200" />
-            <p className="text-sm font-bold text-slate-400">No fuel stations found nearby</p>
-            <p className="text-xs text-slate-300">Try increasing the search radius</p>
+            <p className="text-sm font-bold text-slate-400"><TranslatedText text="No fuel stations found nearby" /></p>
+            <p className="text-xs text-slate-300"><TranslatedText text="Try increasing the search radius" /></p>
           </div>
         )}
 
@@ -207,7 +210,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h4 className="font-black text-[#0f172a] uppercase tracking-tight text-sm">{station.name}</h4>
                   {station.isNearest && (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[8px] font-black uppercase tracking-widest rounded">Nearest</span>
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[8px] font-black uppercase tracking-widest rounded"><TranslatedText text="Nearest" /></span>
                   )}
                   {station.brand && station.brand !== station.name && (
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-widest rounded">{station.brand}</span>
@@ -225,18 +228,18 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
                   <DollarSign size={12} />
                   <span className="text-sm font-black tracking-tighter text-slate-400">—</span>
                 </div>
-                <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">Price N/A</p>
+                <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest"><TranslatedText text="Price N/A" /></p>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex gap-4">
                 <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Distance</span>
+                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest"><TranslatedText text="Distance" /></span>
                   <span className="text-xs font-black text-[#0f172a] uppercase">{station.distanceKm} KM</span>
                 </div>
                 <div className="flex flex-col border-l border-slate-200 pl-4">
-                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Type</span>
+                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest"><TranslatedText text="Type" /></span>
                   <span className="text-xs font-black text-blue-500 uppercase">{station.fuelType}</span>
                 </div>
               </div>
@@ -245,7 +248,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
                 onClick={() => handleNavigate(station)}
                 className="px-6 py-2.5 bg-white border border-slate-200 text-[#0f172a] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 group-hover:bg-[#345E85] group-hover:text-white group-hover:border-[#345E85] transition-all shadow-sm"
               >
-                Navigate
+                <TranslatedText text="Navigate" />
                 <Navigation size={12} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </button>
             </div>

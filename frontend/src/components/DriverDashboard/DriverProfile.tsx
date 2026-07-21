@@ -21,6 +21,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface DriverProfileProps {
   driver: any;
@@ -39,6 +41,7 @@ function safeStr(val: any, fallback = ''): string {
 }
 
 export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading }) => {
+  const { tSync: t } = useTranslation();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
 
@@ -59,7 +62,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
   const handleSave = async () => {
     toast.promise(
       new Promise(resolve => setTimeout(resolve, 800)),
-      { loading: 'Saving...', success: 'Profile updated', error: 'Update failed' }
+      { loading: t('Saving...'), success: t('Profile updated'), error: t('Update failed') }
     );
     setIsEditing(false);
   };
@@ -79,7 +82,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
             <User size={18} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Driver Profile</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Driver Profile" /></p>
             <h2 className="text-lg font-black text-slate-900 tracking-tight">{fullName}</h2>
           </div>
         </div>
@@ -92,7 +95,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
               : 'bg-[#345E85] text-white hover:bg-slate-800'
           )}
         >
-          {isEditing ? <><Save size={14} /> Save</> : <><Edit2 size={14} /> Edit</>}
+          {isEditing ? <><Save size={14} /> <TranslatedText text="Save" /></> : <><Edit2 size={14} /> <TranslatedText text="Edit" /></>}
         </button>
       </div>
 
@@ -126,7 +129,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
                     : 'bg-slate-50 text-slate-500 border-slate-200'
                 )}>
-                  {driver?.status || 'Active'}
+                  {driver?.status === 'ACTIVE' ? <TranslatedText text="Active" /> : <TranslatedText text={driver?.status || 'Active'} />}
                 </span>
                 <span className="px-3 py-1 rounded-full bg-[#345E85]/10 text-[#345E85] text-[9px] font-black uppercase tracking-widest border border-[#345E85]/20 flex items-center gap-1">
                   <Award size={10} /> {Number(driver?.rating ?? 0).toFixed(1)} ★
@@ -146,7 +149,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                     <Icon size={14} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={label} /></p>
                     <p className="text-xs font-bold text-slate-800 truncate">{value}</p>
                   </div>
                 </div>
@@ -158,7 +161,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
           <div className="bg-[#345E85] rounded-[2rem] p-6 text-white">
             <div className="flex items-center gap-2 mb-4">
               <Shield size={16} className="text-white/60" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Driver Stats</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/70"><TranslatedText text="Driver Stats" /></p>
             </div>
             <div className="space-y-4">
               {[
@@ -168,7 +171,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                 { label: 'Safety Score', value: `${Number(driver?.safetyScore ?? 100).toFixed(0)}%`, color: 'text-amber-300' },
               ].map(({ label, value, color }) => (
                 <div key={label}>
-                  <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5">{label}</p>
+                  <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-0.5"><TranslatedText text={label} /></p>
                   <p className={cn('text-base font-black tracking-tight', color)}>{value}</p>
                 </div>
               ))}
@@ -185,7 +188,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
               <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[#345E85]">
                 <Target size={14} />
               </div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Personal Information</h3>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest"><TranslatedText text="Personal Information" /></h3>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
@@ -195,7 +198,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                 { label: 'Address', key: 'address' },
               ].map(({ label, key }) => (
                 <div key={key} className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={label} /></label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -213,11 +216,11 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
 
               {/* License */}
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">License Number</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="License Number" /></label>
                 <p className="text-sm font-bold text-slate-800">{driver?.licenseNumber || '—'}</p>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">License Expiry</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="License Expiry" /></label>
                 <div className="flex items-center gap-2">
                   <CalendarIcon size={13} className="text-slate-400" />
                   <p className="text-sm font-bold text-slate-800">
@@ -228,14 +231,14 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
 
               {/* Vehicle */}
               <div className="sm:col-span-2">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Assigned Truck</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2"><TranslatedText text="Assigned Truck" /></label>
                 <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                   <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-[#345E85] shrink-0">
                     <Truck size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-black text-slate-900 truncate">
-                      {driver?.currentTruck?.plateNumber || driver?.vehiclePlate || 'Not assigned'}
+                      {driver?.currentTruck?.plateNumber || driver?.vehiclePlate || t('Not assigned')}
                     </p>
                     <p className="text-[10px] text-slate-400 font-medium truncate">
                       {driver?.currentTruck ? `${driver.currentTruck.make || ''} ${driver.currentTruck.model || ''}`.trim() : driver?.vehicleModel || '—'}
@@ -257,7 +260,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
               <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-rose-500">
                 <Activity size={14} />
               </div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Emergency Contact</h3>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest"><TranslatedText text="Emergency Contact" /></h3>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
@@ -265,18 +268,18 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                 { label: 'Phone Number', key: 'emergencyPhone', placeholder: 'e.g. +254 --- --- ---' },
               ].map(({ label, key, placeholder }) => (
                 <div key={key} className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={label} /></label>
                   {isEditing ? (
                     <input
                       type="text"
                       value={formData[key as keyof typeof formData]}
                       onChange={e => setFormData({ ...formData, [key]: e.target.value })}
-                      placeholder={placeholder}
+                      placeholder={t(placeholder)}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-100 transition-all"
                     />
                   ) : (
                     <p className="text-sm font-bold text-slate-800">
-                      {formData[key as keyof typeof formData] || 'Not configured'}
+                      {formData[key as keyof typeof formData] || t('Not configured')}
                     </p>
                   )}
                 </div>
@@ -290,7 +293,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
               <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-indigo-500">
                 <FileText size={14} />
               </div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Certifications & Compliance</h3>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest"><TranslatedText text="Certifications & Compliance" /></h3>
             </div>
             <div className="p-6 space-y-3">
               {/* Real compliance dates from driver */}
@@ -330,7 +333,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                         <Icon size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-black text-slate-900 truncate">{name}</p>
+                        <p className="text-xs font-black text-slate-900 truncate"><TranslatedText text={name} /></p>
                         <p className="text-[10px] text-slate-400">
                           {expiryDate ? expiryDate.toLocaleDateString() : '—'}
                         </p>
@@ -343,7 +346,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                       status === 'Expired' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                       'bg-slate-50 text-slate-400 border-slate-200'
                     )}>
-                      {status}
+                      {status === 'N/A' ? t('N/A') : <TranslatedText text={status} />}
                     </span>
                   </div>
                 );

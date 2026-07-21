@@ -17,6 +17,8 @@ import { messengerApi } from '../../services/messengerApi';
 import type { ChatThread } from '../../services/messengerApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface MessengerProps {
   driverId: string;
@@ -29,6 +31,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
   initialThreadId, 
   initialRecipientId 
 }) => {
+  const { tSync: t } = useTranslation();
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,7 +113,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
       )}>
         <div className="p-6 border-b border-slate-50">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Messages</h2>
+            <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Messages" /></h2>
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] border border-blue-100">
               <MessageSquare size={18} />
             </div>
@@ -119,7 +122,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
             <input 
               type="text"
-              placeholder="Search conversations..."
+              placeholder={t('Search conversations...')}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:border-[#345E85] transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,7 +137,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
             </div>
           ) : filteredThreads?.length === 0 ? (
             <div className="p-8 text-center text-slate-400 italic">
-              <p className="text-xs font-bold uppercase tracking-widest">No conversations found</p>
+              <p className="text-xs font-bold uppercase tracking-widest"><TranslatedText text="No conversations found" /></p>
             </div>
           ) : (
             <div className="divide-y divide-slate-50">
@@ -211,7 +214,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                   <div className="flex items-center gap-3 mt-1.5">
                      <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Online Now</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Online Now" /></span>
                      </div>
                      <span className="w-px h-3 bg-slate-200" />
                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
@@ -238,15 +241,15 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                    <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center text-[#345E85] mb-6 border border-blue-100">
                       <MessageSquare size={24} />
                    </div>
-                   <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-widest mb-2">No messages yet</h3>
-                   <p className="text-xs text-slate-400 font-medium italic">Send a message to start the conversation with the shipper.</p>
+                   <h3 className="text-sm font-black text-[#0f172a] uppercase tracking-widest mb-2"><TranslatedText text="No messages yet" /></h3>
+                   <p className="text-xs text-slate-400 font-medium italic"><TranslatedText text="Send a message to start the conversation with the shipper." /></p>
                 </div>
               ) : (
                 <div className="space-y-8">
                   {/* Date Separator */}
                   <div className="flex items-center gap-4 py-4">
                     <div className="flex-1 h-px bg-slate-100" />
-                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] whitespace-nowrap">Encryption Active • Secure Tunnel</span>
+                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] whitespace-nowrap"><TranslatedText text="Encryption Active • Secure Tunnel" /></span>
                     <div className="flex-1 h-px bg-slate-100" />
                   </div>
 
@@ -309,7 +312,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                   <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-3 pr-2">
                     <input 
                       type="text"
-                      placeholder="Type a secure message..."
+                      placeholder={t('Type a secure message...')}
                       className="flex-1 bg-transparent border-none outline-none text-sm font-bold placeholder:text-slate-300 py-3"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
@@ -325,10 +328,10 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                </div>
                <div className="flex items-center justify-between mt-4 px-4">
                   <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                    <AlertCircle size={10} className="text-blue-500" /> Policy: Follow safety protocols in messages
+                    <AlertCircle size={10} className="text-blue-500" /> <TranslatedText text="Policy: Follow safety protocols in messages" />
                   </span>
                   <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
-                    <span>Protocol v2.1</span>
+                    <span><TranslatedText text="Protocol v2.1" /></span>
                   </div>
                </div>
             </div>
@@ -341,24 +344,24 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                  <MessageSquare size={48} strokeWidth={1.5} />
                </div>
             </div>
-            <h2 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight mb-4">Select a Channel</h2>
+            <h2 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight mb-4"><TranslatedText text="Select a Channel" /></h2>
             <p className="text-slate-500 font-medium italic max-w-sm">
-              Communicate directly with Shippers, Fleet Managers, and Support Hubs through our encrypted messaging terminal.
+              <TranslatedText text="Communicate directly with Shippers, Fleet Managers, and Support Hubs through our encrypted messaging terminal." />
             </p>
             <div className="grid grid-cols-2 gap-4 mt-12 w-full max-w-md">
                <div className="p-6 bg-white rounded-3xl border border-slate-100 text-left group hover:border-blue-100 transition-all shadow-sm">
                   <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] mb-4 group-hover:scale-110 transition-transform">
                      <User size={18} />
                   </div>
-                  <h4 className="text-xs font-black text-[#0f172a] uppercase tracking-wider mb-1">Direct Shipper</h4>
-                  <p className="text-[10px] text-slate-400 font-medium italic">Cargo verified chat</p>
+                  <h4 className="text-xs font-black text-[#0f172a] uppercase tracking-wider mb-1"><TranslatedText text="Direct Shipper" /></h4>
+                  <p className="text-[10px] text-slate-400 font-medium italic"><TranslatedText text="Cargo verified chat" /></p>
                </div>
                <div className="p-6 bg-white rounded-3xl border border-slate-100 text-left group hover:border-blue-100 transition-all shadow-sm">
                   <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 mb-4 group-hover:scale-110 transition-transform">
                      <Clock size={18} />
                   </div>
-                  <h4 className="text-xs font-black text-[#0f172a] uppercase tracking-wider mb-1">Dispatch Hub</h4>
-                  <p className="text-[10px] text-slate-400 font-medium italic">Operational support</p>
+                  <h4 className="text-xs font-black text-[#0f172a] uppercase tracking-wider mb-1"><TranslatedText text="Dispatch Hub" /></h4>
+                  <p className="text-[10px] text-slate-400 font-medium italic"><TranslatedText text="Operational support" /></p>
                </div>
             </div>
           </div>

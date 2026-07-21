@@ -28,6 +28,8 @@ import {
   PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
   PreTripInspectionWorkflowStatus,
 } from './preTripInspection';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 type FlowStep = 'vehicle' | 'cargo' | 'blocked' | 'launching';
 
@@ -52,6 +54,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
   onClose,
   onTripStarted,
 }) => {
+  const { tSync: t } = useTranslation();
   const loadId = trip.loadId;
   const [step, setStep] = useState<FlowStep>('vehicle');
   const [inspectionStatus, setInspectionStatus] = useState<PreTripInspectionWorkflowStatus>('PENDING');
@@ -91,11 +94,11 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
     setStep('launching');
     try {
       await driverApi.startTrip(trip.id);
-      toast.success('Trip started successfully!');
+      toast.success(t('Trip started successfully!'));
       onTripStarted();
       onClose();
     } catch (error: any) {
-      toast.error(getApiErrorMessage(error));
+      toast.error(t(getApiErrorMessage(error)));
       setStep('cargo');
     }
   };
@@ -104,7 +107,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
     if (!allRequiredChecked) return;
 
     if (!loadId) {
-      toast.error('No cargo linked to this trip. Contact dispatch.');
+      toast.error(t('No cargo linked to this trip. Contact dispatch.'));
       return;
     }
 
@@ -133,7 +136,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
     } else if (status === 'AWAITING_RESOLUTION') {
       setStep('blocked');
     } else {
-      toast.error('Inspection submitted. Resolve any issues before starting the trip.');
+      toast.error(t('Inspection submitted. Resolve any issues before starting the trip.'));
     }
   };
 
@@ -163,7 +166,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
               <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">
-                Trip Launch Protocol
+                <TranslatedText text="Trip Launch Protocol" />
               </p>
               <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
                 {trip.origin.city} → {trip.destination.city}
@@ -207,7 +210,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                         isActive ? 'text-white' : isDone ? 'text-emerald-400' : 'text-slate-500'
                       }`}
                     >
-                      {s.label}
+                      <TranslatedText text={s.label} />
                     </span>
                   </div>
                   {idx < STEPS.length - 1 && (
@@ -229,8 +232,8 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                     <Truck className="w-5 h-5 text-[#345E85]" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Vehicle Pre-Trip Checklist</h4>
-                    <p className="text-xs text-slate-500">Verify your truck is road-ready before cargo inspection.</p>
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Vehicle Pre-Trip Checklist" /></h4>
+                    <p className="text-xs text-slate-500"><TranslatedText text="Verify your truck is road-ready before cargo inspection." /></p>
                   </div>
                 </div>
                 <VehiclePreTripChecklist checkedItems={checkedItems} onToggle={toggle} />
@@ -242,7 +245,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                 {inspectionLoading ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-4">
                     <Loader2 className="w-8 h-8 text-[#345E85] animate-spin" />
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Checking cargo inspection status...</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest"><TranslatedText text="Checking cargo inspection status..." /></p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -251,15 +254,15 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                         <Package className="w-5 h-5 text-emerald-600" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Cargo Pre-Trip Inspection</h4>
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Cargo Pre-Trip Inspection" /></h4>
                         <p className="text-xs text-slate-500">{trip.cargo.description}</p>
                       </div>
                     </div>
 
                     <div className={`p-5 rounded-2xl border ${getInspectionStatusStyles(inspectionStatus)}`}>
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest">Current Status</span>
-                        <span className="text-xs font-black uppercase">{getInspectionStatusLabel(inspectionStatus)}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Current Status" /></span>
+                        <span className="text-xs font-black uppercase"><TranslatedText text={getInspectionStatusLabel(inspectionStatus)} /></span>
                       </div>
                     </div>
 
@@ -267,7 +270,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                       <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3">
                         <ShieldCheck className="w-5 h-5 text-blue-600 shrink-0" />
                         <p className="text-xs font-medium text-blue-800">
-                          Issues have been resolved by the cargo owner. Please perform a re-inspection to verify corrections before launching.
+                          <TranslatedText text="Issues have been resolved by the cargo owner. Please perform a re-inspection to verify corrections before launching." />
                         </p>
                       </div>
                     )}
@@ -276,7 +279,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                       onClick={() => setShowInspectionForm(true)}
                       className="w-full py-4 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-slate-900 transition-all shadow-lg"
                     >
-                      {inspectionStatus === 'READY_FOR_RE_INSPECTION' ? 'Begin Re-Inspection' : 'Begin Cargo Inspection'}
+                      {inspectionStatus === 'READY_FOR_RE_INSPECTION' ? <TranslatedText text="Begin Re-Inspection" /> : <TranslatedText text="Begin Cargo Inspection" />}
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -301,11 +304,11 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                 <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto mb-5">
                   <AlertTriangle className="w-8 h-8 text-rose-500" />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">Trip Launch Blocked</h4>
-                <p className="text-sm text-slate-600 max-w-md mx-auto mb-4">{PRE_TRIP_INSPECTION_BLOCKED_MESSAGE}</p>
+                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2"><TranslatedText text="Trip Launch Blocked" /></h4>
+                <p className="text-sm text-slate-600 max-w-md mx-auto mb-4"><TranslatedText text={PRE_TRIP_INSPECTION_BLOCKED_MESSAGE} /></p>
                 <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-black uppercase ${getInspectionStatusStyles(inspectionStatus)}`}>
                   <Clock className="w-4 h-4" />
-                  {getInspectionStatusLabel(inspectionStatus)}
+                  <TranslatedText text={getInspectionStatusLabel(inspectionStatus)} />
                 </div>
               </motion.div>
             )}
@@ -313,8 +316,8 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
             {step === 'launching' && (
               <motion.div key="launching" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-16 gap-4">
                 <Loader2 className="w-10 h-10 text-[#345E85] animate-spin" />
-                <p className="text-sm font-black text-slate-800 uppercase tracking-widest">Launching Trip...</p>
-                <p className="text-xs text-slate-500">All pre-trip checks passed. Starting navigation.</p>
+                <p className="text-sm font-black text-slate-800 uppercase tracking-widest"><TranslatedText text="Launching Trip..." /></p>
+                <p className="text-xs text-slate-500"><TranslatedText text="All pre-trip checks passed. Starting navigation." /></p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -327,14 +330,14 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
               onClick={onClose}
               className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white transition-all"
             >
-              Cancel
+              <TranslatedText text="Cancel" />
             </button>
             <button
               onClick={handleVehicleComplete}
               disabled={!allRequiredChecked}
               className="flex-[2] h-12 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
             >
-              Continue to Cargo Inspection
+              <TranslatedText text="Continue to Cargo Inspection" />
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -346,7 +349,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
               onClick={onClose}
               className="w-full h-12 bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-300 transition-all"
             >
-              Close
+              <TranslatedText text="Close" />
             </button>
           </div>
         )}

@@ -13,6 +13,8 @@ import {
   AppWindow,
   ArrowUpRight
 } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface ContactInfo {
   name: string;
@@ -37,13 +39,14 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
   trip,
   onInAppMessage
 }) => {
+  const { tSync: t } = useTranslation();
   const [draftMessage, setDraftMessage] = React.useState('');
 
   // Extract contacts from trip or use defaults for demo
   const contacts: ContactInfo[] = [
     {
       name: trip?.customer?.name || 'Global Logistics Solutions',
-      role: 'The Shipper',
+      role: t('The Shipper'),
       phone: trip?.customer?.phone || '+256 700 000 000',
       email: trip?.customer?.email || 'shipper@example.com',
       whatsapp: trip?.customer?.phone || '+256 700 000 000',
@@ -52,7 +55,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
     },
     {
       name: trip?.destination?.contactPerson || 'Express Delivery Hub',
-      role: 'The Receiver',
+      role: t('The Receiver'),
       phone: trip?.destination?.phone || '+256 701 111 222',
       email: trip?.destination?.email || 'receiver@example.com',
       whatsapp: trip?.destination?.phone || '+256 701 111 222',
@@ -61,7 +64,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
     },
     {
       name: 'Eagle Fleet Management',
-      role: 'Truck Owner',
+      role: t('Truck Owner'),
       phone: '+256 705 555 666',
       email: 'fleet@eagle.com',
       whatsapp: '+256 705 555 666',
@@ -70,7 +73,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
     },
     {
       name: 'UrutiX Hub',
-      role: 'UrutiX Support',
+      role: t('UrutiX Support'),
       phone: '+256 800 123 456',
       email: 'support@urutix.com',
       whatsapp: '+256 800 123 456',
@@ -128,8 +131,8 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                     <MessageCircle size={24} />
                   </div>
                   <div>
-                    <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-1">Get In Touch</h3>
-                    <p className="text-xl font-black text-white uppercase tracking-tight">Send a Message</p>
+                    <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-1"><TranslatedText text="Get In Touch" /></h3>
+                    <p className="text-xl font-black text-white uppercase tracking-tight"><TranslatedText text="Send a Message" /></p>
                   </div>
                 </div>
                 <button
@@ -157,7 +160,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                           <contact.icon size={18} />
                         </div>
                         <div>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{contact.role}</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={contact.role} /></p>
                           <h4 className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{contact.name}</h4>
                         </div>
                       </div>
@@ -167,7 +170,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                        <button
                         onClick={() => handleAction('whatsapp', contact)}
                         className="w-full aspect-square rounded-2xl bg-emerald-50 text-emerald-600 flex flex-col items-center justify-center gap-1 hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 group/btn"
-                        title="WhatsApp"
+                        title={t('WhatsApp')}
                       >
                         <MessageCircle size={14} className="group-hover/btn:scale-110 transition-transform" />
                         <span className="text-[7px] font-black uppercase tracking-tighter">WA</span>
@@ -176,7 +179,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                       <button
                         onClick={() => handleAction('sms', contact)}
                         className="w-full aspect-square rounded-2xl bg-blue-50 text-blue-600 flex flex-col items-center justify-center gap-1 hover:bg-blue-600 hover:text-white transition-all border border-blue-100 group/btn"
-                        title="SMS"
+                        title={t('SMS')}
                       >
                         <MessageSquare size={14} className="group-hover/btn:scale-110 transition-transform" />
                         <span className="text-[7px] font-black uppercase tracking-tighter">SMS</span>
@@ -185,7 +188,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                       <button
                         onClick={() => handleAction('email', contact)}
                         className="w-full aspect-square rounded-2xl bg-slate-100 text-slate-600 flex flex-col items-center justify-center gap-1 hover:bg-slate-600 hover:text-white transition-all border border-slate-200 group/btn"
-                        title="Email"
+                        title={t('Email')}
                       >
                         <Mail size={14} className="group-hover/btn:scale-110 transition-transform" />
                         <span className="text-[7px] font-black uppercase tracking-tighter">Mail</span>
@@ -194,7 +197,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                       <button
                         onClick={() => handleAction('inapp', contact)}
                         className="w-full aspect-square rounded-2xl bg-indigo-50 text-indigo-600 flex flex-col items-center justify-center gap-1 hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 group/btn"
-                        title="In-App Messenger"
+                        title={t('In-App Messenger')}
                       >
                         <AppWindow size={14} className="group-hover/btn:scale-110 transition-transform" />
                         <span className="text-[7px] font-black uppercase tracking-tighter">App</span>
@@ -221,15 +224,15 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                     <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
                         <MessageSquare size={16} />
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Type your message here</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Type your message here" /></p>
                   </div>
                   <textarea 
                     value={draftMessage}
                     onChange={(e) => setDraftMessage(e.target.value)}
-                    placeholder="e.g. I have arrived at the pickup location."
+                    placeholder={t('e.g. I have arrived at the pickup location.')}
                     className="w-full h-24 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all resize-none"
                   />
-                  <p className="text-[9px] text-slate-400 mt-2 italic">* We will put this text into your SMS or WhatsApp for you.</p>
+                  <p className="text-[9px] text-slate-400 mt-2 italic"><TranslatedText text="* We will put this text into your SMS or WhatsApp for you." /></p>
               </div>
 
               <div className="mt-8 p-6 bg-blue-50 rounded-[2rem] border border-blue-100 flex items-center gap-4">
@@ -237,11 +240,11 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                     <Zap size={18} />
                  </div>
                  <div>
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Support Line</p>
-                    <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Need help? We are online 24/7</p>
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest"><TranslatedText text="Support Line" /></p>
+                    <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Need help? We are online 24/7" /></p>
                  </div>
                  <button className="ml-auto px-5 py-2.5 bg-white border border-blue-200 text-[#345E85] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors shadow-sm">
-                    Contact Now
+                    <TranslatedText text="Contact Now" />
                  </button>
               </div>
             </div>

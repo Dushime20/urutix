@@ -9,6 +9,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { TranslatedText } from '../translated-text';
 
 interface HealthMetric {
   id: string;
@@ -36,12 +37,12 @@ export const MaintenanceHealth: React.FC = () => {
               <Zap size={18} fill="currentColor" />
            </div>
            <div>
-              <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Vehicle AI</p>
-              <h3 className="text-base font-black text-white uppercase tracking-tight">Truck Health</h3>
+              <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1"><TranslatedText text="Vehicle AI" /></p>
+              <h3 className="text-base font-black text-white uppercase tracking-tight"><TranslatedText text="Truck Health" /></h3>
            </div>
         </div>
         <div className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-[8px] font-black uppercase tracking-widest border border-white/10">
-            System: Optimal
+            <TranslatedText text="System: Optimal" />
         </div>
       </div>
 
@@ -51,7 +52,7 @@ export const MaintenanceHealth: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <metric.icon size={12} className={metric.status === 'warning' ? 'text-amber-400' : 'text-emerald-400/80'} />
-                <span className="text-[9px] font-black text-white/70 uppercase tracking-widest">{metric.label}</span>
+                <span className="text-[9px] font-black text-white/70 uppercase tracking-widest"><TranslatedText text={metric.label} /></span>
               </div>
               <span className={`text-[9px] font-black ${metric.status === 'warning' ? 'text-amber-400' : 'text-white'}`}>
                 {metric.percentage}%
@@ -77,15 +78,15 @@ export const MaintenanceHealth: React.FC = () => {
             <Calendar size={18} />
          </div>
          <div className="flex-1 min-w-0">
-            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-0.5">Recommended</p>
-            <h4 className="text-white font-black text-xs uppercase tracking-tight truncate">Service in 250 KM</h4>
-            <p className="text-[8px] font-bold text-white/40 italic mt-0.5 leading-none">Next: Level A Protocols</p>
+            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Recommended" /></p>
+            <h4 className="text-white font-black text-xs uppercase tracking-tight truncate"><TranslatedText text="Service in 250 KM" /></h4>
+            <p className="text-[8px] font-bold text-white/40 italic mt-0.5 leading-none"><TranslatedText text="Next: Level A Protocols" /></p>
          </div>
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-2 opacity-40">
         <CheckCircle2 size={10} className="text-emerald-500" />
-        <p className="text-[8px] font-black text-white uppercase tracking-[0.2em] leading-none">Diagnostic Verified</p>
+        <p className="text-[8px] font-black text-white uppercase tracking-[0.2em] leading-none"><TranslatedText text="Diagnostic Verified" /></p>
       </div>
     </div>
   );

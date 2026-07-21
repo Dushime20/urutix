@@ -6,6 +6,7 @@ import {
   AlertCircle,
   Check,
 } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
 
 export interface VehicleChecklistItem {
   id: string;
@@ -103,7 +104,7 @@ export const VehiclePreTripChecklist: React.FC<VehiclePreTripChecklistProps> = (
       <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex items-start gap-3">
         <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
         <p className="text-[10px] font-bold text-amber-800 uppercase tracking-tight leading-relaxed">
-          Complete all mandatory vehicle and safety checks before proceeding to cargo inspection.
+          <TranslatedText text="Complete all mandatory vehicle and safety checks before proceeding to cargo inspection." />
         </p>
       </div>
     )}
@@ -133,11 +134,11 @@ export const VehiclePreTripChecklist: React.FC<VehiclePreTripChecklistProps> = (
               {categoryIcon(item.category)}
             </span>
             <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">
-              {item.label}
+              <TranslatedText text={item.label} />
               {item.required && <span className="text-rose-500 ml-1">*</span>}
             </h4>
           </div>
-          <p className="text-xs font-medium text-slate-500 pl-8">{item.description}</p>
+          <p className="text-xs font-medium text-slate-500 pl-8"><TranslatedText text={item.description} /></p>
         </div>
       </button>
     ))}
