@@ -119,6 +119,11 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
       return;
     }
 
+    if (status === 'AWAITING_CARGO_OWNER_APPROVAL') {
+      setStep('blocked');
+      return;
+    }
+
     if (canProceedWithLoad(status)) {
       await launchTrip();
       return;
@@ -133,8 +138,11 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
 
     if (canProceedWithLoad(status)) {
       await launchTrip();
-    } else if (status === 'AWAITING_RESOLUTION') {
+    } else if (status === 'AWAITING_RESOLUTION' || status === 'FAILED') {
       setStep('blocked');
+    } else if (status === 'AWAITING_CARGO_OWNER_APPROVAL') {
+      setStep('blocked');
+      toast.success(t('Inspection submitted. Waiting for Cargo Owner or Broker approval before you can start.'));
     } else {
       toast.error(t('Inspection submitted. Resolve any issues before starting the trip.'));
     }

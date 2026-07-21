@@ -18,6 +18,7 @@ import { Driver } from '../../entities/driver.entity';
 import { User, UserRole } from '../../entities/user.entity';
 import {
   MarkReadyForReInspectionDto,
+  ApprovePreTripInspectionDto,
   SubmitPreTripInspectionDto,
 } from './dto/pre-trip-inspection.dto';
 import {
@@ -205,7 +206,8 @@ export class PreTripInspectionService {
           : null;
 
         const requiresAction =
-          workflow.status === PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION;
+          workflow.status === PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION ||
+          workflow.status === PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL;
 
         const assignedDriver = load.assignedTruckId
           ? driversByTruckId.get(load.assignedTruckId)
@@ -237,6 +239,9 @@ export class PreTripInspectionService {
           preTrip: {
             workflowStatus: workflow.status,
             approvedAt: workflow.approvedAt,
+            approvedById: workflow.approvedById,
+            approvalNotes: workflow.approvalNotes,
+            submittedForApprovalAt: workflow.submittedForApprovalAt,
             lastFailedAt: workflow.lastFailedAt,
             resolutionNotes: workflow.resolutionNotes,
             readyForReInspectionAt: workflow.readyForReInspectionAt,
@@ -411,9 +416,9 @@ export class PreTripInspectionService {
 
     const nextWorkflow: PreTripInspectionMetadata = passed
       ? {
-          status: PreTripInspectionWorkflowStatus.APPROVED,
+          status: PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL,
           lastInspectionId: savedInspection.id,
-          approvedAt: new Date().toISOString(),
+          submittedForApprovalAt: new Date().toISOString(),
           currentAttempt: attemptNumber,
         }
       : {
@@ -426,7 +431,11 @@ export class PreTripInspectionService {
     await this.updateLoadWorkflow(load, nextWorkflow, dto, passed);
 
     if (passed) {
-      await this.notifyInspectionApproved(load, driver, savedInspection.id);
+      await this.notifyInspectionSubmittedForApproval(
+        load,
+        driver,
+        savedInspection.id,
+      );
     } else {
       await this.notifyInspectionFailed(load, driver, savedInspection.id, issues);
     }
@@ -434,7 +443,72 @@ export class PreTripInspectionService {
     return {
       inspection: savedInspection,
       workflowStatus: nextWorkflow.status,
-      canProceed: passed,
+      canProceed: false,
+    };
+  }
+
+  async approvePreTripInspection(
+    loadId: string,
+    userId: string,
+    tenantId: string,
+    dto: ApprovePreTripInspectionDto,
+  ) {
+    const load = await this.loadRepository.findOne({
+      where: { id: loadId, tenantId },
+      relations: ['assignedTruck'],
+    });
+
+    if (!load) {
+      throw new NotFoundException('Load not found');
+    }
+
+    await this.assertCanResolveInspection(load, userId);
+
+    const workflow = getPreTripInspectionMetadata(load.metadata);
+    if (
+      workflow.status !==
+      PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL
+    ) {
+      throw new BadRequestException(
+        'Only shipments with a submitted pre-trip inspection awaiting approval can be approved.',
+      );
+    }
+
+    const nextWorkflow: PreTripInspectionMetadata = {
+      ...workflow,
+      status: PreTripInspectionWorkflowStatus.APPROVED,
+      approvedAt: new Date().toISOString(),
+      approvedById: userId,
+      approvalNotes: dto.approvalNotes,
+    };
+
+    await this.loadRepository.update(loadId, {
+      metadata: {
+        ...(load.metadata || {}),
+        preTripInspection: nextWorkflow,
+        inspectionStatus: 'COMPLETED',
+      } as Record<string, any>,
+      updatedAt: new Date(),
+    });
+
+    const driver = load.assignedTruckId
+      ? await this.driverRepository.findOne({
+          where: { currentTruckId: load.assignedTruckId, tenantId },
+        })
+      : null;
+
+    await this.notifyInspectionApproved(
+      load,
+      driver,
+      workflow.lastInspectionId!,
+      userId,
+      dto.approvalNotes,
+    );
+
+    return {
+      loadId,
+      workflowStatus: nextWorkflow.status,
+      message: 'Pre-trip inspection approved. Driver may proceed with loading and trip start.',
     };
   }
 
@@ -480,7 +554,7 @@ export class PreTripInspectionService {
       updatedAt: new Date(),
     });
 
-    await this.notifyReadyForReInspection(load, dto.resolutionNotes);
+    await this.notifyReadyForReInspection(load, dto.resolutionNotes, userId);
 
     return {
       loadId,
@@ -718,6 +792,25 @@ export class PreTripInspectionService {
     }
   }
 
+  private getOwnerRecipientIds(load: Load): string[] {
+    return [
+      ...new Set([load.cargoOwnerId, load.brokerId].filter(Boolean)),
+    ] as string[];
+  }
+
+  private async getUserDisplayName(userId: string): Promise<string> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['profile'],
+    });
+    if (!user) return 'User';
+    const profile = user.profile;
+    const name = profile
+      ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim()
+      : '';
+    return name || user.email || 'User';
+  }
+
   private inspectionActionUrl(loadId: string, recipientId: string, load: Load): string {
     if (load.brokerId === recipientId) {
       return `/dashboard/broker/customs-inspections/${loadId}`;
@@ -732,93 +825,172 @@ export class PreTripInspectionService {
     issues: PreTripInspectionIssue[],
   ) {
     const issueSummary = issues.map((issue) => issue.description).join('; ');
-    const recipients = [load.cargoOwnerId, load.brokerId].filter(Boolean) as string[];
+    const shipmentLabel = load.title || 'shipment';
+    const driverName = `${driver.firstName} ${driver.lastName}`.trim();
 
-    for (const recipientId of recipients) {
+    for (const recipientId of this.getOwnerRecipientIds(load)) {
       await this.safeNotify({
         recipientId,
         tenantId: load.tenantId,
-        title: 'Pre-Trip Inspection Failed',
-        message: `Driver ${driver.firstName} ${driver.lastName} reported issues during pre-trip inspection for "${load.title || 'shipment'}": ${issueSummary}`,
+        title: 'Pre-Trip Inspection Failed — Action Required',
+        message: `Driver ${driverName} reported issues during pre-trip inspection for "${shipmentLabel}": ${issueSummary}. Please review and resolve so the driver can re-inspect.`,
         notificationType: NotificationType.CARGO_DAMAGE,
         priority: NotificationPriority.HIGH,
         entityId: load.id,
         actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
-        actionText: 'Review Issues',
+        actionText: 'Review & Resolve',
         metadata: { inspectionId, issues },
+        requiresAction: true,
       });
     }
 
     await this.safeNotify({
       recipientId: driver.userId,
       tenantId: load.tenantId,
-      title: 'Inspection Submitted — Awaiting Resolution',
-      message: `Your failed pre-trip inspection for "${load.title || 'shipment'}" has been submitted. Operations are blocked until the cargo owner or broker resolves the reported issues.`,
+      title: 'Inspection Failed — Submitted to Cargo Owner',
+      message: `Your failed pre-trip inspection for "${shipmentLabel}" has been submitted. The cargo owner and broker have been notified. Operations are blocked until they resolve the reported issues.`,
       notificationType: NotificationType.DRIVER_ALERT,
       priority: NotificationPriority.HIGH,
       entityId: load.id,
-      actionUrl: '/dashboard/driver/cargo',
-      actionText: 'View Inspection',
+      actionUrl: '/dashboard/driver/inspection',
+      actionText: 'View Status',
+      metadata: { inspectionId, issues },
+    });
+  }
+
+  private async notifyInspectionSubmittedForApproval(
+    load: Load,
+    driver: Driver,
+    inspectionId: string,
+  ) {
+    const shipmentLabel = load.title || 'shipment';
+    const driverName = `${driver.firstName} ${driver.lastName}`.trim();
+
+    for (const recipientId of this.getOwnerRecipientIds(load)) {
+      await this.safeNotify({
+        recipientId,
+        tenantId: load.tenantId,
+        title: 'Pre-Trip Inspection Submitted — Approval Required',
+        message: `Driver ${driverName} completed the pre-trip inspection for "${shipmentLabel}" with no blocking issues. Please review and give the green light to start shipping.`,
+        notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+        priority: NotificationPriority.HIGH,
+        entityId: load.id,
+        actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
+        actionText: 'Review & Approve',
+        metadata: { inspectionId },
+        requiresAction: true,
+      });
+    }
+
+    await this.safeNotify({
+      recipientId: driver.userId,
+      tenantId: load.tenantId,
+      title: 'Pre-Trip Inspection Submitted — Awaiting Approval',
+      message: `Your pre-trip inspection for "${shipmentLabel}" has been submitted. The cargo owner and broker have been notified. You will be alerted once they give the green light to start shipping.`,
+      notificationType: NotificationType.DRIVER_ALERT,
+      priority: NotificationPriority.NORMAL,
+      entityId: load.id,
+      actionUrl: '/dashboard/driver/inspection',
+      actionText: 'View Status',
       metadata: { inspectionId },
     });
   }
 
   private async notifyInspectionApproved(
     load: Load,
-    driver: Driver,
+    driver: Driver | null,
     inspectionId: string,
+    approvedById: string,
+    approvalNotes?: string,
   ) {
-    await this.safeNotify({
-      recipientId: load.cargoOwnerId,
-      tenantId: load.tenantId,
-      title: 'Pre-Trip Inspection Approved',
-      message: `Driver ${driver.firstName} ${driver.lastName} approved the pre-trip inspection for "${load.title || 'shipment'}". Loading may proceed.`,
-      notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
-      priority: NotificationPriority.NORMAL,
-      entityId: load.id,
-      actionUrl: `/dashboard/customs-inspections/${load.id}`,
-      actionText: 'View Inspection',
-      metadata: { inspectionId },
-    });
+    const approverName = await this.getUserDisplayName(approvedById);
+    const shipmentLabel = load.title || 'shipment';
+    const notesSuffix = approvalNotes ? ` Notes: ${approvalNotes}` : '';
 
-    await this.safeNotify({
-      recipientId: driver.userId,
-      tenantId: load.tenantId,
-      title: 'Pre-Trip Inspection Approved',
-      message: `Pre-trip inspection approved for "${load.title || 'shipment'}". You may now load cargo and start the trip.`,
-      notificationType: NotificationType.DRIVER_ALERT,
-      priority: NotificationPriority.NORMAL,
-      entityId: load.id,
-      actionUrl: '/dashboard/driver/cargo',
-      actionText: 'Proceed to Loading',
-      metadata: { inspectionId },
-    });
+    if (driver) {
+      await this.safeNotify({
+        recipientId: driver.userId,
+        tenantId: load.tenantId,
+        title: 'Green Light — You May Start Shipping',
+        message: `${approverName} approved the pre-trip inspection for "${shipmentLabel}". You may now load cargo and start the trip.${notesSuffix}`,
+        notificationType: NotificationType.DRIVER_ALERT,
+        priority: NotificationPriority.HIGH,
+        entityId: load.id,
+        actionUrl: '/dashboard/driver/cargo',
+        actionText: 'Proceed to Loading',
+        metadata: { inspectionId, approvedById, approvalNotes },
+      });
+    }
+
+    for (const recipientId of this.getOwnerRecipientIds(load)) {
+      const isApprover = recipientId === approvedById;
+      await this.safeNotify({
+        recipientId,
+        tenantId: load.tenantId,
+        title: isApprover
+          ? 'Pre-Trip Inspection Approved — Driver Notified'
+          : 'Pre-Trip Inspection Approved — Shipping Cleared',
+        message: isApprover
+          ? `You approved the pre-trip inspection for "${shipmentLabel}". The driver has been notified they may load cargo and start the trip.${notesSuffix}`
+          : `${approverName} approved the pre-trip inspection for "${shipmentLabel}". The driver has been notified they may proceed.${notesSuffix}`,
+        notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+        priority: NotificationPriority.NORMAL,
+        entityId: load.id,
+        actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
+        actionText: 'View Inspection',
+        metadata: { inspectionId, approvedById, approvalNotes },
+      });
+    }
   }
 
   private async notifyReadyForReInspection(
     load: Load,
-    resolutionNotes?: string,
+    resolutionNotes: string | undefined,
+    resolvedById: string,
   ) {
+    const resolverName = await this.getUserDisplayName(resolvedById);
+    const shipmentLabel = load.title || 'shipment';
+    const notesSuffix = resolutionNotes ? `: ${resolutionNotes}` : '';
+
     const driver = await this.driverRepository.findOne({
       where: { currentTruckId: load.assignedTruckId, tenantId: load.tenantId },
     });
 
-    if (!driver) {
-      return;
+    if (driver) {
+      await this.safeNotify({
+        recipientId: driver.userId,
+        tenantId: load.tenantId,
+        title: 'Ready for Re-Inspection',
+        message: `${resolverName} resolved the reported issues for "${shipmentLabel}"${notesSuffix}. Please perform a re-inspection before loading.`,
+        notificationType: NotificationType.DRIVER_ALERT,
+        priority: NotificationPriority.HIGH,
+        entityId: load.id,
+        actionUrl: '/dashboard/driver/inspection',
+        actionText: 'Re-Inspect Cargo',
+        metadata: { resolutionNotes, resolvedById },
+        requiresAction: true,
+      });
     }
 
-    await this.safeNotify({
-      recipientId: driver.userId,
-      tenantId: load.tenantId,
-      title: 'Ready for Re-Inspection',
-      message: `Issues for "${load.title || 'shipment'}" have been resolved${resolutionNotes ? `: ${resolutionNotes}` : ''}. Please perform a re-inspection before loading.`,
-      notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
-      priority: NotificationPriority.HIGH,
-      entityId: load.id,
-      actionUrl: '/dashboard/driver/inspection',
-      actionText: 'Re-Inspect Cargo',
-      metadata: { resolutionNotes },
-    });
+    for (const recipientId of this.getOwnerRecipientIds(load)) {
+      const isResolver = recipientId === resolvedById;
+      await this.safeNotify({
+        recipientId,
+        tenantId: load.tenantId,
+        title: isResolver
+          ? 'Resolution Submitted — Driver Notified'
+          : 'Inspection Issues Resolved — Re-Inspection Pending',
+        message: isResolver
+          ? `You marked the reported issues for "${shipmentLabel}" as resolved${notesSuffix}. The driver has been notified to re-inspect.`
+          : `${resolverName} resolved the reported issues for "${shipmentLabel}"${notesSuffix}. The driver will perform a re-inspection.`,
+        notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+        priority: NotificationPriority.NORMAL,
+        entityId: load.id,
+        actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
+        actionText: 'View Inspection',
+        metadata: { resolutionNotes, resolvedById },
+      });
+    }
   }
 
   private async safeNotify(payload: {
@@ -832,6 +1004,7 @@ export class PreTripInspectionService {
     actionUrl?: string;
     actionText?: string;
     metadata?: Record<string, any>;
+    requiresAction?: boolean;
   }) {
     try {
       await this.notificationService.createNotification({
@@ -848,6 +1021,7 @@ export class PreTripInspectionService {
         actionUrl: payload.actionUrl,
         actionText: payload.actionText,
         metadata: payload.metadata,
+        requiresAction: payload.requiresAction ?? false,
       });
     } catch (error) {
       this.logger.error(`Failed to send notification: ${error.message}`);

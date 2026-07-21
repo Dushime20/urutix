@@ -39,6 +39,7 @@ const PRE_TRIP_STATUS: Record<string, { label: string; color: string; icon: Reac
   FAILED: { label: 'Failed', color: 'bg-red-100 text-red-700 border-red-200', icon: <XCircle className="w-3.5 h-3.5" /> },
   AWAITING_RESOLUTION: { label: 'Awaiting Your Action', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
   READY_FOR_RE_INSPECTION: { label: 'Ready for Re-Inspection', color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: <RefreshCw className="w-3.5 h-3.5" /> },
+  AWAITING_CARGO_OWNER_APPROVAL: { label: 'Awaiting Your Approval', color: 'bg-violet-100 text-violet-800 border-violet-200', icon: <Clock className="w-3.5 h-3.5" /> },
   APPROVED: { label: 'Approved', color: 'bg-green-100 text-green-700 border-green-200', icon: <CheckCircle className="w-3.5 h-3.5" /> },
 };
 
@@ -309,6 +310,7 @@ export default function CargoCustomsInspectionsPage() {
       {selectedShipment && (
         <ShipmentDetailModal
           shipment={selectedShipment}
+          autoOpenAction={!!urlLoadId}
           onClose={() => {
             setSelectedShipment(null);
             if (urlLoadId) navigate(`${basePath}/customs-inspections`);
@@ -322,16 +324,25 @@ export default function CargoCustomsInspectionsPage() {
 function ShipmentDetailModal({
   shipment,
   onClose,
+  autoOpenAction,
 }: {
   shipment: ShipmentInspectionOverview;
   onClose: () => void;
+  autoOpenAction?: boolean;
 }) {
   const qc = useQueryClient();
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const [showResolutionForm, setShowResolutionForm] = useState(false);
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const [showResolutionForm, setShowResolutionForm] = useState(
+    autoOpenAction && shipment.preTrip.workflowStatus === 'AWAITING_RESOLUTION',
+  );
+  const [showApprovalForm, setShowApprovalForm] = useState(
+    autoOpenAction && shipment.preTrip.workflowStatus === 'AWAITING_CARGO_OWNER_APPROVAL',
+  );
   const [activeTab, setActiveTab] = useState<'timeline' | 'pre' | 'post'>('timeline');
 
   const canResolve = shipment.preTrip.workflowStatus === 'AWAITING_RESOLUTION';
+  const canApprove = shipment.preTrip.workflowStatus === 'AWAITING_CARGO_OWNER_APPROVAL';
 
   const resolveMutation = useMutation({
     mutationFn: (notes: string) =>
@@ -346,12 +357,30 @@ function ShipmentDetailModal({
     onError: () => toast.error('Failed to submit resolution. Please try again.'),
   });
 
+  const approveMutation = useMutation({
+    mutationFn: (notes?: string) =>
+      cargoInspectionApi.approvePreTripInspection(shipment.loadId, notes),
+    onSuccess: () => {
+      toast.success('Green light given. Driver has been notified they may start shipping.');
+      setApprovalNotes('');
+      setShowApprovalForm(false);
+      qc.invalidateQueries({ queryKey: ['cargoOwnerInspectionOverview'] });
+      onClose();
+    },
+    onError: () => toast.error('Failed to approve inspection. Please try again.'),
+  });
+
   const handleResolve = () => {
     if (!resolutionNotes.trim()) {
       toast.error('Please describe what was resolved');
       return;
     }
     resolveMutation.mutate(resolutionNotes.trim());
+  };
+
+  const handleApprove = () => {
+    const notes = approvalNotes.trim();
+    approveMutation.mutate(notes || undefined);
   };
 
   return (
@@ -371,7 +400,7 @@ function ShipmentDetailModal({
           </button>
         </div>
 
-        {/* Action banner */}
+        {/* Action banner — failed inspection */}
         {canResolve && (
           <div className="mx-6 mt-4 border border-amber-200 rounded-xl overflow-hidden">
             <div className="bg-amber-50 px-4 py-3 flex items-center justify-between">
@@ -406,6 +435,50 @@ function ShipmentDetailModal({
                   {resolveMutation.isPending
                     ? <><RefreshCw className="w-4 h-4 animate-spin" /> Submitting…</>
                     : <><Send className="w-4 h-4" /> Notify Driver — Ready for Re-Inspection</>
+                  }
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action banner — driver submitted, awaiting green light */}
+        {canApprove && (
+          <div className="mx-6 mt-4 border border-violet-200 rounded-xl overflow-hidden">
+            <div className="bg-violet-50 px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-violet-600" />
+                <span className="text-sm font-semibold text-violet-800">
+                  Driver Pre-Trip Inspection Complete — Give Green Light
+                </span>
+              </div>
+              <button
+                onClick={() => setShowApprovalForm((f) => !f)}
+                className="text-xs font-bold text-violet-700 bg-violet-100 hover:bg-violet-200 px-3 py-1 rounded-lg transition-colors shrink-0"
+              >
+                {showApprovalForm ? 'Cancel' : 'Approve & Start Shipping'}
+              </button>
+            </div>
+            {showApprovalForm && (
+              <div className="px-4 py-3 space-y-3 bg-white">
+                <p className="text-xs text-gray-500">
+                  Review the driver&apos;s pre-trip inspection in the Pre-Trip tab. Once satisfied, give the green light so the driver can load cargo and start the trip.
+                </p>
+                <textarea
+                  rows={2}
+                  value={approvalNotes}
+                  onChange={(e) => setApprovalNotes(e.target.value)}
+                  placeholder="Optional notes for the driver (e.g. Proceed with loading at Gate 3...)"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                />
+                <button
+                  onClick={handleApprove}
+                  disabled={approveMutation.isPending}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  {approveMutation.isPending
+                    ? <><RefreshCw className="w-4 h-4 animate-spin" /> Approving…</>
+                    : <><CheckCircle className="w-4 h-4" /> Give Green Light — Start Shipping</>
                   }
                 </button>
               </div>
@@ -460,6 +533,13 @@ function ShipmentDetailModal({
                 <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100 text-sm text-blue-800">
                   <span className="font-semibold">Your resolution notes: </span>
                   {shipment.preTrip.resolutionNotes}
+                </div>
+              )}
+
+              {shipment.preTrip.approvalNotes && (
+                <div className="mt-4 p-3 bg-green-50 rounded-xl border border-green-100 text-sm text-green-800">
+                  <span className="font-semibold">Your approval notes: </span>
+                  {shipment.preTrip.approvalNotes}
                 </div>
               )}
             </div>

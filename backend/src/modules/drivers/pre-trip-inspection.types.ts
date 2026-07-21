@@ -4,6 +4,7 @@ export enum PreTripInspectionWorkflowStatus {
   FAILED = 'FAILED',
   AWAITING_RESOLUTION = 'AWAITING_RESOLUTION',
   READY_FOR_RE_INSPECTION = 'READY_FOR_RE_INSPECTION',
+  AWAITING_CARGO_OWNER_APPROVAL = 'AWAITING_CARGO_OWNER_APPROVAL',
   APPROVED = 'APPROVED',
 }
 
@@ -22,6 +23,9 @@ export interface PreTripInspectionMetadata {
   status: PreTripInspectionWorkflowStatus;
   lastInspectionId?: string;
   approvedAt?: string;
+  approvedById?: string;
+  approvalNotes?: string;
+  submittedForApprovalAt?: string;
   currentAttempt?: number;
   lastFailedAt?: string;
   resolutionNotes?: string;
@@ -50,7 +54,7 @@ export interface PreTripInspectionIssue {
 }
 
 export const PRE_TRIP_INSPECTION_BLOCKED_MESSAGE =
-  'This shipment cannot proceed because the Pre-Trip Inspection has not been approved. Please wait for the Cargo Owner or Broker to resolve the reported issues.';
+  'This shipment cannot proceed until the driver completes the pre-trip inspection and the assigned Cargo Owner or Broker gives approval to start shipping.';
 
 export function getPreTripInspectionMetadata(
   metadata?: Record<string, any>,

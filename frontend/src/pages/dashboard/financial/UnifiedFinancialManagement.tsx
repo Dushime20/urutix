@@ -186,12 +186,13 @@ const UnifiedFinancialManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-200 relative">
-      {/* Background Logo */}
+    <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-200 relative">
+      {/* Background Logo — subtle watermark in dark mode only */}
       <img
         src={logoUrutiX}
-        alt="UrutiX Logo Background"
-        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 dark:opacity-5 z-0"
+        alt=""
+        aria-hidden
+        className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-0 dark:opacity-5 z-0"
         style={{ objectPosition: 'center' }}
       />
       <div className="max-w-[1600px] mx-auto p-4 sm:p-8 md:p-12 relative z-10">
@@ -211,7 +212,7 @@ const UnifiedFinancialManagement = () => {
             </p>
           </div>
 
-          <div className="flex items-center justify-between md:justify-end gap-3 bg-slate-50 dark:bg-slate-900/50 p-1.5 sm:p-2 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-inner w-full md:w-auto">
+          <div className="flex items-center justify-between md:justify-end gap-3 bg-white dark:bg-slate-900/50 p-1.5 sm:p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full md:w-auto">
             <button className="p-3 sm:p-4 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] transition-all shadow-lg shadow-[#2c5173]/20 flex-shrink-0">
               <Plus className="w-5 h-5" />
             </button>
@@ -219,7 +220,7 @@ const UnifiedFinancialManagement = () => {
         </div>
 
         {/* Premium Navigation Tabs */}
-        <div className="bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-700 rounded-2xl sm:rounded-[2rem] p-1.5 sm:p-2 mb-8 sm:mb-10 shadow-inner max-w-full overflow-hidden transition-colors">
+        <div className="bg-slate-100/60 dark:bg-gray-800/50 border border-slate-200 dark:border-gray-700 rounded-2xl p-1.5 sm:p-2 mb-8 sm:mb-10 max-w-full overflow-hidden transition-colors">
           <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -249,8 +250,8 @@ const UnifiedFinancialManagement = () => {
         </div>
 
         {/* Main Content Container */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 transition-colors">
-          <div className="p-4 sm:p-8 md:p-12">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 transition-colors">
+          <div className="p-4 sm:p-6 md:p-8">
             {activeTab === "overview" && (
               <Suspense fallback={<div className="space-y-4 animate-pulse"><div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[1,2,3,4].map(i=><div key={i} className="h-28 bg-slate-100 rounded-2xl"/>)}</div><div className="h-64 bg-slate-100 rounded-2xl"/></div>}>
                 <FinancialDashboard />

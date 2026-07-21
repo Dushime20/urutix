@@ -378,7 +378,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         await driverApi.submitPreTripInspection(driverId, cargoId, payload);
         toast.success(
           decision === 'PASSED'
-            ? t('Pre-trip inspection approved!')
+            ? t('Pre-trip inspection submitted. Waiting for Cargo Owner or Broker approval.')
             : t('Inspection failed — shipment blocked pending resolution.'),
         );
         onInspectionComplete({

@@ -61,6 +61,9 @@ export interface ShipmentInspectionOverview {
   preTrip: {
     workflowStatus: string;
     approvedAt?: string;
+    approvedById?: string;
+    approvalNotes?: string;
+    submittedForApprovalAt?: string;
     lastFailedAt?: string;
     resolutionNotes?: string;
     readyForReInspectionAt?: string;
@@ -104,5 +107,10 @@ export const cargoInspectionApi = {
   markReadyForReInspection: (loadId: string, resolutionNotes?: string) =>
     api.patch(`/loads-v2/${loadId}/pre-trip-inspection/ready-for-reinspection`, {
       resolutionNotes,
+    }),
+
+  approvePreTripInspection: (loadId: string, approvalNotes?: string) =>
+    api.patch(`/loads-v2/${loadId}/pre-trip-inspection/approve`, {
+      approvalNotes,
     }),
 };

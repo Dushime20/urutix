@@ -39,7 +39,7 @@ import { LoadResponseV2Dto } from './dto/load-response-v2.dto';
 import { User } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PreTripInspectionService } from '../drivers/pre-trip-inspection.service';
-import { MarkReadyForReInspectionDto } from '../drivers/dto/pre-trip-inspection.dto';
+import { MarkReadyForReInspectionDto, ApprovePreTripInspectionDto } from '../drivers/dto/pre-trip-inspection.dto';
 
 @ApiTags('loads-v2')
 @Controller('loads-v2')
@@ -639,6 +639,26 @@ export class LoadsV2Controller {
     @Request() req,
   ) {
     return this.preTripInspectionService.markReadyForReInspection(
+      id,
+      req.user.userId || req.user.id,
+      req.user.tenantId,
+      body,
+    );
+  }
+
+  @Patch(':id/pre-trip-inspection/approve')
+  @ApiOperation({
+    summary: 'Approve pre-trip inspection and give green light to start shipping',
+    description:
+      'Cargo owners and brokers approve the driver pre-trip inspection so loading and trip start can proceed.',
+  })
+  @ApiParam({ name: 'id', description: 'Load ID' })
+  async approvePreTripInspection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: ApprovePreTripInspectionDto,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.approvePreTripInspection(
       id,
       req.user.userId || req.user.id,
       req.user.tenantId,

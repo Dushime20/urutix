@@ -123,3 +123,9 @@ export class MarkReadyForReInspectionDto {
   @IsString()
   resolutionNotes?: string;
 }
+
+export class ApprovePreTripInspectionDto {
+  @IsOptional()
+  @IsString()
+  approvalNotes?: string;
+}

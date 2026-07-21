@@ -189,7 +189,7 @@ export const biddingAPI = {
 
   // Views & My bids
   recordAuctionView: (auctionId: string) =>
-    api.post(`/bidding/auctions/${auctionId}/view`, null, {
+    api.post(`/bidding/auctions/${auctionId}/view`, {}, {
       headers: { [SKIP_MUTATION_SYNC_HEADER]: 'true' },
     }),
   getMyBids: () => api.get('/bidding/bids'),

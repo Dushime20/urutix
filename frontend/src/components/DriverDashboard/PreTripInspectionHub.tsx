@@ -146,6 +146,10 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                       <span className="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
                         <Clock className="w-3 h-3" /> <TranslatedText text="Blocked — Awaiting Owner" />
                       </span>
+                    ) : status === 'AWAITING_CARGO_OWNER_APPROVAL' ? (
+                      <span className="px-4 py-2.5 bg-violet-50 text-violet-600 border border-violet-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" /> <TranslatedText text="Awaiting Owner Approval" />
+                      </span>
                     ) : status === 'APPROVED' ? (
                       <span className="px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
                         <CheckCircle className="w-3 h-3" /> <TranslatedText text="Approved" />

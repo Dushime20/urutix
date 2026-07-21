@@ -4,10 +4,11 @@ export type PreTripInspectionWorkflowStatus =
   | 'FAILED'
   | 'AWAITING_RESOLUTION'
   | 'READY_FOR_RE_INSPECTION'
+  | 'AWAITING_CARGO_OWNER_APPROVAL'
   | 'APPROVED';
 
 export const PRE_TRIP_INSPECTION_BLOCKED_MESSAGE =
-  'This shipment cannot proceed because the Pre-Trip Inspection has not been approved. Please wait for the Cargo Owner or Broker to resolve the reported issues.';
+  'This shipment cannot proceed until the driver completes the pre-trip inspection and the assigned Cargo Owner or Broker gives approval to start shipping.';
 
 export function getPreTripStatusFromLoad(load: any): PreTripInspectionWorkflowStatus {
   const workflow = load?.preTripInspection?.status || load?.metadata?.preTripInspection?.status;
@@ -38,6 +39,8 @@ export function getInspectionStatusLabel(status: PreTripInspectionWorkflowStatus
       return 'Awaiting Resolution';
     case 'READY_FOR_RE_INSPECTION':
       return 'Ready for Re-Inspection';
+    case 'AWAITING_CARGO_OWNER_APPROVAL':
+      return 'Awaiting Owner Approval';
     case 'APPROVED':
       return 'Approved';
     default:
@@ -54,6 +57,8 @@ export function getInspectionStatusStyles(status: PreTripInspectionWorkflowStatu
       return 'text-rose-600 bg-rose-50 border-rose-100';
     case 'READY_FOR_RE_INSPECTION':
       return 'text-blue-600 bg-blue-50 border-blue-100';
+    case 'AWAITING_CARGO_OWNER_APPROVAL':
+      return 'text-violet-600 bg-violet-50 border-violet-100';
     case 'IN_PROGRESS':
       return 'text-indigo-600 bg-indigo-50 border-indigo-100';
     case 'PENDING':
