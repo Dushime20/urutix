@@ -22,6 +22,8 @@ import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -93,6 +95,7 @@ const RiskAnalysisEnlite: React.FC<RiskAnalysisEnliteProps> = ({
     const { format } = useCurrencyFormat();
     const formatAmount = (amount: number | null): string =>
         amount === null ? '—' : format(amount, 'RWF');
+    const { tSync: t } = useTranslation();
 
     const [searchTerm, setSearchTerm]   = useState('');
     const [tierFilter, setTierFilter]   = useState('all');
@@ -237,36 +240,36 @@ const RiskAnalysisEnlite: React.FC<RiskAnalysisEnliteProps> = ({
             {/* ── Stats Row ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Total Exposure"
+                    title={t("Total Exposure")}
                     value={totalExposure > 0 ? formatAmount(totalExposure) : 'N/A'}
-                    subtitle={`${entries.length} loan${entries.length !== 1 ? 's' : ''} in portfolio`}
+                    subtitle={`${entries.length} ${t("loan")}${entries.length !== 1 ? 's' : ''} ${t("in portfolio")}`}
                     icon={<Shield size={22} />}
                     color="primary"
                 />
                 <StatCard
-                    title="Avg Credit Score"
+                    title={t("Avg Credit Score")}
                     value={avgCreditScore !== null ? avgCreditScore.toString() : 'N/A'}
                     subtitle={avgCreditScore !== null
-                        ? `${entriesWithScore.length} of ${entries.length} borrowers scored`
-                        : 'No credit scores on record'}
+                        ? `${entriesWithScore.length} of ${entries.length} ${t("borrowers scored")}`
+                        : t('No credit scores on record')}
                     icon={<Activity size={22} />}
                     color="secondary"
                 />
                 <StatCard
-                    title="Default Rate"
+                    title={t("Default Rate")}
                     value={defaultRate !== null ? `${defaultRate}%` : 'N/A'}
                     subtitle={defaultRate !== null
-                        ? `${defaultedCount} defaulted of ${entries.length}`
-                        : 'No default data'}
+                        ? `${defaultedCount} ${t("defaulted of")} ${entries.length}`
+                        : t('No default data')}
                     icon={<AlertTriangle size={22} />}
                     color="error"
                 />
                 <StatCard
-                    title="High / Critical Risk"
+                    title={t("High / Critical Risk")}
                     value={highRiskRate !== null ? `${highRiskRate}%` : 'N/A'}
                     subtitle={highRiskRate !== null
-                        ? `${highRiskCount} of ${entriesWithTier.length} scored loans`
-                        : 'No risk tiers available'}
+                        ? `${highRiskCount} of ${entriesWithTier.length} ${t("scored loans")}`
+                        : t('No risk tiers available')}
                     icon={<BarChart3 size={22} />}
                     color="warning"
                 />
@@ -343,7 +346,7 @@ const RiskAnalysisEnlite: React.FC<RiskAnalysisEnliteProps> = ({
                 <div className="lg:col-span-3">
                     <DataCard
                         title={tabs.find(t => t.id === activeTab)?.label ?? 'ANALYTICS'}
-                        subtitle="Portfolio risk analysis based on verified loan and borrower data"
+                        subtitle={t("Portfolio risk analysis based on verified loan and borrower data")}
                     >
                         {/* ── Overview tab ── */}
                         {activeTab === 'overview' && (

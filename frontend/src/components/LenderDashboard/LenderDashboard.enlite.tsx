@@ -11,6 +11,7 @@ import {
   ShieldCheck, Percent,
 } from 'lucide-react';
 import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { TranslatedText } from '../translated-text';
 
 // ── Status badge ─────────────────────────────────────────────────────────────
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
@@ -134,13 +135,13 @@ const LenderDashboardEnlite: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-black text-[#345E85] uppercase tracking-[0.2em] mb-1">
-            Lending Dashboard
+            <TranslatedText text="Lending Dashboard" />
           </p>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-            {greeting()}, {displayName}
+            <TranslatedText text={greeting()} />, {displayName}
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            {totalIssued} loans issued · {pendingCount} pending approval
+            {totalIssued} <TranslatedText text="loans issued" /> · {pendingCount} <TranslatedText text="pending approval" />
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -150,11 +151,11 @@ const LenderDashboardEnlite: React.FC = () => {
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
-          <button
+            <button
             onClick={() => navigate('/lender/requests')}
             className="flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100"
           >
-            <Briefcase size={14} /> View All Requests
+            <Briefcase size={14} /> <TranslatedText text="View All Requests" />
           </button>
         </div>
       </div>
@@ -164,7 +165,7 @@ const LenderDashboardEnlite: React.FC = () => {
         <div className="bg-rose-50 border border-rose-100 text-rose-700 px-6 py-4 rounded-3xl flex items-center gap-3">
           <AlertTriangle size={16} />
           <span className="text-sm font-semibold">{error}</span>
-          <button onClick={load} className="ml-auto text-xs underline">Retry</button>
+          <button onClick={load} className="ml-auto text-xs underline"><TranslatedText text="Retry" /></button>
         </div>
       )}
 
@@ -215,6 +216,7 @@ const LenderDashboardEnlite: React.FC = () => {
           sub={formatCurrency(interestCollected) + " interest"}
           loading={loading}
         />
+
       </div>
 
       {/* ── Analytics summary bar ── */}
@@ -225,8 +227,8 @@ const LenderDashboardEnlite: React.FC = () => {
               <BarChart3 size={14} className="text-[#345E85]" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight">30-Day Analytics</p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Performance overview</p>
+              <p className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="30-Day Analytics" /></p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest"><TranslatedText text="Performance overview" /></p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -238,7 +240,7 @@ const LenderDashboardEnlite: React.FC = () => {
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-2xl font-black text-slate-900">{value}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{label}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text={label} /></p>
               </div>
             ))}
           </div>
@@ -253,17 +255,17 @@ const LenderDashboardEnlite: React.FC = () => {
               <Activity size={14} className="text-[#345E85]" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Recent Loan Requests</p>
+              <p className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recent Loan Requests" /></p>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                {recentRequests.length} records · {pendingCount} pending
+                {recentRequests.length} <TranslatedText text="records" /> · {pendingCount} <TranslatedText text="pending" />
               </p>
             </div>
           </div>
-          <button
+            <button
             onClick={() => navigate('/lender/requests')}
             className="flex items-center gap-1 text-[10px] font-black text-[#345E85] uppercase tracking-widest hover:opacity-70 transition-opacity"
           >
-            View All <ChevronRight size={12} />
+            <TranslatedText text="View All" /> <ChevronRight size={12} />
           </button>
         </div>
 
@@ -276,8 +278,8 @@ const LenderDashboardEnlite: React.FC = () => {
             <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
               <Briefcase size={22} className="text-slate-400" />
             </div>
-            <p className="text-slate-900 font-black text-base mb-1">No loan requests yet</p>
-            <p className="text-slate-400 text-sm">Requests from truck owners will appear here</p>
+            <p className="text-slate-900 font-black text-base mb-1"><TranslatedText text="No loan requests yet" /></p>
+            <p className="text-slate-400 text-sm"><TranslatedText text="Requests from truck owners will appear here" /></p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -285,7 +287,7 @@ const LenderDashboardEnlite: React.FC = () => {
               <thead>
                 <tr className="border-b border-slate-50">
                   {['Loan ID', 'Borrower', 'Amount', 'Purpose', 'Fund Split', 'Status', 'Due Date', 'Actions'].map(h => (
-                    <th key={h} className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap"><TranslatedText text={h} /></th>
                   ))}
                 </tr>
               </thead>
@@ -426,7 +428,7 @@ const LenderDashboardEnlite: React.FC = () => {
               {icon}
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 group-hover:text-[#345E85] transition-colors">{label}</p>
+              <p className="text-sm font-black text-slate-900 group-hover:text-[#345E85] transition-colors"><TranslatedText text={label} /></p>
               <ChevronRight size={12} className="text-slate-300 mt-0.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>

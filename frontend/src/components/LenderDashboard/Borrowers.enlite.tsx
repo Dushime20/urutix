@@ -21,6 +21,8 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -93,6 +95,7 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
     const { format } = useCurrencyFormat();
     const formatAmount = (amount: number | null | undefined): string =>
         amount == null ? '—' : format(amount, 'RWF');
+    const { tSync: t } = useTranslation();
 
     // ── Derived stats — only from real data ───────────────────────────────────
 
@@ -254,34 +257,34 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
             {/* ── Stats Row ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Total Borrowers"
+                    title={t("Total Borrowers")}
                     value={totalBorrowers.toString()}
-                    subtitle={`${activeBorrowers} active`}
+                    subtitle={`${activeBorrowers} ${t("active")}`}
                     icon={<Users size={24} />}
                     color="primary"
                 />
                 <StatCard
-                    title="Avg Credit Score"
+                    title={t("Avg Credit Score")}
                     value={avgCreditScore !== null ? avgCreditScore.toString() : 'N/A'}
                     subtitle={avgCreditScore !== null
-                        ? `${borrowersWithScore.length} of ${totalBorrowers} scored`
-                        : 'No credit scores on record'}
+                        ? `${borrowersWithScore.length} of ${totalBorrowers} ${t("scored")}`
+                        : t('No credit scores on record')}
                     icon={<TrendingUp size={24} />}
                     color="secondary"
                 />
                 <StatCard
-                    title="Outstanding"
+                    title={t("Outstanding")}
                     value={totalOutstanding > 0 ? formatAmount(totalOutstanding) : 'N/A'}
-                    subtitle={totalOutstanding > 0 ? 'Across all borrowers' : 'All settled'}
+                    subtitle={totalOutstanding > 0 ? t('Across all borrowers') : t('All settled')}
                     icon={<DollarSign size={24} />}
                     color="warning"
                 />
                 <StatCard
-                    title="Default Rate"
+                    title={t("Default Rate")}
                     value={defaultRate !== null ? `${defaultRate}%` : 'N/A'}
                     subtitle={defaultRate !== null
-                        ? `${totalDefaulted} of ${totalLoans} loans`
-                        : 'No default data'}
+                        ? `${totalDefaulted} of ${totalLoans} ${t("loans")}`
+                        : t('No default data')}
                     icon={<AlertCircle size={24} />}
                     color={totalDefaulted > 0 ? 'error' : 'success'}
                 />
@@ -364,8 +367,8 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
                 {/* Main table */}
                 <div className="lg:col-span-3">
                     <DataCard
-                        title="BORROWER DIRECTORY"
-                        subtitle="Verified borrowers from loan history"
+                        title={t("BORROWER DIRECTORY")}
+                        subtitle={t("Verified borrowers from loan history")}
                     >
                         <div className="space-y-6">
                             <div className="flex items-center justify-between gap-4 py-2 mt-2">
@@ -400,7 +403,7 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
                                 loading={loading}
                                 striped
                                 hoverable
-                                emptyMessage="No borrowers found"
+                                    emptyMessage={t("No borrowers found")}
                             />
                         </div>
                     </DataCard>

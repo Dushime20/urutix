@@ -18,6 +18,8 @@ import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,6 +70,7 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
     const { format } = useCurrencyFormat();
     const formatAmount = (amount: number | null): string =>
         amount === null ? '—' : format(amount, 'RWF');
+    const { tSync: t } = useTranslation();
 
     const [searchTerm, setSearchTerm]     = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -236,30 +239,30 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             {/* ── Stats Row ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Total Repaid"
+                    title={t("Total Repaid")}
                     value={totalAmountRepaid > 0 ? formatAmount(totalAmountRepaid) : 'N/A'}
-                    subtitle={`${repayments.length} repayment record${repayments.length !== 1 ? 's' : ''}`}
+                    subtitle={`${repayments.length} ${t("repayment record")}${repayments.length !== 1 ? 's' : ''}`}
                     icon={<DollarSign size={24} />}
                     color="success"
                 />
                 <StatCard
-                    title="Interest Collected"
+                    title={t("Interest Collected")}
                     value={totalInterestCollected > 0 ? formatAmount(totalInterestCollected) : 'N/A'}
-                    subtitle={totalInterestCollected > 0 ? 'From repayment records' : 'No interest recorded yet'}
+                    subtitle={totalInterestCollected > 0 ? t('From repayment records') : t('No interest recorded yet')}
                     icon={<TrendingUp size={24} />}
                     color="primary"
                 />
                 <StatCard
-                    title="Overdue"
+                    title={t("Overdue")}
                     value={overdueCount.toString()}
-                    subtitle={overdueCount > 0 ? 'Require attention' : 'None overdue'}
+                    subtitle={overdueCount > 0 ? t('Require attention') : t('None overdue')}
                     icon={<AlertTriangle size={24} />}
                     color={overdueCount > 0 ? 'error' : 'success'}
                 />
                 <StatCard
-                    title="Pending"
+                    title={t("Pending")}
                     value={pendingCount.toString()}
-                    subtitle={pendingCount > 0 ? 'Awaiting payment' : 'None pending'}
+                    subtitle={pendingCount > 0 ? t('Awaiting payment') : t('None pending')}
                     icon={<Clock size={24} />}
                     color="warning"
                 />
@@ -356,8 +359,8 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
                 {/* Main table */}
                 <div className="lg:col-span-3">
                     <DataCard
-                        title="REPAYMENT RECORDS"
-                        subtitle="Verified repayment transactions from loan repayment history"
+                        title={t("REPAYMENT RECORDS")}
+                        subtitle={t("Verified repayment transactions from loan repayment history")}
                     >
                         <div className="space-y-6">
                             <div className="flex items-center justify-between gap-4 py-2 mt-2">
@@ -395,7 +398,7 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
                                 loading={loading}
                                 striped
                                 hoverable
-                                emptyMessage="No repayment records found"
+                                    emptyMessage={t("No repayment records found")}
                             />
                         </div>
                     </DataCard>

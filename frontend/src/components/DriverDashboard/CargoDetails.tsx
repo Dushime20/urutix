@@ -30,6 +30,7 @@ import {
   getPreTripStatusFromLoad,
   PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
 } from './preTripInspection';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface CargoDetailsProps {
   cargoId: string;
@@ -137,6 +138,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
   onReject,
   onContactShipper
 }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'route' | 'handling' | 'compliance' | 'documents'>('overview');
@@ -607,13 +609,13 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                   <div className="space-y-6">
                     <div>
                       <span className="text-slate-400 text-xs font-semibold mb-1 block">Declared Value</span>
-                      <div className="text-3xl font-black text-emerald-400">${cargo.value.toLocaleString()}</div>
+                      <div className="text-3xl font-black text-emerald-400">{formatCurrency(cargo.value)}</div>
                     </div>
                     <div>
                       <span className="text-slate-400 text-xs font-semibold mb-1 block">Insurance Coverage</span>
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-emerald-400" />
-                        <span className="font-bold text-lg">${cargo.insurance.amount.toLocaleString()}</span>
+                        <span className="font-bold text-lg">{formatCurrency(cargo.insurance.amount)}</span>
                       </div>
                     </div>
                   </div>

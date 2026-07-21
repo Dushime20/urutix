@@ -24,7 +24,7 @@ interface WalletAdvancesProps {
 }
 
 export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
-  const { format: formatCurrency, compact: fmtMoney, compactIn: fmtIn } = useCurrencyFormat();
+  const { format: formatCurrency, currency } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -143,7 +143,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                 <div>
                   <div className="flex items-baseline gap-2">
                     <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-teal-400 italic font-mono">{formatCurrency(wallet?.balance || 0)}</h3>
-                    <span className="text-[10px] font-black text-blue-200 uppercase tracking-widest">USD</span>
+                    <span className="text-[10px] font-black text-blue-200 uppercase tracking-widest">{currency}</span>
                   </div>
 
                 </div>
@@ -246,7 +246,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Advance Amount ($)</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Advance Amount ({currency})</label>
                       <div className="relative">
                         <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
                         <input 
@@ -258,7 +258,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                           onChange={(e) => setAdvanceAmount(parseFloat(e.target.value))}
                         />
                       </div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[#345E85] px-2 text-right">Maximum Limit: $500.00</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[#345E85] px-2 text-right">Maximum Limit: {formatCurrency(500)}</p>
                     </div>
 
                     <div className="space-y-2">

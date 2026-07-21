@@ -32,7 +32,7 @@ interface FuelManagementProps {
 }
 
 export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
-  const { compact: formatCurrency } = useCurrencyFormat();
+  const { compact: formatCurrency, format: formatCurrencyFull } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [showLogForm, setShowLogForm] = useState(false);
   
@@ -243,14 +243,14 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                              <TrendingUp size={12} /> Performance Insight
                         </h4>
                         <p className="text-[11px] font-medium leading-relaxed italic text-slate-600">
-                            "Your fuel consumption was <span className="text-rose-600 font-black underline">5.2% higher</span> on the last Kampala run. Switch to the Bypass route next time to save approx. <span className="text-[#345E85] font-black underline">$42</span>."
+                            "Your fuel consumption was <span className="text-rose-600 font-black underline">5.2% higher</span> on the last Kampala run. Switch to the Bypass route next time to save approx. <span className="text-[#345E85] font-black underline">{formatCurrencyFull(42)}</span>."
                         </p>
                     </div>
                     
                     <button className="flex items-center justify-between w-full p-5 bg-[#345E85] text-white rounded-2xl group hover:bg-slate-900 transition-all shadow-lg shadow-blue-900/10">
                         <div className="text-left">
                             <p className="text-[8px] font-black text-blue-100 uppercase tracking-widest mb-0.5">Interactive Coaching</p>
-                            <p className="text-[10px] font-black uppercase tracking-tight">Unlock "Green Driving" Bonus (+$50)</p>
+                            <p className="text-[10px] font-black uppercase tracking-tight">Unlock "Green Driving" Bonus (+{formatCurrencyFull(50)})</p>
                         </div>
                         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </button>
@@ -575,7 +575,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                           Volume
                         </p>
                         <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">{Number(log.gallons).toFixed(2)} GAL</p>
-                        <p className="text-[10px] font-bold text-slate-400 mt-1">${Number(log.pricePerGallon).toFixed(3)} / GAL</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-1">{formatCurrencyFull(Number(log.pricePerGallon))} / GAL</p>
                       </div>
 
                       <div className="col-span-1">

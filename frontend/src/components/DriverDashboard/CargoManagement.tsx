@@ -30,6 +30,7 @@ import {
   PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
   PreTripInspectionWorkflowStatus,
 } from './preTripInspection';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface CargoItem {
   id: string;
@@ -81,6 +82,7 @@ interface CargoManagementProps {
 }
 
 export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const [cargos, setCargos] = useState<CargoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCargo, setSelectedCargo] = useState<CargoItem | null>(null);
@@ -628,7 +630,7 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                   {/* Value — sm+ only */}
                   <div className="hidden sm:block text-right flex-shrink-0 pl-2">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Value</span>
-                    <span className="text-base font-black text-emerald-600">${cargo.value.toLocaleString()}</span>
+                    <span className="text-base font-black text-emerald-600">{formatCurrency(cargo.value)}</span>
                   </div>
                 </div>
 

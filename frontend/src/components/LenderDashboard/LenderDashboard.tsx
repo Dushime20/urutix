@@ -15,6 +15,7 @@ import { lendingApi } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { TranslatedText } from '../translated-text';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { useTranslation } from '../../hooks/useTranslation';
 
 ChartJS.register(
   CategoryScale,
@@ -50,6 +51,7 @@ interface ChartData {
 const LenderDashboard: React.FC = () => {
   const { user, accessToken } = useAuth();
   const { format: fmtCurrency } = useCurrencyFormat();
+  const { tSync: t } = useTranslation();
   const [stats, setStats] = useState<DashboardStats>({
     totalLoans: 0,
     totalAmount: 0,

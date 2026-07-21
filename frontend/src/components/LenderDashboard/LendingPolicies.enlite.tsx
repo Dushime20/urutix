@@ -19,6 +19,8 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // Reuse interfaces from the original page
 export interface InterestRatePolicy {
@@ -149,6 +151,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
     const { format, compact } = useCurrencyFormat();
     const fmtRwf = (amount: number) => format(amount, 'RWF');
     const cptRwf = (amount: number) => compact(amount, 'RWF');
+    const { tSync: t } = useTranslation();
 
     const tabs = [
         { id: 'interest-rates', label: 'INTEREST RATES', icon: <Percent size={14} />, category: 'interestRates' },
@@ -731,14 +734,14 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
             {/* Header Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Active Rate Policies"
+                    title={t("Active Rate Policies")}
                     value={policies.interestRates.filter(p => p.isActive).length}
-                    subtitle={`Total: ${policies.interestRates.length}`}
+                    subtitle={`${t("Total")}: ${policies.interestRates.length}`}
                     icon={<Percent size={24} />}
                     color="primary"
                 />
                 <StatCard
-                    title="Avg Base Rate"
+                    title={t("Avg Base Rate")}
                     value={`${(policies.interestRates.reduce((acc, curr) => acc + curr.baseRate, 0) / policies.interestRates.length || 0).toFixed(1)}%`}
                     trend="+0.2% vs last month"
                     trendDirection="up"
@@ -746,16 +749,16 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     color="secondary"
                 />
                 <StatCard
-                    title="Max Exposure"
+                    title={t("Max Exposure")}
                     value={cptRwf(policies.globalSettings.manualReviewThreshold)}
-                    subtitle="System Soft-Limit"
+                    subtitle={t("System Soft-Limit")}
                     icon={<Shield size={24} />}
                     color="success"
                 />
                 <StatCard
-                    title="Policy Health"
+                    title={t("Policy Health")}
                     value="98.2%"
-                    trend="Stable"
+                    trend={t("Stable")}
                     trendDirection="up"
                     icon={<Settings size={24} />}
                     color="warning"
@@ -809,7 +812,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                 onClick={() => onAdd(currentTabInfo?.category || '')}
                                 className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all"
                             >
-                                <Plus size={14} /> Add {currentTabInfo?.label ?? 'New'}
+                                <Plus size={14} /> <TranslatedText text={`Add ${currentTabInfo?.label ?? 'New'}`} />
                             </button>
                         }
                     >

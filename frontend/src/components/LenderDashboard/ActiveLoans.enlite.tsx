@@ -18,6 +18,8 @@ import { StatCard } from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Borrower {
     id: string | null;
@@ -85,6 +87,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
 }) => {
     const [viewMode, setViewMode] = useState<'table' | 'grouped'>('table');
     const { format, compact } = useCurrencyFormat();
+    const { tSync: t } = useTranslation();
 
     // Loans are stored in RWF — convert to user preferred currency
     const fmt  = (n: number) => format(n, 'RWF');
@@ -314,29 +317,29 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
                             variant="classic"
-                            title="Total Disbursed"
+                            title={t("Total Disbursed")}
                             value={fmt(analytics.totalDisbursed || 0)}
-                            subtitle="Cumulative capital deployed"
-                            trend="All time"
+                            subtitle={t("Cumulative capital deployed")}
+                            trend={t("All time")}
                             trendDirection="neutral"
                             icon={<Banknote size={22} />}
                             color="primary"
                         />
                         <StatCard
                             variant="classic"
-                            title="Outstanding Balance"
+                            title={t("Outstanding Balance")}
                             value={fmt(analytics.totalOutstanding || 0)}
-                            subtitle="Active portfolio exposure"
-                            trend="Live"
+                            subtitle={t("Active portfolio exposure")}
+                            trend={t("Live")}
                             trendDirection="neutral"
                             icon={<DollarSign size={22} />}
                             color="info"
                         />
                         <StatCard
                             variant="classic"
-                            title="Total Repaid"
+                            title={t("Total Repaid")}
                             value={fmt(analytics.totalRepaid || 0)}
-                            subtitle="Principal recovered"
+                            subtitle={t("Principal recovered")}
                             trend={analytics.totalDisbursed > 0 ? `${((analytics.totalRepaid / analytics.totalDisbursed) * 100).toFixed(1)}% recovery` : '—'}
                             trendDirection="up"
                             icon={<PiggyBank size={22} />}
@@ -344,10 +347,10 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                         />
                         <StatCard
                             variant="classic"
-                            title="Average Loan Size"
+                            title={t("Average Loan Size")}
                             value={fmt(analytics.averageLoanSize || 0)}
-                            subtitle="Per disbursement"
-                            trend="Portfolio avg"
+                            subtitle={t("Per disbursement")}
+                            trend={t("Portfolio avg")}
                             trendDirection="neutral"
                             icon={<TrendingUp size={22} />}
                             color="accent"
@@ -358,19 +361,19 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
                             variant="classic"
-                            title="Active Loans"
+                            title={t("Active Loans")}
                             value={(analytics.totalActiveLoans || 0).toString()}
-                            subtitle="Approved & disbursed"
-                            trend="Stable deployment"
+                            subtitle={t("Approved & disbursed")}
+                            trend={t("Stable deployment")}
                             trendDirection="neutral"
                             icon={<FileText size={22} />}
                             color="secondary"
                         />
                         <StatCard
                             variant="classic"
-                            title="Portfolio Yield"
+                            title={t("Portfolio Yield")}
                             value={`${(analytics.portfolioYield || 0).toFixed(2)}%`}
-                            subtitle="Annualised return"
+                            subtitle={t("Annualised return")}
                             trend="+0.5% optimisation"
                             trendDirection="up"
                             icon={<TrendingUp size={22} />}
@@ -378,20 +381,20 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                         />
                         <StatCard
                             variant="classic"
-                            title="Recovery Rate"
+                            title={t("Recovery Rate")}
                             value={`${(analytics.onTimePaymentRate || 0).toFixed(1)}%`}
-                            subtitle="On-time collection index"
-                            trend={analytics.onTimePaymentRate >= 80 ? 'Healthy' : 'Monitor'}
+                            subtitle={t("On-time collection index")}
+                            trend={analytics.onTimePaymentRate >= 80 ? t('Healthy') : t('Monitor')}
                             trendDirection={analytics.onTimePaymentRate >= 80 ? 'up' : 'down'}
                             icon={<CheckCircle2 size={22} />}
                             color="warning"
                         />
                         <StatCard
                             variant="classic"
-                            title="Default Rate"
+                            title={t("Default Rate")}
                             value={`${(analytics.defaultRate || 0).toFixed(2)}%`}
-                            subtitle="NPL exposure"
-                            trend={analytics.defaultRate <= 5 ? 'Within threshold' : 'Above threshold'}
+                            subtitle={t("NPL exposure")}
+                            trend={analytics.defaultRate <= 5 ? t('Within threshold') : t('Above threshold')}
                             trendDirection={analytics.defaultRate <= 5 ? 'neutral' : 'down'}
                             icon={<TrendingDown size={22} />}
                             color={analytics.defaultRate <= 5 ? 'secondary' : 'error'}
@@ -402,7 +405,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
 
             {/* Main Content Area */}
             <DataCard
-                title="Portfolio Management Console"
+                title={t("Portfolio Management Console")}
                 actions={
                     <div className="flex items-center gap-3">
                         <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
@@ -423,7 +426,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             onClick={handleExport}
                             className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
                         >
-                            <Download size={14} /> Export Portfolio
+                            <Download size={14} /> <TranslatedText text="Export Portfolio" />
                         </button>
                     </div>
                 }
@@ -447,13 +450,13 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                                             <ShieldAlert size={16} />
                                         </div>
                                         <div>
-                                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-tighter">{status} OPERATIONS</h3>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{statusLoans.length} Active Assets Assigned</p>
+                                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-tighter">{status} <TranslatedText text="OPERATIONS" /></h3>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{statusLoans.length} <TranslatedText text="Active Assets Assigned" /></p>
                                         </div>
                                         <div className="flex-1 border-t border-slate-100 border-dashed mx-4"></div>
                                         <div className="text-right">
                                             <p className="text-xs font-black text-slate-900 uppercase">{cpt(statusLoans.reduce((sum, l) => sum + l.outstanding_balance, 0))}</p>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Total Exposure</p>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest"><TranslatedText text="Total Exposure" /></p>
                                         </div>
                                     </div>
                                     <EnhancedTable

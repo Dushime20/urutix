@@ -10,6 +10,7 @@ import {
   Zap
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface RewardStep {
   id: string;
@@ -20,6 +21,7 @@ interface RewardStep {
 }
 
 export const RewardsTimeline: React.FC = () => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const steps: RewardStep[] = [
     { 
       id: '1', 
@@ -114,7 +116,7 @@ export const RewardsTimeline: React.FC = () => {
       <div className="mt-10 p-6 bg-slate-900 rounded-[2rem] relative overflow-hidden">
          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 relative z-10">Next Big Reward</p>
-         <h4 className="text-white font-black uppercase tracking-tight text-lg mb-1 relative z-10">$100 Performance Bonus</h4>
+         <h4 className="text-white font-black uppercase tracking-tight text-lg mb-1 relative z-10">{formatCurrency(100)} Performance Bonus</h4>
          <div className="w-full h-1.5 bg-white/10 rounded-full mt-4 overflow-hidden relative z-10">
             <motion.div 
                 animate={{ width: '85%' }}

@@ -15,6 +15,8 @@ import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 export interface ReceiptData {
     id: string;
@@ -60,6 +62,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
     const { format } = useCurrencyFormat();
     const formatMoney = (amount: number, fromCurrency = 'RWF') =>
         format(amount, fromCurrency);
+    const { tSync: t } = useTranslation();
 
     const getStatusStyle = (status: string) => {
         switch (status) {
@@ -211,14 +214,14 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Total Documents"
+                    title={t("Total Documents")}
                     value={stats.totalReceipts}
-                    subtitle="Issued Receipts"
+                    subtitle={t("Issued Receipts")}
                     icon={<Receipt size={24} />}
                     color="primary"
                 />
                 <StatCard
-                    title="Settled Capital"
+                    title={t("Settled Capital")}
                     value={formatMoney(stats.paidAmount)}
                     trend="+8% this quarter"
                     trendDirection="up"
@@ -226,24 +229,24 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
                     color="success"
                 />
                 <StatCard
-                    title="Outstanding Volume"
+                    title={t("Outstanding Volume")}
                     value={formatMoney(stats.pendingAmount)}
-                    subtitle="Awaiting Settlement"
+                    subtitle={t("Awaiting Settlement")}
                     icon={<Clock size={24} />}
                     color="warning"
                 />
                 <StatCard
-                    title="Aggregate Flow"
+                    title={t("Aggregate Flow")}
                     value={formatMoney(stats.totalVolume)}
-                    subtitle="Network Value"
+                    subtitle={t("Network Value")}
                     icon={<DollarSign size={24} />}
                     color="primary"
                 />
             </div>
 
             <DataCard
-                title="Payment Archive"
-                subtitle="Official financial records for institutional auditing"
+                title={t("Payment Archive")}
+                subtitle={t("Official financial records for institutional auditing")}
                 actions={
                     <div className="flex items-center gap-3">
                         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
@@ -257,7 +260,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
                     columns={columns}
                     data={receipts}
                     loading={loading}
-                    emptyMessage="No institutional receipts generated for this period"
+                    emptyMessage={t("No institutional receipts generated for this period")}
                     rowClassName={() => 'group'}
                 />
             </DataCard>

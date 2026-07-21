@@ -25,10 +25,24 @@ interface MyTruckProps {
   truckData?: any;
 }
 
-export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
+export const MyTruck: React.FC<MyTruckProps> = ({ driverId, truckData }) => {
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = React.useState(false);
-  
-  const truck = truckData;
+
+  const { data: driverProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['driver', driverId],
+    queryFn: () => driverApi.getDriverProfile(driverId),
+    enabled: !!driverId && !truckData,
+  });
+
+  const assignedTruckId = truckData?.id || driverProfile?.currentTruckId;
+
+  const { data: fetchedTruck, isLoading: truckLoading } = useQuery({
+    queryKey: ['assigned-truck', assignedTruckId],
+    queryFn: () => driverApi.getAssignedTruck(assignedTruckId!),
+    enabled: !!assignedTruckId && !truckData,
+  });
+
+  const truck = truckData || fetchedTruck;
 
   const { data: maintenanceData } = useQuery({
     queryKey: ['truck-maintenance', truck?.id],
@@ -36,22 +50,35 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
     enabled: !!truck?.id,
   });
 
+  const isLoading = !truckData && (profileLoading || truckLoading);
+
   const serviceHistory = maintenanceData?.logs || [];
 
   const truckHistory = maintenanceData?.history || [];
 
   const specs = truck ? [
-    { label: 'Payload Capacity', value: truck.payloadCapacity || 'N/A', icon: Zap, color: 'text-blue-500' },
-    { label: 'Fuel Economy', value: truck.fuelEconomy || 'N/A', icon: Gauge, color: 'text-emerald-500' },
-    { label: 'Engine Power', value: truck.enginePower || 'N/A', icon: Activity, color: 'text-rose-500' },
-    { label: 'Tracking', value: truck.trackingStatus || 'N/A', icon: Navigation, color: 'text-blue-500' },
+    { label: 'Payload Capacity', value: truck.payloadCapacity || (truck.capacityWeight ? `${truck.capacityWeight} kg` : 'N/A'), icon: Zap, color: 'text-blue-500' },
+    { label: 'Fuel Type', value: truck.fuelEconomy || truck.fuelType || 'N/A', icon: Gauge, color: 'text-emerald-500' },
+    { label: 'Year', value: truck.enginePower || (truck.year ? String(truck.year) : 'N/A'), icon: Activity, color: 'text-rose-500' },
+    { label: 'Status', value: truck.trackingStatus || truck.status || 'N/A', icon: Navigation, color: 'text-blue-500' },
   ] : [];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700 pb-20">
       
+      {/* Loading state */}
+      {isLoading && (
+        <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-xl shadow-slate-200/30 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100 animate-pulse">
+            <Truck size={40} className="text-slate-200" />
+          </div>
+          <div className="h-4 w-40 bg-slate-100 rounded-lg animate-pulse mb-2" />
+          <div className="h-3 w-56 bg-slate-100 rounded-lg animate-pulse" />
+        </div>
+      )}
+
       {/* No truck assigned state */}
-      {!truck && (
+      {!truck && !isLoading && (
         <div className="bg-white rounded-[2.5rem] p-12 border border-slate-100 shadow-xl shadow-slate-200/30 flex flex-col items-center justify-center text-center">
           <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
             <Truck size={40} className="text-slate-300" />
@@ -97,7 +124,9 @@ export const MyTruck: React.FC<MyTruckProps> = ({ truckData }) => {
                   <span className="text-slate-300 opacity-50">•</span>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{truck.plateNumber}</p>
               </div>
-              <h1 className="text-3xl font-black text-[#0f172a] uppercase tracking-tighter mb-6 leading-none">{truck.model}</h1>
+              <h1 className="text-3xl font-black text-[#0f172a] uppercase tracking-tighter mb-6 leading-none">
+                {truck.make ? `${truck.make} ${truck.model}` : truck.model}
+              </h1>
             </motion.div>
             
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

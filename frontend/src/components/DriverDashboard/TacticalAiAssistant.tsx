@@ -15,6 +15,7 @@ import {
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Message {
   id: string;
@@ -33,6 +34,7 @@ export const TacticalAiAssistant: React.FC<TacticalAiAssistantProps> = ({
   currentTrip, 
   driverName 
 }) => {
+  const { format: formatCurrency } = useCurrencyFormat();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Message[]>([
@@ -78,7 +80,7 @@ export const TacticalAiAssistant: React.FC<TacticalAiAssistantProps> = ({
           ? `Analysis complete. Route to ${currentTrip.destination.city} is currently status: OPTIMAL. Avoid the Bypass due to construction. Save: 8 mins.`
           : "No active mission detected. I recommend checking for high-yield assignments in the Mission Hub.";
       } else if (lowerText.includes('fuel')) {
-        aiResponse = "Scanning for optimized refill nodes... Smart Fuel Finder suggests 'PetroPlus' at km 142 ($5.23/gal). Efficiency would increase by 4%.";
+        aiResponse = `Scanning for optimized refill nodes... Smart Fuel Finder suggests 'PetroPlus' at km 142 (${formatCurrency(5.23)}/gal). Efficiency would increase by 4%.`;
       } else if (lowerText.includes('weather')) {
         aiResponse = "Meteorological forecast: Sunny, 24°C in your current corridor. Visibility is at 100%. No atmospheric disruptions expected for 4 hours.";
       } else if (lowerText.includes('thanks') || lowerText.includes('thank')) {

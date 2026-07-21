@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import StatCard from '../EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
@@ -208,6 +210,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
     const { format } = useCurrencyFormat();
     const formatAmount = (amount: number | null): string =>
         amount === null ? '—' : format(amount, 'RWF');
+    const { tSync: t } = useTranslation();
 
     const [detailLoan, setDetailLoan]         = useState<any | null>(null);
     const [rejectTarget, setRejectTarget]     = useState<DisbursementEntry | null>(null);
@@ -240,7 +243,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
     const columns = [
         {
             key: 'id',
-            label: 'DISBURSEMENT ID',
+                        label: t('DISBURSEMENT ID'),
             render: (id: string, d: DisbursementEntry) => (
                 <div className="flex flex-col gap-0.5">
                     <span className="text-[11px] font-black text-slate-900 font-mono">
@@ -391,33 +394,33 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             {/* ── Stats Row ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Total Pipeline"
+                    title={t("Total Pipeline")}
                     value={disbursements.length.toString()}
-                    subtitle={`${formatAmount(totalAmount > 0 ? totalAmount : null)} total`}
+                    subtitle={`${formatAmount(totalAmount > 0 ? totalAmount : null)} ${t("total")}`}
                     icon={<FileText size={24} />}
                     color="primary"
                     variant="classic"
                 />
                 <StatCard
-                    title="Pending Approval"
+                    title={t("Pending Approval")}
                     value={pendingCount.toString()}
-                    subtitle={pendingCount > 0 ? 'Awaiting review' : 'None pending'}
+                    subtitle={pendingCount > 0 ? t('Awaiting review') : t('None pending')}
                     icon={<Clock size={24} />}
                     color="warning"
                     variant="classic"
                 />
                 <StatCard
-                    title="Approved — Ready"
+                    title={t("Approved — Ready")}
                     value={approvedCount.toString()}
-                    subtitle={approvedCount > 0 ? 'Ready to disburse' : 'None approved'}
+                    subtitle={approvedCount > 0 ? t('Ready to disburse') : t('None approved')}
                     icon={<CheckCircle size={24} />}
                     color="success"
                     variant="classic"
                 />
                 <StatCard
-                    title="Disbursed"
+                    title={t("Disbursed")}
                     value={disbursedCount.toString()}
-                    subtitle={disbursedAmount > 0 ? formatAmount(disbursedAmount) : 'None disbursed'}
+                    subtitle={disbursedAmount > 0 ? formatAmount(disbursedAmount) : t('None disbursed')}
                     icon={<TrendingUp size={24} />}
                     color="secondary"
                     variant="classic"
@@ -496,8 +499,8 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                 {/* Main table */}
                 <div className="lg:col-span-3">
                     <DataCard
-                        title="DISBURSEMENT PIPELINE"
-                        subtitle="Authorize and track loan funding operations"
+                        title={t("DISBURSEMENT PIPELINE")}
+                        subtitle={t("Authorize and track loan funding operations")}
                     >
                         <div className="space-y-6">
                             <div className="flex items-center justify-between gap-4 py-2 mt-2">
@@ -534,7 +537,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                                 loading={loading}
                                 striped
                                 hoverable
-                                emptyMessage="No disbursements match the current filters"
+                                emptyMessage={t("No disbursements match the current filters")}
                             />
                         </div>
                     </DataCard>
