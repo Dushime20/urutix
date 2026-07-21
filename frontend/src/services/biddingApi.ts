@@ -49,6 +49,7 @@ export interface AuctionData {
   auctionEnd: string;
   reservePrice?: number;
   minimumBidIncrement?: number;
+  minimumBidDecrement?: number;
   maximumBidAmount?: number;
   auctionRules?: any;
   notificationSettings?: any;
@@ -199,6 +200,12 @@ export const biddingAPI = {
 };
 
 import { formatCurrency } from '../utils/formatNumber';
+import {
+  validateBidAmount as validateAuctionBidAmount,
+  getSuggestedBidAmount,
+  getBidConstraintHint,
+} from '../utils/bidValidation';
+export type { AuctionBidRules } from '../utils/bidValidation';
 
 // Helper functions for common operations
 export const biddingHelpers = {
@@ -237,19 +244,16 @@ export const biddingHelpers = {
     return Math.min(probability, 95);
   },
 
-  // Validate bid amount
-  validateBidAmount: (amount: number, currentBid?: number, minIncrement?: number) => {
-    if (amount <= 0) return 'Bid amount must be greater than 0';
+  // Validate bid amount against auction rules (reverse / forward)
+  validateBidAmount: (
+    amount: number,
+    auction: Parameters<typeof validateAuctionBidAmount>[1],
+    currency = 'USD',
+  ) => validateAuctionBidAmount(amount, auction, currency),
 
-    if (currentBid && minIncrement) {
-      const minBid = currentBid + minIncrement;
-      if (amount < minBid) {
-        return `Minimum bid amount is ${biddingHelpers.formatCurrency(minBid)}`;
-      }
-    }
+  getSuggestedBidAmount,
 
-    return null;
-  },
+  getBidConstraintHint,
 
   // Get status color for badges
   getStatusColor: (status: string) => {

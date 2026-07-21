@@ -20,7 +20,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { biddingAPI } from '../../services/biddingApi';
+import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
 import { fleetApi } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../utils/formatNumber';
@@ -63,6 +63,7 @@ interface Auction {
   auctionEnd: string;
   reservePrice?: number;
   minimumBidIncrement?: number;
+  minimumBidDecrement?: number;
   totalBids: number;
   uniqueBidders: number;
   currentHighestBid?: number;
@@ -220,10 +221,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   const openQuickBidModal = (auction: Auction) => {
     setSelectedAuction(auction);
-    const defaultAmount = auction?.currentHighestBid
-      ? auction.currentHighestBid - (auction?.minimumBidIncrement || 1)
-      : (auction?.reservePrice || 100) - 1;
-    setQuickBidAmount(String(defaultAmount));
+    const suggested = biddingHelpers.getSuggestedBidAmount(auction);
+    setQuickBidAmount(suggested != null ? String(suggested) : '');
     setQuickAdvancePaymentPercentage('');
     setQuickRequireAdvancePayment(true);
 
@@ -242,13 +241,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
   const openBidModal = (auction: Auction) => {
     setSelectedAuction(auction);
-    setBidAmount(
-      String(
-        auction?.currentHighestBid
-          ? auction.currentHighestBid - (auction?.minimumBidIncrement || 1)
-          : (auction?.reservePrice || 100) - 1
-      )
-    );
+    const suggested = biddingHelpers.getSuggestedBidAmount(auction);
+    setBidAmount(suggested != null ? String(suggested) : '');
     setBidNotes('');
     // Auto-populate dates from cargo — these are read-only, not editable by the bidder
     const pickup = auction?.load?.pickupDate
@@ -314,6 +308,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       toast.error('Enter a valid bid amount');
       return;
     }
+    const bidError = biddingHelpers.validateBidAmount(amountNum, selectedAuction);
+    if (bidError) {
+      toast.error(bidError);
+      return;
+    }
     if (!proposedPickupDate || !proposedDeliveryDate) {
       toast.error('Please specify pickup and delivery dates');
       return;
@@ -350,6 +349,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     const amountNum = Number(bidAmount);
     if (!amountNum || amountNum <= 0) {
       toast.error('Enter a valid bid amount');
+      return;
+    }
+    const bidError = biddingHelpers.validateBidAmount(amountNum, selectedAuction);
+    if (bidError) {
+      toast.error(bidError);
       return;
     }
     if (!selectedTruckId || !proposedPickupDate || !proposedDeliveryDate) {
@@ -818,6 +822,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                 <p className="text-[11px] text-gray-400 dark:text-slate-500 font-medium">
                   The lowest bid wins. Enter the shipping price you are willing to charge.
                 </p>
+                {biddingHelpers.getBidConstraintHint(selectedAuction) && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                    {biddingHelpers.getBidConstraintHint(selectedAuction)}
+                  </p>
+                )}
               </div>
 
               {/* Advance Payment Section */}
@@ -973,6 +982,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                 <p className="text-[11px] text-gray-400 dark:text-slate-500 font-medium">
                   The lowest bid wins. Enter the shipping price you are willing to charge.
                 </p>
+                {biddingHelpers.getBidConstraintHint(selectedAuction) && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                    {biddingHelpers.getBidConstraintHint(selectedAuction)}
+                  </p>
+                )}
               </div>
 
               {/* Asset Allocation */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { DollarSign, Calendar, Truck, TrendingUp, Info, ShieldCheck, AlertCircle, X, ChevronRight } from 'lucide-react';
 import { fleetApi, type Truck as FleetTruck } from '../../services/fleetApi';
+import { biddingHelpers } from '../../services/biddingApi';
 
 interface Auction {
   id: string;
@@ -10,6 +11,7 @@ interface Auction {
   status: string;
   reservePrice?: number;
   minimumBidIncrement?: number;
+  minimumBidDecrement?: number;
   currentHighestBid?: number;
   load: {
     title: string;
@@ -142,11 +144,9 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
         throw new Error('Please enter a valid bid amount');
       }
 
-      if (auction.minimumBidIncrement && auction.currentHighestBid) {
-        const minBid = auction.currentHighestBid + auction.minimumBidIncrement;
-        if (bidAmount < minBid) {
-          throw new Error(`Minimum bid amount is ${minBid.toFixed(2)}`);
-        }
+      const bidError = biddingHelpers.validateBidAmount(bidAmount, auction, formData.bidCurrency);
+      if (bidError) {
+        throw new Error(bidError);
       }
 
       await onSubmit(formData);
@@ -230,7 +230,12 @@ const BidForm: React.FC<BidFormProps> = ({ auction, onSubmit, onCancel }) => {
             </div>
             {auction.currentHighestBid && (
               <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mt-1 ml-1 tracking-tight">
-                Current highest: {formatCurrency(auction.currentHighestBid)}
+                Current lowest: {formatCurrency(auction.currentHighestBid)}
+              </p>
+            )}
+            {biddingHelpers.getBidConstraintHint(auction, formData.bidCurrency) && (
+              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-1 ml-1 tracking-tight">
+                {biddingHelpers.getBidConstraintHint(auction, formData.bidCurrency)}
               </p>
             )}
           </div>

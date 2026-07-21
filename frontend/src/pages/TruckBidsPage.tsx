@@ -145,11 +145,8 @@ const TruckBidsPage: React.FC = () => {
 
 	const openQuickBidModal = (auction: any) => {
 		setSelectedAuction(auction);
-		// Set default bid amount based on current bid or reserve price
-		const defaultAmount = auction?.currentBid
-			? auction.currentBid - (auction?.minimumBidIncrement || 1)
-			: (auction?.reservePrice || 100) - 1;
-		setQuickBidAmount(String(defaultAmount));
+		const suggested = biddingHelpers.getSuggestedBidAmount(auction);
+		setQuickBidAmount(suggested != null ? String(suggested) : '');
 		setQuickAdvancePaymentPercentage(''); // Reset to empty, user can set their preferred percentage
 		setQuickRequireAdvancePayment(true); // Default to requiring advance payment
 		// Reset dates
@@ -163,6 +160,12 @@ const TruckBidsPage: React.FC = () => {
 		const amountNum = Number(quickBidAmount);
 		if (!amountNum || amountNum <= 0) {
 			toast.error('Enter a valid bid amount');
+			return;
+		}
+
+		const bidError = biddingHelpers.validateBidAmount(amountNum, selectedAuction);
+		if (bidError) {
+			toast.error(bidError);
 			return;
 		}
 
@@ -227,13 +230,8 @@ const TruckBidsPage: React.FC = () => {
 
 	const openBidModal = async (auction: any) => {
 		setSelectedAuction(auction);
-		setBidAmount(
-			String(
-				auction?.currentBid
-					? auction.currentBid - (auction?.minimumBidIncrement || 1)
-					: (auction?.reservePrice || 100) - 1
-			)
-		);
+		const suggested = biddingHelpers.getSuggestedBidAmount(auction);
+		setBidAmount(suggested != null ? String(suggested) : '');
 		setBidNotes('');
 		setProposedPickupDate('');
 		setProposedDeliveryDate('');
@@ -331,6 +329,12 @@ const TruckBidsPage: React.FC = () => {
 		const amountNum = Number(bidAmount);
 		if (!amountNum || amountNum <= 0) {
 			toast.error('Enter a valid bid amount');
+			return;
+		}
+
+		const bidError = biddingHelpers.validateBidAmount(amountNum, selectedAuction);
+		if (bidError) {
+			toast.error(bidError);
 			return;
 		}
 
@@ -537,7 +541,7 @@ const TruckBidsPage: React.FC = () => {
 														<div className="flex flex-col items-start gap-1">
 															<span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Price</span>
 															<span className="text-2xl font-black text-emerald-600 italic">
-																{a.currentBid ? fmtBid(a.currentBid) : '—'}
+																{a.currentHighestBid ?? a.currentBid ? fmtBid(a.currentHighestBid ?? a.currentBid) : '—'}
 															</span>
 														</div>
 														<div className="text-right">
@@ -636,7 +640,7 @@ const TruckBidsPage: React.FC = () => {
 													</span>
 												</td>
 												<td className="px-6 py-4">
-													<div className="font-bold text-gray-900">{a.currentBid ? fmtBid(a.currentBid) : '—'}</div>
+													<div className="font-bold text-gray-900">{a.currentHighestBid ?? a.currentBid ? fmtBid(a.currentHighestBid ?? a.currentBid) : '—'}</div>
 													<div className="text-xs text-gray-500">Current Bid</div>
 												</td>
 												<td className="px-6 py-4">
@@ -696,6 +700,11 @@ const TruckBidsPage: React.FC = () => {
 								<div className="text-sm font-medium text-gray-400">
 									Reserve price: {selectedAuction.reservePrice ? fmtBid(selectedAuction.reservePrice) : '—'}
 								</div>
+								{biddingHelpers.getBidConstraintHint(selectedAuction) && (
+									<p className="text-xs text-amber-600 font-semibold">
+										{biddingHelpers.getBidConstraintHint(selectedAuction)}
+									</p>
+								)}
 							</div>
 
 							{/* Advance Payment Section */}
@@ -823,10 +832,21 @@ const TruckBidsPage: React.FC = () => {
 										placeholder="0.00"
 									/>
 								</div>
-								<div className="flex items-center gap-4 text-xs font-medium">
-									<span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">Floor: {fmtBid(selectedAuction.currentBid || selectedAuction.reservePrice || 0)}</span>
-									<span className="text-gray-400">Min. Increment: {fmtBid(selectedAuction.minimumBidIncrement || 100)}</span>
+								<div className="flex flex-wrap items-center gap-4 text-xs font-medium">
+									<span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+										Current lowest: {fmtBid(selectedAuction.currentHighestBid ?? selectedAuction.currentBid ?? selectedAuction.reservePrice ?? 0)}
+									</span>
+									{(selectedAuction.minimumBidDecrement ?? selectedAuction.minimumBidIncrement) != null && (
+										<span className="text-gray-400">
+											Min. step: {fmtBid(selectedAuction.minimumBidDecrement ?? selectedAuction.minimumBidIncrement ?? 0)}
+										</span>
+									)}
 								</div>
+								{biddingHelpers.getBidConstraintHint(selectedAuction) && (
+									<p className="text-xs text-amber-600 font-semibold">
+										{biddingHelpers.getBidConstraintHint(selectedAuction)}
+									</p>
+								)}
 							</div>
 
 							{/* Truck & Driver */}
