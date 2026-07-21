@@ -20,6 +20,7 @@ import { documentApi } from '../../services/documents/documentApi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface CargoItem {
   id: string;
@@ -85,6 +86,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
   onInspectionComplete,
   onCancel
 }) => {
+  const { tSync: t } = useTranslation();
   const [cargo, setCargo] = useState<CargoItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [inspectionStep, setInspectionStep] = useState<'overview' | 'physical' | 'documentation' | 'securement' | 'final'>('overview');
@@ -185,7 +187,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         }));
       } catch (error: any) {
         console.error('Error fetching cargo data:', error);
-        toast.error('Failed to load cargo details');
+        toast.error(t('Failed to load cargo details'));
       } finally {
         setLoading(false);
       }
@@ -230,12 +232,12 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+      toast.error(t('Please upload an image file'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB');
+      toast.error(t('Image size must be less than 5MB'));
       return;
     }
 
@@ -277,7 +279,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
           photos: [...(prev.photos || []), uploadedDocument.fileUrl]
         }));
 
-        toast.success('Photo uploaded successfully');
+        toast.success(t('Photo uploaded successfully'));
       }
     } catch (error: any) {
       console.error('Error uploading photo:', error);
@@ -310,7 +312,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         ...prev,
         photos: prev.photos?.filter(url => url !== photoToRemove.url) || []
       }));
-      toast.success('Photo removed');
+      toast.success(t('Photo removed'));
     }
   };
 
@@ -329,12 +331,12 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
 
   const submitInspection = async (decision: 'PASSED' | 'FAILED') => {
     if (!inspectionResult.notes?.trim()) {
-      toast.error('Please add inspection notes before submitting.');
+      toast.error(t('Please add inspection notes before submitting.'));
       return;
     }
 
     if (decision === 'FAILED' && (!inspectionResult.issues || inspectionResult.issues.length === 0)) {
-      toast.error('Please report at least one issue when failing an inspection.');
+      toast.error(t('Please report at least one issue when failing an inspection.'));
       return;
     }
 
@@ -376,8 +378,8 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         await driverApi.submitPreTripInspection(driverId, cargoId, payload);
         toast.success(
           decision === 'PASSED'
-            ? 'Pre-trip inspection approved!'
-            : 'Inspection failed — shipment blocked pending resolution.',
+            ? t('Pre-trip inspection approved!')
+            : t('Inspection failed — shipment blocked pending resolution.'),
         );
         onInspectionComplete({
           ...(inspectionResult as InspectionResult),
@@ -391,7 +393,7 @@ export const CargoInspection: React.FC<CargoInspectionProps> = ({
         status: decision === 'PASSED' ? 'PASSED' : 'FAILED',
       });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to submit inspection');
+      toast.error(error.response?.data?.message || t('Failed to submit inspection'));
     } finally {
       setSubmitting(false);
     }

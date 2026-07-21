@@ -560,12 +560,12 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                   { label: 'Trip',           value: tripNumber ? `#${tripNumber}` : '—'  },
                   { label: 'Delivered At',   value: form.deliveredAt ? new Date(form.deliveredAt).toLocaleString('en-GB', { dateStyle:'medium', timeStyle:'short' }) : '—' },
                   { label: 'Recipient',      value: form.recipientName || '—'             },
-                  { label: 'Recipient ID',   value: form.recipientIdNumber || 'Not provided' },
-                  { label: 'Company',        value: form.recipientCompany  || 'Not provided' },
-                  { label: 'Cargo Condition',value: CARGO_CONDITIONS.find(c => c.value === form.cargoCondition)?.label || '—' },
-                  { label: 'Photos',         value: `${photos.length} attached`           },
-                  { label: 'GPS',            value: gps ? `${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}` : 'Not available' },
-                  { label: 'Signature',      value: hasSig ? '✓ Captured' : '✗ Required', color: hasSig ? 'text-emerald-600' : 'text-red-500' },
+                  { label: 'Recipient ID',   value: form.recipientIdNumber || t('Not provided') },
+                  { label: 'Company',        value: form.recipientCompany  || t('Not provided') },
+                  { label: 'Cargo Condition',value: CARGO_CONDITIONS.find(c => c.value === form.cargoCondition)?.label ? t(CARGO_CONDITIONS.find(c => c.value === form.cargoCondition)!.label) : '—' },
+                  { label: 'Photos',         value: t('{count} attached', { count: String(photos.length) })           },
+                  { label: 'GPS',            value: gps ? `${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}` : t('Not available') },
+                  { label: 'Signature',      value: hasSig ? t('✓ Captured') : t('✗ Required'), color: hasSig ? 'text-emerald-600' : 'text-red-500' },
                 ].map(row => (
                   <div key={row.label} className="flex justify-between items-center px-4 py-2.5">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={row.label} /></span>

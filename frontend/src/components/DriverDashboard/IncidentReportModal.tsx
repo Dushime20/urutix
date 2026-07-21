@@ -20,6 +20,7 @@ import { driverApi } from '../../services/driverApi';
 import { documentApi } from '../../services/documents/documentApi';
 import { Upload, File } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface IncidentReportModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
   driverId,
   editingIncident 
 }) => {
+  const { tSync: t } = useTranslation();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -63,20 +65,20 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
 
   const handleGetLocation = () => {
     if ("geolocation" in navigator) {
-      toast.loading('Fetching GPS coordinates...', { id: 'gps-fetch' });
+      toast.loading(t('Fetching GPS coordinates...'), { id: 'gps-fetch' });
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           setFormData(prev => ({ ...prev, location: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` }));
-          toast.success('Location tagged successfully!', { id: 'gps-fetch' });
+          toast.success(t('Location tagged successfully!'), { id: 'gps-fetch' });
         },
         (error) => {
           console.error('GPS Error:', error);
-          toast.error('Failed to get location. Please enter manually.', { id: 'gps-fetch' });
+          toast.error(t('Failed to get location. Please enter manually.'), { id: 'gps-fetch' });
         }
       );
     } else {
-      toast.error('Geolocation is not supported by your browser.');
+      toast.error(t('Geolocation is not supported by your browser.'));
     }
   };
 
@@ -107,7 +109,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
           }, selectedFile);
         } catch (uploadError) {
           console.error('Failed to upload document:', uploadError);
-          toast.error('Incident reported, but photo upload failed.');
+          toast.error(t('Incident reported, but photo upload failed.'));
         }
       }
 
@@ -273,7 +275,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                     <textarea 
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder={formData.type === 'expense' ? "What was this fee for? (e.g. Parking, Local Tax)" : "What happened?"}
+                      placeholder={formData.type === 'expense' ? t('What was this fee for? (e.g. Parking, Local Tax)') : t('What happened?')}
                       className="w-full h-32 px-5 py-4 rounded-2xl border border-slate-100 focus:border-[#345E85] focus:outline-none transition-all text-sm font-bold text-[#0f172a] placeholder:text-slate-300 resize-none"
                     />
                   </div>
@@ -305,7 +307,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         className="flex items-center gap-1.5 text-[8px] font-black text-[#345E85] uppercase tracking-widest hover:text-blue-700 transition-colors"
                       >
                         <Navigation size={10} />
-                        Auto-Tag GPS
+                        <TranslatedText text="Auto-Tag GPS" />
                       </button>
                     </div>
                     <div className="relative">
@@ -314,7 +316,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         type="text"
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        placeholder="Current address or coordinates"
+                        placeholder={t('Current address or coordinates')}
                         className="w-full pl-12 pr-5 py-4 rounded-xl border border-slate-100 focus:border-[#345E85] text-sm font-bold text-[#0f172a]"
                       />
                     </div>

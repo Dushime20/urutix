@@ -27,8 +27,7 @@ import { TranslatedText } from '../translated-text';
 import LocationIntelModal from '../Dashboard/Widgets/LocationIntelModal';
 import { CargoHealthModal } from './CargoHealthModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-
-// removed useTranslation to fix lint error
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Trip {
   id: string;
@@ -97,6 +96,7 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
   onOpenRelay,
   hos,
 }) => {
+  const { tSync: t } = useTranslation();
   const { format: formatCurrency } = useCurrencyFormat();
   const [isPaused, setIsPaused] = useState(false);
   const [showIntel, setShowIntel] = useState(false);
@@ -108,7 +108,7 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
     setIsOptimizing(true);
     setTimeout(() => {
       setIsOptimizing(false);
-      toast.success('Path optimized! Found route saving 12 mins.', {
+      toast.success(t('Path optimized! Found route saving 12 mins.'), {
         icon: '🚀',
         style: {
           borderRadius: '20px',

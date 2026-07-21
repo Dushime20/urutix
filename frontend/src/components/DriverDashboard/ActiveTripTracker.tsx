@@ -301,8 +301,8 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
             >
               <Popup>
                 <div className="text-xs space-y-0.5 min-w-[130px]">
-                  <p className="font-black text-[#345E85] uppercase">Your Position</p>
-                  {currentPosition!.speed != null && <p>Speed: <strong>{currentPosition!.speed} km/h</strong></p>}
+                  <p className="font-black text-[#345E85] uppercase"><TranslatedText text="Your Position" /></p>
+                  {currentPosition!.speed != null && <p><TranslatedText text="Speed:" /> <strong>{currentPosition!.speed} km/h</strong></p>}
                   <p className="text-slate-400 text-[10px]">{currentPosition!.latitude.toFixed(5)}, {currentPosition!.longitude.toFixed(5)}</p>
                 </div>
               </Popup>
@@ -317,7 +317,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
             >
               <Popup>
                 <div className="text-xs space-y-0.5 min-w-[140px]">
-                  <p className="font-black text-emerald-600 uppercase tracking-widest">🅐 Start / Pickup</p>
+                  <p className="font-black text-emerald-600 uppercase tracking-widest"><TranslatedText text="Start / Pickup" /></p>
                   <p className="font-semibold text-slate-700">{trip.origin.address}</p>
                   {trip.origin.city && <p className="text-slate-500">{trip.origin.city}</p>}
                 </div>
@@ -333,10 +333,10 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
             >
               <Popup>
                 <div className="text-xs space-y-0.5 min-w-[140px]">
-                  <p className="font-black text-red-600 uppercase tracking-widest">🅑 End / Delivery</p>
+                  <p className="font-black text-red-600 uppercase tracking-widest"><TranslatedText text="End / Delivery" /></p>
                   <p className="font-semibold text-slate-700">{trip.destination.address}</p>
                   {trip.destination.city && <p className="text-slate-500">{trip.destination.city}</p>}
-                  {trip.estimatedArrival && <p className="text-slate-400 text-[10px]">ETA: {new Date(trip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
+                  {trip.estimatedArrival && <p className="text-slate-400 text-[10px]"><TranslatedText text="ETA:" /> {new Date(trip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                 </div>
               </Popup>
             </Marker>

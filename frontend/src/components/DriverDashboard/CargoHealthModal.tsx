@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { TranslatedText } from '../translated-text';
-import { TranslatedText } from '../translated-text';
 
 interface CargoHealthModalProps {
   isOpen: boolean;

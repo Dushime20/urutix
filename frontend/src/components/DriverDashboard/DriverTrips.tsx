@@ -683,7 +683,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 <div className="flex items-center gap-3">
                   <Radio size={18} className="text-emerald-400 animate-pulse" />
                   <span className="text-sm font-black text-white uppercase tracking-widest">
-                    GPS Tracking · #{currentTrip.tripNumber}
+                    <TranslatedText text="GPS Tracking" /> · #{currentTrip.tripNumber}
                   </span>
                 </div>
                 <button
