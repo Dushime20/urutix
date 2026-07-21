@@ -21,11 +21,14 @@ import {
   Package,
   ArrowRight,
   PenLine,
+  ShieldCheck,
+  ListChecks,
 } from 'lucide-react';
 import {
   cargoInspectionApi,
   type ShipmentInspectionOverview,
   type InspectionRecord,
+  type MarkReadyForReInspectionPayload,
 } from '../../../services/cargoInspectionApi';
 import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { cn } from '@/utils/cn';
@@ -57,6 +60,178 @@ function getDocUrl(url: string) {
   if (url.startsWith('http')) return url;
   const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') ?? 'http://localhost:3001';
   return `${base}/${url}`;
+}
+
+function needsResolution(status: string) {
+  return status === 'AWAITING_RESOLUTION' || status === 'FAILED';
+}
+
+function getOpenIssues(history: InspectionRecord[]) {
+  const latestFailed = history.find(
+    (record) => record.decision === 'FAILED' || record.status === 'FAILED',
+  );
+  return (latestFailed?.issues ?? []).filter((issue) => !issue.resolved);
+}
+
+function formatIssueType(type: string) {
+  return type.replace(/_/g, ' ');
+}
+
+function IssueResolutionPanel({
+  issues,
+  resolutionNotes,
+  onResolutionNotesChange,
+  acknowledgedIssues,
+  onToggleIssue,
+  correctiveActions,
+  onCorrectiveActionChange,
+  onSubmit,
+  isPending,
+  compact,
+  className,
+}: {
+  issues: NonNullable<InspectionRecord['issues']>;
+  resolutionNotes: string;
+  onResolutionNotesChange: (value: string) => void;
+  acknowledgedIssues: Set<string>;
+  onToggleIssue: (issueId: string) => void;
+  correctiveActions: Record<string, string>;
+  onCorrectiveActionChange: (issueId: string, value: string) => void;
+  onSubmit: () => void;
+  isPending: boolean;
+  compact?: boolean;
+  className?: string;
+}) {
+  const allAcknowledged =
+    issues.length === 0 || issues.every((issue) => acknowledgedIssues.has(issue.id));
+  const canSubmit = resolutionNotes.trim().length >= 10 && allAcknowledged;
+
+  return (
+    <div className={cn('border border-amber-200 rounded-xl overflow-hidden', className)}>
+      <div className="bg-amber-50 px-4 py-3">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-amber-100 rounded-lg shrink-0">
+            <ShieldCheck className="w-4 h-4 text-amber-700" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-900">Corrective Action Required</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Review each reported issue, document corrective actions taken, then release the shipment for driver re-inspection.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 py-4 space-y-4 bg-white">
+        <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+          <span className={cn('flex items-center gap-1', issues.length > 0 && allAcknowledged ? 'text-amber-700' : '')}>
+            <ListChecks className="w-3.5 h-3.5" /> 1. Acknowledge Issues
+          </span>
+          <ArrowRight className="w-3 h-3" />
+          <span className={cn('flex items-center gap-1', resolutionNotes.trim() ? 'text-amber-700' : '')}>
+            <PenLine className="w-3.5 h-3.5" /> 2. Document Actions
+          </span>
+          <ArrowRight className="w-3 h-3" />
+          <span className={cn('flex items-center gap-1', canSubmit ? 'text-amber-700' : '')}>
+            3. Release for Re-Inspection
+          </span>
+        </div>
+
+        {issues.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              Reported Issues ({issues.length})
+            </p>
+            {issues.map((issue) => {
+              const acknowledged = acknowledgedIssues.has(issue.id);
+              return (
+                <div
+                  key={issue.id}
+                  className={cn(
+                    'rounded-xl border p-3 transition-colors',
+                    acknowledged ? 'border-green-200 bg-green-50/50' : 'border-rose-100 bg-rose-50/40',
+                  )}
+                >
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={acknowledged}
+                      onChange={() => onToggleIssue(issue.id)}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-[#2c5173] focus:ring-[#2c5173]"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-bold text-gray-800">{formatIssueType(issue.type)}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-rose-200 text-rose-800 rounded font-bold">
+                          {issue.severity}
+                        </span>
+                        {acknowledged && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded font-bold">
+                            Acknowledged
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 mt-1">{issue.description}</p>
+                      {issue.actionRequired && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          <span className="font-semibold">Required action: </span>
+                          {issue.actionRequired}
+                        </p>
+                      )}
+                    </div>
+                  </label>
+
+                  {acknowledged && (
+                    <div className="mt-3 ml-7">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                        Corrective action taken
+                      </label>
+                      <input
+                        type="text"
+                        value={correctiveActions[issue.id] ?? ''}
+                        onChange={(e) => onCorrectiveActionChange(issue.id, e.target.value)}
+                        placeholder="e.g. Replaced damaged straps, updated manifest weight..."
+                        className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div>
+          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+            Corrective Action Summary <span className="text-rose-500">*</span>
+          </label>
+          <textarea
+            rows={compact ? 2 : 3}
+            value={resolutionNotes}
+            onChange={(e) => onResolutionNotesChange(e.target.value)}
+            placeholder="Summarize all corrective actions taken. This is recorded in the inspection audit trail and shared with the driver."
+            className="mt-1.5 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+          />
+          <p className="text-[11px] text-gray-400 mt-1">
+            Minimum 10 characters. Include what was corrected and any supporting documentation references.
+          </p>
+        </div>
+
+        {!compact && (
+          <button
+            onClick={onSubmit}
+            disabled={isPending || !canSubmit}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2c5173] hover:bg-[#234261] disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            {isPending
+              ? <><RefreshCw className="w-4 h-4 animate-spin" /> Recording corrective actions…</>
+              : <><Send className="w-4 h-4" /> Release for Driver Re-Inspection</>
+            }
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function TimelineStep({
@@ -333,28 +508,45 @@ function ShipmentDetailModal({
   const qc = useQueryClient();
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [approvalNotes, setApprovalNotes] = useState('');
-  const [showResolutionForm, setShowResolutionForm] = useState(
-    autoOpenAction && shipment.preTrip.workflowStatus === 'AWAITING_RESOLUTION',
-  );
   const [showApprovalForm, setShowApprovalForm] = useState(
     autoOpenAction && shipment.preTrip.workflowStatus === 'AWAITING_CARGO_OWNER_APPROVAL',
   );
-  const [activeTab, setActiveTab] = useState<'timeline' | 'pre' | 'post'>('timeline');
+  const [acknowledgedIssues, setAcknowledgedIssues] = useState<Set<string>>(new Set());
+  const [correctiveActions, setCorrectiveActions] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<'timeline' | 'pre' | 'post'>(
+    autoOpenAction && needsResolution(shipment.preTrip.workflowStatus) ? 'pre' : 'timeline',
+  );
 
-  const canResolve = shipment.preTrip.workflowStatus === 'AWAITING_RESOLUTION';
+  const openIssues = useMemo(
+    () => getOpenIssues(shipment.preTrip.history),
+    [shipment.preTrip.history],
+  );
+
+  const canResolve = needsResolution(shipment.preTrip.workflowStatus);
   const canApprove = shipment.preTrip.workflowStatus === 'AWAITING_CARGO_OWNER_APPROVAL';
+  const isReadyForReInspection = shipment.preTrip.workflowStatus === 'READY_FOR_RE_INSPECTION';
+
+  const allIssuesAcknowledged =
+    openIssues.length === 0 || openIssues.every((issue) => acknowledgedIssues.has(issue.id));
+  const canSubmitResolution = resolutionNotes.trim().length >= 10 && allIssuesAcknowledged;
 
   const resolveMutation = useMutation({
-    mutationFn: (notes: string) =>
-      cargoInspectionApi.markReadyForReInspection(shipment.loadId, notes),
+    mutationFn: (payload: MarkReadyForReInspectionPayload) =>
+      cargoInspectionApi.markReadyForReInspection(shipment.loadId, payload),
     onSuccess: () => {
-      toast.success('Issues marked as resolved. Driver has been notified to re-inspect.');
+      toast.success('Corrective actions recorded. Driver has been notified to re-inspect.');
       setResolutionNotes('');
-      setShowResolutionForm(false);
+      setAcknowledgedIssues(new Set());
+      setCorrectiveActions({});
       qc.invalidateQueries({ queryKey: ['cargoOwnerInspectionOverview'] });
       onClose();
     },
-    onError: () => toast.error('Failed to submit resolution. Please try again.'),
+    onError: (error: { response?: { data?: { message?: string | string[] } } }) => {
+      const message = error.response?.data?.message;
+      toast.error(
+        Array.isArray(message) ? message.join(', ') : message || 'Failed to submit resolution. Please try again.',
+      );
+    },
   });
 
   const approveMutation = useMutation({
@@ -370,12 +562,39 @@ function ShipmentDetailModal({
     onError: () => toast.error('Failed to approve inspection. Please try again.'),
   });
 
+  const toggleIssue = (issueId: string) => {
+    setAcknowledgedIssues((current) => {
+      const next = new Set(current);
+      if (next.has(issueId)) {
+        next.delete(issueId);
+      } else {
+        next.add(issueId);
+      }
+      return next;
+    });
+  };
+
+  const handleCorrectiveActionChange = (issueId: string, value: string) => {
+    setCorrectiveActions((current) => ({ ...current, [issueId]: value }));
+  };
+
   const handleResolve = () => {
-    if (!resolutionNotes.trim()) {
-      toast.error('Please describe what was resolved');
+    if (!canSubmitResolution) {
+      if (!allIssuesAcknowledged) {
+        toast.error('Please acknowledge all reported issues before continuing.');
+        return;
+      }
+      toast.error('Please provide a corrective action summary (minimum 10 characters).');
       return;
     }
-    resolveMutation.mutate(resolutionNotes.trim());
+
+    resolveMutation.mutate({
+      resolutionNotes: resolutionNotes.trim(),
+      resolvedIssues: openIssues.map((issue) => ({
+        issueId: issue.id,
+        correctiveAction: correctiveActions[issue.id]?.trim() || undefined,
+      })),
+    });
   };
 
   const handleApprove = () => {
@@ -400,45 +619,42 @@ function ShipmentDetailModal({
           </button>
         </div>
 
-        {/* Action banner — failed inspection */}
         {canResolve && (
-          <div className="mx-6 mt-4 border border-amber-200 rounded-xl overflow-hidden">
-            <div className="bg-amber-50 px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span className="text-sm font-semibold text-amber-800">Pre-Trip Inspection Failed — Action Required</span>
-              </div>
-              <button
-                onClick={() => setShowResolutionForm((f) => !f)}
-                className="text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded-lg transition-colors"
-              >
-                {showResolutionForm ? 'Cancel' : 'Mark Resolved & Ready for Re-Inspection'}
-              </button>
-            </div>
-            {showResolutionForm && (
-              <div className="px-4 py-3 space-y-3 bg-white">
-                <p className="text-xs text-gray-500">
-                  Describe how you resolved the reported issues. The assigned driver will be notified to perform a re-inspection before the trip can start.
+          <IssueResolutionPanel
+            className="mx-6 mt-4"
+            issues={openIssues}
+            resolutionNotes={resolutionNotes}
+            onResolutionNotesChange={setResolutionNotes}
+            acknowledgedIssues={acknowledgedIssues}
+            onToggleIssue={toggleIssue}
+            correctiveActions={correctiveActions}
+            onCorrectiveActionChange={handleCorrectiveActionChange}
+            onSubmit={handleResolve}
+            isPending={resolveMutation.isPending}
+          />
+        )}
+
+        {isReadyForReInspection && (
+          <div className="mx-6 mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <div className="flex items-start gap-3">
+              <RefreshCw className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-indigo-900">Released for Driver Re-Inspection</p>
+                <p className="text-xs text-indigo-700 mt-1">
+                  Corrective actions were recorded
+                  {shipment.preTrip.readyForReInspectionAt
+                    ? ` on ${new Date(shipment.preTrip.readyForReInspectionAt).toLocaleString()}`
+                    : ''}.
+                  The driver has been notified to perform a new pre-trip inspection.
                 </p>
-                <textarea
-                  rows={3}
-                  value={resolutionNotes}
-                  onChange={(e) => setResolutionNotes(e.target.value)}
-                  placeholder="e.g. Replaced damaged packaging, corrected weight on manifest, uploaded updated Bill of Lading..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
-                />
-                <button
-                  onClick={handleResolve}
-                  disabled={resolveMutation.isPending || !resolutionNotes.trim()}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
-                >
-                  {resolveMutation.isPending
-                    ? <><RefreshCw className="w-4 h-4 animate-spin" /> Submitting…</>
-                    : <><Send className="w-4 h-4" /> Notify Driver — Ready for Re-Inspection</>
-                  }
-                </button>
+                {shipment.preTrip.resolutionNotes && (
+                  <p className="text-xs text-indigo-800 mt-2 bg-white/70 rounded-lg p-2 border border-indigo-100">
+                    <span className="font-semibold">Corrective action summary: </span>
+                    {shipment.preTrip.resolutionNotes}
+                  </p>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -531,7 +747,7 @@ function ShipmentDetailModal({
 
               {shipment.preTrip.resolutionNotes && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100 text-sm text-blue-800">
-                  <span className="font-semibold">Your resolution notes: </span>
+                  <span className="font-semibold">Corrective action summary: </span>
                   {shipment.preTrip.resolutionNotes}
                 </div>
               )}
@@ -566,10 +782,28 @@ function ShipmentDetailModal({
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            Close
-          </button>
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
+          <div className="text-xs text-gray-500">
+            {canResolve && 'Complete corrective actions above to release the driver for re-inspection.'}
+            {canApprove && 'Review the inspection and approve when ready to start shipping.'}
+          </div>
+          <div className="flex items-center gap-2">
+            {canResolve && (
+              <button
+                onClick={handleResolve}
+                disabled={resolveMutation.isPending || !canSubmitResolution}
+                className="px-4 py-2 text-sm font-semibold text-white bg-[#2c5173] hover:bg-[#234261] disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2"
+              >
+                {resolveMutation.isPending
+                  ? <><RefreshCw className="w-4 h-4 animate-spin" /> Submitting…</>
+                  : <><Send className="w-4 h-4" /> Release for Re-Inspection</>
+                }
+              </button>
+            )}
+            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -664,14 +898,45 @@ function InspectionHistoryPanel({
                     </p>
                     <div className="space-y-2">
                       {record.issues.map((issue) => (
-                        <div key={issue.id} className="p-3 bg-rose-50 rounded-lg border border-rose-100">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-rose-700">{issue.type.replace(/_/g, ' ')}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 bg-rose-200 text-rose-800 rounded font-bold">{issue.severity}</span>
+                        <div
+                          key={issue.id}
+                          className={cn(
+                            'p-3 rounded-lg border',
+                            issue.resolved
+                              ? 'bg-green-50 border-green-100'
+                              : 'bg-rose-50 border-rose-100',
+                          )}
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={cn('text-xs font-bold', issue.resolved ? 'text-green-800' : 'text-rose-700')}>
+                              {formatIssueType(issue.type)}
+                            </span>
+                            <span className={cn(
+                              'text-[10px] px-1.5 py-0.5 rounded font-bold',
+                              issue.resolved ? 'bg-green-200 text-green-800' : 'bg-rose-200 text-rose-800',
+                            )}>
+                              {issue.severity}
+                            </span>
+                            {issue.resolved && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded font-bold flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" /> Resolved
+                              </span>
+                            )}
                           </div>
-                          <p className="text-sm text-rose-700 mt-1">{issue.description}</p>
-                          {issue.actionRequired && (
-                            <p className="text-xs text-rose-600 mt-1"><span className="font-semibold">Action: </span>{issue.actionRequired}</p>
+                          <p className={cn('text-sm mt-1', issue.resolved ? 'text-green-800' : 'text-rose-700')}>
+                            {issue.description}
+                          </p>
+                          {issue.actionRequired && !issue.resolved && (
+                            <p className="text-xs text-rose-600 mt-1">
+                              <span className="font-semibold">Action: </span>
+                              {issue.actionRequired}
+                            </p>
+                          )}
+                          {issue.resolved && issue.resolutionNotes && (
+                            <p className="text-xs text-green-700 mt-2 bg-white/60 rounded-lg p-2 border border-green-100">
+                              <span className="font-semibold">Corrective action: </span>
+                              {issue.resolutionNotes}
+                            </p>
                           )}
                         </div>
                       ))}

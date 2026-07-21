@@ -118,10 +118,26 @@ export class SubmitPreTripInspectionDto {
   }>;
 }
 
-export class MarkReadyForReInspectionDto {
+export class ResolvedIssueDto {
+  @IsNotEmpty()
+  @IsString()
+  issueId: string;
+
   @IsOptional()
   @IsString()
-  resolutionNotes?: string;
+  correctiveAction?: string;
+}
+
+export class MarkReadyForReInspectionDto {
+  @IsNotEmpty()
+  @IsString()
+  resolutionNotes: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ResolvedIssueDto)
+  resolvedIssues?: ResolvedIssueDto[];
 }
 
 export class ApprovePreTripInspectionDto {

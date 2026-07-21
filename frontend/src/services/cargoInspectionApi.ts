@@ -67,6 +67,8 @@ export interface ShipmentInspectionOverview {
     lastFailedAt?: string;
     resolutionNotes?: string;
     readyForReInspectionAt?: string;
+    resolvedAt?: string;
+    resolvedById?: string;
     currentAttempt: number;
     historyCount: number;
     requiresAction: boolean;
@@ -79,6 +81,16 @@ export interface ShipmentInspectionOverview {
     history: InspectionRecord[];
   };
   requiresAction: boolean;
+}
+
+export interface ResolvedIssuePayload {
+  issueId: string;
+  correctiveAction?: string;
+}
+
+export interface MarkReadyForReInspectionPayload {
+  resolutionNotes: string;
+  resolvedIssues?: ResolvedIssuePayload[];
 }
 
 export interface CargoInspectionOverviewResponse {
@@ -104,10 +116,8 @@ export const cargoInspectionApi = {
   getPreTripHistory: (loadId: string) =>
     api.get(`/loads-v2/${loadId}/pre-trip-inspection/history`),
 
-  markReadyForReInspection: (loadId: string, resolutionNotes?: string) =>
-    api.patch(`/loads-v2/${loadId}/pre-trip-inspection/ready-for-reinspection`, {
-      resolutionNotes,
-    }),
+  markReadyForReInspection: (loadId: string, payload: MarkReadyForReInspectionPayload) =>
+    api.patch(`/loads-v2/${loadId}/pre-trip-inspection/ready-for-reinspection`, payload),
 
   approvePreTripInspection: (loadId: string, approvalNotes?: string) =>
     api.patch(`/loads-v2/${loadId}/pre-trip-inspection/approve`, {

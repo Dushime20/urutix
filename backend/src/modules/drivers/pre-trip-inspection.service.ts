@@ -28,6 +28,7 @@ import {
   PreTripInspectionIssue,
   PreTripInspectionMetadata,
   PreTripInspectionWorkflowStatus,
+  requiresPreTripOwnerResolution,
 } from './pre-trip-inspection.types';
 import { NotificationService } from '../notifications/notification.service';
 import {
@@ -206,7 +207,7 @@ export class PreTripInspectionService {
           : null;
 
         const requiresAction =
-          workflow.status === PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION ||
+          requiresPreTripOwnerResolution(workflow.status) ||
           workflow.status === PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL;
 
         const assignedDriver = load.assignedTruckId
@@ -245,6 +246,8 @@ export class PreTripInspectionService {
             lastFailedAt: workflow.lastFailedAt,
             resolutionNotes: workflow.resolutionNotes,
             readyForReInspectionAt: workflow.readyForReInspectionAt,
+            resolvedAt: workflow.resolvedAt,
+            resolvedById: workflow.resolvedById,
             currentAttempt: workflow.currentAttempt ?? preTripRecords.length,
             historyCount: preTripRecords.length,
             requiresAction,
@@ -530,19 +533,84 @@ export class PreTripInspectionService {
     await this.assertCanResolveInspection(load, userId);
 
     const workflow = getPreTripInspectionMetadata(load.metadata);
-    if (
-      workflow.status !== PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION
-    ) {
+    if (!requiresPreTripOwnerResolution(workflow.status)) {
       throw new BadRequestException(
-        'Only shipments awaiting resolution can be marked ready for re-inspection.',
+        'Only shipments awaiting corrective action can be released for re-inspection.',
       );
     }
+
+    if (!dto.resolutionNotes?.trim()) {
+      throw new BadRequestException(
+        'Corrective action summary is required before releasing for re-inspection.',
+      );
+    }
+
+    const inspection = workflow.lastInspectionId
+      ? await this.cargoInspectionRepository.findOne({
+          where: { id: workflow.lastInspectionId, loadId },
+        })
+      : (
+          await this.cargoInspectionRepository.find({
+            where: {
+              loadId,
+              inspectionType: CargoInspectionType.PRE_TRIP,
+              decision: InspectionDecision.FAILED,
+            },
+            order: { createdAt: 'DESC' },
+            take: 1,
+          })
+        )[0];
+
+    if (!inspection) {
+      throw new BadRequestException(
+        'No failed inspection record found for this shipment.',
+      );
+    }
+
+    const openIssues = (inspection.issues || []).filter((issue) => !issue.resolved);
+    const resolvedIssueMap = new Map(
+      (dto.resolvedIssues || []).map((item) => [item.issueId, item.correctiveAction]),
+    );
+
+    if (openIssues.length > 0) {
+      const unresolvedIds = openIssues
+        .filter((issue) => !resolvedIssueMap.has(issue.id))
+        .map((issue) => issue.id);
+
+      if (unresolvedIds.length > 0) {
+        throw new BadRequestException(
+          'All reported issues must be acknowledged before releasing for re-inspection.',
+        );
+      }
+    }
+
+    const resolvedAt = new Date().toISOString();
+    const updatedIssues = (inspection.issues || []).map((issue) => {
+      const correctiveAction = resolvedIssueMap.get(issue.id);
+      if (!correctiveAction && !resolvedIssueMap.has(issue.id)) {
+        return issue;
+      }
+
+      return {
+        ...issue,
+        resolved: true,
+        resolutionNotes:
+          correctiveAction?.trim() || dto.resolutionNotes.trim(),
+      };
+    });
+
+    await this.cargoInspectionRepository.update(inspection.id, {
+      issues: updatedIssues,
+      updatedAt: new Date(),
+    });
 
     const nextWorkflow: PreTripInspectionMetadata = {
       ...workflow,
       status: PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION,
-      resolutionNotes: dto.resolutionNotes,
-      readyForReInspectionAt: new Date().toISOString(),
+      resolutionNotes: dto.resolutionNotes.trim(),
+      readyForReInspectionAt: resolvedAt,
+      resolvedAt,
+      resolvedById: userId,
     };
 
     await this.loadRepository.update(loadId, {
@@ -554,12 +622,15 @@ export class PreTripInspectionService {
       updatedAt: new Date(),
     });
 
-    await this.notifyReadyForReInspection(load, dto.resolutionNotes, userId);
+    await this.notifyReadyForReInspection(load, dto.resolutionNotes.trim(), userId);
 
     return {
       loadId,
       workflowStatus: nextWorkflow.status,
-      message: 'Shipment marked ready for re-inspection.',
+      inspectionId: inspection.id,
+      resolvedIssueCount: openIssues.length,
+      message:
+        'Corrective actions recorded. Driver has been notified to perform re-inspection.',
     };
   }
 

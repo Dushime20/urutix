@@ -30,6 +30,8 @@ export interface PreTripInspectionMetadata {
   lastFailedAt?: string;
   resolutionNotes?: string;
   readyForReInspectionAt?: string;
+  resolvedById?: string;
+  resolvedAt?: string;
 }
 
 export interface PreTripInspectionIssue {
@@ -61,7 +63,14 @@ export function getPreTripInspectionMetadata(
 ): PreTripInspectionMetadata {
   const stored = metadata?.preTripInspection;
   if (stored?.status) {
-    return stored as PreTripInspectionMetadata;
+    const result = stored as PreTripInspectionMetadata;
+    if (result.status === PreTripInspectionWorkflowStatus.FAILED) {
+      return {
+        ...result,
+        status: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION,
+      };
+    }
+    return result;
   }
 
   // Backward compatibility with legacy metadata.inspectionStatus
@@ -71,12 +80,25 @@ export function getPreTripInspectionMetadata(
       return { status: PreTripInspectionWorkflowStatus.APPROVED };
     }
     if (legacyResult?.status === 'FAILED') {
-      return { status: PreTripInspectionWorkflowStatus.FAILED };
+      return { status: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION };
     }
     return { status: PreTripInspectionWorkflowStatus.APPROVED };
   }
 
+  if (metadata?.inspectionStatus === 'FAILED') {
+    return { status: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION };
+  }
+
   return { status: PreTripInspectionWorkflowStatus.PENDING };
+}
+
+export function requiresPreTripOwnerResolution(
+  status: PreTripInspectionWorkflowStatus,
+): boolean {
+  return (
+    status === PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION ||
+    status === PreTripInspectionWorkflowStatus.FAILED
+  );
 }
 
 export function isPreTripInspectionApproved(
