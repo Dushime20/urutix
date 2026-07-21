@@ -3,6 +3,8 @@ import { Bar } from 'react-chartjs-2';
 import { Award, Target, Shield, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -28,6 +30,7 @@ interface DriverPerformanceChartProps {
 }
 
 export const DriverPerformanceChart: React.FC<DriverPerformanceChartProps> = ({ data, isLoading }) => {
+  const { tSync: t } = useTranslation();
   if (isLoading) {
     return <div className="bg-transparent p-6 sm:p-8 animate-pulse h-full min-h-[350px]" />;
   }
@@ -36,8 +39,8 @@ export const DriverPerformanceChart: React.FC<DriverPerformanceChartProps> = ({ 
     return (
       <div className="bg-transparent p-6 sm:p-8 h-full min-h-[350px] flex flex-col items-center justify-center gap-3">
         <Activity size={32} className="text-slate-300" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No performance data yet</p>
-        <p className="text-xs text-slate-300">Complete trips to build your score</p>
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="No performance data yet" /></p>
+        <p className="text-xs text-slate-300"><TranslatedText text="Complete trips to build your score" /></p>
       </div>
     );
   }
@@ -57,20 +60,27 @@ export const DriverPerformanceChart: React.FC<DriverPerformanceChartProps> = ({ 
     : 0;
 
   const getPerformanceLevel = (score: number) => {
-    if (score >= 90) return { label: 'Elite',   color: 'text-emerald-600', bgColor: 'bg-emerald-50' };
-    if (score >= 80) return { label: 'Good',    color: 'text-[#2b5271]',  bgColor: 'bg-slate-100'    };
-    if (score >= 70) return { label: 'Average', color: 'text-amber-600',  bgColor: 'bg-amber-50'   };
-    if (score > 0)   return { label: 'Low',     color: 'text-rose-600',   bgColor: 'bg-rose-50'    };
-    return               { label: 'No Data',  color: 'text-slate-400',  bgColor: 'bg-slate-100'   };
+    if (score >= 90) return { label: t('Elite'),   color: 'text-emerald-600', bgColor: 'bg-emerald-50' };
+    if (score >= 80) return { label: t('Good'),    color: 'text-[#2b5271]',  bgColor: 'bg-slate-100'    };
+    if (score >= 70) return { label: t('Average'), color: 'text-amber-600',  bgColor: 'bg-amber-50'   };
+    if (score > 0)   return { label: t('Low'),     color: 'text-rose-600',   bgColor: 'bg-rose-50'    };
+    return               { label: t('No Data'),  color: 'text-slate-400',  bgColor: 'bg-slate-100'   };
   };
 
   const performanceLevel = getPerformanceLevel(overallScore);
 
   const chartConfig = {
-    labels: ['ON-TIME DELIVERY', 'SAFETY INTEGRITY', 'CUSTOMER RATING', 'FUEL EFFICIENCY', 'LOAD UTILIZATION', 'RESPONSE TIME'],
+    labels: [
+      t('ON-TIME DELIVERY'),
+      t('SAFETY INTEGRITY'),
+      t('CUSTOMER RATING'),
+      t('FUEL EFFICIENCY'),
+      t('LOAD UTILIZATION'),
+      t('RESPONSE TIME'),
+    ],
     datasets: [
       {
-        label: 'Metric Grade (%)',
+        label: t('Metric Grade (%)'),
         data: [data.onTimeDelivery, data.safetyScore, data.customerRating, data.fuelEfficiency, data.loadUtilization, data.responseTime],
         backgroundColor: '#2b5271',
         hoverBackgroundColor: '#0f172a',
@@ -118,8 +128,8 @@ export const DriverPerformanceChart: React.FC<DriverPerformanceChartProps> = ({ 
             <Activity size={24} />
           </div>
           <div>
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Performance Analytics</h3>
-            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Driver Score</p>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1"><TranslatedText text="Performance Analytics" /></h3>
+            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Driver Score" /></p>
           </div>
         </div>
 
@@ -132,7 +142,7 @@ export const DriverPerformanceChart: React.FC<DriverPerformanceChartProps> = ({ 
               {overallScore > 0 ? `${overallScore}%` : '—'}
             </div>
             <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-              {performanceLevel.label} Status
+              {performanceLevel.label} <TranslatedText text="Status" />
             </div>
           </div>
         </div>

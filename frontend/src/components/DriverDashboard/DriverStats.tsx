@@ -12,6 +12,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
 
 interface DriverStatsProps {
   stats?: {
@@ -156,10 +157,10 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Performance Overview</h2>
+        <h2 className="text-xl font-semibold text-gray-900"><TranslatedText text="Performance Overview" /></h2>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
           <Calendar className="w-4 h-4" />
-          <span>This Month</span>
+          <span><TranslatedText text="This Month" /></span>
         </div>
       </div>
 
@@ -177,16 +178,16 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
                 <div className={`text-sm font-medium ${colors.change}`}>
                   {stat.changeType === 'positive' && <TrendingUp className="w-4 h-4 inline mr-1" />}
                   {stat.changeType === 'negative' && <TrendingDown className="w-4 h-4 inline mr-1" />}
-                  {stat.change}
+                  {stat.change.startsWith('+') || stat.change.startsWith('-') ? stat.change : <TranslatedText text={stat.change} />}
                 </div>
               </div>
               
               <div className="mb-2">
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <p className="text-sm font-medium text-gray-600"><TranslatedText text={stat.title} /></p>
               </div>
               
-              <p className="text-xs text-gray-500">{stat.description}</p>
+              <p className="text-xs text-gray-500"><TranslatedText text={stat.description} /></p>
             </div>
           );
         })}
@@ -195,10 +196,10 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Progress</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4"><TranslatedText text="Weekly Progress" /></h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Hours Target</span>
+              <span className="text-sm text-gray-600"><TranslatedText text="Hours Target" /></span>
               <span className="text-sm font-medium text-gray-900">40h / 40h</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -216,24 +217,24 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Safety Alerts</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4"><TranslatedText text="Safety Alerts" /></h3>
           <div className="space-y-3">
             {currentStats.consecutiveDrivingHours > 8 && (
               <div className="flex items-center space-x-2 text-yellow-600">
                 <AlertTriangle className="w-4 h-4" />
-                <span className="text-sm">Approaching driving time limit</span>
+                <span className="text-sm"><TranslatedText text="Approaching driving time limit" /></span>
               </div>
             )}
             {currentStats.safetyScore < 80 && (
               <div className="flex items-center space-x-2 text-red-600">
                 <AlertTriangle className="w-4 h-4" />
-                <span className="text-sm">Safety score needs improvement</span>
+                <span className="text-sm"><TranslatedText text="Safety score needs improvement" /></span>
               </div>
             )}
             {currentStats.consecutiveDrivingHours <= 8 && currentStats.safetyScore >= 80 && (
               <div className="flex items-center space-x-2 text-green-600">
                 <CheckCircle className="w-4 h-4" />
-                <span className="text-sm">All safety metrics are good</span>
+                <span className="text-sm"><TranslatedText text="All safety metrics are good" /></span>
               </div>
             )}
           </div>

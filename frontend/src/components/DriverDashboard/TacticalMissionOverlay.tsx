@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface TacticalMissionOverlayProps {
   currentTrip: any;
@@ -24,29 +26,30 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
   onFocusMission,
   onQuickAction 
 }) => {
+  const { tSync: t } = useTranslation();
   if (!currentTrip) return null;
 
   const metrics = [
     { 
-      label: 'ETA', 
+      label: t('ETA'), 
       value: '14:45', 
       icon: Clock, 
       color: 'text-[#2b5271]',
-      description: 'Scheduled arrival'
+      description: t('Scheduled arrival')
     },
     { 
-      label: 'Remaining', 
+      label: t('Remaining'), 
       value: `${currentTrip.distance || 0} KM`, 
       icon: MapPin, 
       color: 'text-emerald-500',
-      description: 'Distance to Target'
+      description: t('Distance to Target')
     },
     { 
-      label: 'Cargo Health', 
-      value: 'OPTIMAL', 
+      label: t('Cargo Health'), 
+      value: t('OPTIMAL'), 
       icon: Activity, 
       color: 'text-amber-500',
-      description: 'Sensors nominal'
+      description: t('Sensors nominal')
     }
   ];
 
@@ -71,7 +74,7 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-black text-[#2b5271] uppercase tracking-[0.3em]">Active Mission</p>
+                  <p className="text-[10px] font-black text-[#2b5271] uppercase tracking-[0.3em]"><TranslatedText text="Active Mission" /></p>
                   <span className="h-1 w-1 rounded-full bg-[#2b5271]/30" />
                   <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">{currentTrip.tripNumber}</p>
                 </div>
@@ -106,7 +109,7 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
               <button 
                 onClick={() => onQuickAction?.('report')}
                 className="h-12 w-12 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-2xl flex items-center justify-center text-rose-500 transition-all active:scale-95 group"
-                title="Report Incident / Fault"
+                title={t('Report Incident / Fault')}
               >
                 <AlertTriangle size={20} className="group-hover:scale-110 transition-transform" />
               </button>
@@ -116,13 +119,13 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
                 className="flex-1 md:flex-none h-12 px-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
               >
                 <Focus size={16} />
-                Focus
+                <TranslatedText text="Focus" />
               </button>
               
               <button 
                 onClick={() => onQuickAction?.('refuel')}
                 className="h-12 w-12 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-2xl flex items-center justify-center text-amber-500 transition-all active:scale-95 group"
-                title="Quick Refuel"
+                title={t('Quick Refuel')}
               >
                 <Zap size={20} className="group-hover:scale-110 transition-transform" />
               </button>
@@ -132,7 +135,7 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
                 className="h-12 px-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
               >
                 <ShieldCheck size={18} />
-                Complete
+                <TranslatedText text="Complete" />
               </button>
             </div>
 

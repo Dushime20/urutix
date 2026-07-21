@@ -3,6 +3,8 @@ import { Line } from 'react-chartjs-2';
 import { TrendingUp, Zap, BarChart3, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -41,6 +43,7 @@ interface DriverEarningsChartProps {
 }
 
 export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, isLoading }) => {
+  const { tSync: t } = useTranslation();
   const { format: formatCurrency } = useCurrencyFormat();
   if (isLoading) {
     return <div className="bg-transparent p-6 sm:p-8 h-full min-h-[350px]" />;
@@ -50,8 +53,8 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
     return (
       <div className="bg-transparent p-6 sm:p-8 h-full min-h-[350px] flex flex-col items-center justify-center gap-3">
         <Zap size={32} className="text-slate-300" />
-        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No earnings data yet</p>
-        <p className="text-xs text-slate-300">Complete trips to see your revenue chart</p>
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="No earnings data yet" /></p>
+        <p className="text-xs text-slate-300"><TranslatedText text="Complete trips to see your revenue chart" /></p>
       </div>
     );
   }
@@ -64,7 +67,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
     labels: data.labels,
     datasets: [
       {
-        label: 'Earnings',
+        label: t('Earnings'),
         data: data.earnings,
         borderColor: '#2b5271',
         backgroundColor: 'transparent',
@@ -124,8 +127,8 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
             <Zap size={24} />
           </div>
           <div>
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">Financial Analytics</h3>
-            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight">Revenue Over Time</p>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1"><TranslatedText text="Financial Analytics" /></h3>
+            <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Revenue Over Time" /></p>
           </div>
         </div>
 
@@ -136,7 +139,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
           <div className="flex items-center justify-end gap-2 mt-1">
             <div className="flex items-center gap-1 text-[#2b5271] text-[9px] font-black uppercase tracking-widest">
               <TrendingUp size={10} />
-              Live Data
+              <TranslatedText text="Live Data" />
             </div>
           </div>
         </div>
@@ -151,7 +154,7 @@ export const DriverEarningsChart: React.FC<DriverEarningsChartProps> = ({ data, 
           <div key={stat.label} className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2 text-[#2b5271]">
               <stat.icon size={12} />
-              <p className="text-[8px] font-black uppercase tracking-widest text-[#2b5271]">{stat.label}</p>
+              <p className="text-[8px] font-black uppercase tracking-widest text-[#2b5271]"><TranslatedText text={stat.label} /></p>
             </div>
             <p className="text-lg font-black text-[#0f172a] tracking-tight">{stat.value}</p>
           </div>

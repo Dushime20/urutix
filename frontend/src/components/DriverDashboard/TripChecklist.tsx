@@ -5,6 +5,7 @@ import {
   VehiclePreTripChecklist,
   useVehicleChecklist,
 } from './VehiclePreTripChecklist';
+import { TranslatedText } from '../translated-text';
 
 interface TripChecklistProps {
   isOpen: boolean;
@@ -40,9 +41,9 @@ export const TripChecklist: React.FC<TripChecklistProps> = ({ isOpen, onClose, o
               <ClipboardCheck className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-xl font-black uppercase tracking-tight">Pre-Trip Checklist</h3>
+              <h3 className="text-xl font-black uppercase tracking-tight"><TranslatedText text="Pre-Trip Checklist" /></h3>
               <p className="text-blue-100/70 text-[10px] font-black uppercase tracking-widest">
-                Verification for Trip #{tripId.slice(0, 8)}
+                <TranslatedText text="Verification for Trip #" />{tripId.slice(0, 8)}
               </p>
             </div>
           </div>
@@ -63,14 +64,14 @@ export const TripChecklist: React.FC<TripChecklistProps> = ({ isOpen, onClose, o
             onClick={onClose}
             className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white hover:text-slate-600 transition-all"
           >
-            Cancel
+            <TranslatedText text="Cancel" />
           </button>
           <button
             onClick={onConfirm}
             disabled={!allRequiredChecked}
             className="flex-[2] h-14 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/10 hover:bg-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >
-            Confirm & Continue
+            <TranslatedText text="Confirm & Continue" />
           </button>
         </div>
       </motion.div>

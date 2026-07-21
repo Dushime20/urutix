@@ -19,6 +19,8 @@ import { useQuery } from '@tanstack/react-query';
 import { driverApi } from '../../services/driverApi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface SafetyMetricsProps {
   driverId: string;
@@ -65,12 +67,15 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
   driverId,
   onReportIncident 
 }) => {
+  const { tSync: t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [showIncidents, setShowIncidents] = useState(false);
   const [showTripHistory, setShowTripHistory] = useState(false);
+  const [showViolations, setShowViolations] = useState(false);
+  const [showCertifications, setShowCertifications] = useState(false);
 
   // Fetch driver data
-  const { data: driverData } = useQuery({
+  const { data: driverData, isLoading } = useQuery({
     queryKey: ['driver-details', driverId],
     queryFn: () => driverApi.getDriver(driverId),
     enabled: !!driverId,
@@ -105,16 +110,16 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
   const trips = tripHistory || [];
   const breaks = breaksData?.breaks || [];
 
-  const data = safetyData || {
-    overallScore: 0,
-    drivingScore: 0,
-    complianceScore: 0,
-    vehicleScore: 0,
+  const data: SafetyData = {
+    overallScore: Number(driver?.safetyScore ?? 0),
+    drivingScore: Number(driver?.safetyScore ?? 0),
+    complianceScore: Number(driver?.complianceScore ?? 0),
+    vehicleScore: Number(driver?.vehicleScore ?? 0),
     lastUpdated: new Date().toISOString(),
     trends: [],
     violations: [],
     certifications: [],
-    inspections: []
+    inspections: [],
   };
 
   const getScoreColor = (_score: number) => {
@@ -192,17 +197,17 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
               onChange={(e) => setSelectedPeriod(e.target.value as any)}
               className="h-10 pl-4 pr-10 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
             >
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
+              <option value="week">{t('This Week')}</option>
+              <option value="month">{t('This Month')}</option>
+              <option value="quarter">{t('This Quarter')}</option>
+              <option value="year">{t('This Year')}</option>
             </select>
             <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
           </div>
 
           <button className="h-10 px-4 bg-[#345E85] text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#2a4b6d] transition-all flex items-center gap-2 shadow-lg shadow-blue-900/10">
             <Download className="w-4 h-4" />
-            <span>Export</span>
+            <span><TranslatedText text="Export" /></span>
           </button>
         </div>
       </div>
@@ -218,17 +223,17 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Hours of Service</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Hours of Service" /></span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-              <h3 className="text-xl font-black uppercase tracking-tight text-[#0f172a]">Mission Readiness</h3>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none mt-1">Status: Operational</p>
+              <h3 className="text-xl font-black uppercase tracking-tight text-[#0f172a]"><TranslatedText text="Mission Readiness" /></h3>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none mt-1"><TranslatedText text="Status: Operational" /></p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 lg:gap-6">
             <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-center min-w-[120px]">
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Driving Today</p>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Driving Today" /></p>
               <p className="text-xl font-black text-[#0f172a]">4.5<span className="text-[10px] text-slate-400 ml-0.5 uppercase tracking-tighter">h</span></p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
                 <div className="bg-[#345E85] h-full w-[40%]" />
@@ -236,9 +241,9 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             </div>
 
             <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-center min-w-[120px]">
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Consecutive</p>
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Consecutive" /></p>
               <p className="text-xl font-black text-[#0f172a]">2.8<span className="text-[10px] text-slate-400 ml-0.5 uppercase tracking-tighter">h</span></p>
-              <p className="text-[8px] font-black text-amber-600 uppercase mt-2 tracking-widest">Break in 1.2h</p>
+              <p className="text-[8px] font-black text-amber-600 uppercase mt-2 tracking-widest"><TranslatedText text="Break in 1.2h" /></p>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -246,28 +251,28 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
                 onClick={async () => {
                    try {
                      await driverApi.startBreak(driverId);
-                     toast.success('Break started');
+                     toast.success(t('Break started'));
                    } catch {
-                     toast.error('Failed to start break');
+                     toast.error(t('Failed to start break'));
                    }
                 }}
                 className="h-11 px-6 bg-[#345E85] hover:bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
               >
                 <Clock size={14} />
-                Start Break
+                <TranslatedText text="Start Break" />
               </button>
               <button 
                 onClick={async () => {
                   try {
                     await driverApi.endBreak(driverId);
-                    toast.success('Break ended');
+                    toast.success(t('Break ended'));
                   } catch {
-                    toast.error('Failed to end break');
+                    toast.error(t('Failed to end break'));
                   }
                }}
                 className="h-9 px-6 bg-white hover:bg-slate-50 text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 active:scale-95 border border-slate-100"
               >
-                End Break
+                <TranslatedText text="End Break" />
               </button>
             </div>
           </div>
@@ -290,11 +295,11 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             <div className="flex items-center gap-2">
               <h3 className={`text-3xl font-black tracking-tight ${getScoreColor(data.overallScore)}`}>{data.overallScore}</h3>
               <span className={`px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${getScoreBgColor(data.overallScore)}`}>
-                {data.overallScore >= 90 ? 'Excellent' : 'Good'}
+                {data.overallScore >= 90 ? t('Excellent') : t('Good')}
               </span>
             </div>
-            <p className="text-sm font-bold text-[#345E85]">Overall Score</p>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Safety Index</p>
+            <p className="text-sm font-bold text-[#345E85]"><TranslatedText text="Overall Score" /></p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text="Safety Index" /></p>
           </div>
         </motion.div>
 

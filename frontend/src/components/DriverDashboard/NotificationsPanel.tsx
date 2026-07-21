@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import {
-  Bell,
-  X
-} from 'lucide-react';
+import { Bell, X } from 'lucide-react';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 interface Notification {
   id: string;
@@ -24,11 +23,11 @@ interface NotificationsPanelProps {
 }
 
 export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, loading, onClose }) => {
+  const { tSync: t } = useTranslation();
   const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('ALL');
 
   const currentNotifications = notifications || [];
 
-  // Filter logic
   const filteredNotifications = currentNotifications.filter(notification => {
     if (filter === 'ALL') return true;
     if (filter === 'UNREAD') return !notification.read;
@@ -47,11 +46,12 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
 
   return (
     <div className="bg-white rounded-[1.5rem] shadow-xl overflow-hidden flex flex-col max-h-[600px] w-full max-w-md mx-auto">
-      {/* Header */}
       <div className="px-6 py-5 border-b border-gray-100 flex items-start justify-between bg-white relative">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
-          <p className="text-sm text-gray-500 mt-0.5">You have {unreadCount} unread notifications</p>
+          <h2 className="text-xl font-bold text-gray-900"><TranslatedText text="Notifications" /></h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {t('You have {count} unread notifications', { count: String(unreadCount) })}
+          </p>
         </div>
         {onClose && (
           <button
@@ -63,7 +63,6 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
         )}
       </div>
 
-      {/* Tabs */}
       <div className="px-6 py-4 flex gap-3 border-b border-gray-50">
         <button
           onClick={() => setFilter('ALL')}
@@ -72,7 +71,7 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
             : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
         >
-          All
+          <TranslatedText text="All" />
         </button>
         <button
           onClick={() => setFilter('UNREAD')}
@@ -81,20 +80,19 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
             : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
         >
-          Unread
+          <TranslatedText text="Unread" />
         </button>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto min-h-[300px]">
         {filteredNotifications.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-8 text-center">
             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
               <Bell className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">No notifications</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2"><TranslatedText text="No notifications" /></h3>
             <p className="text-gray-500 max-w-[200px]">
-              You're all caught up! Check back later for updates.
+              <TranslatedText text="You're all caught up! Check back later for updates." />
             </p>
           </div>
         ) : (
@@ -120,10 +118,9 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
         )}
       </div>
 
-      {/* Footer */}
       <div className="p-4 border-t border-gray-100">
         <button className="w-full py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
-          View All Notifications
+          <TranslatedText text="View All Notifications" />
         </button>
       </div>
     </div>

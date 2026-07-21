@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RouteIntelligenceService } from '../../services/routeIntelligence';
 import type { RouteInsight } from '../../services/routeIntelligence';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet icons
@@ -38,6 +40,7 @@ interface DriverRouteMapProps {
 }
 
 export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
+  const { tSync: t } = useTranslation();
   const [insight, setInsight] = useState<RouteInsight | null>(null);
   const [activeLayer, setActiveLayer] = useState<'standard' | 'traffic' | 'weather'>('standard');
   const [showIntel, setShowIntel] = useState(true);
@@ -86,7 +89,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
               liveLocation ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-rose-500"
             )} />
             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-              {liveLocation ? 'GPS Online' : 'Signal Lost'}
+              {liveLocation ? t('GPS Online') : t('Signal Lost')}
             </span>
          </div>
       </div>
@@ -145,9 +148,9 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
       <div className="absolute top-8 left-8 z-10 flex flex-col gap-4">
          <div className="flex bg-white/90 backdrop-blur-xl p-2 rounded-2xl border border-white/20 shadow-2xl shadow-slate-900/10">
             {([
-               { id: 'standard', icon: Layers, label: 'Standard' },
-               { id: 'traffic', icon: TrendingDown, label: 'Traffic' },
-               { id: 'weather', icon: CloudRain, label: 'Weather' }
+               { id: 'standard', icon: Layers, label: t('Standard') },
+               { id: 'traffic', icon: TrendingDown, label: t('Traffic') },
+               { id: 'weather', icon: CloudRain, label: t('Weather') }
             ] as const).map((layer) => (
                <button
                   key={layer.id}
@@ -174,7 +177,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
             )}
          >
             <Navigation size={14} className={cn(followGPS && "fill-blue-600")} />
-            {followGPS ? 'Auto-Following' : 'Follow Me'}
+            {followGPS ? t('Auto-Following') : t('Follow Me')}
          </button>
       </div>
 
@@ -287,7 +290,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
             <Info size={24} />
          </button>
          <button className="h-14 px-8 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl flex items-center gap-3">
-            <Navigation size={18} fill="white" /> Begin Navigation
+            <Navigation size={18} fill="white" /> <TranslatedText text="Begin Navigation" />
          </button>
       </div>
 

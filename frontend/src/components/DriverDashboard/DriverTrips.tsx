@@ -22,11 +22,14 @@ import {
   History,
   Filter,
   RefreshCw,
-  Fuel
+  Fuel,
+  Radio,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 import FuelEntryModal from '../FleetDashboard/Fuel/FuelEntryModal';
 import { ActiveTripTracker } from './ActiveTripTracker';
 import { useAuth } from '../../contexts/AuthContext';
@@ -45,6 +48,7 @@ interface TripStats {
 }
 
 const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
+  const { tSync: t } = useTranslation();
   const { compact: fmtMoney } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -113,7 +117,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] });
-      toast.success('Trip started successfully');
+      toast.success(t('Trip started successfully'));
     },
     onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
@@ -122,7 +126,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
     mutationFn: (tripId: string) => driverApi.pauseTrip(tripId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
-      toast.success('Trip paused');
+      toast.success(t('Trip paused'));
     },
     onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
@@ -131,7 +135,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
     mutationFn: (tripId: string) => driverApi.resumeTrip(tripId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
-      toast.success('Trip resumed');
+      toast.success(t('Trip resumed'));
     },
     onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
@@ -141,7 +145,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
-      toast.success('Trip completed successfully');
+      toast.success(t('Trip completed successfully'));
     },
     onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
@@ -230,7 +234,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
         variants[status?.toLowerCase()] || 'bg-slate-50 text-slate-500 border-slate-100'
       )}>
         <span className="w-1.5 h-1.5 rounded-full bg-current" />
-        {status?.replace('_', ' ')}
+        {status?.replace('_', ' ') ? <TranslatedText text={status.replace('_', ' ')} /> : null}
       </span>
     );
   };
@@ -242,8 +246,8 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight">Trip <span className="text-primary-500">Command</span></h1>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Real-time fleet operations & dispatching</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Trip" /> <span className="text-primary-500"><TranslatedText text="Command" /></span></h1>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Real-time fleet operations & dispatching" /></p>
         </div>
 
         <button
@@ -251,12 +255,12 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
             queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
             queryClient.invalidateQueries({ queryKey: ['driver-upcoming-trips'] });
             queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
-            toast.success('System synchronization complete');
+            toast.success(t('System synchronization complete'));
           }}
           className="px-6 py-3 bg-white border border-slate-100 text-slate-600 rounded-xl hover:bg-slate-50 hover:text-primary-500 transition-colors flex items-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-sm"
         >
           <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
-          <span>Sync Data</span>
+          <span><TranslatedText text="Sync Data" /></span>
         </button>
       </div>
 
@@ -277,7 +281,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 <stat.icon className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text={stat.label} /></p>
                 <p className="text-2xl font-black text-[#0f172a] tracking-tight">{stat.value}</p>
               </div>
             </div>
@@ -298,12 +302,12 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight">Current Mission</h3>
+                    <h3 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Current Mission" /></h3>
                     <span className="px-3 py-1 bg-primary-100 text-primary-600 text-[10px] font-black uppercase tracking-widest rounded-full">
-                      In Progress
+                      <TranslatedText text="In Progress" />
                     </span>
                   </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Protocol ID: #{currentTrip.tripNumber}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Protocol ID:" /> #{currentTrip.tripNumber}</p>
                 </div>
               </div>
 
@@ -314,13 +318,13 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                       onClick={() => handleTripAction(currentTrip.id, 'pause')}
                       className="px-5 py-3 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-sm"
                     >
-                      <Pause className="w-4 h-4" /> Pause
+                      <Pause className="w-4 h-4" /> <TranslatedText text="Pause" />
                     </button>
                     <button
                       onClick={() => handleTripAction(currentTrip.id, 'complete')}
                       className="px-5 py-3 bg-primary-500 text-white hover:bg-primary-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-md shadow-primary-200"
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Complete
+                      <CheckCircle2 className="w-4 h-4" /> <TranslatedText text="Complete" />
                     </button>
                   </>
                 ) : (
@@ -328,21 +332,21 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                     onClick={() => handleTripAction(currentTrip.id, 'resume')}
                     className="px-5 py-3 bg-primary-500 text-white hover:bg-primary-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-md shadow-primary-200"
                   >
-                    <Play className="w-4 h-4" /> Resume
+                    <Play className="w-4 h-4" /> <TranslatedText text="Resume" />
                   </button>
                 )}
                 <button
                   onClick={() => setShowFuelModal(true)}
                   className="px-5 py-3 bg-amber-500 text-white hover:bg-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-md shadow-amber-200"
                 >
-                  <Fuel className="w-4 h-4" /> Record Fuel
+                  <Fuel className="w-4 h-4" /> <TranslatedText text="Record Fuel" />
                 </button>
                 {/* Live Tracking button — shows the GPS map for this active trip */}
                 <button
                   onClick={() => setShowLiveTracker(true)}
                   className="px-5 py-3 bg-[#345E85] text-white hover:bg-[#0f172a] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-md"
                 >
-                  <Radio className="w-4 h-4 animate-pulse" /> Live Map
+                  <Radio className="w-4 h-4 animate-pulse" /> <TranslatedText text="Live Map" />
                 </button>
               </div>
             </div>
@@ -399,7 +403,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary-500 transition-colors" />
             <input
               type="text"
-              placeholder="SEARCH TRIP DATA..."
+              placeholder={t('SEARCH TRIP DATA...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:bg-white transition-all placeholder:text-slate-300"
@@ -413,11 +417,11 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="pl-6 pr-10 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer hover:bg-slate-50 transition-all min-w-[160px] appearance-none"
               >
-                <option value="all">Status: ALL</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="in_progress">Active</option>
-                <option value="completed">Complete</option>
-                <option value="cancelled">Voided</option>
+                <option value="all">{t('Status: ALL')}</option>
+                <option value="scheduled">{t('Scheduled')}</option>
+                <option value="in_progress">{t('Active')}</option>
+                <option value="completed">{t('Complete')}</option>
+                <option value="cancelled">{t('Voided')}</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <Filter className="w-3 h-3 text-slate-400" />
@@ -430,10 +434,10 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="pl-6 pr-10 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer hover:bg-slate-50 transition-all min-w-[160px] appearance-none"
               >
-                <option value="createdAt">Newest First</option>
-                <option value="startTime">Start Time</option>
-                <option value="distance">Distance</option>
-                <option value="revenue">Revenue</option>
+                <option value="createdAt">{t('Newest First')}</option>
+                <option value="startTime">{t('Start Time')}</option>
+                <option value="distance">{t('Distance')}</option>
+                <option value="revenue">{t('Revenue')}</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <TrendingUp className="w-3 h-3 text-slate-400" />
@@ -448,34 +452,34 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <RefreshCw className="w-8 h-8 text-primary-500 animate-spin" />
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loading Data...</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Loading Data..." /></span>
           </div>
         ) : filteredAndSortedTrips.length === 0 ? (
           <div className="bg-white rounded-[2rem] border border-slate-100 dashed border-2 p-12 text-center shadow-none flex flex-col items-center justify-center">
             <div className="w-20 h-20 bg-slate-50 rounded-[1.5rem] flex items-center justify-center mb-6">
               <Navigation className="w-8 h-8 text-slate-300" />
             </div>
-            <h3 className="text-xl font-black text-primary-900 uppercase tracking-tight mb-2">No Data Detected</h3>
+            <h3 className="text-xl font-black text-primary-900 uppercase tracking-tight mb-2"><TranslatedText text="No Data Detected" /></h3>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
               {searchTerm || statusFilter !== 'all'
-                ? 'Adjust filters to locate records.'
-                : 'No active transit records found.'}
+                ? t('Adjust filters to locate records.')
+                : t('No active transit records found.')}
             </p>
             <div className="mt-6">
               <button
                 onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
                 className="px-6 py-3 bg-primary-50 text-primary-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-100 transition-colors"
               >
-                Reset Filters
+                <TranslatedText text="Reset Filters" />
               </button>
             </div>
           </div>
         ) : (
           <div className="grid gap-4">
             <div className="px-8 flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 hidden md:flex">
-              <div className="flex-1">Operational ID</div>
-              <div className="flex-[2] text-center px-12">Route Vector</div>
-              <div className="flex-1 text-right">Yield / Performance</div>
+              <div className="flex-1"><TranslatedText text="Operational ID" /></div>
+              <div className="flex-[2] text-center px-12"><TranslatedText text="Route Vector" /></div>
+              <div className="flex-1 text-right"><TranslatedText text="Yield / Performance" /></div>
             </div>
             {filteredAndSortedTrips.map((trip) => (
               <div
@@ -514,7 +518,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
 
                 <div className="flex-1 w-full md:w-auto flex flex-row md:flex-col items-center md:items-end justify-between gap-2 pl-0 md:pl-8 border-t md:border-t-0 md:border-l border-slate-50 pt-4 md:pt-0">
                   <div className="text-right">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5">Yield</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5"><TranslatedText text="Yield" /></span>
                     <span className="text-lg font-black text-primary-950">{fmtMoney(Number(trip.earnings || 0))}</span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -546,7 +550,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                     <Navigation className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mission Details</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400"><TranslatedText text="Mission Details" /></span>
                     <h3 className="text-xl font-black text-primary-500 tracking-tight">#{selectedTrip.tripNumber}</h3>
                   </div>
                 </div>
@@ -560,26 +564,26 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {selectedTrip.status?.toLowerCase() === 'scheduled' && (
                     <button onClick={() => handleTripAction(selectedTrip.id, 'start')} className="col-span-2 py-4 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-colors shadow-lg shadow-primary-200">
-                      Start Trip
+                      <TranslatedText text="Start Trip" />
                     </button>
                   )}
                   {selectedTrip.status?.toLowerCase() === 'in_progress' && (
                     <>
                       <button onClick={() => handleTripAction(selectedTrip.id, 'pause')} className="py-4 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
-                        <Pause size={14} /> Pause
+                        <Pause size={14} /> <TranslatedText text="Pause" />
                       </button>
                       <button onClick={() => setShowFuelModal(true)} className="py-4 bg-amber-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-colors shadow-lg shadow-amber-200 flex items-center justify-center gap-2">
-                        <History size={14} /> Log Fuel
+                        <History size={14} /> <TranslatedText text="Log Fuel" />
                       </button>
                       <button onClick={() => handleTripAction(selectedTrip.id, 'complete')} className="py-4 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-colors shadow-lg shadow-primary-200 flex items-center justify-center gap-2 sm:col-span-2">
-                        <CheckCircle2 size={14} /> Complete Mission
+                        <CheckCircle2 size={14} /> <TranslatedText text="Complete Mission" />
                       </button>
                       {/* Live GPS map button inside detail modal */}
                       <button
                         onClick={() => { setShowDetailsModal(false); setShowLiveTracker(true); }}
                         className="py-4 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#0f172a] transition-colors flex items-center justify-center gap-2 sm:col-span-2"
                       >
-                        <Radio size={14} className="animate-pulse" /> Open Live Map
+                        <Radio size={14} className="animate-pulse" /> <TranslatedText text="Open Live Map" />
                       </button>
                     </>
                   )}
@@ -590,7 +594,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                   {/* Pickup */}
                   <div className="relative">
                     <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-white border-4 border-primary-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-primary-500 block mb-1">Origin</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-primary-500 block mb-1"><TranslatedText text="Origin" /></span>
                     <h4 className="text-lg font-bold text-primary-900 leading-tight">{selectedTrip.origin?.address}</h4>
                     <p className="text-slate-500 text-xs mt-0.5">{selectedTrip.origin?.city}, {selectedTrip.origin?.state}</p>
                   </div>
@@ -598,7 +602,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                   {/* Delivery */}
                   <div className="relative">
                     <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-white border-4 border-emerald-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 block mb-1">Destination</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 block mb-1"><TranslatedText text="Destination" /></span>
                     <h4 className="text-lg font-bold text-primary-900 leading-tight">{selectedTrip.destination?.address}</h4>
                     <p className="text-slate-500 text-xs mt-0.5">{selectedTrip.destination?.city}, {selectedTrip.destination?.state}</p>
                   </div>

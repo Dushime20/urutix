@@ -37,6 +37,8 @@ import toast from 'react-hot-toast';
 import { useGpsTracking } from '../../hooks/useGpsTracking';
 import { driverApi } from '../../services/driverApi';
 import { cn } from '../../utils/cn';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ── Fix Leaflet default icon in Vite/webpack builds ─────────────────────
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -101,6 +103,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
   driverId,
   onTripEnded,
 }) => {
+  const { tSync: t } = useTranslation();
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
   const [ending, setEnding] = useState(false);
   const [elapsed, setElapsed] = useState(0); // seconds since mount
@@ -146,14 +149,14 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
   };
 
   const handleEndTrip = async () => {
-    if (!window.confirm('End this trip? This action cannot be undone.')) return;
+    if (!window.confirm(t('End this trip? This action cannot be undone.'))) return;
     setEnding(true);
     try {
       await driverApi.completeTrip(trip.id);
-      toast.success('Trip completed successfully!', { icon: '🏁' });
+      toast.success(t('Trip completed successfully!'), { icon: '🏁' });
       onTripEnded?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to end trip');
+      toast.error(err?.response?.data?.message || t('Failed to end trip'));
     } finally {
       setEnding(false);
     }
@@ -180,10 +183,10 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
           </div>
           <div className="min-w-0">
             <h2 className="text-base sm:text-lg font-black text-[#0f172a] uppercase tracking-tight leading-none">
-              Live Tracking
+              <TranslatedText text="Live Tracking" />
             </h2>
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-              Trip #{trip.tripNumber}
+              <TranslatedText text="Trip #" />{trip.tripNumber}
             </p>
           </div>
           {/* Live badge */}
@@ -200,8 +203,8 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
             ) : (
               <WifiOff className="w-3 h-3" />
             )}
-            <span className="hidden sm:inline">{isTracking ? 'Broadcasting GPS' : 'Acquiring…'}</span>
-            <span className="sm:hidden">{isTracking ? 'Live' : 'GPS…'}</span>
+            <span className="hidden sm:inline">{isTracking ? t('Broadcasting GPS') : t('Acquiring…')}</span>
+            <span className="sm:hidden">{isTracking ? t('Live') : t('GPS…')}</span>
           </span>
         </div>
 
@@ -215,7 +218,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
           ) : (
             <CheckCircle className="w-4 h-4" />
           )}
-          End Trip
+          <TranslatedText text="End Trip" />
         </button>
       </div>
 
@@ -223,43 +226,17 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
       {error && (
         <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 text-xs font-bold">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-          {error} — location updates paused.
+          {error} — <TranslatedText text="location updates paused." />
         </div>
       )}
 
       {/* ── Stats bar ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {[
-          {
-            label: 'Elapsed',
-            value: formatElapsed(elapsed),
-            icon: Clock,
-            color: 'text-blue-600',
-            bg: 'bg-blue-50',
-          },
-          {
-            label: 'Speed',
-            value: currentPosition?.speed != null
-              ? `${currentPosition.speed} km/h`
-              : '—',
-            icon: Gauge,
-            color: 'text-purple-600',
-            bg: 'bg-purple-50',
-          },
-          {
-            label: 'Points',
-            value: routePath.length,
-            icon: Activity,
-            color: 'text-emerald-600',
-            bg: 'bg-emerald-50',
-          },
-          {
-            label: 'Accuracy',
-            value: accuracy != null ? `±${Math.round(accuracy)}m` : '—',
-            icon: Target,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50',
-          },
+          { label: t('Elapsed'), value: formatElapsed(elapsed), icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: t('Speed'), value: currentPosition?.speed != null ? `${currentPosition.speed} km/h` : '—', icon: Gauge, color: 'text-purple-600', bg: 'bg-purple-50' },
+          { label: t('Points'), value: routePath.length, icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: t('Accuracy'), value: accuracy != null ? `±${Math.round(accuracy)}m` : '—', icon: Target, color: 'text-amber-600', bg: 'bg-amber-50' },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -368,21 +345,21 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
 
         {/* Map legend */}
         <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 px-3 py-2 border-t border-slate-50 bg-white">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Legend:</span>
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Legend:" /></span>
           <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
             <span className="inline-flex w-5 h-5 rounded-full bg-emerald-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">A</span>
-            Start
+            <TranslatedText text="Start" />
           </span>
           <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
             <span className="inline-flex w-5 h-5 rounded-full bg-red-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">B</span>
-            Destination
+            <TranslatedText text="Destination" />
           </span>
           <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
-            <span className="inline-block w-5 h-1 rounded-full bg-[#345E85]" /> Your Route
+            <span className="inline-block w-5 h-1 rounded-full bg-[#345E85]" /> <TranslatedText text="Your Route" />
           </span>
           <span className={cn('ml-auto flex items-center gap-1.5 text-[9px] font-black uppercase', isTracking ? 'text-emerald-600' : 'text-slate-400')}>
             <span className={cn('w-2 h-2 rounded-full', isTracking ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300')} />
-            {isTracking ? 'Broadcasting GPS' : 'GPS acquiring…'}
+            {isTracking ? t('Broadcasting GPS') : t('GPS acquiring…')}
           </span>
         </div>
       </div>
@@ -392,7 +369,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 sm:p-4">
           <div className="flex items-center gap-2 text-[#345E85] mb-1">
             <div className="w-2 h-2 rounded-full bg-[#345E85]" />
-            <span className="text-[9px] font-black uppercase tracking-widest">Origin</span>
+            <span className="text-[9px] font-black uppercase tracking-widest"><TranslatedText text="Origin" /></span>
           </div>
           <p className="text-xs font-bold text-slate-700 truncate">{trip.origin.address}</p>
           <p className="text-[10px] text-slate-500">{trip.origin.city}</p>
@@ -400,13 +377,13 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
           <div className="flex items-center gap-2 text-emerald-600 mb-1">
             <MapPin className="w-3 h-3" />
-            <span className="text-[9px] font-black uppercase tracking-widest">Destination</span>
+            <span className="text-[9px] font-black uppercase tracking-widest"><TranslatedText text="Destination" /></span>
           </div>
           <p className="text-xs font-bold text-slate-700 truncate">{trip.destination.address}</p>
           <p className="text-[10px] text-slate-500">{trip.destination.city}</p>
           {trip.estimatedArrival && (
             <p className="text-[9px] font-black text-emerald-600 mt-1">
-              ETA:{' '}
+              <TranslatedText text="ETA:" />{' '}
               {new Date(trip.estimatedArrival).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
