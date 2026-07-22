@@ -251,9 +251,12 @@ export class EpodService {
     if (trip.driverId) {
       const driver = await this.driverRepository.findOne({ where: { id: trip.driverId } });
       if (driver) {
-        driver.status = DriverStatus.ACTIVE;
-        await this.driverRepository.save(driver);
-        this.logger.log(`[EpodService] Driver ${driver.id} → ACTIVE after ePOD trip ${trip.id}`);
+        if (!driver.currentTripId || driver.currentTripId === trip.id) {
+          driver.status = DriverStatus.ACTIVE;
+          driver.currentTripId = null;
+          await this.driverRepository.save(driver);
+          this.logger.log(`[EpodService] Driver ${driver.id} → ACTIVE after ePOD trip ${trip.id}`);
+        }
       }
     }
   }

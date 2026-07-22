@@ -194,8 +194,50 @@ export class TripsService {
 
   async assignDriver(id: string, driverId: string, tenantId: string): Promise<Trip> {
     const trip = await this.findOne(id, tenantId);
+
+    if ([TripStatus.COMPLETED, TripStatus.CANCELLED].includes(trip.status)) {
+      throw new BadRequestException(
+        'Cannot assign a driver to a completed or cancelled trip.',
+      );
+    }
+
+    const driver = await this.driverRepository.findOne({
+      where: { id: driverId, tenantId },
+    });
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+
+    if (!trip.plannedStartTime || !trip.plannedEndTime) {
+      throw new BadRequestException(
+        'Trip must have planned start and end times before a driver can be assigned.',
+      );
+    }
+
+    if (this.availabilityService) {
+      await this.availabilityService.assertDriverAvailableForAssignment({
+        driverId,
+        pickupDateTime: new Date(trip.plannedStartTime),
+        deliveryDateTime: new Date(trip.plannedEndTime),
+        tenantId,
+        excludeTripId: trip.id,
+      });
+    }
+
     trip.driverId = driverId;
     const savedTrip = await this.tripRepository.save(trip);
+
+    if (this.availabilityService) {
+      await this.availabilityService.updateReservationDates(
+        trip.id,
+        new Date(trip.plannedStartTime),
+        new Date(trip.plannedEndTime),
+        tenantId,
+        trip.loadId,
+        trip.truckId,
+        driverId,
+      );
+    }
 
     // Send driver assignment notifications (fire-and-forget)
     this.sendDriverAssignmentNotifications(savedTrip, driverId, tenantId).catch(err =>
@@ -262,6 +304,14 @@ export class TripsService {
         trip.loadId,
         tenantId,
       );
+
+      if (trip.driverId && this.availabilityService) {
+        await this.availabilityService.assertDriverCanStartTrip(
+          trip.driverId,
+          trip.id,
+          tenantId,
+        );
+      }
     }
 
     trip.status = updateTripStatusDto.status;
@@ -273,6 +323,12 @@ export class TripsService {
     }
 
     const savedTrip = await this.tripRepository.save(trip);
+
+    this.availabilityService
+      ?.reconcileReservationForTrip(savedTrip.id, `Trip status → ${updateTripStatusDto.status}`)
+      .catch(err =>
+        this.logger.error(`Failed to reconcile reservation for trip ${savedTrip.id}: ${err.message}`),
+      );
 
     // CREDIT DEDUCTION: Deduct credits only on the very first start (PLANNED → IN_PROGRESS).
     // DELAYED → IN_PROGRESS (resume) must NOT re-deduct.
@@ -379,6 +435,7 @@ export class TripsService {
       const driver = await this.driverRepository.findOne({ where: { id: trip.driverId } });
       if (driver) {
         driver.status = DriverStatus.IN_TRANSIT;
+        driver.currentTripId = trip.id;
         await this.driverRepository.save(driver);
         this.logger.log(`[TripsService] Driver ${driver.id} → IN_TRANSIT for trip ${trip.id}`);
       }
@@ -405,9 +462,12 @@ export class TripsService {
     if (trip.driverId) {
       const driver = await this.driverRepository.findOne({ where: { id: trip.driverId } });
       if (driver) {
-        driver.status = DriverStatus.ACTIVE;
-        await this.driverRepository.save(driver);
-        this.logger.log(`[TripsService] Driver ${driver.id} → ACTIVE after trip ${trip.id}`);
+        if (!driver.currentTripId || driver.currentTripId === trip.id) {
+          driver.status = DriverStatus.ACTIVE;
+          driver.currentTripId = null;
+          await this.driverRepository.save(driver);
+          this.logger.log(`[TripsService] Driver ${driver.id} → ACTIVE after trip ${trip.id}`);
+        }
       }
     }
   }

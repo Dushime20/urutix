@@ -11,6 +11,7 @@ import { AvailabilityService } from './availability.service';
 import { AvailabilityController } from './availability.controller';
 import { BidConflictResolutionService } from './services/bid-conflict-resolution.service';
 import { TruckAvailabilityEngine } from './services/truck-availability.engine';
+import { DriverSchedulingGuardService } from './services/driver-scheduling-guard.service';
 import { AvailabilityReconciliationListener } from './listeners/availability-reconciliation.listener';
 import { NotificationModule } from '../notifications/notification.module';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
@@ -31,11 +32,17 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
   ],
   providers: [
     TruckAvailabilityEngine,
+    DriverSchedulingGuardService,
     AvailabilityService,
     BidConflictResolutionService,
     AvailabilityReconciliationListener,
   ],
   controllers: [AvailabilityController],
-  exports: [AvailabilityService, BidConflictResolutionService, TruckAvailabilityEngine],
+  exports: [
+    AvailabilityService,
+    BidConflictResolutionService,
+    TruckAvailabilityEngine,
+    DriverSchedulingGuardService,
+  ],
 })
 export class AvailabilityModule {}

@@ -19,6 +19,7 @@ import {
   EffectiveAvailabilityWindow,
   OperationalTripPhase,
 } from './services/truck-availability.engine';
+import { DriverSchedulingGuardService } from './services/driver-scheduling-guard.service';
 
 export interface ConflictInfo {
   type: 'TRUCK' | 'DRIVER';
@@ -101,6 +102,7 @@ export class AvailabilityService {
     @InjectRepository(Load)
     private readonly loadRepo: Repository<Load>,
     private readonly availabilityEngine: TruckAvailabilityEngine,
+    private readonly driverSchedulingGuard: DriverSchedulingGuardService,
   ) {}
 
   // ─── Core Overlap Query ─────────────────────────────────────────────────────
@@ -136,10 +138,28 @@ export class AvailabilityService {
     }
 
     if (driverId) {
-      const driverConflict = await this.findDriverConflict(
-        driverId, pickupDateTime, deliveryDateTime, excludeTripId,
-      );
-      if (driverConflict) conflicts.push(driverConflict);
+      const driverConflict = await this.driverSchedulingGuard.findDriverConflict({
+        driverId,
+        pickupDateTime,
+        deliveryDateTime,
+        tenantId,
+        excludeTripId,
+      });
+      if (driverConflict) {
+        conflicts.push({
+          type: 'DRIVER',
+          resourceId: driverId,
+          conflictingTripId: driverConflict.conflictingTripId,
+          conflictingCargoId: driverConflict.conflictingCargoId,
+          existingPickup: driverConflict.existingPickup,
+          existingDelivery: driverConflict.existingDelivery,
+          effectiveWindow: driverConflict.effectiveWindow,
+          auditReason:
+            driverConflict.conflictType === 'CONCURRENT_EXECUTION'
+              ? 'Driver is executing an active trip and cannot be double-booked.'
+              : `Driver reserved for ${driverConflict.conflictingTripStatus} trip schedule.`,
+        });
+      }
     }
 
     return conflicts;
@@ -287,64 +307,6 @@ export class AvailabilityService {
     return null;
   }
 
-  private async findDriverConflict(
-    driverId: string,
-    pickupDateTime: Date,
-    deliveryDateTime: Date,
-    excludeTripId?: string,
-  ): Promise<ConflictInfo | null> {
-    const activeReservations = await this.reservationRepo.find({
-      where: { driverId, status: ReservationStatus.ACTIVE },
-    });
-
-    for (const reservation of activeReservations) {
-      if (excludeTripId && reservation.tripId === excludeTripId) continue;
-
-      const [trip, load] = await Promise.all([
-        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
-        this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
-      ]);
-
-      if (this.availabilityEngine.shouldReleaseStaleReservation(trip, load)) {
-        await this.releaseReservation(
-          reservation.tripId,
-          'Auto-released: trip completed or cancelled — driver now available',
-        );
-        continue;
-      }
-
-      const effectiveWindow = this.availabilityEngine.resolveEffectiveWindow(
-        trip,
-        load,
-        reservation,
-      );
-
-      if (!effectiveWindow.isBlocking) continue;
-
-      const overlaps = this.availabilityEngine.schedulesOverlap(
-        effectiveWindow.pickupDateTime,
-        effectiveWindow.deliveryDateTime,
-        pickupDateTime,
-        deliveryDateTime,
-      );
-
-      if (overlaps) {
-        return {
-          type: 'DRIVER',
-          resourceId: driverId,
-          conflictingTripId: reservation.tripId,
-          conflictingCargoId: reservation.cargoId,
-          existingPickup: effectiveWindow.pickupDateTime,
-          existingDelivery: effectiveWindow.deliveryDateTime,
-          effectiveWindow,
-          auditReason: this.buildAuditMessage(effectiveWindow, trip, load),
-        };
-      }
-    }
-
-    return null;
-  }
-
   private buildAuditMessage(
     window: EffectiveAvailabilityWindow,
     trip?: Trip | null,
@@ -367,6 +329,30 @@ export class AvailabilityService {
       );
     }
     return `Truck reserved for planned schedule ${window.plannedPickupDateTime.toISOString()} → ${plannedEnd}.`;
+  }
+
+  /**
+   * Validates driver assignment against scheduling rules (overlap + single active trip).
+   */
+  async assertDriverAvailableForAssignment(params: {
+    driverId: string;
+    pickupDateTime: Date;
+    deliveryDateTime: Date;
+    tenantId: string;
+    excludeTripId?: string;
+  }): Promise<void> {
+    return this.driverSchedulingGuard.assertDriverAvailableForAssignment(params);
+  }
+
+  /**
+   * Validates a driver can start a trip (no other IN_PROGRESS trip).
+   */
+  async assertDriverCanStartTrip(
+    driverId: string,
+    tripId: string,
+    tenantId: string,
+  ): Promise<void> {
+    return this.driverSchedulingGuard.assertDriverCanStartTrip(driverId, tripId, tenantId);
   }
 
   // ─── Assertion helper (throws if conflict found) ─────────────────────────────
@@ -415,10 +401,15 @@ export class AvailabilityService {
       );
     } else {
       const detail = c.auditReason ? ` ${c.auditReason}` : '';
+      const isActiveExecution = c.auditReason?.includes('executing an active trip');
       throw new ConflictException(
-        `This driver is already assigned to another shipment during the selected transportation period. ` +
-        `Conflict: Cargo ${c.conflictingCargoId} — ${pickup} → ${delivery}.${detail} ` +
-        `Choose another driver or reschedule.`,
+        isActiveExecution
+          ? `This driver is currently executing another trip and cannot be assigned to overlapping shipments. ` +
+            `Conflict: Cargo ${c.conflictingCargoId} — ${pickup} → ${delivery}.${detail} ` +
+            `Complete the current trip first, or choose another driver.`
+          : `This driver is already assigned to another shipment during the selected transportation period. ` +
+            `Conflict: Cargo ${c.conflictingCargoId} — ${pickup} → ${delivery}.${detail} ` +
+            `Choose another driver or reschedule.`,
       );
     }
   }

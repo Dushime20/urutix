@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Gavel, ChevronDown, ChevronUp, Check, X, Eye, RefreshCw,
   Loader2, Star, TrendingDown, User, Calendar, Truck, Clock,
   DollarSign, AlertCircle, Package, FileText, Award,
-  CheckCircle2, XCircle, Info, ArrowUpDown,
+  CheckCircle2, XCircle, Info, ArrowUpDown, Plus, Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { biddingAPI } from '../../services/biddingApi';
@@ -660,8 +660,13 @@ function AuctionCard({ auction, isExpanded, onToggle, onAcceptBid, accepting, hi
 
 // ─── Main BrokerBidManagement component ──────────────────────────────────────
 
-const BrokerBidManagement: React.FC = () => {
+interface BrokerBidManagementProps {
+  onCreateAuction?: () => void;
+}
+
+const BrokerBidManagement: React.FC<BrokerBidManagementProps> = ({ onCreateAuction }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { confirm, DialogComponent } = useConfirmDialog();
   const [searchParams] = useSearchParams();
@@ -755,6 +760,30 @@ const BrokerBidManagement: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {/* Quick Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+        <div>
+          <h2 className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wide">Bid Management</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Review incoming bids or start a new auction or match</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={onCreateAuction}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#345E85] hover:bg-[#2c5173] text-white text-xs font-bold uppercase tracking-wide transition-colors shadow-sm"
+          >
+            <Plus size={14} />
+            Create Auction
+          </button>
+          <button
+            onClick={() => navigate('/dashboard/broker/smart-matching')}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[#345E85] dark:text-primary-400 text-xs font-bold uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            <Zap size={14} />
+            Smart Match
+          </button>
+        </div>
+      </div>
+
       {/* Summary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
@@ -800,9 +829,27 @@ const BrokerBidManagement: React.FC = () => {
             <Gavel size={28} className="text-slate-300 dark:text-slate-600" />
           </div>
           <h3 className="text-base font-black text-slate-700 dark:text-slate-300 uppercase italic mb-1">No auctions found</h3>
-          <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-            {statusFilter !== 'all' ? 'Try a different status filter.' : 'Create an auction from the "Host" tab to start receiving bids.'}
+          <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-5">
+            {statusFilter !== 'all' ? 'Try a different status filter.' : 'Create an auction or run smart matching to get started.'}
           </p>
+          {statusFilter === 'all' && (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={onCreateAuction}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#345E85] hover:bg-[#2c5173] text-white text-xs font-bold uppercase tracking-wide transition-colors"
+              >
+                <Plus size={14} />
+                Create Auction
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/broker/smart-matching')}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <Zap size={14} />
+                Smart Match
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

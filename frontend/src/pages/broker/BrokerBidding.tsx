@@ -7,7 +7,7 @@ import BidHistory from '../../components/Bidding/BidHistory';
 import BidAnalytics from '../../components/Bidding/BidAnalytics';
 import CreateAuction from '../../components/Bidding/CreateAuction';
 import BrokerBidManagement from '../../components/Bidding/BrokerBidManagement';
-import { Gavel, Users, BarChart3, DollarSign, Heart, Plus, Activity, CheckSquare } from 'lucide-react';
+import { Gavel, Users, BarChart3, DollarSign, Heart, Plus, Activity, CheckSquare, Clock } from 'lucide-react';
 import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -97,32 +97,48 @@ const BrokerBidding: React.FC = () => {
       {/* Tabs Terminal */}
       <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
         <div className="bg-slate-50/50 p-3 border-b border-slate-100 dark:border-slate-800 overflow-x-auto">
-           <div className="flex gap-2 min-w-max">
+           <div className="flex items-center gap-2 min-w-max">
+              {/* Primary workflow tabs */}
               {[
-                { id: 'bids', label: 'Manage Bids', icon: CheckSquare },
-                { id: 'auctions', label: 'Open', icon: Gavel },
-                { id: 'history', label: 'History', icon: ClockIcon },
+                { id: 'bids', label: 'Manage Bids', icon: CheckSquare, badge: 'NEW' },
+                { id: 'auctions', label: 'Open Auctions', icon: Gavel },
+                { id: 'create', label: 'Create Auction', icon: Plus },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2.5 px-5 py-3.5 rounded-2xl text-xs font-bold uppercase transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-900 hover:bg-white dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-800'}`}
+                >
+                  <tab.icon size={14} />
+                  {tab.label}
+                  {tab.badge && (
+                    <span className="px-1.5 py-0.5 rounded-md bg-primary-600 text-white text-[9px] font-black">{tab.badge}</span>
+                  )}
+                </button>
+              ))}
+
+              <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-1 shrink-0" aria-hidden />
+
+              {/* Reference & insights tabs */}
+              {[
+                { id: 'history', label: 'History', icon: Clock },
                 { id: 'watched', label: 'Saved', icon: Heart },
-                { id: 'create', label: 'Host', icon: Plus },
                 { id: 'analytics', label: 'Analysis', icon: BarChart3 },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-3 px-6 py-4 rounded-2xl text-sm font-bold uppercase transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-900 hover:bg-white dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-800'}`}
+                  className={`flex items-center gap-2.5 px-5 py-3.5 rounded-2xl text-xs font-bold uppercase transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:text-slate-900 hover:bg-white dark:text-slate-500 dark:hover:text-white dark:hover:bg-slate-800'}`}
                 >
                   <tab.icon size={14} />
                   {tab.label}
-                  {tab.id === 'bids' && (
-                    <span className="px-1.5 py-0.5 rounded-md bg-primary-600 text-white text-[9px] font-black">NEW</span>
-                  )}
                 </button>
               ))}
            </div>
         </div>
 
         <div className="p-8 sm:p-12">
-          {activeTab === 'bids' && <BrokerBidManagement />}
+          {activeTab === 'bids' && <BrokerBidManagement onCreateAuction={() => setActiveTab('create')} />}
           {activeTab === 'auctions' && <AuctionList userRole="BROKER" />}
           {activeTab === 'history' && <BidHistory userRole="BROKER" />}
           {activeTab === 'watched' && <AuctionList userRole="BROKER" showWatchedOnly={true} />}
@@ -133,10 +149,5 @@ const BrokerBidding: React.FC = () => {
     </div>
   );
 };
-
-// Internal constant for ClockIcon until I decide to import it
-const ClockIcon = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-);
 
 export default BrokerBidding;
