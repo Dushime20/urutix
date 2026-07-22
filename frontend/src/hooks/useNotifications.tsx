@@ -85,13 +85,35 @@ export const useNotifications = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user.id] });
 
       const metadata = data?.metadata || data?.data || {};
+      const event = String(metadata?.event || '').toUpperCase();
+      const isPreTripApproved =
+        event === 'PRE_TRIP_APPROVED' ||
+        notifType === 'PRE_TRIP_APPROVED';
       const isPreTripReInspection =
-        metadata?.event === 'PRE_TRIP_READY_FOR_RE_INSPECTION' ||
+        event === 'PRE_TRIP_READY_FOR_RE_INSPECTION' ||
+        notifType === 'PRE_TRIP_READY_FOR_RE_INSPECTION' ||
         (notifType === 'DRIVER_ALERT' &&
           String(data?.title || '').toLowerCase().includes('re-inspection'));
 
-      if (isPreTripReInspection) {
+      if (isPreTripApproved || isPreTripReInspection) {
         queryClient.invalidateQueries({ queryKey: ['driver-pre-trip-inspections'] });
+        queryClient.invalidateQueries({ queryKey: ['driver-loads'] });
+        queryClient.invalidateQueries({ queryKey: ['driver-trips'] });
+      }
+
+      if (isPreTripApproved) {
+        toast.success(
+          data.message ||
+            'Pre-trip inspection approved. You may load cargo and start the trip.',
+          {
+            icon: '🟢',
+            duration: 8000,
+          },
+        );
+        return;
+      }
+
+      if (isPreTripReInspection) {
         toast.success(data.message || 'Cargo owner resolved issues. You can re-inspect now.', {
           icon: '✅',
           duration: 8000,

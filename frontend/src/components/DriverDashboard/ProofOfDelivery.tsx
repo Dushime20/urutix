@@ -238,35 +238,35 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
     <div className="flex flex-col h-full max-h-[90vh] bg-white rounded-[2rem] overflow-hidden">
 
       {/* ── Top header ────────────────────────────────────────────────── */}
-      <div className="shrink-0 bg-[#0f172a] px-6 pt-6 pb-5">
+      <div className="shrink-0 bg-white dark:bg-[#0f172a] border-b border-slate-100 dark:border-transparent px-6 pt-6 pb-5">
         <div className="flex items-start justify-between mb-5">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <FileCheck size={16} className="text-emerald-400" />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <FileCheck size={16} className="text-emerald-500 dark:text-emerald-400" />
+              <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                 <TranslatedText text="Electronic Proof of Delivery" />
               </span>
             </div>
-            <h2 className="text-xl font-black text-white uppercase tracking-tight">
+            <h2 className="text-xl font-black text-[#0f172a] dark:text-white uppercase tracking-tight">
               {tripNumber ? <><TranslatedText text="Trip #" />{tripNumber}</> : <TranslatedText text="Trip Completion" />}
             </h2>
             {cargoTitle && (
-              <p className="text-[11px] text-slate-400 mt-0.5 truncate max-w-xs">{cargoTitle}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xs">{cargoTitle}</p>
             )}
           </div>
           <button onClick={onCancel}
-            className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all border border-white/10">
+            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-slate-300 dark:hover:text-white flex items-center justify-center transition-all border border-slate-200 dark:border-white/10">
             <X size={18} />
           </button>
         </div>
 
         {/* Trip summary strip */}
         {(origin || destination || cargoWeight) && (
-          <div className="flex items-center gap-3 px-4 py-2.5 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex-wrap gap-y-1">
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest flex-wrap gap-y-1">
             {origin      && <span>{origin}</span>}
-            {origin && destination && <span className="text-slate-600">→</span>}
+            {origin && destination && <span className="text-slate-400 dark:text-slate-600">→</span>}
             {destination && <span>{destination}</span>}
-            {cargoWeight && <><span className="text-slate-600 mx-1">·</span><span>{cargoWeight.toLocaleString()} kg</span></>}
+            {cargoWeight && <><span className="text-slate-400 dark:text-slate-600 mx-1">·</span><span>{cargoWeight.toLocaleString()} kg</span></>}
           </div>
         )}
 
@@ -278,15 +278,15 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             return (
               <React.Fragment key={s.id}>
                 <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all
-                  ${active ? 'bg-emerald-500 text-white' : done ? 'bg-white/15 text-emerald-400' : 'bg-white/5 text-slate-600'}`}>
+                  ${active ? 'bg-emerald-500 text-white' : done ? 'bg-emerald-50 text-emerald-600 dark:bg-white/15 dark:text-emerald-400' : 'bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-slate-600'}`}>
                   <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black
-                    ${active ? 'bg-white text-emerald-600' : done ? 'bg-emerald-500 text-white' : 'bg-white/10 text-slate-500'}`}>
+                    ${active ? 'bg-white text-emerald-600' : done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500 dark:bg-white/10'}`}>
                     {done ? '✓' : s.id}
                   </span>
                   <span className="hidden sm:inline"><TranslatedText text={s.label} /></span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-0.5 rounded ${step > s.id ? 'bg-emerald-500/40' : 'bg-white/10'}`} />
+                  <div className={`flex-1 h-0.5 rounded ${step > s.id ? 'bg-emerald-500/40' : 'bg-slate-200 dark:bg-white/10'}`} />
                 )}
               </React.Fragment>
             );

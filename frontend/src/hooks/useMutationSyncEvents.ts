@@ -87,8 +87,12 @@ export function useMutationSyncEvents() {
 
       if (
         type.includes('DRIVER_ALERT') ||
+        type.includes('PRE_TRIP') ||
         type.includes('INSPECTION') ||
-        payload?.metadata?.event === 'PRE_TRIP_READY_FOR_RE_INSPECTION'
+        payload?.metadata?.event === 'PRE_TRIP_READY_FOR_RE_INSPECTION' ||
+        payload?.metadata?.event === 'PRE_TRIP_APPROVED' ||
+        payload?.metadata?.event === 'PRE_TRIP_SUBMITTED' ||
+        payload?.metadata?.event === 'PRE_TRIP_FAILED'
       ) {
         invalidate([
           queryKeys.drivers.preTripInspections(),

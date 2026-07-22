@@ -439,12 +439,14 @@ export class PreTripInspectionService {
       ? {
           status: PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL,
           lastInspectionId: savedInspection.id,
+          lastDriverUserId: driver.userId,
           submittedForApprovalAt: new Date().toISOString(),
           currentAttempt: attemptNumber,
         }
       : {
           status: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION,
           lastInspectionId: savedInspection.id,
+          lastDriverUserId: driver.userId,
           lastFailedAt: new Date().toISOString(),
           currentAttempt: attemptNumber,
         };
@@ -512,11 +514,23 @@ export class PreTripInspectionService {
       updatedAt: new Date(),
     });
 
-    const driver = load.assignedTruckId
-      ? await this.driverRepository.findOne({
-          where: { currentTruckId: load.assignedTruckId, tenantId },
+    const inspection = workflow.lastInspectionId
+      ? await this.cargoInspectionRepository.findOne({
+          where: { id: workflow.lastInspectionId, loadId },
         })
       : null;
+
+    const driver = await this.resolveDriverForLoad(
+      load,
+      inspection,
+      workflow.lastDriverUserId,
+    );
+
+    if (!driver) {
+      this.logger.warn(
+        `No driver found to notify for load ${loadId} pre-trip approval (truck=${load.assignedTruckId}, inspectionDriver=${inspection?.driverId}, lastDriverUserId=${workflow.lastDriverUserId})`,
+      );
+    }
 
     await this.notifyInspectionApproved(
       load,
@@ -529,7 +543,10 @@ export class PreTripInspectionService {
     return {
       loadId,
       workflowStatus: nextWorkflow.status,
-      message: 'Pre-trip inspection approved. Driver may proceed with loading and trip start.',
+      driverNotified: Boolean(driver),
+      message: driver
+        ? 'Pre-trip inspection approved. Driver has been notified and may proceed with loading and trip start.'
+        : 'Pre-trip inspection approved. Driver could not be resolved for notification — verify truck assignment.',
     };
   }
 
@@ -947,6 +964,7 @@ export class PreTripInspectionService {
     const issueSummary = issues.map((issue) => issue.description).join('; ');
     const shipmentLabel = load.title || 'shipment';
     const driverName = `${driver.firstName} ${driver.lastName}`.trim();
+    const event = 'PRE_TRIP_FAILED';
 
     for (const recipientId of this.getOwnerRecipientIds(load)) {
       await this.safeNotify({
@@ -954,13 +972,25 @@ export class PreTripInspectionService {
         tenantId: load.tenantId,
         title: 'Pre-Trip Inspection Failed — Action Required',
         message: `Driver ${driverName} reported issues during pre-trip inspection for "${shipmentLabel}": ${issueSummary}. Please review and resolve so the driver can re-inspect.`,
-        notificationType: NotificationType.CARGO_DAMAGE,
+        shortMessage: `Pre-trip failed for "${shipmentLabel}" — action required.`,
+        notificationType: NotificationType.PRE_TRIP_FAILED,
         priority: NotificationPriority.HIGH,
         entityId: load.id,
         actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
         actionText: 'Review & Resolve',
-        metadata: { inspectionId, issues },
+        metadata: {
+          loadId: load.id,
+          inspectionId,
+          issues,
+          event,
+          workflowStatus: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION,
+        },
         requiresAction: true,
+        channels: [
+          NotificationChannel.IN_APP,
+          NotificationChannel.PUSH,
+          NotificationChannel.EMAIL,
+        ],
       });
     }
 
@@ -969,12 +999,24 @@ export class PreTripInspectionService {
       tenantId: load.tenantId,
       title: 'Inspection Failed — Submitted to Cargo Owner',
       message: `Your failed pre-trip inspection for "${shipmentLabel}" has been submitted. The cargo owner and broker have been notified. Operations are blocked until they resolve the reported issues.`,
-      notificationType: NotificationType.DRIVER_ALERT,
+      shortMessage: `Pre-trip failed for "${shipmentLabel}" — awaiting owner resolution.`,
+      notificationType: NotificationType.PRE_TRIP_FAILED,
       priority: NotificationPriority.HIGH,
       entityId: load.id,
       actionUrl: '/dashboard/driver/inspection',
       actionText: 'View Status',
-      metadata: { inspectionId, issues },
+      metadata: {
+        loadId: load.id,
+        inspectionId,
+        issues,
+        event,
+        workflowStatus: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION,
+      },
+      channels: [
+        NotificationChannel.IN_APP,
+        NotificationChannel.PUSH,
+        NotificationChannel.EMAIL,
+      ],
     });
   }
 
@@ -985,6 +1027,7 @@ export class PreTripInspectionService {
   ) {
     const shipmentLabel = load.title || 'shipment';
     const driverName = `${driver.firstName} ${driver.lastName}`.trim();
+    const event = 'PRE_TRIP_SUBMITTED';
 
     for (const recipientId of this.getOwnerRecipientIds(load)) {
       await this.safeNotify({
@@ -992,13 +1035,25 @@ export class PreTripInspectionService {
         tenantId: load.tenantId,
         title: 'Pre-Trip Inspection Submitted — Approval Required',
         message: `Driver ${driverName} completed the pre-trip inspection for "${shipmentLabel}" with no blocking issues. Please review and give the green light to start shipping.`,
-        notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+        shortMessage: `Approve pre-trip for "${shipmentLabel}" to clear shipping.`,
+        notificationType: NotificationType.PRE_TRIP_SUBMITTED,
         priority: NotificationPriority.HIGH,
         entityId: load.id,
         actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
         actionText: 'Review & Approve',
-        metadata: { inspectionId },
+        metadata: {
+          loadId: load.id,
+          inspectionId,
+          event,
+          workflowStatus:
+            PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL,
+        },
         requiresAction: true,
+        channels: [
+          NotificationChannel.IN_APP,
+          NotificationChannel.PUSH,
+          NotificationChannel.EMAIL,
+        ],
       });
     }
 
@@ -1007,12 +1062,20 @@ export class PreTripInspectionService {
       tenantId: load.tenantId,
       title: 'Pre-Trip Inspection Submitted — Awaiting Approval',
       message: `Your pre-trip inspection for "${shipmentLabel}" has been submitted. The cargo owner and broker have been notified. You will be alerted once they give the green light to start shipping.`,
-      notificationType: NotificationType.DRIVER_ALERT,
+      shortMessage: `Awaiting approval for "${shipmentLabel}" pre-trip inspection.`,
+      notificationType: NotificationType.PRE_TRIP_SUBMITTED,
       priority: NotificationPriority.NORMAL,
       entityId: load.id,
       actionUrl: '/dashboard/driver/inspection',
       actionText: 'View Status',
-      metadata: { inspectionId },
+      metadata: {
+        loadId: load.id,
+        inspectionId,
+        event,
+        workflowStatus:
+          PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL,
+      },
+      channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
     });
   }
 
@@ -1026,6 +1089,8 @@ export class PreTripInspectionService {
     const approverName = await this.getUserDisplayName(approvedById);
     const shipmentLabel = load.title || 'shipment';
     const notesSuffix = approvalNotes ? ` Notes: ${approvalNotes}` : '';
+    const event = 'PRE_TRIP_APPROVED';
+    const driverNotified = Boolean(driver);
 
     if (driver) {
       await this.safeNotify({
@@ -1033,12 +1098,27 @@ export class PreTripInspectionService {
         tenantId: load.tenantId,
         title: 'Green Light — You May Start Shipping',
         message: `${approverName} approved the pre-trip inspection for "${shipmentLabel}". You may now load cargo and start the trip.${notesSuffix}`,
-        notificationType: NotificationType.DRIVER_ALERT,
+        shortMessage: `Green light for "${shipmentLabel}" — you may start shipping.`,
+        notificationType: NotificationType.PRE_TRIP_APPROVED,
         priority: NotificationPriority.HIGH,
         entityId: load.id,
         actionUrl: '/dashboard/driver/cargo',
         actionText: 'Proceed to Loading',
-        metadata: { inspectionId, approvedById, approvalNotes },
+        metadata: {
+          loadId: load.id,
+          inspectionId,
+          approvedById,
+          approvalNotes,
+          event,
+          workflowStatus: PreTripInspectionWorkflowStatus.APPROVED,
+        },
+        requiresAction: true,
+        channels: [
+          NotificationChannel.IN_APP,
+          NotificationChannel.PUSH,
+          NotificationChannel.EMAIL,
+          NotificationChannel.SMS,
+        ],
       });
     }
 
@@ -1048,17 +1128,33 @@ export class PreTripInspectionService {
         recipientId,
         tenantId: load.tenantId,
         title: isApprover
-          ? 'Pre-Trip Inspection Approved — Driver Notified'
+          ? driverNotified
+            ? 'Pre-Trip Inspection Approved — Driver Notified'
+            : 'Pre-Trip Inspection Approved — Driver Notify Failed'
           : 'Pre-Trip Inspection Approved — Shipping Cleared',
         message: isApprover
-          ? `You approved the pre-trip inspection for "${shipmentLabel}". The driver has been notified they may load cargo and start the trip.${notesSuffix}`
-          : `${approverName} approved the pre-trip inspection for "${shipmentLabel}". The driver has been notified they may proceed.${notesSuffix}`,
-        notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+          ? driverNotified
+            ? `You approved the pre-trip inspection for "${shipmentLabel}". The driver has been notified they may load cargo and start the trip.${notesSuffix}`
+            : `You approved the pre-trip inspection for "${shipmentLabel}". Shipping is cleared, but the assigned driver could not be resolved for notification — verify truck assignment.${notesSuffix}`
+          : driverNotified
+            ? `${approverName} approved the pre-trip inspection for "${shipmentLabel}". The driver has been notified they may proceed.${notesSuffix}`
+            : `${approverName} approved the pre-trip inspection for "${shipmentLabel}". Shipping is cleared; driver notification could not be delivered automatically.${notesSuffix}`,
+        shortMessage: `Pre-trip approved for "${shipmentLabel}".`,
+        notificationType: NotificationType.PRE_TRIP_APPROVED,
         priority: NotificationPriority.NORMAL,
         entityId: load.id,
         actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
         actionText: 'View Inspection',
-        metadata: { inspectionId, approvedById, approvalNotes },
+        metadata: {
+          loadId: load.id,
+          inspectionId,
+          approvedById,
+          approvalNotes,
+          driverNotified,
+          event,
+          workflowStatus: PreTripInspectionWorkflowStatus.APPROVED,
+        },
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
       });
     }
   }
@@ -1066,6 +1162,7 @@ export class PreTripInspectionService {
   private async resolveDriverForLoad(
     load: Load,
     inspection?: CargoInspection | null,
+    lastDriverUserId?: string | null,
   ): Promise<Driver | null> {
     if (load.assignedTruckId) {
       const driverByTruck = await this.driverRepository.findOne({
@@ -1076,12 +1173,25 @@ export class PreTripInspectionService {
       }
     }
 
-    if (inspection?.driverId) {
+    const candidateUserIds = [
+      inspection?.driverId,
+      lastDriverUserId,
+    ].filter(Boolean) as string[];
+
+    for (const userId of candidateUserIds) {
       const driverByUser = await this.driverRepository.findOne({
-        where: { userId: inspection.driverId, tenantId: load.tenantId },
+        where: { userId, tenantId: load.tenantId },
       });
       if (driverByUser) {
         return driverByUser;
+      }
+
+      // Defensive: some historical rows may store driver entity id
+      const driverById = await this.driverRepository.findOne({
+        where: { id: userId, tenantId: load.tenantId },
+      });
+      if (driverById) {
+        return driverById;
       }
     }
 
@@ -1101,8 +1211,15 @@ export class PreTripInspectionService {
       resolvedIssueCount === 1
         ? '1 reported issue'
         : `${resolvedIssueCount} reported issues`;
+    const event = 'PRE_TRIP_READY_FOR_RE_INSPECTION';
+    const workflow = getPreTripInspectionMetadata(load.metadata);
 
-    const driver = await this.resolveDriverForLoad(load, inspection);
+    const driver = await this.resolveDriverForLoad(
+      load,
+      inspection,
+      workflow.lastDriverUserId,
+    );
+    const driverNotified = Boolean(driver);
 
     if (driver) {
       await this.safeNotify({
@@ -1111,7 +1228,7 @@ export class PreTripInspectionService {
         title: 'Issues Resolved — Re-Inspection Required',
         message: `${resolverName} resolved ${issueLabel} for "${shipmentLabel}". Corrective actions: ${resolutionNotes}. Please perform a new pre-trip inspection before loading.`,
         shortMessage: `Re-inspect "${shipmentLabel}" — issues resolved by cargo owner.`,
-        notificationType: NotificationType.DRIVER_ALERT,
+        notificationType: NotificationType.PRE_TRIP_READY_FOR_RE_INSPECTION,
         priority: NotificationPriority.HIGH,
         entityId: load.id,
         actionUrl: '/dashboard/driver/inspection',
@@ -1123,13 +1240,19 @@ export class PreTripInspectionService {
           resolvedById,
           resolvedIssueCount,
           workflowStatus: PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION,
-          event: 'PRE_TRIP_READY_FOR_RE_INSPECTION',
+          event,
         },
         requiresAction: true,
+        channels: [
+          NotificationChannel.IN_APP,
+          NotificationChannel.PUSH,
+          NotificationChannel.EMAIL,
+          NotificationChannel.SMS,
+        ],
       });
     } else {
       this.logger.warn(
-        `No driver found to notify for load ${load.id} re-inspection release`,
+        `No driver found to notify for load ${load.id} re-inspection release (truck=${load.assignedTruckId}, inspectionDriver=${inspection.driverId}, lastDriverUserId=${workflow.lastDriverUserId})`,
       );
     }
 
@@ -1139,22 +1262,32 @@ export class PreTripInspectionService {
         recipientId,
         tenantId: load.tenantId,
         title: isResolver
-          ? 'Resolution Submitted — Driver Notified'
+          ? driverNotified
+            ? 'Resolution Submitted — Driver Notified'
+            : 'Resolution Submitted — Driver Notify Failed'
           : 'Inspection Issues Resolved — Re-Inspection Pending',
         message: isResolver
-          ? `You marked ${issueLabel} for "${shipmentLabel}" as resolved. The driver has been notified to re-inspect.`
-          : `${resolverName} resolved ${issueLabel} for "${shipmentLabel}". The driver will perform a re-inspection.`,
-        notificationType: NotificationType.CARGO_DELIVERY_UPDATE,
+          ? driverNotified
+            ? `You marked ${issueLabel} for "${shipmentLabel}" as resolved. The driver has been notified to re-inspect.`
+            : `You marked ${issueLabel} for "${shipmentLabel}" as resolved. The driver could not be resolved for notification — verify truck assignment.`
+          : driverNotified
+            ? `${resolverName} resolved ${issueLabel} for "${shipmentLabel}". The driver will perform a re-inspection.`
+            : `${resolverName} resolved ${issueLabel} for "${shipmentLabel}". Driver notification could not be delivered automatically.`,
+        shortMessage: `Re-inspection pending for "${shipmentLabel}".`,
+        notificationType: NotificationType.PRE_TRIP_READY_FOR_RE_INSPECTION,
         priority: NotificationPriority.NORMAL,
         entityId: load.id,
         actionUrl: this.inspectionActionUrl(load.id, recipientId, load),
         actionText: 'View Inspection',
         metadata: {
+          loadId: load.id,
           resolutionNotes,
           resolvedById,
           resolvedIssueCount,
-          event: 'PRE_TRIP_READY_FOR_RE_INSPECTION',
+          driverNotified,
+          event,
         },
+        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
       });
     }
   }
@@ -1172,8 +1305,35 @@ export class PreTripInspectionService {
     actionText?: string;
     metadata?: Record<string, any>;
     requiresAction?: boolean;
+    channels?: NotificationChannel[];
   }) {
     try {
+      const recipient = await this.userRepository.findOne({
+        where: { id: payload.recipientId },
+      });
+      const recipientEmail = recipient?.email?.trim() || undefined;
+      const recipientPhone = recipient?.phone?.trim() || undefined;
+
+      const requestedChannels =
+        payload.channels ??
+        [NotificationChannel.IN_APP, NotificationChannel.PUSH];
+
+      const channels = requestedChannels.filter((channel) => {
+        if (channel === NotificationChannel.EMAIL) {
+          return Boolean(recipientEmail);
+        }
+        if (channel === NotificationChannel.SMS) {
+          return Boolean(recipientPhone);
+        }
+        return true;
+      });
+
+      const metadata = {
+        ...(payload.metadata || {}),
+        ...(recipientEmail ? { recipientEmail } : {}),
+        ...(recipientPhone ? { recipientPhone } : {}),
+      };
+
       const saved = await this.notificationService.createNotification({
         recipientId: payload.recipientId,
         tenantId: payload.tenantId,
@@ -1185,10 +1345,10 @@ export class PreTripInspectionService {
         priority: payload.priority,
         entityId: payload.entityId,
         entityType: EntityType.CARGO,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        channels,
         actionUrl: payload.actionUrl,
         actionText: payload.actionText,
-        metadata: payload.metadata,
+        metadata,
         requiresAction: payload.requiresAction ?? false,
       });
 
@@ -1196,7 +1356,10 @@ export class PreTripInspectionService {
         ...saved,
         type: payload.notificationType,
         notificationType: payload.notificationType,
-        data: payload.metadata,
+        title: payload.title,
+        message: payload.message,
+        metadata,
+        data: metadata,
       });
     } catch (error) {
       this.logger.error(`Failed to send notification: ${error.message}`);

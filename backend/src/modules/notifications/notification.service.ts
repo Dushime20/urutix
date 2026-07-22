@@ -982,10 +982,19 @@ export class NotificationService {
    */
   private async sendSmsNotification(notification: Notification): Promise<void> {
     try {
-      // TODO: Get recipient phone from user context or notification metadata
-      const recipientPhone =
-        notification.metadata?.recipientPhone || '+1234567890';
-      await this.smsService.sendSms(recipientPhone, notification.message);
+      const recipientPhone = notification.metadata?.recipientPhone?.trim();
+      if (!recipientPhone) {
+        console.warn(
+          `[SMS] No recipientPhone in metadata for notification ${notification.id} — skipping`,
+        );
+        return;
+      }
+      const smsBody =
+        notification.shortMessage ||
+        notification.message ||
+        notification.title ||
+        'UrutiX notification';
+      await this.smsService.sendSms(recipientPhone, smsBody);
       await this.markAsDelivered(
         notification.id,
         NotificationChannel.SMS,

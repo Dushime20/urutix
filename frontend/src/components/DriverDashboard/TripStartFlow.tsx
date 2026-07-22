@@ -178,23 +178,23 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
         className="relative w-full sm:max-w-2xl max-h-[96vh] flex flex-col bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="bg-[#0f172a] px-6 sm:px-8 py-6 shrink-0">
+        <div className="bg-white dark:bg-[#0f172a] border-b border-slate-100 dark:border-transparent px-6 sm:px-8 py-6 shrink-0">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">
+              <p className="text-[9px] font-black text-slate-500 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">
                 <TranslatedText text="Trip Launch Protocol" />
               </p>
-              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+              <h3 className="text-lg sm:text-xl font-black text-[#0f172a] dark:text-white uppercase tracking-tight">
                 {trip.origin.city} → {trip.destination.city}
               </h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">
                 ORD-{trip.tripNumber}
               </p>
             </div>
             {step !== 'launching' && (
               <button
                 onClick={onClose}
-                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors shrink-0"
+                className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white flex items-center justify-center transition-colors shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -216,21 +216,25 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                           ? 'bg-emerald-500 border-emerald-500 text-white'
                           : isActive
                             ? 'bg-[#345E85] border-[#345E85] text-white'
-                            : 'bg-transparent border-slate-600 text-slate-500'
+                            : 'bg-transparent border-slate-300 text-slate-400 dark:border-slate-600 dark:text-slate-500'
                       }`}
                     >
                       {isDone ? <CheckCircle className="w-4 h-4" /> : <Icon className="w-3.5 h-3.5" />}
                     </div>
                     <span
                       className={`text-[9px] font-black uppercase tracking-wider hidden sm:block truncate ${
-                        isActive ? 'text-white' : isDone ? 'text-emerald-400' : 'text-slate-500'
+                        isActive
+                          ? 'text-[#0f172a] dark:text-white'
+                          : isDone
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-slate-400 dark:text-slate-500'
                       }`}
                     >
                       <TranslatedText text={s.label} />
                     </span>
                   </div>
                   {idx < STEPS.length - 1 && (
-                    <div className={`flex-1 h-0.5 rounded-full min-w-[12px] ${isDone ? 'bg-emerald-500' : 'bg-slate-700'}`} />
+                    <div className={`flex-1 h-0.5 rounded-full min-w-[12px] ${isDone ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
                   )}
                 </React.Fragment>
               );

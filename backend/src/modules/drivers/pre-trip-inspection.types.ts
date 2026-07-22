@@ -22,6 +22,7 @@ export enum InspectionDecision {
 export interface PreTripInspectionMetadata {
   status: PreTripInspectionWorkflowStatus;
   lastInspectionId?: string;
+  lastDriverUserId?: string;
   approvedAt?: string;
   approvedById?: string;
   approvalNotes?: string;
