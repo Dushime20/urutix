@@ -77,7 +77,7 @@ export class LoanNotificationService {
       'New Loan Request',
       `${requesterName} has submitted a loan request for ${amount.toLocaleString()} RWF.`,
       loanId,
-      `/lending/loan-requests/${loanId}`,
+      `/lender/requests?loan=${loanId}`,
       { loanId, requesterName, amount },
     );
   }
@@ -99,7 +99,7 @@ export class LoanNotificationService {
       'Loan Approved',
       `Your loan request has been approved by ${lenderName} for ${approvedAmount.toLocaleString()} RWF.`,
       loanId,
-      `/loans/${loanId}`,
+      `/dashboard/loan-requests?loan=${loanId}`,
       { loanId, approvedAmount, lenderName },
     );
   }
@@ -121,7 +121,7 @@ export class LoanNotificationService {
       'Payment Received via Lender',
       `${lenderName} has paid ${amount.toLocaleString()} RWF on behalf of the cargo owner.`,
       loanId,
-      `/payments`,
+      `/dashboard/fleet/financial`,
       { loanId, amount, lenderName },
     );
   }
@@ -166,7 +166,7 @@ export class LoanNotificationService {
       'Loan Repayment Received',
       `${borrowerName} has made a repayment of ${amount.toLocaleString()} RWF.`,
       loanId,
-      `/lending/loan-requests/${loanId}`,
+      `/lender/requests?loan=${loanId}`,
       { loanId, amount, borrowerName },
     );
   }
@@ -190,7 +190,7 @@ export class LoanNotificationService {
       'Loan Overdue',
       `Your loan of ${outstandingAmount.toLocaleString()} RWF was due on ${dueDateStr}. Please repay immediately.`,
       loanId,
-      `/loans/${loanId}`,
+      `/dashboard/loan-requests?loan=${loanId}`,
       { loanId, dueDate, outstandingAmount },
     );
     await this.send(
@@ -202,7 +202,7 @@ export class LoanNotificationService {
       'Loan Overdue Alert',
       `A loan of ${outstandingAmount.toLocaleString()} RWF was due on ${dueDateStr} and has not been repaid.`,
       loanId,
-      `/lending/loan-requests/${loanId}`,
+      `/lender/requests?loan=${loanId}`,
       { loanId, dueDate, outstandingAmount },
     );
   }
@@ -224,7 +224,7 @@ export class LoanNotificationService {
       'Payment Reminder',
       `Your loan repayment of ${amount.toLocaleString()} RWF is due on ${dueDate.toLocaleDateString()}.`,
       loanId,
-      `/loans/${loanId}`,
+      `/dashboard/loan-requests?loan=${loanId}`,
       { loanId, dueDate, amount },
     );
   }

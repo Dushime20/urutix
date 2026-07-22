@@ -41,26 +41,9 @@ interface ActiveLoan {
   _rawData?: any;
 }
 
-interface LoanPortfolioAnalytics {
-  totalActiveLoans: number;
-  totalOutstanding: number;
-  totalDisbursed: number;
-  totalRepaid: number;
-  totalInterestEarned: number;
-  averageInterestRate: number;
-  portfolioYield: number;
-  defaultRate: number;
-  onTimePaymentRate: number;
-  recoveryRate: number;
-  averageLoanSize: number;
-  monthlyCollections: number;
-  expectedMonthlyIncome: number;
-}
-
 const ActiveLoansPage: React.FC = () => {
   const { user } = useAuth();
   const [loans, setLoans] = useState<ActiveLoan[]>([]);
-  const [analytics, setAnalytics] = useState<LoanPortfolioAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<string>('created_at');
@@ -74,10 +57,7 @@ const ActiveLoansPage: React.FC = () => {
     const fetchActiveLoans = async () => {
       setLoading(true);
       try {
-        const [loansData, analyticsData] = await Promise.all([
-          lendingApi.getActiveLoans(user.id),
-          lendingApi.getLenderAnalytics(user.id, '12months')
-        ]);
+        const loansData = await lendingApi.getActiveLoans(user.id);
 
         // API returns { data: [], total, page, limit, totalPages }
         const loans: any[] = loansData?.data ?? [];
@@ -142,24 +122,6 @@ const ActiveLoansPage: React.FC = () => {
         });
 
         setLoans(transformedLoans);
-        // Map backend snake_case portfolio metrics → camelCase shape the component expects
-        const p = analyticsData?.portfolio ?? {};
-        const mappedAnalytics: LoanPortfolioAnalytics = {
-          totalActiveLoans:      transformedLoans.length,
-          totalOutstanding:      Number(p.outstanding_balance ?? 0),
-          totalDisbursed:        Number(p.total_amount_disbursed ?? 0),
-          totalRepaid:           Number(p.total_amount_repaid ?? 0),
-          totalInterestEarned:   Number(analyticsData?.standards_summary?.ifrs9_ecl_estimate ?? 0),
-          averageInterestRate:   Number(p.average_loan_size > 0 ? (analyticsData?.standards_summary?.pd_average ?? 0) : 0),
-          portfolioYield:        Number(p.portfolio_yield ?? 0),
-          defaultRate:           Number(p.default_rate ?? 0),
-          onTimePaymentRate:     Number(p.recovery_rate ?? 0),
-          recoveryRate:          Number(p.recovery_rate ?? 0),
-          averageLoanSize:       Number(p.average_loan_size ?? 0),
-          monthlyCollections:    0,
-          expectedMonthlyIncome: 0,
-        };
-        setAnalytics(mappedAnalytics);
 
         if (transformedLoans.length === 0) {
           toast('No active loans found.', { icon: 'ℹ️' });
@@ -203,7 +165,7 @@ const ActiveLoansPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
       <div className="max-w-[1536px] mx-auto space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Active Loan Book</h1>
             <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">
@@ -249,7 +211,6 @@ const ActiveLoansPage: React.FC = () => {
         <ActiveLoansEnlite
           loading={loading}
           loans={sorted}
-          analytics={analytics}
           onSort={toggleSort}
           sortKey={sortBy}
           sortDirection={sortDir}

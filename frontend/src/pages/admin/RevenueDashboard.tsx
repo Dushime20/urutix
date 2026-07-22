@@ -5,10 +5,9 @@
  */
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign, TrendingUp, Building2, Percent, BarChart3, Calendar } from 'lucide-react';
+import { Building2, BarChart3, Calendar } from 'lucide-react';
 import { revenueApi } from '../../services/featuresApi';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
-import { StatCard } from '../../components/EnliteUI';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -73,41 +72,6 @@ const RevenueDashboard: React.FC = () => {
         <ModernLoader isLoading text="Loading_Revenue" />
       ) : (
         <div className="space-y-6">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title={<TranslatedText text="Total GMV" />}
-              value={fmt(data?.totalGMV)}
-              icon={<DollarSign size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="Gross Merchandise Value" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Platform Fees" />}
-              value={fmt(data?.totalPlatformFees)}
-              icon={<Percent size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="Revenue collected" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Broker Commissions" />}
-              value={fmt(data?.totalBrokerCommissions)}
-              icon={<TrendingUp size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="Paid to brokers" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Net Payouts" />}
-              value={fmt(data?.totalNetPayouts)}
-              icon={<BarChart3 size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="To truck owners" />}
-            />
-          </div>
 
           {/* Summary Row */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">

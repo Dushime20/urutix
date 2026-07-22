@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  ArrowLeft, BarChart3, TrendingUp, Clock, CheckCircle,
-  AlertTriangle, Timer, Shield, Activity, Flag, Users, RefreshCw,
-} from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { disputesAPI } from '../../services/api';
 import type { DisputeAnalytics } from '../../types/dispute';
 import { CATEGORY_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '../../types/dispute';
@@ -12,19 +9,6 @@ import { CATEGORY_LABELS, PRIORITY_LABELS, STATUS_LABELS } from '../../types/dis
 interface Props { onBack: () => void; }
 
 const COLORS = ['#2c5173', '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-
-const MetricCard: React.FC<{ label: string; value: string | number; sub?: string; icon: React.ReactNode; color: string }> = ({
-  label, value, sub, icon, color,
-}) => (
-  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-4">
-    <div className="flex items-start justify-between mb-3">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
-    </div>
-    <p className="text-2xl font-black text-gray-900 dark:text-white">{value}</p>
-    <p className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-0.5">{label}</p>
-    {sub && <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">{sub}</p>}
-  </div>
-);
 
 const SupportAnalyticsDashboard: React.FC<Props> = ({ onBack }) => {
   const [period, setPeriod] = useState('month');
@@ -93,18 +77,6 @@ const SupportAnalyticsDashboard: React.FC<Props> = ({ onBack }) => {
 
       {analytics && (
         <>
-          {/* KPI Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <MetricCard label="Total Tickets"         value={analytics.total}              sub="All time period"                              icon={<Activity size={18} />}    color="bg-slate-100 text-slate-600" />
-            <MetricCard label="Open"                  value={analytics.open}               sub="Need attention"                               icon={<Flag size={18} />}         color="bg-blue-100 text-blue-600" />
-            <MetricCard label="Escalated"             value={analytics.escalated}          sub="Require urgent action"                        icon={<AlertTriangle size={18} />} color="bg-orange-100 text-orange-600" />
-            <MetricCard label="Resolved"              value={analytics.resolved}           sub={`${analytics.closed} closed total`}           icon={<CheckCircle size={18} />}  color="bg-green-100 text-green-600" />
-            <MetricCard label="SLA Compliance"        value={`${analytics.slaCompliancePercent}%`} sub={`${analytics.slaBreached} breached`}  icon={<Shield size={18} />}       color="bg-purple-100 text-purple-600" />
-            <MetricCard label="Avg Response (min)"    value={analytics.avgFirstResponseTimeMinutes} sub="First admin reply"                    icon={<Timer size={18} />}        color="bg-amber-100 text-amber-600" />
-            <MetricCard label="Avg Resolution (hr)"   value={analytics.avgResolutionTimeHours}      sub="Time to resolve"                      icon={<Clock size={18} />}        color="bg-cyan-100 text-cyan-600" />
-            <MetricCard label="Reopened"              value={analytics.reopened}           sub="Needed re-attention"                          icon={<TrendingUp size={18} />}   color="bg-indigo-100 text-indigo-600" />
-          </div>
-
           {/* Charts row 1 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Monthly trend */}

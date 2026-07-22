@@ -1,12 +1,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
-import { Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings, ExternalLink } from 'lucide-react';
 import { notificationApi } from '../services/notifications/notificationApi';
 import type { Notification } from '../services/notifications/notificationApi';
 import { TranslatedText } from '../components/translated-text';
+import { useAuth } from '../contexts/AuthContext';
+import { navigateFromNotification } from '../utils/notificationNavigation';
 
 const NotificationsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     category: '',
@@ -80,6 +84,25 @@ const NotificationsPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
     },
   });
+
+  const handleOpenNotification = useCallback(
+    (notification: Notification) => {
+      void navigateFromNotification({
+        notification: {
+          id: notification.id,
+          actionUrl: notification.actionUrl,
+          type: notification.notificationType,
+          isRead: Boolean(notification.readAt || notification.isRead),
+        },
+        role: user?.role,
+        navigate,
+        markAsRead: async (id) => {
+          await markAsReadMutation.mutateAsync(id);
+        },
+      });
+    },
+    [navigate, user?.role, markAsReadMutation],
+  );
 
   // Delete notification mutation
   const deleteMutation = useMutation({
@@ -323,8 +346,12 @@ const NotificationsPage: React.FC = () => {
                 </tr>
               ) : (
                 notificationsData?.notifications.map((notification: Notification) => (
-                  <tr key={notification.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap">
+                  <tr
+                    key={notification.id}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => handleOpenNotification(notification)}
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
@@ -379,13 +406,20 @@ const NotificationsPage: React.FC = () => {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-xs font-medium" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1.5 items-center">
                         {notification.requiresAction && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
                             <TranslatedText text="Action Required" />
                           </span>
                         )}
+                        <button
+                          onClick={() => handleOpenNotification(notification)}
+                          className="text-indigo-600 hover:text-indigo-900 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
+                          title={notification.actionText || 'Open'}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
                         {!notification.readAt && (
                           <button
                             onClick={() => markAsReadMutation.mutate(notification.id)}
@@ -424,13 +458,18 @@ const NotificationsPage: React.FC = () => {
           </div>
         ) : (
           notificationsData?.notifications.map((notification: Notification) => (
-            <div key={notification.id} className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+            <div
+              key={notification.id}
+              className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm cursor-pointer active:bg-gray-50"
+              onClick={() => handleOpenNotification(notification)}
+            >
               <div className="flex items-start gap-3">
                 <input
                   type="checkbox"
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 mt-1 flex-shrink-0 touch-manipulation"
                   checked={selectedNotifications.includes(notification.id)}
                   onChange={(e) => handleNotificationSelect(notification.id, e.target.checked)}
+                  onClick={(e) => e.stopPropagation()}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -447,7 +486,14 @@ const NotificationsPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleOpenNotification(notification)}
+                        className="text-indigo-600 hover:text-indigo-900 transition-colors touch-manipulation min-w-[36px] min-h-[36px] flex items-center justify-center"
+                        title={notification.actionText || 'Open'}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
                       {!notification.readAt && (
                         <button
                           onClick={() => markAsReadMutation.mutate(notification.id)}

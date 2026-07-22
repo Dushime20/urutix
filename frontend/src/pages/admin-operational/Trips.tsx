@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaTruck, FaMapMarkerAlt, FaEye, FaSearch, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
+import { FaEye, FaSearch } from 'react-icons/fa';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import type { Trip } from '../../services/tenantApi';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminTrips: React.FC = () => {
@@ -41,13 +40,6 @@ const OperationalAdminTrips: React.FC = () => {
     });
   }, [trips, searchTerm, statusFilter]);
 
-  const stats = {
-    total: trips.length,
-    completed: trips.filter(t => t.status === 'COMPLETED').length,
-    active: trips.filter(t => t.status === 'IN_PROGRESS').length,
-    delayed: trips.filter(t => t.status === 'DELAYED').length,
-  };
-
   return (
     <OperationalPageLayout
       title="Trip Monitoring"
@@ -57,41 +49,6 @@ const OperationalAdminTrips: React.FC = () => {
         <ModernLoader isLoading={true} type="page" />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Trips"
-              value={stats.total}
-              icon={<FaTruck size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="All time trips"
-            />
-            <StatCard
-              title="Active Trips"
-              value={stats.active}
-              icon={<FaMapMarkerAlt size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Currently in progress"
-            />
-            <StatCard
-              title="Completed"
-              value={stats.completed}
-              icon={<FaCheck size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Successfully delivered"
-            />
-            <StatCard
-              title="Delayed"
-              value={stats.delayed}
-              icon={<FaExclamationTriangle size={22} />}
-              color="error"
-              variant="classic"
-              subtitle="Requiring attention"
-            />
-          </div>
-
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-4">
             <div className="relative flex-1">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

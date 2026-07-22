@@ -9,17 +9,14 @@ import {
   UserPlus,
   Shield,
   Clock,
-  CheckCircle,
   X,
   ExternalLink,
   Filter,
-  Users
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import receiverService from '../../services/receiverService';
 import type { Receiver, CreateReceiverDto } from '../../types/receiver';
 import { cn } from '@/utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 import ModernLoader from '../../components/common/ModernLoader';
 
@@ -172,38 +169,6 @@ const ReceiversPage: React.FC = () => {
           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           Add Receiver
         </button>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 lg:gap-12 items-start">
-        <CircularStatCard
-          title="Total Receivers"
-          value={receivers.length}
-          icon={Users}
-          colorClass="bg-blue-50 text-[#345E85]"
-          secondaryColor="text-[#345E85]"
-        />
-        <CircularStatCard
-          title="Active"
-          value={receivers.filter(r => r.status === 'ACTIVE').length}
-          icon={CheckCircle}
-          colorClass="bg-emerald-50 text-emerald-600"
-          secondaryColor="text-emerald-600"
-        />
-        <CircularStatCard
-          title="Pending"
-          value={receivers.filter(r => r.status !== 'ACTIVE').length}
-          icon={Clock}
-          colorClass="bg-amber-50 text-amber-600"
-          secondaryColor="text-amber-600"
-        />
-        <CircularStatCard
-          title="Assigned Cargo"
-          value="0"
-          icon={Package}
-          colorClass="bg-purple-50 text-purple-600"
-          secondaryColor="text-purple-600"
-        />
       </div>
 
       {/* Main Content Area */}

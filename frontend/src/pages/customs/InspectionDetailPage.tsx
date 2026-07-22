@@ -5,13 +5,12 @@ import toast from 'react-hot-toast';
 import {
   ShieldCheck, ArrowLeft, CheckCircle, XCircle, AlertTriangle,
   Clock, FileText, Truck, User, MapPin, Package, Flag, Hash,
-  Calendar, Building2, Weight, DollarSign, Zap, Globe,
+  Calendar, Building2, Weight, Zap, Globe,
   ChevronRight, Loader2, BadgeCheck, ShieldAlert, PauseCircle,
   MessageSquare, ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const BRAND = '#2c5173';
@@ -217,17 +216,26 @@ const InspectionDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Financial summary strip */}
+            {/* Financial summary */}
             {(ins.declaredValue || ins.dutyAmount || ins.taxAmount) && (
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {ins.declaredValue && (
-                  <StatCard title="Declared Value" value={fmtCurrency(ins.declaredValue)} icon={<DollarSign size={16} />} color="primary" variant="classic" />
+              <div className="mt-5 space-y-2 text-sm border-t border-slate-100 dark:border-slate-800 pt-4">
+                {ins.declaredValue != null && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-slate-500 dark:text-slate-400">Declared Value</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">{fmtCurrency(ins.declaredValue)}</span>
+                  </div>
                 )}
-                {ins.dutyAmount && (
-                  <StatCard title="Duty Amount" value={fmtCurrency(ins.dutyAmount)} icon={<DollarSign size={16} />} color="primary" variant="classic" />
+                {ins.dutyAmount != null && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-slate-500 dark:text-slate-400">Duty Amount</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">{fmtCurrency(ins.dutyAmount)}</span>
+                  </div>
                 )}
-                {ins.taxAmount && (
-                  <StatCard title="Tax Amount" value={fmtCurrency(ins.taxAmount)} icon={<DollarSign size={16} />} color="primary" variant="classic" />
+                {ins.taxAmount != null && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-slate-500 dark:text-slate-400">Tax Amount</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">{fmtCurrency(ins.taxAmount)}</span>
+                  </div>
                 )}
               </div>
             )}

@@ -629,7 +629,7 @@ export class MatchingService {
             entityType: EntityType.CARGO,
             entityId: loadId,
             requiresAction: true,
-            actionUrl: `/dashboard/cargos/${loadId}/matches`,
+            actionUrl: `/dashboard/smart-matching`,
             actionText: 'View Matches',
           });
           this.logger.log(`📧 Notified cargo owner ${load.cargoOwnerId} of ${top5.length} top match candidates for load ${loadId}`);
@@ -1349,7 +1349,7 @@ export class MatchingService {
           entityType: EntityType.TRIP,
           entityId: trip.id,
           requiresAction: true,
-          actionUrl: `/dashboard/fleet/trips`,
+          actionUrl: `/dashboard/trips`,
           actionText: 'View Trip'
         });
         this.logger.log(`📧 Notification sent to Truck Owner: ${truckOwnerId}`);

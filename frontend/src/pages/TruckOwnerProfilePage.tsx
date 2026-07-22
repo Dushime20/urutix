@@ -11,8 +11,6 @@ import {
   CreditCard,
   Camera,
   CheckCircle2,
-  Users,
-  Truck,
   ChevronRight,
   Activity,
   Edit,
@@ -40,8 +38,6 @@ import Grid from '@mui/material/Grid';
 import { toast } from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';
 import { cn } from '../utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
-
 interface TruckOwnerProfile {
   personal: {
     firstName: string;
@@ -391,38 +387,6 @@ const TruckOwnerProfilePage: React.FC = () => {
           <Edit size={14} className="group-hover:rotate-12 transition-transform" />
           {saving ? 'SAVING...' : 'SAVE CHANGES'}
         </button>
-      </div>
-
-      {/* Stats Matrix */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-12 place-items-center bg-white p-6 md:p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-        <CircularStatCard
-          title="Total Trucks"
-          value={profile.fleet.totalTrucks}
-          icon={Truck}
-          colorClass="bg-blue-50 text-blue-600"
-          secondaryColor="text-blue-600"
-        />
-        <CircularStatCard
-          title="Active Fleet"
-          value={profile.fleet.activeTrucks}
-          icon={Activity}
-          colorClass="bg-emerald-50 text-emerald-600"
-          secondaryColor="text-emerald-600"
-        />
-        <CircularStatCard
-          title="Commanders"
-          value={profile.fleet.totalDrivers}
-          icon={Users}
-          colorClass="bg-amber-50 text-amber-600"
-          secondaryColor="text-amber-600"
-        />
-        <CircularStatCard
-          title="Trust Score"
-          value="4.85"
-          icon={Star}
-          colorClass="bg-primary-50 text-primary-500"
-          secondaryColor="text-primary-500"
-        />
       </div>
 
       {/* Navigation Sub-Surface */}

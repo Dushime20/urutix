@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { motion } from 'framer-motion';
 import {
     Fuel,
-    AlertTriangle,
     Plus,
-    DollarSign,
-    Droplets,
-    TrendingUp,
     ShieldCheck,
     BarChart3,
+    TrendingUp,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import FuelLogTable from '../components/FleetDashboard/Fuel/FuelLogTable';
@@ -21,7 +17,6 @@ import { FuelAdvancesTab } from '../components/FleetDashboard/Fuel/FuelAdvancesT
 import { fuelApi } from '../services/fuelApi';
 import type { FuelEntry } from '../services/fleetApi';
 import { cn } from '../utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import DashboardHeader from '../components/Layout/DashboardHeader';
 import DashboardFooter from '../components/Layout/DashboardFooter';
 import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
@@ -38,7 +33,6 @@ import {
 
 
 const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
-    const { compact: fmtMoney } = useCurrencyFormat();
     const [stats, setStats] = useState<any>(null);
     const [logs, setLogs] = useState<FuelEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -164,42 +158,6 @@ const FuelPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
                 )}
 
                 <div className={isEmbedded ? "space-y-12" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12"}>
-                     {/* Fuel Stats Overview */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-200"
-                    >
-                        <CircularStatCard
-                            title="Total Spend"
-                            value={fmtMoney(Number(stats?.totalCost || 0))}
-                            icon={DollarSign}
-                            colorClass="bg-blue-50 text-blue-600"
-                            secondaryColor="text-blue-600"
-                        />
-                        <CircularStatCard
-                            title="Fuel Volume"
-                            value={`${Number(stats?.totalGallons || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} Gal`}
-                            icon={Droplets}
-                            colorClass="bg-emerald-50 text-emerald-600"
-                            secondaryColor="text-emerald-600"
-                        />
-                        <CircularStatCard
-                            title="Avg. MPG"
-                            value={`${Number(stats?.avgMpg || 0).toFixed(1)} MPG`}
-                            icon={TrendingUp}
-                            colorClass="bg-primary-50 text-primary-500"
-                            secondaryColor="text-primary-500"
-                        />
-                        <CircularStatCard
-                            title="Fraud Alerts"
-                            value={stats?.flaggedTransactions || 0}
-                            icon={AlertTriangle}
-                            colorClass="bg-rose-50 text-rose-600"
-                            secondaryColor="text-rose-600"
-                        />
-                    </motion.div>
-
                     {/* Analytics & Performance */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 space-y-8 transition-colors duration-200">

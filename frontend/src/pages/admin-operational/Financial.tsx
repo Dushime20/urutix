@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaWallet, FaMoneyBillWave, FaExchangeAlt, FaChartBar } from 'react-icons/fa';
+import { FaChartBar } from 'react-icons/fa';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import type { FinancialMetrics } from '../../services/tenantApi';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
@@ -59,41 +58,6 @@ const OperationalAdminFinancial: React.FC = () => {
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
             </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Revenue"
-              value={formatCurrency(metrics?.totalRevenue)}
-              icon={<FaMoneyBillWave size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={`Earned over ${timeRange}`}
-            />
-            <StatCard
-              title="Transactions"
-              value={metrics?.totalTransactions || 0}
-              icon={<FaExchangeAlt size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Processed payments"
-            />
-            <StatCard
-              title="Pending Amount"
-              value={formatCurrency(metrics?.pendingAmount)}
-              icon={<FaWallet size={22} />}
-              color="warning"
-              variant="classic"
-              subtitle="Awaiting clearance"
-            />
-            <StatCard
-              title="Escrow Balance"
-              value={formatCurrency(metrics?.escrowBalance)}
-              icon={<FaWallet size={22} />}
-              color="success"
-              variant="classic"
-              subtitle="Secured funds"
-            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

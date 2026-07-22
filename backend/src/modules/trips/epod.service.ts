@@ -532,7 +532,7 @@ export class EpodService {
         category:  NotificationCategory.TRIP,
         channel:   NotificationChannel.IN_APP,
         priority:  'NORMAL',
-        actionUrl: `/dashboard/fleet/trips`,
+        actionUrl: `/dashboard/trips`,
         actionText:'View Trip & Payment',
         metadata:  { tripId: trip.id, epodId: epod.id },
       } as any);
@@ -550,7 +550,7 @@ export class EpodService {
         category:  NotificationCategory.TRIP,
         channel:   NotificationChannel.IN_APP,
         priority:  'NORMAL',
-        actionUrl: `/dashboard/missions`,
+        actionUrl: `/dashboard/driver/missions`,
         actionText:'View Completed Trip',
         metadata:  { tripId: trip.id, epodId: epod.id },
       } as any);

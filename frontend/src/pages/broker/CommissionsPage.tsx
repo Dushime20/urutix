@@ -4,20 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerCommission } from '../../services/brokerApi';
 import { 
   DollarSign, 
-  Clock, 
   Filter,
-  Download,
-  Loader2,
-  TrendingUp,
-  Activity,
   ArrowUpRight,
-  ShieldCheck,
   Calendar,
-  Zap,
-  Shield,
-  ArrowRight
 } from 'lucide-react';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const CommissionsPage: React.FC = () => {
@@ -32,8 +22,6 @@ const CommissionsPage: React.FC = () => {
   });
   const [stats, setStats] = useState({
     totalEarned: 0,
-    totalPending: 0,
-    total: 0,
   });
 
   useEffect(() => {
@@ -56,8 +44,6 @@ const CommissionsPage: React.FC = () => {
       setCommissions(Array.isArray(commissionsData) ? commissionsData : []);
       setStats({
         totalEarned: responseData.totalEarned || 0,
-        totalPending: responseData.totalPending || 0,
-        total: responseData.total || 0,
       });
     } catch (err: any) {
       console.error('Failed to load commissions:', err);
@@ -108,13 +94,6 @@ const CommissionsPage: React.FC = () => {
              </button>
            </div>
         </div>
-      </div>
-
-      {/* Statistics Board */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <StatCard title="Revenue System" value={fmtMoney(stats.totalEarned)} subtitle="Authorized Payouts" icon={<DollarSign size={20} />} color="success" variant="classic" />
-        <StatCard title="Pending Pipeline" value={fmtMoney(stats.totalPending)} subtitle="In Clearance Cycle" icon={<Clock size={20} />} color="warning" variant="classic" />
-        <StatCard title="Total Records" value={stats.total} subtitle="Facilitations Processed" icon={<Activity size={20} />} color="info" variant="classic" />
       </div>
 
       {/* Audit Controls */}

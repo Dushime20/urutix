@@ -25,7 +25,6 @@ import { fuelApi } from '../../services/fuelApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 type FilterStatus = 'all' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'RECONCILED';
 
@@ -49,11 +48,6 @@ const DriverAdvanceRequestsPage: React.FC = () => {
     queryKey: ['fleet-driver-advances'],
     queryFn: () => fuelApi.getAllAdvancesForMyDrivers(),
     refetchInterval: 30000,
-  });
-
-  const { data: stats } = useQuery({
-    queryKey: ['fleet-advance-stats'],
-    queryFn: () => fuelApi.getAdvanceStats(),
   });
 
   const approveMutation = useMutation({
@@ -137,46 +131,6 @@ const DriverAdvanceRequestsPage: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Pending"
-          value={stats?.pendingCount ?? 0}
-          icon={<Clock size={20} />}
-          subtitle={formatCurrency(stats?.pendingAmount ?? 0)}
-          color="warning"
-          loading={!stats}
-          variant="premium"
-        />
-        <StatCard
-          title="Approved"
-          value={stats?.approvedCount ?? 0}
-          icon={<CheckCircle size={20} />}
-          subtitle={formatCurrency(stats?.approvedAmount ?? 0)}
-          color="success"
-          loading={!stats}
-          variant="premium"
-        />
-        <StatCard
-          title="Reconciled"
-          value={stats?.reconciledCount ?? 0}
-          icon={<BadgeCheck size={20} />}
-          subtitle={formatCurrency(stats?.totalReconciled ?? 0)}
-          color="primary"
-          loading={!stats}
-          variant="premium"
-        />
-        <StatCard
-          title="Rejected"
-          value={stats?.rejectedCount ?? 0}
-          icon={<XCircle size={20} />}
-          subtitle="—"
-          color="error"
-          loading={!stats}
-          variant="premium"
-        />
-      </div>
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2 p-1.5 bg-slate-50 border border-slate-100 rounded-2xl w-fit shadow-inner">

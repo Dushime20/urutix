@@ -644,7 +644,7 @@ const LenderTeamManagementPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -675,61 +675,6 @@ const LenderTeamManagementPage: React.FC = () => {
                 <FaUserPlus className="h-4 w-4" />
                 Add Team Member
               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <FaUserCheck className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.status === 'active').length}
-                </div>
-                <div className="text-sm text-gray-600">Active Members</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <FaCog className="h-5 w-5 text-yellow-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.status === 'pending').length}
-                </div>
-                <div className="text-sm text-gray-600">Pending Approval</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <FaUserShield className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">{roles.length}</div>
-                <div className="text-sm text-gray-600">Available Roles</div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FaShieldAlt className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900">{permissions.length}</div>
-                <div className="text-sm text-gray-600">Permissions</div>
-              </div>
             </div>
           </div>
         </div>

@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
 import {
-    FileText,
-    TrendingUp,
-    CheckCircle2,
-    DollarSign,
+    ShieldAlert,
     ExternalLink,
     Mail,
-    ShieldAlert,
     Download,
     LayoutGrid,
     List,
-    TrendingDown,
-    Banknote,
-    PiggyBank,
 } from 'lucide-react';
-import { StatCard } from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -53,23 +45,9 @@ interface ActiveLoan {
     _rawData?: any;
 }
 
-interface PortfolioAnalytics {
-    totalActiveLoans: number;
-    totalOutstanding: number;
-    totalDisbursed: number;
-    totalRepaid: number;
-    totalInterestEarned: number;
-    portfolioYield: number;
-    onTimePaymentRate: number;
-    defaultRate: number;
-    recoveryRate: number;
-    averageLoanSize: number;
-}
-
 interface ActiveLoansEnliteProps {
     loading: boolean;
     loans: ActiveLoan[];
-    analytics: PortfolioAnalytics | null;
     onSort: (key: string) => void;
     sortKey: string;
     sortDirection: 'asc' | 'desc';
@@ -79,19 +57,17 @@ interface ActiveLoansEnliteProps {
 const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
     loading,
     loans,
-    analytics,
     onSort,
     sortKey,
     sortDirection,
     onViewDetails
 }) => {
     const [viewMode, setViewMode] = useState<'table' | 'grouped'>('table');
-    const { format, compact } = useCurrencyFormat();
+    const { format } = useCurrencyFormat();
     const { tSync: t } = useTranslation();
 
     // Loans are stored in RWF — convert to user preferred currency
     const fmt  = (n: number) => format(n, 'RWF');
-    const cpt  = (n: number) => compact(n, 'RWF');
 
     const handleExport = () => {
         if (loans.length === 0) return;
@@ -310,99 +286,6 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Portfolio Analytics — 8 stat cards */}
-            {analytics && (
-                <>
-                    {/* Row 1: Money stats */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <StatCard
-                            variant="classic"
-                            title={t("Total Disbursed")}
-                            value={fmt(analytics.totalDisbursed || 0)}
-                            subtitle={t("Cumulative capital deployed")}
-                            trend={t("All time")}
-                            trendDirection="neutral"
-                            icon={<Banknote size={22} />}
-                            color="primary"
-                        />
-                        <StatCard
-                            variant="classic"
-                            title={t("Outstanding Balance")}
-                            value={fmt(analytics.totalOutstanding || 0)}
-                            subtitle={t("Active portfolio exposure")}
-                            trend={t("Live")}
-                            trendDirection="neutral"
-                            icon={<DollarSign size={22} />}
-                            color="info"
-                        />
-                        <StatCard
-                            variant="classic"
-                            title={t("Total Repaid")}
-                            value={fmt(analytics.totalRepaid || 0)}
-                            subtitle={t("Principal recovered")}
-                            trend={analytics.totalDisbursed > 0 ? `${((analytics.totalRepaid / analytics.totalDisbursed) * 100).toFixed(1)}% recovery` : '—'}
-                            trendDirection="up"
-                            icon={<PiggyBank size={22} />}
-                            color="success"
-                        />
-                        <StatCard
-                            variant="classic"
-                            title={t("Average Loan Size")}
-                            value={fmt(analytics.averageLoanSize || 0)}
-                            subtitle={t("Per disbursement")}
-                            trend={t("Portfolio avg")}
-                            trendDirection="neutral"
-                            icon={<TrendingUp size={22} />}
-                            color="accent"
-                        />
-                    </div>
-
-                    {/* Row 2: Performance stats */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <StatCard
-                            variant="classic"
-                            title={t("Active Loans")}
-                            value={(analytics.totalActiveLoans || 0).toString()}
-                            subtitle={t("Approved & disbursed")}
-                            trend={t("Stable deployment")}
-                            trendDirection="neutral"
-                            icon={<FileText size={22} />}
-                            color="secondary"
-                        />
-                        <StatCard
-                            variant="classic"
-                            title={t("Portfolio Yield")}
-                            value={`${(analytics.portfolioYield || 0).toFixed(2)}%`}
-                            subtitle={t("Annualised return")}
-                            trend="+0.5% optimisation"
-                            trendDirection="up"
-                            icon={<TrendingUp size={22} />}
-                            color="emerald"
-                        />
-                        <StatCard
-                            variant="classic"
-                            title={t("Recovery Rate")}
-                            value={`${(analytics.onTimePaymentRate || 0).toFixed(1)}%`}
-                            subtitle={t("On-time collection index")}
-                            trend={analytics.onTimePaymentRate >= 80 ? t('Healthy') : t('Monitor')}
-                            trendDirection={analytics.onTimePaymentRate >= 80 ? 'up' : 'down'}
-                            icon={<CheckCircle2 size={22} />}
-                            color="warning"
-                        />
-                        <StatCard
-                            variant="classic"
-                            title={t("Default Rate")}
-                            value={`${(analytics.defaultRate || 0).toFixed(2)}%`}
-                            subtitle={t("NPL exposure")}
-                            trend={analytics.defaultRate <= 5 ? t('Within threshold') : t('Above threshold')}
-                            trendDirection={analytics.defaultRate <= 5 ? 'neutral' : 'down'}
-                            icon={<TrendingDown size={22} />}
-                            color={analytics.defaultRate <= 5 ? 'secondary' : 'error'}
-                        />
-                    </div>
-                </>
-            )}
-
             {/* Main Content Area */}
             <DataCard
                 title={t("Portfolio Management Console")}

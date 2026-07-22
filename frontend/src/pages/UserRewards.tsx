@@ -12,7 +12,6 @@ import {
   Ticket
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import StatCard from '../components/EnliteUI/Cards/StatCard';
 import DataCard from '../components/EnliteUI/Cards/DataCard';
 import ModernLoader from '../components/common/ModernLoader';
 
@@ -31,31 +30,21 @@ interface Reward {
   criteria?: Record<string, any>;
 }
 
-interface RewardStats {
-  totalRewards: number;
-  activeRewards: number;
-  redeemedRewards: number;
-  totalValue: number;
-  pendingValue: number;
-  activeValue: number;
-}
-
 const UserRewards: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
   const { user } = useAuth();
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [stats, setStats] = useState<RewardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user?.id) {
       loadUserRewards();
-      loadRewardStats();
     }
   }, [user?.id]);
 
   const loadUserRewards = async () => {
     try {
+      setLoading(true);
       const response = await fetch(`/api/rewards/user/${user?.id}`);
       if (!response.ok) {
         setRewards([]);
@@ -73,41 +62,6 @@ const UserRewards: React.FC = () => {
     } catch (error) {
       console.error('Error loading rewards:', error);
       setRewards([]);
-    }
-  };
-
-  const loadRewardStats = async () => {
-    try {
-      const response = await fetch(`/api/rewards/user/${user?.id}/stats`);
-      if (!response.ok) {
-        setStats({
-          totalRewards: 0,
-          activeRewards: 0,
-          redeemedRewards: 0,
-          totalValue: 0,
-          pendingValue: 0,
-          activeValue: 0,
-        });
-        return;
-      }
-      const data = await response.json();
-      setStats({
-        totalRewards: data?.totalRewards || 0,
-        activeRewards: data?.activeRewards || 0,
-        redeemedRewards: data?.redeemedRewards || 0,
-        totalValue: data?.totalValue || 0,
-        pendingValue: data?.pendingValue || 0,
-        activeValue: data?.activeValue || 0,
-      });
-    } catch (error) {
-      setStats({
-        totalRewards: 0,
-        activeRewards: 0,
-        redeemedRewards: 0,
-        totalValue: 0,
-        pendingValue: 0,
-        activeValue: 0,
-      });
     } finally {
       setLoading(false);
     }
@@ -124,7 +78,6 @@ const UserRewards: React.FC = () => {
 
       if (response.ok) {
         loadUserRewards();
-        loadRewardStats();
       }
     } catch (error) {
       console.error('Error activating reward:', error);
@@ -142,7 +95,6 @@ const UserRewards: React.FC = () => {
 
       if (response.ok) {
         loadUserRewards();
-        loadRewardStats();
       }
     } catch (error) {
       console.error('Error redeeming reward:', error);
@@ -193,33 +145,6 @@ const UserRewards: React.FC = () => {
         <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Rewards & Benefits</h1>
         <p className="text-slate-500 font-medium">Unlock exclusive perks, manage bonuses, and track your loyalty progress.</p>
       </div>
-
-      {/* Stats Matrix */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard
-            title="Total Rewards"
-            value={stats.totalRewards}
-            icon={<Award />}
-            color="primary"
-            subtitle={`Total Value: ${fmtMoney(stats.totalValue || 0)}`}
-          />
-          <StatCard
-            title="Active Rewards"
-            value={stats.activeRewards}
-            icon={<CheckCircle />}
-            color="success"
-            subtitle={`Available: ${fmtMoney(stats.activeValue || 0)}`}
-          />
-          <StatCard
-            title="Redeemed"
-            value={stats.redeemedRewards}
-            icon={<Coins />}
-            color="accent"
-            subtitle="Successfully Claimed"
-          />
-        </div>
-      )}
 
       {/* Rewards List */}
       <DataCard

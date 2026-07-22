@@ -1,17 +1,14 @@
 import React from 'react';
 import {
-    Receipt,
     Download,
     Printer,
     CheckCircle2,
     Clock,
     XCircle,
     FileText,
-    DollarSign,
     Eye,
     Box
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -82,13 +79,6 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
             case 'cancelled': return <XCircle size={12} className="mr-1" />;
             default: return null;
         }
-    };
-
-    const stats = {
-        totalReceipts: receipts.length,
-        paidAmount: receipts.filter(r => r.status === 'paid').reduce((sum, r) => sum + r.amount, 0),
-        pendingAmount: receipts.filter(r => r.status === 'issued').reduce((sum, r) => sum + r.amount, 0),
-        totalVolume: receipts.reduce((sum, r) => sum + r.amount, 0)
     };
 
     const columns = [
@@ -212,38 +202,6 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title={t("Total Documents")}
-                    value={stats.totalReceipts}
-                    subtitle={t("Issued Receipts")}
-                    icon={<Receipt size={24} />}
-                    color="primary"
-                />
-                <StatCard
-                    title={t("Settled Capital")}
-                    value={formatMoney(stats.paidAmount)}
-                    trend="+8% this quarter"
-                    trendDirection="up"
-                    icon={<CheckCircle2 size={24} />}
-                    color="success"
-                />
-                <StatCard
-                    title={t("Outstanding Volume")}
-                    value={formatMoney(stats.pendingAmount)}
-                    subtitle={t("Awaiting Settlement")}
-                    icon={<Clock size={24} />}
-                    color="warning"
-                />
-                <StatCard
-                    title={t("Aggregate Flow")}
-                    value={formatMoney(stats.totalVolume)}
-                    subtitle={t("Network Value")}
-                    icon={<DollarSign size={24} />}
-                    color="primary"
-                />
-            </div>
-
             <DataCard
                 title={t("Payment Archive")}
                 subtitle={t("Official financial records for institutional auditing")}

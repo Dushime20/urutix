@@ -19,10 +19,8 @@ import {
   AutoFixHigh as MLIcon,
   Speed as RealtimeIcon,
   Api as ApiIcon,
-  TrendingUp as TrendingUpIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi } from '../../services/analyticsApi';
 import DataCard from '../../components/EnliteUI/Cards/DataCard';
@@ -404,13 +402,6 @@ export const AdvancedAnalytics: React.FC = () => {
   // Cargo owners / fleet owners don't need ML training or API marketplace
   const isCargoOwnerRole = CARGO_OWNER_ROLES.includes(user?.role ?? '');
 
-  // Fetch real dashboard data
-  const { data: dashboardData } = useQuery({
-    queryKey: ['analytics', 'advanced', 'dashboard', user?.tenantId],
-    queryFn: () => analyticsApi.getRealTimeDashboard(),
-    enabled: !!user?.tenantId,
-  });
-
   // Build tabs based on role
   const tabs = [
     ...(!isCargoOwnerRole ? [{ label: 'AI Models',    icon: <MLIcon sx={{ fontSize: 14 }} /> }] : []),
@@ -437,64 +428,6 @@ export const AdvancedAnalytics: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-
-      {/* ── Overview Cards ───────────────────────────────────────────────────── */}
-      <Grid container spacing={3}>
-        {!isCargoOwnerRole && (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="AI MODELS"
-              value={dashboardData?.activeModels?.toString() ?? '—'}
-              subtitle="ACTIVE AI MODELS"
-              icon={<MLIcon />}
-              color="primary"
-              variant="classic"
-            />
-          </Grid>
-        )}
-        <Grid size={{ xs: 12, sm: 6, md: isCargoOwnerRole ? 4 : 3 }}>
-          <StatCard
-            title="LIVE STREAMS"
-            value={dashboardData?.activeStreams?.toString() ?? '—'}
-            subtitle="ACTIVE MONITORING"
-            icon={<RealtimeIcon />}
-            color="info"
-            variant="classic"
-          />
-        </Grid>
-        {!isCargoOwnerRole && (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="API KEYS"
-              value={dashboardData?.activeApiKeys?.toString() ?? '—'}
-              subtitle="ACTIVE API KEYS"
-              icon={<ApiIcon />}
-              color="secondary"
-              variant="classic"
-            />
-          </Grid>
-        )}
-        <Grid size={{ xs: 12, sm: 6, md: isCargoOwnerRole ? 4 : 3 }}>
-          <StatCard
-            title="PREDICTIONS"
-            value={dashboardData?.predictionsToday?.toString() ?? '—'}
-            subtitle="AI PREDICTIONS TODAY"
-            icon={<TrendingUpIcon />}
-            color="warning"
-            variant="classic"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: isCargoOwnerRole ? 4 : 3 }}>
-          <StatCard
-            title="ALERTS ACTIVE"
-            value={dashboardData?.activeAlerts?.toString() ?? '—'}
-            subtitle="MONITORING ALERTS"
-            icon={<SettingsIcon />}
-            color="error"
-            variant="classic"
-          />
-        </Grid>
-      </Grid>
 
       {/* ── Tabs ─────────────────────────────────────────────────────────────── */}
       <DataCard title="ADVANCED DATA CENTER" subtitle="AI models, live monitoring and alert settings">

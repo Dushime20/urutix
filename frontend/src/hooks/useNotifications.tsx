@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
 import { notificationsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { resolveNotificationRoute } from '../utils/resolveNotificationRoute';
 
 export interface UrutixNotification {
   id: string;
@@ -221,20 +222,26 @@ export const useNotifications = () => {
       }
       return true;
     })
-    .map((n: any) => ({
-      id: n.id,
-      type: n.notificationType || n.type || 'GENERAL',
-      title: n.title,
-      message: n.message,
-      data: n.metadata || n.data,
-      timestamp: n.createdAt || n.timestamp || new Date().toISOString(),
-      isRead: isNotificationRead(n),
-      category: n.category,
-      priority: n.priority,
-      createdAt: n.createdAt,
-      actionUrl: n.actionUrl,
-      actionText: n.actionText,
-    }));
+    .map((n: any) => {
+      const type = n.notificationType || n.type || 'GENERAL';
+      const resolved = resolveNotificationRoute(n.actionUrl, user?.role, {
+        notificationType: type,
+      });
+      return {
+        id: n.id,
+        type,
+        title: n.title,
+        message: n.message,
+        data: n.metadata || n.data,
+        timestamp: n.createdAt || n.timestamp || new Date().toISOString(),
+        isRead: isNotificationRead(n),
+        category: n.category,
+        priority: n.priority,
+        createdAt: n.createdAt,
+        actionUrl: resolved.path || n.actionUrl,
+        actionText: n.actionText,
+      };
+    });
 
   // Unread count: prefer server value, fall back to client-side count
   const serverUnreadCount = unreadCountData?.count ?? null;

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaGavel, FaMapMarkerAlt, FaSearch, FaCheckCircle, FaTimesCircle, FaClock } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaSearch } from 'react-icons/fa';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import type { Bid } from '../../services/tenantApi';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
@@ -14,7 +13,6 @@ const OperationalAdminBidding: React.FC = () => {
   const [bids, setBids] = useState<Bid[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [stats, setStats] = useState({ total: 0, pending: 0, accepted: 0, rejected: 0 });
 
   useEffect(() => {
     if (user?.tenantId) {
@@ -27,20 +25,11 @@ const OperationalAdminBidding: React.FC = () => {
   const fetchBids = async (tenantId: string) => {
     try {
       setLoading(true);
-      const [bidsRes, statsRes] = await Promise.all([
-        operationalAdminApi.getBids({ status: statusFilter === 'all' ? undefined : statusFilter }),
-        operationalAdminApi.getBiddingStats(),
-      ]);
+      const bidsRes = await operationalAdminApi.getBids({ status: statusFilter === 'all' ? undefined : statusFilter });
       const rawBids: any[] = Array.isArray(bidsRes) ? bidsRes : bidsRes?.bids ?? bidsRes?.data ?? bidsRes?.items ?? [];
       // Scope bids to this tenant only
       const tenantBids = rawBids.filter((b: any) => !b.tenantId || b.tenantId === tenantId);
       setBids(tenantBids);
-      setStats({
-        total:    statsRes?.total    ?? tenantBids.length,
-        pending:  statsRes?.pending  ?? 0,
-        accepted: statsRes?.accepted ?? 0,
-        rejected: statsRes?.rejected ?? 0,
-      });
     } catch (error: any) {
       toast.error(getApiErrorMessage(error));
       console.error(error);
@@ -69,41 +58,6 @@ const OperationalAdminBidding: React.FC = () => {
         <ModernLoader isLoading={true} type="page" />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Bids"
-              value={stats.total}
-              icon={<FaGavel size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="All received bids"
-            />
-            <StatCard
-              title="Pending Approval"
-              value={stats.pending}
-              icon={<FaClock size={22} />}
-              color="warning"
-              variant="classic"
-              subtitle="Awaiting response"
-            />
-            <StatCard
-              title="Accepted"
-              value={stats.accepted}
-              icon={<FaCheckCircle size={22} />}
-              color="success"
-              variant="classic"
-              subtitle="Won bids"
-            />
-            <StatCard
-              title="Rejected"
-              value={stats.rejected}
-              icon={<FaTimesCircle size={22} />}
-              color="error"
-              variant="classic"
-              subtitle="Lost bids"
-            />
-          </div>
-
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-4">
             <div className="relative flex-1">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

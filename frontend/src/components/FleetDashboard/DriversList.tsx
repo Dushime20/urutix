@@ -18,7 +18,6 @@ import {
 	ExternalLink,
 	Users,
 	AlertTriangle,
-	CheckCircle2,
 	Clock,
 	Loader2,
 	Zap,
@@ -38,7 +37,6 @@ import type { Driver } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import DocumentUploadModal from '../documents/DocumentUploadModal';
 import { cn } from '../../utils/cn';
-import { CircularStatCard } from '../EnliteUI/Cards/StatCard';
 import { DriverBreakManagement } from './DriverBreakManagement';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -200,38 +198,6 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 
 	return (
 		<div className="space-y-8 pb-12">
-			{/* Stats Matrix */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-gray-900 p-10 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-200">
-				<CircularStatCard
-					title="Total Drivers"
-					value={drivers.length}
-					icon={Users}
-					colorClass="bg-blue-50 dark:bg-blue-950/20 text-[#345E85] dark:text-blue-400"
-					secondaryColor="text-[#345E85] dark:text-blue-400"
-				/>
-				<CircularStatCard
-					title="Active Duty"
-					value={drivers.filter(d => d.status === 'ACTIVE').length}
-					icon={CheckCircle2}
-					colorClass="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400"
-					secondaryColor="text-emerald-600 dark:text-emerald-400"
-				/>
-				<CircularStatCard
-					title="Ready / Available"
-					value={drivers.filter(d => d.availabilityStatus === 'AVAILABLE').length}
-					icon={Clock}
-					colorClass="bg-primary-50 dark:bg-primary-950/20 text-primary-500 dark:text-primary-400"
-					secondaryColor="text-primary-500 dark:text-primary-400"
-				/>
-				<CircularStatCard
-					title="Compliance Alerts"
-					value={drivers.filter(d => d.status === 'SUSPENDED').length}
-					icon={AlertTriangle}
-					colorClass="bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400"
-					secondaryColor="text-rose-600 dark:text-rose-400"
-				/>
-			</div>
-
 			{/* Control Surface */}
 			<div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4 flex flex-col md:flex-row gap-4 transition-colors duration-200">
 				<div className="flex-1 relative group">

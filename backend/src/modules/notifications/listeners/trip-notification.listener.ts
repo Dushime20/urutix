@@ -170,7 +170,7 @@ export class TripNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/driver/trips`,
+        actionUrl: `/dashboard/driver/trips`,
         actionText: 'View Trip Details',
         metadata: {
           tripId: payload.tripId,
@@ -273,7 +273,7 @@ export class TripNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/driver/trips`,
+        actionUrl: `/dashboard/driver/trips`,
         actionText: 'Start Trip',
         metadata: {
           tripId: payload.tripId,
@@ -523,7 +523,7 @@ export class TripNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
-        actionUrl: `/driver/trips`,
+        actionUrl: `/dashboard/driver/trips`,
         actionText: 'View Trip',
         metadata: {
           tripId: payload.tripId,

@@ -28,7 +28,6 @@ import {
   FaClock
 } from 'react-icons/fa';
 import { TranslatedText } from '@/components/translated-text';
-import { StatCard } from '../components/EnliteUI';
 import { activityLogsApi, type ActivityLog } from '@/services/activityLogsApi';
 import ModernLoader from '../components/common/ModernLoader';
 
@@ -49,19 +48,7 @@ const AdminHistory: React.FC = () => {
     }),
   });
 
-  // Fetch activity stats
-  const { data: statsData } = useQuery({
-    queryKey: ['activity-stats'],
-    queryFn: () => activityLogsApi.getActivityStats(),
-  });
-
   const activityLogs = logsData?.logs || [];
-  const stats = statsData || {
-    totalActivities: 0,
-    userActions: 0,
-    securityEvents: 0,
-    systemEvents: 0,
-  };
 
   // Filter logs (client-side filtering for additional refinement)
   const filteredLogs = useMemo(() => {
@@ -130,42 +117,6 @@ const AdminHistory: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={<TranslatedText text="Total Activities" />}
-          value={stats.totalActivities}
-          icon={<FaHistory size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Last 24 hours" />}
-        />
-        <StatCard
-          title={<TranslatedText text="User Actions" />}
-          value={stats.userActions}
-          icon={<FaUser size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="User operations" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Security Events" />}
-          value={stats.securityEvents}
-          icon={<FaShieldAlt size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Auth & security" />}
-        />
-        <StatCard
-          title={<TranslatedText text="System Events" />}
-          value={stats.systemEvents}
-          icon={<FaCog size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="System operations" />}
-        />
-      </div>
-
       {/* Filters */}
       <div className="bg-slate-50 border border-transparent rounded-3xl p-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">

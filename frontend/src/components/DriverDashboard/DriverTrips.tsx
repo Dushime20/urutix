@@ -8,14 +8,12 @@ import {
   X,
   Play,
   Pause,
-  Calendar,
   ArrowRight,
   Navigation,
   CheckCircle2,
   TrendingUp,
   Search,
   Truck,
-  DollarSign,
   MapPin,
   Box,
   User,
@@ -36,15 +34,6 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface DriverTripsProps {
   driverId: string;
-}
-
-interface TripStats {
-  totalTrips: number;
-  activeTrips: number;
-  completedTrips: number;
-  scheduledTrips: number;
-  totalRevenue: number;
-  totalDistance: number;
 }
 
 const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
@@ -150,24 +139,6 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
     onError: (error: any) => toast.error(getApiErrorMessage(error)),
   });
 
-  // Stats
-  const stats: TripStats = useMemo(() => {
-    const totalTrips = allTrips.length;
-    const activeTrips = allTrips.filter(t =>
-      ['in_progress', 'active'].includes(t.status?.toLowerCase() || '')
-    ).length;
-    const completedTrips = allTrips.filter(t =>
-      ['completed', 'delivered'].includes(t.status?.toLowerCase() || '')
-    ).length;
-    const scheduledTrips = allTrips.filter(t =>
-      ['scheduled', 'planned'].includes(t.status?.toLowerCase() || '')
-    ).length;
-    const totalRevenue = allTrips.reduce((sum, t) => sum + Number(t.earnings || 0), 0);
-    const totalDistance = allTrips.reduce((sum, t) => sum + Number(t.distance || 0), 0);
-
-    return { totalTrips, activeTrips, completedTrips, scheduledTrips, totalRevenue, totalDistance };
-  }, [allTrips]);
-
   // Filtering & Sorting
   const filteredAndSortedTrips = useMemo(() => {
     const filtered = allTrips.filter((trip) => {
@@ -262,31 +233,6 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
           <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
           <span><TranslatedText text="Sync Data" /></span>
         </button>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Trips', value: stats.totalTrips, icon: Navigation, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Active', value: stats.activeTrips, icon: Truck, color: 'text-sky-600', bg: 'bg-sky-50' },
-          { label: 'Scheduled', value: stats.scheduledTrips, icon: Calendar, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Revenue', value: fmtMoney(stats.totalRevenue), icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' }
-        ].map((stat, idx) => (
-          <div
-            key={idx}
-            className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-4">
-              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", stat.bg, stat.color)}>
-                <stat.icon className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text={stat.label} /></p>
-                <p className="text-2xl font-black text-[#0f172a] tracking-tight">{stat.value}</p>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Current Trip Card */}

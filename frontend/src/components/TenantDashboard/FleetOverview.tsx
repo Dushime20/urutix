@@ -1,12 +1,22 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Truck, User, Wrench as Tools,
-  AlertTriangle, Clock,
-  Filter, Search, Plus, Eye, Edit, Trash2,
+  Truck,
+  Wrench as Tools,
+  AlertTriangle,
+  Clock,
+  Filter,
+  Search,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
   Activity,
-  Settings as SettingsIcon, ShieldCheck, Zap,
-  ChevronLeft, ChevronRight
+  Settings as SettingsIcon,
+  ShieldCheck,
+  Zap,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TranslatedText } from '../translated-text';
@@ -338,64 +348,6 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
 
   return (
     <div className="space-y-10">
-      {/* Summary Cards — Screenshot-driven Refinement */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10 py-6">
-        {[
-          { 
-            label: tSync('Total Trucks'), 
-            value: fleetSummary.totalTrucks, 
-            icon: Truck,
-            color: 'text-primary-600 dark:text-primary-400',
-            borderColor: 'border-primary-100 dark:border-primary-900',
-            shadow: 'shadow-primary-100/50 dark:shadow-primary-900/10'
-          },
-          { 
-            label: tSync('Available Trucks'), 
-            value: fleetSummary.activeTrucks, 
-            icon: Zap,
-            color: 'text-primary-600 dark:text-primary-400',
-            borderColor: 'border-primary-100 dark:border-primary-900',
-            shadow: 'shadow-primary-100/50 dark:shadow-primary-900/10'
-          },
-          { 
-            label: tSync('Total Drivers'), 
-            value: fleetSummary.totalDrivers, 
-            icon: User,
-            color: 'text-primary-600 dark:text-primary-400',
-            borderColor: 'border-primary-100 dark:border-primary-900',
-            shadow: 'shadow-primary-100/50 dark:shadow-primary-900/10'
-          },
-          { 
-            label: tSync('Fleet Usage'), 
-            value: `${utilization.current}%`, 
-            icon: Activity,
-            color: 'text-primary-600 dark:text-primary-400',
-            borderColor: 'border-primary-100 dark:border-primary-900',
-            shadow: 'shadow-primary-100/50 dark:shadow-primary-900/10'
-          }
-        ].map((stat, i) => (
-          <motion.div 
-            key={i} 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="flex items-center gap-6 group cursor-default"
-          >
-             <div className={`w-20 h-20 rounded-full bg-white dark:bg-slate-800 border ${stat.borderColor} flex items-center justify-center flex-shrink-0 shadow-xl ${stat.shadow} transition-transform duration-500 group-hover:scale-110`}>
-                <stat.icon size={28} className="text-primary-600 dark:text-primary-400" />
-             </div>
-             
-             <div className="flex flex-col">
-                <p className={`text-3xl font-black ${stat.color} leading-none mb-1.5 tracking-tight`}>
-                  {stat.value}
-                </p>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">
-                  {stat.label}
-                </p>
-             </div>
-          </motion.div>
-        ))}
-      </div>
 
       {/* Charts Row — Enhanced Visuals */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

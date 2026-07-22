@@ -3,13 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { monitoringApi } from '../../services/monitoringApi';
 import { useSocket } from '../../contexts/SocketContext';
 import {
-    Activity, Database, Cpu, HardDrive,
-    Users, AlertTriangle, CheckCircle, Loader2,
-    Download, RefreshCw, BarChart2, Globe
+    Activity, AlertTriangle,
+    Users, Download, RefreshCw, BarChart2, Globe
 } from 'lucide-react';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
-import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
 
 const SystemMonitoring: React.FC = () => {
@@ -22,8 +20,8 @@ const SystemMonitoring: React.FC = () => {
     const [autoRefresh, setAutoRefresh] = useState(true);
     const { socket } = useSocket();
 
-    // Fetch system health
-    const { data: health, isLoading: healthLoading, refetch: refetchHealth } = useQuery({
+    // Fetch system health (drives loading gate + refresh actions)
+    const { isLoading: healthLoading, refetch: refetchHealth } = useQuery({
         queryKey: ['system-health'],
         queryFn: monitoringApi.getSystemHealth,
         refetchInterval: autoRefresh ? 30000 : false // Auto-refresh every 30s
@@ -83,24 +81,6 @@ const SystemMonitoring: React.FC = () => {
         };
     }, [socket, refetchActivity, refetchAudit, refetchHealth, refetchMetrics]);
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'healthy': return 'text-emerald-600 bg-emerald-50';
-            case 'degraded': return 'text-amber-600 bg-amber-50';
-            case 'unhealthy': return 'text-red-600 bg-red-50';
-            default: return 'text-slate-600 bg-slate-50';
-        }
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'healthy': return <CheckCircle className="text-emerald-600 w-5 h-5" />;
-            case 'degraded': return <AlertTriangle className="text-amber-600 w-5 h-5" />;
-            case 'unhealthy': return <AlertTriangle className="text-red-600 w-5 h-5" />;
-            default: return <Loader2 className="animate-spin text-slate-600 w-5 h-5" />;
-        }
-    };
-
     if (healthLoading || activityLoading) {
         return (
             <AdminPageLayout
@@ -138,44 +118,8 @@ const SystemMonitoring: React.FC = () => {
             }
         >
             <div className="safe-bottom">
-            {/* System Status Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <StatCard
-                    title={<TranslatedText text="System Status" />}
-                    value={health?.status?.toUpperCase() || 'UNKNOWN'}
-                    icon={getStatusIcon(health?.status || 'unknown')}
-                    color="primary"
-                    variant="classic"
-                    subtitle={`Uptime: ${health?.uptime.formatted || 'N/A'}`}
-                />
-                <StatCard
-                    title={<TranslatedText text="Database" />}
-                    value={health?.services.database.status?.toUpperCase() || 'UNKNOWN'}
-                    icon={<Database className="w-5 h-5" />}
-                    color="primary"
-                    variant="classic"
-                    subtitle={`Response: ${health?.services.database.responseTime || 'N/A'}`}
-                />
-                <StatCard
-                    title={<TranslatedText text="Memory" />}
-                    value={`${health?.resources.memory.system.usagePercent || 0}%`}
-                    icon={<HardDrive className="w-5 h-5" />}
-                    color="primary"
-                    variant="classic"
-                    subtitle={`${health?.resources.memory.system.used || 0}GB Used / ${health?.resources.memory.system.total || 0}GB Total`}
-                />
-                <StatCard
-                    title={<TranslatedText text="CPU" />}
-                    value={`${health?.resources.cpu.cores || 0} Cores`}
-                    icon={<Cpu className="w-5 h-5" />}
-                    color="primary"
-                    variant="classic"
-                    subtitle={`Model: ${health?.resources.cpu.model || 'Unknown'}`}
-                />
-            </div>
-
             {/* Performance & Network Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Traffic Stats */}
                 <div className="bg-white rounded-[24px] p-8 border border-slate-100">
                     <div className="flex items-center gap-3 mb-6">
@@ -243,30 +187,6 @@ const SystemMonitoring: React.FC = () => {
                     </div>
                 </div>
                 <div className="p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <StatCard
-                            title={<TranslatedText text="Active (24h)" />}
-                            value={userActivity?.activeUsers.last24h || 0}
-                            icon={<Users className="w-5 h-5" />}
-                            color="primary"
-                            variant="classic"
-                        />
-                        <StatCard
-                            title={<TranslatedText text="Active (7d)" />}
-                            value={userActivity?.activeUsers.last7d || 0}
-                            icon={<Users className="w-5 h-5" />}
-                            color="primary"
-                            variant="classic"
-                        />
-                        <StatCard
-                            title={<TranslatedText text="Active (30d)" />}
-                            value={userActivity?.activeUsers.last30d || 0}
-                            icon={<Users className="w-5 h-5" />}
-                            color="primary"
-                            variant="classic"
-                        />
-                    </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Users by Status */}
                         <div>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FaDollarSign, FaChartLine, FaCreditCard, FaWallet, FaExchangeAlt,
+  FaChartLine, FaCreditCard, FaWallet, FaExchangeAlt,
   FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaPlus, FaCalendar,
-  FaClock, FaArrowUp, FaArrowDown, FaCaretUp, FaCaretDown,
+  FaCaretUp, FaCaretDown,
   FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaPiggyBank,
   FaReceipt, FaMoneyBillWave, FaUniversity, FaHandshake, FaShoppingCart,
   FaTruck, FaGasPump, FaTools, FaRoad, FaUserTie, FaShieldAlt
@@ -209,76 +209,6 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
               <FaPlus className="w-4 h-4" />
               <span>Add Revenue</span>
             </button>
-          </div>
-        </div>
-
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-green-600">{formatCurrency(metrics.totalRevenue)}</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <FaDollarSign className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              <FaArrowUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-green-500">+12.5%</span>
-              <span className="text-gray-500 ml-1">from last month</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(metrics.totalExpenses)}</p>
-              </div>
-              <div className="p-3 bg-red-100 rounded-full">
-                <FaReceipt className="w-6 h-6 text-red-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              <FaArrowDown className="w-4 h-4 text-red-500 mr-1" />
-              <span className="text-red-500">-8.2%</span>
-              <span className="text-gray-500 ml-1">from last month</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Net Profit</p>
-                <p className="text-2xl font-bold text-blue-600">{formatCurrency(metrics.netProfit)}</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <FaChartLine className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              <FaArrowUp className="w-4 h-4 text-blue-500 mr-1" />
-              <span className="text-blue-500">+{metrics.profitMargin}%</span>
-              <span className="text-gray-500 ml-1">profit margin</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending Payments</p>
-                <p className="text-2xl font-bold text-yellow-600">{formatCurrency(metrics.pendingPayments)}</p>
-              </div>
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <FaClock className="w-6 h-6 text-yellow-600" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center text-sm">
-              <span className="text-yellow-500">2 payments</span>
-              <span className="text-gray-500 ml-1">awaiting</span>
-            </div>
           </div>
         </div>
 

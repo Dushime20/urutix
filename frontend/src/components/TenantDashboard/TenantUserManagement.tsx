@@ -1,11 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import {
-    Users, UserPlus, Search,
-    Truck, Box, CheckCircle,
-    ArrowRight, Download,
-    X, Mail, Phone, Gavel, 
-    Navigation, DollarSign,
-    ChevronLeft, ChevronRight
+  Users,
+  UserPlus,
+  Search,
+  Truck,
+  Box,
+  ArrowRight,
+  Download,
+  X,
+  Mail,
+  Phone,
+  Gavel,
+  Navigation,
+  DollarSign,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import PartnerDetailView from './PartnerDetailView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -104,18 +113,6 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
         setCurrentPage(1);
     }, [searchTerm, roleFilter, pageSize]);
 
-    const stats = useMemo(() => {
-        return {
-            total: users.length,
-            truckOwners: users.filter((u: Partner) => u.role === 'TRUCK_OWNER').length,
-            cargoOwners: users.filter((u: Partner) => u.role === 'CARGO_OWNER').length,
-            brokers: users.filter((u: Partner) => u.role === 'BROKER').length,
-            drivers: users.filter((u: Partner) => u.role === 'DRIVER').length,
-            lenders: users.filter((u: Partner) => u.role === 'LENDER').length,
-            active: users.filter((u: Partner) => u.status === 'ACTIVE').length,
-        };
-    }, [users]);
-
     const getRoleIcon = (role: string) => {
         switch (role) {
             case 'TRUCK_OWNER': return <Truck className="w-4 h-4 text-indigo-500" />;
@@ -134,36 +131,6 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
 
     return (
         <div className="space-y-8 pb-20 w-full max-w-full overflow-x-hidden">
-            {/* Stats Overview */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 py-4">
-                {[
-                    { label: 'Total Users', value: stats.total, icon: Users, borderColor: 'border-primary-100 dark:border-primary-900/30', shadowColor: 'shadow-primary-100/20 dark:shadow-primary-900/10' },
-                    { label: 'Truck Owners', value: stats.truckOwners, icon: Truck, borderColor: 'border-indigo-100 dark:border-indigo-900/30', shadowColor: 'shadow-indigo-100/20 dark:shadow-indigo-900/10' },
-                    { label: 'Cargo Owners', value: stats.cargoOwners, icon: Box, borderColor: 'border-emerald-100 dark:border-emerald-900/30', shadowColor: 'shadow-emerald-100/20 dark:shadow-emerald-900/10' },
-                    { label: 'Active Status', value: stats.active, icon: CheckCircle, borderColor: 'border-primary-100 dark:border-primary-900/30', shadowColor: 'shadow-primary-100/20 dark:shadow-primary-900/10' }
-                ].map((stat, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="flex items-center space-x-6 transition-transform duration-300 hover:translate-x-1 cursor-default group"
-                    >
-                        <div className={`relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white dark:bg-slate-900 border ${stat.borderColor} shadow-xl ${stat.shadowColor} overflow-hidden transition-all duration-500 group-hover:scale-110`}>
-                            <stat.icon size={28} className="text-primary-600 dark:text-primary-400" />
-                        </div>
-
-                        <div className="flex flex-col">
-                            <span className={`text-3xl font-black text-primary-600 dark:text-primary-400 tracking-tight leading-none mb-1.5`}>
-                                {stat.value}
-                            </span>
-                            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 whitespace-nowrap uppercase tracking-[0.2em]">
-                                <TranslatedText text={stat.label} />
-                            </span>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
 
             {/* User Directory Header */}
             <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">

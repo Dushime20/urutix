@@ -20,12 +20,11 @@ import {
   FaClock,
   FaCheckCircle,
   FaTimesCircle,
-  FaExclamationTriangle,
   FaEye,
   FaSync,
   FaCalendarAlt,
   FaTruck,
-  FaUser,
+  FaUser
 } from 'react-icons/fa';
 
 interface CargoLoad {
@@ -468,67 +467,6 @@ const TenantAdminCargo: React.FC = () => {
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-blue-600 font-medium truncate">Total Loads</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-900">{stats.totalLoads}</p>
-              </div>
-              <FaBox className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-blue-600 font-medium truncate">Active</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-900">{stats.activeLoads}</p>
-              </div>
-              <FaTruck className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-yellow-600 font-medium truncate">Pending</p>
-                <p className="text-xl sm:text-2xl font-bold text-yellow-900">{stats.pendingLoads}</p>
-              </div>
-              <FaClock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-green-600 font-medium truncate">Completed</p>
-                <p className="text-xl sm:text-2xl font-bold text-green-900">{stats.completedLoads}</p>
-              </div>
-              <FaCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-purple-600 font-medium truncate">Total Weight</p>
-                <p className="text-lg sm:text-2xl font-bold text-purple-900 truncate">
-                  {stats.totalWeight.toFixed(0)} kg
-                </p>
-              </div>
-              <FaWeight className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-orange-600 font-medium truncate">Total Value</p>
-                <p className="text-lg sm:text-2xl font-bold text-orange-900 truncate">
-                  ${stats.totalValue.toFixed(0)}
-                </p>
-              </div>
-              <FaDollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Filters and Search */}

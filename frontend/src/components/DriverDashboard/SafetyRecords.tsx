@@ -21,7 +21,6 @@ import { IncidentDetailModal } from './IncidentDetailModal';
 import { IncidentReportModal } from './IncidentReportModal';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
-import StatCard from '../EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -42,13 +41,6 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
   const [showIncidentEdit, setShowIncidentEdit] = useState(false);
   const [editingIncident, setEditingIncident] = useState<any>(null);
   const queryClient = useQueryClient();
-
-  // Fetch driver data
-  const { data: driverData } = useQuery({
-    queryKey: ['driver-details', driverId],
-    queryFn: () => driverApi.getDriver(driverId),
-    enabled: !!driverId,
-  });
 
   // Fetch trip history
   const { data: tripHistory, isLoading: loadingTrips } = useQuery({
@@ -75,23 +67,10 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
     enabled: !!driverId,
   });
 
-  const driver = driverData || {};
   const trips = tripHistory || [];
   const allBreaks = breaksData?.breaks || [];
   const incidents = incidentsData || [];
-  const safetyScore = Number(driver.safetyScore) || 100;
-  const rating = Number(driver.rating) || 0;
   const activeBreak = allBreaks.find((b: any) => !b.endTime && !b.duration);
-  const openIncidents = incidents.filter(
-    (inc: any) => !['RESOLVED', 'CLOSED', 'resolved', 'closed'].includes(inc.status)
-  ).length;
-
-  const getSafetyScoreColor = (score: number): 'emerald' | 'primary' | 'warning' | 'error' => {
-    if (score >= 90) return 'emerald';
-    if (score >= 80) return 'primary';
-    if (score >= 70) return 'warning';
-    return 'error';
-  };
 
   const getIncidentTypeColor = (type: string) => {
     switch (type) {
@@ -280,44 +259,6 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
           <AlertTriangle className="w-4 h-4" />
           <TranslatedText text="Report Incident" />
         </button>
-      </div>
-
-      {/* Safety Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={<TranslatedText text="Safety Score" />}
-          value={`${safetyScore.toFixed(0)}%`}
-          subtitle={rating > 0 ? `${rating.toFixed(1)} ${t('driver rating')}` : t('Based on compliance')}
-          icon={<Shield size={22} />}
-          color={getSafetyScoreColor(safetyScore)}
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Total Trips" />}
-          value={trips.length}
-          subtitle={<TranslatedText text="Completed & in progress" />}
-          icon={<Truck size={22} />}
-          color="primary"
-          variant="classic"
-          loading={loadingTrips}
-        />
-        <StatCard
-          title={<TranslatedText text="Rest Breaks" />}
-          value={allBreaks.length}
-          subtitle={activeBreak ? t('Break currently active') : t('Logged this period')}
-          icon={<Coffee size={22} />}
-          color="purple"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Incidents" />}
-          value={incidents.length}
-          subtitle={openIncidents > 0 ? `${openIncidents} ${t(openIncidents === 1 ? 'open case' : 'open cases')}` : t('No open cases')}
-          icon={<AlertTriangle size={22} />}
-          color={incidents.length > 0 ? 'error' : 'emerald'}
-          variant="classic"
-          loading={loadingIncidents}
-        />
       </div>
 
       {/* Primary Content: Incidents + Break Management */}

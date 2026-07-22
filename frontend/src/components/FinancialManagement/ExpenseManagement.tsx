@@ -6,13 +6,12 @@ import {
   Trash2, Edit3, Eye, CheckCircle, XCircle, 
   Clock, Fuel, Wrench, MapPin, Truck, 
   User as UserIcon, ArrowRight,
-  TrendingUp, ShieldCheck, Landmark
+  ShieldCheck, Landmark
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { financialAPI, fleetAPI, tripsAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Expense {
@@ -145,14 +144,6 @@ const ExpenseManagement: React.FC = () => {
     );
   }, [expensesData, searchTerm]);
 
-  const stats = useMemo(() => {
-    if (!filteredExpenses) return { total: 0, pending: 0, taxSaved: 0 };
-    return {
-      total: filteredExpenses.reduce((acc: number, e: Expense) => acc + Number(e.amount), 0),
-      pending: filteredExpenses.filter((e: Expense) => e.status === 'pending').reduce((acc: number, e: Expense) => acc + Number(e.amount), 0),
-      taxSaved: filteredExpenses.filter((e: Expense) => e.taxDeductible).reduce((acc: number, e: Expense) => acc + Number(e.amount), 0) * 0.15 
-    };
-  }, [filteredExpenses]);
 
   const expenseTypes = [
     { value: 'fuel', label: 'Fuel', icon: Fuel, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
@@ -166,34 +157,6 @@ const ExpenseManagement: React.FC = () => {
 
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
-      {/* Quick Dashboard - SUBTLE CIRCULAR DESIGN */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-8 bg-slate-50/30 dark:bg-slate-900/10 rounded-[3rem] border border-slate-100/50 dark:border-slate-800">
-        <StatCard 
-          title="Total Burn" 
-          value={formatCurrency(stats.total)} 
-          icon={<TrendingUp size={24} />} 
-          subtitle="Operational Expenses"
-          color="primary"
-          variant="classic"
-        />
-        <StatCard 
-          title="Pending Approval" 
-          value={formatCurrency(stats.pending)} 
-          icon={<Clock size={24} />} 
-          subtitle="Awaiting Review"
-          color="primary"
-          variant="classic"
-        />
-        <StatCard 
-          title="Tax Deductible" 
-          value={formatCurrency(stats.taxSaved)} 
-          icon={<ShieldCheck size={24} />} 
-          subtitle="Estimated Savings"
-          color="primary"
-          variant="classic"
-        />
-      </div>
-
       {/* Control Bar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96 group">

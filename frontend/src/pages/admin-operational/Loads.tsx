@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaBox, FaMapMarkerAlt, FaSearch, FaDownload, FaEye } from 'react-icons/fa';
+import { FaSearch, FaEye } from 'react-icons/fa';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
 const OperationalAdminLoads: React.FC = () => {
@@ -47,13 +46,6 @@ const OperationalAdminLoads: React.FC = () => {
     });
   }, [loads, searchTerm, statusFilter]);
 
-  const stats = {
-    total: loads.length,
-    active: loads.filter(l => ['PUBLISHED', 'ASSIGNED', 'IN_TRANSIT'].includes(l.status)).length,
-    completed: loads.filter(l => ['COMPLETED', 'DELIVERED', 'CLOSED'].includes(l.status)).length,
-    drafts: loads.filter(l => l.status === 'DRAFT' || l.status === 'CREATED').length,
-  };
-
   return (
     <OperationalPageLayout
       title="Load Management"
@@ -63,41 +55,6 @@ const OperationalAdminLoads: React.FC = () => {
         <ModernLoader isLoading={true} type="page" />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Loads"
-              value={stats.total}
-              icon={<FaBox size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="All time loads"
-            />
-            <StatCard
-              title="Active Loads"
-              value={stats.active}
-              icon={<FaMapMarkerAlt size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Published / In Transit"
-            />
-            <StatCard
-              title="Completed"
-              value={stats.completed}
-              icon={<FaBox size={22} />}
-              color="success"
-              variant="classic"
-              subtitle="Successfully delivered"
-            />
-            <StatCard
-              title="Drafts"
-              value={stats.drafts}
-              icon={<FaBox size={22} />}
-              color="warning"
-              variant="classic"
-              subtitle="Pending publication"
-            />
-          </div>
-
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-4">
             <div className="relative flex-1">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

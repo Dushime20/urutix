@@ -190,7 +190,7 @@ export class AuctionNotificationListener {
             status: NotificationStatus.SENT,
             isRead: false,
             requiresAction: true,
-            actionUrl: '/dashboard/bidding',
+            actionUrl: '/dashboard/fleet/my-bids',
             actionText: 'View auction & bid',
             metadata: {
               auctionId: payload.auctionId,
@@ -519,7 +519,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/dashboard/bidding`,
+        actionUrl: `/dashboard/fleet/my-bids`,
         actionText: 'View Details',
         metadata: {
           auctionId: payload.auctionId,
@@ -625,7 +625,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: `/dashboard/smart-matching`,
+        actionUrl: `/dashboard/fleet/smart-bookings`,
         actionText: 'View Match',
         metadata: {
           matchId: payload.matchId,
@@ -737,7 +737,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
-        actionUrl: '/dashboard/bidding',
+        actionUrl: '/dashboard/fleet/my-bids',
         actionText: 'View Bids',
         metadata: {
           bidId: payload.bidId,
@@ -783,7 +783,7 @@ export class AuctionNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
-        actionUrl: '/dashboard/bidding',
+        actionUrl: '/dashboard/fleet/my-bids',
         actionText: 'View Bids',
         metadata: {
           bidId: payload.bidId,

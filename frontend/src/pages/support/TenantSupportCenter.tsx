@@ -4,13 +4,12 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Headphones, AlertTriangle, Search, Download, Eye, Clock,
   CheckCircle, XCircle, Flag, RefreshCw, Plus, BarChart3,
-  MessageSquare, Paperclip, Scale, TrendingUp, ChevronDown,
-  ArrowUp, ShieldAlert, Users, Timer, Activity, Zap,
+  ChevronDown, Users, Timer, Activity,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { disputesAPI } from '../../services/api';
 import {
-  type Dispute, type DisputeAnalytics,
+  type Dispute,
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
   getStatusColor, getPriorityColor, getPriorityDot,
   getUserDisplayName, formatRelativeTime, getSlaStatus,
@@ -31,20 +30,6 @@ const STATUS_TABS = [
   { key: 'RESOLVED',            label: 'Resolved',         icon: CheckCircle },
   { key: 'CLOSED',              label: 'Closed',           icon: XCircle },
 ];
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
-const StatCard: React.FC<{ label: string; value: number | string; icon: React.ReactNode; color: string; sub?: string }> = ({
-  label, value, icon, color, sub,
-}) => (
-  <div className="flex items-center gap-3 p-4 rounded-2xl border border-gray-100 bg-white dark:bg-slate-800 dark:border-slate-700">
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
-    <div className="min-w-0">
-      <p className="text-2xl font-black text-gray-900 dark:text-white leading-none">{value}</p>
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
-      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
-    </div>
-  </div>
-);
 
 // ── SLA badge ─────────────────────────────────────────────────────────────────
 const SlaBadge: React.FC<{ dispute: Dispute }> = ({ dispute }) => {
@@ -70,7 +55,6 @@ const TenantSupportCenter: React.FC = () => {
   const [selectedId, setSelectedId]   = useState<string | null>(null);
   const [showCreate, setShowCreate]   = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [period, setPeriod]           = useState('month');
 
   const { data: listData, isLoading, refetch } = useQuery({
     queryKey: ['support-admin', activeTab, categoryFilter, priorityFilter, search],
@@ -84,14 +68,7 @@ const TenantSupportCenter: React.FC = () => {
     staleTime: 30_000,
   });
 
-  const { data: analyticsData } = useQuery({
-    queryKey: ['support-analytics', period],
-    queryFn: () => disputesAPI.getAnalytics(period).then(r => r.data),
-    staleTime: 60_000,
-  });
-
-  const disputes: Dispute[]              = listData?.data ?? [];
-  const analytics: DisputeAnalytics | null = analyticsData?.data ?? null;
+  const disputes: Dispute[] = listData?.data ?? [];
 
   const handleExport = useCallback(() => {
     const headers = ['Ticket#', 'Title', 'Category', 'Priority', 'Status', 'Reporter', 'Assigned To', 'SLA', 'Created'];
@@ -161,20 +138,6 @@ const TenantSupportCenter: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Quick stats */}
-      {analytics && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
-          <StatCard label="Total"       value={analytics.total}              icon={<Headphones size={16} />}    color="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300" />
-          <StatCard label="Open"        value={analytics.open}               icon={<Flag size={16} />}          color="bg-blue-100 text-blue-600" />
-          <StatCard label="In Progress" value={analytics.underReview + analytics.assigned + analytics.investigating} icon={<Eye size={16} />} color="bg-amber-100 text-amber-600" />
-          <StatCard label="Escalated"   value={analytics.escalated}          icon={<AlertTriangle size={16} />} color="bg-orange-100 text-orange-600" />
-          <StatCard label="Resolved"    value={analytics.resolved}           icon={<CheckCircle size={16} />}   color="bg-green-100 text-green-600" />
-          <StatCard label="SLA Broken"  value={analytics.slaBreached}        icon={<Timer size={16} />}         color="bg-red-100 text-red-600" />
-          <StatCard label="Compliance"  value={`${analytics.slaCompliancePercent}%`} icon={<ShieldAlert size={16} />} color="bg-purple-100 text-purple-600" />
-          <StatCard label="Avg Res (h)" value={analytics.avgResolutionTimeHours} icon={<Clock size={16} />}  color="bg-cyan-100 text-cyan-600" />
-        </div>
-      )}
 
       {/* Status tabs */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 overflow-x-auto">

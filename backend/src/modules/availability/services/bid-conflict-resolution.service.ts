@@ -566,7 +566,7 @@ export class BidConflictResolutionService {
       entityType: EntityType.CARGO,
       entityId: ctx.confirmedLoadId,
       requiresAction: false,
-      actionUrl: '/dashboard/bidding',
+      actionUrl: '/dashboard/fleet/my-bids',
       actionText: 'View Bids',
     });
   }

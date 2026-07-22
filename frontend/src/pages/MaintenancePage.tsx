@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import MaintenanceSchedulerModal from '../components/FleetDashboard/Maintenance/MaintenanceSchedulerModal';
 import MaintenanceHistoryTable from '../components/FleetDashboard/Maintenance/MaintenanceHistoryTable';
-import MaintenanceStatsCards from '../components/FleetDashboard/Maintenance/MaintenanceStatsCards';
 import { fleetApi } from '../services/fleetApi';
 import toast from 'react-hot-toast';
 import logoUrutiX from '../assets/logo-urutix.svg';
@@ -341,9 +340,6 @@ const MaintenancePage: React.FC = () => {
                         </button>
                     </div>
                 </div>
-
-                {/* Stats Cards */}
-                <MaintenanceStatsCards stats={stats} loading={loading} />
 
                 {/* Filters & Actions */}
                 <div className="bg-white rounded-t-xl border border-gray-200 border-b-0 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm mt-8">

@@ -117,7 +117,7 @@ const RepaymentsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col">
             <h2 className="text-3xl font-black text-[#0f172a] dark:text-white tracking-tight uppercase">
               Repayment <span className="text-[#2c5173]">Tracking</span>

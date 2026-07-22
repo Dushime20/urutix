@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, X } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useAuth } from '../../contexts/AuthContext';
+import { navigateFromNotification } from '../../utils/notificationNavigation';
+import { getNotificationsHubPath } from '../../utils/resolveNotificationRoute';
 
 interface Notification {
   id: string;
-  type: 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS' | 'URGENT';
+  type: 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS' | 'URGENT' | string;
   title: string;
   message: string;
   timestamp: string;
   read: boolean;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  category: 'TRIP' | 'SAFETY' | 'PAYMENT' | 'SYSTEM' | 'MAINTENANCE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
+  category: 'TRIP' | 'SAFETY' | 'PAYMENT' | 'SYSTEM' | 'MAINTENANCE' | string;
   actionRequired?: boolean;
   actionUrl?: string;
 }
@@ -20,10 +24,18 @@ interface NotificationsPanelProps {
   notifications?: Notification[];
   loading?: boolean;
   onClose?: () => void;
+  onMarkAsRead?: (id: string) => void | Promise<void>;
 }
 
-export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifications, loading, onClose }) => {
+export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({
+  notifications,
+  loading,
+  onClose,
+  onMarkAsRead,
+}) => {
   const { tSync: t } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('ALL');
 
   const currentNotifications = notifications || [];
@@ -35,6 +47,21 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
   });
 
   const unreadCount = currentNotifications.filter(n => !n.read).length;
+
+  const handleClick = (notification: Notification) => {
+    void navigateFromNotification({
+      notification: {
+        id: notification.id,
+        actionUrl: notification.actionUrl,
+        type: notification.type,
+        isRead: notification.read,
+      },
+      role: user?.role,
+      navigate,
+      markAsRead: onMarkAsRead,
+      onNavigated: () => onClose?.(),
+    });
+  };
 
   if (loading) {
     return (
@@ -98,9 +125,11 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
         ) : (
           <div className="divide-y divide-gray-50">
             {filteredNotifications.map((notification) => (
-              <div
+              <button
+                type="button"
                 key={notification.id}
-                className={`p-4 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50/30' : ''}`}
+                onClick={() => handleClick(notification)}
+                className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50/30' : ''}`}
               >
                 <div className="flex gap-4">
                   <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${!notification.read ? 'bg-blue-500' : 'bg-transparent'}`} />
@@ -112,14 +141,21 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ notifica
                     </span>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
 
       <div className="p-4 border-t border-gray-100">
-        <button className="w-full py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
+        <button
+          type="button"
+          onClick={() => {
+            navigate(getNotificationsHubPath(user?.role));
+            onClose?.();
+          }}
+          className="w-full py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+        >
           <TranslatedText text="View All Notifications" />
         </button>
       </div>

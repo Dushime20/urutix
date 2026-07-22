@@ -637,22 +637,19 @@ const DetailedMatchView: React.FC<{
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <MetricCard
-            label="Estimated Cost"
-            value={`$${match.estimatedCost}`}
-            icon={<FaDollarSign />}
-          />
-          <MetricCard
-            label="Estimated Time"
-            value={`${match.estimatedTime}h`}
-            icon={<FaClock />}
-          />
-          <MetricCard
-            label="Distance"
-            value={`${match.distance} km`}
-            icon={<FaRoute />}
-          />
+        <div className="space-y-2 mb-6 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Estimated Cost</span>
+            <span className="font-medium text-gray-900">${match.estimatedCost}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Estimated Time</span>
+            <span className="font-medium text-gray-900">{match.estimatedTime}h</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Distance</span>
+            <span className="font-medium text-gray-900">{match.distance} km</span>
+          </div>
         </div>
       </div>
 
@@ -744,19 +741,5 @@ const ScoreCard: React.FC<{
   </div>
 );
 
-// Metric Card Component
-const MetricCard: React.FC<{
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-}> = ({ label, value, icon }) => (
-  <div className="text-center p-4 bg-gray-50 rounded-lg">
-    <div className="flex items-center justify-center mb-2 text-gray-600">
-      {icon}
-    </div>
-    <div className="text-xl font-bold text-gray-900">{value}</div>
-    <div className="text-sm text-gray-600">{label}</div>
-  </div>
-);
 
 export default MatchingInterface;

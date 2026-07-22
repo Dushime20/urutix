@@ -474,7 +474,7 @@ export class CustomsService {
         priority: NotificationPriority.HIGH,
         entityType: 'TRIP' as any,
         entityId: inspection.tripId,
-        actionUrl: `/customs/inspections/${inspectionId}`,
+        actionUrl: `/dashboard/customs/inspections/${inspectionId}`,
         actionText: 'Review Response',
         metadata: {
           inspectionId,

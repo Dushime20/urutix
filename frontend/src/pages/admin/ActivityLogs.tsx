@@ -2,11 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import {
-    FaDownload,
-    FaExclamationTriangle, FaTimesCircle,
-    FaDesktop, FaMobile, FaGlobe, FaSync,
-    FaFilter, FaChartLine, FaUser, FaClock,
-    FaSearch, FaShieldAlt, FaBuilding
+  FaDownload,
+  FaExclamationTriangle,
+  FaTimesCircle,
+  FaDesktop,
+  FaMobile,
+  FaGlobe,
+  FaSync,
+  FaFilter,
+  FaChartLine,
+  FaUser,
+  FaClock,
+  FaSearch,
+  FaShieldAlt,
+  FaBuilding
 } from 'react-icons/fa';
 import { FileText, Activity, TrendingUp, Eye } from 'lucide-react';
 import axios from 'axios';
@@ -14,7 +23,6 @@ import toast from 'react-hot-toast';
 import { useSocket } from '../../contexts/SocketContext';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
-import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
 
 interface ActivityLog {
@@ -194,7 +202,6 @@ const ActivityLogs: React.FC = () => {
         }
     };
 
-
     if (logsLoading && !logsData) {
         return (
             <AdminPageLayout
@@ -242,42 +249,6 @@ const ActivityLogs: React.FC = () => {
             }
         >
             <div className="safe-bottom">
-
-             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                <StatCard
-                    title={<TranslatedText text="Total Activities" />}
-                    value={logsData?.total || 0}
-                    subtitle={<TranslatedText text="Last 24 hours" />}
-                    icon={<Activity size={24} />}
-                    color="primary"
-                    variant="classic"
-                />
-                <StatCard
-                    title={<TranslatedText text="Active Sessions" />}
-                    value={sessionsData?.length || 0}
-                    subtitle={<TranslatedText text="Currently online" />}
-                    icon={<FaDesktop size={20} />}
-                    color="primary"
-                    variant="classic"
-                />
-                <StatCard
-                    title={<TranslatedText text="Anomalies Detected" />}
-                    value={suspiciousData?.length || 0}
-                    subtitle={<TranslatedText text="Requires Attention" />}
-                    icon={<FaShieldAlt size={20} />}
-                    color="primary"
-                    variant="classic"
-                />
-                <StatCard
-                    title={<TranslatedText text="Active Operatives" />}
-                    value={analyticsData?.uniqueUsers || 0}
-                    subtitle={<TranslatedText text="Last 24 hours" />}
-                    icon={<FaUser size={20} />}
-                    color="primary"
-                    variant="classic"
-                />
-            </div>
 
             {/* Suspicious Activities Alert */}
             {suspiciousData && suspiciousData.length > 0 && (

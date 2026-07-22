@@ -28,7 +28,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { DataCard } from '../../components/EnliteUI/Cards/DataCard';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
@@ -200,14 +199,6 @@ const SystemHealthDashboard: React.FC = () => {
     }
   };
 
-  const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  };
-
   const prepareChartData = (metricName: string) => {
     return historicalData
       .filter(m => m.metricName === metricName)
@@ -287,135 +278,6 @@ const SystemHealthDashboard: React.FC = () => {
           </Box>
         </Alert>
       )}
-
-      {/* Server Metrics */}
-      <Typography variant="h6" gutterBottom>
-        <TranslatedText text="Server Metrics" />
-      </Typography>
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="CPU Usage" />}
-            value={`${metrics.server.cpuUsage.toFixed(1)}%`}
-            trend={metrics.server.cpuUsage > 70 ? 'up' : 'stable'}
-            color={metrics.server.cpuUsage > 90 ? 'error' : metrics.server.cpuUsage > 70 ? 'warning' : 'success'}
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Memory Usage" />}
-            value={`${metrics.server.memoryUsage.toFixed(1)}%`}
-            trend={metrics.server.memoryUsage > 80 ? 'up' : 'stable'}
-            color={metrics.server.memoryUsage > 95 ? 'error' : metrics.server.memoryUsage > 80 ? 'warning' : 'success'}
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Disk Usage" />}
-            value={formatBytes(metrics.server.diskUsage)}
-            trend="stable"
-            color="info"
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Network I/O" />}
-            value={`${formatBytes(metrics.server.networkIn)} / ${formatBytes(metrics.server.networkOut)}`}
-            trend="stable"
-            color="info"
-            variant="classic"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Database Metrics */}
-      <Typography variant="h6" gutterBottom>
-        <TranslatedText text="Database Metrics" />
-      </Typography>
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Connections" />}
-            value={metrics.database.connectionCount.toString()}
-            trend="stable"
-            color="primary"
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Active Queries" />}
-            value={metrics.database.activeQueries.toString()}
-            trend="stable"
-            color="primary"
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Avg Query Time" />}
-            value={`${metrics.database.avgQueryTime.toFixed(1)}ms`}
-            trend={metrics.database.avgQueryTime > 100 ? 'up' : 'stable'}
-            color={metrics.database.avgQueryTime > 500 ? 'error' : metrics.database.avgQueryTime > 100 ? 'warning' : 'success'}
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Slow Queries" />}
-            value={metrics.database.slowQueries.toString()}
-            trend={metrics.database.slowQueries > 10 ? 'up' : 'stable'}
-            color={metrics.database.slowQueries > 50 ? 'error' : metrics.database.slowQueries > 10 ? 'warning' : 'success'}
-            variant="classic"
-          />
-        </Grid>
-      </Grid>
-
-      {/* API Metrics */}
-      <Typography variant="h6" gutterBottom>
-        <TranslatedText text="API Metrics" />
-      </Typography>
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Requests/Min" />}
-            value={metrics.api.requestsPerMinute.toString()}
-            trend="stable"
-            color="secondary"
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Avg Response Time" />}
-            value={`${metrics.api.avgResponseTime.toFixed(1)}ms`}
-            trend={metrics.api.avgResponseTime > 200 ? 'up' : 'stable'}
-            color={metrics.api.avgResponseTime > 1000 ? 'error' : metrics.api.avgResponseTime > 200 ? 'warning' : 'success'}
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="Error Rate" />}
-            value={`${metrics.api.errorRate.toFixed(2)}%`}
-            trend={metrics.api.errorRate > 1 ? 'up' : 'stable'}
-            color={metrics.api.errorRate > 5 ? 'error' : metrics.api.errorRate > 1 ? 'warning' : 'success'}
-            variant="classic"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title={<TranslatedText text="P95 Response" />}
-            value={`${metrics.api.p95ResponseTime.toFixed(1)}ms`}
-            trend="stable"
-            color="secondary"
-            variant="classic"
-          />
-        </Grid>
-      </Grid>
 
       {/* Historical Trends */}
       <Typography variant="h6" gutterBottom>

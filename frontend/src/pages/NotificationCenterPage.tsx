@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Bell, Check, CheckCheck, Trash2, Filter, Search, X } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import ModernLoader from '../components/common/ModernLoader';
+import { navigateFromNotification } from '../utils/notificationNavigation';
 
 const NotificationCenterPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -35,13 +38,12 @@ const NotificationCenterPage: React.FC = () => {
   const categories = Array.from(new Set(notifications.map(n => n.category)));
 
   const handleNotificationClick = async (notification: any) => {
-    if (!notification.isRead) {
-      await markAsRead(notification.id);
-    }
-
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
-    }
+    await navigateFromNotification({
+      notification,
+      role: user?.role,
+      navigate,
+      markAsRead,
+    });
   };
 
   const getPriorityColor = (priority: string) => {

@@ -13,7 +13,6 @@ import {
   BarChart3
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useBidAnalyticsQuery } from '../../hooks/useBiddingQueries';
 
 interface LoadPerformance {
@@ -28,7 +27,7 @@ interface BidAnalyticsProps {
 }
 
 const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
-  const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
+  const { format: fmtFull } = useCurrencyFormat();
   const { data: analyticsData, isLoading: loading, isError } = useBidAnalyticsQuery();
 
   const error = isError ? 'Failed to load analytics data' : null;
@@ -49,11 +48,6 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return hours > 0 ? `${hours}H ${mins}M` : `${mins}M`;
-  };
-
-  const StatsCard = ({ title, value, icon, colorClass, secondaryColor }: any) => {
-    const displayValue = Array.isArray(value) ? value.length : value;
-    return <CircularStatCard title={title} value={displayValue} icon={icon} colorClass={colorClass} secondaryColor={secondaryColor} />;
   };
 
   if (loading) {
@@ -97,37 +91,6 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
           </div>
         </div>
       )}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-        <StatsCard
-          title="Total Engagement"
-          value={analytics.totalBids}
-          icon={Activity}
-          colorClass="bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400"
-          secondaryColor="text-[#345E85] dark:text-blue-400"
-        />
-        <StatsCard
-          title="Conversion Rate"
-          value={`${analytics.successRate}%`}
-          icon={Target}
-          colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-          secondaryColor="text-emerald-600 dark:text-emerald-400"
-        />
-        <StatsCard
-          title="Average Valuation"
-          value={formatCurrency(analytics.averageBidAmount)}
-          icon={DollarSign}
-          colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-          secondaryColor="text-amber-600 dark:text-amber-400"
-        />
-        <StatsCard
-          title="Response Latency"
-          value={formatTime(analytics.averageResponseTime)}
-          icon={Clock}
-          colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
-          secondaryColor="text-purple-600 dark:text-purple-400"
-        />
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">

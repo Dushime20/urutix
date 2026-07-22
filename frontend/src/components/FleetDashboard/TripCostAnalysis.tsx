@@ -6,11 +6,9 @@ import {
   FaRoute, 
   FaUser, 
   FaTools,
-  FaChartLine,
   FaCalculator
 } from 'react-icons/fa';
 import { tripsAPI } from '../../services/api';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface TripCostAnalysisProps {
@@ -319,28 +317,19 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
               <h3 className="text-sm font-semibold text-gray-900">Profitability Analysis</h3>
             </div>
             <div className="p-3 space-y-3">
-              <div className="grid grid-cols-1 gap-3">
-                <StatCard
-                  title="Revenue"
-                  value={formatCurrency(profitability.revenue, trip.currencyCode || 'USD')}
-                  icon={<FaChartLine size={16} />}
-                  color="primary"
-                  variant="classic"
-                />
-                <StatCard
-                  title="Total Cost"
-                  value={formatCurrency(profitability.totalCost, trip.currencyCode || 'USD')}
-                  icon={<FaCalculator size={16} />}
-                  color="primary"
-                  variant="classic"
-                />
-                <StatCard
-                  title="Profit"
-                  value={formatCurrency(profitability.profit, trip.currencyCode || 'USD')}
-                  icon={<FaDollarSign size={16} />}
-                  color="primary"
-                  variant="classic"
-                />
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Revenue</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(profitability.revenue, trip.currencyCode || 'USD')}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Total Cost</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(profitability.totalCost, trip.currencyCode || 'USD')}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Profit</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(profitability.profit, trip.currencyCode || 'USD')}</span>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-600">Profit Margin</span>

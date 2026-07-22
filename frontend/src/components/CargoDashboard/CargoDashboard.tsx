@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -7,7 +7,7 @@ import {
   FaClock,
 } from "react-icons/fa";
 import { FiGrid, FiList } from "react-icons/fi";
-import { ChevronLeft, ChevronRight, Package, TrendingUp, MapPin, BarChart3, Home, ChevronRight as ChevronRightIcon, X, ArrowUp, ArrowDown, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, Home, ChevronRight as ChevronRightIcon, X, ArrowUp, ArrowDown, Plus } from "lucide-react";
 
 import { CargoFilters } from "./CargoFilters";
 import { CargoModal } from "./CargoModal";
@@ -20,7 +20,6 @@ import { AssignBrokerModal } from "./AssignBrokerModal";
 import { AssignReceiverModal } from "./AssignReceiverModal";
 import { RequestFinancingModal } from "./RequestFinancingModal";
 import { useCargoOwnerLayout } from "../../contexts/CargoOwnerLayoutContext";
-import StatCard from "../EnliteUI/Cards/StatCard";
 
 
 
@@ -228,17 +227,6 @@ export const CargoDashboard: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const observer = useRef<IntersectionObserver | null>(null);
-
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const total = allCargos.length;
-    const published = allCargos.filter(c => c.status === 'PUBLISHED').length;
-    const inTransit = allCargos.filter(c => c.status === 'IN_TRANSIT').length;
-    const completed = allCargos.filter(c => c.status === 'DELIVERED' || c.status === 'COMPLETED').length;
-    const totalValue = allCargos.reduce((sum, c) => sum + (Number(c.loadValue) || 0), 0);
-
-    return { total, published, inTransit, completed, totalValue };
-  }, [allCargos]);
 
   // Sort handler
   const handleSort = (field: 'date' | 'value' | 'status' | 'urgency') => {
@@ -1163,50 +1151,6 @@ export const CargoDashboard: React.FC = () => {
             <ChevronRightIcon className="size-3 sm:size-3.5 text-slate-300 dark:text-slate-600" />
             <span className="text-slate-900 dark:text-slate-100 font-bold"><TranslatedText text="Cargo Management" /></span>
           </nav>
-
-          {/* Stats Cards */}
-          {/* Stats Cards - Premium Command Center Style */}
-          {/* Stats Cards - ENLITE STYLE */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard
-              title={<TranslatedText text="Total Shipments" />}
-              value={stats.total}
-              icon={<Package />}
-              color="primary"
-              trend="+12%"
-              trendDirection="up"
-              subtitle={<TranslatedText text="All Time" />}
-              variant="modern"
-            />
-            <StatCard
-              title={<TranslatedText text="Active / Published" />}
-              value={stats.published}
-              icon={<TrendingUp />}
-              color="primary"
-              trend={<TranslatedText text="Active" />}
-              trendDirection="neutral"
-              subtitle={<TranslatedText text="Currently Live" />}
-              variant="modern"
-            />
-            <StatCard
-              title={<TranslatedText text="In Transit" />}
-              value={stats.inTransit}
-              icon={<MapPin />}
-              color="primary"
-              trend={<TranslatedText text="En Route" />}
-              trendDirection="neutral"
-              subtitle={<TranslatedText text="Live Tracking" />}
-              variant="modern"
-            />
-            <StatCard
-              title={<TranslatedText text="Total Value" />}
-              value={`$${stats.totalValue.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })} `}
-              icon={<BarChart3 />}
-              color="primary"
-              subtitle={<TranslatedText text="Asset Valuation" />}
-              variant="modern"
-            />
-          </div>
 
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 transition-colors duration-300">
             {/* Header Section */}

@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 import {
-    Activity,
     TrendingUp,
-    DollarSign,
     Search,
     Filter,
     ArrowUpRight,
     Calendar,
     User,
-    AlertCircle,
-    Clock,
-    Banknote,
 } from 'lucide-react';
-import { StatCard } from '../EnliteUI';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
@@ -42,7 +36,8 @@ export interface InterestLoan {
 interface InterestTrackingEnliteProps {
     loading: boolean;
     loans: InterestLoan[];
-    summary: {
+    /** @deprecated KPIs live on Overview only — kept optional for call-site compat */
+    summary?: {
         totalLoans: number;
         totalPrincipalDeployed: number;
         totalInterestCollected: number;
@@ -82,9 +77,8 @@ const isOverdue = (dueDate: string | null, status: string): boolean => {
 const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
     loading,
     loans,
-    summary,
 }) => {
-    const { format: fmtCurrency, compact: compactAmount } = useCurrencyFormat();
+    const { format: fmtCurrency } = useCurrencyFormat();
     const formatAmount = (amount: number | null): string =>
         amount === null ? '—' : fmtCurrency(amount);
 
@@ -229,58 +223,6 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            {/* Analytics Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Interest Collected"
-                    value={summary ? formatAmount(summary.totalInterestCollected > 0 ? summary.totalInterestCollected : null) : '—'}
-                    subtitle={summary ? `Across ${summary.totalLoans} loan${summary.totalLoans !== 1 ? 's' : ''}` : 'Loading...'}
-                    icon={<DollarSign size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && !summary}
-                />
-                <StatCard
-                    title="Outstanding Interest"
-                    value={summary?.totalOutstandingInterest != null
-                        ? formatAmount(summary.totalOutstandingInterest > 0 ? summary.totalOutstandingInterest : null)
-                        : '—'}
-                    subtitle={summary?.totalOutstandingInterest != null
-                        ? summary.totalOutstandingInterest > 0 ? 'Receivable' : 'All settled'
-                        : 'No contracted interest'}
-                    icon={<Clock size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && !summary}
-                />
-                <StatCard
-                    title="Collection Efficiency"
-                    value={summary?.collectionEfficiency != null
-                        ? `${summary.collectionEfficiency.toFixed(1)}%`
-                        : '—'}
-                    subtitle={summary?.collectionEfficiency != null
-                        ? 'Interest paid vs contracted'
-                        : 'No contracted interest data'}
-                    icon={<Activity size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && !summary}
-                />
-                <StatCard
-                    title="Principal Deployed"
-                    value={summary ? compactAmount(summary.totalPrincipalDeployed || 0) : '—'}
-                    subtitle={summary != null
-                        ? summary.overdueCount > 0
-                            ? `${summary.overdueCount} overdue loan${summary.overdueCount !== 1 ? 's' : ''}`
-                            : 'None overdue'
-                        : 'Loading...'}
-                    icon={summary?.overdueCount ? <AlertCircle size={18} /> : <Banknote size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && !summary}
-                />
-            </div>
-
             {/* Interest Records */}
             <DataCard
                 title="Interest Revenue"

@@ -11,19 +11,28 @@ import {
 } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import {
-  Users, Edit, Plus, Download,
-  Eye, X, Ban, Unlock,
-  ChevronsUpDown, User, Building2,
-  ShieldCheck, Trash2,
+  Users,
+  Edit,
+  Plus,
+  Download,
+  Eye,
+  X,
+  Ban,
+  Unlock,
+  ChevronsUpDown,
+  User,
+  Building2,
+  ShieldCheck,
+  Trash2,
   Mail,
-  UserCheck, UserX,
+  UserCheck,
+  UserX,
   Search
 } from 'lucide-react';
 import { UserPermissionEditor } from '../components/Admin/Permissions/UserPermissionEditor';
 import { RolePermissionsMatrix } from '../components/Admin/Permissions/RolePermissionsMatrix';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
-import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 
 interface User {
@@ -380,7 +389,6 @@ const AdminUsers: React.FC = () => {
       }
     >
 
-
       <div className="flex items-center gap-6 mb-8 border-b border-gray-100">
         <button
           onClick={() => setActiveTab('users')}
@@ -406,48 +414,6 @@ const AdminUsers: React.FC = () => {
 
       {activeTab === 'users' ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <StatCard
-              title={<TranslatedText text="Total Users" />}
-              value={users.length}
-              icon={<Users size={22} />}
-              color="primary"
-              variant="classic"
-              trend="+12.5%"
-              trendDirection="up"
-              subtitle={<TranslatedText text="Active platform users" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Active Users" />}
-              value={users.filter(u => u.status === 'ACTIVE').length}
-              icon={<UserCheck size={22} />}
-              color="primary"
-              variant="classic"
-              trend="+5.2%"
-              trendDirection="up"
-              subtitle={<TranslatedText text="Currently active" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Security Flagged" />}
-              value={usersWithOverrides}
-              icon={<ShieldCheck size={22} />}
-              color="primary"
-              variant="classic"
-              trend="+1"
-              trendDirection="neutral"
-              subtitle={<TranslatedText text="Custom permissions" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Suspended" />}
-              value={users.filter(u => u.status === 'SUSPENDED').length}
-              icon={<UserX size={22} />}
-              color="primary"
-              variant="classic"
-              trend="0%"
-              trendDirection="neutral"
-              subtitle={<TranslatedText text="Suspended accounts" />}
-            />
-          </div>
 
           {/* Users Content Card */}
           <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
@@ -697,7 +663,6 @@ const AdminUsers: React.FC = () => {
       ) : (
         <RolePermissionsMatrix />
       )}
-
 
       {/* Create User Modal */}
       {

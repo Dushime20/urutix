@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   FaExclamationTriangle,
-  FaBan,
   FaFlag,
   FaGavel,
   FaChartLine,
@@ -164,118 +163,7 @@ const GovernanceDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {/* Enforcement Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <FaGavel className="text-red-600 text-xl" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Enforcement</span>
-            </div>
-            <div className="space-y-2">
-              <div className="text-3xl font-bold text-gray-900">
-                {stats?.enforcement.totalActions || 0}
-              </div>
-              <div className="text-sm text-gray-600">Total Actions</div>
-              <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray-200">
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900">
-                    {stats?.enforcement.suspensions || 0}
-                  </div>
-                  <div className="text-xs text-gray-500">Suspended</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900">
-                    {stats?.enforcement.terminations || 0}
-                  </div>
-                  <div className="text-xs text-gray-500">Terminated</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900">
-                    {stats?.enforcement.restrictions || 0}
-                  </div>
-                  <div className="text-xs text-gray-500">Restricted</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Appeals */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <FaClock className="text-yellow-600 text-xl" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Appeals</span>
-            </div>
-            <div className="space-y-2">
-              <div className="text-3xl font-bold text-gray-900">
-                {stats?.appeals.pending || 0}
-              </div>
-              <div className="text-sm text-gray-600">Pending Review</div>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Appeals:</span>
-                  <span className="font-semibold text-gray-900">
-                    {stats?.appeals.total || 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Blacklist */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gray-100 rounded-lg">
-                <FaBan className="text-gray-600 text-xl" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Blacklist</span>
-            </div>
-            <div className="space-y-2">
-              <div className="text-3xl font-bold text-gray-900">
-                {stats?.blacklist.activeEntries || 0}
-              </div>
-              <div className="text-sm text-gray-600">Active Entries</div>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Entries:</span>
-                  <span className="font-semibold text-gray-900">
-                    {stats?.blacklist.totalEntries || 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Risk Flags */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <FaFlag className="text-orange-600 text-xl" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Risk Flags</span>
-            </div>
-            <div className="space-y-2">
-              <div className="text-3xl font-bold text-gray-900">
-                {stats?.riskFlags.pending || 0}
-              </div>
-              <div className="text-sm text-gray-600">Pending Review</div>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Total Flags:</span>
-                  <span className="font-semibold text-gray-900">
-                    {stats?.riskFlags.total || 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow">
           <div className="border-b border-gray-200">

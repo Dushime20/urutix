@@ -1,17 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import {
-  DollarSign, Activity, CreditCard, Wallet, RefreshCw,
-  Search, Download, Eye, Calendar,
-  Clock, ArrowUpRight, ArrowDownRight, CheckCircle2,
-  XCircle, Timer, Wallet2, FileText, Globe,
-  Building2, TrendingUp, Receipt, PiggyBank, X,
-  ArrowUp, Loader2
+  DollarSign,
+  Activity,
+  CreditCard,
+  Wallet,
+  RefreshCw,
+  Search,
+  Download,
+  Eye,
+  Calendar,
+  Clock,
+  ArrowUpRight,
+  ArrowDownRight,
+  CheckCircle2,
+  XCircle,
+  Timer,
+  Wallet2,
+  FileText,
+  Globe,
+  Building2,
+  TrendingUp,
+  Receipt,
+  PiggyBank,
+  X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { adminAPI } from '../../services/adminApi';
-import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -304,49 +320,6 @@ const FinancialAdminDashboard: React.FC = () => {
         </div>
       ) : (
       <div className="space-y-10">
-        {/* Financial Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title={<TranslatedText text="Total Revenue" />}
-            value={fmtMoney(metrics.totalRevenue)}
-            icon={<DollarSign size={18} />}
-            trend={`${metrics.monthlyGrowth}%`}
-            trendDirection="up"
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="Active yield this month" />}
-          />
-          <StatCard
-            title={<TranslatedText text="Transactions" />}
-            value={metrics.totalTransactions.toLocaleString()}
-            icon={<Activity size={18} />}
-            trend={`${fmtMoney(metrics.averageTransactionValue)} AVG`}
-            trendDirection="neutral"
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="Network throughput" />}
-          />
-          <StatCard
-            title={<TranslatedText text="Pending" />}
-            value={fmtMoney(metrics.pendingAmount)}
-            icon={<Timer size={18} />}
-            trend={`${transactions.filter(t => t.status === 'pending').length} TXN`}
-            trendDirection="neutral"
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="Assets in processing" />}
-          />
-          <StatCard
-            title={<TranslatedText text="Escrow Balance" />}
-            value={fmtMoney(metrics.escrowBalance)}
-            icon={<PiggyBank size={18} />}
-            trend="SECURED"
-            trendDirection="neutral"
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="Guaranteed liquidity" />}
-          />
-        </div>
 
         {/* Revenue Chart and Quick Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

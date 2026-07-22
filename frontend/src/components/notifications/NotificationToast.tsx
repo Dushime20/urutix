@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { X, ExternalLink, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { resolveNotificationRoute } from '../../utils/resolveNotificationRoute';
 
 interface NotificationToastProps {
   id: string;
@@ -30,6 +32,7 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
   duration = 5000,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (autoHide) {
@@ -113,8 +116,16 @@ const NotificationToast: React.FC<NotificationToastProps> = ({
   const styles = getPriorityStyles();
 
   const handleAction = () => {
-    if (actionUrl) {
-      navigate(actionUrl);
+    const resolved = resolveNotificationRoute(actionUrl, user?.role, { notificationType: type });
+    if (resolved.path) {
+      if (/^https?:\/\//i.test(resolved.path)) {
+        window.location.assign(resolved.path);
+      } else {
+        navigate(resolved.path);
+      }
+      if (onMarkAsRead) {
+        onMarkAsRead(id);
+      }
     }
     onDismiss(id);
   };

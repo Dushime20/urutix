@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   X, Headphones, ChevronDown, AlertTriangle, Upload, FileText,
@@ -6,7 +6,13 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { disputesAPI, tripsAPI, paymentsAPI, financialAPI } from '../../services/api';
-import { CATEGORY_LABELS, PRIORITY_LABELS } from '../../types/dispute';
+import { lendingApi } from '../../services/lending/lendingApi';
+import { loadsAPI } from '../../services/load';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  CATEGORY_LABELS, PRIORITY_LABELS,
+  type DisputeCategory,
+} from '../../types/dispute';
 
 interface Props { onClose: () => void; onCreated: () => void; }
 
@@ -20,6 +26,47 @@ function getDefaultPriority(cat: string): string {
   if (['DELIVERY_DELAY','DRIVER_MISCONDUCT','BROKER_COMPLAINT','LENDER_COMPLAINT','CONTRACT_VIOLATION'].includes(cat)) return 'MEDIUM';
   return 'LOW';
 }
+
+/** Categories shown per role */
+const ROLE_CATEGORIES: Record<string, DisputeCategory[]> = {
+  LENDER: [
+    'PAYMENT_ISSUE', 'BILLING_ISSUE', 'LENDER_COMPLAINT', 'CONTRACT_VIOLATION',
+    'DOCUMENTATION_ISSUE', 'FRAUD_SUSPECTED', 'IDENTITY_VERIFICATION',
+    'TECHNICAL_PROBLEM', 'ACCOUNT_SUSPENSION', 'SECURITY_CONCERN',
+    'SUBSCRIPTION_ISSUE', 'FEATURE_REQUEST', 'OTHER',
+  ],
+  CARGO_OWNER: [
+    'CARGO_DAMAGE', 'CARGO_LOSS', 'DELIVERY_DELAY', 'LOADING_DELAY', 'UNLOADING_DELAY',
+    'ROUTE_VIOLATION', 'DRIVER_MISCONDUCT', 'DOCUMENTATION_ISSUE', 'PAYMENT_ISSUE',
+    'BILLING_ISSUE', 'AUCTION_ISSUE', 'BROKER_COMPLAINT', 'CONTRACT_VIOLATION',
+    'INSURANCE_CLAIM', 'FRAUD_SUSPECTED', 'TECHNICAL_PROBLEM', 'FEATURE_REQUEST', 'OTHER',
+  ],
+  DRIVER: [
+    'DELIVERY_DELAY', 'CARGO_DAMAGE', 'CARGO_LOSS', 'ROUTE_VIOLATION',
+    'VEHICLE_DAMAGE', 'TRUCK_BREAKDOWN', 'LOADING_DELAY', 'UNLOADING_DELAY',
+    'DOCUMENTATION_ISSUE', 'PAYMENT_ISSUE', 'DRIVER_MISCONDUCT',
+    'TECHNICAL_PROBLEM', 'SECURITY_CONCERN', 'OTHER',
+  ],
+  BROKER: [
+    'AUCTION_ISSUE', 'BROKER_COMPLAINT', 'PAYMENT_ISSUE', 'CONTRACT_VIOLATION',
+    'DELIVERY_DELAY', 'DOCUMENTATION_ISSUE', 'FRAUD_SUSPECTED',
+    'BILLING_ISSUE', 'TECHNICAL_PROBLEM', 'FEATURE_REQUEST', 'OTHER',
+  ],
+};
+
+type RefField = 'trip' | 'invoice' | 'payment' | 'loan' | 'cargo';
+
+const ROLE_REF_FIELDS: Record<string, RefField[]> = {
+  LENDER: ['loan'],
+  CARGO_OWNER: ['cargo', 'trip', 'payment'],
+  DRIVER: ['trip'],
+  BROKER: ['trip', 'payment'],
+  TRUCK_OWNER: ['trip', 'invoice', 'payment'],
+  FLEET_MANAGER: ['trip', 'invoice', 'payment'],
+  FLEET_DISPATCHER: ['trip', 'invoice', 'payment'],
+};
+
+const DEFAULT_REF_FIELDS: RefField[] = ['trip', 'invoice', 'payment'];
 
 // Compact searchable select for reference fields
 interface RefSelectProps {
@@ -73,10 +120,27 @@ const RefSelect: React.FC<RefSelectProps> = ({ label, value, onChange, options, 
 };
 
 const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
+  const { user } = useAuth();
+  const role = user?.role ?? '';
+  const isLender = role === 'LENDER';
+  const isCargoOwner = role === 'CARGO_OWNER';
+
+  const allowedCategories = useMemo(() => {
+    const keys = ROLE_CATEGORIES[role] ?? (Object.keys(CATEGORY_LABELS) as DisputeCategory[]);
+    return keys;
+  }, [role]);
+
+  const refFields = ROLE_REF_FIELDS[role] ?? DEFAULT_REF_FIELDS;
+  const showTrip = refFields.includes('trip');
+  const showInvoice = refFields.includes('invoice');
+  const showPayment = refFields.includes('payment');
+  const showLoan = refFields.includes('loan');
+  const showCargo = refFields.includes('cargo');
+
   const [form, setForm] = useState({
-    title: '', description: '', category: 'OTHER', priority: 'MEDIUM',
+    title: '', description: '', category: 'OTHER' as string, priority: 'MEDIUM',
     location: '', incidentDate: '', additionalNotes: '',
-    tripId: '', invoiceId: '', paymentId: '',
+    tripId: '', invoiceId: '', paymentId: '', loanId: '', cargoId: '',
   });
   const [autoPriority, setAutoPriority] = useState(true);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -90,11 +154,12 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     }
   };
 
-  // Fetch user's trips
+  // Fetch user's trips (logistics roles)
   const { data: tripsData, isLoading: tripsLoading } = useQuery({
     queryKey: ['my-trips-for-dispute'],
     queryFn: () => tripsAPI.getAll({ limit: 100 }).then(r => r.data),
     staleTime: 60_000,
+    enabled: showTrip,
   });
   const trips = (tripsData?.data ?? tripsData ?? []) as any[];
   const tripOptions = trips.map((t: any) => ({
@@ -108,6 +173,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     queryKey: ['my-invoices-for-dispute'],
     queryFn: () => financialAPI.getInvoices({ limit: 100 }).then(r => r.data),
     staleTime: 60_000,
+    enabled: showInvoice,
   });
   const invoices = (invoicesData?.data ?? invoicesData ?? []) as any[];
   const invoiceOptions = invoices.map((inv: any) => ({
@@ -121,6 +187,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     queryKey: ['my-payments-for-dispute'],
     queryFn: () => paymentsAPI.getAll({ limit: 100 }).then(r => r.data),
     staleTime: 60_000,
+    enabled: showPayment,
   });
   const payments = (paymentsData?.data ?? paymentsData ?? []) as any[];
   const paymentOptions = payments.map((p: any) => ({
@@ -128,6 +195,72 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     label: p.referenceNumber ?? p.id.slice(0, 8),
     sub: p.amount != null ? `${p.currency ?? ''} ${p.amount} — ${p.status ?? ''}`.trim() : p.status,
   }));
+
+  // Fetch lender loans
+  const { data: loansData, isLoading: loansLoading } = useQuery({
+    queryKey: ['my-loans-for-dispute', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const [active, requests] = await Promise.all([
+        lendingApi.getActiveLoans(user.id, 1, 100).catch(() => null),
+        lendingApi.getLenderLoanRequests(user.id, undefined, 1, 100).catch(() => null),
+      ]);
+      const activeList = (active?.data ?? active ?? []) as any[];
+      const requestList = (requests?.data ?? requests ?? []) as any[];
+      const byId = new Map<string, any>();
+      for (const loan of [...requestList, ...activeList]) {
+        if (loan?.id) byId.set(loan.id, loan);
+      }
+      return Array.from(byId.values());
+    },
+    staleTime: 60_000,
+    enabled: showLoan && !!user?.id,
+  });
+  const loans = (loansData ?? []) as any[];
+  const loanOptions = loans.map((loan: any) => {
+    const borrower = loan.borrower;
+    const borrowerName =
+      borrower?.contact_name ?? borrower?.company_name ?? borrower?.name ?? null;
+    const amount = loan.approved_amount ?? loan.requested_amount ?? loan.principal_amount;
+    const ref = loan.external_loan_ref ?? loan.id?.slice(0, 8);
+    return {
+      id: loan.id,
+      label: ref ? `Loan ${ref}` : loan.id.slice(0, 8),
+      sub: [
+        borrowerName,
+        amount != null ? `${Number(amount).toLocaleString()}` : null,
+        loan.status,
+      ].filter(Boolean).join(' · '),
+    };
+  });
+
+  // Fetch cargo owner's loads/cargos
+  const { data: cargosData, isLoading: cargosLoading } = useQuery({
+    queryKey: ['my-cargos-for-dispute'],
+    queryFn: () => loadsAPI.getAll({ limit: 100 }).then(r => r.data),
+    staleTime: 60_000,
+    enabled: showCargo,
+  });
+  const cargos = useMemo(() => {
+    const raw = cargosData as any;
+    if (raw?.cargos) return raw.cargos as any[];
+    if (raw?.items) return raw.items as any[];
+    if (raw?.data?.cargos) return raw.data.cargos as any[];
+    if (raw?.data?.items) return raw.data.items as any[];
+    if (Array.isArray(raw?.data)) return raw.data as any[];
+    if (Array.isArray(raw)) return raw as any[];
+    return [];
+  }, [cargosData]);
+  const cargoOptions = cargos.map((c: any) => {
+    const origin = c.pickupLocation?.city ?? c.origin ?? c.pickupCity ?? '';
+    const dest = c.deliveryLocation?.city ?? c.destination ?? c.deliveryCity ?? '';
+    const route = [origin, dest].filter(Boolean).join(' → ');
+    return {
+      id: c.id,
+      label: c.referenceNumber ?? c.loadNumber ?? c.title ?? c.id.slice(0, 8),
+      sub: [c.cargoType ?? c.type, route || null, c.status].filter(Boolean).join(' · '),
+    };
+  });
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -143,7 +276,16 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
 
   const createMut = useMutation({
     mutationFn: async () => {
-      // 1. Create the ticket
+      const selectedLoan = loanOptions.find(o => o.id === form.loanId);
+      const loanNote = form.loanId
+        ? `Related Loan: ${selectedLoan?.label ?? form.loanId}${selectedLoan?.sub ? ` (${selectedLoan.sub})` : ''} [ID: ${form.loanId}]`
+        : '';
+      const selectedCargo = cargoOptions.find(o => o.id === form.cargoId);
+      const cargoNote = form.cargoId
+        ? `Related Cargo: ${selectedCargo?.label ?? form.cargoId}${selectedCargo?.sub ? ` (${selectedCargo.sub})` : ''} [ID: ${form.cargoId}]`
+        : '';
+      const notes = [form.additionalNotes.trim(), loanNote, cargoNote].filter(Boolean).join('\n');
+
       const res = await disputesAPI.create({
         title: form.title,
         description: form.description,
@@ -151,13 +293,13 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
         priority: form.priority,
         location: form.location || undefined,
         incidentDate: form.incidentDate || undefined,
-        additionalNotes: form.additionalNotes || undefined,
-        tripId: form.tripId || undefined,
-        invoiceId: form.invoiceId || undefined,
-        paymentId: form.paymentId || undefined,
+        additionalNotes: notes || undefined,
+        tripId: showTrip ? (form.tripId || undefined) : undefined,
+        invoiceId: showInvoice ? (form.invoiceId || undefined) : undefined,
+        paymentId: showPayment ? (form.paymentId || undefined) : undefined,
+        shipmentId: showCargo ? (form.cargoId || undefined) : undefined,
       });
       const disputeId = res.data?.data?.id;
-      // 2. Upload attachments if any
       if (disputeId && attachments.length > 0) {
         await Promise.all(
           attachments.map(file => disputesAPI.uploadAttachment(disputeId, file))
@@ -183,8 +325,14 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
 
   const formatBytes = (b: number) => b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / (1024 * 1024)).toFixed(1)} MB`;
 
+  const refColCount = refFields.length;
+  const refGridClass =
+    refColCount <= 1 ? 'grid-cols-1' :
+    refColCount === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+    'grid-cols-1 sm:grid-cols-3';
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-3 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[200] p-3 overflow-y-auto">
       <div className="bg-white dark:bg-slate-800 rounded-[24px] w-full max-w-2xl my-6 border border-gray-100 dark:border-slate-700">
 
         {/* Header */}
@@ -195,7 +343,13 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
             </div>
             <div>
               <h2 className="text-sm font-black text-gray-900 dark:text-white">Report an Issue</h2>
-              <p className="text-[11px] text-gray-400">Submit a new support ticket</p>
+              <p className="text-[11px] text-gray-400">
+                {isLender
+                  ? 'Submit a loan or lending-related support ticket'
+                  : isCargoOwner
+                    ? 'Submit a cargo or shipment-related support ticket'
+                    : 'Submit a new support ticket'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-400">
@@ -209,7 +363,11 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Title <span className="text-red-400">*</span></label>
             <input value={form.title} onChange={e => set('title', e.target.value)}
-              placeholder="Brief description of the issue..."
+              placeholder={
+                isLender ? 'e.g. Disbursement failed for loan…'
+                  : isCargoOwner ? 'e.g. Cargo damaged on delivery…'
+                    : 'Brief description of the issue...'
+              }
               className="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] dark:bg-slate-700 dark:text-white" />
           </div>
 
@@ -220,7 +378,9 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
               <div className="relative">
                 <select value={form.category} onChange={e => set('category', e.target.value)}
                   className="w-full pl-3 pr-8 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-sm appearance-none focus:ring-2 focus:ring-[#2c5173] dark:bg-slate-700 dark:text-white">
-                  {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {allowedCategories.map(k => (
+                    <option key={k} value={k}>{CATEGORY_LABELS[k]}</option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
@@ -255,55 +415,104 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Description <span className="text-red-400">*</span></label>
             <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={4}
-              placeholder="Provide a detailed description of the issue, what happened, when, and any relevant information..."
+              placeholder={
+                isLender
+                  ? 'Describe the loan issue — disbursement, repayment, borrower, interest, or policy problem...'
+                  : isCargoOwner
+                    ? 'Describe the cargo issue — damage, delay, missing items, driver, auction, or payment problem...'
+                    : 'Provide a detailed description of the issue, what happened, when, and any relevant information...'
+              }
               className="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173] dark:bg-slate-700 dark:text-white" />
           </div>
 
-          {/* Location & Incident Date */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Location (optional)</label>
-              <input value={form.location} onChange={e => set('location', e.target.value)}
-                placeholder="Where did this occur?"
-                className="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] dark:bg-slate-700 dark:text-white" />
+          {/* Location & Incident Date — less relevant for lenders */}
+          {!isLender && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Location (optional)</label>
+                <input value={form.location} onChange={e => set('location', e.target.value)}
+                  placeholder="Where did this occur?"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] dark:bg-slate-700 dark:text-white" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Incident Date (optional)</label>
+                <input type="date" value={form.incidentDate} onChange={e => set('incidentDate', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] dark:bg-slate-700 dark:text-white" />
+              </div>
             </div>
+          )}
+
+          {isLender && (
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Incident Date (optional)</label>
               <input type="date" value={form.incidentDate} onChange={e => set('incidentDate', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] dark:bg-slate-700 dark:text-white" />
             </div>
-          </div>
+          )}
 
-          {/* Related References — smart dropdowns */}
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Related References <span className="font-normal normal-case tracking-normal text-gray-400">(optional — select from your records)</span></p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <RefSelect
-                label="Trip"
-                value={form.tripId}
-                onChange={v => set('tripId', v)}
-                options={tripOptions}
-                loading={tripsLoading}
-                placeholder="Select a trip"
-              />
-              <RefSelect
-                label="Invoice"
-                value={form.invoiceId}
-                onChange={v => set('invoiceId', v)}
-                options={invoiceOptions}
-                loading={invoicesLoading}
-                placeholder="Select an invoice"
-              />
-              <RefSelect
-                label="Payment"
-                value={form.paymentId}
-                onChange={v => set('paymentId', v)}
-                options={paymentOptions}
-                loading={paymentsLoading}
-                placeholder="Select a payment"
-              />
+          {/* Related References — role-based */}
+          {refFields.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                Related References{' '}
+                <span className="font-normal normal-case tracking-normal text-gray-400">
+                  (optional — select from your {isLender ? 'loans' : isCargoOwner ? 'cargos' : 'records'})
+                </span>
+              </p>
+              <div className={`grid ${refGridClass} gap-2`}>
+                {showCargo && (
+                  <RefSelect
+                    label="Cargo"
+                    value={form.cargoId}
+                    onChange={v => set('cargoId', v)}
+                    options={cargoOptions}
+                    loading={cargosLoading}
+                    placeholder="Select a cargo"
+                  />
+                )}
+                {showLoan && (
+                  <RefSelect
+                    label="Loan"
+                    value={form.loanId}
+                    onChange={v => set('loanId', v)}
+                    options={loanOptions}
+                    loading={loansLoading}
+                    placeholder="Select a loan"
+                  />
+                )}
+                {showTrip && (
+                  <RefSelect
+                    label="Trip"
+                    value={form.tripId}
+                    onChange={v => set('tripId', v)}
+                    options={tripOptions}
+                    loading={tripsLoading}
+                    placeholder="Select a trip"
+                  />
+                )}
+                {showInvoice && (
+                  <RefSelect
+                    label="Invoice"
+                    value={form.invoiceId}
+                    onChange={v => set('invoiceId', v)}
+                    options={invoiceOptions}
+                    loading={invoicesLoading}
+                    placeholder="Select an invoice"
+                  />
+                )}
+                {showPayment && (
+                  <RefSelect
+                    label="Payment"
+                    value={form.paymentId}
+                    onChange={v => set('paymentId', v)}
+                    options={paymentOptions}
+                    loading={paymentsLoading}
+                    placeholder="Select a payment"
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Proof / Document upload */}
           <div>

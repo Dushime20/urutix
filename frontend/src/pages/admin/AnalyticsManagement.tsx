@@ -42,7 +42,6 @@ import {
 } from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
-import { StatCard, DataCard } from '../../components/EnliteUI';
 import { adminAPI } from '../../services/adminApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -288,48 +287,6 @@ const AnalyticsManagement: React.FC = () => {
             </div>
           ) : (
           <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title={<TranslatedText text="AGGREGATE REVENUE" />}
-              value={fmtMoney(overviewData?.stats?.totalRevenue || 0)}
-              subtitle={<TranslatedText text="GROSS REVENUE STREAM" />}
-              icon={<MoneyIcon />}
-              trend={`${overviewData?.stats?.totalTrips || 0} trips`}
-              trendDirection="up"
-              color="primary"
-              variant="classic"
-            />
-            <StatCard
-              title={<TranslatedText text="ACTIVE NETWORK" />}
-              value={(overviewData?.stats?.totalUsers || 0).toLocaleString()}
-              subtitle={<TranslatedText text="TOTAL REGISTERED USERS" />}
-              icon={<UsersIcon />}
-              trend={`${overviewData?.stats?.totalTrucks || 0} trucks`}
-              trendDirection="up"
-              color="primary"
-              variant="classic"
-            />
-            <StatCard
-              title={<TranslatedText text="PLATFORM VELOCITY" />}
-              value={`${overviewData?.stats?.matchingEfficiency || 0}%`}
-              subtitle={<TranslatedText text="TRIP SUCCESS RATE" />}
-              icon={<PerformanceIcon />}
-              trend={`${overviewData?.stats?.completedTrips || 0} completed`}
-              trendDirection="up"
-              color="primary"
-              variant="classic"
-            />
-            <StatCard
-              title={<TranslatedText text="ACTIVE TRIPS" />}
-              value={(overviewData?.stats?.activeTrips || 0).toString()}
-              subtitle={<TranslatedText text="TRIPS IN PROGRESS" />}
-              icon={<SecurityIcon />}
-              trend={`${overviewData?.stats?.totalLoads || 0} loads`}
-              trendDirection="up"
-              color="primary"
-              variant="classic"
-            />
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
@@ -407,38 +364,6 @@ const AnalyticsManagement: React.FC = () => {
             </div>
           ) : (
           <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <StatCard
-                title="TOTAL LOADS"
-                value={cargoData?.stats?.totalLoads || 0}
-                subtitle="BOOKING SUCCESS"
-                trend={`${cargoData?.stats?.bookingSuccessRate || 0}%`}
-                trendDirection="up"
-                icon={<CargoIcon />}
-                color="primary"
-                variant="classic"
-             />
-             <StatCard
-                title="ACTIVE LOADS"
-                value={cargoData?.stats?.activeLoads || 0}
-                subtitle="COMPLETED"
-                trend={`${cargoData?.stats?.completedLoads || 0}`}
-                trendDirection="up"
-                icon={<UsersIcon />}
-                color="primary"
-                variant="classic"
-             />
-             <StatCard
-                title="AVG LOAD VALUE"
-                value={fmtMoney(cargoData?.stats?.avgLoadValue || 0)}
-                subtitle="CANCELLED"
-                trend={`${cargoData?.stats?.cancelledLoads || 0}`}
-                trendDirection="down"
-                icon={<MoneyIcon />}
-                color="primary"
-                variant="classic"
-             />
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <DataCard title={<TranslatedText text="CARGO TYPE DISTRIBUTION" />} subtitle={<TranslatedText text="Load distribution by cargo category" />} icon={<PieChartIcon />}>
@@ -500,36 +425,6 @@ const AnalyticsManagement: React.FC = () => {
             </div>
           ) : (
           <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatCard
-              title="TOTAL TRUCKS"
-              value={fleetData?.stats?.totalTrucks || 0}
-              icon={<FleetIcon />}
-              color="primary"
-              variant="classic"
-            />
-            <StatCard
-              title="AVAILABLE"
-              value={fleetData?.stats?.availableTrucks || 0}
-              icon={<FleetIcon />}
-              color="primary"
-              variant="classic"
-            />
-            <StatCard
-              title="IN TRANSIT"
-              value={fleetData?.stats?.inTransitTrucks || 0}
-              icon={<FleetIcon />}
-              color="primary"
-              variant="classic"
-            />
-            <StatCard
-              title="MAINTENANCE"
-              value={fleetData?.stats?.maintenanceTrucks || 0}
-              icon={<FleetIcon />}
-              color="primary"
-              variant="classic"
-            />
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <DataCard title="TRUCK TYPE BREAKDOWN" subtitle="Fleet composition by vehicle type" icon={<PieChartIcon />}>
@@ -571,24 +466,6 @@ const AnalyticsManagement: React.FC = () => {
             </DataCard>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <StatCard
-              title="FLEET UTILIZATION RATE"
-              value={`${fleetData?.stats?.utilizationRate || 0}%`}
-              subtitle="of fleet active"
-              icon={<PerformanceIcon />}
-              color="primary"
-              variant="classic"
-            />
-            <StatCard
-              title="TRIP SUCCESS RATE"
-              value={`${fleetData?.stats?.tripSuccessRate || 0}%`}
-              subtitle={`of ${fleetData?.stats?.totalTrips || 0} trips`}
-              icon={<SecurityIcon />}
-              color="primary"
-              variant="classic"
-            />
-          </div>
           </>
           )}
         </div>

@@ -14,15 +14,28 @@ import TenantSettingsModal from '../components/TenantSettingsModal';
 import ManageUsersModal from '../components/ManageUsersModal';
 import TenantKYCModal from '../components/TenantKYCModal';
 import {
-  Building2, Edit, Plus, Search, Download,
-  Eye, Check, X, Trash2,
-  ChevronsUpDown, Globe, Users, TrendingUp,
-  Settings, ShieldCheck, AlertTriangle, CreditCard,
-  Heart, Clock
+  Building2,
+  Edit,
+  Plus,
+  Search,
+  Download,
+  Eye,
+  Check,
+  X,
+  Trash2,
+  ChevronsUpDown,
+  Globe,
+  Users,
+  TrendingUp,
+  Settings,
+  ShieldCheck,
+  AlertTriangle,
+  CreditCard,
+  Heart,
+  Clock
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
-import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
@@ -481,7 +494,6 @@ const AdminTenants: React.FC = () => {
     }
   };
 
-
   const handleCreateTenant = () => {
     // Use default admin names since admin info is stored in User entity, not Tenant
     const adminFirstName = 'Admin';
@@ -533,41 +545,6 @@ const AdminTenants: React.FC = () => {
         </button>
       }
     >
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <StatCard
-          title={<TranslatedText text="Total Tenants" />}
-          value={tenants.length}
-          icon={<Building2 size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Registered" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Active Tenants" />}
-          value={tenants.filter((t: Tenant) => t.status === 'active').length}
-          icon={<Check size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Operational" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Total Users" />}
-          value={tenants.reduce((sum: number, t: Tenant) => sum + (t.userCount || 0), 0)}
-          icon={<Users size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="All Tenants" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Total Revenue" />}
-          value={formatCurrency(tenants.reduce((sum: number, t: Tenant) => sum + (t.revenue || 0), 0))}
-          icon={<TrendingUp size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Aggregate" />}
-        />
-      </div>
 
       {/* Filters and Search */}
       <div className="p-6 bg-[#fafafa] rounded-xl border border-transparent mb-10 flex flex-col md:flex-row gap-6 items-center justify-between">
@@ -845,8 +822,6 @@ const AdminTenants: React.FC = () => {
                 </div>
               </div>
 
-
-
               <div className="bg-[#fafafa] border border-gray-100 rounded-[24px] p-6">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-indigo-600 border border-gray-50">
@@ -1084,7 +1059,6 @@ const AdminTenants: React.FC = () => {
                     />
                   </div>
                 </div>
-
 
               </div>
             )}

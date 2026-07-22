@@ -7,12 +7,9 @@ import {
     Eye,
     Calendar,
     User,
-    TrendingUp,
     Search,
     Filter,
-    Banknote,
 } from 'lucide-react';
-import { StatCard } from '../EnliteUI';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
@@ -58,19 +55,13 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
     loading,
     repayments,
 }) => {
-    const { format: fmtCurrency, compact: compactAmount } = useCurrencyFormat();
+    const { format: fmtCurrency } = useCurrencyFormat();
     const formatAmount = (amount: number | null): string =>
         amount === null ? '—' : fmtCurrency(amount);
 
     const [searchTerm, setSearchTerm]     = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [detailLoan, setDetailLoan]     = useState<any | null>(null);
-
-    const totalInterestCollected = repayments.reduce((s, r) => s + (r.interestPaid ?? 0), 0);
-    const totalPrincipalRepaid = repayments.reduce((s, r) => s + (r.principalPaid ?? 0), 0);
-    const totalAmountRepaid = repayments.reduce((s, r) => s + (r.amount ?? 0), 0);
-    const overdueCount = repayments.filter(r => r.status === 'overdue').length;
-    const pendingCount = repayments.filter(r => r.status === 'pending').length;
 
     const filtered = repayments.filter(r => {
         const q = searchTerm.toLowerCase();
@@ -205,45 +196,6 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Total Repaid"
-                    value={totalAmountRepaid > 0 ? compactAmount(totalAmountRepaid) : '—'}
-                    subtitle={`${repayments.length} repayment record${repayments.length !== 1 ? 's' : ''}`}
-                    icon={<DollarSign size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && repayments.length === 0}
-                />
-                <StatCard
-                    title="Interest Collected"
-                    value={totalInterestCollected > 0 ? compactAmount(totalInterestCollected) : '—'}
-                    subtitle={totalInterestCollected > 0 ? 'From repayment records' : 'No interest recorded yet'}
-                    icon={<TrendingUp size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && repayments.length === 0}
-                />
-                <StatCard
-                    title="Principal Repaid"
-                    value={totalPrincipalRepaid > 0 ? compactAmount(totalPrincipalRepaid) : '—'}
-                    subtitle={totalPrincipalRepaid > 0 ? 'Capital recovered' : 'No principal recorded'}
-                    icon={<Banknote size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && repayments.length === 0}
-                />
-                <StatCard
-                    title="Overdue / Pending"
-                    value={`${overdueCount} / ${pendingCount}`}
-                    subtitle={overdueCount > 0 ? 'Require attention' : 'None overdue'}
-                    icon={overdueCount > 0 ? <AlertTriangle size={18} /> : <Clock size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && repayments.length === 0}
-                />
-            </div>
-
             <DataCard
                 title="Repayment Records"
                 subtitle="Verified repayment transactions from loan repayment history"

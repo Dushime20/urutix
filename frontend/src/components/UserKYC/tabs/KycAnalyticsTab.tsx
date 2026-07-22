@@ -12,13 +12,11 @@ import {
   Security,
   Schedule,
   CheckCircle,
-  Analytics,
   Star,
   Shield,
   Timeline,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import { StatCard } from '../../EnliteUI/Cards/StatCard';
 
 interface KycAnalyticsTabProps {
   metrics: any;
@@ -97,69 +95,9 @@ export const KycAnalyticsTab: React.FC<KycAnalyticsTabProps> = ({
 
   const verificationMetrics = getVerificationMetrics();
   const timelineEvents = getTimelineData();
-  const overallScore = verificationMetrics.reduce((sum, metric) => sum + metric.value, 0) / verificationMetrics.length;
 
   return (
     <div className="space-y-8">
-      {/* Overall Analytics */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Typography className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 pl-1">
-          Verification Analytics
-        </Typography>
-        
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <StatCard
-              title="Overall Score"
-              value={`${Math.round(overallScore)}%`}
-              icon={<Analytics />}
-              color="primary"
-              variant="classic"
-              trend={overallScore > 50 ? '+15%' : undefined}
-              trendDirection={overallScore > 50 ? 'up' : 'neutral'}
-              subtitle="Verification Progress"
-            />
-          </Grid>
-          
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <StatCard
-              title="Compliance"
-              value={profile?.complianceScore || 0}
-              icon={<Shield />}
-              color="emerald"
-              variant="classic"
-              subtitle="Security Rating"
-            />
-          </Grid>
-          
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <StatCard
-              title="Documents"
-              value={metrics?.documentsUploaded || 0}
-              icon={<CheckCircle />}
-              color="primary"
-              variant="classic"
-              subtitle="Files Uploaded"
-            />
-          </Grid>
-          
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-            <StatCard
-              title="Est. Time"
-              value={metrics?.estimatedCompletion || 'N/A'}
-              icon={<Schedule />}
-              variant="classic"
-              color="secondary"
-              subtitle="Processing"
-            />
-          </Grid>
-        </Grid>
-      </motion.div>
-
       {/* Verification Breakdown */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

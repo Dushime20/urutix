@@ -5,16 +5,31 @@ import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
-import { StatCard } from '../components/EnliteUI';
 import {
-  User, Mail, Phone, Building2,
-  MoreHorizontal, Search, TrendingUp,
-  DollarSign, Users,
-  Download, AlertTriangle, CheckCircle2,
-  Eye, Percent, MapPin,
-  CreditCard, History, Star, Ban,
-  Edit, X, ShieldCheck, Briefcase,
-  ExternalLink, ChevronRight
+  User,
+  Mail,
+  Phone,
+  Building2,
+  MoreHorizontal,
+  Search,
+  TrendingUp,
+  Users,
+  Download,
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  Percent,
+  MapPin,
+  CreditCard,
+  History,
+  Star,
+  Ban,
+  Edit,
+  X,
+  ShieldCheck,
+  Briefcase,
+  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 
 interface Lender {
@@ -442,42 +457,6 @@ const AdminBorrowersPage: React.FC = () => {
       {/* Analytics Dashboard */}
       {showAnalytics && analytics && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-             <StatCard
-              title={<TranslatedText text="Total Borrowers" />}
-              value={analytics?.totalBorrowers}
-              icon={<Users size={22} />}
-              color="primary"
-              variant="classic"
-              trend={`+${analytics?.monthlyGrowth}%`}
-              trendDirection="up"
-              subtitle="Registered borrowers"
-            />
-            <StatCard
-              title={<TranslatedText text="Active Matrix" />}
-              value={analytics?.activeBorrowers}
-              icon={<CheckCircle2 size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={`${((analytics?.activeBorrowers || 0) / (analytics?.totalBorrowers || 1) * 100).toFixed(1)}% Operational`}
-            />
-            <StatCard
-              title={<TranslatedText text="Total Issuance (RWF)" />}
-              value={fmtMoney(analytics.totalAmountBorrowed)}
-              icon={<DollarSign size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={`${analytics.totalLoansIssued} Issuances`}
-            />
-            <StatCard
-              title={<TranslatedText text="Efficiency Core" />}
-              value={analytics.avgCreditScore}
-              icon={<Star size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={`${analytics.defaultRate.toFixed(1)}% Default Index`}
-            />
-          </div>
 
           {/* Performance Insights */}
           <div className="bg-white rounded-[32px] border border-transparent p-8">

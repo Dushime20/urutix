@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  FaDollarSign, FaChartLine, FaCreditCard, FaWallet, FaExchangeAlt,
-  FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaPlus, FaCalendar,
-  FaClock, FaArrowUp, FaArrowDown, FaCaretUp, FaCaretDown,
-  FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaPiggyBank,
-  FaReceipt, FaMoneyBillWave, FaUniversity, FaHandshake, FaShoppingCart
+  FaDollarSign, FaCreditCard, FaWallet, FaExchangeAlt,
+  FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaPlus,
+  FaClock, FaCheckCircle, FaTimesCircle, FaHourglassHalf,
+  FaReceipt, FaUniversity
 } from 'react-icons/fa';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
-import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
 
 interface Transaction {
@@ -232,44 +230,6 @@ const FinancialDashboard: React.FC = () => {
       description={<TranslatedText text="Monitor transactions, revenue, and financial metrics" />}
     >
       <div className="safe-bottom">
-
-      {/* Financial Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title={<TranslatedText text="Total Revenue" />}
-          value={`$${metrics.totalRevenue.toLocaleString()}`}
-          icon={<FaDollarSign className="w-5 h-5" />}
-          color="primary"
-          trend={`+${metrics.monthlyGrowth}%`}
-          trendDirection="up"
-          subtitle={<TranslatedText text="this month" />}
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Total Transactions" />}
-          value={metrics.totalTransactions.toLocaleString()}
-          icon={<FaExchangeAlt className="w-5 h-5" />}
-          color="primary"
-          subtitle={`$${metrics.averageTransactionValue} avg value`}
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Pending Amount" />}
-          value={`$${metrics.pendingAmount.toLocaleString()}`}
-          icon={<FaHourglassHalf className="w-5 h-5" />}
-          color="primary"
-          subtitle={`${transactions.filter(t => t.status === 'pending').length} transactions`}
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Escrow Balance" />}
-          value={`$${metrics.escrowBalance.toLocaleString()}`}
-          icon={<FaPiggyBank className="w-5 h-5" />}
-          color="primary"
-          subtitle={<TranslatedText text="Secured funds" />}
-          variant="classic"
-        />
-      </div>
 
       {/* Revenue Chart and Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

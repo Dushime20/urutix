@@ -14,16 +14,30 @@ import { fleetApi, type FleetItem } from '../services/fleetApi';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermission } from '../contexts/PermissionContext';
 import {
-  Map as LucideMap, Edit, Plus, Search, Download,
-  Check, Ban, MapPin, Eye, X,
-  ChevronsUpDown, Clock, Milestone, Truck, Settings,
-  ShieldCheck, AlertTriangle,
-  Play, Pause, Building2, Trash2
+  Map as LucideMap,
+  Edit,
+  Plus,
+  Search,
+  Download,
+  Check,
+  Ban,
+  MapPin,
+  Eye,
+  X,
+  ChevronsUpDown,
+  Clock,
+  Milestone,
+  Truck,
+  Settings,
+  AlertTriangle,
+  Play,
+  Pause,
+  Building2,
+  Trash2
 } from 'lucide-react';
 import { FaShieldAlt } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
-import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 
 interface Route {
@@ -72,7 +86,6 @@ const AdminRoutes: React.FC = () => {
   const canDeleteRoutes = hasPermission('route:delete') ||
     user?.role === 'ADMIN' ||
     user?.role === 'TENANT_ADMIN';
-
 
   const canAssignRoutes = hasPermission('route:assign') ||
     user?.role === 'TRUCK_OWNER' ||
@@ -234,7 +247,6 @@ const AdminRoutes: React.FC = () => {
     }
   });
 
-
   const resetForm = () => {
     setTenantId('');
     setName('');
@@ -252,7 +264,6 @@ const AdminRoutes: React.FC = () => {
     setEditingRoute({ ...route });
     setShowEditModal(true);
   };
-
 
   // Status update mutation
   const { mutate: updateRouteStatus, isPending: isUpdatingStatus } = useMutation({
@@ -510,45 +521,6 @@ const AdminRoutes: React.FC = () => {
     >
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={<TranslatedText text="Total Routes" />}
-          value={analyticsData?.totalRoutes ?? routes.length}
-          icon={<LucideMap size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="All registered routes" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Active Routes" />}
-          value={analyticsData?.activeRoutes ?? routes.filter((r: Route) => r.status === 'active').length}
-          icon={<Check size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Currently operational" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Total Distance" />}
-          value={`${(analyticsData?.totalDistance ?? routes.reduce((sum: number, r: Route) => sum + (r.distance || 0), 0)).toLocaleString()} km`}
-          icon={<Milestone size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Combined route distance" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Assigned Trucks" />}
-          value={routes.reduce((sum: number, r: Route) => {
-            if (Array.isArray(r.assignedTrucks)) {
-              return sum + r.assignedTrucks.length;
-            }
-            return sum + (typeof r.assignedTrucks === 'number' ? r.assignedTrucks : 0);
-          }, 0)}
-          icon={<Truck size={22} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Trucks using routes" />}
-        />
-      </div>
 
       {/* Toolbar: filters, bulk actions */}
       <div className="bg-white rounded-xl border border-transparent p-4">
@@ -1574,5 +1546,4 @@ const AdminRoutes: React.FC = () => {
 };
 
 export default AdminRoutes;
-
 

@@ -1,7 +1,7 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState } from 'react';
 import { brokerAPI, type MultiStopLoad, type CreateMultiStopLoadData } from '../../services/brokerApi';
-import { Route, Plus, MapPin, Clock, Loader2, CheckCircle2, Activity, Zap, Shield, ArrowRight, X, Navigation } from 'lucide-react';
+import { Route, Plus, MapPin, Clock, Zap, Activity, X, Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const MultiStopManagement: React.FC = () => {
@@ -90,23 +90,6 @@ const MultiStopManagement: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-12">
-          {/* Optimization Stats */}
-          {multiStop.routeOptimization && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              {[
-                { label: 'Delta Distance', value: `${multiStop.routeOptimization.distanceSavings.toFixed(1)} km`, color: 'emerald' },
-                { label: 'Delta Time', value: `${Math.round(multiStop.routeOptimization.timeSavings / 60)} hrs`, color: 'primary' },
-                { label: 'Delta Resource', value: `${multiStop.routeOptimization.fuelSavings.toFixed(1)} unit`, color: 'indigo' },
-                { label: 'Efficiency', value: `${multiStop.routeOptimization.optimizationScore.toFixed(1)}%`, color: 'slate' }
-              ].map((stat, i) => (
-                <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden relative dark:bg-slate-900 dark:border-slate-800">
-                   <p className="text-xs font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
-                   <h3 className={`text-2xl font-bold italic ${stat.color === 'emerald' ? 'text-emerald-500' : stat.color === 'primary' ? 'text-primary-600' : stat.color === 'indigo' ? 'text-indigo-500' : 'text-slate-900'}`}>{stat.value}</h3>
-                </div>
-              ))}
-            </div>
-          )}
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             {/* Node List */}
             <div className="lg:col-span-8 space-y-8">

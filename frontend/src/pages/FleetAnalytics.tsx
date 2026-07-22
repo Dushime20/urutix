@@ -3,9 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { fleetApi, type TCOAnalysis } from '../services/fleetApi';
 import { fuelApi } from '../services/fuelApi';
 import TCOCharts from '../components/FleetDashboard/Analytics/TCOCharts';
-import { Loader2, Zap, Fuel, DollarSign, CheckCircle, Filter, ArrowRight, Brain, AlertTriangle, BarChart3, Activity, Droplets, TrendingUp } from 'lucide-react';
+import { Loader2, Zap, Filter, ArrowRight, Brain, AlertTriangle, BarChart3, TrendingUp } from 'lucide-react';
 import { cn } from '../utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -199,38 +198,6 @@ const FleetAnalytics: React.FC = () => {
 
     return (
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <CircularStatCard
-            title="Total Spend"
-            value={fmtMoney(Number(fuelStats?.totalSpend || 0))}
-            icon={DollarSign}
-            colorClass="bg-blue-50 text-blue-600"
-            secondaryColor="text-blue-600"
-          />
-          <CircularStatCard
-            title="Fuel Volume"
-            value={`${Number(fuelStats?.totalVolume || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} Gal`}
-            icon={Droplets}
-            colorClass="bg-emerald-50 text-emerald-600"
-            secondaryColor="text-emerald-600"
-          />
-          <CircularStatCard
-            title="Avg. MPG"
-            value={`${Number(fuelStats?.fleetEfficiency || 0).toFixed(1)} MPG`}
-            icon={TrendingUp}
-            colorClass="bg-amber-50 text-amber-600"
-            secondaryColor="text-amber-600"
-          />
-          <CircularStatCard
-            title="Fraud Alerts"
-            value={fuelStats?.fraudAlerts || 0}
-            icon={AlertTriangle}
-            colorClass="bg-rose-50 text-rose-600"
-            secondaryColor="text-rose-600"
-          />
-        </div>
-
         {/* Daily trend chart + truck performance */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 space-y-8">
@@ -316,45 +283,9 @@ const FleetAnalytics: React.FC = () => {
       );
     }
 
-    const utilization = analyticsData?.utilizationRate ?? null;
-    const avgRating = analyticsData?.averageRating ?? null;
-    const totalRevenue = analyticsData?.totalRevenue ?? null;
-    const activeTrips = analyticsData?.activeTrips ?? null;
-
     return (
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <CircularStatCard
-            title="Utilization"
-            value={utilization !== null ? `${Math.round(utilization)}%` : '—'}
-            icon={Zap}
-            colorClass="bg-blue-50 text-blue-600"
-            secondaryColor="text-blue-600"
-          />
-          <CircularStatCard
-            title="Avg Rating"
-            value={avgRating !== null ? avgRating.toFixed(1) : '—'}
-            icon={Activity}
-            colorClass="bg-emerald-50 text-emerald-600"
-            secondaryColor="text-emerald-600"
-          />
-          <CircularStatCard
-            title="Revenue"
-            value={totalRevenue !== null ? fmtMoney(totalRevenue) : '—'}
-            icon={DollarSign}
-            colorClass="bg-amber-50 text-amber-600"
-            secondaryColor="text-amber-600"
-          />
-          <CircularStatCard
-            title="Active Trips"
-            value={activeTrips !== null ? activeTrips : '—'}
-            icon={CheckCircle}
-            colorClass="bg-primary-50 text-primary-500"
-            secondaryColor="text-primary-500"
-          />
-        </div>
-
-        {analyticsData && Object.keys(analyticsData).length === 0 && (
+        {(!analyticsData || Object.keys(analyticsData).length === 0) && (
           <div className="text-center py-12 text-slate-400 text-[10px] font-black uppercase tracking-widest">
             No analytics data available yet
           </div>

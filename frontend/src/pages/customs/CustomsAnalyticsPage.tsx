@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { BarChart3, TrendingUp, CheckCircle, XCircle, Clock, Flag } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { customsApi } from '../../services/customsApi';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { cn } from '../../utils/cn';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const BRAND = '#2c5173';
 
@@ -49,15 +48,6 @@ const CustomsAnalyticsPage: React.FC = () => {
     fill: riskColors[r.risk] || '#94a3b8',
   })).filter((r: any) => r.value > 0);
 
-  const kpis = [
-    { label: 'Total', value: analytics.total ?? 0, icon: BarChart3, statColor: 'primary' as const },
-    { label: 'Clearance Rate', value: `${analytics.clearanceRate ?? 0}%`, icon: TrendingUp, statColor: 'primary' as const },
-    { label: 'Cleared', value: (analytics.byStatus || []).find((s: any) => s.status === 'CLEARED')?.count ?? 0, icon: CheckCircle, statColor: 'primary' as const },
-    { label: 'Rejected', value: (analytics.byStatus || []).find((s: any) => s.status === 'REJECTED')?.count ?? 0, icon: XCircle, statColor: 'primary' as const },
-    { label: 'On Hold', value: (analytics.byStatus || []).find((s: any) => s.status === 'ON_HOLD')?.count ?? 0, icon: Clock, statColor: 'primary' as const },
-    { label: 'High Risk', value: (analytics.byStatus || []).find((s: any) => s.status === 'HIGH_RISK')?.count ?? 0, icon: Flag, statColor: 'primary' as const },
-  ];
-
   return (
     <div className="space-y-6 p-6 max-w-[1400px] mx-auto">
       {/* Header */}
@@ -90,9 +80,6 @@ const CustomsAnalyticsPage: React.FC = () => {
 
       {isLoading ? (
         <div className="space-y-4 animate-pulse">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[1,2,3,4,5,6].map(i => <div key={i} className="h-28 bg-slate-100 dark:bg-slate-800 rounded-2xl" />)}
-          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
             <div className="h-64 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
@@ -100,20 +87,6 @@ const CustomsAnalyticsPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {kpis.map(({ label, value, icon: Icon, statColor }) => (
-              <StatCard
-                key={label}
-                title={label}
-                value={value}
-                icon={<Icon size={24} />}
-                color={statColor}
-                variant="classic"
-              />
-            ))}
-          </div>
-
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Status Bar Chart */}

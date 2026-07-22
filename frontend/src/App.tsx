@@ -190,7 +190,8 @@ const LendingPoliciesPage = lazy(() => import('./pages/LendingPoliciesPage'));
 const CreditAssessmentPage = lazy(() => import('./pages/CreditAssessmentPage'));
 const TransactionsHistoryPage = lazy(() => import('./pages/TransactionsHistoryPage'));
 const LenderProfilePage = lazy(() => import('./pages/LenderProfilePage'));
-const LenderNotificationsPage = lazy(() => import('./pages/LenderNotificationsPage'));
+const NotificationResourceUnavailablePage = lazy(() => import('./pages/NotificationResourceUnavailablePage'));
+const NotificationsHubRedirect = lazy(() => import('./pages/NotificationsHubRedirect'));
 const LenderSupportPage = lazy(() => import('./pages/LenderSupportPage'));
 const LenderTeamManagementPage = lazy(() => import('./pages/LenderTeamManagementPage'));
 
@@ -273,6 +274,8 @@ function App() {
                     <Route path="/customs-officer/setup-password" element={<CustomsOfficerPasswordSetup />} />
                     <Route path="/broker/setup-password" element={<BrokerPasswordSetup />} />
                     <Route path="/agent/setup-password" element={<AgentPasswordSetup />} />
+                    <Route path="/notifications" element={<NotificationsHubRedirect />} />
+                    <Route path="/resource-unavailable" element={<NotificationResourceUnavailablePage />} />
 
                     {/* Cargo Owner Routes */}
                     <Route path="/dashboard" element={<CargoOwnerLayout />}>
@@ -280,6 +283,7 @@ function App() {
                       <Route path="cargos" element={<CargoDashboard />} />
                       <Route path="cargos/create" element={<CargoList />} />
                       <Route path="cargos/list" element={<CargoList />} />
+                      <Route path="resource-unavailable" element={<NotificationResourceUnavailablePage />} />
                       <Route path="cargos/active" element={<CargoList />} />
                       <Route path="cargos/my-cargos" element={<ReceiverCargosPage />} />
                       <Route path="cargos/:cargoId/inspect" element={<CargoInspectionPage />} />
@@ -448,6 +452,9 @@ function App() {
                       <Route path="backhaul" element={<BackhaulMatchingPage />} />
                       <Route path="tier" element={<CarrierTierPage />} />
                       <Route path="load-map" element={<LoadMapPage />} />
+                      <Route path="notifications" element={<UnifiedNotificationManagement />} />
+                      <Route path="notification-center" element={<UnifiedNotificationManagement />} />
+                      <Route path="resource-unavailable" element={<NotificationResourceUnavailablePage />} />
                       {/* Live GPS Tracking */}
                       <Route path="tracking" element={<LiveTracking />} />
                       <Route path="tracking/trips/:tripId" element={<TripTracking />} />
@@ -632,6 +639,9 @@ function App() {
                       <Route path="geofences" element={<GeofenceManager />} />
                       <Route path="integrations" element={<IntegrationsPage />} />
                       <Route path="branding" element={<BrandingSettingsPage />} />
+                      <Route path="notifications" element={<UnifiedNotificationManagement />} />
+                      <Route path="notification-center" element={<UnifiedNotificationManagement />} />
+                      <Route path="resource-unavailable" element={<NotificationResourceUnavailablePage />} />
                       <Route path="support" element={<TenantSupportCenter />} />
                       <Route path="support/analytics" element={<SupportAnalyticsDashboard onBack={() => window.history.back()} />} />
                     </Route>
@@ -653,7 +663,8 @@ function App() {
                       <Route path="credit" element={<CreditAssessmentPage />} />
                       <Route path="history" element={<TransactionsHistoryPage />} />
                       <Route path="profile" element={<LenderProfilePage />} />
-                      <Route path="notifications" element={<LenderNotificationsPage />} />
+                      <Route path="notifications" element={<UnifiedNotificationManagement />} />
+                      <Route path="notification-center" element={<UnifiedNotificationManagement />} />
                       <Route path="team" element={<LenderTeamManagementPage />} />
                       <Route path="support" element={<LenderSupportPage />} />
                       <Route path="financial" element={<UnifiedFinancialManagement />} />
@@ -679,10 +690,11 @@ function App() {
                       <Route path="discovery" element={<CargoDiscovery />} />
                       <Route path="deals" element={<DealFacilitation />} />
                       <Route path="commissions" element={<CommissionsPage />} />
-                      <Route path="statistics" element={<BrokerAnalytics />} />
+                      <Route path="statistics" element={<Navigate to="/dashboard/broker/analytics" replace />} />
                       <Route path="analytics" element={<BrokerAnalytics />} />
                       <Route path="profile" element={<BrokerProfile />} />
                       <Route path="notifications" element={<UnifiedNotificationManagement />} />
+                      <Route path="notification-center" element={<UnifiedNotificationManagement />} />
                       <Route path="settings" element={<BrokerProfile />} />
                       {/* Critical Features Routes */}
                       <Route path="contracts" element={<ContractManagement />} />
@@ -716,6 +728,9 @@ function App() {
                       <Route path="reports" element={<CustomsAuditPage />} />
                       <Route path="profile" element={<CustomsOfficerProfilePage />} />
                       <Route path="settings" element={<CustomsOfficerProfilePage />} />
+                      <Route path="notifications" element={<UnifiedNotificationManagement />} />
+                      <Route path="notification-center" element={<UnifiedNotificationManagement />} />
+                      <Route path="resource-unavailable" element={<NotificationResourceUnavailablePage />} />
                     </Route>
                     <Route path="/customs" element={<Navigate to="/dashboard/customs" replace />} />
 

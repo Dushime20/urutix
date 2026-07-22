@@ -37,7 +37,6 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 interface TruckAnalyticsProps {
@@ -242,42 +241,6 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks, analytic
             </button>
           </div>
         </div>
-      </div>
-
-      {/* KPI Layer */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          variant="premium"
-          title="Fleet Utilization"
-          value={`${analytics?.utilizationRate || 0}%`}
-          icon={<Activity />}
-          color="primary"
-          subtitle="Real-time occupancy"
-        />
-        <StatCard
-          variant="premium"
-          title="Fuel Efficiency"
-          value={`${fuelStats?.avgConsumption?.toFixed(1) || '0.0'} L/100km`}
-          icon={<Fuel />}
-          color="emerald"
-          subtitle="Fleet-wide average"
-        />
-        <StatCard
-          variant="premium"
-          title="Est. Monthly TCO"
-          value={formatCurrency(analytics?.totalRevenue ? analytics.totalRevenue * 0.65 : (tcoData?.totalExpenses || 0))}
-          icon={<DollarSign />}
-          color="purple"
-          subtitle="Operating expenses"
-        />
-        <StatCard
-          variant="premium"
-          title="Security Coverage"
-          value={`${stats.totalTrucks > 0 ? Math.round((stats.securityFeatures.gps / stats.totalTrucks) * 100) : 0}%`}
-          icon={<ShieldCheck />}
-          color="accent"
-          subtitle="Active hardware units"
-        />
       </div>
 
       {/* Analytics Matrix */}

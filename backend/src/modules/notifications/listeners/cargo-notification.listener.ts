@@ -397,7 +397,7 @@ export class CargoNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: true,
-        actionUrl: '/dashboard/receiver/cargos',
+        actionUrl: '/dashboard/cargos/my-cargos',
         actionText: 'View Assigned Cargo',
         metadata: {
           cargoId: event.cargoId,

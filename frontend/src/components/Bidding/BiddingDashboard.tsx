@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Gavel,
-  Users,
-  TrendingUp,
-  DollarSign,
   PlusCircle,
   BarChart3,
   X,
@@ -21,23 +18,15 @@ import CreateAuction from './CreateAuction';
 import BidAnalytics from './BidAnalytics';
 import InactiveAuctions from './InactiveAuctions';
 import { cn } from '@/utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useLocation } from 'react-router-dom';
-import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 import { queryKeys } from '@/lib/queryKeys';
 
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
-const StatsCard = ({ title, value, icon, colorClass, secondaryColor }: any) => {
-  const displayValue = Array.isArray(value) ? value.length : value;
-  return <CircularStatCard title={title} value={displayValue} icon={icon} colorClass={colorClass} secondaryColor={secondaryColor} />;
-};
-
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const location = useLocation();
-  const { compact } = useCurrencyFormat();
   const [activeTab, setActiveTab] = useState(
     userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
       ? 'all-bids' 
@@ -49,10 +38,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
 
   const { data: stats = {
     totalAuctions: 0,
-    participatedAuctions: 0,
     activeBids: 0,
-    totalValue: 0,
-    successRate: 0,
   }, isLoading: loading, isError } = useQuery({
     queryKey: queryKeys.bidding.stats,
     queryFn: async () => {
@@ -77,79 +63,6 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       setActiveTab(viewParam);
     }
   }, [location.search]);
-
-  const renderCargoOwnerStats = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-      <StatsCard
-        title="My Auctions"
-        value={stats.totalAuctions}
-        icon={Gavel}
-        colorClass="bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400"
-        secondaryColor="text-[#345E85] dark:text-blue-400"
-      />
-      <StatsCard
-        title="Active Auctions"
-        value={Array.isArray(stats.activeBids) ? stats.activeBids.length : stats.activeBids}
-        icon={TrendingUp}
-        colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-        secondaryColor="text-emerald-600 dark:text-emerald-400"
-      />
-      <StatsCard
-        title="Total Cargo Value"
-        value={compact(stats.totalValue)}
-        icon={DollarSign}
-        colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-        secondaryColor="text-amber-600 dark:text-amber-400"
-      />
-      <StatsCard
-        title="Auction Success Rate"
-        value={`${Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate}%`}
-        icon={TrendingUp}
-        colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
-        secondaryColor="text-purple-600 dark:text-purple-400"
-      />
-    </div>
-  );
-
-  const renderTruckOwnerStats = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-      <StatsCard
-        title="Available Auctions"
-        value={stats.totalAuctions}
-        icon={Gavel}
-        colorClass="bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400"
-        secondaryColor="text-[#345E85] dark:text-blue-400"
-      />
-      <StatsCard
-        title="Auctions Entered"
-        value={stats.participatedAuctions || 0}
-        icon={HistoryIcon}
-        colorClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-        secondaryColor="text-indigo-600 dark:text-indigo-400"
-      />
-      <StatsCard
-        title="Live Bids"
-        value={Array.isArray(stats.activeBids) ? stats.activeBids.length : stats.activeBids}
-        icon={Users}
-        colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-        secondaryColor="text-emerald-600 dark:text-emerald-400"
-      />
-      <StatsCard
-        title="Total Bid Value"
-        value={compact(stats.totalValue)}
-        icon={DollarSign}
-        colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-        secondaryColor="text-amber-600 dark:text-amber-400"
-      />
-      <StatsCard
-        title="Win Rate"
-        value={`${Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate}%`}
-        icon={TrendingUp}
-        colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
-        secondaryColor="text-purple-600 dark:text-purple-400"
-      />
-    </div>
-  );
 
   const renderCargoOwnerTabs = () => (
     <div className="space-y-6 sm:space-y-8">
@@ -297,39 +210,6 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     </div>
   );
 
-  const renderAdminStats = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 mb-8 sm:mb-12 place-items-center bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-      <StatsCard
-        title="Total Auctions"
-        value={stats.totalAuctions}
-        icon={Gavel}
-        colorClass="bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400"
-        secondaryColor="text-[#345E85] dark:text-blue-400"
-      />
-      <StatsCard
-        title="Active Bids"
-        value={Array.isArray(stats.activeBids) ? stats.activeBids.length : stats.activeBids}
-        icon={Users}
-        colorClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-        secondaryColor="text-emerald-600 dark:text-emerald-400"
-      />
-      <StatsCard
-        title="Platform Bid Volume"
-        value={compact(stats.totalValue)}
-        icon={DollarSign}
-        colorClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-        secondaryColor="text-amber-600 dark:text-amber-400"
-      />
-      <StatsCard
-        title="Success Rate"
-        value={`${Array.isArray(stats.successRate) ? stats.successRate[0] : stats.successRate}%`}
-        icon={TrendingUp}
-        colorClass="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
-        secondaryColor="text-purple-600 dark:text-purple-400"
-      />
-    </div>
-  );
-
   const renderAdminTabs = () => (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-between items-center bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full overflow-hidden">
@@ -420,11 +300,6 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         </div>
       )}
 
-      {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
-        ? renderAdminStats() 
-        : userRole === 'CARGO_OWNER' 
-          ? renderCargoOwnerStats() 
-          : renderTruckOwnerStats()}
       {userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
         ? renderAdminTabs() 
         : userRole === 'CARGO_OWNER' 

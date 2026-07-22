@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ModernLoader from '../../components/common/ModernLoader';
-import {
-  FaTruck, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaDownload,
+import { FaTruck, FaEdit, FaTrash, FaPlus, FaSearch, FaFilter, FaDownload,
   FaEye, FaMapMarkerAlt, FaTools, FaCheckCircle, FaExclamationTriangle
 } from 'react-icons/fa';
-import { useQuery } from '@tanstack/react-query';
-import { tenantApi } from '../../services/tenantApi';
 import { TranslatedText } from '../../components/translated-text';
-import { FaCoins } from 'react-icons/fa';
-import { StatCard } from '../../components/EnliteUI';
 
 interface Truck {
   id: string;
@@ -113,13 +108,6 @@ const FleetManagement: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const { data: balanceData } = useQuery({
-    queryKey: ['tenant-credit-balance'],
-    queryFn: () => tenantApi.getCreditBalance(),
-  });
-
-  const currentBalance = balanceData?.currentBalance || 0;
-
   if (loading) {
     return <ModernLoader isLoading={true} type="page" showStats={true} />;
   }
@@ -176,38 +164,6 @@ const FleetManagement: React.FC = () => {
             <span><TranslatedText text="Export" /></span>
           </button>
         </div>
-      </div>
-
-      {/* Fleet Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard
-          title={<TranslatedText text="Total Trucks" />}
-          value={trucks.length}
-          icon={<FaTruck size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Active" />}
-          value={trucks.filter(t => t.status === 'active').length}
-          icon={<FaCheckCircle size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Maintenance" />}
-          value={trucks.filter(t => t.status === 'maintenance').length}
-          icon={<FaTools size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Credit Balance" />}
-          value={`${currentBalance.toLocaleString()} TRX`}
-          icon={<FaCoins size={22} />}
-          color="primary"
-          variant="classic"
-        />
       </div>
 
       {/* Truck Grid */}

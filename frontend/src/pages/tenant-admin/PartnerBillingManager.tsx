@@ -2,19 +2,10 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
-import {
-    FaWallet,
-    FaExchangeAlt,
-    FaSearch,
-    FaUser,
-    FaBuilding,
-    FaHistory,
-    FaArrowRight,
-} from 'react-icons/fa';
+import { FaWallet, FaExchangeAlt, FaBuilding, FaArrowRight } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 
 interface UserBalance {
     id: string;
@@ -157,124 +148,6 @@ const PartnerBillingManager: React.FC = () => {
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[120px] pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/5 rounded-full -ml-32 -mb-32 blur-3xl pointer-events-none"></div>
-            </div>
-
-            {/* Statistics Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard
-                    title={tSync('Total Partners')}
-                    value={totalPartners}
-                    icon={<FaUser size={20} />}
-                    color="primary"
-                    variant="premium"
-                />
-                <StatCard
-                    title={tSync('Distributed Credits')}
-                    value={totalCreditsHeldByPartners.toLocaleString()}
-                    icon={<FaExchangeAlt size={20} />}
-                    color="success"
-                    variant="premium"
-                />
-                <StatCard
-                    title={tSync('Pending Allocations')}
-                    value="0"
-                    icon={<FaHistory size={20} />}
-                    color="warning"
-                    variant="premium"
-                />
-            </div>
-
-            {/* Partner List Table */}
-            <div className="bg-white dark:bg-slate-900 rounded-[40px] shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-                <div className="px-10 py-10 border-b border-gray-50 dark:border-slate-800/50 flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div>
-                        <h2 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 italic"><TranslatedText text="Financial Oversight" /></h2>
-                        <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Partner Accounts" /></h3>
-                    </div>
-                    <div className="relative w-full md:w-96 group">
-                        <FaSearch className="absolute left-5 top-1/2 transform -translate-y-1/2 text-slate-300 dark:text-slate-600 group-focus-within:text-primary-600 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder={tSync("Search by name, email, or company...")}
-                            className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-transparent dark:border-slate-800 rounded-[24px] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:bg-white dark:focus:bg-slate-900 transition-all outline-none text-sm font-medium shadow-sm dark:text-white"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                {isLoading ? (
-                    <div className="p-32 text-center">
-                        <div className="w-16 h-16 border-4 border-primary-50 dark:border-primary-900/20 border-t-primary-600 rounded-full animate-spin mx-auto mb-6"></div>
-                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Retrieving Accounts" />...</p>
-                    </div>
-                ) : filteredBalances.length === 0 ? (
-                    <div className="p-24 text-center">
-                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-dashed border-slate-100 dark:border-slate-800">
-                            <FaSearch className="text-slate-200 dark:text-slate-700 text-3xl" />
-                        </div>
-                        <h4 className="text-xl font-black text-slate-800 dark:text-white"><TranslatedText text="No Partners Found" /></h4>
-                        <p className="text-slate-400 dark:text-slate-500 text-sm mt-2 font-medium italic max-w-xs mx-auto"><TranslatedText text="We couldn't find any partner accounts matching your current search parameters." /></p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-slate-50/50 dark:bg-slate-800/30">
-                                <tr>
-                                    <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Partner Identity" /></th>
-                                    <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Financial Health" /></th>
-                                    <th className="px-10 py-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Account Type" /></th>
-                                    <th className="px-10 py-6 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Operations" /></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                                {filteredBalances.map((item) => (
-                                    <tr key={item.id} className="hover:bg-primary-50/30 dark:hover:bg-primary-900/10 transition-all duration-300 group">
-                                        <td className="px-10 py-8">
-                                            <div className="flex items-center space-x-6">
-                                                <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 font-black group-hover:bg-primary-600 group-hover:text-white transition-all duration-500 text-lg shadow-sm">
-                                                    {item.user?.profile?.firstName?.[0]}{item.user?.profile?.lastName?.[0]}
-                                                </div>
-                                                <div>
-                                                    <div className="font-black text-slate-800 dark:text-slate-200 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors tracking-tight text-lg">
-                                                        {item.user?.profile?.firstName} {item.user?.profile?.lastName}
-                                                    </div>
-                                                    <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
-                                                        {item.user?.profile?.companyName || item.user?.email}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-10 py-8">
-                                            <div className="flex items-baseline gap-2 px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 group-hover:bg-white dark:group-hover:bg-slate-900 group-hover:border-primary-100 transition-all w-fit tabular-nums">
-                                                <span className="text-2xl font-black text-slate-800 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400">{item.currentBalance.toLocaleString()}</span>
-                                                <span className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Credits" /></span>
-                                            </div>
-                                        </td>
-                                        <td className="px-10 py-8">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em]"><TranslatedText text="Partner Account" /></span>
-                                            </div>
-                                        </td>
-                                        <td className="px-10 py-8 text-right">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedUser(item);
-                                                    setIsTransferModalOpen(true);
-                                                }}
-                                                className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-slate-800 text-white hover:bg-primary-600 dark:hover:bg-primary-500 rounded-[22px] shadow-xl shadow-slate-100 dark:shadow-none transition-all text-[10px] font-black uppercase tracking-[0.2em] group/btn hover:-translate-y-0.5"
-                                            >
-                                                <FaExchangeAlt size={12} className="group-hover/btn:rotate-180 transition-transform duration-500" />
-                                                <span><TranslatedText text="Allocate" /></span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
             </div>
 
             {/* Allocation Modal */}

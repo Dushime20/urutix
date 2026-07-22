@@ -10,7 +10,6 @@ import { TranslatedText } from '../../components/translated-text';
 import { adminAPI, type AdminDispute } from '../../services/adminApi';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -296,15 +295,6 @@ const OperationalAdminDisputes: React.FC = () => {
     return matchSearch && matchStatus;
   });
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const stats = {
-    total:      disputes.length,
-    open:       disputes.filter(d => d.status === 'OPEN').length,
-    resolved:   disputes.filter(d => d.status === 'RESOLVED').length,
-    escalated:  disputes.filter(d => d.status === 'ESCALATED').length,
-    rejected:   disputes.filter(d => d.status === 'REJECTED').length,
-  };
-
   // ── Handlers ────────────────────────────────────────────────────────────────
   const onView = useCallback((dispute: AdminDispute) => {
     setSelectedDispute(dispute);
@@ -331,50 +321,6 @@ const OperationalAdminDisputes: React.FC = () => {
       title="Dispute Resolution"
       description="Manage and resolve platform disputes"
     >
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-        <StatCard
-          title="Total"
-          value={stats.total}
-          icon={<Gavel className="w-5 h-5" />}
-          color="primary"
-          variant="classic"
-          subtitle="All disputes"
-        />
-        <StatCard
-          title="Open"
-          value={stats.open}
-          icon={<Flag className="w-5 h-5" />}
-          color="warning"
-          variant="classic"
-          subtitle="Awaiting action"
-        />
-        <StatCard
-          title="Resolved"
-          value={stats.resolved}
-          icon={<CheckCircle className="w-5 h-5" />}
-          color="success"
-          variant="classic"
-          subtitle="Cases closed"
-        />
-        <StatCard
-          title="Escalated"
-          value={stats.escalated}
-          icon={<AlertTriangle className="w-5 h-5" />}
-          color="warning"
-          variant="classic"
-          subtitle="Needs escalation"
-        />
-        <StatCard
-          title="Rejected"
-          value={stats.rejected}
-          icon={<XCircle className="w-5 h-5" />}
-          color="error"
-          variant="classic"
-          subtitle="Dismissed"
-        />
-      </div>
-
         {/* Controls */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 mb-6">
           <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col md:flex-row gap-4">

@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
-import { TrendingUp, DollarSign, Clock, CheckCircle, Package, AlertTriangle } from 'lucide-react';
-import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { Package, AlertTriangle } from 'lucide-react';
 
 interface Cargo {
   id: string;
@@ -17,28 +16,8 @@ interface CargoAnalyticsProps {
 }
 
 export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
-  const { format: fmtFull } = useCurrencyFormat();
   // Calculate analytics
   const analytics = useMemo(() => {
-    const totalValue = cargos.reduce((sum, cargo) => sum + (cargo.loadValue || 0), 0);
-
-    // Calculate average delivery time (in days)
-    const deliveredCargos = cargos.filter(c => c.status === 'DELIVERED' && c.pickupDate && c.deliveryDate);
-    const avgDeliveryTime = deliveredCargos.length > 0
-      ? deliveredCargos.reduce((sum, cargo) => {
-        const pickup = new Date(cargo.pickupDate).getTime();
-        const delivery = new Date(cargo.deliveryDate).getTime();
-        const days = (delivery - pickup) / (1000 * 60 * 60 * 24);
-        return sum + days;
-      }, 0) / deliveredCargos.length
-      : 0;
-
-    // Calculate success rate (delivered / total non-draft)
-    const nonDraftCargos = cargos.filter(c => c.status !== 'DRAFT');
-    const successRate = nonDraftCargos.length > 0
-      ? (cargos.filter(c => c.status === 'DELIVERED').length / nonDraftCargos.length) * 100
-      : 0;
-
     // Status distribution
     const statusDistribution = cargos.reduce((acc, cargo) => {
       acc[cargo.status] = (acc[cargo.status] || 0) + 1;
@@ -53,17 +32,11 @@ export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
     }, {} as Record<string, number>);
 
     return {
-      totalValue,
-      avgDeliveryTime,
-      successRate,
       statusDistribution,
       urgencyDistribution,
       totalCargos: cargos.length,
     };
   }, [cargos]);
-
-  // Format currency
-  const formatCurrency = (value: number) => fmtFull(value);
 
   // Get status color
   const getStatusColor = (status: string) => {
@@ -90,65 +63,6 @@ export const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ cargos }) => {
 
   return (
     <div className="space-y-6 mb-6">
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Value */}
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <DollarSign className="w-5 h-5 text-green-600" />
-            </div>
-            <TrendingUp className="w-4 h-4 text-green-500" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(analytics.totalValue)}</p>
-            <p className="text-xs text-gray-600 font-medium">Total Cargo Value</p>
-          </div>
-        </div>
-
-        {/* Average Delivery Time */}
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-primary-100 rounded-lg">
-              <Clock className="w-5 h-5 text-primary-600" />
-            </div>
-            <Package className="w-4 h-4 text-primary-500" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-gray-900">{analytics.avgDeliveryTime.toFixed(1)} days</p>
-            <p className="text-xs text-gray-600 font-medium">Avg Delivery Time</p>
-          </div>
-        </div>
-
-        {/* Success Rate */}
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-purple-600" />
-            </div>
-            <TrendingUp className="w-4 h-4 text-purple-500" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-gray-900">{analytics.successRate.toFixed(1)}%</p>
-            <p className="text-xs text-gray-600 font-medium">Success Rate</p>
-          </div>
-        </div>
-
-        {/* Total Cargo */}
-        <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Package className="w-5 h-5 text-orange-600" />
-            </div>
-            <AlertTriangle className="w-4 h-4 text-orange-500" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-gray-900">{analytics.totalCargos}</p>
-            <p className="text-xs text-gray-600 font-medium">Total Cargo</p>
-          </div>
-        </div>
-      </div>
-
       {/* Distribution Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Status Distribution */}

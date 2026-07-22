@@ -4,15 +4,24 @@ import { fetchAllTrips, fetchTenants, cancelTrip } from '../services/adminApi';
 import toast from 'react-hot-toast';
 import ModernLoader from '../components/common/ModernLoader';
 import {
-  FaTruck, FaEdit, FaSearch, FaDownload,
-  FaEye, FaCheck, FaTimes, FaMapMarkerAlt,
-  FaSort, FaShippingFast,
+  FaTruck,
+  FaEdit,
+  FaSearch,
+  FaDownload,
+  FaEye,
+  FaCheck,
+  FaTimes,
+  FaMapMarkerAlt,
+  FaSort,
+  FaShippingFast,
   FaExclamationTriangle,
-  FaUser, FaDollarSign, FaWeightHanging, FaBarcode
+  FaUser,
+  FaDollarSign,
+  FaWeightHanging,
+  FaBarcode
 } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
-import { StatCard } from '../components/EnliteUI';
 import { cn } from '../utils/cn';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
@@ -316,7 +325,6 @@ const AdminTrips: React.FC = () => {
     return (revenue ?? 0) - (fuelCost ?? 0) - (tollCost ?? 0);
   };
 
-
   const stats = [
     {
       label: <TranslatedText text="Total Trips" />,
@@ -380,41 +388,6 @@ const AdminTrips: React.FC = () => {
       {!isLoading && !error && (
         <div className="space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title={<TranslatedText text="Total Trips" />}
-              value={mappedTrips.length}
-              icon={<FaTruck size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="All registered trips" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Active Trips" />}
-              value={mappedTrips.filter((t: Trip) => ['in_progress', 'scheduled'].includes(t.status)).length}
-              icon={<FaShippingFast size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="Currently active" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Total Revenue" />}
-              value={formatCurrency(mappedTrips.reduce((sum: number, t: Trip) => sum + (t.revenue ?? 0), 0))}
-              icon={<FaDollarSign size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="Combined trip revenue" />}
-            />
-            <StatCard
-              title={<TranslatedText text="Completed Today" />}
-              value={mappedTrips.filter((t: Trip) => t.status === 'completed' &&
-                new Date(t.endTime || '').toDateString() === new Date().toDateString()).length}
-              icon={<FaCheck size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={<TranslatedText text="Trips completed today" />}
-            />
-          </div>
 
           {/* Filters and Search */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-transparent dark:border-slate-800">

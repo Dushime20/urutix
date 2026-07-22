@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import {
-  Activity, AlertTriangle, CheckCircle, XCircle, Clock,
-  Users, Package, Server, Database, Cpu, HardDrive,
-  RefreshCw, Bell, TrendingUp, TrendingDown, Wifi,
-  ChevronDown, Search, Shield, Zap, BarChart3,
+  Activity, AlertTriangle, CheckCircle, Clock,
+  Users, Server, Database, Cpu,
+  RefreshCw, Bell, Search,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { TranslatedText } from '../../components/translated-text';
@@ -27,27 +26,6 @@ const fmtUptime = (s: number) => {
   return [d && `${d}d`, h && `${h}h`, `${m}m`].filter(Boolean).join(' ');
 };
 const fmtNum = (n: number) => n?.toLocaleString() ?? '—';
-
-// ── small stat card ────────────────────────────────────────────────────────────
-const StatCard: React.FC<{
-  label: string; value: React.ReactNode; icon: React.ReactNode;
-  iconBg?: string; sub?: string; trend?: 'up' | 'down';
-}> = ({ label, value, icon, iconBg = 'bg-slate-100 text-slate-600', sub, trend }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>{icon}</div>
-    <div className="min-w-0">
-      <p className="text-2xl font-black text-gray-900 leading-none truncate">{value}</p>
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
-      {(sub || trend) && (
-        <div className="flex items-center gap-1 mt-0.5">
-          {trend === 'up' && <TrendingUp className="w-3 h-3 text-green-500" />}
-          {trend === 'down' && <TrendingDown className="w-3 h-3 text-red-500" />}
-          {sub && <p className="text-[10px] text-slate-400">{sub}</p>}
-        </div>
-      )}
-    </div>
-  </div>
-);
 
 // ── service row ────────────────────────────────────────────────────────────────
 const ServiceRow: React.FC<{ label: string; status: string; detail?: string }> = ({ label, status, detail }) => {
@@ -229,22 +207,6 @@ const MonitoringDashboard: React.FC = () => {
           <div className="text-[10px] text-gray-400 whitespace-nowrap hidden sm:block">
             {health?.timestamp ? new Date(health.timestamp).toLocaleTimeString() : '—'}
           </div>
-        </div>
-
-        {/* ── Platform KPI Row ──────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard label="Total Users"    value={fmtNum(vitals?.platform?.totalUsers)}   icon={<Users size={16} />}    iconBg="bg-blue-100 text-blue-600" />
-          <StatCard label="Tenants"        value={fmtNum(vitals?.platform?.totalTenants)} icon={<Shield size={16} />}   iconBg="bg-indigo-100 text-indigo-600" />
-          <StatCard label="Total Trips"    value={fmtNum(vitals?.platform?.totalTrips)}   icon={<Package size={16} />}  iconBg="bg-green-100 text-green-600" />
-          <StatCard label="Total Loads"    value={fmtNum(vitals?.platform?.totalLoads)}   icon={<BarChart3 size={16} />} iconBg="bg-amber-100 text-amber-600" />
-          <StatCard label="Trucks"         value={fmtNum(vitals?.platform?.totalTrucks)}  icon={<Activity size={16} />} iconBg="bg-purple-100 text-purple-600" />
-          <StatCard
-            label="Active (24h)"
-            value={fmtNum(activity?.activeUsers?.last24h)}
-            icon={<Zap size={16} />}
-            iconBg="bg-cyan-100 text-cyan-600"
-            sub={`7d: ${fmtNum(activity?.activeUsers?.last7d)}`}
-          />
         </div>
 
         {/* ── Services + Resources row ──────────────────────────────────── */}

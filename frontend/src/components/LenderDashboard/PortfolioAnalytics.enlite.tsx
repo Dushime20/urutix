@@ -1,19 +1,14 @@
 import React from 'react';
 import {
-    TrendingUp,
     PieChart,
-    DollarSign,
-    Target,
     Activity,
     Shield,
     Globe,
-    AlertTriangle,
     Download,
     ChevronRight,
     ArrowUpRight,
     ArrowDownLeft
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -124,46 +119,6 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title="Portfolio Value"
-                    value={formatCurrency(portfolioData.totalValue)}
-                    trend={`${portfolioData.monthlyGrowth}%`}
-                    trendDirection="up"
-                    icon={<DollarSign size={24} />}
-                    color="primary"
-                    subtitle="Aggregate Capital"
-                />
-                <StatCard
-                    title="Portfolio Yield"
-                    value={`${portfolioData.portfolioYield}%`}
-                    trend="+2.3%"
-                    trendDirection="up"
-                    icon={<TrendingUp size={24} />}
-                    color="success"
-                    subtitle="Yield Performance"
-                />
-                <StatCard
-                    title="Collection Rate"
-                    value={`${portfolioData.collectionRate}%`}
-                    trend="+1.2%"
-                    trendDirection="up"
-                    icon={<Target size={24} />}
-                    color="info"
-                    subtitle="Recovery Efficacy"
-                />
-                <StatCard
-                    title="Default Velocity"
-                    value={`${((portfolioData.defaultedLoans / portfolioData.totalLoans) * 100).toFixed(1)}%`}
-                    trend="Stable"
-                    trendDirection="neutral"
-                    icon={<AlertTriangle size={24} />}
-                    color="secondary"
-                    subtitle="Risk Threshold"
-                />
-            </div>
-
             {/* Performance Analysis */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">

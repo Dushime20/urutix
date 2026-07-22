@@ -3,13 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type EscrowAccount, type CreateEscrowData, type FundEscrowData, type ReleaseEscrowData } from '../../services/brokerApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import { Wallet, Plus, Search, DollarSign, CheckCircle2, Clock, Loader2, Eye, ArrowUpCircle, ArrowDownCircle, Shield, TrendingUp, Activity, X } from 'lucide-react';
+import { Wallet, Plus, Search, DollarSign, Clock, Loader2, Eye, ArrowUpCircle, ArrowDownCircle, Shield, Activity, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 
 const EscrowManagement: React.FC = () => {
   const { user } = useAuth();
-  const { compact: fmtMoney, formatIn } = useCurrencyFormat();
+  const { formatIn } = useCurrencyFormat();
   const [escrows, setEscrows] = useState<EscrowAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -132,14 +131,6 @@ const EscrowManagement: React.FC = () => {
             <Plus size={14} /> Create Escrow
           </button>
         </div>
-      </div>
-
-      {/* Financial Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <StatCard title="Total Volume" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.totalAmount || 0), 0))} subtitle="Total Contract Value" icon={<DollarSign size={20} />} color="primary" variant="classic" />
-        <StatCard title="Liquid Funds" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.fundedAmount || 0), 0))} subtitle="Locked in Escrow" icon={<Shield size={20} />} color="emerald" variant="classic" />
-        <StatCard title="Total Released" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.releasedAmount || 0), 0))} subtitle="Successful Payouts" icon={<CheckCircle2 size={20} />} color="success" variant="classic" />
-        <StatCard title="Commission" value={fmtMoney(escrows.reduce((sum, e) => sum + (e.commissionAmount || 0), 0))} subtitle="Earnings Balance" icon={<TrendingUp size={20} />} color="warning" variant="classic" />
       </div>
 
       {/* Terminal Grid */}

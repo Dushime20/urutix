@@ -15,7 +15,6 @@ import {
     TrendingUp,
     AlertTriangle
 } from 'lucide-react';
-import { StatCard } from '../EnliteUI';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -162,25 +161,6 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
         { id: 'cargo-types', label: 'Cargo Policies', icon: <Truck size={14} />, category: 'cargoTypePolicies' },
         { id: 'global-settings', label: 'System Config', icon: <Settings size={14} />, category: 'globalSettings' }
     ];
-
-    const activeRateCount = policies.interestRates.filter(p => p.isActive).length;
-    const avgBaseRate = policies.interestRates.length > 0
-        ? (policies.interestRates.reduce((acc, curr) => acc + curr.baseRate, 0) / policies.interestRates.length).toFixed(1)
-        : null;
-    const totalPolicyCount =
-        policies.interestRates.length +
-        policies.loanLimits.length +
-        policies.eligibilityCriteria.length +
-        policies.riskAssessment.length +
-        policies.repaymentPolicies.length +
-        policies.cargoTypePolicies.length;
-    const activePolicyCount =
-        policies.interestRates.filter(p => p.isActive).length +
-        policies.loanLimits.filter(p => p.isActive).length +
-        policies.eligibilityCriteria.filter(p => p.isActive).length +
-        policies.riskAssessment.filter(p => p.isActive).length +
-        policies.repaymentPolicies.filter(p => p.isActive).length +
-        policies.cargoTypePolicies.filter(p => p.isActive).length;
 
     const getRiskColor = (risk: string) => {
         switch (risk) {
@@ -750,44 +730,6 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title={t("Active Rate Policies")}
-                    value={activeRateCount}
-                    subtitle={`${t("Total")}: ${policies.interestRates.length}`}
-                    icon={<Percent size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && policies.interestRates.length === 0}
-                />
-                <StatCard
-                    title={t("Avg Base Rate")}
-                    value={avgBaseRate !== null ? `${avgBaseRate}%` : '—'}
-                    subtitle={policies.interestRates.length > 0 ? t("Across active rate cards") : t("No rates configured")}
-                    icon={<TrendingUp size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && policies.interestRates.length === 0}
-                />
-                <StatCard
-                    title={t("Max Exposure")}
-                    value={cptRwf(policies.globalSettings.manualReviewThreshold)}
-                    subtitle={t("System Soft-Limit")}
-                    icon={<Shield size={18} />}
-                    color="primary"
-                    variant="classic"
-                />
-                <StatCard
-                    title={t("Active Policies")}
-                    value={`${activePolicyCount}/${totalPolicyCount || 0}`}
-                    subtitle={t("Enabled across all categories")}
-                    icon={<Settings size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && totalPolicyCount === 0}
-                />
-            </div>
-
             <div className="flex items-center gap-2 px-1 overflow-x-auto pb-1">
                 {tabs.map(tab => (
                     <button

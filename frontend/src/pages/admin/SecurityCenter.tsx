@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Grid,
   Paper,
   Typography,
   CircularProgress,
@@ -37,11 +36,7 @@ import {
   Warning as WarningIcon,
   Error as ErrorIcon,
   CheckCircle as CheckCircleIcon,
-  Security as SecurityIcon,
-  Person as PersonIcon,
-  Computer as ComputerIcon,
 } from '@mui/icons-material';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { DataCard } from '../../components/EnliteUI/Cards/DataCard';
 import * as adminApi from '../../services/adminApi';
 
@@ -349,50 +344,6 @@ const SecurityCenter: React.FC = () => {
           {error}
         </Alert>
       )}
-
-      {/* Summary Cards */}
-      <Grid container spacing={3} mb={4}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title={<TranslatedText text="Security Events" />}
-            value={securityEvents.length.toString()}
-            trend="stable"
-            color="primary"
-            icon={<SecurityIcon />}
-            variant="classic"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title={<TranslatedText text="Failed Logins" />}
-            value={failedLogins.length.toString()}
-            trend={failedLogins.length > 10 ? 'up' : 'stable'}
-            color={failedLogins.length > 10 ? 'warning' : 'success'}
-            icon={<ErrorIcon />}
-            variant="classic"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title={<TranslatedText text="Active Sessions" />}
-            value={activeSessions.length.toString()}
-            trend="stable"
-            color="info"
-            icon={<ComputerIcon />}
-            variant="classic"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title={<TranslatedText text="Flagged Accounts" />}
-            value={flaggedAccounts.length.toString()}
-            trend={flaggedAccounts.length > 0 ? 'up' : 'stable'}
-            color={flaggedAccounts.length > 0 ? 'error' : 'success'}
-            icon={<PersonIcon />}
-            variant="classic"
-          />
-        </Grid>
-      </Grid>
 
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>

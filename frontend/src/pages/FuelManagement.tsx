@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import {
     FaGasPump,
     FaTruck,
-    FaDollarSign,
     FaSpinner,
-    FaChartLine,
     FaPlus,
     FaExclamationTriangle,
 } from 'react-icons/fa';
@@ -16,7 +13,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from '../components/ui';
-import { fuelApi, type FuelLog, type FuelStatistics, type CreateFuelLogData } from '../services/fuelApi';
+import { fuelApi, type FuelLog, type CreateFuelLogData } from '../services/fuelApi';
 import { fleetApi } from '../services/fleetApi';
 import toast from 'react-hot-toast';
 import { cn } from '../utils/cn';
@@ -24,11 +21,9 @@ import { cn } from '../utils/cn';
 type TabType = 'all' | 'flagged';
 
 const FuelManagement: React.FC = () => {
-    const { compact: fmtMoney } = useCurrencyFormat();
     const [activeTab, setActiveTab] = useState<TabType>('all');
     const [fuelLogs, setFuelLogs] = useState<FuelLog[]>([]);
     const [filteredLogs, setFilteredLogs] = useState<FuelLog[]>([]);
-    const [statistics, setStatistics] = useState<FuelStatistics | null>(null);
     const [loading, setLoading] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [trucks, setTrucks] = useState<any[]>([]);
@@ -60,12 +55,8 @@ const FuelManagement: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [logs, stats] = await Promise.all([
-                fuelApi.getFuelLogs(),
-                fuelApi.getFuelStatistics(),
-            ]);
+            const logs = await fuelApi.getFuelLogs();
             setFuelLogs(logs);
-            setStatistics(stats);
         } catch (error) {
             console.error('Error loading fuel data:', error);
             toast.error('Failed to load fuel data');
@@ -171,81 +162,6 @@ const FuelManagement: React.FC = () => {
                         Add Fuel Log
                     </button>
                 </div>
-
-                {/* Statistics Cards */}
-                {statistics && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs sm:text-sm font-medium text-gray-600">Total Fuel Spend (MO)</p>
-                                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-                                        {fmtMoney(statistics.totalSpend)}
-                                    </p>
-                                    <p className="text-xs text-emerald-600 font-medium mt-1">
-                                        ↗ +4.2% vs last month
-                                    </p>
-                                </div>
-                                <div className="bg-blue-50 rounded-lg p-3">
-                                    <FaDollarSign className="w-6 h-6 text-blue-600" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs sm:text-sm font-medium text-gray-600">Total Volume</p>
-                                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-                                        {statistics.totalVolume.toLocaleString()}
-                                        <span className="text-sm font-normal text-gray-600"> gal</span>
-                                    </p>
-                                    <p className="text-xs text-gray-600 mt-1">
-                                        Avg ${statistics.avgPricePerGallon.toFixed(2)} / gal
-                                    </p>
-                                </div>
-                                <div className="bg-emerald-50 rounded-lg p-3">
-                                    <FaGasPump className="w-6 h-6 text-emerald-600" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs sm:text-sm font-medium text-gray-600">Fleet Efficiency</p>
-                                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-                                        {statistics.fleetEfficiency.toFixed(1)}
-                                        <span className="text-sm font-normal text-gray-600"> MPG</span>
-                                    </p>
-                                    <p className="text-xs text-emerald-600 font-medium mt-1">
-                                        Above industry avg
-                                    </p>
-                                </div>
-                                <div className="bg-violet-50 rounded-lg p-3">
-                                    <FaChartLine className="w-6 h-6 text-violet-600" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs sm:text-sm font-medium text-gray-600">Fraud Alerts</p>
-                                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">
-                                        {statistics.fraudAlerts}
-                                    </p>
-                                    <p className="text-xs text-gray-600 mt-1">
-                                        Suspicious transactions
-                                    </p>
-                                </div>
-                                <div className="bg-red-50 rounded-lg p-3">
-                                    <FaExclamationTriangle className="w-6 h-6 text-red-600" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Tabs */}
                 <div className="border-b border-gray-200">

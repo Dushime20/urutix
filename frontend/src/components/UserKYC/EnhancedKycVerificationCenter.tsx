@@ -19,14 +19,12 @@ import {
   Analytics,
   TrendingUp,
   Shield,
-  Star,
   Close,
   Upload,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { userKycApi, type KycRequirements } from '../../services/userKycApi';
-import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 // Import tab components
 import { KycOverviewTab } from './tabs/KycOverviewTab';
@@ -226,60 +224,6 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
       {/* Main Content Area with Advanced Cards */}
       <Container maxWidth="xl" className="-mt-12 pb-20 relative z-20">
         <Grid container spacing={4}>
-          {/* Metrics Overview Cards */}
-          <Grid size={{ xs: 12 }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                  <StatCard
-                    title="Completion Rate"
-                    value={`${metrics?.completionRate || 100}%`}
-                    icon={<TrendingUp />}
-                    color="emerald"
-                    variant="classic"
-                    trend={metrics && metrics.completionRate > 50 ? '+12%' : '+12%'}
-                    trendDirection={metrics && metrics.completionRate > 50 ? 'up' : 'up'}
-                    subtitle="Overall Progress"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                  <StatCard
-                    title="Documents"
-                    value={metrics?.documentsUploaded || 4}
-                    icon={<DocumentScanner />}
-                    color="primary"
-                    variant="classic"
-                    subtitle="Files Uploaded"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                  <StatCard
-                    title="Compliance Score"
-                    value={metrics?.complianceScore || 95}
-                    icon={<Shield />}
-                    color="primary"
-                    variant="classic"
-                    subtitle="Safety Score"
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-                  <StatCard
-                    title="Verification Level"
-                    value={metrics?.verificationLevel || 'ENHANCED'}
-                    icon={<Star />}
-                    color="secondary"
-                    variant="classic"
-                    subtitle="Account Level"
-                  />
-                </Grid>
-              </Grid>
-            </motion.div>
-          </Grid>
-
           {/* Main Content Tabs */}
           <Grid size={{ xs: 12, lg: 8 }}>
             <motion.div

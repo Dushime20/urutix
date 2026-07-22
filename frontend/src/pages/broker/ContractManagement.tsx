@@ -2,7 +2,7 @@ import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadContract, type CreateContractData } from '../../services/brokerApi';
-import { Plus, Search, CheckCircle2, X, Eye, Download, Shield, TrendingUp, Lock, FileCheck, DollarSign, Activity, AlertCircle, Clock, Loader2, FileText, XCircle } from 'lucide-react';
+import { Plus, Search, CheckCircle2, X, Eye, Download, Shield, TrendingUp, Lock, FileCheck, DollarSign, Activity, Loader2, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import jsPDF from 'jspdf';
@@ -182,28 +182,6 @@ const ContractManagement: React.FC = () => {
             <Plus size={14} /> New Contract
           </button>
         </div>
-      </div>
-
-      {/* Registry Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {[
-          { label: 'Total Earnings', value: `${contracts.reduce((acc, c) => acc + c.commissionAmount, 0).toLocaleString()} KES`, sub: 'Total Commission', icon: TrendingUp, color: 'primary' },
-          { label: 'Active Loads', value: contracts.filter(c => c.status === 'ACTIVE' || c.status === 'SIGNED').length, sub: 'Authorized Contracts', icon: Shield, color: 'emerald' },
-          { label: 'Pending Action', value: contracts.filter(c => c.status.includes('PENDING')).length, sub: 'Awaiting Signature', icon: Clock, color: 'amber' },
-          { label: 'Success Rate', value: '98.2%', sub: 'Fulfilled Contracts', icon: CheckCircle2, color: 'indigo' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 group-hover:bg-primary-50 transition-colors dark:bg-slate-800/50"></div>
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all mb-6 dark:bg-slate-800/50">
-                <stat.icon size={20} />
-              </div>
-              <p className="text-sm font-bold text-slate-400 uppercase mb-1">{stat.label}</p>
-              <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stat.value}</h3>
-              <p className="text-xs font-bold text-slate-400 uppercase mt-1">{stat.sub}</p>
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Contract Table Terminal */}

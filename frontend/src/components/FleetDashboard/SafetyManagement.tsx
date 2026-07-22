@@ -27,7 +27,6 @@ import { fleetApi } from '../../services/fleetApi';
 import { driverApi } from '../../services/driverApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { CircularStatCard } from '../EnliteUI/Cards/StatCard';
 
 interface SafetyManagementProps {
   fleetId?: string;
@@ -455,25 +454,6 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
     onError: () => toast.error('Failed to report incident'),
   });
 
-  const { data: inspectionsData } = useQuery({
-    queryKey: ['safety-stats'],
-    queryFn: () => safetyApi.getInspections()
-  });
-
-  const inspectionsList = (inspectionsData as any)?.data?.inspections || [];
-  const passedCount = inspectionsList.filter((i: any) => i.status === 'passed').length;
-  const failedCount = inspectionsList.filter((i: any) => i.status === 'failed').length;
-
-  const safetyScore = inspectionsList.length > 0 
-    ? Math.round((passedCount / inspectionsList.length) * 100) 
-    : 100;
-
-  const safetyStats = {
-    safetyScore: safetyScore,
-    incidents: failedCount,
-    inspections: inspectionsList.length
-  };
-
   const IncidentsContainer = () => {
     const { data: incidentsData, isLoading } = useQuery({
       queryKey: ['safety-incidents'],
@@ -579,31 +559,6 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = () => {
             Safety Audit
           </button>
         </div>
-      </div>
-
-      {/* Safety Stat Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12 place-items-center bg-white dark:bg-gray-900 p-10 rounded-[3rem] border border-slate-100 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <CircularStatCard
-          title="Safety Score"
-          value={`${safetyStats.safetyScore}%`}
-          icon={Shield}
-          colorClass="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400"
-          secondaryColor="text-emerald-600 dark:text-emerald-400"
-        />
-        <CircularStatCard
-          title="Safety Incidents"
-          value={safetyStats.incidents}
-          icon={AlertTriangle}
-          colorClass="bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400"
-          secondaryColor="text-rose-600 dark:text-rose-400"
-        />
-        <CircularStatCard
-          title="Inspections Done"
-          value={safetyStats.inspections}
-          icon={ClipboardCheck}
-          colorClass="bg-primary-50 dark:bg-primary-950/30 text-primary-500 dark:text-primary-400"
-          secondaryColor="text-primary-500 dark:text-primary-400"
-        />
       </div>
 
       {/* Navigation Vectors */}

@@ -58,12 +58,12 @@ const MobileBottomNav: React.FC = () => {
             case 'SUPER_ADMIN': return '/admin/notifications';
             case 'ADMIN': return '/admin-operational/notifications';
             case 'TENANT_ADMIN': return '/tenant-admin/notifications';
-            case 'TRUCK_OWNER': return '/dashboard/fleet/notifications'; 
+            case 'TRUCK_OWNER': return '/dashboard/fleet/notifications';
             case 'DRIVER': return '/dashboard/driver/notifications';
             case 'BROKER': return '/dashboard/broker/notifications';
-            case 'CUSTOMS_OFFICER': return '/dashboard/customs/notifications'; 
+            case 'CUSTOMS_OFFICER': return '/dashboard/customs/notifications';
             case 'LENDER': return '/lender/notifications';
-            case 'CARGO_OWNER': 
+            case 'CARGO_OWNER':
             case 'CARGO_RECEIVER':
             default: return '/dashboard/notifications';
         }

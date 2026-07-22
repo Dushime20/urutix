@@ -11,7 +11,6 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Banknote,
   Truck,
   Package,
   LineChart,
@@ -23,7 +22,6 @@ import {
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import { adminAPI } from '../services/adminApi';
-import { StatCard } from '../components/EnliteUI';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 interface EscrowAccount {
@@ -44,17 +42,8 @@ interface EscrowAccount {
   isDisputed?: boolean;
 }
 
-interface EscrowStats {
-  totalInEscrow: number;
-  totalAccounts: number;
-  activeAccounts: number;
-  pendingRelease: number;
-  releasedAccounts: number;
-  disputedAccounts: number;
-}
-
 const EscrowManagement: React.FC = () => {
-  const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
+  const { format: fmtFull } = useCurrencyFormat();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedEscrow, setSelectedEscrow] = useState<EscrowAccount | null>(null);
@@ -62,14 +51,6 @@ const EscrowManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [escrowAccounts, setEscrowAccounts] = useState<EscrowAccount[]>([]);
-  const [stats, setStats] = useState<EscrowStats>({
-    totalInEscrow: 0,
-    totalAccounts: 0,
-    activeAccounts: 0,
-    pendingRelease: 0,
-    releasedAccounts: 0,
-    disputedAccounts: 0,
-  });
 
   const fetchData = async () => {
     try {
@@ -78,7 +59,6 @@ const EscrowManagement: React.FC = () => {
       const res = await adminAPI.getEscrow();
       const data = res.data?.data || res.data;
       setEscrowAccounts(data?.escrowAccounts || []);
-      if (data?.stats) setStats(data.stats);
     } catch (err: any) {
       console.error('Error fetching escrow data:', err);
       setError(err.response?.data?.message || 'Failed to load escrow data');
@@ -182,38 +162,6 @@ const EscrowManagement: React.FC = () => {
         </div>
       ) : (
       <>
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title={<TranslatedText text="Total in Escrow" />}
-          value={fmtMoney(stats.totalInEscrow)}
-          icon={<Banknote className="w-5 h-5" />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Active Accounts" />}
-          value={stats.activeAccounts}
-          icon={<Lock className="w-5 h-5" />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Pending Release" />}
-          value={stats.pendingRelease}
-          icon={<Clock className="w-5 h-5" />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Disputed Accounts" />}
-          value={stats.disputedAccounts}
-          icon={<AlertTriangle className="w-5 h-5" />}
-          color="primary"
-          variant="classic"
-        />
-      </div>
-
       {/* Filters and Search */}
       <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">

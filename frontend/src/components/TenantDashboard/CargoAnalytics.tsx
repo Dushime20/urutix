@@ -1,10 +1,20 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from '@tanstack/react-query';
 import {
-  Box, Truck, MapPin as FaMapMarkerAlt, Clock, CheckCircle,
-  AlertTriangle, Route, DollarSign, Search, Filter,
-  Plus, Eye, Save as FaSave, Check as FaCheck,
-  Rocket as FaRocket, Layers as FaLayerGroup
+  Truck,
+  MapPin as FaMapMarkerAlt,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Route,
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Save as FaSave,
+  Check as FaCheck,
+  Rocket as FaRocket,
+  Layers as FaLayerGroup
 } from 'lucide-react';
 import { Line, Bar } from "react-chartjs-2";
 import { TranslatedText } from "../translated-text";
@@ -235,16 +245,6 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
   if (metricsLoading || loadsLoading) {
     return (
       <div className="space-y-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded mb-2"></div>
-                <div className="h-8 bg-gray-200 dark:bg-slate-800 rounded"></div>
-              </div>
-            </div>
-          ))}
-        </div>
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-2 text-slate-600 dark:text-slate-400"><TranslatedText text="Loading cargo data..." /></p>
@@ -255,27 +255,6 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
 
   return (
     <div className="space-y-10">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: tSync('Total Shipments'), value: cargoData.summary.totalLoads.toLocaleString(), icon: Box, color: 'indigo' },
-          { label: tSync('Success Rate'), value: `${cargoData.summary.onTimeDelivery}%`, icon: Route, color: 'amber' },
-          { label: tSync('Delivered'), value: cargoData.summary.completedLoads.toLocaleString(), icon: CheckCircle, color: 'emerald' },
-          { label: tSync('Earnings'), value: formatCurrency(cargoData.summary.totalRevenue), icon: DollarSign, color: 'primary' }
-        ].map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-6 hover:shadow-md transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{stat.label}</p>
-                <p className="text-2xl font-black text-slate-800 dark:text-white tracking-tight leading-tight">{stat.value}</p>
-              </div>
-              <div className={`p-3 bg-primary-50 dark:bg-primary-900/20 rounded-xl`}>
-                <stat.icon className={`w-6 h-6 text-primary-600 dark:text-primary-400`} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

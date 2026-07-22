@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query'; // Import useQuery
 import {
-  DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
-  Landmark, Calendar, Filter, Download, Eye,
-  Wallet, Activity, Package, Users, CheckCircle // Import icons
+  TrendingUp, ArrowUpRight, ArrowDownRight,
+  Calendar, Filter, Download,
 } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +23,6 @@ import {
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import { StatCard } from '../EnliteUI/Cards/StatCard';
 
 // Register Chart.js components
 ChartJS.register(
@@ -351,42 +349,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               exit={{ opacity: 0, y: -10 }}
               className="space-y-10"
             >
-              {/* Core KPI Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                  title={tSync('Total Earnings')}
-                  value={formatCurrency((creditBalance?.revenueFromPartnerSales || 0) + (financialData.summary.totalRevenue || 0))}
-                  icon={<DollarSign size={22} />}
-                  color="primary"
-                  variant="classic"
-                  trendDirection="neutral"
-                />
-                <StatCard
-                  title={tSync('Net Profit')}
-                  value={formatCurrency(financialData.summary.netProfit || 0)}
-                  icon={<TrendingUp size={22} />}
-                  color="emerald"
-                  variant="classic"
-                  trendDirection="neutral"
-                />
-                <StatCard
-                  title={tSync('Average Trip Income')}
-                  value={formatCurrency(financialData.summary.averageRevenuePerLoad || 0)}
-                  icon={<Landmark size={22} />}
-                  color="info"
-                  variant="classic"
-                  trendDirection="neutral"
-                />
-                <StatCard
-                  title={tSync('Remaining Credits')}
-                  value={(creditBalance?.currentBalance ?? 0).toLocaleString()}
-                  icon={<Wallet size={22} />}
-                  color="accent"
-                  variant="classic"
-                  trendDirection="neutral"
-                />
-              </div>
-
               {/* Main Chart Section */}
               {financialData.trends.length > 0 ? (
                 <div className="bg-white dark:bg-slate-900 p-10 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
@@ -496,44 +458,6 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               exit={{ opacity: 0 }}
               className="space-y-8"
             >
-              {/* Credit Balance Summary for Tenant Admin */}
-              {creditBalance && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <StatCard
-                    title={tSync('Current Balance')}
-                    value={(creditBalance.currentBalance ?? 0).toLocaleString()}
-                    icon={<Wallet size={22} />}
-                    color="primary"
-                    variant="classic"
-                    subtitle={tSync('Credits available to use')}
-                  />
-                  <StatCard
-                    title={tSync('Subscription Credits')}
-                    value={(creditBalance.subscriptionCredits ?? 0).toLocaleString()}
-                    icon={<Package size={22} />}
-                    color="info"
-                    variant="classic"
-                    subtitle={tSync('From active subscription plan')}
-                  />
-                  <StatCard
-                    title={tSync('Bonus Credits')}
-                    value={(creditBalance.bonusCredits ?? 0).toLocaleString()}
-                    icon={<Activity size={22} />}
-                    color="warning"
-                    variant="classic"
-                    subtitle={tSync('Earned from marketplace & bids')}
-                  />
-                  <StatCard
-                    title={tSync('Lifetime Spent')}
-                    value={(creditBalance.lifetimeSpent ?? 0).toLocaleString()}
-                    icon={<CheckCircle size={22} />}
-                    color="error"
-                    variant="classic"
-                    subtitle={tSync('Total credits consumed')}
-                  />
-                </div>
-              )}
-
               {/* Transaction History Table */}
               <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
                 {transactions && transactions.length > 0 ? (

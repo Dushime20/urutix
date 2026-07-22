@@ -1,7 +1,7 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState } from 'react';
 import { brokerAPI, type TransporterPerformance } from '../../services/brokerApi';
-import { BarChart3, TrendingUp, TrendingDown, CheckCircle2, Search, Award, Activity, Zap, ArrowRight, Shield } from 'lucide-react';
+import { BarChart3, CheckCircle2, Search, Activity, Zap, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PerformanceAnalytics: React.FC = () => {
@@ -126,28 +126,6 @@ const PerformanceAnalytics: React.FC = () => {
       {/* Detail System */}
       {viewMode === 'single' && performance && (
         <div className="space-y-12 animate-slide-up">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { label: 'Reliability', value: `${performance.reliabilityScore.toFixed(1)}%`, score: performance.reliabilityScore },
-              { label: 'On-Time', value: `${performance.onTimeDeliveryRate.toFixed(1)}%`, score: performance.onTimeDeliveryRate },
-              { label: 'Damages', value: `${performance.damageRate.toFixed(1)}%`, score: 100 - performance.damageRate },
-              { label: 'Success Prob.', value: `${performance.predictiveMatchSuccess.toFixed(1)}%`, score: performance.predictiveMatchSuccess },
-            ].map((stat, i) => (
-              <div key={i} className="group relative bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-                <div className="relative z-10">
-                  <p className="text-sm font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
-                  <h3 className="text-3xl font-bold text-slate-900 mb-4 dark:text-white">{stat.value}</h3>
-                  <div className="w-full h-1 bg-slate-50 rounded-full overflow-hidden dark:bg-slate-800/50">
-                    <div 
-                      className={`h-full transition-all duration-1000 ${stat.score >= 80 ? 'bg-emerald-500' : stat.score >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
-                      style={{ width: `${stat.score}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-10 dark:bg-slate-900 dark:border-slate-800">
               <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">

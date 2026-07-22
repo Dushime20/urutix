@@ -89,7 +89,7 @@ export class TenantDashboardService {
         metadata: {
           currentBalance: partner.currentBalance,
           threshold: 5000,
-          actionUrl: '/dashboard/credits/topup'
+          actionUrl: '/dashboard/fleet/buy-credits'
         }
       }, tenantId)
     );

@@ -1,19 +1,15 @@
 import React from 'react';
 import {
     Users,
-    TrendingUp,
     Search,
     ChevronRight,
     Mail,
     Phone,
     Briefcase,
-    DollarSign,
-    AlertCircle,
     Clock,
     User,
     Filter,
 } from 'lucide-react';
-import { StatCard } from '../EnliteUI';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -80,20 +76,9 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
     onSearchChange,
     onStatusFilterChange,
 }) => {
-    const { format: fmtCurrency, compact: compactAmount } = useCurrencyFormat();
+    const { format: fmtCurrency } = useCurrencyFormat();
     const formatAmount = (amount: number | null | undefined): string =>
         amount == null ? '—' : fmtCurrency(amount);
-
-    const totalBorrowers = borrowers.length;
-    const activeBorrowers = borrowers.filter(b => b.status === 'active').length;
-    const borrowersWithScore = borrowers.filter(b => b.creditScore !== null);
-    const avgCreditScore = borrowersWithScore.length > 0
-        ? Math.round(borrowersWithScore.reduce((s, b) => s + b.creditScore!, 0) / borrowersWithScore.length)
-        : null;
-    const totalOutstanding = borrowers.reduce((s, b) => s + b.outstanding, 0);
-    const totalDefaulted   = borrowers.reduce((s, b) => s + b.defaultedLoans, 0);
-    const totalLoans       = borrowers.reduce((s, b) => s + b.loanCount, 0);
-    const defaultRate      = totalLoans > 0 ? ((totalDefaulted / totalLoans) * 100).toFixed(1) : null;
 
     const filtered = borrowers.filter(b => {
         const q = searchTerm.toLowerCase();
@@ -230,49 +215,6 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Total Borrowers"
-                    value={totalBorrowers.toString()}
-                    subtitle={`${activeBorrowers} active`}
-                    icon={<Users size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && borrowers.length === 0}
-                />
-                <StatCard
-                    title="Avg Credit Score"
-                    value={avgCreditScore !== null ? avgCreditScore.toString() : '—'}
-                    subtitle={avgCreditScore !== null
-                        ? `${borrowersWithScore.length} of ${totalBorrowers} scored`
-                        : 'No credit scores on record'}
-                    icon={<TrendingUp size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && borrowers.length === 0}
-                />
-                <StatCard
-                    title="Outstanding"
-                    value={totalOutstanding > 0 ? compactAmount(totalOutstanding) : '—'}
-                    subtitle={totalOutstanding > 0 ? 'Across all borrowers' : 'All settled'}
-                    icon={<DollarSign size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && borrowers.length === 0}
-                />
-                <StatCard
-                    title="Default Rate"
-                    value={defaultRate !== null ? `${defaultRate}%` : '—'}
-                    subtitle={defaultRate !== null
-                        ? `${totalDefaulted} of ${totalLoans} loans`
-                        : 'No default data'}
-                    icon={<AlertCircle size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && borrowers.length === 0}
-                />
-            </div>
-
             <DataCard
                 title="Borrower Directory"
                 subtitle="Verified borrowers from loan history"

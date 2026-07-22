@@ -18,8 +18,7 @@ import {
   FaTimesCircle,
   FaExclamationTriangle,
   FaEye,
-  FaDownload,
-  FaSync,
+  FaSync
 } from 'react-icons/fa';
 
 interface RouteStats {
@@ -361,56 +360,6 @@ const TenantAdminRoutes: React.FC = () => {
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-blue-600 font-medium truncate">Total Routes</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-900">{stats.totalRoutes}</p>
-              </div>
-              <FaRoute className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-green-600 font-medium truncate">Active</p>
-                <p className="text-xl sm:text-2xl font-bold text-green-900">{stats.activeRoutes}</p>
-              </div>
-              <FaCheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-gray-600 font-medium truncate">Inactive</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.inactiveRoutes}</p>
-              </div>
-              <FaTimesCircle className="w-6 h-6 sm:w-8 sm:h-8 text-gray-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-purple-600 font-medium truncate">Total Distance</p>
-                <p className="text-lg sm:text-2xl font-bold text-purple-900 truncate">
-                  {stats.totalDistance.toFixed(0)} km
-                </p>
-              </div>
-              <FaRoad className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs text-orange-600 font-medium truncate">Assigned Trucks</p>
-                <p className="text-xl sm:text-2xl font-bold text-orange-900">{stats.assignedTrucks}</p>
-              </div>
-              <FaTruck className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 opacity-50 flex-shrink-0 ml-2" />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Filters and Search */}

@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import {
     FileText,
-    Clock,
-    Database,
-    CheckCircle2,
     Download,
     Mail,
-    Activity,
     Search,
     Filter,
     Play,
     LayoutTemplate,
     Archive,
 } from 'lucide-react';
-import { StatCard } from '../EnliteUI';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 
@@ -162,46 +157,6 @@ const FinancialReportsEnlite: React.FC<FinancialReportsEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            {/* Analytics Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard
-                    title="Report Library"
-                    value={templates.length.toString()}
-                    subtitle="Available blueprints"
-                    icon={<Database size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && templates.length === 0}
-                />
-                <StatCard
-                    title="Scheduled"
-                    value={templates.filter(t => t.isScheduled).length.toString()}
-                    subtitle="Automated pipelines"
-                    icon={<Clock size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && templates.length === 0}
-                />
-                <StatCard
-                    title="Generated"
-                    value={recentReports.length.toString()}
-                    subtitle="Recent documents"
-                    icon={<Activity size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && recentReports.length === 0}
-                />
-                <StatCard
-                    title="Completed"
-                    value={recentReports.filter(r => r.status === 'completed').length.toString()}
-                    subtitle="Ready to download"
-                    icon={<CheckCircle2 size={18} />}
-                    color="primary"
-                    variant="classic"
-                    loading={loading && recentReports.length === 0}
-                />
-            </div>
-
             {/* Tab switcher */}
             <div className="flex items-center gap-2 px-1">
                 {tabs.map(tab => (

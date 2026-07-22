@@ -2,16 +2,27 @@
 import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
-import { StatCard } from '../components/EnliteUI';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import {
-  Trash2, Plus, Key, Mail,
-  Phone, Building2, MoreHorizontal,
-  Copy, Check, Search, TrendingUp,
-  DollarSign,
-  Download, AlertTriangle, CheckCircle2,
-  Clock, Eye, Percent, X,
-  Briefcase, ShieldCheck
+  Trash2,
+  Plus,
+  Key,
+  Mail,
+  Phone,
+  Building2,
+  MoreHorizontal,
+  Copy,
+  Check,
+  Search,
+  TrendingUp,
+  Download,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Percent,
+  X,
+  ShieldCheck
 } from 'lucide-react';
 
 interface Lender {
@@ -335,42 +346,6 @@ const AdminLenderRegistrationPage: React.FC = () => {
       {/* Analytics Dashboard */}
       {showAnalytics && analytics && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-             <StatCard
-              title="Total Providers"
-              value={analytics?.totalLenders}
-              icon={<Building2 size={22} />}
-              color="primary"
-              variant="classic"
-              trend={`+${analytics?.monthlyGrowth}%`}
-              trendDirection="up"
-              subtitle="Registered lenders"
-            />
-            <StatCard
-              title="Active Matrix"
-              value={analytics?.activeLenders}
-              icon={<ShieldCheck size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={`${((analytics?.activeLenders || 0) / (analytics?.totalLenders || 1) * 100).toFixed(1)}% Active`}
-            />
-            <StatCard
-              title="Loan Volume"
-              value={(analytics?.totalLoansIssued || 0).toLocaleString()}
-              icon={<Briefcase size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Total Issued Loans"
-            />
-            <StatCard
-              title="Financial Flow"
-              value={fmtMoney(analytics?.totalAmountDisbursed || 0)}
-              icon={<DollarSign size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Disbursed Total Amount"
-            />
-          </div>
 
           <div className="bg-[#fafafa] rounded-[32px] border border-transparent p-8">
             <div className="flex items-center justify-between mb-8">

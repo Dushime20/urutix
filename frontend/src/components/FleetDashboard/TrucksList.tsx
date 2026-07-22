@@ -4,9 +4,6 @@ import {
   MapPin,
   Trash2,
   Search,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
   Plus,
   Users,
   FileText,
@@ -28,7 +25,6 @@ import { fleetApi, type Route as RouteType } from '../../services/fleetApi';
 import { fetchAdminRoutes } from '../../services/adminApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn';
-import { CircularStatCard } from '../EnliteUI/Cards/StatCard';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import TruckLocationModal from './TruckLocationModal';
@@ -52,7 +48,6 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   const { user, accessToken, isLoading: authLoading } = useAuth();
   const [trucks, setTrucks] = useState<any[]>([]);
   const [routes, setRoutes] = useState<RouteType[]>([]);
-  const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -80,10 +75,7 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
     if (!user || !accessToken || authLoading) return;
     setLoading(true);
     try {
-      const [trucksData, analyticsData] = await Promise.all([
-        fleetApi.getTrucks({ limit: 100 }),
-        fleetApi.fetchAnalytics(),
-      ]);
+      const trucksData = await fleetApi.getTrucks({ limit: 100 });
 
       // Deep route enrichment: fetch per-truck routes
       const enrichedTrucks = await Promise.all(
@@ -107,7 +99,6 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       );
 
       setTrucks(enrichedTrucks);
-      setAnalytics(analyticsData);
 
       // Load routes list for the assign route modal
       try {
@@ -278,38 +269,6 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
 
   return (
     <div className="space-y-8 pb-12">
-      {/* Stats Matrix */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-gray-900 p-10 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors duration-300">
-        <CircularStatCard
-          title="Total Trucks"
-          value={analytics?.totalTrucks !== undefined ? analytics.totalTrucks : trucks.length}
-          icon={Truck}
-          colorClass="bg-blue-50 text-[#345E85]"
-          secondaryColor="text-[#345E85]"
-        />
-        <CircularStatCard
-          title="Available"
-          value={analytics?.availableTrucks !== undefined ? analytics.availableTrucks : trucks.filter(t => t.status === 'AVAILABLE').length}
-          icon={CheckCircle2}
-          colorClass="bg-emerald-50 text-emerald-600"
-          secondaryColor="text-emerald-600"
-        />
-        <CircularStatCard
-          title="In Transit"
-          value={analytics?.inTransit !== undefined ? analytics.inTransit : trucks.filter(t => t.status === 'IN_TRANSIT').length}
-          icon={Clock}
-          colorClass="bg-primary-50 text-primary-500"
-          secondaryColor="text-primary-500"
-        />
-        <CircularStatCard
-          title="Attention Required"
-          value={analytics?.maintenanceAlerts !== undefined ? analytics.maintenanceAlerts : trucks.filter(t => t.status === 'MAINTENANCE').length}
-          icon={AlertTriangle}
-          colorClass="bg-rose-50 text-rose-600"
-          secondaryColor="text-rose-600"
-        />
-      </div>
-
       {/* Control Surface */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-4 flex flex-col md:flex-row gap-4 transition-colors duration-300">
         <div className="flex-1 relative group">

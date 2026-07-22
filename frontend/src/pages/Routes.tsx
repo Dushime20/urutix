@@ -7,20 +7,17 @@ import {
   RefreshCcw,
   Navigation,
   Clock,
-  Activity,
   Trash2,
   Edit3,
   Filter,
   X,
   TrendingUp,
-  Shield,
   Loader2,
   Box,
   Map as MapIcon
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import MapLocationPicker from '@/components/FleetDashboard/MapLocationPicker';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 
 const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const { confirm, DialogComponent } = useConfirmDialog();
@@ -174,10 +171,6 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     );
   }
 
-  const activeRoutes = routes.filter(r => r.isActive).length;
-  const totalCoverage = routes.reduce((acc, r) => acc + (r.distance || 0), 0);
-
-
   if (error) {
     return (
       <div className="space-y-6">
@@ -214,38 +207,6 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
 
   return (
     <div className={cn("space-y-12 animate-in fade-in duration-700", isEmbedded ? "p-0" : "p-0")}>
-      {/* Search & Stats Hub */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 place-items-center bg-slate-50/50 dark:bg-slate-900/50 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-inner">
-        <CircularStatCard
-          title="Optimal Paths"
-          value={routes.length}
-          icon={Navigation}
-          colorClass="bg-blue-50 text-[#345E85]"
-          secondaryColor="text-[#345E85]"
-        />
-        <CircularStatCard
-          title="Active Dynamics"
-          value={activeRoutes}
-          icon={Activity}
-          colorClass="bg-emerald-50 text-emerald-600"
-          secondaryColor="text-emerald-600"
-        />
-        <CircularStatCard
-          title="Network Scope"
-          value={`${(totalCoverage / 1000).toFixed(1)}K KM`}
-          icon={Box}
-          colorClass="bg-amber-50 text-amber-600"
-          secondaryColor="text-amber-600"
-        />
-        <CircularStatCard
-          title="Path Reliability"
-          value="98.2%"
-          icon={Shield}
-          colorClass="bg-purple-50 text-purple-600"
-          secondaryColor="text-purple-600"
-        />
-      </div>
-
       {/* Control Hub */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-4">

@@ -10,16 +10,15 @@ import api, { paymentsAPI } from '../services/api';
 import { fleetApi } from '../services/fleetApi';
 import { FaSearch, FaTimes, FaMoneyBillWave } from 'react-icons/fa';
 import {
-  X, DollarSign, Clock, CheckCircle, AlertTriangle, FileText,
+  X, DollarSign, CheckCircle, AlertTriangle, FileText,
   RefreshCw, ChevronDown, Landmark, CalendarDays, CircleDollarSign,
-  Plus, TrendingUp, Banknote, Package, MapPin, Loader2, Info,
+  Plus, TrendingUp, Package, MapPin, Loader2, Info,
 } from 'lucide-react';
 import LoanRequestsEnlite from '../components/LenderDashboard/LoanRequests.enlite.tsx';
 import LoanDetailModal from '../components/LenderDashboard/LoanDetailModal';
 import EnhancedRepayButton from '../components/Lending/EnhancedRepayButton';
 import LoanTermsAcceptanceModal from '../components/Lending/LoanTermsAcceptanceModal';
 import LoanAppealModal from '../components/Lending/LoanAppealModal';
-import { StatCard } from '../components/EnliteUI';
 import { buildLoanWorkflowView, workflowStageBadgeClass } from '../utils/loanWorkflow';
 
 interface Lender { id: string; name: string; type: string; email: string; phone: string; }
@@ -915,7 +914,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
 
 const TruckOwnerLoanRequestsView: React.FC<{
   requests: LoanRequest[];
-  analytics: LoanAnalytics | null;
+  analytics?: LoanAnalytics | null;
   loading: boolean;
   error: string | null;
   onNewRequest: () => void;
@@ -924,7 +923,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
   onSearchChange: (v: string) => void;
   autoReviewLoanId?: string | null;
   autoAppealLoanId?: string | null;
-}> = ({ requests, analytics, loading, error, onNewRequest, onRefresh, search, onSearchChange, autoReviewLoanId, autoAppealLoanId }) => {
+}> = ({ requests, loading, error, onNewRequest, onRefresh, search, onSearchChange, autoReviewLoanId, autoAppealLoanId }) => {
   const { compact: fmtMoney } = useCurrencyFormat();
   const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
   const [acceptLoanId, setAcceptLoanId] = useState<string | null>(null);
@@ -959,7 +958,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
             My Loan <span className="text-[#2c5173]">Requests</span>
@@ -977,14 +976,6 @@ const TruckOwnerLoanRequestsView: React.FC<{
             <Plus size={14} /> Request Loan
           </button>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Requests" value={analytics?.totalRequests ?? 0} icon={<FileText size={18} />} color="primary" variant="classic" />
-        <StatCard title="Pending" value={analytics?.pendingRequests ?? 0} icon={<Clock size={18} />} color="primary" variant="classic" />
-        <StatCard title="Approved" value={analytics?.approvedRequests ?? 0} icon={<CheckCircle size={18} />} color="primary" variant="classic" />
-        <StatCard title="Total Requested" value={fmtMoney(analytics?.totalAmountRequested ?? 0)} icon={<Banknote size={18} />} color="primary" variant="classic" />
       </div>
 
       {/* Search */}
@@ -1802,7 +1793,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950 p-6 md:p-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4 mb-8">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 mb-8 bg-gray-50/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col">
             <h2 className="text-3xl font-black text-[#0f172a] dark:text-white tracking-tight uppercase">
               Loan <span className="text-[#2c5173]">Requests</span>

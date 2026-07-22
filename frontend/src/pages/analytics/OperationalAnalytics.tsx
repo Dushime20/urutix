@@ -6,15 +6,7 @@ import {
   Tabs,
   Tab,
   CircularProgress,
-  Alert,
 } from '@mui/material';
-import {
-  LocalShipping as ShippingIcon,
-  Schedule as ScheduleIcon,
-  Business as CarrierIcon,
-  TrendingUp as TrendingUpIcon,
-} from '@mui/icons-material';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { EnhancedTable, type Column } from '../../components/EnliteUI/Tables/EnhancedTable';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi } from '../../services/analyticsApi';
@@ -40,12 +32,6 @@ export const OperationalAnalytics: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const { compact: fmtMoney, currency } = useCurrencyFormat();
 
-  const { data: performanceData, isLoading: performanceLoading, error: performanceError } = useQuery({
-    queryKey: ['analytics', 'operational', 'performance', user?.tenantId],
-    queryFn: () => analyticsApi.getOperationalPerformance(),
-    enabled: !!user?.tenantId,
-    retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 2,
-  });
 
   const { data: routeData, isLoading: routeLoading } = useQuery({
     queryKey: ['analytics', 'operational', 'routes', user?.tenantId],
@@ -68,15 +54,6 @@ export const OperationalAnalytics: React.FC = () => {
     retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 2,
   });
 
-  if (performanceError) {
-    return (
-      <div className="p-6">
-        <Alert severity="error" sx={{ borderRadius: '12px' }}>
-          Failed to load operational analytics: {(performanceError as any)?.message ?? 'Unknown error'}
-        </Alert>
-      </div>
-    );
-  }
 
   // ── Table columns ───────────────────────────────────────────────────────────
   const routeColumns: Column[] = [
@@ -98,66 +75,6 @@ export const OperationalAnalytics: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-
-      {/* ── Performance Summary ─────────────────────────────────────────────── */}
-      {performanceLoading ? (
-        <Grid container spacing={3}>
-          {[1,2,3,4].map(i => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-              <div className="h-32 bg-white rounded-3xl border border-slate-100 animate-pulse" />
-            </Grid>
-          ))}
-        </Grid>
-      ) : performanceData ? (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="TOTAL SHIPMENTS"
-              value={fmtNum(performanceData.totalShipments)}
-              subtitle="TOTAL COMPLETED"
-              icon={<ShippingIcon />}
-              color="primary"
-              variant="classic"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="ON-TIME RATE"
-              value={fmtPct(performanceData.onTimeRate)}
-              subtitle="ON-TIME PERFORMANCE"
-              icon={<ScheduleIcon />}
-              color="success"
-              variant="classic"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="ACTIVE CARRIERS"
-              value={fmtNum(performanceData.activeCarriers)}
-              subtitle="ACTIVE PROVIDERS"
-              icon={<CarrierIcon />}
-              color="secondary"
-              variant="classic"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="EFFICIENCY"
-              value={performanceData.efficiencyScore != null ? `${performanceData.efficiencyScore.toFixed(0)}/100` : '—'}
-              subtitle="OVERALL RATING"
-              icon={<TrendingUpIcon />}
-              color="warning"
-              variant="classic"
-            />
-          </Grid>
-        </Grid>
-      ) : (
-        <div className="p-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200 text-center">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            No performance data available yet. Complete shipments to see metrics.
-          </p>
-        </div>
-      )}
 
       {/* ── Detail Tabs ─────────────────────────────────────────────────────── */}
       <DataCard title="OPERATIONAL PERFORMANCE" subtitle="Routes, carriers and market comparison">

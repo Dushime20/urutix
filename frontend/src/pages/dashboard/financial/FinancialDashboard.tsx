@@ -3,17 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import {
   Download,
-  ArrowUpRight,
   PieChart as PieChartIcon,
   BarChart3,
-  Wallet,
-  TrendingUp,
   CreditCard,
-  Banknote,
   CheckCircle,
   Clock,
   XCircle,
-  Coins,
 } from 'lucide-react';
 import {
   XAxis,
@@ -31,7 +26,6 @@ import { cn } from '@/utils/cn';
 import { financialAPI } from '@/services/api';
 import { fuelApi } from '@/services/fuelApi';
 import { tenantApi } from '@/services/tenantApi';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '@/hooks/useCurrencyFormat';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatLocation } from '@/utils/formatLocation';
@@ -88,13 +82,6 @@ const FinancialDashboard: React.FC = () => {
   const { data: advanceStats } = useQuery({
     queryKey: ['fleet-advance-stats-overview'],
     queryFn: () => fuelApi.getAdvanceStats(),
-    enabled: isFleet,
-    refetchInterval: 60000,
-  });
-
-  const { data: walletStats } = useQuery({
-    queryKey: ['fleet-wallet-stats-overview'],
-    queryFn: () => fuelApi.getWalletStats(),
     enabled: isFleet,
     refetchInterval: 60000,
   });
@@ -188,68 +175,6 @@ const FinancialDashboard: React.FC = () => {
 
   const periodLabel = { week: 'This week', month: 'This month', quarter: 'This quarter', year: 'This year' }[timeRange];
 
-  const primaryCards = isCargoOwner
-    ? [
-        {
-          title: 'Freight Spend',
-          value: formatCurrency(stats.expenses),
-          trend: `${reportData?.meta?.tripCount ?? 0} trips`,
-          trendDirection: 'neutral' as const,
-          icon: <Wallet size={22} />,
-        },
-        {
-          title: 'Contracted Value',
-          value: formatCurrency(stats.revenue || stats.expenses),
-          trend: `${reportData?.meta?.paymentCount ?? 0} payments`,
-          trendDirection: 'up' as const,
-          icon: <TrendingUp size={22} />,
-        },
-        {
-          title: 'Net Outflow',
-          value: formatCurrency(Math.abs(stats.profit || stats.expenses)),
-          trend: periodLabel,
-          trendDirection: 'down' as const,
-          icon: <ArrowUpRight size={22} />,
-        },
-        {
-          title: 'Activity',
-          value: `${(reportData?.meta?.tripCount ?? 0) + (reportData?.meta?.paymentCount ?? 0)}`,
-          trend: 'Transactions',
-          trendDirection: 'neutral' as const,
-          icon: <PieChartIcon size={22} />,
-        },
-      ]
-    : [
-        {
-          title: 'Total Revenue',
-          value: formatCurrency(stats.revenue),
-          trend: `${reportData?.meta?.paymentCount ?? 0} payments`,
-          trendDirection: 'up' as const,
-          icon: <TrendingUp size={22} />,
-        },
-        {
-          title: 'Total Expenses',
-          value: formatCurrency(stats.expenses),
-          trend: `${reportData?.meta?.tripCount ?? 0} trips`,
-          trendDirection: 'neutral' as const,
-          icon: <Wallet size={22} />,
-        },
-        {
-          title: 'Net Profit',
-          value: formatCurrency(stats.profit),
-          trend: stats.profit >= 0 ? 'Positive' : 'Negative',
-          trendDirection: stats.profit >= 0 ? ('up' as const) : ('down' as const),
-          icon: <ArrowUpRight size={22} />,
-        },
-        {
-          title: 'Profit Margin',
-          value: `${stats.margin.toFixed(1)}%`,
-          trend: periodLabel,
-          trendDirection: 'neutral' as const,
-          icon: <PieChartIcon size={22} />,
-        },
-      ];
-
   const advanceStatusStyles: Record<string, string> = {
     PENDING: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
     APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800',
@@ -266,11 +191,6 @@ const FinancialDashboard: React.FC = () => {
     return (
       <div className="space-y-8 animate-pulse">
         <div className="h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700" />
-          ))}
-        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="h-72 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700" />
           <div className="h-72 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700" />
@@ -310,72 +230,6 @@ const FinancialDashboard: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Fleet wallet & credits */}
-      {isFleet && (
-        <section>
-          <SectionHeader
-            title="Fleet Wallet & Credits"
-            description="Credits, driver advances, and wallet balances"
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <StatCard
-              title="Credit Balance"
-              value={(creditBalance?.currentBalance ?? 0).toLocaleString()}
-              subtitle="Available credits"
-              icon={<Coins size={20} />}
-              color="primary"
-              variant="premium"
-            />
-            <StatCard
-              title="Total Advances Paid"
-              value={formatCurrency(advanceStats?.totalAdvanced || 0)}
-              subtitle={`${advanceStats?.totalAdvances ?? 0} advances`}
-              icon={<Banknote size={20} />}
-              color="primary"
-              variant="premium"
-            />
-            <StatCard
-              title="Pending Advances"
-              value={formatCurrency(advanceStats?.pendingAmount || 0)}
-              subtitle={`${advanceStats?.pendingCount ?? 0} awaiting approval`}
-              icon={<Clock size={20} />}
-              color="warning"
-              variant="premium"
-            />
-            <StatCard
-              title="Wallet Balance"
-              value={formatCurrency(walletStats?.totalBalance || 0)}
-              subtitle={`${walletStats?.activeWallets ?? 0} active wallets`}
-              icon={<Wallet size={20} />}
-              color="primary"
-              variant="premium"
-            />
-          </div>
-        </section>
-      )}
-
-      {/* Financial performance */}
-      <section>
-        <SectionHeader
-          title={isFleet ? 'Financial Performance' : 'Overview'}
-          description={`Revenue, expenses, and profitability for ${periodLabel.toLowerCase()}`}
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {primaryCards.map((card) => (
-            <StatCard
-              key={card.title}
-              title={card.title}
-              value={card.value}
-              trend={card.trend}
-              trendDirection={card.trendDirection}
-              icon={card.icon}
-              color="primary"
-              variant="premium"
-            />
-          ))}
-        </div>
-      </section>
 
       {/* Charts — fleet breakdown + expense analytics */}
       <section>

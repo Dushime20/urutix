@@ -114,7 +114,7 @@ export class BiddingIntelligenceService {
       entityType: EntityType.CARGO,
       entityId: counterBid.id,
       requiresAction: true,
-      actionUrl: `/dashboard/my-bids`,
+      actionUrl: `/dashboard/fleet/my-bids`,
       actionText: 'View Counter-Offer',
     });
   }

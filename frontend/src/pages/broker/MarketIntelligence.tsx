@@ -1,7 +1,7 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
 import React, { useState } from 'react';
 import { brokerAPI, type MarketIntelligence, type MarketRoute } from '../../services/brokerApi';
-import { TrendingUp, DollarSign, BarChart3, Loader2, Search, Award } from 'lucide-react';
+import { TrendingUp, BarChart3, Loader2, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const MarketIntelligence: React.FC = () => {
@@ -130,28 +130,6 @@ const MarketIntelligence: React.FC = () => {
       {/* Intelligence Display System */}
       {marketData && (
         <div className="space-y-12 animate-slide-up">
-          {/* High-Impact Stat System */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { label: 'Current Price', value: `${marketData.currentRate.toLocaleString()} KES`, sub: 'Real-time Data', icon: DollarSign },
-              { label: 'Average Price', value: `${marketData.averageRate?.toLocaleString() || 'N/A'} KES`, sub: 'Industry Average', icon: BarChart3 },
-              { label: 'Suggested Price', value: `${marketData.recommendedRate?.toLocaleString() || 'N/A'} KES`, sub: 'Recommended', icon: Award },
-              { label: 'Trend', value: marketData.pricingInsights?.priceTrend || 'STABLE', sub: 'Market Status', icon: TrendingUp },
-            ].map((stat, i) => (
-              <div key={i} className="group relative bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 group-hover:bg-primary-50 transition-colors dark:bg-slate-800/50"></div>
-                <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all mb-6 dark:bg-slate-800/50">
-                    <stat.icon size={20} />
-                  </div>
-                  <p className="text-sm font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
-                  <h3 className="text-3xl font-bold text-slate-900 mb-1 dark:text-white">{stat.value}</h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase">{stat.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Rate Tactical Mapping */}
           {marketData.rateRecommendations && (
             <div className="bg-white rounded-[3rem] border border-slate-100 p-12 shadow-sm space-y-12 dark:bg-slate-900 dark:border-slate-800">

@@ -2,9 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-  CreditCard,
-  TrendingUp,
-  TrendingDown,
   Package,
   Truck,
   DollarSign,
@@ -15,7 +12,6 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import StatCard from '../../components/EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import ModernLoader from '../../components/common/ModernLoader';
@@ -142,37 +138,6 @@ const TruckOwnerCredits: React.FC = () => {
 
   return (
     <div className="p-8 space-y-8 transition-colors duration-200">
-      {/* Credit Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <StatCard
-            title={<TranslatedText text="Current Balance" />}
-            value={creditData?.balance || 0}
-            icon={<CreditCard />}
-            subtitle={<TranslatedText text="Available Credits" />}
-            color="primary"
-            variant="premium"
-            loading={isLoading}
-          />
-
-        <StatCard
-            title={<TranslatedText text="Total Earned" />}
-            value={creditData?.totalEarned || 0}
-            icon={<TrendingUp />}
-            subtitle={<TranslatedText text="All Time" />}
-            color="success"
-            loading={isLoading}
-          />
-
-          <StatCard
-            title={<TranslatedText text="Total Spent" />}
-            value={creditData?.totalSpent || 0}
-            icon={<TrendingDown />}
-            subtitle={<TranslatedText text="All Time" />}
-            color="accent"
-            loading={isLoading}
-          />
-        </div>
-
         {/* Filters */}
         <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm p-6 mb-6 transition-colors duration-200">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

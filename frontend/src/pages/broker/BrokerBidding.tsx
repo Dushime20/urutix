@@ -7,20 +7,14 @@ import BidHistory from '../../components/Bidding/BidHistory';
 import BidAnalytics from '../../components/Bidding/BidAnalytics';
 import CreateAuction from '../../components/Bidding/CreateAuction';
 import BrokerBidManagement from '../../components/Bidding/BrokerBidManagement';
-import { Gavel, Users, BarChart3, DollarSign, Heart, Plus, Activity, CheckSquare, Clock } from 'lucide-react';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
-import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { Gavel, BarChart3, Heart, Plus, CheckSquare, Clock } from 'lucide-react';
 
 const BrokerBidding: React.FC = () => {
-  const { compact: fmtMoney } = useCurrencyFormat();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('bids');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
-    totalAuctions: 0,
     activeBids: 0,
-    totalValue: 0,
     successRate: 0,
   });
 
@@ -38,14 +32,14 @@ const BrokerBidding: React.FC = () => {
     setLoading(true);
     try {
       const response = await biddingAPI.getDashboardStats();
-      setStats(response.data);
+      setStats({
+        activeBids: response.data.activeBids,
+        successRate: response.data.successRate,
+      });
     } catch (error: any) {
       console.error('Dashboard stats error:', error);
-      setError('Failed to load real-time metrics - using demo data');
       setStats({
-        totalAuctions: 8,
         activeBids: 5,
-        totalValue: 32000,
         successRate: 68,
       });
     } finally {
@@ -84,14 +78,6 @@ const BrokerBidding: React.FC = () => {
              <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Win Rate</p>
            </div>
         </div>
-      </div>
-
-      {/* Statistics Board */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <StatCard title="Auctions" value={stats.totalAuctions} icon={<Gavel size={20} />} color="primary" variant="classic" />
-        <StatCard title="Active" value={stats.activeBids} icon={<Users size={20} />} color="info" variant="classic" />
-        <StatCard title="Liquidity" value={fmtMoney(stats.totalValue)} icon={<DollarSign size={20} />} color="success" variant="classic" />
-        <StatCard title="Win Rate" value={`${stats.successRate}%`} icon={<Activity size={20} />} color="warning" variant="classic" />
       </div>
 
       {/* Tabs Terminal */}

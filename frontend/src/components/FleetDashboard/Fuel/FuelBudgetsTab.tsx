@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fuelApi } from '../../../services/fuelApi';
-import { StatCard } from '../../EnliteUI/Cards/StatCard';
-import { ShieldCheck, AlertTriangle } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export const FuelBudgetsTab: React.FC = () => {
     const [overBudgetTrips, setOverBudgetTrips] = useState<any[]>([]);
@@ -25,21 +24,6 @@ export const FuelBudgetsTab: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <StatCard
-                    title="Active Budgets Monitored"
-                    value={overBudgetTrips.length > 0 ? 'Tracking Overruns' : 'All Good'}
-                    icon={<ShieldCheck size={24} />}
-                    color="primary"
-                />
-                <StatCard
-                    title="Over Budget Trips"
-                    value={overBudgetTrips.length}
-                    icon={<AlertTriangle size={24} />}
-                    color={overBudgetTrips.length > 0 ? 'error' : 'secondary'}
-                />
-            </div>
-
             <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors">
                 <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500 mb-8 flex items-center gap-3">
                     <span className="w-8 h-px bg-slate-200 dark:bg-slate-800"></span>

@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import {
   Bell, Search, CheckCircle, Trash2, RefreshCw, AlertTriangle,
-  Clock, Filter, ChevronDown, X, MessageSquare, Package,
-  Truck, CreditCard, Settings, Shield, Activity, Zap,
+  Clock, Filter, ChevronDown, X, Package,
+  Truck, CreditCard, Settings, Shield, Activity,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
@@ -54,20 +54,6 @@ const fmtTime = (ts: string) => {
   if (days < 7)  return `${days}d ago`;
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
-
-// ── stat card ──────────────────────────────────────────────────────────────────
-const StatCard: React.FC<{
-  label: string; value: number | string;
-  icon: React.ReactNode; iconBg: string;
-}> = ({ label, value, icon, iconBg }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
-    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>{icon}</div>
-    <div>
-      <p className="text-2xl font-black text-gray-900 leading-none">{value}</p>
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-0.5">{label}</p>
-    </div>
-  </div>
-);
 
 // ── detail modal ───────────────────────────────────────────────────────────────
 const DetailModal: React.FC<{ n: Notification; onClose: () => void }> = ({ n, onClose }) => {
@@ -179,22 +165,9 @@ const AdminNotificationsHub: React.FC = () => {
     retry: 1,
   });
 
-  const { data: unreadData } = useQuery({
-    queryKey: ['admin-notifications-unread'],
-    queryFn: () => notificationApi.getUnreadCount(),
-    staleTime: 60_000,
-    retry: 1,
-  });
-
   const notifications: Notification[] = data?.notifications ?? [];
   const totalPages = data?.totalPages ?? 1;
   const total      = data?.total ?? 0;
-
-  // derive stats from loaded page (backend scoped)
-  const unread    = notifications.filter(n => !n.readAt).length;
-  const actReq    = notifications.filter(n => n.requiresAction).length;
-  const failed    = notifications.filter(n => n.status === 'FAILED').length;
-  const critical  = notifications.filter(n => n.priority === 'CRITICAL' || n.priority === 'URGENT').length;
 
   const markReadMut = useMutation({
     mutationFn: (id: string) => notificationApi.markAsRead(id),
@@ -257,15 +230,6 @@ const AdminNotificationsHub: React.FC = () => {
       }
     >
       <div className="safe-bottom space-y-5">
-
-        {/* ── Stats row ─────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-          <StatCard label="Total"        value={total}                             icon={<Bell size={16} />}         iconBg="bg-slate-100 text-slate-600" />
-          <StatCard label="Unread"       value={unreadData?.count ?? unread}       icon={<MessageSquare size={16}/>} iconBg="bg-blue-100 text-blue-600" />
-          <StatCard label="Action Req."  value={actReq}                            icon={<AlertTriangle size={16}/>} iconBg="bg-amber-100 text-amber-600" />
-          <StatCard label="Critical"     value={critical}                          icon={<Zap size={16} />}          iconBg="bg-red-100 text-red-600" />
-          <StatCard label="Failed"       value={failed}                            icon={<X size={16} />}            iconBg="bg-gray-100 text-gray-500" />
-        </div>
 
         {/* ── Filters ──────────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl border border-gray-100 p-4">

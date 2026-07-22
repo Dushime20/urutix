@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaChartLine, FaShip, FaTruck, FaUsers } from 'react-icons/fa';
+import { FaChartLine } from 'react-icons/fa';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
@@ -53,41 +52,6 @@ const OperationalAdminAnalytics: React.FC = () => {
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
             </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Shipments"
-              value={metrics?.totalShipments || 0}
-              icon={<FaShip size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle={`Over ${timeRange}`}
-            />
-            <StatCard
-              title="Active Fleet"
-              value={metrics?.activeFleet || 0}
-              icon={<FaTruck size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Vehicles utilized"
-            />
-            <StatCard
-              title="On Time Delivery"
-              value={`${metrics?.onTimeDelivery || 0}%`}
-              icon={<FaChartLine size={22} />}
-              color="success"
-              variant="classic"
-              subtitle="Target: > 95%"
-            />
-            <StatCard
-              title="Customer Satisfaction"
-              value={`${metrics?.customerSatisfaction || 0} / 5`}
-              icon={<FaUsers size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Average rating"
-            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,19 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FaTruck, FaUsers, FaMapMarkerAlt, FaCalendarAlt,
-  FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaTrash
+import {
+  FaTruck,
+  FaMapMarkerAlt,
+  FaSearch,
+  FaDownload,
+  FaEye,
+  FaEdit,
+  FaTrash
 } from 'react-icons/fa';
 import {
-  X, Truck, User, MapPin, Calendar, Shield, CheckCircle2,
-  AlertTriangle, Clock, Building2, Phone, Mail,
-  Activity, Wrench, Circle, Hash,
+  X,
+  Truck,
+  User,
+  MapPin,
+  Calendar,
+  Building2,
+  Phone,
+  Mail,
+  Hash
 } from 'lucide-react';
 import { TranslatedText } from '../components/translated-text';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminTruck } from '../services/adminApi';
-import { StatCard } from '../components/EnliteUI';
 import ModernLoader from '../components/common/ModernLoader';
 
 // ── Truck Detail Modal ────────────────────────────────────────────────────────
@@ -389,46 +399,6 @@ const AdminTrucks: React.FC = () => {
       description="Monitor and manage all trucks across the platform"
     >
       <div className="space-y-6">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Total Trucks"
-            value={trucks.length}
-            icon={<FaTruck size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Registered fleet"
-          />
-          <StatCard
-            title="Active Trucks"
-            value={trucks.filter(t => 
-              t.isActive && 
-              (t.status?.toUpperCase() === 'AVAILABLE' || t.status?.toUpperCase() === 'IN_TRANSIT')
-            ).length}
-            icon={<FaTruck size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Available or In Transit"
-          />
-          <StatCard
-            title="In Maintenance"
-            value={trucks.filter(t => t.status?.toUpperCase() === 'MAINTENANCE').length}
-            icon={<FaTruck size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Under service"
-          />
-          <StatCard
-            title="Out of Service"
-            value={trucks.filter(t => 
-              !t.isActive || t.status?.toUpperCase() === 'OUT_OF_SERVICE'
-            ).length}
-            icon={<FaTruck size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Offline or inactive"
-          />
-        </div>
 
         {/* Filters and Search */}
         <div className="bg-white rounded-xl p-6 border border-transparent">

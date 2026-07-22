@@ -4,18 +4,13 @@ import {
     ArrowDownLeft,
     Search,
     Filter,
-    FileText,
     CreditCard,
     Clock,
     CheckCircle2,
     XCircle,
     AlertCircle,
     Eye,
-    DollarSign,
-    TrendingUp,
-    TrendingDown,
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
@@ -91,12 +86,6 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
 
     const disbursements = entries.filter(e => e.source === 'disbursement');
     const repayments    = entries.filter(e => e.source === 'repayment');
-
-    const totalOutflow = disbursements.reduce((s, e) => s + Math.abs(e.amount ?? 0), 0);
-    const totalInflow  = repayments.reduce((s, e) => s + (e.amount ?? 0), 0);
-    const totalInterestCollected = repayments.reduce(
-        (s, e) => s + (e.interestPaid ?? 0), 0,
-    );
 
     // ── Filtered data ─────────────────────────────────────────────────────────
 
@@ -242,42 +231,6 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-
-            {/* ── Stats Row ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title="Total Events"
-                    value={entries.length.toString()}
-                    subtitle={`${disbursements.length} disbursements, ${repayments.length} repayments`}
-                    icon={<FileText size={24} />}
-                    color="primary"
-                    variant="classic"
-                />
-                <StatCard
-                    title="Capital Outflow"
-                    value={totalOutflow > 0 ? fmtCurrency(totalOutflow) : 'N/A'}
-                    subtitle={`${disbursements.length} disbursement${disbursements.length !== 1 ? 's' : ''}`}
-                    icon={<TrendingDown size={24} />}
-                    color="error"
-                    variant="classic"
-                />
-                <StatCard
-                    title="Capital Inflow"
-                    value={totalInflow > 0 ? fmtCurrency(totalInflow) : 'N/A'}
-                    subtitle={`${repayments.length} repayment${repayments.length !== 1 ? 's' : ''}`}
-                    icon={<TrendingUp size={24} />}
-                    color="success"
-                    variant="classic"
-                />
-                <StatCard
-                    title="Interest Collected"
-                    value={totalInterestCollected > 0 ? fmtCurrency(totalInterestCollected) : 'N/A'}
-                    subtitle={totalInterestCollected > 0 ? 'From repayment records' : 'No interest recorded'}
-                    icon={<DollarSign size={24} />}
-                    color="secondary"
-                    variant="classic"
-                />
-            </div>
 
             {/* ── Main Layout ── */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">

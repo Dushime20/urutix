@@ -18,7 +18,6 @@ import {
   Info,
   Send,
   RefreshCw,
-  Package,
   ArrowRight,
   PenLine,
   ShieldCheck,
@@ -30,7 +29,6 @@ import {
   type InspectionRecord,
   type MarkReadyForReInspectionPayload,
 } from '../../../services/cargoInspectionApi';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { cn } from '@/utils/cn';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -299,8 +297,6 @@ export default function CargoCustomsInspectionsPage() {
   });
 
   const shipments = data?.shipments ?? [];
-  const summary = data?.summary;
-
   useEffect(() => {
     if (urlLoadId && shipments.length > 0 && !selectedShipment) {
       const match = shipments.find((s) => s.loadId === urlLoadId);
@@ -349,17 +345,6 @@ export default function CargoCustomsInspectionsPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {summary && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <StatCard title="Shipments" value={summary.total} icon={<Package />} color="secondary" variant="classic" />
-            <StatCard title="Pre-Trip Pending" value={summary.preTripPending} icon={<Clock />} color="info" variant="classic" />
-            <StatCard title="Needs Action" value={summary.preTripAwaitingAction} icon={<AlertTriangle />} color="error" variant="classic" />
-            <StatCard title="Pre-Trip Approved" value={summary.preTripApproved} icon={<CheckCircle />} color="success" variant="classic" />
-            <StatCard title="Post Completed" value={summary.postCompleted} icon={<ClipboardCheck />} color="success" variant="classic" />
-            <StatCard title="Post Issues" value={summary.postWithIssues} icon={<AlertTriangle />} color="error" variant="classic" />
-          </div>
-        )}
-
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

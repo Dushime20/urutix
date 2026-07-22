@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FaUsers, FaEdit, FaTrash, FaPlus, FaSearch, FaDownload,
-  FaEye, FaUserCheck, FaUserTimes, FaShieldAlt, FaFilter,
+  FaEye, FaShieldAlt, FaFilter,
   FaSort, FaEllipsisV, FaCheck, FaTimes, FaBan, FaUnlock,
   FaEnvelope, FaPhone, FaMapMarkerAlt, FaCalendarAlt, FaKey,
 } from 'react-icons/fa';
@@ -11,7 +11,6 @@ import { usePermission } from '../../contexts/PermissionContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
-import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
 import { RolePermissionsMatrix } from '../../components/Admin/Permissions/RolePermissionsMatrix';
 import { permissionApi } from '../../services/permissionApi';
@@ -849,45 +848,6 @@ const UserManagement: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Enhanced Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <StatCard
-          title={<TranslatedText text="Total Users" />}
-          value={users.length}
-          icon={<FaUsers size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Active Users" />}
-          value={users.filter(u => u.status === 'active').length}
-          icon={<FaUserCheck size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Pending Users" />}
-          value={users.filter(u => u.status === 'pending').length}
-          icon={<FaUserTimes size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Admins" />}
-          value={users.filter(u => u.role === 'ADMIN').length}
-          icon={<FaShieldAlt size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Verified" />}
-          value={users.filter(u => u.verificationStatus === 'verified').length}
-          icon={<FaCheck size={22} />}
-          color="primary"
-          variant="classic"
-        />
       </div>
 
       {/* User Details Modal */}

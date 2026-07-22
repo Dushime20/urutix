@@ -5,12 +5,10 @@ import {
   BarChart3,
   Download,
   Filter,
-  Target,
   Zap,
   ChevronDown,
   ChevronUp,
   CreditCard,
-  Briefcase,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -31,6 +29,7 @@ import {
   Filler,
 } from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement,
@@ -59,13 +58,11 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
   const hasData = currentData.length > 0 && currentData.some(d => d.netEarnings > 0 || d.trips > 0);
 
   const totalEarnings  = currentData.reduce((s, d) => s + d.netEarnings, 0);
-  const totalTrips     = currentData.reduce((s, d) => s + d.trips, 0);
   const totalDistance  = currentData.reduce((s, d) => s + d.distance, 0);
   const totalHours     = currentData.reduce((s, d) => s + d.hours, 0);
   const totalBase      = currentData.reduce((s, d) => s + d.earnings, 0);
   const totalBonuses   = currentData.reduce((s, d) => s + d.bonuses, 0);
   const totalDeductions = currentData.reduce((s, d) => s + d.deductions, 0);
-  const avgPerTrip     = totalTrips > 0 ? totalEarnings / totalTrips : 0;
   const avgPerHour     = totalHours > 0 ? totalEarnings / totalHours : 0;
   const avgPerKm       = totalDistance > 0 ? totalEarnings / totalDistance : 0;
 
@@ -199,33 +196,6 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
 
       {hasData && (
         <>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { label: 'Total Revenue', sub: 'Net Earnings', value: formatCurrency(totalEarnings), icon: CreditCard },
-              { label: 'Total Trips', sub: 'Completed Jobs', value: totalTrips, icon: Briefcase },
-              { label: 'Total Hours', sub: 'Drive Time', value: `${totalHours.toFixed(1)}h`, icon: Zap },
-              { label: 'Per Trip', sub: 'Average', value: formatCurrency(avgPerTrip), icon: Target },
-            ].map((card, i) => (
-              <motion.div
-                key={card.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all"
-              >
-                <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
-                  <card.icon className="w-6 h-6" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <h3 className="text-3xl font-black text-slate-800 tracking-tight">{card.value}</h3>
-                  <p className="text-sm font-bold text-slate-600"><TranslatedText text={card.label} /></p>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text={card.sub} /></p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm">

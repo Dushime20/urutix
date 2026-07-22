@@ -7,17 +7,15 @@ import {
   FaTruck,
   FaCheckCircle,
   FaClock,
-  FaDollarSign,
   FaSearch,
   FaFilter,
   FaEye,
   FaSync,
   FaMapMarkerAlt,
   FaUser,
-  FaExclamationTriangle,
+  FaExclamationTriangle
 } from 'react-icons/fa';
 import ActiveTrips from '../TenantDashboard/ActiveTrips';
-import { StatCard } from '../EnliteUI/Cards/StatCard';
 import { formatLocation } from '../../utils/formatLocation';
 
 interface Trip {
@@ -39,15 +37,6 @@ interface Trip {
   progress?: number;
   createdAt: string;
   updatedAt: string;
-}
-
-interface TripStats {
-  totalTrips: number;
-  activeTrips: number;
-  completedTrips: number;
-  scheduledTrips: number;
-  totalRevenue: number;
-  totalDistance: number;
 }
 
 const TenantAdminTrips: React.FC = () => {
@@ -89,37 +78,6 @@ const TenantAdminTrips: React.FC = () => {
   });
 
   const trips: Trip[] = Array.isArray(tripsData) ? tripsData : [];
-
-  // Calculate statistics
-  const stats: TripStats = useMemo(() => {
-    const totalTrips = trips.length;
-    const activeTrips = trips.filter(
-      (t) => t.status?.toLowerCase() === 'in_progress' || t.status?.toLowerCase() === 'active',
-    ).length;
-    const completedTrips = trips.filter(
-      (t) => t.status?.toLowerCase() === 'completed' || t.status?.toLowerCase() === 'delivered',
-    ).length;
-    const scheduledTrips = trips.filter(
-      (t) => t.status?.toLowerCase() === 'scheduled' || t.status?.toLowerCase() === 'pending',
-    ).length;
-    const totalRevenue = trips.reduce((sum, t) => {
-      const revenue = typeof t.revenue === 'number' ? t.revenue : Number(t.revenue) || 0;
-      return sum + revenue;
-    }, 0);
-    const totalDistance = trips.reduce((sum, t) => {
-      const distance = typeof t.distance === 'number' ? t.distance : Number(t.distance) || 0;
-      return sum + distance;
-    }, 0);
-
-    return {
-      totalTrips,
-      activeTrips,
-      completedTrips,
-      scheduledTrips,
-      totalRevenue,
-      totalDistance,
-    };
-  }, [trips]);
 
   // Filter and sort trips
   const filteredAndSortedTrips = useMemo(() => {
@@ -225,15 +183,6 @@ const TenantAdminTrips: React.FC = () => {
           </button>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard title="Total Trips"                     value={stats.totalTrips}                          icon={<FaRoute size={16} />}       color="primary"   variant="classic" />
-          <StatCard title="Active"                          value={stats.activeTrips}                         icon={<FaTruck size={16} />}       color="info"      variant="classic" />
-          <StatCard title="Completed"                       value={stats.completedTrips}                      icon={<FaCheckCircle size={16} />} color="success"   variant="classic" />
-          <StatCard title="Scheduled"                       value={stats.scheduledTrips}                      icon={<FaClock size={16} />}       color="warning"   variant="classic" />
-          <StatCard title="Revenue"                         value={`$${stats.totalRevenue.toFixed(0)}`}       icon={<FaDollarSign size={16} />}  color="purple"    variant="classic" />
-          <StatCard title="Distance"                        value={`${stats.totalDistance.toFixed(0)} km`}    icon={<FaRoute size={16} />}       color="secondary" variant="classic" />
-        </div>
       </div>
 
       {/* Filters and Search */}

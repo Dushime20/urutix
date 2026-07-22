@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
-import { AlertCircle, Clock, AlertTriangle, Inbox, DollarSign } from 'lucide-react';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { AlertCircle, Inbox } from 'lucide-react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // fmt replaced by useCurrencyFormat hook
@@ -27,7 +26,6 @@ const FleetPendingPaymentsPage = () => {
   });
 
   const payments: any[] = data?.data?.data?.payments || [];
-  const summary = data?.data?.data?.summary || {};
 
   const enriched = useMemo(() =>
     payments.map((p: any) => ({ ...p, urgency: urgencyOf(p.dueDate) })),
@@ -67,41 +65,6 @@ const FleetPendingPaymentsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Due"
-          value={fmt(summary.totalAmount || 0)}
-          subtitle={`${summary.totalPayments || 0} payments`}
-          icon={<DollarSign size={24} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title="Overdue"
-          value={fmt(summary.overdueAmount || 0)}
-          subtitle={`${summary.overdueCount || 0} overdue`}
-          icon={<AlertTriangle size={24} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title="Due Soon"
-          value={fmt(summary.dueSoonAmount || 0)}
-          subtitle={`${summary.dueSoonCount || 0} within 7 days`}
-          icon={<Clock size={24} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title="Upcoming"
-          value={pendingList.length}
-          subtitle="scheduled"
-          icon={<Clock size={24} />}
-          color="primary"
-          variant="classic"
-        />
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <input

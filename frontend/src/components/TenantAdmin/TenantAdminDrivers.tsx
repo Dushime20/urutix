@@ -22,21 +22,10 @@ import {
   RefreshCw,
   Clock,
   Briefcase,
-  UserX,
   X,
   LayoutGrid,
-  List
+  List,
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
-
-interface DriverStats {
-  totalDrivers: number;
-  activeDrivers: number;
-  inactiveDrivers: number;
-  availableDrivers: number;
-  inTransitDrivers: number;
-  totalExperience: number;
-}
 
 const TenantAdminDrivers: React.FC = () => {
   const queryClient = useQueryClient();
@@ -199,32 +188,6 @@ const TenantAdminDrivers: React.FC = () => {
       toast.error(error?.response?.data?.message || 'Failed to assign driver');
     },
   });
-
-  // Calculate statistics
-  const stats: DriverStats = useMemo(() => {
-    const totalDrivers = drivers.length;
-    const activeDrivers = drivers.filter((d) => d.status?.toUpperCase() === 'ACTIVE').length;
-    const inactiveDrivers = totalDrivers - activeDrivers;
-    const availableDrivers = drivers.filter(
-      (d) => d.availabilityStatus?.toUpperCase() === 'AVAILABLE',
-    ).length;
-    const inTransitDrivers = drivers.filter(
-      (d) => d.availabilityStatus?.toUpperCase() === 'IN_TRANSIT',
-    ).length;
-    const totalExperience = drivers.reduce((sum, d) => {
-      const exp = typeof d.experience === 'number' ? d.experience : Number(d.experience) || 0;
-      return sum + exp;
-    }, 0);
-
-    return {
-      totalDrivers,
-      activeDrivers,
-      inactiveDrivers,
-      availableDrivers,
-      inTransitDrivers,
-      totalExperience,
-    };
-  }, [drivers]);
 
   // Filter and sort drivers
   const filteredAndSortedDrivers = useMemo(() => {
@@ -449,60 +412,6 @@ const TenantAdminDrivers: React.FC = () => {
             </button>
           </div>
         </div>
-
-        {/* Statistics Cards */}
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard
-            title="Total Drivers"
-            value={stats.totalDrivers}
-            icon={<Users />}
-            color="primary"
-            subtitle="Fleet Size"
-            variant="classic"
-          />
-          <StatCard
-            title="Active Drivers"
-            value={stats.activeDrivers}
-            icon={<CheckCircle2 />}
-            color="success"
-            subtitle="Operational"
-            variant="classic"
-          />
-          <StatCard
-            title="Inactive"
-            value={stats.inactiveDrivers}
-            icon={<UserX />}
-            color="secondary"
-            subtitle="Off Duty"
-            variant="classic"
-          />
-          <StatCard
-            title="Available"
-            value={stats.availableDrivers}
-            icon={<Clock />}
-            color="info"
-            subtitle="Ready"
-            variant="classic"
-          />
-          <StatCard
-            title="In Transit"
-            value={stats.inTransitDrivers}
-            icon={<Truck />}
-            color="warning"
-            subtitle="On Job"
-            variant="classic"
-          />
-          <StatCard
-            title="Experience"
-            value={`${stats.totalExperience.toFixed(0)} yrs`}
-            icon={<Briefcase />}
-            variant="classic"
-            color="accent"
-            subtitle="Cumulative"
-          />
-        </div>
-      </div>
 
       {/* Filters and Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">

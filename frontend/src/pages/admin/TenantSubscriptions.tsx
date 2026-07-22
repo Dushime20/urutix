@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   FaCreditCard,
@@ -22,7 +21,7 @@ import {
   FaTimes,
   FaBuilding,
   FaChartLine,
-  FaHistory,
+  FaHistory
 } from 'react-icons/fa';
 
 interface TenantSubscription {
@@ -247,40 +246,6 @@ const TenantSubscriptions: React.FC = () => {
     >
       <div className="safe-bottom space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title={<TranslatedText text="Total Subscriptions" />}
-            value={subscriptions.length}
-            icon={<FaCreditCard className="w-5 h-5" />}
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="All tenant subscriptions" />}
-          />
-          <StatCard
-            title={<TranslatedText text="Active" />}
-            value={subscriptions.filter(s => s.status === 'active').length}
-            icon={<FaCheckCircle className="w-5 h-5" />}
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="Currently active" />}
-          />
-          <StatCard
-            title={<TranslatedText text="Trial" />}
-            value={subscriptions.filter(s => s.status === 'trial').length}
-            icon={<FaClock className="w-5 h-5" />}
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="In trial period" />}
-          />
-          <StatCard
-            title={<TranslatedText text="Total Revenue" />}
-            value={fmtMoney(subscriptions.reduce((sum, s) => sum + (s.paidAmount || 0), 0))}
-            icon={<FaChartLine className="w-5 h-5" />}
-            color="primary"
-            variant="classic"
-            subtitle={<TranslatedText text="Total payments received" />}
-          />
-        </div>
 
         {/* Filters */}
         <div className="bg-white rounded-lg p-4 border border-slate-200">

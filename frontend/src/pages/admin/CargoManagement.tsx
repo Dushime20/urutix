@@ -16,14 +16,11 @@ import {
   FaShieldAlt,
   FaThermometerHalf,
   FaExclamationTriangle,
-  FaTruck,
-  FaClock,
   FaLayerGroup,
   FaSync,
 } from "react-icons/fa";
 import FilterSelect from "@/components/common/FilterSelect";
 import { TranslatedText } from '../../components/translated-text';
-import { StatCard } from '../../components/EnliteUI';
 
 interface Cargo {
   id: string;
@@ -234,45 +231,6 @@ const CargoManagement: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Cargo Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <StatCard
-          title={<TranslatedText text="Total Cargos" />}
-          value={cargos.length}
-          icon={<FaBox size={22} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="In Transit" />}
-          value={cargos.filter(c => c.status === 'in_transit').length}
-          icon={<FaTruck size={22} />}
-          color="success"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Critical" />}
-          value={cargos.filter(c => c.urgency === 'critical').length}
-          icon={<FaClock size={22} />}
-          color="error"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Hazardous" />}
-          value={cargos.filter(c => c.isHazardous).length}
-          icon={<FaExclamationTriangle size={22} />}
-          color="warning"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Total Value" />}
-          value={`$${cargos.reduce((acc, c) => acc + c.value, 0).toLocaleString()}`}
-          icon={<FaDollarSign size={22} />}
-          color="info"
-          variant="classic"
-        />
       </div>
 
       {/* Cargo Table */}

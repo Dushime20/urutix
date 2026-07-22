@@ -7,6 +7,9 @@ import {
 } from 'lucide-react';
 import { useNotifications } from '../../hooks/useNotifications';
 import type { UrutixNotification } from '../../hooks/useNotifications';
+import { useAuth } from '../../contexts/AuthContext';
+import { navigateFromNotification } from '../../utils/notificationNavigation';
+import { getNotificationsHubPath } from '../../utils/resolveNotificationRoute';
 
 interface CargoOwnerNotificationDropdownProps {
   className?: string;
@@ -52,6 +55,7 @@ const formatTimestamp = (ts: string): string => {
 
 const CargoOwnerNotificationDropdown: React.FC<CargoOwnerNotificationDropdownProps> = ({ className = '' }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -71,12 +75,14 @@ const CargoOwnerNotificationDropdown: React.FC<CargoOwnerNotificationDropdownPro
     .slice(0, 20);
 
   const handleNotificationClick = useCallback((n: UrutixNotification) => {
-    if (!n.isRead) markAsRead(n.id);
-    if (n.actionUrl) {
-      navigate(n.actionUrl);
-      setIsOpen(false);
-    }
-  }, [markAsRead, navigate]);
+    void navigateFromNotification({
+      notification: n,
+      role: user?.role,
+      navigate,
+      markAsRead,
+      onNavigated: () => setIsOpen(false),
+    });
+  }, [markAsRead, navigate, user?.role]);
 
   const handleMarkAllRead = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -239,7 +245,7 @@ const CargoOwnerNotificationDropdown: React.FC<CargoOwnerNotificationDropdownPro
             {/* ── Footer ── */}
             <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900">
               <button
-                onClick={() => { navigate('/notifications'); setIsOpen(false); }}
+                onClick={() => { navigate(getNotificationsHubPath(user?.role)); setIsOpen(false); }}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100 transition-colors"
               >
                 View All Notifications

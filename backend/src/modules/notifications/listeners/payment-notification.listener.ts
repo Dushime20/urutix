@@ -149,7 +149,7 @@ export class PaymentNotificationListener {
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
-        actionUrl: `/dashboard/financial/payments`,
+        actionUrl: `/dashboard/fleet/financial`,
         actionText: 'View Payments',
         metadata: {
           paymentId: payload.paymentId,

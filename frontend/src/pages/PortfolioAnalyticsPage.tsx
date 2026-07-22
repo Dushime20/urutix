@@ -2,12 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { lendingApi } from '../services/lending/lendingApi';
 import {
-  RotateCcw, TrendingUp, TrendingDown, Shield, AlertTriangle,
-  DollarSign, Activity, BarChart2, PieChart, ArrowUpRight,
+  RotateCcw, Shield, AlertTriangle,
+  Activity, BarChart2, PieChart,
 } from 'lucide-react';
 import ModernLoader from '../components/common/ModernLoader';
 import api from '../services/api';
-import { StatCard } from '../components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 const fmtPct = (n: number | null | undefined, decimals = 2): string =>
@@ -19,22 +18,6 @@ const riskColour = (level: string) =>
                        'text-rose-600 bg-rose-50 border-rose-100';
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-const KpiCard: React.FC<{
-  label: string; value: string; sub?: string;
-  icon: React.ReactNode; trend?: number; accent?: boolean;
-}> = ({ label, value, sub, icon, trend }) => (
-  <StatCard
-    title={label}
-    value={value}
-    icon={icon}
-    subtitle={sub}
-    trend={trend != null ? `${Math.abs(trend).toFixed(1)}%` : undefined}
-    trendDirection={trend != null ? (trend >= 0 ? 'up' : 'down') : 'neutral'}
-    color="primary"
-    variant="classic"
-  />
-);
-
 const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; sub?: string }> = ({ icon, title, sub }) => (
   <div className="flex items-center gap-3 mb-5">
     <div className="w-8 h-8 rounded-xl bg-[#345E85]/10 text-[#345E85] flex items-center justify-center">{icon}</div>
@@ -132,7 +115,7 @@ const PortfolioAnalyticsPage: React.FC = () => {
       <div className="max-w-[1536px] mx-auto space-y-10">
 
         {/* ── Header ── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Portfolio Analytics</h1>
             <p className="text-slate-400 mt-1 uppercase text-[10px] font-black tracking-widest">
@@ -155,20 +138,6 @@ const PortfolioAnalyticsPage: React.FC = () => {
               <RotateCcw className="w-4 h-4" />
             </button>
           </div>
-        </div>
-
-        {/* ── KPI Row ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard label="Total Disbursed" value={fmtRWF(p.total_amount_disbursed ?? 0)}
-            sub={`${p.total_loans_issued ?? 0} loans issued`} icon={<DollarSign className="w-5 h-5" />} accent />
-          <KpiCard label="Outstanding Balance" value={fmtRWF(p.outstanding_balance ?? 0)}
-            sub="Active loan book" icon={<Activity className="w-5 h-5" />} />
-          <KpiCard label="Recovery Rate" value={fmtPct(p.recovery_rate)}
-            sub="Repaid / Disbursed" icon={<TrendingUp className="w-5 h-5" />}
-            trend={p.recovery_rate != null ? p.recovery_rate - 100 : undefined} />
-          <KpiCard label="Default Rate" value={fmtPct(p.default_rate)}
-            sub="Basel II PDr proxy" icon={<AlertTriangle className="w-5 h-5" />}
-            trend={p.default_rate != null ? -p.default_rate : undefined} />
         </div>
 
         {/* ── IFRS 9 + Basel II Standards Summary ── */}

@@ -7,7 +7,6 @@ import {
   MapPin, 
   DollarSign, 
   Droplets, 
-  History,
   TrendingUp,
   CreditCard,
   Truck,
@@ -86,9 +85,6 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
   });
 
   const stats = {
-    totalSpend: driverStats?.totalSpend || 0,
-    totalVolume: driverStats?.totalVolume || 0,
-    avgPrice: driverStats?.avgPricePerGallon || 0,
     efficiencyMpg: driverStats?.efficiencyMpg || 0,
     ecoScore: driverStats?.ecoScore || 0,
     co2Saved: driverStats?.co2Saved || 0,
@@ -129,12 +125,6 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
     });
   };
 
-  const { data: wallet, isLoading: walletLoading } = useQuery({
-    queryKey: ['driver-fuel-wallet', driverId],
-    queryFn: () => fuelApi.getDriverWallet(driverId),
-    enabled: !!driverId,
-  });
-
   // formatCurrency provided by useCurrencyFormat hook above
 
   return (
@@ -170,53 +160,6 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
               <Plus size={18} />
               <TranslatedText text="Record Fuel Log" />
             </button>
-        </div>
-      </div>
-
-      {/* Summary Matrix */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="relative bg-gradient-to-br from-[#345E85] via-[#2a4b6d] to-[#1e3a5a] rounded-[2rem] p-8 border border-white/10 shadow-xl shadow-[#345E85]/20 group transition-all duration-500 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-400/10 blur-[80px] rounded-full -mr-16 -mt-16" />
-          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-6 text-white transition-transform group-hover:scale-110">
-            <CreditCard size={24} />
-          </div>
-          <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1"><TranslatedText text="Fuel Wallet Balance" /></p>
-          <h3 className="text-3xl sm:text-4xl font-black tracking-tight text-white italic font-mono">
-             {walletLoading ? '...' : formatCurrency(wallet?.balance || 0)}
-          </h3>
-          <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mt-2"><TranslatedText text="Available for Refill" /></p>
-        </div>
-
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-6 text-[#345E85] transition-transform group-hover:scale-110">
-            <DollarSign size={24} />
-          </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Total Fuel Spend" /></p>
-          <h3 className="text-3xl font-black text-[#0f172a] lowercase tracking-tight">
-            {formatCurrency(stats.totalSpend)}
-          </h3>
-          <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mt-2 flex items-center gap-1">
-            <TrendingUp size={12} />
-            <TranslatedText text="Updated live" />
-          </p>
-        </div>
-
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-6 text-amber-600 transition-transform group-hover:scale-110">
-            <Droplets size={24} />
-          </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Total Gallons" /></p>
-          <h3 className="text-3xl font-black text-[#0f172a] tracking-tight">{Number(stats.totalVolume).toFixed(1)} GAL</h3>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2"><TranslatedText text="Volume Yield" /></p>
-        </div>
-
-        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-6 text-[#345E85] transition-transform group-hover:scale-110">
-            <History size={24} />
-          </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="Avg Price / GAL" /></p>
-          <h3 className="text-3xl font-black text-[#0f172a] tracking-tight">{formatCurrency(stats.avgPrice)}</h3>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2"><TranslatedText text="Market Rate" /></p>
         </div>
       </div>
 

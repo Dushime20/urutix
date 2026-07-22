@@ -1,14 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
-import { 
-  FaHistory, FaChartLine, FaDownload, FaFilter, FaSearch,
-  FaArrowDown, FaArrowUp, FaCalendar, FaCoins, FaTruck
+import {
+  FaHistory,
+  FaDownload,
+  FaFilter,
+  FaSearch,
+  FaArrowDown,
+  FaArrowUp,
+  FaCalendar,
+  FaCoins,
+  FaTruck
 } from 'react-icons/fa';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import api from '../../services/api';
-import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
 import { format } from 'date-fns';
 
@@ -223,41 +229,6 @@ const CreditUsageHistory: React.FC = () => {
       }
     >
       <div className="safe-bottom">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <StatCard
-          title={<TranslatedText text="Total Consumed" />}
-          value={stats.totalConsumed.toLocaleString()}
-          icon={<FaArrowDown className="w-5 h-5" />}
-          color="primary"
-          subtitle={`Last ${dateRange} days`}
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Total Purchased" />}
-          value={stats.totalPurchased.toLocaleString()}
-          icon={<FaArrowUp className="w-5 h-5" />}
-          color="primary"
-          subtitle={`Last ${dateRange} days`}
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Bonus Credits" />}
-          value={stats.totalBonus.toLocaleString()}
-          icon={<FaCoins className="w-5 h-5" />}
-          color="primary"
-          subtitle={`Last ${dateRange} days`}
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Daily Average" />}
-          value={stats.averageDaily.toFixed(1)}
-          icon={<FaChartLine className="w-5 h-5" />}
-          color="primary"
-          subtitle="Credits per day"
-          variant="classic"
-        />
-      </div>
 
       {/* Top Consumers */}
       {stats.topConsumers.length > 0 && (

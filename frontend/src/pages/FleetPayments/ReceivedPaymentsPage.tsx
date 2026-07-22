@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
-import { TrendingUp, Clock, CheckCircle, AlertCircle, Inbox, Building, User } from 'lucide-react';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { AlertCircle, Inbox, Building, User } from 'lucide-react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const statusStyle: Record<string, string> = {
@@ -15,10 +14,7 @@ const statusStyle: Record<string, string> = {
 };
 
 const ReceivedPaymentsPage = () => {
-  // compact(amount, fromCurrency) → converts FROM fromCurrency TO user's preferred currency,
-  // then formats in K/M/B compact notation.
-  // compactIn(amount, targetCurrency, fromCurrency) → converts to a specific target currency.
-  const { compact, compactIn } = useCurrencyFormat();
+  const { compactIn } = useCurrencyFormat();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -31,11 +27,10 @@ const ReceivedPaymentsPage = () => {
   });
 
   const payments: any[] = data?.data?.data?.payments || [];
-  const summary = data?.data?.data?.summary || {};
 
   // Currency that the backend stores amounts in (from summary or first payment).
   // All amounts from the /all endpoint are in the same currency.
-  const payCurrency: string = summary?.currency || payments[0]?.currency || 'RWF';
+  const payCurrency: string = data?.data?.data?.summary?.currency || payments[0]?.currency || 'RWF';
 
   const filtered = useMemo(() => {
     let list = [...payments];
@@ -58,16 +53,6 @@ const ReceivedPaymentsPage = () => {
     return list;
   }, [payments, statusFilter, sourceFilter, search]);
 
-  // Sum totals in the payment's native currency — compact() will handle conversion
-  // to the user's preferred currency when rendering the stat cards.
-  const totalCompleted = payments
-    .filter((p: any) => p.status === 'completed')
-    .reduce((s: number, p: any) => s + Number(p.amount), 0);
-
-  const totalPending = payments
-    .filter((p: any) => p.status === 'pending' || p.status === 'processing')
-    .reduce((s: number, p: any) => s + Number(p.amount), 0);
-
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
       <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]" />
@@ -83,35 +68,6 @@ const ReceivedPaymentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          title="Total Received"
-          // compact(amount, fromCurrency): converts from payCurrency → preferred currency
-          value={compact(totalCompleted, payCurrency)}
-          subtitle={`${payments.filter((p: any) => p.status === 'completed').length} completed`}
-          icon={<TrendingUp size={24} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title="Pending / Processing"
-          value={compact(totalPending, payCurrency)}
-          subtitle={`${payments.filter((p: any) => p.status === 'pending' || p.status === 'processing').length} in progress`}
-          icon={<Clock size={24} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title="Total Payments"
-          value={summary.totalPayments ?? payments.length}
-          subtitle={`${summary.lenderPaymentsCount ?? 0} via lender · ${(summary.totalPayments ?? payments.length) - (summary.lenderPaymentsCount ?? 0)} direct`}
-          icon={<CheckCircle size={24} />}
-          color="primary"
-          variant="classic"
-        />
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <input

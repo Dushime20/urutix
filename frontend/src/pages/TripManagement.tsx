@@ -28,7 +28,6 @@ import { getApiErrorMessage } from '../config/errorMessages';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 import { cn } from '../utils/cn';
 import ModernLoader from '../components/common/ModernLoader';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 
 /**
@@ -336,38 +335,6 @@ const TripManagement: React.FC = () => {
         </div>
         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Trip Management</h1>
         <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Monitor active trips, schedule shipments, and track fleet performance.</p>
-      </div>
-
-      {/* Stats Matrix */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white dark:bg-slate-900 p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-        <CircularStatCard
-          title="Total Trips"
-          value={trips.length}
-          icon={Route}
-          colorClass="bg-blue-50 dark:bg-blue-900/30 text-[#345E85] dark:text-blue-400"
-          secondaryColor="text-[#345E85] dark:text-blue-400"
-        />
-        <CircularStatCard
-          title="In Progress"
-          value={trips.filter((t: Trip) => t.status === 'IN_PROGRESS').length}
-          icon={Truck}
-          colorClass="bg-info-50 dark:bg-blue-900/30 text-blue-500 dark:text-blue-400"
-          secondaryColor="text-blue-500 dark:text-blue-400"
-        />
-        <CircularStatCard
-          title="Planned"
-          value={trips.filter((t: Trip) => t.status === 'PLANNED').length}
-          icon={Clock}
-          colorClass="bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400"
-          secondaryColor="text-amber-500 dark:text-amber-400"
-        />
-        <CircularStatCard
-          title="Completed"
-          value={trips.filter((t: Trip) => t.status === 'COMPLETED').length}
-          icon={CheckCircle}
-          colorClass="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400"
-          secondaryColor="text-emerald-600 dark:text-emerald-400"
-        />
       </div>
 
       {/* Filters and View Toggle */}

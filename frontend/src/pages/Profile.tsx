@@ -3,7 +3,7 @@ import {
   User, Mail, Phone, Building2, MapPin, 
   Globe, Info, Save, Edit, Camera,
   Shield, Clock, Star, CheckCircle, FileCheck,
-  Building, CreditCard, Bell, Lock, Activity,
+  Building, Bell, Lock, Activity,
   Smartphone, Languages, ShieldCheck, Settings, X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,18 +11,10 @@ import { authAPI } from '../services/api';
 import { tenantApi, type TenantInfo } from '../services/tenantApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { KycManagementPage } from '../components/UserKYC/KycManagementPage';
-import { StatCard } from '../components/EnliteUI/Cards/StatCard';
 import { toast } from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import CurrencySelector from '../components/common/CurrencySelector';
-
-// Helper for BarChart if needed, or just use plain icon
-const BarChart = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" />
-  </svg>
-);
 
 interface UserProfile {
   id: string;
@@ -535,30 +527,6 @@ const Profile: React.FC = () => {
                             <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{tenant.name || 'Organization'}</h2>
                             <p className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Tenant ID: {tenant.id?.split('-')[0] || 'N/A'}</p>
                          </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                         <StatCard 
-                            title="Subscription"
-                            value={tenant.subscription?.plan?.toUpperCase() || 'FREE'}
-                            icon={<CreditCard />}
-                            color="purple"
-                            subtitle={`Active until ${tenant.subscription?.expiresAt ? new Date(tenant.subscription.expiresAt).toLocaleDateString() : 'Unknown'}`}
-                         />
-                         <StatCard 
-                            title="Operational Level"
-                            value={tenant.type?.replace('-', ' ').toUpperCase() || 'STANDARD'}
-                            icon={<Activity />}
-                            color="emerald"
-                            subtitle="Primary Domain"
-                         />
-                         <StatCard 
-                            title="System Status"
-                            value="OPTIMAL"
-                            icon={<BarChart size={24} />}
-                            color="info"
-                            subtitle="System Performance"
-                         />
                       </div>
 
                       <div className="space-y-6 pt-6">

@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
-import { AlertCircle, CheckCircle, DollarSign, Inbox, ChevronLeft, ChevronRight, Building, User } from 'lucide-react';
-import { StatCard } from '@/components/EnliteUI/Cards/StatCard';
+import { AlertCircle, Inbox, ChevronLeft, ChevronRight, Building, User } from 'lucide-react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 // fmt replaced by useCurrencyFormat hook
@@ -32,7 +31,6 @@ const FleetTransactionHistoryPage = () => {
   });
 
   const transactions: any[] = data?.data?.data?.payments || [];
-  const summary = data?.data?.data?.summary || {};
 
   const filtered = useMemo(() => {
     let list = transactions;
@@ -63,8 +61,6 @@ const FleetTransactionHistoryPage = () => {
     [transactions]
   );
 
-  const currency = transactions[0]?.currency || 'RWF';
-
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
       <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]" />
@@ -80,33 +76,6 @@ const FleetTransactionHistoryPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          title="Total Received"
-          value={fmt(summary.totalAmount || 0, currency)}
-          subtitle={`${summary.totalPayments || 0} transactions`}
-          icon={<CheckCircle size={24} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title="Showing"
-          value={filtered.length}
-          subtitle="matching filter"
-          icon={<DollarSign size={24} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title="Currency"
-          value={currency}
-          subtitle="all transactions"
-          icon={<CheckCircle size={24} />}
-          color="primary"
-          variant="classic"
-        />
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <input

@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Users,
   UserCheck,
   Star,
   Award,
   Target,
   Plus,
   User,
-  CheckCircle2,
   List,
   ChevronRight,
-  TrendingUp,
-  ShieldCheck,
   Layout,
   UserPlus
 } from 'lucide-react';
@@ -22,7 +18,6 @@ import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import { DriversList } from '../components/FleetDashboard/DriversList';
 import { DriverAssignments } from '../components/FleetDashboard/DriverAssignments';
 import { cn } from '../utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserRatings from './UserRatings';
 import UserRewards from './UserRewards';
@@ -169,38 +164,6 @@ const UnifiedDriverManagement: React.FC = () => {
             Add New Driver
           </button>
         </div>
-      </div>
-
-      {/* Stats Matrix */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 place-items-center bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-        <CircularStatCard
-          title="Total Drivers"
-          value={loadingDrivers ? '...' : drivers.length}
-          icon={Users}
-          colorClass="bg-blue-50 text-blue-600"
-          secondaryColor="text-blue-600"
-        />
-        <CircularStatCard
-          title="Available"
-          value={loadingDrivers ? '...' : drivers.filter(d => !d.currentTruckId).length}
-          icon={CheckCircle2}
-          colorClass="bg-emerald-50 text-emerald-600"
-          secondaryColor="text-emerald-600"
-        />
-        <CircularStatCard
-          title="Average Rating"
-          value="94.2%"
-          icon={TrendingUp}
-          colorClass="bg-primary-50 text-primary-500"
-          secondaryColor="text-primary-500"
-        />
-        <CircularStatCard
-          title="Documents"
-          value="100%"
-          icon={ShieldCheck}
-          colorClass="bg-purple-50 text-purple-600"
-          secondaryColor="text-purple-600"
-        />
       </div>
 
       {/* Navigation Sub-Surface */}

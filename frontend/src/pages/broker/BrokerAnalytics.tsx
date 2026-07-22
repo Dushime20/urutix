@@ -4,15 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerStatistics } from '../../services/brokerApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { 
-  TrendingUp, 
-  DollarSign, 
-  Package, 
   BarChart3,
   Calendar,
-  Activity,
-  Zap,
-  Shield,
-  ArrowRight
 } from 'lucide-react';
 import {
   LineChart,
@@ -110,26 +103,6 @@ const BrokerAnalytics: React.FC = () => {
              </select>
            </div>
         </div>
-      </div>
-
-      {/* Primary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {[
-          { label: 'Revenue', value: fmtMoney(statistics?.totalCommissions ?? 0), icon: DollarSign },
-          { label: 'Settled', value: fmtMoney(statistics?.totalEarned ?? 0), icon: TrendingUp },
-          { label: 'Loads', value: statistics?.totalLoads || 0, icon: Package },
-          { label: 'Yield', value: `${(statistics?.averageCommissionRate ?? 0).toFixed(1)}%`, icon: Activity },
-        ].map((stat, i) => (
-          <div key={i} className="group bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden relative dark:bg-slate-900 dark:border-slate-800">
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all mb-8 shadow-sm dark:bg-slate-800/50">
-                <stat.icon size={20} />
-              </div>
-              <p className="text-sm font-bold text-slate-400 uppercase mb-2">{stat.label}</p>
-              <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{stat.value}</h3>
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Analysis Grid */}

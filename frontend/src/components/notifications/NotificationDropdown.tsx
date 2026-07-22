@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, X, ExternalLink, Clock } from 'lucide-react';
 import type { UrutixNotification } from '../../hooks/useNotifications';
@@ -6,6 +6,8 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import { navigateFromNotification } from '../../utils/notificationNavigation';
+import { getNotificationsHubPath } from '../../utils/resolveNotificationRoute';
 
 interface NotificationDropdownProps {
   className?: string;
@@ -28,17 +30,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
   const [selectedNotification, setSelectedNotification] = useState<UrutixNotification | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Track previous open state to detect closing
-  const prevIsOpen = useRef(isOpen);
-
-  // Mark all as read when closing the dropdown
-  useEffect(() => {
-    if (prevIsOpen.current && !isOpen && unreadCount > 0) {
-      markAllAsRead();
-    }
-    prevIsOpen.current = isOpen;
-  }, [isOpen, unreadCount, markAllAsRead]);
 
   // Filter notifications based on active tab
   const filteredNotifications = notifications.filter(n => {
@@ -88,9 +79,19 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
 
 
   const handleNotificationClick = (n: UrutixNotification) => {
-    markAsRead(n.id);
+    // Open detail modal only; mark-as-read happens on successful navigation
     setSelectedNotification(n);
     setIsOpen(false);
+  };
+
+  const handleNavigateFromNotification = (n: UrutixNotification) => {
+    void navigateFromNotification({
+      notification: n,
+      role: user?.role,
+      navigate,
+      markAsRead,
+      onNavigated: () => setSelectedNotification(null),
+    });
   };
 
   const renderNotificationModal = () => {
@@ -152,21 +153,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
                   </p>
                 </div>
 
-                {selectedNotification.actionUrl && (
-                  <button 
-                    onClick={() => {
-                      const url = selectedNotification.actionUrl;
-                      if (url) {
-                        navigate(url);
-                      }
-                      setSelectedNotification(null);
-                    }}
-                    className="w-full py-4 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 focus:outline-none"
-                  >
-                    {selectedNotification.actionText || 'Proceed to Link'}
-                    <ExternalLink size={16} />
-                  </button>
-                )}
+                <button 
+                  onClick={() => handleNavigateFromNotification(selectedNotification)}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 focus:outline-none"
+                >
+                  {selectedNotification.actionText || 'View Details'}
+                  <ExternalLink size={16} />
+                </button>
               </div>
             </motion.div>
           </div>
@@ -177,8 +170,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
   };
 
   const handleViewAll = () => {
-    const path = user?.role === 'CARGO_OWNER' ? '/cargo-owner/notifications' : '/dashboard/notifications';
-    navigate(path);
+    navigate(getNotificationsHubPath(user?.role));
     setIsOpen(false);
   };
 
@@ -354,20 +346,21 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className =
                             })}
                           </span>
 
-                          {notification.actionUrl && (
-                            <button 
-                               className="text-xs font-medium text-[#4F46E5] hover:text-[#4338ca] flex items-center gap-1"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 if (notification.actionUrl) {
-                                   navigate(notification.actionUrl);
-                                 }
-                                 setIsOpen(false);
-                               }}
-                            >
-                               {notification.actionText || 'View Details'} <ExternalLink className="w-3 h-3" />
-                            </button>
-                          )}
+                          <button 
+                             className="text-xs font-medium text-[#4F46E5] hover:text-[#4338ca] flex items-center gap-1"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               void navigateFromNotification({
+                                 notification,
+                                 role: user?.role,
+                                 navigate,
+                                 markAsRead,
+                                 onNavigated: () => setIsOpen(false),
+                               });
+                             }}
+                          >
+                             {notification.actionText || 'View Details'} <ExternalLink className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
                     </div>

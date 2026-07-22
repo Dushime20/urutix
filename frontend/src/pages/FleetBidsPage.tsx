@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Package,
   MapPin,
-  DollarSign,
   Calendar,
   CheckCircle,
   XCircle,
@@ -24,14 +23,12 @@ import {
   Gavel,
   ArrowRight,
   ShieldAlert,
-  TrendingUp
 } from 'lucide-react';
 
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ModernLoader from '../components/common/ModernLoader';
 import type { Cargo } from '../types/cargo';
-import StatCard from '../components/EnliteUI/Cards/StatCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
 import { cn } from '../utils/cn';
 
@@ -402,42 +399,6 @@ const FleetBidsPage: React.FC = () => {
               Refresh
             </button>
           </div>
-        </div>
-
-        {/* Stats Matrix */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Active Offers"
-            value={bids.filter(b => b.bidStatus === 'pending' || b.auctionType === 'REVERSE').length}
-            icon={<Gavel />}
-            color="primary"
-            subtitle="Available bids"
-            variant="classic"
-          />
-          <StatCard
-            title="Live Bids"
-            value={bids.reduce((acc, b) => acc + (b.totalBids || 0), 0)}
-            icon={<TrendingUp />}
-            color="success"
-            subtitle="Total bids placed"
-            variant="classic"
-          />
-          <StatCard
-            title="Total Volume"
-            value={formatCurrency(bids.reduce((acc, curr) => acc + (curr.offeredPrice || 0), 0))}
-            icon={<DollarSign />}
-            color="info"
-            subtitle="Combined value"
-            variant="classic"
-          />
-          <StatCard
-            title="Win Rate"
-            value={`${bids.length > 0 ? Math.round((bids.filter(b => b.bidStatus === 'accepted').length / bids.length) * 100) : 0}%`}
-            icon={<CheckCircle />}
-            color="success"
-            subtitle="Success rate"
-            variant="classic"
-          />
         </div>
 
         {/* Filters and Controls */}

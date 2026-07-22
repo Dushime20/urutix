@@ -698,7 +698,7 @@ export class BiddingService {
       entityType:       EntityType.CARGO,
       entityId:         bidId,
       requiresAction:   true,
-      actionUrl:        `/dashboard/bidding?view=my-bids&bidId=${bidId}`,
+      actionUrl:        `/dashboard/fleet/my-bids?view=my-bids&bidId=${bidId}`,
       actionText:       'Update Bid',
     });
 
@@ -1085,7 +1085,7 @@ export class BiddingService {
         entityType: EntityType.TRIP,
         entityId: tripId || bid.id,
         requiresAction: true,
-        actionUrl: tripId ? `/dashboard/trips` : `/dashboard/bidding`,
+        actionUrl: tripId ? `/dashboard/trips` : `/dashboard/fleet/my-bids`,
         actionText: 'View Trip',
       });
 

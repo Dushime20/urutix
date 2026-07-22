@@ -217,32 +217,6 @@ const MyBidsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-blue-600">{bids.length}</div>
-          <div className="text-sm text-gray-600">Total Bids</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-green-600">
-            {bids.filter(b => b.status === 'ACCEPTED').length}
-          </div>
-          <div className="text-sm text-gray-600">Accepted</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-yellow-600">
-            {bids.filter(b => b.status === 'PENDING').length}
-          </div>
-          <div className="text-sm text-gray-600">Pending</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-2xl font-bold text-red-600">
-            {bids.filter(b => b.status === 'REJECTED').length}
-          </div>
-          <div className="text-sm text-gray-600">Rejected</div>
-        </div>
-      </div>
-
       {/* Bids List */}
       <div className="space-y-4">
         {sortedBids.length === 0 ? (

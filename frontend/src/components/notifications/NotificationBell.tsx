@@ -1,13 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { navigateFromNotification } from '../../utils/notificationNavigation';
+import { getNotificationsHubPath } from '../../utils/resolveNotificationRoute';
 
 const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, isConnected } = useNotifications();
 
   // Close dropdown when clicking outside
@@ -28,16 +32,13 @@ const NotificationBell: React.FC = () => {
   }, [isOpen]);
 
   const handleNotificationClick = async (notification: any) => {
-    // Mark as read
-    if (!notification.isRead) {
-      await markAsRead(notification.id);
-    }
-
-    // Navigate to action URL if available
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
-      setIsOpen(false);
-    }
+    await navigateFromNotification({
+      notification,
+      role: user?.role,
+      navigate,
+      markAsRead,
+      onNavigated: () => setIsOpen(false),
+    });
   };
 
   const handleMarkAllAsRead = async (e: React.MouseEvent) => {
@@ -239,7 +240,7 @@ const NotificationBell: React.FC = () => {
             <div className="p-3 border-t border-gray-200 bg-gray-50">
               <button
                 onClick={() => {
-                  navigate('/notifications');
+                  navigate(getNotificationsHubPath(user?.role));
                   setIsOpen(false);
                 }}
                 className="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"

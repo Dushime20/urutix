@@ -39,20 +39,23 @@ const UnifiedNotificationManagement = () => {
   // Update route when tab changes (for navigation)
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    // Extract base path (either /dashboard or /cargo-owner)
-    const pathParts = location.pathname.split("/").filter(Boolean);
-    const basePath = pathParts[0] ? `/${pathParts[0]}` : "/dashboard";
+    // Keep the current notifications hub prefix (supports nested role bases)
+    const pathname = location.pathname;
+    const hubMatch = pathname.match(
+      /^(\/(?:dashboard\/(?:fleet|broker|driver|customs)|dashboard|cargo-owner|lender|tenant-admin|admin-operational|admin))\/(?:notifications|notification-center)/,
+    );
+    const basePath = hubMatch?.[1] || '/dashboard';
 
-    let categoryParam = "";
-    if (tab === "system") {
-      categoryParam = "?category=SYSTEM";
-    } else if (tab === "cargo") {
-      categoryParam = "?category=CARGO";
-    } else if (tab === "financial") {
-      categoryParam = "?category=FINANCIAL";
+    let categoryParam = '';
+    if (tab === 'system') {
+      categoryParam = '?category=SYSTEM';
+    } else if (tab === 'cargo') {
+      categoryParam = '?category=CARGO';
+    } else if (tab === 'financial') {
+      categoryParam = '?category=FINANCIAL';
     }
 
-    navigate(`${basePath}/notification-center${categoryParam}`, { replace: true });
+    navigate(`${basePath}/notifications${categoryParam}`, { replace: true });
   };
 
   const tabs = [

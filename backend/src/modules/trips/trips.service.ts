@@ -930,7 +930,7 @@ export class TripsService {
       priority: NotificationPriority.HIGH,
       entityType: EntityType.TRIP,
       entityId: tripId,
-      actionUrl: `/dashboard/credits`,
+      actionUrl: `/dashboard/fleet/credits`,
       actionText: 'View Credit Balance',
       templateId: 'credit-deduction-notification',
       metadata: {
@@ -953,7 +953,7 @@ export class TripsService {
       priority: NotificationPriority.HIGH,
       entityType: EntityType.TRIP,
       entityId: tripId,
-      actionUrl: `/dashboard/credits`,
+      actionUrl: `/dashboard/fleet/credits`,
       actionText: 'View Credit Balance',
       templateId: 'credit-deduction-notification',
       metadata: {

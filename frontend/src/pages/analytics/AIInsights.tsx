@@ -11,13 +11,10 @@ import {
 } from '@mui/material';
 import { CheckCircle2 } from 'lucide-react';
 import {
-  Psychology as AIIcon,
-  TrendingUp as TrendingUpIcon,
   Warning as WarningIcon,
   Lightbulb as InsightIcon,
   AutoFixHigh as OptimizeIcon,
 } from '@mui/icons-material';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi } from '../../services/analyticsApi';
 import DataCard from '../../components/EnliteUI/Cards/DataCard';
@@ -44,7 +41,7 @@ export const AIInsights: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError, refetch: refetchDashboard } = useQuery({
+  const { error: dashboardError, refetch: refetchDashboard } = useQuery({
     queryKey: ['analytics', 'ai', 'dashboard', user?.tenantId],
     queryFn: async () => {
       const raw = await analyticsApi.getAIDashboardSummary();
@@ -111,71 +108,8 @@ export const AIInsights: React.FC = () => {
     );
   }
 
-  const potentialSavings = dashboardData?.summary?.potentialSavings;
-  const confidence = dashboardData?.latestPrediction?.confidence;
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-
-      {/* ── Summary Cards ───────────────────────────────────────────────────── */}
-      {dashboardLoading ? (
-        <Grid container spacing={3}>
-          {[1,2,3,4].map(i => (
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
-              <div className="h-32 bg-white rounded-3xl border border-slate-100 animate-pulse" />
-            </Grid>
-          ))}
-        </Grid>
-      ) : dashboardData ? (
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="TOTAL INSIGHTS"
-              value={dashboardData.totalInsights?.toString() ?? '—'}
-              subtitle="AI RECOMMENDATIONS"
-              icon={<AIIcon />}
-              color="primary"
-              variant="classic"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="ACTIVE ALERTS"
-              value={dashboardData.activeAlerts?.toString() ?? '—'}
-              subtitle="ISSUES DETECTED"
-              icon={<WarningIcon />}
-              color="error"
-              variant="classic"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="POTENTIAL SAVINGS"
-              value={fmtMoney(potentialSavings)}
-              subtitle="ESTIMATED SAVINGS"
-              icon={<TrendingUpIcon />}
-              color="success"
-              variant="classic"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              title="CONFIDENCE"
-              value={confidence != null ? `${(confidence * 100).toFixed(0)}%` : '—'}
-              subtitle="AVERAGE ACCURACY"
-              icon={<InsightIcon />}
-              color="secondary"
-              variant="classic"
-            />
-          </Grid>
-        </Grid>
-      ) : (
-        <div className="p-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200 text-center">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            No AI insights available yet. Generate insights to get started.
-          </p>
-        </div>
-      )}
 
       {/* ── AI Assistant ────────────────────────────────────────────────────── */}
       <DataCard title="AI ANALYTICS ASSISTANT" subtitle="AI-powered predictions and suggestions">

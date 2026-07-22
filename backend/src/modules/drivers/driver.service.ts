@@ -1441,7 +1441,7 @@ export class DriverService {
         entityId: savedIncident.id,
         entityType: EntityType.DRIVER,
         channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
-        actionUrl: `/dashboard/fleet/safety/${savedIncident.id}`,
+        actionUrl: `/dashboard/fleet/safety`,
         actionText: 'View Incident',
       });
       this.logger.log(`✅ Notified truck owner: ${driver.employerId}`);
@@ -1468,7 +1468,7 @@ export class DriverService {
           entityId: savedIncident.id,
           entityType: EntityType.CARGO,
           channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
-          actionUrl: `/cargo-owner/shipments/${activeTrip.load.id}`,
+          actionUrl: `/dashboard/tracking/trips/${activeTrip.load.id}`,
           actionText: 'View Shipment',
           metadata: {
             incidentId: savedIncident.id,

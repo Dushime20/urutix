@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import {
-    FileText,
-    Clock,
     DollarSign,
     CheckCircle,
     XCircle,
@@ -12,15 +10,13 @@ import {
     Filter,
     ArrowUpRight,
     AlertCircle,
-    TrendingUp,
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
-import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import { TranslatedText } from '../translated-text';
-import { useTranslation } from '../../hooks/useTranslation';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import LoanDetailModal from './LoanDetailModal';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { TranslatedText } from '../translated-text';
+import { useTranslation } from '../../hooks/useTranslation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -218,13 +214,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
 
     // ── Derived stats — only from real data ───────────────────────────────────
 
-    const totalAmount     = disbursements.reduce((s, d) => s + (d.amount ?? 0), 0);
-    const disbursedAmount = disbursements
-        .filter(d => d.status === 'disbursed')
-        .reduce((s, d) => s + (d.amount ?? 0), 0);
-    const pendingCount    = disbursements.filter(d => d.status === 'pending').length;
     const approvedCount   = disbursements.filter(d => d.status === 'approved').length;
-    const disbursedCount  = disbursements.filter(d => d.status === 'disbursed').length;
 
     // ── Filtered data ─────────────────────────────────────────────────────────
 
@@ -390,42 +380,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-
-            {/* ── Stats Row ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    title={t("Total Pipeline")}
-                    value={disbursements.length.toString()}
-                    subtitle={`${formatAmount(totalAmount > 0 ? totalAmount : null)} ${t("total")}`}
-                    icon={<FileText size={24} />}
-                    color="primary"
-                    variant="classic"
-                />
-                <StatCard
-                    title={t("Pending Approval")}
-                    value={pendingCount.toString()}
-                    subtitle={pendingCount > 0 ? t('Awaiting review') : t('None pending')}
-                    icon={<Clock size={24} />}
-                    color="warning"
-                    variant="classic"
-                />
-                <StatCard
-                    title={t("Approved — Ready")}
-                    value={approvedCount.toString()}
-                    subtitle={approvedCount > 0 ? t('Ready to disburse') : t('None approved')}
-                    icon={<CheckCircle size={24} />}
-                    color="success"
-                    variant="classic"
-                />
-                <StatCard
-                    title={t("Disbursed")}
-                    value={disbursedCount.toString()}
-                    subtitle={disbursedAmount > 0 ? formatAmount(disbursedAmount) : t('None disbursed')}
-                    icon={<TrendingUp size={24} />}
-                    color="secondary"
-                    variant="classic"
-                />
-            </div>
 
             {/* Approved loans alert — these need action */}
             {approvedCount > 0 && (

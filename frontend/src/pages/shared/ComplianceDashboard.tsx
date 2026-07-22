@@ -7,13 +7,12 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ShieldCheck, ShieldAlert, ShieldOff, Truck, Users,
+  ShieldCheck, Truck, Users,
   AlertTriangle, CheckCircle2, Clock, RefreshCw
 } from 'lucide-react';
 import { complianceApi } from '../../services/featuresApi';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 
 const ComplianceDashboard: React.FC = () => {
   const [selectedEntity, setSelectedEntity] = useState<{ type: 'driver' | 'truck'; id: string } | null>(null);
@@ -61,42 +60,6 @@ const ComplianceDashboard: React.FC = () => {
           <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
           <TranslatedText text="Refresh" />
         </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={<TranslatedText text="Compliant Drivers" />}
-          value={`${drivers.compliant}/${drivers.total}`}
-          icon={<Users size={20} />}
-          color="primary"
-          variant="classic"
-          subtitle={<span className="text-emerald-600 dark:text-emerald-400 font-black">{driverCompliantPct}% compliant</span>}
-        />
-        <StatCard
-          title={<TranslatedText text="Driver Issues" />}
-          value={drivers.nonCompliant}
-          icon={<ShieldAlert size={20} />}
-          color={drivers.nonCompliant > 0 ? 'primary' : 'primary'}
-          variant="classic"
-          subtitle={<TranslatedText text="Expired documents" />}
-        />
-        <StatCard
-          title={<TranslatedText text="Compliant Trucks" />}
-          value={`${trucks.compliant}/${trucks.total}`}
-          icon={<Truck size={20} />}
-          color="primary"
-          variant="classic"
-          subtitle={<span className="text-emerald-600 dark:text-emerald-400 font-black">{truckCompliantPct}% compliant</span>}
-        />
-        <StatCard
-          title={<TranslatedText text="Truck Issues" />}
-          value={trucks.nonCompliant}
-          icon={<ShieldOff size={20} />}
-          color="primary"
-          variant="classic"
-          subtitle={<TranslatedText text="Expired documents" />}
-        />
       </div>
 
       {/* Status Breakdown */}

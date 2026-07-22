@@ -13,7 +13,7 @@ import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { io, Socket } from 'socket.io-client';
 import {
-  Truck, Wifi, WifiOff, Shield, Navigation, Activity, TrendingUp,
+  Truck, Wifi, WifiOff, Navigation, Activity,
   Loader2, CheckCircle, X, MessageCircle, MessageSquare, User,
   Clock, Gauge, MapPin, Radio, History, Package, ExternalLink,
   Filter, Search, RefreshCw, Target, ChevronRight,
@@ -23,7 +23,6 @@ import receiverService from '../services/receiverService';
 import { brokerAPI } from '../services/brokerApi';
 import api from '../services/api';
 import { cn } from '@/utils/cn';
-import { CircularStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { getApiBaseUrl } from '../config/environment';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
@@ -354,10 +353,6 @@ const Tracking: React.FC = () => {
     return 0;
   };
 
-  const totalActive    = allShipments.filter(s => s.status === 'IN_TRANSIT' || s.status === 'DELAYED').length;
-  const totalCompleted = allShipments.filter(s => s.status === 'DELIVERED').length;
-  const onTimeRate     = allShipments.length ? Math.round(allShipments.filter(s => s.status !== 'DELAYED' && s.status !== 'CANCELLED').length / allShipments.length * 100) : 100;
-
   const isActive = (s: Shipment) => s.status === 'IN_TRANSIT' || s.status === 'DELAYED';
 
   // get the right tracking path based on user role
@@ -399,14 +394,6 @@ const Tracking: React.FC = () => {
         >
           <RefreshCw size={13} className={cn(refreshing && 'animate-spin')} /> Refresh
         </button>
-      </div>
-
-      {/* ── Summary stats ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 bg-slate-50/50 p-3 sm:p-5 rounded-2xl border border-slate-100">
-        <CircularStatCard title="Active" value={totalActive} icon={Activity} colorClass="bg-blue-50 text-[#345E85]" secondaryColor="text-[#345E85]" />
-        <CircularStatCard title="Completed" value={totalCompleted} icon={CheckCircle} colorClass="bg-emerald-50 text-emerald-600" secondaryColor="text-emerald-600" />
-        <CircularStatCard title="On-time" value={`${onTimeRate}%`} icon={Shield} colorClass="bg-amber-50 text-amber-600" secondaryColor="text-amber-600" />
-        <CircularStatCard title="All Trips" value={allShipments.length} icon={TrendingUp} colorClass="bg-purple-50 text-purple-600" secondaryColor="text-purple-600" />
       </div>
 
       {/* ── Status filter tabs ─────────────────────────────────────────────── */}

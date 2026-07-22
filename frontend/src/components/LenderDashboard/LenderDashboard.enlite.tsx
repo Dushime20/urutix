@@ -132,7 +132,7 @@ const LenderDashboardEnlite: React.FC = () => {
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 space-y-8">
 
       {/* ── Header ── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-black text-[#345E85] uppercase tracking-[0.2em] mb-1">
             <TranslatedText text="Lending Dashboard" />

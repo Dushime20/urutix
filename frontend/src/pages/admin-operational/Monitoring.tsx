@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaMapMarkedAlt, FaTruck, FaExclamationTriangle } from 'react-icons/fa';
+import { FaMapMarkedAlt } from 'react-icons/fa';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
 import type { Trip } from '../../services/tenantApi';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
@@ -12,7 +11,6 @@ const OperationalAdminMonitoring: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTrips, setActiveTrips] = useState<Trip[]>([]);
-  const [routePerformance, setRoutePerformance] = useState<any[]>([]);
 
   useEffect(() => {
     if (user?.tenantId) {
@@ -25,29 +23,21 @@ const OperationalAdminMonitoring: React.FC = () => {
   const fetchMonitoringData = async (tenantId: string) => {
     try {
       setLoading(true);
-      const [tripsData, healthData] = await Promise.all([
-        operationalAdminApi.getTrips(),
-        operationalAdminApi.getHealth(),
-      ]);
+      const tripsData = await operationalAdminApi.getTrips();
       const allTrips: any[] = Array.isArray(tripsData)
         ? tripsData
         : tripsData?.trips ?? tripsData?.data ?? tripsData?.items ?? [];
       // Scope to this tenant only
       const tenantTrips = allTrips.filter((t: any) => !t.tenantId || t.tenantId === tenantId);
       setActiveTrips(tenantTrips.filter((t: any) => ['IN_PROGRESS', 'DELAYED'].includes(t.status)));
-      const routes = healthData?.activeRoutes ?? healthData?.routes ?? [];
-      setRoutePerformance(Array.isArray(routes) ? routes : []);
     } catch (error: any) {
       toast.error(getApiErrorMessage(error));
       console.error(error);
       setActiveTrips([]);
-      setRoutePerformance([]);
     } finally {
       setLoading(false);
     }
   };
-
-  const delayedTrips = activeTrips.filter(t => t.status === 'DELAYED').length;
 
   return (
     <OperationalPageLayout
@@ -58,33 +48,6 @@ const OperationalAdminMonitoring: React.FC = () => {
         <ModernLoader isLoading={true} type="page" />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard
-              title="Active Trips"
-              value={activeTrips.length}
-              icon={<FaTruck size={22} />}
-              color="primary"
-              variant="classic"
-              subtitle="Currently in transit"
-            />
-            <StatCard
-              title="Delayed Trips"
-              value={delayedTrips}
-              icon={<FaExclamationTriangle size={22} />}
-              color="error"
-              variant="classic"
-              subtitle="Action required"
-            />
-            <StatCard
-              title="Monitored Routes"
-              value={routePerformance.length}
-              icon={<FaMapMarkedAlt size={22} />}
-              color="success"
-              variant="classic"
-              subtitle="Active route analysis"
-            />
-          </div>
-
           <div className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <FaMapMarkedAlt className="text-primary-500" /> Live Tracking Feed

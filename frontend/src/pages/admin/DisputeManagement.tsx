@@ -1,16 +1,27 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Gavel, AlertTriangle, Search, Download,
-  Eye, Clock, CheckCircle, XCircle, Hourglass, Scale,
-  FileText, Flag, X, ChevronDown, RefreshCw
+  Gavel,
+  AlertTriangle,
+  Search,
+  Download,
+  Eye,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Hourglass,
+  Scale,
+  FileText,
+  Flag,
+  X,
+  ChevronDown,
+  RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import { adminAPI, type AdminDispute } from '../../services/adminApi';
 import ModernLoader from '../../components/common/ModernLoader';
-import { StatCard } from '../../components/EnliteUI';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -362,43 +373,6 @@ const DisputeManagement: React.FC = () => {
     >
       <div className="safe-bottom">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <StatCard
-          title={<TranslatedText text="Total" />}
-          value={stats.total}
-          icon={<Gavel size={18} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Open" />}
-          value={stats.open}
-          icon={<Flag size={18} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Resolved" />}
-          value={stats.resolved}
-          icon={<CheckCircle size={18} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Escalated" />}
-          value={stats.escalated}
-          icon={<AlertTriangle size={18} />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Rejected" />}
-          value={stats.rejected}
-          icon={<XCircle size={18} />}
-          color="primary"
-          variant="classic"
-        />
-      </div>
 
       {/* Filters */}
       <div className="bg-white rounded-[24px] border border-gray-100 p-4 mb-6">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fuelApi } from '../../../services/fuelApi';
 import { useAuth } from '../../../contexts/AuthContext';
-import { DollarSign, Check, X, Clock, User } from 'lucide-react';
+import { Check, X, Clock, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
 
@@ -10,7 +10,6 @@ export const FuelAdvancesTab: React.FC = () => {
     const { compact: formatCurrency } = useCurrencyFormat();
     const [pendingAdvances, setPendingAdvances] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const [stats, setStats] = useState<any>(null);
 
     // Truck owners see only their drivers' advances; admins/fleet managers see all
     const isAdminRole = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'FLEET_MANAGER', 'FLEET_ACCOUNTANT'].includes(user?.role || '');
@@ -22,12 +21,10 @@ export const FuelAdvancesTab: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [advances, advanceStats] = await Promise.all([
-                isAdminRole ? fuelApi.getPendingAdvances() : fuelApi.getPendingAdvancesForMyDrivers(),
-                fuelApi.getAdvanceStats(),
-            ]);
+            const advances = isAdminRole
+                ? await fuelApi.getPendingAdvances()
+                : await fuelApi.getPendingAdvancesForMyDrivers();
             setPendingAdvances(advances || []);
-            setStats(advanceStats);
         } catch (error) {
             console.error('Failed to load advances', error);
         } finally {
@@ -57,29 +54,8 @@ export const FuelAdvancesTab: React.FC = () => {
         }
     };
 
-    // formatCurrency provided by useCurrencyFormat hook above
-
     return (
         <div className="space-y-6">
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                    { label: 'Total Advances', value: stats?.totalAdvances || 0, color: 'text-blue-600', bg: 'bg-blue-50' },
-                    { label: 'Pending Value', value: formatCurrency(stats?.pendingAmount), color: 'text-amber-600', bg: 'bg-amber-50' },
-                    { label: 'Unreconciled', value: formatCurrency((stats?.totalAdvanced || 0) - (stats?.totalReconciled || 0)), color: 'text-rose-600', bg: 'bg-rose-50' },
-                ].map(s => (
-                    <div key={s.label} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] p-6 flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl ${s.bg} flex items-center justify-center`}>
-                            <DollarSign size={20} className={s.color} />
-                        </div>
-                        <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
-                            <p className={`text-xl font-black ${s.color} tracking-tight`}>{s.value}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
             {/* Table */}
             <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden">
                 <div className="px-8 py-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">

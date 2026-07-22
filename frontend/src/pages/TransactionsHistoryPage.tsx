@@ -148,7 +148,7 @@ const TransactionsHistoryPage: React.FC = () => {
       <div className="max-w-[1536px] mx-auto space-y-8">
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase flex items-center gap-3">
               <div className="p-2 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-200">

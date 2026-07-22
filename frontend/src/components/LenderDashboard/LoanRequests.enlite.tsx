@@ -10,7 +10,6 @@ import {
     Download,
     Building,
     ArrowUpRight,
-    Shield,
     CreditCard,
     FileText,
     Activity,
@@ -19,7 +18,6 @@ import {
 } from 'lucide-react';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
-import { StatCard } from '../EnliteUI';
 import ExportModal from '../ExportModal/ExportModal';
 import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
 import LoanApprovalModal from './LoanApprovalModal';
@@ -38,7 +36,7 @@ import {
 interface LoanRequestsEnliteProps {
     loading: boolean;
     requests: any[];
-    analytics: any;
+    analytics?: any;
     onApprove: (id: string, payload: LoanApprovalPayload) => Promise<void>;
     onReject: (id: string, reason: string) => void;
     onViewDetails: (request: any) => void;
@@ -51,7 +49,6 @@ interface LoanRequestsEnliteProps {
 const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     loading,
     requests,
-    analytics,
     onApprove,
     onReject,
     onViewDetails,
@@ -59,7 +56,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onExport,
     autoDisburseLoanId,
 }) => {
-    const { format: formatAmount, compact: compactAmount } = useCurrencyFormat();
+    const { format: formatAmount } = useCurrencyFormat();
     const { tSync: t } = useTranslation();
     const [showExportModal, setShowExportModal] = useState(false);
     const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
@@ -318,14 +315,6 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            {/* Analytics Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title={t("Total Applications")} value={analytics?.totalRequests ?? 0} subtitle={t("Lifetime requests")} icon={<FileText size={18} />} color="primary" variant="classic" />
-                <StatCard title={t("Pending Approval")} value={analytics?.pendingRequests ?? 0} subtitle={t("Requires attention")} icon={<Clock size={18} />} color="primary" variant="classic" />
-                <StatCard title={t("Capital Requested")} value={compactAmount(analytics?.totalAmountRequested || 0)} subtitle={t("Pipeline volume")} icon={<DollarSign size={18} />} color="primary" variant="classic" />
-                <StatCard title={t("Approval Rate")} value={`${analytics?.approvalRate?.toFixed(1) || 0}%`} subtitle={`${t("Avg risk")}: ${analytics?.averageRiskScore?.toFixed(0) || 0}%`} icon={<Shield size={18} />} color="primary" variant="classic" />
-            </div>
-
             {/* Requests Management */}
             <DataCard
                 title={t("Loan Workflow Management")}

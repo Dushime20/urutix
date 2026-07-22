@@ -20,7 +20,6 @@ import {
 import api from "@/services/api";
 import { cn } from "@/utils/cn";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
-import { StatCard } from "@/components/EnliteUI";
 
 interface Inspection {
   id: string;
@@ -99,8 +98,6 @@ const CargoOwnerInspections = () => {
   });
 
   const inspections = data?.data?.inspections || [];
-  const summary = data?.data?.summary;
-
   const toggleExpand = (id: string) => {
     setExpandedInspections((prev) => {
       const next = new Set(prev);
@@ -154,17 +151,6 @@ const CargoOwnerInspections = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Stats */}
-      {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard title="Completed" value={summary.completed} icon={<CheckCircle size={18} />} color="primary" variant="classic" />
-          <StatCard title="Pending" value={summary.pending} icon={<Clock size={18} />} color="primary" variant="classic" />
-          <StatCard title="In Progress" value={summary.inProgress} icon={<ClipboardCheck size={18} />} color="primary" variant="classic" />
-          <StatCard title="Disputed" value={summary.disputed} icon={<XCircle size={18} />} color="primary" variant="classic" />
-          <StatCard title="With Issues" value={summary.withDiscrepancies} icon={<AlertTriangle size={18} />} color="primary" variant="classic" />
-        </div>
-      )}
-
       {/* Filters */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4">

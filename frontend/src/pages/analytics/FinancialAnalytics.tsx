@@ -12,11 +12,7 @@ import {
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
-  LocalShipping as ShippingIcon,
-  Inventory as InventoryIcon,
-  Speed as SpeedIcon,
 } from '@mui/icons-material';
-import { StatCard } from '../../components/EnliteUI/Cards/StatCard';
 import { EnhancedTable, type Column } from '../../components/EnliteUI/Tables/EnhancedTable';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, type CostFilters } from '../../services/analyticsApi';
@@ -135,27 +131,6 @@ const FinancialAnalytics: React.FC = () => {
     },
   ];
 
-  // ── Derived stat values (safe fallbacks) ────────────────────────────────────
-  const totalCostValue = costTrends?.totalCost != null
-    ? fmtMoney(costTrends.totalCost)
-    : `${CURRENCY_SYMBOL}—`;
-
-  const avgCostValue = costTrends?.averageCostPerShipment != null
-    ? fmtMoney(costTrends.averageCostPerShipment, 2)
-    : `${CURRENCY_SYMBOL}—`;
-
-  const totalShipmentsValue = costTrends?.totalShipments != null
-    ? fmtCount(costTrends.totalShipments)
-    : '—';
-
-  const efficiencyValue = financialSummary?.efficiency?.overallEfficiency != null
-    ? fmtPct(financialSummary.efficiency.overallEfficiency)
-    : '—';
-
-  const costChangePct = costTrends?.costChangePercentage ?? 0;
-  const trendDirection: 'up' | 'down' | 'neutral' =
-    costChangePct > 0 ? 'up' : costChangePct < 0 ? 'down' : 'neutral';
-
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -212,56 +187,6 @@ const FinancialAnalytics: React.FC = () => {
           </Grid>
         </Grid>
       </div>
-
-      {/* ── Summary Stats ────────────────────────────────────────────────────── */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="TOTAL COST"
-            value={totalCostValue}
-            subtitle="TOTAL SPENT"
-            trend={costChangePct.toString()}
-            trendDirection={trendDirection}
-            icon={<TrendingUpIcon />}
-            loading={trendsLoading}
-            color="primary"
-            variant="classic"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="AVERAGE UNIT"
-            value={avgCostValue}
-            subtitle="COST PER SHIPMENT"
-            icon={<ShippingIcon />}
-            loading={trendsLoading}
-            color="secondary"
-            variant="classic"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="VOLUME LOG"
-            value={totalShipmentsValue}
-            subtitle="TOTAL SHIPMENT COUNT"
-            icon={<InventoryIcon />}
-            loading={trendsLoading}
-            color="success"
-            variant="classic"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="EFFICIENCY"
-            value={efficiencyValue}
-            subtitle="FINANCIAL EFFICIENCY"
-            icon={<SpeedIcon />}
-            loading={summaryLoading}
-            color="warning"
-            variant="classic"
-          />
-        </Grid>
-      </Grid>
 
       {/* ── Charts ───────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

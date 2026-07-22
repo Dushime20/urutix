@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  FaChartLine, FaDollarSign, FaTruck, FaSearch, FaFilter, FaDownload,
-  FaEye, FaClock,
-  FaGavel, FaCheckCircle, FaTimesCircle, FaExclamationTriangle, FaTimes
+  FaTruck,
+  FaSearch,
+  FaFilter,
+  FaDownload,
+  FaEye,
+  FaClock,
+  FaGavel,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaExclamationTriangle,
+  FaTimes
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { biddingAPI } from '../../services/biddingApi';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
-import { StatCard } from '../../components/EnliteUI';
 import ModernLoader from '../../components/common/ModernLoader';
 
 interface Bid {
@@ -240,18 +247,6 @@ const BiddingManagement: React.FC = () => {
     setShowDetailsModal(true);
   };
 
-  const stats = {
-    total: bids.length,
-    pending: bids.filter(b => b.status?.toUpperCase() === 'PENDING').length,
-    accepted: bids.filter(b => b.status?.toUpperCase() === 'ACCEPTED').length,
-    rejected: bids.filter(b => b.status?.toUpperCase() === 'REJECTED').length,
-    totalValue: bids.reduce((acc, b) => {
-      const amount = parseFloat(String(b.bidAmount || 0));
-      return acc + (isNaN(amount) ? 0 : amount);
-    }, 0),
-    avgRating: 0 // Rating not available in current API response
-  };
-
   if (bidsLoading && bids.length === 0) {
     return (
       <AdminPageLayout
@@ -271,50 +266,6 @@ const BiddingManagement: React.FC = () => {
       <div className="safe-bottom">
 
       {/* Bidding Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
-        <StatCard
-          title={<TranslatedText text="Total Bids" />}
-          value={stats.total}
-          icon={<FaGavel />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Pending" />}
-          value={stats.pending}
-          icon={<FaClock />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Accepted" />}
-          value={stats.accepted}
-          icon={<FaCheckCircle />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Rejected" />}
-          value={stats.rejected}
-          icon={<FaTimesCircle />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Total Value" />}
-          value={fmtMoney(stats.totalValue)}
-          icon={<FaDollarSign />}
-          color="primary"
-          variant="classic"
-        />
-        <StatCard
-          title={<TranslatedText text="Avg Rating" />}
-          value={stats.avgRating}
-          icon={<FaChartLine />}
-          color="primary"
-          variant="classic"
-        />
-      </div>
 
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-2.5">

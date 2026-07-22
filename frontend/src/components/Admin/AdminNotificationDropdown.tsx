@@ -1,11 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { Bell, X, Activity, CheckCheck, Clock, ShieldAlert, Check } from 'lucide-react';
 import { useNotifications } from '../../hooks/useNotifications';
 import type { UrutixNotification } from '../../hooks/useNotifications';
+import { useAuth } from '../../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { navigateFromNotification } from '../../utils/notificationNavigation';
+import { getNotificationsHubPath } from '../../utils/resolveNotificationRoute';
 
 const AdminNotificationDropdown: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     notifications,
     unreadCount,
@@ -135,10 +141,13 @@ const AdminNotificationDropdown: React.FC = () => {
                 <button
                   className="flex-1 py-4 bg-primary-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-primary-700 transition-all shadow-lg shadow-primary-200 active:scale-[0.98]"
                   onClick={() => {
-                    if (selectedNotification.actionUrl) {
-                      window.location.href = selectedNotification.actionUrl;
-                    }
-                    setSelectedNotification(null);
+                    void navigateFromNotification({
+                      notification: selectedNotification,
+                      role: user?.role,
+                      navigate,
+                      markAsRead,
+                      onNavigated: () => setSelectedNotification(null),
+                    });
                   }}
                 >
                   Take Action
@@ -315,7 +324,7 @@ const AdminNotificationDropdown: React.FC = () => {
             <div className="p-4 bg-slate-50 border-t border-slate-100">
               <button
                 className="w-full py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all shadow-sm active:scale-[0.98]"
-                onClick={() => { window.location.href = '/admin/notifications'; setIsOpen(false); }}
+                onClick={() => { navigate(getNotificationsHubPath(user?.role)); setIsOpen(false); }}
               >
                 VIEW ALL SYSTEM ALERTS
               </button>

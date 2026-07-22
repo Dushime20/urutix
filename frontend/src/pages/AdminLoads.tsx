@@ -2,18 +2,30 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  FaBox, FaMapMarkerAlt, FaCalendarAlt, FaWeight,
-  FaSearch, FaDownload, FaEye, FaTrash, FaDollarSign,
+  FaBox,
+  FaMapMarkerAlt,
+  FaCalendarAlt,
+  FaSearch,
+  FaDownload,
+  FaEye,
+  FaTrash
 } from 'react-icons/fa';
 import {
-  X, Package, MapPin, Calendar, User, Building2, Truck,
-  AlertTriangle, CheckCircle2, Clock, Scale, DollarSign,
-  Thermometer, ShieldAlert, ChevronRight, Loader2,
+  X,
+  Package,
+  MapPin,
+  Calendar,
+  User,
+  Building2,
+  Truck,
+  AlertTriangle,
+  Scale,
+  DollarSign,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminLoad } from '../services/adminApi';
-import { StatCard } from '../components/EnliteUI';
 import toast from 'react-hot-toast';
 import ModernLoader from '../components/common/ModernLoader';
 
@@ -122,8 +134,6 @@ const LoadDetailModal: React.FC<LoadDetailModalProps> = ({ load, onClose }) => {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-
-          {/* Quick stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-orange-50 rounded-xl p-3 text-center">
               <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Weight</p>
@@ -404,40 +414,6 @@ const AdminLoads: React.FC = () => {
       <div className="space-y-6">
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Total Loads"
-            value={stats.total}
-            icon={<FaBox size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Platform shipments"
-          />
-          <StatCard
-            title="Active Loads"
-            value={stats.active}
-            icon={<FaBox size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Currently in progress"
-          />
-          <StatCard
-            title="Completed"
-            value={stats.completed}
-            icon={<FaBox size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Successfully delivered"
-          />
-          <StatCard
-            title="Cancelled"
-            value={stats.cancelled}
-            icon={<FaBox size={22} />}
-            color="primary"
-            variant="classic"
-            subtitle="Aborted shipments"
-          />
-        </div>
 
         {/* Filters */}
         <div className="bg-white rounded-xl p-5 flex flex-col md:flex-row gap-4 items-center justify-between border border-transparent">
