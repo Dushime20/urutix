@@ -72,6 +72,7 @@ import { LoanNotificationService } from './services/loan-notification.service';
 import { CurrencyService } from '../currency/currency.service';
 import { ConfigService } from '@nestjs/config';
 import { SubmitLoanOfferDto } from './dto/loan-offer.dto';
+import { buildLoanWorkflowView } from './utils/loan-workflow.util';
 
 @Injectable()
 export class LendingService {
@@ -1364,28 +1365,41 @@ export class LendingService {
       loan.terms_declined_at = null;
       loan.terms_decline_reason = null;
 
+      const isPartial = offer.approved_amount < loan.requested_amount - 0.01;
+      const offerSnapshot = {
+        offered_at: new Date().toISOString(),
+        approved_amount: offer.approved_amount,
+        requested_amount: loan.requested_amount,
+        is_partial_approval: isPartial,
+        offer_type: isPartial ? 'counter_offer' : 'full_offer',
+        loan_term_months: termMonths,
+        due_date: offer.due_date,
+        interest_amount: financials.interest_amount,
+        total_repayable: financials.total_repayable,
+        currency: loan.currency,
+      };
+
       loan.metadata = {
         ...(loan.metadata || {}),
         interest_rate: financials.nominal_rate,
         effective_annual_rate: financials.effective_annual_rate,
         risk_score: financials.risk_score,
         risk_level: financials.risk_level,
-        offer_snapshot: {
-          offered_at: new Date().toISOString(),
-          approved_amount: offer.approved_amount,
-          requested_amount: loan.requested_amount,
-          is_partial_approval: offer.approved_amount < loan.requested_amount,
-          loan_term_months: termMonths,
-          due_date: offer.due_date,
-          interest_amount: financials.interest_amount,
-          total_repayable: financials.total_repayable,
-          currency: loan.currency,
-        },
+        offer_snapshot: offerSnapshot,
+        offer_history: [
+          ...((loan.metadata?.offer_history as any[]) || []),
+          offerSnapshot,
+        ],
+        // Confirming after an appeal resolves the appeal
+        appeal: loan.metadata?.appeal
+          ? { ...loan.metadata.appeal, status: 'resolved', resolved_at: new Date().toISOString() }
+          : null,
+        rejection: null,
       };
 
       const updatedLoan = await manager.save(LoanRequest, loan);
 
-      // Notify borrower with full terms disclosure — disbursement blocked until acceptance
+      // Notify borrower — counter-offer vs full offer; disbursement blocked until acceptance
       try {
         const lender = loan.lender_id
           ? await this.lenderRepository.findOne({ where: { id: loan.lender_id } })
@@ -1409,6 +1423,7 @@ export class LendingService {
               apr: financials.apr,
               currency: updatedLoan.currency,
               loanNumber: updatedLoan.loan_number,
+              isCounterOffer: isPartial,
             },
           );
         }
@@ -1416,7 +1431,7 @@ export class LendingService {
         this.logger.warn(`Could not send loan offer notification: ${notifErr.message}`);
       }
 
-      return updatedLoan;
+      return { ...updatedLoan, ...buildLoanWorkflowView(updatedLoan) };
     });
   }
 
@@ -1491,10 +1506,14 @@ export class LendingService {
       this.logger.warn(`Could not notify lender of terms acceptance: ${notifErr.message}`);
     }
 
-    return saved;
+    return { ...saved, ...buildLoanWorkflowView(saved) };
   }
 
-  /** Borrower declines the lender's formal offer. */
+  /**
+   * Borrower declines the lender's formal offer / counter-offer.
+   * Returns the application to pending so the lender can submit a revised offer
+   * (standard credit negotiation — decline ends the current offer, not the facility).
+   */
   async declineLoanTerms(
     loanId: string,
     userId: string,
@@ -1518,10 +1537,33 @@ export class LendingService {
       throw new ConflictException('Terms already accepted — cannot decline.');
     }
 
-    loan.terms_declined_at = new Date();
-    loan.terms_decline_reason = reason || 'Borrower declined offered terms';
-    loan.status = LoanRequestStatus.REJECTED;
-    loan.rejection_reason = loan.terms_decline_reason;
+    const declineReason = reason || 'Borrower declined offered terms';
+    const declinedOffer = loan.metadata?.offer_snapshot
+      ? { ...loan.metadata.offer_snapshot, declined_at: new Date().toISOString(), decline_reason: declineReason }
+      : null;
+
+    loan.terms_declined_at = null;
+    loan.terms_decline_reason = null;
+    // Re-open for renegotiation — hard reject is lender-only via rejectLoanRequest
+    loan.status = LoanRequestStatus.PENDING;
+    loan.approved_amount = null as any;
+    loan.interest_amount = null as any;
+    loan.apr = null as any;
+    loan.origination_fee_amount = null as any;
+    loan.total_cost_of_credit = null as any;
+    loan.due_date = null as any;
+    loan.loan_term_months = null;
+    loan.terms_offered_at = null;
+    loan.borrower_accepted_at = null;
+    loan.metadata = {
+      ...(loan.metadata || {}),
+      offer_snapshot: null,
+      last_declined_offer: declinedOffer,
+      offer_history: [
+        ...((loan.metadata?.offer_history as any[]) || []),
+        ...(declinedOffer ? [declinedOffer] : []),
+      ],
+    };
 
     const saved = await this.loanRequestRepository.save(loan);
 
@@ -1536,7 +1578,7 @@ export class LendingService {
             lu.id,
             loan.tenant_id,
             loan.id,
-            reason,
+            declineReason,
           );
         }
       }
@@ -1544,7 +1586,7 @@ export class LendingService {
       this.logger.warn(`Could not notify lender of terms decline: ${notifErr.message}`);
     }
 
-    return saved;
+    return { ...saved, ...buildLoanWorkflowView(saved) };
   }
 
   /** Full TILA-style disclosure for borrower review before acceptance. */
@@ -1558,10 +1600,50 @@ export class LendingService {
       throw new NotFoundException('Loan request not found');
     }
 
-    const approvedAmount = loan.approved_amount ?? loan.requested_amount;
-    const interestAmount = loan.interest_amount ?? 0;
-    const originationFee = loan.origination_fee_amount ?? 0;
+    const approvedAmount = Number(loan.approved_amount ?? loan.requested_amount);
+    const interestAmount = Number(loan.interest_amount ?? 0);
+    const originationFee = Number(loan.origination_fee_amount ?? 0);
     const totalRepayable = approvedAmount + interestAmount + originationFee;
+    const termMonths = Number(loan.loan_term_months || 3);
+    const nominalRate =
+      loan.metadata?.interest_rate ?? loan.loanTerms?.[0]?.nominal_rate ?? null;
+    const monthlyInstalment =
+      termMonths > 0 ? Math.round((totalRepayable / termMonths) * 100) / 100 : totalRepayable;
+
+    const repaymentSchedule = Array.from({ length: Math.max(termMonths, 1) }, (_, i) => {
+      const due = loan.due_date ? new Date(loan.due_date) : new Date();
+      if (loan.due_date && termMonths > 1) {
+        // Spread instalments ending on final due date
+        const start = new Date(due);
+        start.setMonth(start.getMonth() - (termMonths - 1 - i));
+        return {
+          instalment_number: i + 1,
+          due_date: start.toISOString().split('T')[0],
+          amount: monthlyInstalment,
+        };
+      }
+      return {
+        instalment_number: i + 1,
+        due_date: due.toISOString().split('T')[0],
+        amount: monthlyInstalment,
+      };
+    });
+
+    const workflow = buildLoanWorkflowView(loan);
+    const amountReduction =
+      loan.requested_amount > approvedAmount
+        ? Math.round((loan.requested_amount - approvedAmount) * 100) / 100
+        : 0;
+
+    const rulesAndRegulations = [
+      'This offer is a formal credit disclosure. No funds are disbursed until you agree.',
+      'Interest is calculated on the offered principal for the stated term (APR disclosed above).',
+      'Repayment is due by the stated due date / instalment schedule. Late payment may incur fees after any grace period.',
+      'Funds are disbursed to the nominated service provider (e.g. transporter) on your behalf once you agree and the lender pays.',
+      'You may reject this offer; the lender may then revise terms or close the application.',
+      'Personal and cargo data used for this assessment is processed for credit underwriting and AML/KYC compliance.',
+      'This facility is subject to the lender’s active interest-rate and risk policy in force at offer time.',
+    ];
 
     return {
       loan_id: loan.id,
@@ -1573,16 +1655,29 @@ export class LendingService {
       interest_amount: interestAmount,
       origination_fee_amount: originationFee,
       total_repayable: totalRepayable,
+      monthly_instalment: monthlyInstalment,
       apr: loan.apr,
-      nominal_rate: loan.metadata?.interest_rate ?? loan.loanTerms?.[0]?.nominal_rate,
+      nominal_rate: nominalRate,
       effective_annual_rate:
         loan.metadata?.effective_annual_rate ?? loan.loanTerms?.[0]?.effective_annual_rate,
-      loan_term_months: loan.loan_term_months,
+      loan_term_months: termMonths,
       due_date: loan.due_date,
+      grace_period_end: loan.grace_period_end,
       terms_offered_at: loan.terms_offered_at,
       borrower_accepted_at: loan.borrower_accepted_at,
       terms_declined_at: loan.terms_declined_at,
       lender_name: loan.lender?.name,
+      policy: {
+        interest_rate_source: 'Lender Interest Rate Policy + borrower risk assessment',
+        nominal_rate: nominalRate,
+        apr: loan.apr,
+        risk_score: loan.risk_score ?? loan.metadata?.risk_score ?? null,
+        risk_tier: loan.risk_tier ?? loan.metadata?.risk_level ?? null,
+        currency: loan.currency,
+        purpose: loan.purpose || 'Cargo financing',
+      },
+      repayment_schedule: repaymentSchedule,
+      rules_and_regulations: rulesAndRegulations,
       can_accept:
         loan.status === LoanRequestStatus.APPROVED &&
         !!loan.terms_offered_at &&
@@ -1593,6 +1688,9 @@ export class LendingService {
         !!loan.borrower_accepted_at &&
         !loan.terms_declined_at,
       offer_snapshot: loan.metadata?.offer_snapshot,
+      is_counter_offer: workflow.is_partial_offer,
+      amount_reduction: amountReduction,
+      ...workflow,
     };
   }
 
@@ -1724,12 +1822,45 @@ export class LendingService {
       throw new NotFoundException('Loan request not found');
     }
 
+    if (
+      loan.status !== LoanRequestStatus.PENDING &&
+      loan.status !== LoanRequestStatus.APPROVED
+    ) {
+      throw new BadRequestException(
+        `Cannot reject a loan with status "${loan.status}".`,
+      );
+    }
+
+    // Rejecting an unaccepted offer or pending application
+    if (
+      loan.status === LoanRequestStatus.APPROVED &&
+      loan.borrower_accepted_at
+    ) {
+      throw new BadRequestException(
+        'Cannot reject after the borrower has accepted terms. Use disbursement controls instead.',
+      );
+    }
+
+    const rejectionReason =
+      (reason || '').trim() || 'Application did not meet lending criteria';
+
     loan.status = LoanRequestStatus.REJECTED;
-    loan.rejection_reason = reason;
+    loan.rejection_reason = rejectionReason;
+    loan.terms_offered_at = null;
+    loan.borrower_accepted_at = null;
+    loan.metadata = {
+      ...(loan.metadata || {}),
+      offer_snapshot: null,
+      rejection: {
+        reason: rejectionReason,
+        rejected_at: new Date().toISOString(),
+      },
+      // Clear any prior appeal so borrower can appeal this new rejection
+      appeal: null,
+    };
 
     const rejectedLoan = await this.loanRequestRepository.save(loan);
 
-    // Notify cargo owner of rejection
     try {
       const lender = loan.lender_id
         ? await this.lenderRepository.findOne({ where: { id: loan.lender_id } })
@@ -1740,7 +1871,7 @@ export class LendingService {
           creatorUser.id,
           loan.tenant_id,
           loan.id,
-          reason,
+          rejectionReason,
           lender?.name || 'Lender',
         );
       }
@@ -1748,7 +1879,86 @@ export class LendingService {
       this.logger.warn(`Could not send loan rejection notification: ${notifErr.message}`);
     }
 
-    return rejectedLoan;
+    return { ...rejectedLoan, ...buildLoanWorkflowView(rejectedLoan) };
+  }
+
+  /**
+   * Borrower appeals a hard rejection — reopens the application for lender review
+   * with an optional comment (credit reconsideration / right to be heard).
+   */
+  async appealLoanRejection(
+    loanId: string,
+    userId: string,
+    comment: string,
+  ): Promise<LoanRequest> {
+    const loan = await this.loanRequestRepository.findOne({ where: { id: loanId } });
+    if (!loan) {
+      throw new NotFoundException('Loan request not found');
+    }
+
+    if (loan.created_by !== userId) {
+      throw new BadRequestException('Only the borrower can appeal this rejection.');
+    }
+
+    if (loan.status !== LoanRequestStatus.REJECTED) {
+      throw new BadRequestException('Only rejected loan applications can be appealed.');
+    }
+
+    if (loan.metadata?.appeal?.status === 'pending_review') {
+      throw new ConflictException('An appeal is already pending for this loan.');
+    }
+
+    const appealComment = (comment || '').trim();
+    if (appealComment.length < 10) {
+      throw new BadRequestException(
+        'Please provide a comment of at least 10 characters explaining your appeal.',
+      );
+    }
+
+    const previousRejection = loan.rejection_reason;
+    loan.status = LoanRequestStatus.PENDING;
+    loan.metadata = {
+      ...(loan.metadata || {}),
+      appeal: {
+        status: 'pending_review',
+        comment: appealComment,
+        submitted_at: new Date().toISOString(),
+        previous_rejection_reason: previousRejection,
+        submitted_by: userId,
+      },
+      appeal_history: [
+        ...((loan.metadata?.appeal_history as any[]) || []),
+        {
+          comment: appealComment,
+          submitted_at: new Date().toISOString(),
+          previous_rejection_reason: previousRejection,
+        },
+      ],
+    };
+
+    const saved = await this.loanRequestRepository.save(loan);
+
+    try {
+      if (loan.lender_id) {
+        const lenderUsers = await this.lenderUserRepository.find({
+          where: { lender_id: loan.lender_id, status: LenderUserStatus.ACTIVE },
+          take: 5,
+        });
+        for (const lu of lenderUsers) {
+          await this.loanNotificationService.notifyLenderLoanAppealed(
+            lu.id,
+            loan.tenant_id,
+            loan.id,
+            appealComment,
+            loan.loan_number,
+          );
+        }
+      }
+    } catch (notifErr) {
+      this.logger.warn(`Could not notify lender of loan appeal: ${notifErr.message}`);
+    }
+
+    return { ...saved, ...buildLoanWorkflowView(saved) };
   }
 
   async initiateDisbursement(loanId: string): Promise<LoanDisbursement> {
@@ -2519,12 +2729,13 @@ export class LendingService {
   }
 
   /** Get all loan requests created by a specific user (cargo owner) */
-  async getMyLoanRequests(userId: string, tenantId: string): Promise<LoanRequest[]> {
-    return this.loanRequestRepository.find({
+  async getMyLoanRequests(userId: string, tenantId: string): Promise<any[]> {
+    const loans = await this.loanRequestRepository.find({
       where: { created_by: userId, tenant_id: tenantId },
       relations: ['lender', 'disbursements', 'repayments'],
       order: { created_at: 'DESC' },
     });
+    return loans.map((loan) => ({ ...loan, ...buildLoanWorkflowView(loan) }));
   }
 
   async getLenderDashboard(lenderId: string, dateFrom?: Date, dateTo?: Date, tenantId?: string) {
@@ -3293,7 +3504,16 @@ export class LendingService {
         (disbursement?.credit_score != null && Number(disbursement.credit_score) > 0 ? Number(disbursement.credit_score) :
         (meta.credit_score != null ? Number(meta.credit_score) : (loan.borrower?.credit_score ?? null)));
 
-      return { ...loan, interest_rate, effective_annual_rate, risk_score, credit_score };
+      const workflow = buildLoanWorkflowView(loan);
+
+      return {
+        ...loan,
+        interest_rate,
+        effective_annual_rate,
+        risk_score,
+        credit_score,
+        ...workflow,
+      };
     });
 
     return { data: enrichedLoans, total, page, limit, totalPages: Math.ceil(total / limit) };

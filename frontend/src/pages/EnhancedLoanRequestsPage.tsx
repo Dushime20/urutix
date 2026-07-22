@@ -2,6 +2,7 @@
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import { lendingApi } from '../services/lending/lendingApi';
 import type { CreateLoanRequestDto } from '../services/lending/lendingApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,7 +17,10 @@ import {
 import LoanRequestsEnlite from '../components/LenderDashboard/LoanRequests.enlite.tsx';
 import LoanDetailModal from '../components/LenderDashboard/LoanDetailModal';
 import EnhancedRepayButton from '../components/Lending/EnhancedRepayButton';
+import LoanTermsAcceptanceModal from '../components/Lending/LoanTermsAcceptanceModal';
+import LoanAppealModal from '../components/Lending/LoanAppealModal';
 import { StatCard } from '../components/EnliteUI';
+import { buildLoanWorkflowView, workflowStageBadgeClass } from '../utils/loanWorkflow';
 
 interface Lender { id: string; name: string; type: string; email: string; phone: string; }
 interface LoanRequest {
@@ -34,6 +38,17 @@ interface LoanRequest {
   monthly_payment?: number; loan_term_months: number;
   requested_split?: Array<{ type: string; id: string; amount: number }>;
   rejection_reason?: string;
+  terms_offered_at?: string | null;
+  borrower_accepted_at?: string | null;
+  terms_declined_at?: string | null;
+  metadata?: any;
+  workflow_stage?: string;
+  workflow_label?: string;
+  is_partial_offer?: boolean;
+  amount_reduction?: number | null;
+  can_appeal?: boolean;
+  has_open_appeal?: boolean;
+  appeal_comment?: string | null;
 }
 interface LoanAnalytics {
   totalRequests: number; pendingRequests: number; approvedRequests: number; rejectedRequests: number;
@@ -43,20 +58,11 @@ interface LoanAnalytics {
 
 const BENEFICIARY_TYPES = ['fuel', 'driver', 'maintenance', 'tolls', 'truck_owner', 'other'] as const;
 
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const cfg: Record<string, { cls: string; icon: React.ReactNode }> = {
-    pending:   { cls: 'bg-amber-50 text-amber-700 border-amber-200',       icon: <Clock size={10} /> },
-    approved:  { cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <CheckCircle size={10} /> },
-    rejected:  { cls: 'bg-rose-50 text-rose-700 border-rose-200',          icon: <X size={10} /> },
-    disbursed: { cls: 'bg-blue-50 text-blue-700 border-blue-200',          icon: <DollarSign size={10} /> },
-    repaid:    { cls: 'bg-emerald-50 text-emerald-700 border-emerald-100', icon: <CheckCircle size={10} /> },
-    defaulted: { cls: 'bg-rose-100 text-rose-700 border-rose-200',         icon: <AlertTriangle size={10} /> },
-    failed:    { cls: 'bg-slate-100 text-slate-600 border-slate-200',      icon: <AlertTriangle size={10} /> },
-  };
-  const { cls, icon } = cfg[status?.toLowerCase()] ?? { cls: 'bg-slate-50 text-slate-600 border-slate-200', icon: <FileText size={10} /> };
+const StatusBadge: React.FC<{ loan: LoanRequest }> = ({ loan }) => {
+  const wf = buildLoanWorkflowView(loan);
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${cls}`}>
-      {icon} {status}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${workflowStageBadgeClass(wf.workflow_stage)}`}>
+      {wf.workflow_label}
     </span>
   );
 };
@@ -916,9 +922,33 @@ const TruckOwnerLoanRequestsView: React.FC<{
   onRefresh: () => void;
   search: string;
   onSearchChange: (v: string) => void;
-}> = ({ requests, analytics, loading, error, onNewRequest, onRefresh, search, onSearchChange }) => {
+  autoReviewLoanId?: string | null;
+  autoAppealLoanId?: string | null;
+}> = ({ requests, analytics, loading, error, onNewRequest, onRefresh, search, onSearchChange, autoReviewLoanId, autoAppealLoanId }) => {
   const { compact: fmtMoney } = useCurrencyFormat();
   const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
+  const [acceptLoanId, setAcceptLoanId] = useState<string | null>(null);
+  const [appealLoan, setAppealLoan] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!autoReviewLoanId || !requests?.length) return;
+    const loan = requests.find((r) => r.id === autoReviewLoanId);
+    if (!loan) return;
+    const wf = buildLoanWorkflowView(loan);
+    if (wf.awaiting_borrower_response) {
+      setAcceptLoanId(loan.id);
+    }
+  }, [autoReviewLoanId, requests]);
+
+  useEffect(() => {
+    if (!autoAppealLoanId || !requests?.length) return;
+    const loan = requests.find((r) => r.id === autoAppealLoanId);
+    if (!loan) return;
+    const wf = buildLoanWorkflowView(loan);
+    if (wf.can_appeal) {
+      setAppealLoan(loan);
+    }
+  }, [autoAppealLoanId, requests]);
 
   const filtered = requests.filter(r =>
     r.id.toLowerCase().includes(search.toLowerCase()) ||
@@ -1070,7 +1100,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
 
                     {/* Status */}
                     <td className="px-6 py-4">
-                      <StatusBadge status={req.status} />
+                      <StatusBadge loan={req} />
                     </td>
 
                     {/* Due Date */}
@@ -1097,17 +1127,53 @@ const TruckOwnerLoanRequestsView: React.FC<{
                         >
                           <FileText size={13} />
                         </button>
-                        {(req.status === 'approved' || req.status === 'disbursed') && (
+                        {(() => {
+                          const wf = buildLoanWorkflowView(req);
+                          if (wf.awaiting_borrower_response) {
+                            return (
+                              <button
+                                onClick={() => setAcceptLoanId(req.id)}
+                                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all ${
+                                  wf.is_partial_offer
+                                    ? 'bg-orange-600 hover:bg-orange-700'
+                                    : 'bg-[#345E85] hover:bg-[#2a4d6d]'
+                                }`}
+                              >
+                                {wf.is_partial_offer ? 'Agree / Reject' : 'Review Terms'}
+                              </button>
+                            );
+                          }
+                          if (wf.can_appeal) {
+                            return (
+                              <button
+                                onClick={() => setAppealLoan(req)}
+                                className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white bg-violet-700 hover:bg-violet-800 transition-all"
+                                title={req.rejection_reason || 'Appeal rejection'}
+                              >
+                                Appeal / Comment
+                              </button>
+                            );
+                          }
+                          if (wf.has_open_appeal) {
+                            return (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-violet-700 bg-violet-50 px-2 py-1 rounded-lg">
+                                Appeal sent
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
+                        {req.status === 'rejected' && req.rejection_reason && (
+                          <span className="text-[10px] text-rose-500 font-semibold max-w-[120px] truncate" title={req.rejection_reason}>
+                            {req.rejection_reason}
+                          </span>
+                        )}
+                        {(req.status === 'approved' || req.status === 'disbursed') && req.borrower_accepted_at && (
                           <EnhancedRepayButton 
                             loanId={req.id} 
                             amount={req.approved_amount ?? req.requested_amount}
                             onRepaymentSuccess={onRefresh}
                           />
-                        )}
-                        {req.status === 'rejected' && req.rejection_reason && (
-                          <span className="text-[10px] text-rose-500 font-semibold" title={req.rejection_reason}>
-                            Rejected
-                          </span>
                         )}
                       </div>
                     </td>
@@ -1126,6 +1192,23 @@ const TruckOwnerLoanRequestsView: React.FC<{
           onClose={() => setSelectedLoan(null)}
         />
       )}
+
+      {acceptLoanId && (
+        <LoanTermsAcceptanceModal
+          loanId={acceptLoanId}
+          onClose={() => setAcceptLoanId(null)}
+          onAccepted={() => { setAcceptLoanId(null); onRefresh(); }}
+          onDeclined={() => { setAcceptLoanId(null); onRefresh(); }}
+        />
+      )}
+
+      {appealLoan && (
+        <LoanAppealModal
+          loan={appealLoan}
+          onClose={() => setAppealLoan(null)}
+          onSuccess={() => { setAppealLoan(null); onRefresh(); }}
+        />
+      )}
     </div>
   );
 };
@@ -1133,9 +1216,37 @@ const TruckOwnerLoanRequestsView: React.FC<{
 const EnhancedLoanRequestsPage: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
   const { user, accessToken } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isTruckOwner = user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER';
   const isCargoOwner = user?.role === 'CARGO_OWNER';
   const isBorrower = isTruckOwner || isCargoOwner; // Both can request loans
+
+  const deepLinkLoanId = searchParams.get('loan');
+  const deepLinkAction = searchParams.get('action');
+  const autoDisburseLoanId =
+    deepLinkLoanId && (deepLinkAction === 'disburse' || deepLinkAction === 'revise')
+      ? deepLinkLoanId
+      : null;
+  const autoReviewLoanId =
+    deepLinkLoanId && deepLinkAction === 'review-offer'
+      ? deepLinkLoanId
+      : null;
+  const autoAppealLoanId =
+    deepLinkLoanId && deepLinkAction === 'appeal'
+      ? deepLinkLoanId
+      : null;
+
+  useEffect(() => {
+    // Clear one-shot deep-link params after the target modal has a chance to open
+    if (!deepLinkLoanId) return;
+    const t = window.setTimeout(() => {
+      const next = new URLSearchParams(searchParams);
+      next.delete('loan');
+      next.delete('action');
+      setSearchParams(next, { replace: true });
+    }, 2500);
+    return () => window.clearTimeout(t);
+  }, [deepLinkLoanId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [requests, setRequests] = useState<LoanRequest[]>([]);
   const [analytics, setAnalytics] = useState<LoanAnalytics | null>(null);
@@ -1257,9 +1368,21 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
             processing_fee: 0,
             total_amount: Number(req.requested_amount || req.requestedAmount) || 0,
-            loan_term_months: 12,
+            loan_term_months: req.loan_term_months || req.loanTermMonths || 12,
             borrower_company: req.borrower?.company_name || (cargoLabel ? `Load: ${cargoLabel}` : undefined),
             requested_split: req.requested_split || [],
+            rejection_reason: req.rejection_reason || req.rejectionReason,
+            terms_offered_at: req.terms_offered_at || req.termsOfferedAt || null,
+            borrower_accepted_at: req.borrower_accepted_at || req.borrowerAcceptedAt || null,
+            terms_declined_at: req.terms_declined_at || req.termsDeclinedAt || null,
+            metadata: req.metadata,
+            workflow_stage: req.workflow_stage,
+            workflow_label: req.workflow_label,
+            is_partial_offer: req.is_partial_offer,
+            amount_reduction: req.amount_reduction,
+            can_appeal: req.can_appeal,
+            has_open_appeal: req.has_open_appeal,
+            appeal_comment: req.appeal_comment,
           };
         })
       );
@@ -1341,9 +1464,21 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
             processing_fee: 0,
             total_amount: Number(req.requested_amount || req.requestedAmount) || 0,
-            loan_term_months: 12,
+            loan_term_months: req.loan_term_months || req.loanTermMonths || 12,
             borrower_company: req.borrower?.company_name || (cargoLabel ? `Load: ${cargoLabel}` : undefined),
             requested_split: req.requested_split || [],
+            rejection_reason: req.rejection_reason || req.rejectionReason,
+            terms_offered_at: req.terms_offered_at || req.termsOfferedAt || null,
+            borrower_accepted_at: req.borrower_accepted_at || req.borrowerAcceptedAt || null,
+            terms_declined_at: req.terms_declined_at || req.termsDeclinedAt || null,
+            metadata: req.metadata,
+            workflow_stage: req.workflow_stage,
+            workflow_label: req.workflow_label,
+            is_partial_offer: req.is_partial_offer,
+            amount_reduction: req.amount_reduction,
+            can_appeal: req.can_appeal,
+            has_open_appeal: req.has_open_appeal,
+            appeal_comment: req.appeal_comment,
           };
         })
       );
@@ -1444,6 +1579,17 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               lender_id: req.lender_id || req.lenderId, processing_fee: req.processing_fee || req.processingFee || 0,
               total_amount: req.total_amount || req.totalAmount || 0, loan_term_months: req.loan_term_months || req.loanTermMonths || 12,
               distance: 0, estimated_duration: 0,
+              terms_offered_at: req.terms_offered_at || req.termsOfferedAt || null,
+              borrower_accepted_at: req.borrower_accepted_at || req.borrowerAcceptedAt || null,
+              terms_declined_at: req.terms_declined_at || req.termsDeclinedAt || null,
+              rejection_reason: req.rejection_reason || req.rejectionReason,
+              workflow_stage: req.workflow_stage,
+              workflow_label: req.workflow_label,
+              is_partial_offer: req.is_partial_offer,
+              amount_reduction: req.amount_reduction,
+              can_appeal: req.can_appeal,
+              has_open_appeal: req.has_open_appeal,
+              appeal_comment: req.appeal_comment,
             };
           })
         );
@@ -1480,7 +1626,20 @@ const EnhancedLoanRequestsPage: React.FC = () => {
       setRequests(prev => prev.map(r => {
         const updated = requestsData.find((u: any) => u.id === r.id);
         if (!updated) return r;
-        return { ...r, status: updated.status, approved_amount: updated.approved_amount ?? r.approved_amount };
+        return {
+          ...r,
+          status: updated.status,
+          approved_amount: updated.approved_amount ?? r.approved_amount,
+          terms_offered_at: updated.terms_offered_at ?? r.terms_offered_at,
+          borrower_accepted_at: updated.borrower_accepted_at ?? r.borrower_accepted_at,
+          terms_declined_at: updated.terms_declined_at ?? r.terms_declined_at,
+          metadata: updated.metadata ?? r.metadata,
+          workflow_stage: updated.workflow_stage ?? r.workflow_stage,
+          workflow_label: updated.workflow_label ?? r.workflow_label,
+          is_partial_offer: updated.is_partial_offer ?? r.is_partial_offer,
+          amount_reduction: updated.amount_reduction ?? r.amount_reduction,
+          loan_term_months: updated.loan_term_months ?? r.loan_term_months,
+        };
       }));
     } catch { /* non-fatal */ }
   };
@@ -1601,6 +1760,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             onRefresh={refreshFunction}
             search={search}
             onSearchChange={setSearch}
+            autoReviewLoanId={autoReviewLoanId}
+            autoAppealLoanId={autoAppealLoanId}
           />
         </div>
 
@@ -1663,6 +1824,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
           onViewDetails={req => { setSelectedLoanForDetail(req); setShowDetailModal(true); }}
           onViewPaymentDetails={req => { setSelectedLoanForPaymentDetails(req); fetchLoanPayments(req.id); setShowPaymentDetailsModal(true); }}
           onExport={() => alert('Exporting...')}
+          autoDisburseLoanId={autoDisburseLoanId}
         />
       </div>
 

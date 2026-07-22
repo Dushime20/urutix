@@ -322,6 +322,11 @@ export const lendingApi = {
     return response.data;
   },
 
+  appealLoanRejection: async (loanId: string, comment: string) => {
+    const response = await api.post(`/lending/loan-requests/${loanId}/appeal`, { comment });
+    return response.data;
+  },
+
   initiateDisbursement: async (loanId: string) => {
     const response = await api.post(`/lending/loan-requests/${loanId}/disburse`);
     return response.data;

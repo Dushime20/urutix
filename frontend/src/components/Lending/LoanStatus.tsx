@@ -282,28 +282,48 @@ const LoanStatus: React.FC<LoanStatusProps> = ({ loanId }) => {
           </div>
         </div>
 
-        {/* Borrower action — accept terms if offer pending */}
+        {/* Borrower action — accept / agree to offer or counter-offer */}
         {loan.status === 'approved' &&
           loan.terms_offered_at &&
           !loan.borrower_accepted_at &&
           !loan.terms_declined_at && (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-5">
-            <h3 className="font-bold text-amber-900 mb-2">Action Required — Review Loan Offer</h3>
-            <p className="text-sm text-amber-800 mb-4">
-              Your lender has sent formal loan terms. Review the full disclosure and accept before funds are disbursed.
+          <div className={`border-2 rounded-xl p-5 ${
+            (loan.approved_amount != null && loan.requested_amount != null && loan.approved_amount < loan.requested_amount - 0.01)
+              ? 'bg-orange-50 border-orange-200'
+              : 'bg-amber-50 border-amber-200'
+          }`}>
+            <h3 className={`font-bold mb-2 ${
+              (loan.approved_amount != null && loan.requested_amount != null && loan.approved_amount < loan.requested_amount - 0.01)
+                ? 'text-orange-900'
+                : 'text-amber-900'
+            }`}>
+              {(loan.approved_amount != null && loan.requested_amount != null && loan.approved_amount < loan.requested_amount - 0.01)
+                ? 'Action Required — Counter-Offer Received'
+                : 'Action Required — Review Loan Offer'}
+            </h3>
+            <p className={`text-sm mb-4 ${
+              (loan.approved_amount != null && loan.requested_amount != null && loan.approved_amount < loan.requested_amount - 0.01)
+                ? 'text-orange-800'
+                : 'text-amber-800'
+            }`}>
+              {(loan.approved_amount != null && loan.requested_amount != null && loan.approved_amount < loan.requested_amount - 0.01)
+                ? 'Your lender offered a lower amount than requested. Agree or reject before funding can proceed.'
+                : 'Your lender has sent formal loan terms. Review the full disclosure and accept before funds are disbursed.'}
             </p>
             <button
               onClick={() => setShowAcceptModal(true)}
               className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-sm font-bold hover:bg-[#2a4d6d] transition-colors"
             >
-              Review &amp; Accept Terms
+              {(loan.approved_amount != null && loan.requested_amount != null && loan.approved_amount < loan.requested_amount - 0.01)
+                ? 'Agree / Reject Counter-Offer'
+                : 'Review & Accept Terms'}
             </button>
           </div>
         )}
 
         {loan.status === 'approved' && loan.borrower_accepted_at && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
-            Terms accepted on {formatDate(loan.borrower_accepted_at)}. Awaiting lender disbursement.
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800">
+            Terms accepted on {formatDate(loan.borrower_accepted_at)}. Lender can now disburse funds.
           </div>
         )}
 

@@ -649,6 +649,39 @@ export class LendingController {
     return await this.lendingService.approveLoanRequest(loanId, approvalDto);
   }
 
+  @Post('lending/loan-requests/:loanId/reject')
+  @ApiOperation({
+    summary: 'Reject a pending loan request',
+    description: 'Hard rejection by the lender — terminates the application.',
+  })
+  async rejectLoanRequest(
+    @Param('loanId', ParseUUIDPipe) loanId: string,
+    @Body() body: { reason?: string },
+  ) {
+    return await this.lendingService.rejectLoanRequest(
+      loanId,
+      body?.reason || 'Application did not meet lending criteria',
+    );
+  }
+
+  @Post('lending/loan-requests/:loanId/appeal')
+  @ApiOperation({
+    summary: 'Borrower appeals a loan rejection',
+    description:
+      'Reopens a rejected application for lender reconsideration with a comment.',
+  })
+  async appealLoanRejection(
+    @Param('loanId', ParseUUIDPipe) loanId: string,
+    @Body() body: { comment: string },
+    @Request() req,
+  ) {
+    return await this.lendingService.appealLoanRejection(
+      loanId,
+      req.user.userId,
+      body?.comment || '',
+    );
+  }
+
   @Post('lending/loan-requests/:loanId/accept-terms')
   @ApiOperation({
     summary: 'Borrower accepts formal loan terms',

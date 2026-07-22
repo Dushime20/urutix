@@ -140,11 +140,12 @@ export class LoanNotificationService {
       NotificationType.LOAN_REJECTED,
       NotificationCategory.LOAN,
       NotificationPriority.HIGH,
-      'Loan Request Rejected',
-      `Your loan request was rejected by ${lenderName}. Reason: ${reason || 'Not specified'}.`,
+      'Loan Request Rejected — You Can Appeal',
+      `Your loan request was rejected by ${lenderName}. Reason: ${reason || 'Not specified'}. ` +
+      `You may appeal or add a comment for reconsideration.`,
       loanId,
-      `/loans/${loanId}`,
-      { loanId, reason, lenderName },
+      `/dashboard/loan-requests?loan=${loanId}&action=appeal`,
+      { loanId, reason, lenderName, action: 'appeal' },
     );
   }
 
@@ -244,22 +245,34 @@ export class LoanNotificationService {
       apr: number | null;
       currency: string;
       loanNumber?: string;
+      isCounterOffer?: boolean;
     },
   ) {
     const ref = details.loanNumber || loanId.slice(0, 8).toUpperCase();
+    const isCounter = details.isCounterOffer === true
+      || details.approvedAmount < details.requestedAmount - 0.01;
+    const title = isCounter
+      ? 'Counter-Offer Received — Agree or Reject'
+      : 'Loan Terms Offer — Action Required';
+    const message = isCounter
+      ? `${details.lenderName} offered ${details.approvedAmount.toLocaleString()} ${details.currency} ` +
+        `(you requested ${details.requestedAmount.toLocaleString()} ${details.currency}). ` +
+        `Review the revised terms and agree or reject before funding can proceed.`
+      : `${details.lenderName} has offered you a loan of ${details.approvedAmount.toLocaleString()} ${details.currency} ` +
+        `(total repayable: ${details.totalRepayable.toLocaleString()} ${details.currency}, due ${new Date(details.dueDate).toLocaleDateString()}). ` +
+        `Please review and accept the terms before funds are disbursed.`;
+
     await this.send(
       cargoOwnerId,
       tenantId,
       NotificationType.LOAN_TERMS_OFFERED,
       NotificationCategory.LOAN,
       NotificationPriority.HIGH,
-      'Loan Terms Offer — Action Required',
-      `${details.lenderName} has offered you a loan of ${details.approvedAmount.toLocaleString()} ${details.currency} ` +
-      `(total repayable: ${details.totalRepayable.toLocaleString()} ${details.currency}, due ${new Date(details.dueDate).toLocaleDateString()}). ` +
-      `Please review and accept the terms before funds are disbursed.`,
+      title,
+      message,
       loanId,
-      `/dashboard/loan-requests?loan=${loanId}`,
-      { ...details, loanRef: ref },
+      `/dashboard/loan-requests?loan=${loanId}&action=review-offer`,
+      { ...details, loanRef: ref, isCounterOffer: isCounter },
     );
   }
 
@@ -276,12 +289,12 @@ export class LoanNotificationService {
       NotificationType.LOAN_TERMS_ACCEPTED,
       NotificationCategory.LOAN,
       NotificationPriority.HIGH,
-      'Borrower Accepted Loan Terms',
+      'Borrower Accepted — Ready to Disburse',
       `The borrower has accepted the loan terms${loanNumber ? ` (#${loanNumber})` : ''}. ` +
-      `You may now disburse ${amount.toLocaleString()}.`,
+      `Open the payment modal to disburse ${amount.toLocaleString()}.`,
       loanId,
-      `/lending/loan-requests/${loanId}`,
-      { loanId, amount, loanNumber },
+      `/lender/requests?loan=${loanId}&action=disburse`,
+      { loanId, amount, loanNumber, action: 'disburse' },
     );
   }
 
@@ -297,10 +310,11 @@ export class LoanNotificationService {
       NotificationType.LOAN_TERMS_DECLINED,
       NotificationCategory.LOAN,
       NotificationPriority.HIGH,
-      'Borrower Declined Loan Terms',
-      `The borrower declined the offered loan terms.${reason ? ` Reason: ${reason}` : ''}`,
+      'Borrower Declined Offer — Revise Terms',
+      `The borrower declined the offered terms.${reason ? ` Reason: ${reason}` : ''} ` +
+      `You may submit a revised offer on this application.`,
       loanId,
-      `/lending/loan-requests/${loanId}`,
+      `/lender/requests?loan=${loanId}&action=revise`,
       { loanId, reason },
     );
   }
@@ -325,6 +339,29 @@ export class LoanNotificationService {
       loanId,
       `/dashboard/loan-requests?loan=${loanId}`,
       { loanId, amount, lenderName, currency },
+    );
+  }
+
+  /** Lender receives: borrower appealed a rejection */
+  async notifyLenderLoanAppealed(
+    lenderUserId: string,
+    tenantId: string,
+    loanId: string,
+    comment: string,
+    loanNumber?: string,
+  ) {
+    await this.send(
+      lenderUserId,
+      tenantId,
+      NotificationType.LOAN_APPEAL_SUBMITTED,
+      NotificationCategory.LOAN,
+      NotificationPriority.HIGH,
+      'Borrower Appealed Loan Rejection',
+      `The borrower appealed${loanNumber ? ` (#${loanNumber})` : ''}: "${comment.slice(0, 160)}${comment.length > 160 ? '…' : ''}". ` +
+      `Please confirm a new offer or reject again.`,
+      loanId,
+      `/lender/requests?loan=${loanId}&action=revise`,
+      { loanId, comment, loanNumber, action: 'revise' },
     );
   }
 }

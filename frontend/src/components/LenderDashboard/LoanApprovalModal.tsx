@@ -162,14 +162,16 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
     return d.toISOString().split('T')[0];
   })();
 
+  const isCounterOffer = approvedAmount < (loan?.requested_amount ?? 0) - 0.01;
+
   // ── Submit offer — notifies borrower; NO disbursement at this stage ───────
   const handleConfirm = async () => {
     if (approvedAmount <= 0) {
-      toast.error('Approved amount must be greater than zero.');
+      toast.error('Offer amount must be greater than zero.');
       return;
     }
     if (approvedAmount > loan.requested_amount + 0.01) {
-      toast.error(`Approved amount cannot exceed requested amount (${fmt(loan.requested_amount)}).`);
+      toast.error(`Offer amount cannot exceed requested amount (${fmt(loan.requested_amount)}).`);
       return;
     }
     setStep('processing');
@@ -180,7 +182,11 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
         loan_term_months: loanTermMonths,
       });
 
-      toast.success('Loan offer sent to borrower. Disbursement unlocks after they accept.');
+      toast.success(
+        isCounterOffer
+          ? 'Counter-offer sent. Cargo owner must agree or reject before you can fund.'
+          : 'Loan offer sent to borrower. Disbursement unlocks after they accept.',
+      );
       onSuccess?.(loan.id);
       onClose();
     } catch (err: any) {
@@ -207,10 +213,22 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               </div>
               <div className="absolute inset-0 rounded-full border-4 border-[#345E85]/20 border-t-[#345E85] animate-spin" style={{ animationDuration: '1.5s' }} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Sending Offer to Borrower</h3>
+            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">
+              {isCounterOffer ? 'Sending Counter-Offer' : 'Sending Offer to Borrower'}
+            </h3>
             <p className="text-sm text-slate-500 text-center max-w-xs">
-              Submitting formal terms of{' '}
-              <span className="font-bold text-slate-700">{fmt(approvedAmount)}</span> for borrower review…
+              {isCounterOffer ? (
+                <>
+                  Offering <span className="font-bold text-slate-700">{fmt(approvedAmount)}</span> instead of
+                  requested <span className="font-bold text-slate-700">{fmt(loan.requested_amount)}</span>.
+                  Cargo owner will agree or reject.
+                </>
+              ) : (
+                <>
+                  Submitting formal terms of{' '}
+                  <span className="font-bold text-slate-700">{fmt(approvedAmount)}</span> for borrower review…
+                </>
+              )}
             </p>
           </div>
         )}
@@ -252,7 +270,9 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                 <p className="text-[9px] font-black text-[#345E85] uppercase tracking-widest mb-1">
                   Step 1 of 2 — Set Offer Terms
                 </p>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Prepare Loan Offer</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  {isCounterOffer ? 'Prepare Counter-Offer' : 'Confirm Loan Offer'}
+                </h2>
                 <p className="text-sm text-slate-500 mt-0.5">
                   <span className="font-bold text-slate-700">{loan.borrower_name || 'Borrower'}</span>
                   {loan.borrower_company && <span className="text-slate-400"> · {loan.borrower_company}</span>}
@@ -302,13 +322,14 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               {/* Editable fields */}
               <div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">
-                  Confirm Approval Terms
+                  {isCounterOffer ? 'Counter-Offer Terms' : 'Confirm Offer Terms'}
                 </p>
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Approved Amount */}
+                  {/* Offer Amount */}
                   <div className="col-span-2">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <DollarSign className="w-3.5 h-3.5 text-slate-400" /> Approved Amount
+                      <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+                      {isCounterOffer ? 'Counter-Offer Amount' : 'Offer Amount'}
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">{currency}</span>
@@ -317,10 +338,14 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                         onChange={e => setApprovedAmount(parseFloat(e.target.value) || 0)}
                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
                     </div>
-                    {approvedAmount < loan.requested_amount && (
-                      <p className="text-[10px] text-amber-600 font-semibold mt-1">
-                        Partial approval — borrower requested {fmt(loan.requested_amount)}
-                      </p>
+                    {isCounterOffer && (
+                      <div className="mt-2 flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2">
+                        <Info className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-orange-700 font-semibold leading-relaxed">
+                          You are offering less than requested ({fmt(loan.requested_amount)}).
+                          The cargo owner will be notified to <strong>agree</strong> or <strong>reject</strong> this counter-offer before funding.
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -385,9 +410,13 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
             <div className="p-6 border-b border-slate-100 bg-slate-50 shrink-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Review Offer Before Sending</h2>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                    {isCounterOffer ? 'Review Counter-Offer' : 'Review Offer Before Sending'}
+                  </h2>
                   <p className="text-sm text-slate-500 mt-1">
-                    Borrower will receive full disclosure and must accept before you can disburse.
+                    {isCounterOffer
+                      ? 'Cargo owner must agree or reject the reduced amount before you can pay.'
+                      : 'Borrower will receive full disclosure and must accept before you can disburse.'}
                   </p>
                 </div>
                 <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors shrink-0">
@@ -443,16 +472,22 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               </div>
 
               {/* ── Workflow notice ── */}
-              <div className="flex items-start gap-4 bg-amber-50 rounded-2xl p-5 border-2 border-amber-100">
-                <Info className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+              <div className={`flex items-start gap-4 rounded-2xl p-5 border-2 ${
+                isCounterOffer ? 'bg-orange-50 border-orange-100' : 'bg-amber-50 border-amber-100'
+              }`}>
+                <Info className={`w-5 h-5 mt-0.5 shrink-0 ${isCounterOffer ? 'text-orange-600' : 'text-amber-600'}`} />
                 <div>
-                  <div className="text-sm font-black text-amber-900 mb-1 uppercase tracking-tight">
-                    3-Step Compliant Workflow
+                  <div className={`text-sm font-black mb-1 uppercase tracking-tight ${
+                    isCounterOffer ? 'text-orange-900' : 'text-amber-900'
+                  }`}>
+                    {isCounterOffer ? 'Counter-Offer Negotiation' : '3-Step Compliant Workflow'}
                   </div>
-                  <ol className="text-[11px] font-bold text-amber-800 leading-relaxed list-decimal list-inside space-y-1">
-                    <li><strong>Now:</strong> You send this formal offer to the borrower</li>
-                    <li><strong>Next:</strong> Borrower reviews TILA disclosure and accepts or declines</li>
-                    <li><strong>Then:</strong> You disburse the locked amount via the Disburse action</li>
+                  <ol className={`text-[11px] font-bold leading-relaxed list-decimal list-inside space-y-1 ${
+                    isCounterOffer ? 'text-orange-800' : 'text-amber-800'
+                  }`}>
+                    <li><strong>Now:</strong> Send {isCounterOffer ? 'this counter-offer' : 'this formal offer'} to the cargo owner</li>
+                    <li><strong>Next:</strong> They review and <strong>agree</strong> or <strong>reject</strong></li>
+                    <li><strong>Then:</strong> After agreement, the Pay Now modal opens so you can disburse</li>
                   </ol>
                 </div>
               </div>
@@ -506,7 +541,9 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               </button>
               <button onClick={handleConfirm}
                 className="flex-1 px-8 py-4 text-xs font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white rounded-xl transition-all uppercase tracking-widest border-b-4 border-indigo-900/20">
-                Send Offer to Borrower · {fmt(approvedAmount)}
+                {isCounterOffer
+                  ? `Send Counter-Offer · ${fmt(approvedAmount)}`
+                  : `Send Offer to Borrower · ${fmt(approvedAmount)}`}
               </button>
             </div>
           </>

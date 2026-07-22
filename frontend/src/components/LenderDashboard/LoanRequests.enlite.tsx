@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Clock,
     DollarSign,
@@ -23,11 +23,17 @@ import { StatCard } from '../EnliteUI';
 import ExportModal from '../ExportModal/ExportModal';
 import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
 import LoanApprovalModal from './LoanApprovalModal';
+import LoanRejectModal from './LoanRejectModal';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import LoanDisbursementModal from './LoanDisbursementModal';
 import type { LoanApprovalPayload } from './LoanApprovalModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import {
+    buildLoanWorkflowView,
+    workflowStageBadgeClass,
+    type LoanWorkflowStage,
+} from '../../utils/loanWorkflow';
 
 interface LoanRequestsEnliteProps {
     loading: boolean;
@@ -38,6 +44,8 @@ interface LoanRequestsEnliteProps {
     onViewDetails: (request: any) => void;
     onViewPaymentDetails: (request: any) => void;
     onExport: () => void;
+    /** When set (e.g. from ?loan=&action=disburse), auto-open the pay modal */
+    autoDisburseLoanId?: string | null;
 }
 
 const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
@@ -48,13 +56,27 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onReject,
     onViewDetails,
     onViewPaymentDetails,
-    onExport
+    onExport,
+    autoDisburseLoanId,
 }) => {
     const { format: formatAmount, compact: compactAmount } = useCurrencyFormat();
     const { tSync: t } = useTranslation();
     const [showExportModal, setShowExportModal] = useState(false);
     const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
+    const [rejectLoan, setRejectLoan] = useState<any | null>(null);
     const [disburseLoan, setDisburseLoan] = useState<any | null>(null);
+
+    useEffect(() => {
+        if (!autoDisburseLoanId || !requests?.length) return;
+        const loan = requests.find((r) => r.id === autoDisburseLoanId);
+        if (!loan) return;
+        const wf = buildLoanWorkflowView(loan);
+        if (wf.ready_to_disburse) {
+            setDisburseLoan(loan);
+        } else if (wf.workflow_stage === 'pending_review' || wf.workflow_stage === 'appeal_pending') {
+            setApprovalLoan(loan);
+        }
+    }, [autoDisburseLoanId, requests]);
 
     const handleExport = () => {
         setShowExportModal(true);
@@ -92,19 +114,39 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
             key: 'requested_amount',
             label: t('Financing'),
             sortable: true,
-            render: (amount: number, row: any) => (
-                <div className="space-y-1">
-                    <p className="font-bold text-slate-900 dark:text-white text-sm">{formatAmount(amount)}</p>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold border border-blue-100 dark:border-blue-800/50 italic">
-                            {row.interest_rate}% APR
-                        </span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                            {row.loan_term_months}m
-                        </span>
+            render: (amount: number, row: any) => {
+                const wf = buildLoanWorkflowView(row);
+                const offered = row.approved_amount != null ? Number(row.approved_amount) : null;
+                const showOffered = offered != null && (
+                    wf.awaiting_borrower_response || wf.ready_to_disburse || row.status === 'disbursed'
+                );
+                return (
+                    <div className="space-y-1">
+                        {showOffered ? (
+                            <>
+                                <p className="font-bold text-slate-900 dark:text-white text-sm">
+                                    {formatAmount(offered)}
+                                </p>
+                                {wf.is_partial_offer && (
+                                    <p className="text-[10px] text-orange-600 dark:text-orange-400 font-semibold">
+                                        of {formatAmount(amount)} requested
+                                    </p>
+                                )}
+                            </>
+                        ) : (
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{formatAmount(amount)}</p>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold border border-blue-100 dark:border-blue-800/50 italic">
+                                {row.interest_rate != null ? `${row.interest_rate}% APR` : '% APR'}
+                            </span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                {row.loan_term_months || '—'}m
+                            </span>
+                        </div>
                     </div>
-                </div>
-            )
+                );
+            }
         },
         {
             key: 'cargo_type',
@@ -125,30 +167,44 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
             key: 'status',
             label: t('Status'),
             sortable: true,
-            render: (status: string) => {
-                const iconMap: Record<string, any> = {
-                    pending: <Clock className="w-2.5 h-2.5" />,
-                    approved: <CheckCircle className="w-2.5 h-2.5" />,
+            render: (_status: string, row: any) => {
+                const wf = buildLoanWorkflowView(row);
+                const stage = wf.workflow_stage as LoanWorkflowStage;
+                const iconMap: Partial<Record<LoanWorkflowStage, React.ReactNode>> = {
+                    pending_review: <Clock className="w-2.5 h-2.5" />,
+                    appeal_pending: <Hourglass className="w-2.5 h-2.5" />,
+                    offer_sent: <Send className="w-2.5 h-2.5" />,
+                    counter_offer_sent: <Hourglass className="w-2.5 h-2.5" />,
+                    ready_to_disburse: <CheckCircle className="w-2.5 h-2.5" />,
                     disbursed: <DollarSign className="w-2.5 h-2.5" />,
                     rejected: <X className="w-2.5 h-2.5" />,
                     repaid: <CheckCircle className="w-2.5 h-2.5" />,
-                    overdue: <AlertTriangle className="w-2.5 h-2.5" />
+                    failed: <AlertTriangle className="w-2.5 h-2.5" />,
+                    defaulted: <AlertTriangle className="w-2.5 h-2.5" />,
                 };
 
                 return (
-                    <div className="flex flex-col gap-1.5">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border
-              ${status.toLowerCase() === 'pending' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' :
-                                status.toLowerCase() === 'approved' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' :
-                                    status.toLowerCase() === 'disbursed' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' :
-                                        status.toLowerCase() === 'rejected' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/50' :
-                                            status.toLowerCase() === 'repaid' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50' :
-                                                status.toLowerCase() === 'overdue' ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/50' :
-                                                    'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}
+                    <div className="flex flex-col gap-1">
+                        <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${workflowStageBadgeClass(stage)}`}
+                            title={
+                                stage === 'counter_offer_sent'
+                                    ? 'Reduced amount offered — waiting for borrower to agree or reject'
+                                    : stage === 'offer_sent'
+                                        ? 'Formal offer sent — waiting for borrower acceptance'
+                                        : stage === 'ready_to_disburse'
+                                            ? 'Borrower accepted — ready to disburse funds'
+                                            : undefined
+                            }
                         >
-                            {iconMap[status.toLowerCase()] || <FileText className="w-2.5 h-2.5" />}
-                            {status}
+                            {iconMap[stage] || <FileText className="w-2.5 h-2.5" />}
+                            {wf.workflow_label}
                         </span>
+                        {wf.is_partial_offer && wf.awaiting_borrower_response && (
+                            <span className="text-[9px] text-orange-600 dark:text-orange-400 font-semibold uppercase tracking-wide">
+                                Awaiting borrower
+                            </span>
+                        )}
                     </div>
                 );
             }
@@ -177,7 +233,9 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
         {
             key: 'actions',
             label: t('Actions'),
-            render: (_: any, row: any) => (
+            render: (_: any, row: any) => {
+                const wf = buildLoanWorkflowView(row);
+                return (
                 <div className="flex items-center gap-1.5">
                     <button
                         onClick={() => onViewDetails(row)}
@@ -187,44 +245,59 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                         <Eye className="w-4 h-4" />
                     </button>
 
-                    {row.status === 'pending' && (
+                    {(wf.workflow_stage === 'pending_review' || wf.workflow_stage === 'appeal_pending') && (
                         <>
                             <button
                                 onClick={() => setApprovalLoan(row)}
-                                className="p-1.5 hover:bg-[#2c5173]/10 rounded text-[#2c5173] transition-colors"
-                                title="Prepare Offer"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-wider hover:bg-emerald-100 transition-colors"
+                                title={wf.has_open_appeal ? 'Review appeal and confirm new offer' : 'Confirm loan and send terms to borrower'}
                             >
-                                <Check className="w-4 h-4" />
+                                <Check className="w-3 h-3" /> Confirm
                             </button>
                             <button
-                                onClick={() => {
-                                    const reason = prompt('Enter rejection reason:') || 'Application did not meet criteria';
-                                    if (reason) onReject(row.id, reason);
-                                }}
-                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400 transition-colors"
-                                title="Reject"
+                                onClick={() => setRejectLoan(row)}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-[9px] font-black uppercase tracking-wider hover:bg-rose-100 transition-colors"
+                                title="Reject with reason"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-3 h-3" /> Reject
                             </button>
                         </>
                     )}
 
-                    {row.status === 'approved' && !row.borrower_accepted_at && (
+                    {wf.has_open_appeal && wf.appeal_comment && (
                         <span
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-700 text-[9px] font-black uppercase tracking-wider"
-                            title="Waiting for borrower to accept terms"
+                            className="inline-flex max-w-[140px] truncate items-center gap-1 px-2 py-1 rounded-lg bg-violet-50 text-violet-700 text-[9px] font-black uppercase tracking-wider"
+                            title={wf.appeal_comment}
                         >
-                            <Hourglass className="w-3 h-3" /> Awaiting Acceptance
+                            Appeal comment
                         </span>
                     )}
 
-                    {row.status === 'approved' && row.borrower_accepted_at && (
+                    {wf.awaiting_borrower_response && (
+                        <span
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                                wf.is_partial_offer
+                                    ? 'bg-orange-50 text-orange-700'
+                                    : 'bg-amber-50 text-amber-700'
+                            }`}
+                            title={
+                                wf.is_partial_offer
+                                    ? 'Counter-offer sent — waiting for cargo owner to agree or reject'
+                                    : 'Offer sent — waiting for borrower to accept terms'
+                            }
+                        >
+                            <Hourglass className="w-3 h-3" />
+                            {wf.is_partial_offer ? 'Awaiting Agree/Reject' : 'Awaiting Acceptance'}
+                        </span>
+                    )}
+
+                    {wf.ready_to_disburse && (
                         <button
                             onClick={() => setDisburseLoan(row)}
-                            className="p-1.5 hover:bg-emerald-100 rounded text-emerald-700 transition-colors"
-                            title="Disburse Funds"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-wider transition-colors shadow-sm"
+                            title="Borrower accepted — disburse funds now"
                         >
-                            <Send className="w-4 h-4" />
+                            <Send className="w-3 h-3" /> Pay Now
                         </button>
                     )}
 
@@ -238,7 +311,8 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                         </button>
                     )}
                 </div>
-            )
+                );
+            }
         }
     ];
 
@@ -295,6 +369,23 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     onSuccess={(loanId) => {
                         setApprovalLoan(null);
                         onApprove(loanId, { approvedAmount: approvalLoan.approved_amount ?? approvalLoan.requested_amount, loanTermMonths: approvalLoan.loan_term_months ?? 3, dueDate: approvalLoan.due_date ?? '' });
+                    }}
+                />
+            )}
+
+            {rejectLoan && (
+                <LoanRejectModal
+                    loan={rejectLoan}
+                    onClose={() => setRejectLoan(null)}
+                    onSuccess={() => {
+                        const id = rejectLoan.id;
+                        setRejectLoan(null);
+                        // Modal already rejected via API — refresh list
+                        void onApprove(id, {
+                            approvedAmount: rejectLoan.requested_amount,
+                            loanTermMonths: rejectLoan.loan_term_months ?? 3,
+                            dueDate: rejectLoan.due_date ?? '',
+                        });
                     }}
                 />
             )}
