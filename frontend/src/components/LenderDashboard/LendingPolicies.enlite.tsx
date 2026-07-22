@@ -15,7 +15,7 @@ import {
     TrendingUp,
     AlertTriangle
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
+import { StatCard } from '../EnliteUI';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -154,14 +154,33 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
     const { tSync: t } = useTranslation();
 
     const tabs = [
-        { id: 'interest-rates', label: 'INTEREST RATES', icon: <Percent size={14} />, category: 'interestRates' },
-        { id: 'loan-limits', label: 'LOAN LIMITS', icon: <DollarSign size={14} />, category: 'loanLimits' },
-        { id: 'eligibility', label: 'ELIGIBILITY', icon: <Users size={14} />, category: 'eligibilityCriteria' },
-        { id: 'risk-assessment', label: 'RISK RULES', icon: <Scale size={14} />, category: 'riskAssessment' },
-        { id: 'repayment', label: 'REPAYMENT', icon: <Calendar size={14} />, category: 'repaymentPolicies' },
-        { id: 'cargo-types', label: 'CARGO POLICIES', icon: <Truck size={14} />, category: 'cargoTypePolicies' },
-        { id: 'global-settings', label: 'SYSTEM CONFIG', icon: <Settings size={14} />, category: 'globalSettings' }
+        { id: 'interest-rates', label: 'Interest Rates', icon: <Percent size={14} />, category: 'interestRates' },
+        { id: 'loan-limits', label: 'Loan Limits', icon: <DollarSign size={14} />, category: 'loanLimits' },
+        { id: 'eligibility', label: 'Eligibility', icon: <Users size={14} />, category: 'eligibilityCriteria' },
+        { id: 'risk-assessment', label: 'Risk Rules', icon: <Scale size={14} />, category: 'riskAssessment' },
+        { id: 'repayment', label: 'Repayment', icon: <Calendar size={14} />, category: 'repaymentPolicies' },
+        { id: 'cargo-types', label: 'Cargo Policies', icon: <Truck size={14} />, category: 'cargoTypePolicies' },
+        { id: 'global-settings', label: 'System Config', icon: <Settings size={14} />, category: 'globalSettings' }
     ];
+
+    const activeRateCount = policies.interestRates.filter(p => p.isActive).length;
+    const avgBaseRate = policies.interestRates.length > 0
+        ? (policies.interestRates.reduce((acc, curr) => acc + curr.baseRate, 0) / policies.interestRates.length).toFixed(1)
+        : null;
+    const totalPolicyCount =
+        policies.interestRates.length +
+        policies.loanLimits.length +
+        policies.eligibilityCriteria.length +
+        policies.riskAssessment.length +
+        policies.repaymentPolicies.length +
+        policies.cargoTypePolicies.length;
+    const activePolicyCount =
+        policies.interestRates.filter(p => p.isActive).length +
+        policies.loanLimits.filter(p => p.isActive).length +
+        policies.eligibilityCriteria.filter(p => p.isActive).length +
+        policies.riskAssessment.filter(p => p.isActive).length +
+        policies.repaymentPolicies.filter(p => p.isActive).length +
+        policies.cargoTypePolicies.filter(p => p.isActive).length;
 
     const getRiskColor = (risk: string) => {
         switch (risk) {
@@ -730,96 +749,80 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Header Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="space-y-12">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     title={t("Active Rate Policies")}
-                    value={policies.interestRates.filter(p => p.isActive).length}
+                    value={activeRateCount}
                     subtitle={`${t("Total")}: ${policies.interestRates.length}`}
-                    icon={<Percent size={24} />}
+                    icon={<Percent size={18} />}
                     color="primary"
+                    variant="classic"
+                    loading={loading && policies.interestRates.length === 0}
                 />
                 <StatCard
                     title={t("Avg Base Rate")}
-                    value={`${(policies.interestRates.reduce((acc, curr) => acc + curr.baseRate, 0) / policies.interestRates.length || 0).toFixed(1)}%`}
-                    trend="+0.2% vs last month"
-                    trendDirection="up"
-                    icon={<TrendingUp size={24} />}
-                    color="secondary"
+                    value={avgBaseRate !== null ? `${avgBaseRate}%` : '—'}
+                    subtitle={policies.interestRates.length > 0 ? t("Across active rate cards") : t("No rates configured")}
+                    icon={<TrendingUp size={18} />}
+                    color="primary"
+                    variant="classic"
+                    loading={loading && policies.interestRates.length === 0}
                 />
                 <StatCard
                     title={t("Max Exposure")}
                     value={cptRwf(policies.globalSettings.manualReviewThreshold)}
                     subtitle={t("System Soft-Limit")}
-                    icon={<Shield size={24} />}
-                    color="success"
+                    icon={<Shield size={18} />}
+                    color="primary"
+                    variant="classic"
                 />
                 <StatCard
-                    title={t("Policy Health")}
-                    value="98.2%"
-                    trend={t("Stable")}
-                    trendDirection="up"
-                    icon={<Settings size={24} />}
-                    color="warning"
+                    title={t("Active Policies")}
+                    value={`${activePolicyCount}/${totalPolicyCount || 0}`}
+                    subtitle={t("Enabled across all categories")}
+                    icon={<Settings size={18} />}
+                    color="primary"
+                    variant="classic"
+                    loading={loading && totalPolicyCount === 0}
                 />
             </div>
 
-            {/* Main Configuration Console */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-                {/* Navigation Sidebar */}
-                <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-white rounded-2xl border border-slate-100 p-2 shadow-sm">
-                        <p className="px-4 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">Configuration Tiers</p>
-                        <div className="space-y-1">
-                            {tabs.map(tab => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => onTabChange(tab.id)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${activeTab === tab.id
-                                        ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-                                        : 'text-slate-500 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    <div className={`${activeTab === tab.id ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-900'}`}>
-                                        {tab.icon}
-                                    </div>
-                                    <span className="text-[10px] font-black uppercase tracking-tight">{tab.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-[#345E85] rounded-2xl p-6 text-white shadow-xl shadow-blue-100 relative overflow-hidden group">
-                        <div className="relative z-10">
-                            <Shield className="mb-4 opacity-50" size={32} />
-                            <h4 className="text-sm font-black uppercase tracking-tighter leading-tight">Policy Assurance Mode Enabled</h4>
-                            <p className="text-[10px] font-bold text-blue-100/70 mt-2 uppercase tracking-widest leading-relaxed">
-                                All changes go through consensus verification before deployment.
-                            </p>
-                        </div>
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
-                    </div>
-                </div>
-
-                {/* Content Area */}
-                <div className="lg:col-span-3">
-                    <DataCard
-                        title={currentTabInfo?.label || 'POLICY ENGINE'}
-                        subtitle={`Manage your ${currentTabInfo?.label.toLowerCase()} configurations`}
-                        actions={
-                            <button
-                                onClick={() => onAdd(currentTabInfo?.category || '')}
-                                className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 transition-all"
-                            >
-                                <Plus size={14} /> <TranslatedText text={`Add ${currentTabInfo?.label ?? 'New'}`} />
-                            </button>
-                        }
+            <div className="flex items-center gap-2 px-1 overflow-x-auto pb-1">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => onTabChange(tab.id)}
+                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                            activeTab === tab.id
+                                ? 'bg-[#2c5173] text-white shadow-lg shadow-[#2c5173]/20'
+                                : 'bg-white text-slate-500 border border-slate-100 hover:bg-slate-50'
+                        }`}
                     >
-                        {renderTabContent()}
-                    </DataCard>
-                </div>
+                        {tab.icon}
+                        {tab.label}
+                    </button>
+                ))}
             </div>
+
+            <DataCard
+                title={currentTabInfo?.label || 'Policy Engine'}
+                subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                icon={currentTabInfo?.icon ?? <Settings className="w-5 h-5" />}
+                headerColor="primary"
+                actions={
+                    activeTab !== 'global-settings' ? (
+                        <button
+                            onClick={() => onAdd(currentTabInfo?.category || '')}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-md text-[10px] font-bold uppercase tracking-widest transition-all"
+                        >
+                            <Plus size={14} /> <TranslatedText text={`Add ${currentTabInfo?.label ?? 'New'}`} />
+                        </button>
+                    ) : undefined
+                }
+            >
+                {renderTabContent()}
+            </DataCard>
         </div>
     );
 };

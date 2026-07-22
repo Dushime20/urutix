@@ -1,30 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Users,
-    UserCheck,
-    Shield,
     TrendingUp,
     Search,
-    Download,
     ChevronRight,
     Mail,
     Phone,
     Briefcase,
     DollarSign,
     AlertCircle,
-    CheckCircle2,
-    XCircle,
     Clock,
     User,
+    Filter,
 } from 'lucide-react';
-import StatCard from '../EnliteUI/Cards/StatCard';
+import { StatCard } from '../EnliteUI';
 import DataCard from '../EnliteUI/Cards/DataCard';
 import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import { TranslatedText } from '../translated-text';
-import { useTranslation } from '../../hooks/useTranslation';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface BorrowerEntry {
     borrowerId: string;
@@ -59,8 +51,6 @@ interface BorrowersEnliteProps {
     onStatusFilterChange: (v: string) => void;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const statusStyle: Record<string, string> = {
     active:    'bg-emerald-50 text-emerald-700 border-emerald-100',
     inactive:  'bg-slate-50 text-slate-600 border-slate-100',
@@ -82,8 +72,6 @@ const formatDate = (iso: string | null): string => {
     });
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
     loading,
     borrowers,
@@ -92,27 +80,20 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
     onSearchChange,
     onStatusFilterChange,
 }) => {
-    const { format } = useCurrencyFormat();
+    const { format: fmtCurrency, compact: compactAmount } = useCurrencyFormat();
     const formatAmount = (amount: number | null | undefined): string =>
-        amount == null ? '—' : format(amount, 'RWF');
-    const { tSync: t } = useTranslation();
-
-    // ── Derived stats — only from real data ───────────────────────────────────
+        amount == null ? '—' : fmtCurrency(amount);
 
     const totalBorrowers = borrowers.length;
     const activeBorrowers = borrowers.filter(b => b.status === 'active').length;
-    
     const borrowersWithScore = borrowers.filter(b => b.creditScore !== null);
     const avgCreditScore = borrowersWithScore.length > 0
         ? Math.round(borrowersWithScore.reduce((s, b) => s + b.creditScore!, 0) / borrowersWithScore.length)
         : null;
-
     const totalOutstanding = borrowers.reduce((s, b) => s + b.outstanding, 0);
     const totalDefaulted   = borrowers.reduce((s, b) => s + b.defaultedLoans, 0);
     const totalLoans       = borrowers.reduce((s, b) => s + b.loanCount, 0);
     const defaultRate      = totalLoans > 0 ? ((totalDefaulted / totalLoans) * 100).toFixed(1) : null;
-
-    // ── Filtered data ─────────────────────────────────────────────────────────
 
     const filtered = borrowers.filter(b => {
         const q = searchTerm.toLowerCase();
@@ -125,27 +106,25 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
         return matchSearch && matchStatus;
     });
 
-    // ── Table columns ─────────────────────────────────────────────────────────
-
     const columns = [
         {
             key: 'borrower',
-            label: 'BORROWER',
+            label: 'Borrower',
             render: (_: any, b: BorrowerEntry) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 flex-shrink-0">
-                        <User size={18} className="text-[#345E85]" />
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0">
+                        <User size={14} className="text-[#2c5173]" />
                     </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="font-black text-slate-900 uppercase text-[11px] truncate">
+                    <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm truncate">
                             {b.companyName ?? b.contactName ?? (
-                                <span className="text-slate-400 italic normal-case font-medium">No name on record</span>
+                                <span className="text-slate-400 italic font-medium">No name on record</span>
                             )}
-                        </span>
+                        </p>
                         {b.businessType && (
-                            <span className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium flex items-center gap-1">
                                 <Briefcase size={8} /> {b.businessType}
-                            </span>
+                            </p>
                         )}
                     </div>
                 </div>
@@ -153,37 +132,37 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
         },
         {
             key: 'contact',
-            label: 'CONTACT',
+            label: 'Contact',
             render: (_: any, b: BorrowerEntry) => (
                 <div className="flex flex-col gap-0.5">
                     {b.email && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600">
+                        <div className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
                             <Mail size={10} className="text-slate-400" /> {b.email}
                         </div>
                     )}
                     {b.phone && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600">
+                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
                             <Phone size={10} className="text-slate-400" /> {b.phone}
                         </div>
                     )}
                     {!b.email && !b.phone && (
-                        <span className="text-[10px] text-slate-400 italic">No contact info</span>
+                        <span className="text-sm text-slate-400 italic">No contact info</span>
                     )}
                 </div>
             ),
         },
         {
             key: 'credit',
-            label: 'CREDIT SCORE',
+            label: 'Credit Score',
             render: (_: any, b: BorrowerEntry) => (
-                <div className="flex flex-col gap-0.5">
-                    <span className={`font-black text-[13px] ${scoreColor(b.creditScore)}`}>
+                <div className="flex flex-col gap-1">
+                    <span className={`font-semibold text-sm ${scoreColor(b.creditScore)}`}>
                         {b.creditScore !== null ? b.creditScore : (
-                            <span className="text-slate-400 text-[10px] font-bold italic normal-case">No score</span>
+                            <span className="text-slate-400 text-xs font-medium italic">No score</span>
                         )}
                     </span>
                     {b.status && (
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border uppercase w-fit ${statusStyle[b.status] ?? statusStyle.pending}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider w-fit ${statusStyle[b.status] ?? statusStyle.pending}`}>
                             {b.status}
                         </span>
                     )}
@@ -192,13 +171,13 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
         },
         {
             key: 'loans',
-            label: 'LOAN ACTIVITY',
+            label: 'Loan Activity',
             render: (_: any, b: BorrowerEntry) => (
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-black text-slate-900">
+                <div className="min-w-0">
+                    <p className="font-semibold text-slate-900 text-sm">
                         {b.loanCount} loan{b.loanCount !== 1 ? 's' : ''}
-                    </span>
-                    <div className="flex gap-2 text-[9px] font-bold uppercase">
+                    </p>
+                    <div className="flex gap-2 text-[10px] font-medium uppercase tracking-wider">
                         {b.activeLoans > 0 && <span className="text-blue-600">{b.activeLoans} active</span>}
                         {b.repaidLoans > 0 && <span className="text-emerald-600">{b.repaidLoans} repaid</span>}
                         {b.defaultedLoans > 0 && <span className="text-rose-600">{b.defaultedLoans} defaulted</span>}
@@ -209,25 +188,25 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
         },
         {
             key: 'exposure',
-            label: 'EXPOSURE',
+            label: 'Exposure',
             render: (_: any, b: BorrowerEntry) => (
-                <div className="flex flex-col gap-0.5">
-                    <span className="font-black text-slate-900 text-[11px]">
+                <div className="min-w-0">
+                    <p className="font-semibold text-slate-900 text-sm">
                         {formatAmount(b.outstanding > 0 ? b.outstanding : null)}
-                    </span>
-                    <span className="text-[9px] text-slate-400 font-bold uppercase">
+                    </p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">
                         {formatAmount(b.totalApproved > 0 ? b.totalApproved : null)} approved
-                    </span>
+                    </p>
                 </div>
             ),
         },
         {
             key: 'last_loan',
-            label: 'LAST LOAN',
+            label: 'Last Loan',
             render: (_: any, b: BorrowerEntry) => (
                 <div className="flex items-center gap-1.5">
                     <Clock size={11} className="text-slate-400 flex-shrink-0" />
-                    <span className="text-[10px] font-semibold text-slate-600 whitespace-nowrap">
+                    <span className="text-sm font-medium text-slate-600 whitespace-nowrap">
                         {formatDate(b.lastLoanDate)}
                     </span>
                 </div>
@@ -236,7 +215,7 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
         {
             key: 'actions',
             label: '',
-            render: (_: any, b: BorrowerEntry) => (
+            render: () => (
                 <div className="flex justify-end">
                     <button
                         className="p-2 hover:bg-slate-50 rounded-xl transition-all group"
@@ -249,166 +228,106 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
         },
     ];
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-
-            {/* ── Stats Row ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="space-y-12">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
-                    title={t("Total Borrowers")}
+                    title="Total Borrowers"
                     value={totalBorrowers.toString()}
-                    subtitle={`${activeBorrowers} ${t("active")}`}
-                    icon={<Users size={24} />}
+                    subtitle={`${activeBorrowers} active`}
+                    icon={<Users size={18} />}
                     color="primary"
+                    variant="classic"
+                    loading={loading && borrowers.length === 0}
                 />
                 <StatCard
-                    title={t("Avg Credit Score")}
-                    value={avgCreditScore !== null ? avgCreditScore.toString() : 'N/A'}
+                    title="Avg Credit Score"
+                    value={avgCreditScore !== null ? avgCreditScore.toString() : '—'}
                     subtitle={avgCreditScore !== null
-                        ? `${borrowersWithScore.length} of ${totalBorrowers} ${t("scored")}`
-                        : t('No credit scores on record')}
-                    icon={<TrendingUp size={24} />}
-                    color="secondary"
+                        ? `${borrowersWithScore.length} of ${totalBorrowers} scored`
+                        : 'No credit scores on record'}
+                    icon={<TrendingUp size={18} />}
+                    color="primary"
+                    variant="classic"
+                    loading={loading && borrowers.length === 0}
                 />
                 <StatCard
-                    title={t("Outstanding")}
-                    value={totalOutstanding > 0 ? formatAmount(totalOutstanding) : 'N/A'}
-                    subtitle={totalOutstanding > 0 ? t('Across all borrowers') : t('All settled')}
-                    icon={<DollarSign size={24} />}
-                    color="warning"
+                    title="Outstanding"
+                    value={totalOutstanding > 0 ? compactAmount(totalOutstanding) : '—'}
+                    subtitle={totalOutstanding > 0 ? 'Across all borrowers' : 'All settled'}
+                    icon={<DollarSign size={18} />}
+                    color="primary"
+                    variant="classic"
+                    loading={loading && borrowers.length === 0}
                 />
                 <StatCard
-                    title={t("Default Rate")}
-                    value={defaultRate !== null ? `${defaultRate}%` : 'N/A'}
+                    title="Default Rate"
+                    value={defaultRate !== null ? `${defaultRate}%` : '—'}
                     subtitle={defaultRate !== null
-                        ? `${totalDefaulted} of ${totalLoans} ${t("loans")}`
-                        : t('No default data')}
-                    icon={<AlertCircle size={24} />}
-                    color={totalDefaulted > 0 ? 'error' : 'success'}
+                        ? `${totalDefaulted} of ${totalLoans} loans`
+                        : 'No default data'}
+                    icon={<AlertCircle size={18} />}
+                    color="primary"
+                    variant="classic"
+                    loading={loading && borrowers.length === 0}
                 />
             </div>
 
-            {/* ── Main Layout ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-
-                {/* Sidebar */}
-                <div className="lg:col-span-1 space-y-4">
-
-                    {/* Status breakdown */}
-                    <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-2">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                            Status Breakdown
-                        </p>
-                        {Object.keys(statusStyle).map(s => {
-                            const cnt = borrowers.filter(b => b.status === s).length;
-                            if (cnt === 0) return null;
-                            return (
-                                <div key={s} className="flex items-center justify-between py-1">
-                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase ${statusStyle[s]}`}>
-                                        {s}
-                                    </span>
-                                    <span className="text-[11px] font-black text-slate-700">{cnt}</span>
-                                </div>
-                            );
-                        })}
-                        {borrowers.length === 0 && (
-                            <p className="text-[10px] text-slate-400 italic">No data</p>
-                        )}
-                    </div>
-
-                    {/* Defaulted alert */}
-                    {totalDefaulted > 0 && (
-                        <div className="bg-rose-50 rounded-2xl border border-rose-100 p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <XCircle size={16} className="text-rose-600" />
-                                <p className="text-[10px] font-black text-rose-700 uppercase tracking-widest">
-                                    {totalDefaulted} Defaulted Loan{totalDefaulted !== 1 ? 's' : ''}
-                                </p>
-                            </div>
-                            <p className="text-xs text-rose-600">
-                                Across {borrowers.filter(b => b.defaultedLoans > 0).length} borrower{borrowers.filter(b => b.defaultedLoans > 0).length !== 1 ? 's' : ''}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Overdue alert */}
-                    {borrowers.some(b => b.overdueLoans > 0) && (
-                        <div className="bg-orange-50 rounded-2xl border border-orange-100 p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <AlertCircle size={16} className="text-orange-600" />
-                                <p className="text-[10px] font-black text-orange-700 uppercase tracking-widest">
-                                    {borrowers.reduce((s, b) => s + b.overdueLoans, 0)} Overdue
-                                </p>
-                            </div>
-                            <p className="text-xs text-orange-600">
-                                Across {borrowers.filter(b => b.overdueLoans > 0).length} borrower{borrowers.filter(b => b.overdueLoans > 0).length !== 1 ? 's' : ''}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Policy note */}
-                    <div className="bg-[#345E85] rounded-2xl p-5 text-white shadow-xl shadow-blue-100 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <Shield className="mb-3 opacity-50" size={24} />
-                            <h4 className="text-[11px] font-black uppercase tracking-tighter leading-tight">
-                                Data Policy
-                            </h4>
-                            <p className="text-[9px] font-bold text-blue-100/70 mt-2 uppercase tracking-widest leading-relaxed">
-                                Borrower records are derived exclusively from verified loan history.
-                                Only borrowers with at least one loan appear here.
-                            </p>
-                        </div>
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12" />
-                    </div>
-                </div>
-
-                {/* Main table */}
-                <div className="lg:col-span-3">
-                    <DataCard
-                        title={t("BORROWER DIRECTORY")}
-                        subtitle={t("Verified borrowers from loan history")}
-                    >
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between gap-4 py-2 mt-2">
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="SEARCH BORROWERS..."
-                                        value={searchTerm}
-                                        onChange={e => onSearchChange(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black tracking-widest uppercase focus:ring-2 focus:ring-[#345E85] focus:outline-none transition-all"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <select
-                                        value={statusFilter}
-                                        onChange={e => onStatusFilterChange(e.target.value)}
-                                        className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black tracking-widest uppercase focus:outline-none"
-                                    >
-                                        <option value="all">ALL STATUS</option>
-                                        <option value="active">ACTIVE</option>
-                                        <option value="inactive">INACTIVE</option>
-                                        <option value="suspended">SUSPENDED</option>
-                                        <option value="pending">PENDING</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <EnhancedTable
-                                columns={columns}
-                                data={filtered}
-                                loading={loading}
-                                striped
-                                hoverable
-                                    emptyMessage={t("No borrowers found")}
+            <DataCard
+                title="Borrower Directory"
+                subtitle="Verified borrowers from loan history"
+                icon={<Users className="w-5 h-5" />}
+                headerColor="primary"
+                actions={
+                    <div className="flex items-center gap-2">
+                        <div className="relative hidden md:block">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" size={14} />
+                            <input
+                                type="text"
+                                placeholder="SEARCH BORROWERS..."
+                                value={searchTerm}
+                                onChange={e => onSearchChange(e.target.value)}
+                                className="w-48 lg:w-56 pl-9 pr-3 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
                             />
                         </div>
-                    </DataCard>
+                        <div className="flex items-center gap-1.5">
+                            <Filter size={14} className="text-white/70" />
+                            <select
+                                value={statusFilter}
+                                onChange={e => onStatusFilterChange(e.target.value)}
+                                className="px-2.5 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white focus:outline-none"
+                            >
+                                <option value="all" className="text-slate-900">ALL STATUS</option>
+                                <option value="active" className="text-slate-900">ACTIVE</option>
+                                <option value="inactive" className="text-slate-900">INACTIVE</option>
+                                <option value="suspended" className="text-slate-900">SUSPENDED</option>
+                                <option value="pending" className="text-slate-900">PENDING</option>
+                            </select>
+                        </div>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <div className="relative md:hidden">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search borrowers..."
+                            value={searchTerm}
+                            onChange={e => onSearchChange(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173]"
+                        />
+                    </div>
+                    <EnhancedTable
+                        columns={columns}
+                        data={filtered}
+                        loading={loading}
+                        striped
+                        hoverable
+                        emptyMessage="No borrowers found"
+                    />
                 </div>
-            </div>
+            </DataCard>
         </div>
     );
 };
