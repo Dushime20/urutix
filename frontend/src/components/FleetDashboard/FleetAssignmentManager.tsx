@@ -84,6 +84,7 @@ const FleetAssignmentManager = () => {
   const getAvailableDrivers = () => {
     return drivers.filter(driver => 
       driver.status === 'ACTIVE' && 
+      !driver.currentTruckId &&
       !assignments.some(a => a.driverId === driver.id && a.status === 'ACTIVE')
     );
   };

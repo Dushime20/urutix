@@ -4,6 +4,7 @@ import { X, Users, Truck, Route, CheckCircle, AlertCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fleetApi } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
+import { errorMessage } from '../../utils/error';
 
 interface CreateAssignmentModalProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ const CreateAssignmentModal = ({
       resetForm();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to create assignment');
+      toast.error(errorMessage(error, 'Failed to create assignment'));
     }
   });
 

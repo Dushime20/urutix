@@ -35,6 +35,8 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
     cargoType: 'GENERAL',
     weight: '',
     volume: '',
+    numberOfPieces: '',
+    numberOfPallets: '',
     pickupLocation: '',
     deliveryLocation: '',
     pickupDate: new Date().toISOString().split('T')[0],
@@ -78,6 +80,8 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         cargoType: cargo.cargoType || 'GENERAL',
         weight: cargo.weight?.toString() || '',
         volume: cargo.volume && Number(cargo.volume) > 0 ? cargo.volume.toString() : '',
+        numberOfPieces: cargo.numberOfPieces?.toString() || '',
+        numberOfPallets: cargo.numberOfPallets?.toString() || '',
         pickupLocation: cargo.pickupLocation?.address || cargo.pickupLocation?.name || '',
         deliveryLocation: cargo.deliveryLocation?.address || cargo.deliveryLocation?.name || '',
         pickupDate: new Date().toISOString().split('T')[0], // Reset dates to today/tomorrow
@@ -183,6 +187,19 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         return;
       }
 
+      const parsedPieces = formData.numberOfPieces ? parseInt(formData.numberOfPieces, 10) : 0;
+      const parsedPallets = formData.numberOfPallets ? parseInt(formData.numberOfPallets, 10) : 0;
+      if (formData.numberOfPieces && (!Number.isFinite(parsedPieces) || parsedPieces < 0 || parsedPieces > 10000)) {
+        toast.error('Number of pieces must be between 0 and 10,000');
+        setLoading(false);
+        return;
+      }
+      if (formData.numberOfPallets && (!Number.isFinite(parsedPallets) || parsedPallets < 0 || parsedPallets > 1000)) {
+        toast.error('Number of boxes (pallets) must be between 0 and 1,000');
+        setLoading(false);
+        return;
+      }
+
       // Create cargo with minimal data and defaults to satisfy ICargoBody
       const cargoData: ICargoBody = {
         title: formData.title,
@@ -281,8 +298,8 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         isTimeCritical: false,
         maxTransitTime: 0,
         packagingType: 'Palletized',
-        numberOfPieces: 1,
-        numberOfPallets: 1,
+        numberOfPieces: parsedPieces,
+        numberOfPallets: parsedPallets,
         requiresGpsMonitoring: true,
         requiresTemperatureMonitoring: false,
         insuranceValue: parseFloat(formData.loadValue),
@@ -310,6 +327,8 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
         cargoType: 'GENERAL',
         weight: '',
         volume: '',
+        numberOfPieces: '',
+        numberOfPallets: '',
         pickupLocation: '',
         deliveryLocation: '',
         pickupDate: new Date().toISOString().split('T')[0],
@@ -465,6 +484,33 @@ const QuickCreateModal: React.FC<QuickCreateModalProps> = ({ isOpen, onClose, on
               min="0.01"
               step="0.01"
               placeholder="Optional — can add later"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <EnliteInput
+              id="numberOfPieces"
+              name="numberOfPieces"
+              label="Number of Pieces"
+              type="number"
+              value={formData.numberOfPieces}
+              onChange={handleChange}
+              min="0"
+              max="10000"
+              step="1"
+              placeholder="e.g. 50"
+            />
+            <EnliteInput
+              id="numberOfPallets"
+              name="numberOfPallets"
+              label="Number of Boxes (Pallets)"
+              type="number"
+              value={formData.numberOfPallets}
+              onChange={handleChange}
+              min="0"
+              max="1000"
+              step="1"
+              placeholder="e.g. 5"
             />
           </div>
 

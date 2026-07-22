@@ -1874,6 +1874,53 @@ export class FleetService {
     }
   }
 
+  /**
+   * Atomically move a driver from their current truck (if any) to a new truck.
+   * Preferred over manual unassign + assign for fleet transfers.
+   */
+  async transferDriverToTruck(
+    toTruckId: string,
+    driverId: string,
+    tenantId: string,
+    userId: string,
+    notes?: string,
+  ): Promise<{ assignment: any; transferred: boolean }> {
+    const driver = await this.findOneDriver(driverId, tenantId, userId);
+    const fromTruckId = driver.currentTruckId;
+
+    if (fromTruckId === toTruckId) {
+      const existingAssignment = await this.findOneTruck(toTruckId, tenantId, userId);
+      const alreadyAssigned = existingAssignment.assignedDrivers?.find(
+        (d) => d.driverId === driverId,
+      );
+      if (alreadyAssigned) {
+        throw new ConflictException('Driver is already assigned to this truck');
+      }
+    }
+
+    if (fromTruckId && fromTruckId !== toTruckId) {
+      await this.unassignDriverFromTruck(
+        fromTruckId,
+        driverId,
+        tenantId,
+        userId,
+      );
+    }
+
+    const assignment = await this.assignDriverToTruck(
+      toTruckId,
+      driverId,
+      tenantId,
+      userId,
+      notes,
+    );
+
+    return {
+      assignment,
+      transferred: Boolean(fromTruckId && fromTruckId !== toTruckId),
+    };
+  }
+
   // Truck records and documents
   async getTruckRecords(truckId: string, tenantId: string): Promise<any> {
     const truck = await this.findOneTruck(truckId, tenantId);

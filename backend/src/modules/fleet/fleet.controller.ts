@@ -684,6 +684,57 @@ export class FleetController {
     }
   }
 
+  @Post('trucks/:id/transfer-driver')
+  @ApiOperation({
+    summary: 'Transfer driver to truck',
+    description:
+      'Moves a driver from their current truck (if any) to the target truck in one operation',
+  })
+  @ApiParam({ name: 'id', description: 'Target truck ID (UUID)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        driverId: { type: 'string', description: 'Driver ID (UUID)' },
+        notes: { type: 'string', description: 'Assignment notes (optional)' },
+      },
+      required: ['driverId'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Driver transferred to truck successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Truck or driver not found' })
+  @ApiResponse({ status: 409, description: 'Driver cannot be transferred' })
+  async transferDriverToTruck(
+    @Param('id', ParseUUIDPipe) truckId: string,
+    @Body() body: { driverId: string; notes?: string },
+    @Request() req,
+  ) {
+    if (!req.user?.userId || !req.user?.tenantId) {
+      throw new UnauthorizedException('User not authenticated.');
+    }
+    if (!body.driverId) {
+      throw new BadRequestException('Driver ID is required');
+    }
+
+    const result = await this.fleetService.transferDriverToTruck(
+      truckId,
+      body.driverId,
+      req.user.tenantId,
+      req.user.userId,
+      body.notes,
+    );
+
+    return {
+      message: result.transferred
+        ? 'Driver transferred to truck successfully'
+        : 'Driver assigned to truck successfully',
+      assignment: result.assignment,
+    };
+  }
+
   // Truck records endpoints
   @Get('trucks/:id/records')
   @ApiOperation({

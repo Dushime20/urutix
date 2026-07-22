@@ -10,9 +10,10 @@ import {
     ArrowRight,
     Loader2
 } from 'lucide-react';
-import { fleetApi, type Driver, type DriverAssignment } from '../../services/fleetApi';
+import { fleetApi, type Driver, type DriverAssignment, type Truck } from '../../services/fleetApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { errorMessage } from '../../utils/error';
 
 interface AssignmentModalProps {
     isOpen: boolean;
@@ -24,6 +25,7 @@ interface AssignmentModalProps {
 
 const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truckId, truckName, onAssignSuccess }) => {
     const [drivers, setDrivers] = useState<Driver[]>([]);
+    const [trucks, setTrucks] = useState<Truck[]>([]);
     const [currentAssignments, setCurrentAssignments] = useState<DriverAssignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState<'active' | 'assign'>('active');
@@ -57,22 +59,38 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
     const loadData = async () => {
         setLoading(true);
         try {
-            const truck = await fleetApi.getTruck(truckId);
-            if (truck && truck.assignedDrivers) {
+            const [truck, allDrivers, allTrucks] = await Promise.all([
+                fleetApi.getTruck(truckId),
+                fleetApi.getDrivers(),
+                fleetApi.getTrucks({}),
+            ]);
+
+            if (truck?.assignedDrivers) {
                 setCurrentAssignments(truck.assignedDrivers);
             } else {
                 setCurrentAssignments([]);
             }
 
-            const allDrivers = await fleetApi.getDrivers();
             setDrivers(allDrivers.filter(d => d.status === 'ACTIVE'));
+            setTrucks(allTrucks);
         } catch (error) {
             console.error('Error loading data:', error);
-            toast.error('Failed to load data');
+            toast.error(errorMessage(error, 'Failed to load driver assignment data'));
         } finally {
             setLoading(false);
         }
     };
+
+    const getTruckLabel = (id?: string) => {
+        if (!id) return 'another truck';
+        const truck = trucks.find(t => t.id === id);
+        if (!truck) return 'another truck';
+        return truck.plateNumber || `${truck.make || ''} ${truck.model || ''}`.trim() || 'another truck';
+    };
+
+    const matchesDriverSearch = (driver: Driver) =>
+        `${driver.firstName} ${driver.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        driver.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase());
 
     const handleAssign = async (driverId: string, driverName: string) => {
         setSubmitting(driverId);
@@ -84,7 +102,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
             setViewMode('active');
         } catch (error) {
             console.error('Error assigning driver:', error);
-            toast.error('Failed to assign driver');
+            toast.error(errorMessage(error, 'Failed to assign driver'));
         } finally {
             setSubmitting(null);
         }
@@ -101,7 +119,27 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
             await loadData();
         } catch (error) {
             console.error('Error unassigning driver:', error);
-            toast.error('Failed to unassign driver');
+            toast.error(errorMessage(error, 'Failed to unassign driver'));
+        } finally {
+            setSubmitting(null);
+        }
+    };
+
+    const handleTransfer = async (driverId: string, driverName: string) => {
+        const assignedTruck = drivers.find(d => d.id === driverId)?.currentTruckId;
+        const fromLabel = getTruckLabel(assignedTruck);
+        if (!window.confirm(`Move ${driverName} from ${fromLabel} to ${truckName}?`)) return;
+
+        setSubmitting(driverId);
+        try {
+            const result = await fleetApi.transferDriverToTruck(truckId, driverId);
+            toast.success(result.message || `Transferred ${driverName} to ${truckName}`);
+            onAssignSuccess();
+            await loadData();
+            setViewMode('active');
+        } catch (error) {
+            console.error('Error transferring driver:', error);
+            toast.error(errorMessage(error, 'Failed to transfer driver'));
         } finally {
             setSubmitting(null);
         }
@@ -143,7 +181,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                 experience: 0
             });
         } catch (error: any) {
-            toast.error(error?.response?.data?.message || 'Failed to invite driver');
+            toast.error(errorMessage(error, 'Failed to invite driver'));
         } finally {
             setSubmitting(null);
         }
@@ -155,8 +193,15 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
 
     const availableDrivers = drivers.filter(driver =>
         !activeDriverIds.includes(driver.id) &&
-        (`${driver.firstName} ${driver.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            driver.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase()))
+        (!driver.currentTruckId || driver.currentTruckId === truckId) &&
+        matchesDriverSearch(driver)
+    );
+
+    const transferCandidates = drivers.filter(driver =>
+        !activeDriverIds.includes(driver.id) &&
+        driver.currentTruckId &&
+        driver.currentTruckId !== truckId &&
+        matchesDriverSearch(driver)
     );
 
     const activeAssignments = currentAssignments.filter(a => a.status === 'active');
@@ -358,12 +403,12 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                             </div>
 
                                             {/* Search Results */}
-                                            {availableDrivers.length === 0 ? (
+                                            {availableDrivers.length === 0 && transferCandidates.length === 0 ? (
                                                 <div className="py-20 text-center flex flex-col items-center bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-100 dark:border-gray-700 transition-colors">
                                                     <div className="size-16 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-200 dark:text-gray-600 mb-6">
                                                         <Search size={32} />
                                                     </div>
-                                                    <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">No available drivers found</p>
+                                                    <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">No drivers found</p>
                                                     <button
                                                         onClick={() => setAssignSubMode('new')}
                                                         className="mt-4 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:underline transition-colors"
@@ -372,31 +417,71 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <div className="grid gap-3">
-                                                    {availableDrivers.map(driver => (
-                                                        <div key={driver.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all flex items-center justify-between group">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="size-12 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                                    <span className="font-bold text-sm">{driver.firstName[0]}{driver.lastName[0]}</span>
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white transition-colors">{driver.firstName} {driver.lastName}</h4>
-                                                                    <div className="flex items-center gap-2 text-[10px] font-bold">
-                                                                        <span className="text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">{driver.licenseNumber}</span>
-                                                                        <div className="size-1 bg-green-500 rounded-full" />
-                                                                        <span className="text-green-600 dark:text-green-400 uppercase tracking-tighter transition-colors">Available</span>
+                                                <div className="space-y-6">
+                                                    {availableDrivers.length > 0 && (
+                                                        <div className="grid gap-3">
+                                                            {availableDrivers.map(driver => (
+                                                                <div key={driver.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-900/50 transition-all flex items-center justify-between group">
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="size-12 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                            <span className="font-bold text-sm">{driver.firstName[0]}{driver.lastName[0]}</span>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-bold text-gray-900 dark:text-white transition-colors">{driver.firstName} {driver.lastName}</h4>
+                                                                            <div className="flex items-center gap-2 text-[10px] font-bold">
+                                                                                <span className="text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">{driver.licenseNumber}</span>
+                                                                                <div className="size-1 bg-green-500 rounded-full" />
+                                                                                <span className="text-green-600 dark:text-green-400 uppercase tracking-tighter transition-colors">Available</span>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
+                                                                    <button
+                                                                        onClick={() => handleAssign(driver.id, `${driver.firstName} ${driver.lastName}`)}
+                                                                        disabled={submitting !== null}
+                                                                        className="px-6 py-2.5 bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded-md hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all flex items-center gap-2"
+                                                                    >
+                                                                        {submitting === driver.id ? <Loader2 size={14} className="animate-spin" /> : <><UserPlus size={14} /> Assign</>}
+                                                                    </button>
                                                                 </div>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => handleAssign(driver.id, `${driver.firstName} ${driver.lastName}`)}
-                                                                disabled={submitting !== null}
-                                                                className="px-6 py-2.5 bg-gray-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-widest rounded-md hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all flex items-center gap-2"
-                                                            >
-                                                                {submitting === driver.id ? <Loader2 size={14} className="animate-spin" /> : <><UserPlus size={14} /> Assign</>}
-                                                            </button>
+                                                            ))}
                                                         </div>
-                                                    ))}
+                                                    )}
+
+                                                    {transferCandidates.length > 0 && (
+                                                        <div className="space-y-3">
+                                                            <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest px-1">
+                                                                Assigned to another truck — transfer to {truckName}
+                                                            </p>
+                                                            <div className="grid gap-3">
+                                                                {transferCandidates.map(driver => (
+                                                                    <div key={driver.id} className="bg-amber-50/50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-100 dark:border-amber-900/40 transition-all flex items-center justify-between group">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="size-12 bg-white dark:bg-gray-800 rounded-lg flex items-center justify-center text-amber-500 transition-colors">
+                                                                                <span className="font-bold text-sm">{driver.firstName[0]}{driver.lastName[0]}</span>
+                                                                            </div>
+                                                                            <div>
+                                                                                <h4 className="text-sm font-bold text-gray-900 dark:text-white transition-colors">{driver.firstName} {driver.lastName}</h4>
+                                                                                <div className="flex items-center gap-2 text-[10px] font-bold">
+                                                                                    <span className="text-gray-400 dark:text-gray-500 uppercase tracking-wider transition-colors">{driver.licenseNumber}</span>
+                                                                                    <div className="size-1 bg-amber-500 rounded-full" />
+                                                                                    <span className="text-amber-600 dark:text-amber-400 uppercase tracking-tighter transition-colors">
+                                                                                        On {getTruckLabel(driver.currentTruckId)}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => handleTransfer(driver.id, `${driver.firstName} ${driver.lastName}`)}
+                                                                            disabled={submitting !== null}
+                                                                            className="px-6 py-2.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-widest rounded-md hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 transition-all flex items-center gap-2"
+                                                                        >
+                                                                            {submitting === driver.id ? <Loader2 size={14} className="animate-spin" /> : <><ArrowRight size={14} /> Transfer</>}
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </>

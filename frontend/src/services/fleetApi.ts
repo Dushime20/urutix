@@ -662,8 +662,20 @@ export const fleetApi = {
     await api.post(`/fleet/trucks/${truckId}/assign-driver`, payload);
   },
 
-  unassignDriverFromTruck: async (truckId: string): Promise<void> => {
-    await api.post(`/fleet/trucks/${truckId}/unassign-driver`);
+  unassignDriverFromTruck: async (truckId: string, driverId: string): Promise<void> => {
+    await api.delete(`/fleet/trucks/${truckId}/assign-driver/${driverId}`);
+  },
+
+  transferDriverToTruck: async (
+    truckId: string,
+    driverId: string,
+    notes?: string,
+  ): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>(
+      `/fleet/trucks/${truckId}/transfer-driver`,
+      { driverId, notes },
+    );
+    return response.data;
   },
 
   // Analytics operations

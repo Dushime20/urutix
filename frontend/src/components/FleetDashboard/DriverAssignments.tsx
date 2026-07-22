@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { fleetApi, type FleetItem, type Driver, type DriverAssignment } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
+import { errorMessage } from '../../utils/error';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 
@@ -38,7 +39,7 @@ export const DriverAssignments: React.FC = () => {
       setTrucks(trucksData);
       setDrivers(driversData);
     } catch (error: any) {
-      toast.error('Failed to synchronize personnel matrix');
+      toast.error(errorMessage(error, 'Failed to synchronize personnel matrix'));
     } finally {
       setLoading(false);
     }
@@ -57,9 +58,30 @@ export const DriverAssignments: React.FC = () => {
     );
   });
 
+  const getTruckLabel = (id?: string) => {
+    if (!id) return 'another truck';
+    const truck = trucks.find(t => t.id === id);
+    if (!truck) return 'another truck';
+    return truck.plateNumber || `${truck.make || ''} ${truck.model || ''}`.trim() || 'another truck';
+  };
+
   const getAvailableDrivers = (truck: FleetItem): Driver[] => {
     const assignedDriverIds = (truck.assignedDrivers || []).map(a => a.driverId);
-    return drivers.filter(driver => !assignedDriverIds.includes(driver.id));
+    return drivers.filter(
+      driver =>
+        !assignedDriverIds.includes(driver.id) &&
+        (!driver.currentTruckId || driver.currentTruckId === truck.id),
+    );
+  };
+
+  const getTransferCandidates = (truck: FleetItem): Driver[] => {
+    const assignedDriverIds = (truck.assignedDrivers || []).map(a => a.driverId);
+    return drivers.filter(
+      driver =>
+        !assignedDriverIds.includes(driver.id) &&
+        !!driver.currentTruckId &&
+        driver.currentTruckId !== truck.id,
+    );
   };
 
   const handleAssignDriver = async (truckId: string, driverId: string) => {
@@ -74,7 +96,7 @@ export const DriverAssignments: React.FC = () => {
       setAssignmentNotes('');
       await loadData();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Synchronization failed');
+      toast.error(errorMessage(error, 'Synchronization failed'));
     } finally {
       setAssigning(false);
     }
@@ -87,7 +109,28 @@ export const DriverAssignments: React.FC = () => {
       toast.success('Assignment terminated');
       await loadData();
     } catch (error: any) {
-      toast.error('Termination failed');
+      toast.error(errorMessage(error, 'Termination failed'));
+    }
+  };
+
+  const handleTransferDriver = async (truckId: string, driverId: string, driverName: string) => {
+    const driver = drivers.find(d => d.id === driverId);
+    const fromLabel = getTruckLabel(driver?.currentTruckId);
+    const toLabel = getTruckLabel(truckId);
+    if (!confirm(`Move ${driverName} from ${fromLabel} to ${toLabel}?`)) return;
+
+    setAssigning(true);
+    try {
+      const result = await fleetApi.transferDriverToTruck(truckId, driverId, assignmentNotes || undefined);
+      toast.success(result.message || `Transferred ${driverName} to ${toLabel}`);
+      setShowAssignModal(false);
+      setSelectedTruck(null);
+      setAssignmentNotes('');
+      await loadData();
+    } catch (error: any) {
+      toast.error(errorMessage(error, 'Transfer failed'));
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -224,7 +267,7 @@ export const DriverAssignments: React.FC = () => {
                 />
               </div>
 
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+              <div className="max-h-60 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                 {getAvailableDrivers(selectedTruck)
                   .filter(d => `${d.firstName} ${d.lastName}`.toLowerCase().includes(searchDriver.toLowerCase()))
                   .map(driver => (
@@ -240,12 +283,43 @@ export const DriverAssignments: React.FC = () => {
                         </div>
                         <div className="text-left">
                           <p className="text-sm font-bold text-slate-900">{driver.firstName} {driver.lastName}</p>
-                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{driver.licenseNumber}</p>
+                          <p className="text-[9px] font-black uppercase text-emerald-500 tracking-widest">Available</p>
                         </div>
                       </div>
                       <CheckCircle2 size={18} className="text-slate-200 group-hover/driver:text-primary-500" />
                     </button>
                   ))}
+
+                {getTransferCandidates(selectedTruck)
+                  .filter(d => `${d.firstName} ${d.lastName}`.toLowerCase().includes(searchDriver.toLowerCase()))
+                  .map(driver => (
+                    <button
+                      key={`transfer-${driver.id}`}
+                      onClick={() => handleTransferDriver(selectedTruck.id, driver.id, `${driver.firstName} ${driver.lastName}`)}
+                      disabled={assigning}
+                      className="w-full p-4 flex items-center justify-between bg-amber-50 rounded-2xl border border-amber-100 hover:border-amber-200 hover:bg-amber-100/60 transition-all group/driver"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="size-10 bg-white rounded-xl flex items-center justify-center text-amber-500 shadow-sm">
+                          <User size={18} />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-slate-900">{driver.firstName} {driver.lastName}</p>
+                          <p className="text-[9px] font-black uppercase text-amber-600 tracking-widest">
+                            On {getTruckLabel(driver.currentTruckId)} — tap to transfer
+                          </p>
+                        </div>
+                      </div>
+                      <CheckCircle2 size={18} className="text-amber-300 group-hover/driver:text-amber-600" />
+                    </button>
+                  ))}
+
+                {getAvailableDrivers(selectedTruck).length === 0 &&
+                  getTransferCandidates(selectedTruck).length === 0 && (
+                    <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest py-8">
+                      No drivers available for this truck
+                    </p>
+                  )}
               </div>
 
               <textarea
