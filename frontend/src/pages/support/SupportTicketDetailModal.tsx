@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { disputesAPI } from '../../services/api';
-import { buildFileUrl } from '../../utils/fileUrl';
 import {
   type Dispute, type DisputeMessage, type DisputeAttachment,
   type DisputeResolution, type DisputeTimeline,
@@ -104,6 +103,17 @@ const SupportTicketDetailModal: React.FC<Props> = ({ disputeId, isAdmin = false,
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['dispute-attachments', disputeId] }); toast.success('File uploaded'); },
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Upload failed'),
   });
+  const [openingAttachmentId, setOpeningAttachmentId] = useState<string | null>(null);
+  const openAttachment = async (attachmentId: string) => {
+    setOpeningAttachmentId(attachmentId);
+    try {
+      await disputesAPI.openAttachmentInNewTab(disputeId, attachmentId);
+    } catch {
+      toast.error('Failed to open attachment');
+    } finally {
+      setOpeningAttachmentId(null);
+    }
+  };
   const resolveMut  = useMutation({ mutationFn: () => disputesAPI.resolve(disputeId, { decision: resolveDecision, resolutionSummary: resolveSummary, adminNotes: resolveNotes }), onSuccess: () => { setShowResolve(false); invalidate(); toast.success('Ticket resolved'); }, onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed') });
   const closeMut    = useMutation({ mutationFn: () => disputesAPI.close(disputeId), onSuccess: () => { invalidate(); toast.success('Ticket closed'); }, onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed') });
   const reopenMut   = useMutation({ mutationFn: () => disputesAPI.reopen(disputeId, 'Admin reopened'), onSuccess: () => { invalidate(); toast.success('Ticket reopened'); }, onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Failed') });
@@ -284,9 +294,16 @@ const SupportTicketDetailModal: React.FC<Props> = ({ disputeId, isAdmin = false,
                     <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{att.fileName}</p>
                     <p className="text-[10px] text-gray-400">{getUserDisplayName(att.uploader)} · {formatRelativeTime(att.createdAt)} {att.fileSize && `· ${(att.fileSize / 1024).toFixed(0)}KB`}</p>
                   </div>
-                  <a href={buildFileUrl(att.fileUrl)} target="_blank" rel="noreferrer" className="px-2.5 py-1.5 bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 text-gray-700 dark:text-slate-200 rounded-lg text-[11px] font-bold hover:bg-gray-50 dark:hover:bg-slate-500 flex items-center gap-1">
-                    <Eye size={11} /> View
-                  </a>
+                  <button
+                    type="button"
+                    onClick={() => openAttachment(att.id)}
+                    disabled={openingAttachmentId === att.id}
+                    className="px-2.5 py-1.5 bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 text-gray-700 dark:text-slate-200 rounded-lg text-[11px] font-bold hover:bg-gray-50 dark:hover:bg-slate-500 flex items-center gap-1 disabled:opacity-50">
+                    {openingAttachmentId === att.id
+                      ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                      : <Eye size={11} />}
+                    View
+                  </button>
                 </div>
               ))}
             </div>

@@ -442,6 +442,21 @@ export class DisputesService {
     });
   }
 
+  async getAttachment(
+    disputeId: string,
+    attachmentId: string,
+    user: User,
+  ): Promise<DisputeAttachment> {
+    await this.findOne(disputeId, user);
+    const attachment = await this.attachmentRepo.findOne({
+      where: { id: attachmentId, disputeId },
+    });
+    if (!attachment) {
+      throw new NotFoundException('Attachment not found');
+    }
+    return attachment;
+  }
+
   // ─── Resolve ───────────────────────────────────────────────────────────────
   async resolve(id: string, dto: ResolveDisputeDto, user: User): Promise<DisputeV2> {
     if (!canResolve(user.role)) throw new ForbiddenException('Only Tenant Admins can resolve tickets.');

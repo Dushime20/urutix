@@ -325,6 +325,23 @@ export const disputesAPI = {
     return api.post(`/disputes/${id}/attachments`, formData);
   },
   getAttachments: (id: string) => api.get(`/disputes/${id}/attachments`),
+  openAttachmentInNewTab: async (disputeId: string, attachmentId: string): Promise<void> => {
+    const response = await api.get(`/disputes/${disputeId}/attachments/${attachmentId}/file`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], {
+      type: response.headers['content-type'] || 'application/octet-stream',
+    });
+    const blobUrl = URL.createObjectURL(blob);
+    const win = window.open(blobUrl, '_blank');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    if (!win) {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.target = '_blank';
+      a.click();
+    }
+  },
 
   // Timeline & resolutions
   getTimeline: (id: string) => api.get(`/disputes/${id}/timeline`),

@@ -1,8 +1,11 @@
 import {
   Controller, Get, Post, Patch, Delete, Body, Param,
   Query, UseGuards, Request, UseInterceptors, UploadedFile,
-  HttpCode, HttpStatus,
+  HttpCode, HttpStatus, Res, NotFoundException,
 } from '@nestjs/common';
+import { Response } from 'express';
+import * as fs from 'fs';
+import { join } from 'path';
 import {
   ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody,
 } from '@nestjs/swagger';
@@ -127,6 +130,37 @@ export class DisputesController {
   @Get(':id/attachments')
   async getAttachments(@Param('id') id: string, @Request() req) {
     return { success: true, data: await this.disputesService.getAttachments(id, req.user) };
+  }
+
+  @Get(':id/attachments/:attachmentId/file')
+  @ApiOperation({ summary: 'View dispute attachment (authenticated)' })
+  async serveAttachment(
+    @Param('id') id: string,
+    @Param('attachmentId') attachmentId: string,
+    @Request() req,
+    @Res() res: Response,
+  ): Promise<void> {
+    const attachment = await this.disputesService.getAttachment(id, attachmentId, req.user);
+    if (!attachment.fileUrl) {
+      throw new NotFoundException('Attachment file not found');
+    }
+
+    let urlPath: string;
+    try {
+      urlPath = new URL(attachment.fileUrl).pathname;
+    } catch {
+      urlPath = attachment.fileUrl.startsWith('/') ? attachment.fileUrl : `/${attachment.fileUrl}`;
+    }
+
+    const filePath = join(process.cwd(), urlPath);
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException(`File not found on server: ${filePath}`);
+    }
+
+    res.setHeader('Content-Type', attachment.fileType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${attachment.fileName}"`);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.sendFile(filePath);
   }
 
   // ── Timeline ───────────────────────────────────────────────────────────────
