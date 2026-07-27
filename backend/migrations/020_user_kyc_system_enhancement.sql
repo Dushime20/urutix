@@ -92,51 +92,61 @@ CREATE INDEX IF NOT EXISTS idx_user_kyc_audit_log_created_at ON user_kyc_audit_l
 
 CREATE INDEX IF NOT EXISTS idx_kyc_role_requirements_role ON kyc_role_requirements(role);
 
--- Insert default KYC requirements for each role (idempotent)
-INSERT INTO kyc_role_requirements (role, requirement_level, required_documents, optional_documents, verification_steps, auto_approval_eligible, description)
-SELECT * FROM (VALUES
-('TRUCK_OWNER', 'ENHANCED', 
- ARRAY['IDENTITY_DOCUMENT', 'DRIVER_LICENSE', 'BUSINESS_LICENSE', 'INSURANCE_CERTIFICATE', 'BANK_STATEMENT'], 
- ARRAY['VEHICLE_REGISTRATION', 'SAFETY_CERTIFICATE'],
- ARRAY['identity_verification', 'address_verification', 'business_verification', 'financial_verification', 'background_check'],
- FALSE,
- 'Enhanced KYC for truck owners including business and financial verification'),
-
-('CARGO_OWNER', 'STANDARD', 
- ARRAY['IDENTITY_DOCUMENT', 'BUSINESS_LICENSE', 'TAX_CERTIFICATE', 'BANK_STATEMENT'], 
- ARRAY['TRADE_LICENSE', 'WAREHOUSE_CERTIFICATE'],
- ARRAY['identity_verification', 'business_verification', 'financial_verification'],
- FALSE,
- 'Standard KYC for cargo owners with business verification'),
-
-('BROKER', 'ENHANCED', 
- ARRAY['IDENTITY_DOCUMENT', 'BROKER_LICENSE', 'BUSINESS_LICENSE', 'BANK_STATEMENT', 'PROFESSIONAL_CERTIFICATE'], 
- ARRAY['BONDING_CERTIFICATE', 'CREDIT_REPORT'],
- ARRAY['identity_verification', 'business_verification', 'financial_verification', 'professional_verification'],
- FALSE,
- 'Enhanced KYC for brokers including professional licensing verification'),
-
-('DRIVER', 'STANDARD', 
- ARRAY['IDENTITY_DOCUMENT', 'DRIVER_LICENSE', 'MEDICAL_CERTIFICATE'], 
- ARRAY['SAFETY_TRAINING_CERTIFICATE', 'EXPERIENCE_CERTIFICATE'],
- ARRAY['identity_verification', 'license_verification', 'medical_verification'],
- TRUE,
- 'Standard KYC for drivers with license and medical verification'),
-
-('AGENT', 'BASIC', 
- ARRAY['IDENTITY_DOCUMENT', 'PROOF_OF_ADDRESS'], 
- ARRAY['PROFESSIONAL_REFERENCE'],
- ARRAY['identity_verification', 'address_verification'],
- TRUE,
- 'Basic KYC for agents with identity verification'),
-
-('LENDER', 'PREMIUM', 
- ARRAY['IDENTITY_DOCUMENT', 'BUSINESS_LICENSE', 'FINANCIAL_LICENSE', 'BANK_STATEMENT', 'CREDIT_REPORT', 'REGULATORY_APPROVAL'], 
- ARRAY['AUDIT_REPORT', 'COMPLIANCE_CERTIFICATE'],
- ARRAY['identity_verification', 'business_verification', 'financial_verification', 'regulatory_verification', 'compliance_verification'],
- FALSE,
- 'Premium KYC for lenders with full regulatory compliance verification')
-) AS v(role, requirement_level, required_documents, optional_documents, verification_steps, auto_approval_eligible, description)
+-- Insert default KYC requirements for each role (idempotent).
+-- Cast requirement_level explicitly — VALUES() yields text, column is an enum.
+INSERT INTO kyc_role_requirements (
+  role, requirement_level, required_documents, optional_documents,
+  verification_steps, auto_approval_eligible, description
+)
+SELECT
+  v.role,
+  v.requirement_level::user_kyc_requirement_level,
+  v.required_documents,
+  v.optional_documents,
+  v.verification_steps,
+  v.auto_approval_eligible,
+  v.description
+FROM (VALUES
+  ('TRUCK_OWNER', 'ENHANCED',
+   ARRAY['IDENTITY_DOCUMENT', 'DRIVER_LICENSE', 'BUSINESS_LICENSE', 'INSURANCE_CERTIFICATE', 'BANK_STATEMENT'],
+   ARRAY['VEHICLE_REGISTRATION', 'SAFETY_CERTIFICATE'],
+   ARRAY['identity_verification', 'address_verification', 'business_verification', 'financial_verification', 'background_check'],
+   FALSE,
+   'Enhanced KYC for truck owners including business and financial verification'),
+  ('CARGO_OWNER', 'STANDARD',
+   ARRAY['IDENTITY_DOCUMENT', 'BUSINESS_LICENSE', 'TAX_CERTIFICATE', 'BANK_STATEMENT'],
+   ARRAY['TRADE_LICENSE', 'WAREHOUSE_CERTIFICATE'],
+   ARRAY['identity_verification', 'business_verification', 'financial_verification'],
+   FALSE,
+   'Standard KYC for cargo owners with business verification'),
+  ('BROKER', 'ENHANCED',
+   ARRAY['IDENTITY_DOCUMENT', 'BROKER_LICENSE', 'BUSINESS_LICENSE', 'BANK_STATEMENT', 'PROFESSIONAL_CERTIFICATE'],
+   ARRAY['BONDING_CERTIFICATE', 'CREDIT_REPORT'],
+   ARRAY['identity_verification', 'business_verification', 'financial_verification', 'professional_verification'],
+   FALSE,
+   'Enhanced KYC for brokers including professional licensing verification'),
+  ('DRIVER', 'STANDARD',
+   ARRAY['IDENTITY_DOCUMENT', 'DRIVER_LICENSE', 'MEDICAL_CERTIFICATE'],
+   ARRAY['SAFETY_TRAINING_CERTIFICATE', 'EXPERIENCE_CERTIFICATE'],
+   ARRAY['identity_verification', 'license_verification', 'medical_verification'],
+   TRUE,
+   'Standard KYC for drivers with license and medical verification'),
+  ('AGENT', 'BASIC',
+   ARRAY['IDENTITY_DOCUMENT', 'PROOF_OF_ADDRESS'],
+   ARRAY['PROFESSIONAL_REFERENCE'],
+   ARRAY['identity_verification', 'address_verification'],
+   TRUE,
+   'Basic KYC for agents with identity verification'),
+  ('LENDER', 'PREMIUM',
+   ARRAY['IDENTITY_DOCUMENT', 'BUSINESS_LICENSE', 'FINANCIAL_LICENSE', 'BANK_STATEMENT', 'CREDIT_REPORT', 'REGULATORY_APPROVAL'],
+   ARRAY['AUDIT_REPORT', 'COMPLIANCE_CERTIFICATE'],
+   ARRAY['identity_verification', 'business_verification', 'financial_verification', 'regulatory_verification', 'compliance_verification'],
+   FALSE,
+   'Premium KYC for lenders with full regulatory compliance verification')
+) AS v(
+  role, requirement_level, required_documents, optional_documents,
+  verification_steps, auto_approval_eligible, description
+)
 WHERE NOT EXISTS (
   SELECT 1 FROM kyc_role_requirements k WHERE k.role = v.role
 );

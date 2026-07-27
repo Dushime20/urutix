@@ -678,9 +678,16 @@ async function runMigrations(force = false) {
       logInfo('All migrations already executed. Database is up to date.');
     }
 
-    // Auto-reconcile historical failures (objective met / superseded / retry)
-    const exitOnUnresolved = process.env.FAIL_ON_MIGRATION_ERROR !== 'false';
-    await reconcileMigrations({ exitOnUnresolved });
+    // Auto-reconcile historical failures. Do not abort container startup for
+    // leftover historical failures — that causes crash loops. Manual
+    // `node migrate.js reconcile` still fails hard when exitOnUnresolved=true.
+    const result = await reconcileMigrations({ exitOnUnresolved: false });
+    if (result?.unresolved > 0) {
+      logWarning(
+        `${result.unresolved} historical migration(s) still unresolved — app will start. ` +
+        'Run: node migrate.js doctor',
+      );
+    }
 
   } catch (error) {
     logError(`Migration error: ${error.message}`);
