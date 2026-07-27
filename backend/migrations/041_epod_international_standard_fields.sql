@@ -31,7 +31,7 @@ END $$;
 
 -- ── 3. Create epods table (full schema — safe on fresh databases) ──────────────
 CREATE TABLE IF NOT EXISTS epods (
-  id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "tenantId"            UUID NOT NULL,
   "tripId"              UUID NOT NULL UNIQUE,
   "driverId"            UUID NOT NULL,
@@ -73,27 +73,46 @@ CREATE TABLE IF NOT EXISTS epods (
 
 -- ── 4. Safe ALTER TABLE for databases that already have the old epods table ────
 
-ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientIdNumber"  VARCHAR(100);
-ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientCompany"   VARCHAR(200);
-ALTER TABLE epods ADD COLUMN IF NOT EXISTS "deliveredAt"        TIMESTAMP WITH TIME ZONE;
-ALTER TABLE epods ADD COLUMN IF NOT EXISTS "unitsDelivered"     VARCHAR(100);
-ALTER TABLE epods ADD COLUMN IF NOT EXISTS "exceptionNotes"     TEXT;
-ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputedAt"         TIMESTAMP WITH TIME ZONE;
-ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputeReason"      TEXT;
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'epods'
+  ) THEN
+    ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientIdNumber"  VARCHAR(100);
+    ALTER TABLE epods ADD COLUMN IF NOT EXISTS "recipientCompany"   VARCHAR(200);
+    ALTER TABLE epods ADD COLUMN IF NOT EXISTS "deliveredAt"        TIMESTAMP WITH TIME ZONE;
+    ALTER TABLE epods ADD COLUMN IF NOT EXISTS "unitsDelivered"     VARCHAR(100);
+    ALTER TABLE epods ADD COLUMN IF NOT EXISTS "exceptionNotes"     TEXT;
+    ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputedAt"         TIMESTAMP WITH TIME ZONE;
+    ALTER TABLE epods ADD COLUMN IF NOT EXISTS "disputeReason"      TEXT;
+  END IF;
+END $$;
 
 -- cargoCondition needs the enum type to exist first (already created above)
 DO $$ BEGIN
-  ALTER TABLE epods
-    ADD COLUMN "cargoCondition" cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT';
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'epods'
+  ) THEN
+    ALTER TABLE epods
+      ADD COLUMN "cargoCondition" cargo_condition_on_delivery_enum NOT NULL DEFAULT 'INTACT';
+  END IF;
 EXCEPTION WHEN duplicate_column THEN NULL;
 END $$;
 
 -- ── 5. Indexes ─────────────────────────────────────────────────────────────────
-CREATE INDEX IF NOT EXISTS idx_epods_tenant_status  ON epods ("tenantId", status);
-CREATE INDEX IF NOT EXISTS idx_epods_cargo_owner    ON epods ("cargoOwnerId");
-CREATE INDEX IF NOT EXISTS idx_epods_driver         ON epods ("driverId");
-CREATE INDEX IF NOT EXISTS idx_epods_submitted_at   ON epods ("submittedAt");
-CREATE INDEX IF NOT EXISTS idx_epods_cargo_cond     ON epods ("cargoCondition");
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'epods'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_epods_tenant_status  ON epods ("tenantId", status);
+    CREATE INDEX IF NOT EXISTS idx_epods_cargo_owner    ON epods ("cargoOwnerId");
+    CREATE INDEX IF NOT EXISTS idx_epods_driver         ON epods ("driverId");
+    CREATE INDEX IF NOT EXISTS idx_epods_submitted_at   ON epods ("submittedAt");
+    CREATE INDEX IF NOT EXISTS idx_epods_cargo_cond     ON epods ("cargoCondition");
+  END IF;
+END $$;
 
 -- ── 6. trips table: ensure completedAt column exists ──────────────────────────
 ALTER TABLE trips ADD COLUMN IF NOT EXISTS "completedAt" TIMESTAMP WITH TIME ZONE;

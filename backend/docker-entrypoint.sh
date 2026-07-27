@@ -119,6 +119,8 @@ run_migrations() {
     log_success "Migrations completed successfully."
   else
     log_error "Migration runner exited with an error."
+    log_info "Diagnose: docker compose exec backend node migrate.js doctor"
+    log_info "Repair:   docker compose exec backend node migrate.js reconcile"
 
     if [[ "${FAIL_ON_MIGRATION_ERROR:-true}" == "true" ]]; then
       log_error "FAIL_ON_MIGRATION_ERROR=true — aborting startup."

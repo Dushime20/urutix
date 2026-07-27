@@ -2,25 +2,26 @@
 -- Date: 2026-05-08
 -- Description: Add fields to support REVERSE, FORWARD, DUTCH, and SEALED auction types
 
--- The auctions table already has most required columns
--- Just add any missing constraints and indexes
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'auctions'
+  ) THEN
+    RAISE NOTICE 'auctions table missing — skipping professional auction types migration';
+    RETURN;
+  END IF;
 
--- Add check constraints for data integrity (if they don't exist)
-DO $$ 
-BEGIN
-    -- Check if constraint exists before adding
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.table_constraints 
-        WHERE constraint_name = 'check_reverse_pricing' 
-        AND table_name = 'auctions'
-    ) THEN
-        ALTER TABLE auctions
-        ADD CONSTRAINT check_reverse_pricing 
-          CHECK (
-            "auctionType" != 'REVERSE' OR 
-            ("targetPrice" IS NOT NULL AND "reservePrice" IS NOT NULL)
-          );
-    END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'check_reverse_pricing' AND table_name = 'auctions'
+  ) THEN
+    ALTER TABLE auctions
+    ADD CONSTRAINT check_reverse_pricing
+      CHECK (
+        "auctionType" != 'REVERSE' OR
+        ("targetPrice" IS NOT NULL AND "reservePrice" IS NOT NULL)
+      );
+  END IF;
 END $$;
 
 -- Add indexes for performance (if they don't exist)

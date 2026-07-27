@@ -92,8 +92,9 @@ CREATE INDEX IF NOT EXISTS idx_user_kyc_audit_log_created_at ON user_kyc_audit_l
 
 CREATE INDEX IF NOT EXISTS idx_kyc_role_requirements_role ON kyc_role_requirements(role);
 
--- Insert default KYC requirements for each role
-INSERT INTO kyc_role_requirements (role, requirement_level, required_documents, optional_documents, verification_steps, auto_approval_eligible, description) VALUES
+-- Insert default KYC requirements for each role (idempotent)
+INSERT INTO kyc_role_requirements (role, requirement_level, required_documents, optional_documents, verification_steps, auto_approval_eligible, description)
+SELECT * FROM (VALUES
 ('TRUCK_OWNER', 'ENHANCED', 
  ARRAY['IDENTITY_DOCUMENT', 'DRIVER_LICENSE', 'BUSINESS_LICENSE', 'INSURANCE_CERTIFICATE', 'BANK_STATEMENT'], 
  ARRAY['VEHICLE_REGISTRATION', 'SAFETY_CERTIFICATE'],
@@ -134,7 +135,11 @@ INSERT INTO kyc_role_requirements (role, requirement_level, required_documents, 
  ARRAY['AUDIT_REPORT', 'COMPLIANCE_CERTIFICATE'],
  ARRAY['identity_verification', 'business_verification', 'financial_verification', 'regulatory_verification', 'compliance_verification'],
  FALSE,
- 'Premium KYC for lenders with full regulatory compliance verification');
+ 'Premium KYC for lenders with full regulatory compliance verification')
+) AS v(role, requirement_level, required_documents, optional_documents, verification_steps, auto_approval_eligible, description)
+WHERE NOT EXISTS (
+  SELECT 1 FROM kyc_role_requirements k WHERE k.role = v.role
+);
 
 -- Update existing user profiles with appropriate requirement levels based on user roles
 UPDATE user_profiles 

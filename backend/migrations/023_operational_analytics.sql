@@ -206,13 +206,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger for automatic carrier performance updates
-DROP TRIGGER IF EXISTS trigger_update_carrier_performance ON cargo_owner_analytics;
-CREATE TRIGGER trigger_update_carrier_performance
-    AFTER INSERT OR UPDATE ON cargo_owner_analytics
-    FOR EACH ROW
-    WHEN (NEW.carrier_id IS NOT NULL)
-    EXECUTE FUNCTION update_carrier_performance_metrics();
+-- Create trigger for automatic carrier performance updates (requires cargo_owner_analytics)
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'cargo_owner_analytics'
+  ) THEN
+    DROP TRIGGER IF EXISTS trigger_update_carrier_performance ON cargo_owner_analytics;
+    CREATE TRIGGER trigger_update_carrier_performance
+      AFTER INSERT OR UPDATE ON cargo_owner_analytics
+      FOR EACH ROW
+      WHEN (NEW.carrier_id IS NOT NULL)
+      EXECUTE FUNCTION update_carrier_performance_metrics();
+  END IF;
+END $$;
 
 -- Insert sample market intelligence data for testing
 INSERT INTO market_intelligence_data (data_type, geographic_scope, time_period, cargo_type, metrics, source, confidence_score, participant_count) VALUES
@@ -227,21 +234,30 @@ INSERT INTO market_intelligence_data (data_type, geographic_scope, time_period, 
  'market_analysis', 0.70, 10);
 
 -- Create view for operational analytics dashboard
-CREATE OR REPLACE VIEW operational_analytics_dashboard AS
-SELECT 
-    coa.tenant_id,
-    coa.cargo_owner_id,
-    COUNT(*) as total_shipments,
-    AVG(coa.on_time_delivery::int * 100) as on_time_rate,
-    AVG(coa.damage_reported::int * 100) as damage_rate,
-    AVG(coa.cost_per_km) as avg_cost_per_km,
-    AVG(coa.actual_transit_hours) as avg_transit_hours,
-    COUNT(DISTINCT coa.carrier_id) as active_carriers,
-    COUNT(DISTINCT coa.route_hash) as active_routes,
-    AVG(coa.carrier_rating) as avg_carrier_rating
-FROM cargo_owner_analytics coa
-WHERE coa.booking_date >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY coa.tenant_id, coa.cargo_owner_id;
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'cargo_owner_analytics'
+  ) THEN
+    EXECUTE $view$
+      CREATE OR REPLACE VIEW operational_analytics_dashboard AS
+      SELECT
+        coa.tenant_id,
+        coa.cargo_owner_id,
+        COUNT(*) as total_shipments,
+        AVG(coa.on_time_delivery::int * 100) as on_time_rate,
+        AVG(coa.damage_reported::int * 100) as damage_rate,
+        AVG(coa.cost_per_km) as avg_cost_per_km,
+        AVG(coa.actual_transit_hours) as avg_transit_hours,
+        COUNT(DISTINCT coa.carrier_id) as active_carriers,
+        COUNT(DISTINCT coa.route_hash) as active_routes,
+        AVG(coa.carrier_rating) as avg_carrier_rating
+      FROM cargo_owner_analytics coa
+      WHERE coa.booking_date >= CURRENT_DATE - INTERVAL '30 days'
+      GROUP BY coa.tenant_id, coa.cargo_owner_id
+    $view$;
+  END IF;
+END $$;
 
 -- Grant permissions (skipped — role urutix_app is not guaranteed to exist)
 -- GRANT SELECT, INSERT, UPDATE, DELETE ON carrier_performance_metrics TO urutix_app;

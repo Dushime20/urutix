@@ -41,6 +41,8 @@
     "migration:run:linux": "npx typeorm-ts-node-commonjs migration:run -d src/config/database-postgres.config.ts",
     "migrations:run": "node migrate.js",
     "migrations:status": "node migrate.js status",
+    "migrations:doctor": "node migrate.js doctor",
+    "migrations:reconcile": "node migrate.js reconcile",
     "migrations:errors": "node migrate.js errors",
     "migrations:retry-failed": "node migrate.js retry-failed",
     "migrations:force": "node migrate.js --force",

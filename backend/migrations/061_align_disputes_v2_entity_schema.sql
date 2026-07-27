@@ -280,12 +280,28 @@ DO $$ BEGIN
     ALTER TABLE dispute_audit_logs ADD COLUMN IF NOT EXISTS "userAgent" text;
     ALTER TABLE dispute_audit_logs ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMPTZ DEFAULT NOW();
 
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'dispute_audit_logs' AND column_name = 'dispute_id'
+  ) THEN
     UPDATE dispute_audit_logs SET
       "disputeId"   = COALESCE("disputeId", dispute_id),
       "performedBy" = COALESCE("performedBy", "userId"),
       "oldValue"    = COALESCE("oldValue", old_value),
-      "newValue"    = COALESCE("newValue", new_value)
+      "newValue"    = COALESCE("newValue", new_value),
+      "ipAddress"   = COALESCE("ipAddress", ip_address),
+      "userAgent"   = COALESCE("userAgent", user_agent)
     WHERE "disputeId" IS NULL OR "performedBy" IS NULL;
+
+    ALTER TABLE dispute_audit_logs DROP CONSTRAINT IF EXISTS dispute_audit_logs_dispute_id_fkey;
+    DROP INDEX IF EXISTS idx_dispute_audit_dispute;
+    ALTER TABLE dispute_audit_logs DROP COLUMN IF EXISTS dispute_id;
+    ALTER TABLE dispute_audit_logs DROP COLUMN IF EXISTS "userId";
+    ALTER TABLE dispute_audit_logs DROP COLUMN IF EXISTS old_value;
+    ALTER TABLE dispute_audit_logs DROP COLUMN IF EXISTS new_value;
+    ALTER TABLE dispute_audit_logs DROP COLUMN IF EXISTS ip_address;
+    ALTER TABLE dispute_audit_logs DROP COLUMN IF EXISTS user_agent;
+  END IF;
   END IF;
 EXCEPTION WHEN others THEN
   RAISE NOTICE 'dispute_audit_logs align skipped: %', SQLERRM;

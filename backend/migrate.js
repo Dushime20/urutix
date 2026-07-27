@@ -20,6 +20,12 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+const {
+  SUCCESS_LIKE,
+  MIGRATION_HEALTH,
+  assessMigration,
+} = require('./migration-health');
+
 const MIGRATION_TABLE = 'schema_migrations';
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
 
@@ -172,11 +178,11 @@ async function executeMigration(client, migrationFile, force = false) {
       [migrationFile]
     );
     const status = statusResult.rows[0]?.status;
-    if (status === 'success') {
+    if (SUCCESS_LIKE.has(status)) {
       logInfo(`Skipping ${migrationFile} (already executed)`);
       return { skipped: true, reason: 'executed' };
     }
-    logInfo(`Skipping ${migrationFile} (recorded as ${status}; use: node migrate.js retry-failed)`);
+    logInfo(`Skipping ${migrationFile} (recorded as ${status}; use: node migrate.js retry-failed or reconcile)`);
     return { skipped: true, reason: status || 'executed' };
   }
 
@@ -213,6 +219,182 @@ async function executeMigration(client, migrationFile, force = false) {
 
     logError(`${migrationFile} failed: ${error.message}`);
     return { success: false, error: error.message };
+  }
+}
+
+async function markMigrationResolved(client, migrationName, status, note) {
+  await client.query(
+    `UPDATE ${MIGRATION_TABLE}
+     SET status = $2,
+         error_message = $3,
+         executed_at = CURRENT_TIMESTAMP
+     WHERE migration_name = $1`,
+    [migrationName, status, note],
+  );
+}
+
+async function reconcileMigrations({ exitOnUnresolved = false } = {}) {
+  logHeader('MIGRATION RECONCILIATION');
+
+  const config = getDbConfig();
+  const client = new Client(config);
+
+  try {
+    await client.connect();
+    await createMigrationTable(client);
+
+    const failed = await client.query(
+      `SELECT migration_name, error_message, executed_at
+       FROM ${MIGRATION_TABLE}
+       WHERE status = 'failed'
+       ORDER BY id`,
+    );
+
+    if (failed.rows.length === 0) {
+      logSuccess('No failed migrations — database ledger is clean.');
+      return { reconciled: 0, retried: 0, unresolved: 0 };
+    }
+
+    logInfo(`Found ${failed.rows.length} failed migration(s). Assessing and repairing...\n`);
+
+    let reconciled = 0;
+    let retried = 0;
+    let unresolved = 0;
+
+    for (const row of failed.rows) {
+      const name = row.migration_name;
+      const assessment = await assessMigration(client, name, { ...row, status: 'failed' });
+
+      if (assessment.healthy) {
+        const status = assessment.reason?.startsWith('superseded') ? 'superseded' : 'reconciled';
+        await markMigrationResolved(
+          client,
+          name,
+          status,
+          assessment.reason || 'objective verified by migration-health',
+        );
+        logSuccess(`${name} → ${status} (${assessment.reason})`);
+        reconciled++;
+        continue;
+      }
+
+      const filePath = path.join(MIGRATIONS_DIR, name);
+      if (!fs.existsSync(filePath)) {
+        logWarning(`${name} — file missing, cannot retry`);
+        unresolved++;
+        continue;
+      }
+
+      logInfo(`${name} — retrying SQL...`);
+      const run = await executeMigration(client, name, true);
+      if (run.success) {
+        retried++;
+        logSuccess(`${name} → success (retry)`);
+        continue;
+      }
+
+      const after = await assessMigration(client, name, {
+        ...row,
+        status: 'failed',
+      });
+      if (after.healthy) {
+        await markMigrationResolved(
+          client,
+          name,
+          'reconciled',
+          'objective verified after retry failure',
+        );
+        logSuccess(`${name} → reconciled (objective met despite retry error)`);
+        reconciled++;
+      } else {
+        logError(`${name} — still unresolved: ${row.error_message || run.error || 'unknown'}`);
+        unresolved++;
+      }
+    }
+
+    logHeader('RECONCILIATION SUMMARY');
+    log(`🔧 Reconciled/superseded: ${reconciled}`, colors.green);
+    log(`🔁 Fixed by retry: ${retried}`, colors.green);
+    log(`❌ Unresolved: ${unresolved}`, unresolved > 0 ? colors.red : colors.green);
+
+    if (unresolved > 0 && exitOnUnresolved) {
+      logError('\nUnresolved failed migrations remain. Run: node migrate.js doctor');
+      process.exit(1);
+    }
+
+    return { reconciled, retried, unresolved };
+  } finally {
+    await client.end();
+  }
+}
+
+async function doctorMigrations() {
+  logHeader('MIGRATION DOCTOR');
+
+  const config = getDbConfig();
+  const client = new Client(config);
+
+  try {
+    await client.connect();
+    await createMigrationTable(client);
+
+    const executed = await getExecutedMigrations(client);
+    const executedMap = new Map(executed.map((m) => [m.migration_name, m]));
+    const allMigrations = getMigrationFiles();
+
+    let healthy = 0;
+    let warnings = 0;
+    let critical = 0;
+
+    for (const migration of allMigrations) {
+      const row = executedMap.get(migration);
+      const assessment = await assessMigration(client, migration, row);
+
+      if (!row) {
+        log(`⏳ ${migration} — PENDING`, colors.yellow);
+        warnings++;
+        continue;
+      }
+
+      if (SUCCESS_LIKE.has(row.status)) {
+        log(`✅ ${migration} — ${row.status}`, colors.green);
+        healthy++;
+        continue;
+      }
+
+      if (assessment.healthy) {
+        log(`🔧 ${migration} — failed but objective met (${assessment.reason})`, colors.yellow);
+        logInfo(`   Run: node migrate.js reconcile`);
+        warnings++;
+        continue;
+      }
+
+      log(`❌ ${migration} — FAILED`, colors.red);
+      if (row.error_message) {
+        log(`   error: ${row.error_message}`, colors.yellow);
+      }
+      if (MIGRATION_HEALTH[migration]?.description) {
+        log(`   expects: ${MIGRATION_HEALTH[migration].description}`, colors.cyan);
+      }
+      critical++;
+    }
+
+    logHeader('DOCTOR SUMMARY');
+    log(`✅ Healthy: ${healthy}`, colors.green);
+    log(`⚠️  Warnings (pending / needs reconcile): ${warnings}`, colors.yellow);
+    log(`❌ Critical (failed + objective missing): ${critical}`, critical > 0 ? colors.red : colors.green);
+
+    if (critical > 0) {
+      logError('\nAction: fix SQL or run node migrate.js reconcile');
+      process.exit(1);
+    }
+    if (warnings > 0) {
+      logWarning('\nRun: node migrate.js reconcile');
+    } else {
+      logSuccess('Migration ledger is healthy.');
+    }
+  } finally {
+    await client.end();
   }
 }
 
@@ -300,9 +482,19 @@ async function showStatus(client) {
   );
   
   const pending = allMigrations.filter(m => !executedMap.has(m));
-  
+  const failedCount = executedMigrations.filter(m => m.status === 'failed').length;
+  const reconciledCount = executedMigrations.filter(m =>
+    m.status === 'reconciled' || m.status === 'superseded'
+  ).length;
+
   log(`📊 Total migrations: ${allMigrations.length}`, colors.cyan);
-  log(`✅ Executed: ${executedMigrations.length}`, colors.green);
+  log(`✅ Successful: ${executedMigrations.filter(m => m.status === 'success').length}`, colors.green);
+  if (reconciledCount > 0) {
+    log(`🔧 Reconciled/superseded: ${reconciledCount}`, colors.cyan);
+  }
+  if (failedCount > 0) {
+    log(`❌ Failed (needs action): ${failedCount}`, colors.red);
+  }
   log(`⏳ Pending: ${pending.length}`, colors.yellow);
   log('');
   
@@ -319,11 +511,16 @@ async function showStatus(client) {
     const number = String(index + 1).padStart(3, '0');
     
     if (executed) {
-      const status = executed.status === 'success' ? '✅' : '❌';
+      const icon = executed.status === 'success' ? '✅'
+        : executed.status === 'reconciled' ? '🔧'
+        : executed.status === 'superseded' ? '↪️'
+        : executed.status === 'failed' ? '❌' : '•';
+      const color = SUCCESS_LIKE.has(executed.status) ? colors.green
+        : executed.status === 'failed' ? colors.red : colors.yellow;
       const date = new Date(executed.executed_at).toLocaleString();
       const time = executed.execution_time_ms ? `${executed.execution_time_ms}ms` : 'N/A';
-      log(`${number}. ${status} ${migration.padEnd(50)} ${date} (${time})`, 
-          executed.status === 'success' ? colors.green : colors.red);
+      const label = executed.status === 'success' ? '' : ` [${executed.status}]`;
+      log(`${number}. ${icon} ${migration.padEnd(50)} ${date} (${time})${label}`, color);
     } else {
       log(`${number}. ⏳ ${migration.padEnd(50)} PENDING`, colors.yellow);
     }
@@ -480,12 +677,16 @@ async function runMigrations(force = false) {
     } else if (skipped === migrationFiles.length) {
       logInfo('All migrations already executed. Database is up to date.');
     }
-    
+
+    // Auto-reconcile historical failures (objective met / superseded / retry)
+    const exitOnUnresolved = process.env.FAIL_ON_MIGRATION_ERROR !== 'false';
+    await reconcileMigrations({ exitOnUnresolved });
+
   } catch (error) {
     logError(`Migration error: ${error.message}`);
     console.error(error);
     process.exit(1);
-    
+
   } finally {
     await client.end();
     logInfo('Database connection closed');
@@ -549,6 +750,12 @@ async function main() {
     } else if (command === 'retry-failed' || command === '--retry-failed') {
       await retryFailedMigrations();
 
+    } else if (command === 'reconcile' || command === '--reconcile') {
+      await reconcileMigrations({ exitOnUnresolved: true });
+
+    } else if (command === 'doctor' || command === '--doctor') {
+      await doctorMigrations();
+
     } else if (command === 'create' || command === '--create') {
       createMigration(args[1]);
 
@@ -574,4 +781,10 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { runMigrations, showStatus, createMigration };
+module.exports = {
+  runMigrations,
+  showStatus,
+  createMigration,
+  reconcileMigrations,
+  doctorMigrations,
+};

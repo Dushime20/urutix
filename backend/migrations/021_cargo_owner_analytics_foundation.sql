@@ -97,7 +97,7 @@ CREATE INDEX idx_insights_tenant_owner ON analytics_insights(tenant_id, cargo_ow
 CREATE INDEX idx_insights_expires ON analytics_insights(expires_at) WHERE expires_at IS NOT NULL;
 
 -- Add analytics permissions to existing permissions table
-INSERT INTO permissions (id, name, resource, action, description, created_at, updated_at, category) VALUES
+INSERT INTO permissions (id, name, resource, action, description, "createdAt", "updatedAt", category) VALUES
 (gen_random_uuid(), 'analytics:view', 'analytics', 'view', 'View analytics dashboards and reports', NOW(), NOW(), 'analytics'),
 (gen_random_uuid(), 'analytics:export', 'analytics', 'export', 'Export analytics data and reports', NOW(), NOW(), 'analytics'),
 (gen_random_uuid(), 'analytics:insights', 'analytics', 'insights', 'Access AI-generated insights and recommendations', NOW(), NOW(), 'analytics'),
