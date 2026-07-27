@@ -120,6 +120,13 @@ export enum NotificationType {
   PAYMENT_REMINDER = 'PAYMENT_REMINDER',
   TRUCK_OWNER_PAYMENT_RECEIVED = 'TRUCK_OWNER_PAYMENT_RECEIVED',
 
+  // Dispute / support notifications
+  DISPUTE_REPORTED = 'DISPUTE_REPORTED',
+  DISPUTE_UPDATED = 'DISPUTE_UPDATED',
+  DISPUTE_ESCALATED = 'DISPUTE_ESCALATED',
+  DISPUTE_RESOLVED = 'DISPUTE_RESOLVED',
+  DISPUTE_SLA_BREACHED = 'DISPUTE_SLA_BREACHED',
+
   // Other
   GENERAL = 'GENERAL',
   REMINDER = 'REMINDER',
@@ -154,6 +161,7 @@ export enum NotificationCategory {
   MARKETING = 'MARKETING',
   LOAN = 'LOAN',
   AUCTION = 'AUCTION',
+  DISPUTE = 'DISPUTE',
 }
 
 export enum NotificationStatus {
@@ -189,6 +197,7 @@ export enum EntityType {
   EXPENSE = 'EXPENSE',
   LOAN = 'LOAN',
   AUCTION = 'AUCTION',
+  DISPUTE = 'DISPUTE',
 }
 
 @Entity('notifications')

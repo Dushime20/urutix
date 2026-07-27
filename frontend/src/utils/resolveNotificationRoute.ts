@@ -168,11 +168,13 @@ function moduleFallbackForPath(pathname: string, role?: string | null): string {
     if (role === 'DRIVER') return '/dashboard/driver/cargo';
     return '/dashboard/cargos';
   }
-  if (pathname.includes('/dispute')) {
+  if (pathname.includes('/dispute') || pathname.includes('/support')) {
     if (role === 'BROKER') return '/dashboard/broker/disputes';
     if (role === 'TRUCK_OWNER') return '/dashboard/fleet/disputes';
     if (role === 'LENDER') return '/lender/disputes';
     if (role === 'DRIVER') return '/dashboard/driver/disputes';
+    if (role === 'SUPER_ADMIN' || role === 'ADMIN') return '/admin/support';
+    if (role === 'TENANT_ADMIN') return '/tenant-admin/support';
     return '/dashboard/disputes';
   }
   if (pathname.includes('/credit')) {

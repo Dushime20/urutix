@@ -47,7 +47,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 const roles = payload.roles || (payload.role ? [payload.role] : []);
 
                 if (roles.includes('admin') || roles.includes('tenant_admin') ||
-                    roles.includes('SUPER_ADMIN') || roles.includes('ADMIN')) { // Also check uppercase enum values
+                    roles.includes('SUPER_ADMIN') || roles.includes('ADMIN') ||
+                    roles.includes('TENANT_ADMIN')) {
                     client.join('admin');
                     console.log(`Client ${client.id} joined admin room`);
                 }

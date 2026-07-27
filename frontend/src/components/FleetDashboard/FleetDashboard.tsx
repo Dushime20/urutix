@@ -615,7 +615,7 @@ export const FleetDashboard: React.FC = () => {
               className="space-y-8"
             >
               {/* Specialized View Header (Hidden for tabs that implement their own complete control surfaces) */}
-              {!['trucks', 'drivers', 'assignments', 'bids', 'financial', 'expenses', 'loans'].includes(activeTab) && (
+              {!['trucks', 'drivers', 'assignments', 'bids', 'financial', 'expenses', 'loans', 'fuel'].includes(activeTab) && (
                 <div className="bg-white dark:bg-gray-900 p-8 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-6">
                     <div className="h-16 w-16 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-blue-500 dark:text-blue-400">
