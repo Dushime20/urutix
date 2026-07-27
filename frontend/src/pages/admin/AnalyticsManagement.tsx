@@ -42,6 +42,7 @@ import {
 } from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
+import { DataCard } from '../../components/EnliteUI/Cards/DataCard';
 import { adminAPI } from '../../services/adminApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 

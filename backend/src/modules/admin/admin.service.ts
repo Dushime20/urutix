@@ -10,7 +10,7 @@ import { User } from '../../entities/user.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Tenant, TenantStatus, TenantType } from '../../entities/tenant.entity';
-import { Dispute } from '../../entities/dispute.entity';
+import { DisputeV2, DisputeStatusV2 } from '../../entities/dispute-v2.entity';
 import { AuditLog } from '../../entities/audit-log.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
@@ -30,8 +30,8 @@ export class AdminService {
     @InjectRepository(Notification)
     private readonly notificationRepo: Repository<Notification>,
     @InjectRepository(Tenant) private readonly tenantRepo: Repository<Tenant>,
-    @InjectRepository(Dispute)
-    private readonly disputeRepo: Repository<Dispute>,
+    @InjectRepository(DisputeV2)
+    private readonly disputeRepo: Repository<DisputeV2>,
     @InjectRepository(AuditLog)
     private readonly auditRepo: Repository<AuditLog>,
     @InjectRepository(Trip) private readonly tripRepo: Repository<Trip>,
@@ -774,14 +774,49 @@ export class AdminService {
     }
   }
 
+  private mapDisputeForAdmin(dispute: DisputeV2) {
+    const latestResolution = [...(dispute.resolutions || [])].sort(
+      (a, b) => new Date(b.resolvedAt).getTime() - new Date(a.resolvedAt).getTime(),
+    )[0];
+
+    return {
+      id: dispute.id,
+      tenantId: dispute.tenantId,
+      tripId: dispute.tripId,
+      raisedById: dispute.complainantUserId,
+      status: dispute.status,
+      reason: dispute.description || dispute.title,
+      resolution: latestResolution?.resolutionSummary || dispute.additionalNotes,
+      createdAt: dispute.createdAt,
+      updatedAt: dispute.updatedAt,
+      raisedBy: dispute.complainant
+        ? {
+            id: dispute.complainant.id,
+            email: dispute.complainant.email,
+            firstName: dispute.complainant.profile?.firstName,
+            lastName: dispute.complainant.profile?.lastName,
+            role: dispute.complainant.role,
+          }
+        : undefined,
+      trip: dispute.trip
+        ? {
+            id: dispute.trip.id,
+            tripNumber: dispute.trip.tripNumber,
+            agreedPrice: dispute.trip.agreedPrice,
+            status: dispute.trip.status,
+          }
+        : undefined,
+    };
+  }
+
   async getDisputes(tenantId: string) {
     const disputes = await this.disputeRepo.find({
       where: tenantId ? ({ tenantId } as any) : {},
-      relations: ['raisedBy', 'trip'],
+      relations: ['complainant', 'complainant.profile', 'trip', 'resolutions'],
       take: 200,
       order: { createdAt: 'DESC' } as any,
     });
-    return { disputes };
+    return { disputes: disputes.map((dispute) => this.mapDisputeForAdmin(dispute)) };
   }
 
   async updateDisputeStatus(
@@ -791,17 +826,20 @@ export class AdminService {
   ) {
     const dispute = await this.disputeRepo.findOne({
       where: { id: disputeId } as any,
-      relations: ['raisedBy', 'trip'],
+      relations: ['complainant', 'complainant.profile', 'trip', 'resolutions'],
     });
     if (!dispute) {
       throw new Error('Dispute not found');
     }
-    (dispute as any).status = status;
+    dispute.status = status as DisputeStatusV2;
+    if (status === DisputeStatusV2.RESOLVED) {
+      dispute.resolvedAt = new Date();
+    }
     if (resolution) {
-      (dispute as any).resolution = resolution;
+      dispute.additionalNotes = resolution;
     }
     const saved = await this.disputeRepo.save(dispute);
-    return { dispute: saved };
+    return { dispute: this.mapDisputeForAdmin(saved) };
   }
 
   async getAudit(tenantId: string) {

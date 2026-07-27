@@ -11,7 +11,7 @@ import { User } from '../../entities/user.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Tenant } from '../../entities/tenant.entity';
-import { Dispute } from '../../entities/dispute.entity';
+import { DisputeV2 } from '../../entities/dispute-v2.entity';
 import { AuditLog } from '../../entities/audit-log.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
@@ -84,7 +84,7 @@ import { TenantManagementController } from './tenant-management.controller';
       Payment,
       Notification,
       Tenant,
-      Dispute,
+      DisputeV2,
       AuditLog,
       Trip,
       Load,
