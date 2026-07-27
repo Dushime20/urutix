@@ -7,6 +7,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   PaymentStatus,
   PaymentType,
@@ -35,11 +36,13 @@ export class PaymentFilterDto {
   endDate?: Date;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   minAmount?: number;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   maxAmount?: number;
@@ -53,12 +56,14 @@ export class PaymentFilterDto {
   tripId?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   @Max(100)
   limit?: number = 20;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   offset?: number = 0;

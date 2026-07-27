@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   CATEGORY_LABELS, PRIORITY_LABELS,
   type DisputeCategory,
+  asApiList,
 } from '../../types/dispute';
 
 interface Props { onClose: () => void; onCreated: () => void; }
@@ -161,7 +162,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     staleTime: 60_000,
     enabled: showTrip,
   });
-  const trips = (tripsData?.data ?? tripsData ?? []) as any[];
+  const trips = asApiList<any>(tripsData, 'data', 'trips', 'items');
   const tripOptions = trips.map((t: any) => ({
     id: t.id,
     label: t.tripNumber ?? t.id.slice(0, 8),
@@ -175,7 +176,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     staleTime: 60_000,
     enabled: showInvoice,
   });
-  const invoices = (invoicesData?.data ?? invoicesData ?? []) as any[];
+  const invoices = asApiList<any>(invoicesData, 'invoices', 'data', 'items');
   const invoiceOptions = invoices.map((inv: any) => ({
     id: inv.id,
     label: inv.invoiceNumber ?? inv.referenceNumber ?? inv.id.slice(0, 8),
@@ -189,7 +190,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     staleTime: 60_000,
     enabled: showPayment,
   });
-  const payments = (paymentsData?.data ?? paymentsData ?? []) as any[];
+  const payments = asApiList<any>(paymentsData, 'payments', 'data', 'items');
   const paymentOptions = payments.map((p: any) => ({
     id: p.id,
     label: p.referenceNumber ?? p.id.slice(0, 8),
@@ -241,16 +242,10 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     staleTime: 60_000,
     enabled: showCargo,
   });
-  const cargos = useMemo(() => {
-    const raw = cargosData as any;
-    if (raw?.cargos) return raw.cargos as any[];
-    if (raw?.items) return raw.items as any[];
-    if (raw?.data?.cargos) return raw.data.cargos as any[];
-    if (raw?.data?.items) return raw.data.items as any[];
-    if (Array.isArray(raw?.data)) return raw.data as any[];
-    if (Array.isArray(raw)) return raw as any[];
-    return [];
-  }, [cargosData]);
+  const cargos = useMemo(
+    () => asApiList<any>(cargosData, 'cargos', 'items', 'data'),
+    [cargosData],
+  );
   const cargoOptions = cargos.map((c: any) => {
     const origin = c.pickupLocation?.city ?? c.origin ?? c.pickupCity ?? '';
     const dest = c.deliveryLocation?.city ?? c.destination ?? c.deliveryCity ?? '';

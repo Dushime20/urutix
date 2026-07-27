@@ -325,6 +325,27 @@ export function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
 
+/** Coerce common paginated API payloads to a flat array. */
+export function asApiList<T>(payload: unknown, ...listKeys: string[]): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (!payload || typeof payload !== 'object') return [];
+
+  const keys = listKeys.length > 0
+    ? listKeys
+    : ['data', 'items', 'payments', 'invoices', 'trips', 'cargos', 'disputes'];
+
+  const obj = payload as Record<string, unknown>;
+  for (const key of keys) {
+    const val = obj[key];
+    if (Array.isArray(val)) return val as T[];
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const nested = asApiList<T>(val, ...keys);
+      if (nested.length > 0) return nested;
+    }
+  }
+  return [];
+}
+
 export function formatRelativeTime(date: string): string {
   if (!date) return '—';
   const diff = Date.now() - new Date(date).getTime();
