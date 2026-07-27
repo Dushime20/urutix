@@ -12,6 +12,7 @@ import {
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
   getStatusColor, getPriorityColor, getPriorityDot, getSlaStatus,
   getUserDisplayName, formatRelativeTime,
+  asDisputeList,
 } from '../../types/dispute';
 import CreateTicketModal from './CreateTicketModal';
 import SupportTicketDetailModal from './SupportTicketDetailModal';
@@ -50,7 +51,7 @@ const UserSupportPage: React.FC = () => {
     staleTime: 30_000,
   });
 
-  const disputes: Dispute[] = data?.data ?? [];
+  const disputes: Dispute[] = asDisputeList(data);
   const openCount     = disputes.filter(d => ['OPEN','REOPENED'].includes(d.status)).length;
   const pendingCount  = disputes.filter(d => ['UNDER_REVIEW','ASSIGNED','INVESTIGATING','AWAITING_INFORMATION'].includes(d.status)).length;
   const resolvedCount = disputes.filter(d => ['RESOLVED','CLOSED'].includes(d.status)).length;

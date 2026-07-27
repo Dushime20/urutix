@@ -13,6 +13,7 @@ import {
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
   getStatusColor, getPriorityColor, getPriorityDot,
   getUserDisplayName, formatRelativeTime, getSlaStatus,
+  asDisputeList,
 } from '../../types/dispute';
 import SupportTicketDetailModal from './SupportTicketDetailModal';
 import CreateTicketModal from './CreateTicketModal';
@@ -68,7 +69,7 @@ const TenantSupportCenter: React.FC = () => {
     staleTime: 30_000,
   });
 
-  const disputes: Dispute[] = listData?.data ?? [];
+  const disputes: Dispute[] = asDisputeList(listData);
 
   const handleExport = useCallback(() => {
     const headers = ['Ticket#', 'Title', 'Category', 'Priority', 'Status', 'Reporter', 'Assigned To', 'SLA', 'Created'];

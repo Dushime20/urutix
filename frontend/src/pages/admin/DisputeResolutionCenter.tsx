@@ -16,6 +16,7 @@ import {
   type DisputeAnalytics,
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
   getStatusColor, getPriorityColor, getUserDisplayName, formatRelativeTime,
+  asDisputeList,
 } from '../../types/dispute';
 import DisputeDetailModal from './dispute/DisputeDetailModal';
 import CreateDisputeModal from './dispute/CreateDisputeModal';
@@ -62,7 +63,7 @@ const DisputeResolutionCenter: React.FC = () => {
     staleTime: 60_000,
   });
 
-  const disputes: Dispute[] = listData?.data ?? [];
+  const disputes: Dispute[] = asDisputeList(listData);
   const analytics: DisputeAnalytics | null = analyticsData?.data ?? null;
 
   const handleExport = useCallback(() => {

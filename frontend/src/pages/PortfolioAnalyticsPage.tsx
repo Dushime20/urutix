@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { lendingApi } from '../services/lending/lendingApi';
 import {
   RotateCcw, Shield, AlertTriangle,
-  Activity, BarChart2, PieChart,
+  Activity, BarChart2, PieChart, TrendingUp,
 } from 'lucide-react';
 import ModernLoader from '../components/common/ModernLoader';
 import api from '../services/api';

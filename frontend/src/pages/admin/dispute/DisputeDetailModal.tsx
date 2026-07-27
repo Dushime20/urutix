@@ -11,7 +11,8 @@ import {
   type Dispute, type DisputeMessage, type DisputeAttachment, type DisputeResolution,
   type DisputeTimeline, type DisputeStatus,
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS, DECISION_LABELS,
-  getStatusColor, getPriorityColor, getUserDisplayName, formatRelativeTime,
+  getStatusColor, getPriorityColor,   getUserDisplayName, formatRelativeTime,
+  asArray,
 } from '../../../types/dispute';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -65,10 +66,10 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
   });
 
   const dispute: Dispute | null = disputeData?.data ?? null;
-  const comments: DisputeMessage[]      = commentsData?.data  ?? [];
-  const attachments: DisputeAttachment[] = attachmentsData?.data ?? [];
-  const timeline: DisputeTimeline[]     = timelineData?.data  ?? [];
-  const resolutions: DisputeResolution[] = resolutionsData?.data ?? [];
+  const comments: DisputeMessage[]      = asArray(commentsData?.data);
+  const attachments: DisputeAttachment[] = asArray(attachmentsData?.data);
+  const timeline: DisputeTimeline[]     = asArray(timelineData?.data);
+  const resolutions: DisputeResolution[] = asArray(resolutionsData?.data);
 
   const addCommentMut = useMutation({
     mutationFn: () => disputesAPI.addComment(disputeId, { message: comment, isInternal }),

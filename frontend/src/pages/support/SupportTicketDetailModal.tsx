@@ -15,6 +15,7 @@ import {
   ASSIGNEE_ROLE_LABELS, ESCALATION_REASON_LABELS,
   getStatusColor, getPriorityColor, getPriorityDot, getSlaStatus,
   getUserDisplayName, formatRelativeTime,
+  asArray,
 } from '../../types/dispute';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -80,11 +81,11 @@ const SupportTicketDetailModal: React.FC<Props> = ({ disputeId, isAdmin = false,
   });
 
   const dispute: Dispute | null         = disputeData?.data ?? null;
-  const comments: DisputeMessage[]      = commentsData?.data ?? [];
-  const attachments: DisputeAttachment[] = attachmentsData?.data ?? [];
-  const timeline: DisputeTimeline[]     = timelineData?.data ?? [];
-  const resolutions: DisputeResolution[] = resolutionsData?.data ?? [];
-  const assignments: any[]              = assignmentsData?.data ?? [];
+  const comments: DisputeMessage[]      = asArray(commentsData?.data);
+  const attachments: DisputeAttachment[] = asArray(attachmentsData?.data);
+  const timeline: DisputeTimeline[]     = asArray(timelineData?.data);
+  const resolutions: DisputeResolution[] = asArray(resolutionsData?.data);
+  const assignments: any[]              = asArray(assignmentsData?.data);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['dispute', disputeId] });

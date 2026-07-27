@@ -306,6 +306,25 @@ export function getUserDisplayName(user?: DisputeUser | null): string {
   return user.email ?? 'Unknown';
 }
 
+/** Coerce unknown API payloads to arrays — prevents `.map is not a function` crashes. */
+export function asDisputeList<T = Dispute>(payload: unknown): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (payload && typeof payload === 'object') {
+    const data = (payload as { data?: unknown }).data;
+    if (Array.isArray(data)) return data as T[];
+    if (data && typeof data === 'object') {
+      const nested = data as { disputes?: unknown; items?: unknown };
+      if (Array.isArray(nested.disputes)) return nested.disputes as T[];
+      if (Array.isArray(nested.items)) return nested.items as T[];
+    }
+  }
+  return [];
+}
+
+export function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
 export function formatRelativeTime(date: string): string {
   if (!date) return '—';
   const diff = Date.now() - new Date(date).getTime();

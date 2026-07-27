@@ -10,6 +10,7 @@ import {
   type Dispute,
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
   getStatusColor, getPriorityColor, getUserDisplayName, formatRelativeTime,
+  asDisputeList,
 } from '../../../types/dispute';
 import CreateDisputeModal from '../../admin/dispute/CreateDisputeModal';
 import UserDisputeDetailModal from './UserDisputeDetailModal';
@@ -31,7 +32,7 @@ const DisputesPage: React.FC = () => {
     staleTime: 30_000,
   });
 
-  const disputes: Dispute[] = data?.data ?? [];
+  const disputes: Dispute[] = asDisputeList(data);
 
   const statusOptions = [
     { value: '',               label: 'All Statuses' },
