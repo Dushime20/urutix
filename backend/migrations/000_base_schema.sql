@@ -945,21 +945,52 @@ CREATE TABLE IF NOT EXISTS disputes_v2 (
   "createdAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_disputes_v2_ticket ON disputes_v2(ticket_number) WHERE ticket_number IS NOT NULL;
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'disputes_v2' AND column_name = 'ticketNumber'
+  ) THEN
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_disputes_v2_ticket_camel
+      ON disputes_v2 ("ticketNumber") WHERE "ticketNumber" IS NOT NULL;
+  ELSIF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'disputes_v2' AND column_name = 'ticket_number'
+  ) THEN
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_disputes_v2_ticket
+      ON disputes_v2 (ticket_number) WHERE ticket_number IS NOT NULL;
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_disputes_v2_tenant ON disputes_v2("tenantId", status);
 
 CREATE TABLE IF NOT EXISTS dispute_audit_logs (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dispute_id UUID NOT NULL REFERENCES disputes_v2(id) ON DELETE CASCADE,
-  "userId"   UUID REFERENCES users(id) ON DELETE SET NULL,
-  action     VARCHAR(100) NOT NULL,
-  old_value  JSONB,
-  new_value  JSONB,
-  ip_address VARCHAR(45),
-  user_agent TEXT,
-  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "disputeId"   UUID NOT NULL,
+  action        VARCHAR(100) NOT NULL,
+  "performedBy" UUID NOT NULL,
+  "oldValue"    JSONB,
+  "newValue"    JSONB,
+  notes         TEXT,
+  "ipAddress"   VARCHAR(45),
+  "userAgent"   TEXT,
+  "createdAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_dispute_audit_dispute ON dispute_audit_logs(dispute_id, "createdAt" DESC);
+
+-- Bootstrap-safe index: supports camelCase (current) and legacy dispute_id during transition
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'dispute_audit_logs' AND column_name = 'disputeId'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_dispute_audit_dispute_camel
+      ON dispute_audit_logs ("disputeId", "createdAt" DESC);
+  ELSIF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'dispute_audit_logs' AND column_name = 'dispute_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_dispute_audit_dispute
+      ON dispute_audit_logs (dispute_id, "createdAt" DESC);
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- APPLICATION-LEVEL TABLES  (TypeORM entities used at startup)
