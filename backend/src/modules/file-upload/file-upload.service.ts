@@ -276,4 +276,26 @@ export class FileUploadService {
 
     return fs.createReadStream(filePath);
   }
+
+  /**
+   * Resolve a stored fileUrl (absolute or relative) to an absolute disk path.
+   * IMPORTANT: never path.join(cwd, '/uploads/...') — a leading slash makes
+   * path.join discard cwd on POSIX and look in the wrong place.
+   */
+  resolveLocalPath(fileUrl: string): string {
+    let urlPath: string;
+    try {
+      urlPath = new URL(fileUrl).pathname;
+    } catch {
+      urlPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+    }
+
+    // Strip /api/uploads or /uploads prefix → relative path under uploadDir
+    const relative = urlPath
+      .replace(/^\/api\/uploads\//, '')
+      .replace(/^\/uploads\//, '')
+      .replace(/^\/+/, '');
+
+    return path.resolve(this.uploadDir, relative);
+  }
 }

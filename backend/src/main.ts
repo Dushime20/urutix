@@ -6,17 +6,25 @@ import * as morgan from 'morgan';
 import { v4 } from 'uuid';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = process.env.PORT || 3005;
 
   // Serve uploaded files from the backend container volume.
-  // Host nginx proxies /uploads/ here (see nginx/urutix.com.conf).
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+  // Host nginx must proxy /uploads/ here (see nginx/urutix.com.conf).
+  // Do NOT rely on host nginx aliasing a Docker volume path — that path is fragile.
+  const uploadsRoot = join(process.cwd(), 'uploads');
+  if (!existsSync(uploadsRoot)) {
+    mkdirSync(uploadsRoot, { recursive: true });
+  }
+  app.useStaticAssets(uploadsRoot, {
     prefix: '/uploads/',
     index: false,
+    fallthrough: false,
   });
+  console.log(`📁 Serving uploads from: ${uploadsRoot}`);
 
   // Configure CORS origins from environment variable ONLY
   const allowedOrigins = process.env.ALLOWED_ORIGINS

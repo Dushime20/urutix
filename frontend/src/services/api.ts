@@ -329,9 +329,17 @@ export const disputesAPI = {
     const response = await api.get(`/disputes/${disputeId}/attachments/${attachmentId}/file`, {
       responseType: 'blob',
     });
-    const blob = new Blob([response.data], {
-      type: response.headers['content-type'] || 'application/octet-stream',
-    });
+    const contentType = response.headers['content-type'] || 'application/octet-stream';
+    // Guard against error JSON accidentally treated as a file blob
+    if (contentType.includes('application/json')) {
+      const text = await (response.data as Blob).text();
+      let message = 'Failed to open attachment';
+      try {
+        message = JSON.parse(text)?.message || message;
+      } catch { /* ignore */ }
+      throw new Error(message);
+    }
+    const blob = new Blob([response.data], { type: contentType });
     const blobUrl = URL.createObjectURL(blob);
     const win = window.open(blobUrl, '_blank');
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
@@ -339,6 +347,7 @@ export const disputesAPI = {
       const a = document.createElement('a');
       a.href = blobUrl;
       a.target = '_blank';
+      a.rel = 'noopener';
       a.click();
     }
   },

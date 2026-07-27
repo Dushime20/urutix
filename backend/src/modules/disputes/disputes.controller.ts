@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import * as fs from 'fs';
-import { join } from 'path';
 import {
   ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody,
 } from '@nestjs/swagger';
@@ -145,14 +144,7 @@ export class DisputesController {
       throw new NotFoundException('Attachment file not found');
     }
 
-    let urlPath: string;
-    try {
-      urlPath = new URL(attachment.fileUrl).pathname;
-    } catch {
-      urlPath = attachment.fileUrl.startsWith('/') ? attachment.fileUrl : `/${attachment.fileUrl}`;
-    }
-
-    const filePath = join(process.cwd(), urlPath);
+    const filePath = this.fileUploadService.resolveLocalPath(attachment.fileUrl);
     if (!fs.existsSync(filePath)) {
       throw new NotFoundException(`File not found on server: ${filePath}`);
     }
