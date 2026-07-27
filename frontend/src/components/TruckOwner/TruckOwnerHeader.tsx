@@ -15,7 +15,6 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
-import LanguageSwitcher from '../LanguageSwitcher';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -94,9 +93,6 @@ const TruckOwnerHeader: React.FC<TruckOwnerHeaderProps> = ({
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
-          {/* Language Switcher */}
-          <LanguageSwitcher />
-
           {/* Notifications - Hidden on mobile as it's in the bottom nav */}
           <div className="hidden lg:block">
             <CargoOwnerNotificationDropdown />
@@ -205,13 +201,6 @@ const TruckOwnerHeader: React.FC<TruckOwnerHeaderProps> = ({
                 </a>
               ))}
 
-              {/* Mobile Language Switcher */}
-              <div className="flex items-center justify-between px-3 py-2 border-t border-slate-100 dark:border-slate-800 mt-4 pt-4">
-                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  <TranslatedText text="Language" />
-                </span>
-                <LanguageSwitcher />
-              </div>
             </div>
           </motion.div>
         )}

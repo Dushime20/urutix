@@ -595,7 +595,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
           <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
             <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
-              <LanguageSwitcher />
+              {user?.role !== 'TRUCK_OWNER' && <LanguageSwitcher />}
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
@@ -635,19 +635,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                       <User size={14} className="text-slate-400 dark:text-slate-500" />
                       <TranslatedText text="Profile Settings" />
                     </Link>
-
-                    {user?.role === 'TRUCK_OWNER' && (
-                      <>
-                        <Link
-                          to="/dashboard/fleet/settings"
-                          onClick={() => setShowUserMenu(false)}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
-                        >
-                          <Settings size={14} className="text-slate-400 dark:text-slate-500" />
-                          <TranslatedText text="Fleet Settings" />
-                        </Link>
-                      </>
-                    )}
                     <div className="px-4 py-1">
                       <ContextualHelp context={location.pathname} dropdownMode />
                     </div>
@@ -840,15 +827,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 {/* Footer Controls Card */}
                 <div className="flex-shrink-0 p-4 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/30">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-2 shadow-sm mb-3">
-                    <div className="grid grid-cols-2 gap-1">
+                    <div className={`grid gap-1 ${user?.role === 'TRUCK_OWNER' ? 'grid-cols-1' : 'grid-cols-2'}`}>
                       <div className="flex items-center gap-2 p-1.5">
                         <ThemeToggle />
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Mode</span>
                       </div>
-                      <div className="flex items-center gap-2 p-1.5 justify-end">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lang</span>
-                        <LanguageSwitcher />
-                      </div>
+                      {user?.role !== 'TRUCK_OWNER' && (
+                        <div className="flex items-center gap-2 p-1.5 justify-end">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lang</span>
+                          <LanguageSwitcher />
+                        </div>
+                      )}
                     </div>
                     <div className="mt-1 pt-1 border-t border-slate-100 dark:border-slate-700 px-1.5 pb-0.5 flex items-center justify-between">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Currency</span>

@@ -16,7 +16,6 @@ import {
     DollarSign
 } from 'lucide-react';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
-import LanguageSwitcher from '../LanguageSwitcher';
 import CurrencySelector from '../common/CurrencySelector';
 
 interface FleetHeaderProps {
@@ -190,8 +189,6 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                         <span>Help</span>
                     </button>
 
-                    <LanguageSwitcher />
-
                     {/* Currency Selector */}
                     <CurrencySelector variant="compact" />
 
@@ -256,11 +253,6 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                     <DropdownItem to="/dashboard/fleet/bids" label="Load Board" />
                     <DropdownItem to="/dashboard/fleet/dispatch" label="Dispatch" />
                     <DropdownItem to="/dashboard/fleet/smart-bookings" label="Bookings" />
-                    <div className="h-px bg-slate-100 my-1" />
-                    <div className="flex items-center justify-between px-4 py-2">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Localization</span>
-                        <LanguageSwitcher />
-                    </div>
                 </div>
             )}
         </div>

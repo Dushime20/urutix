@@ -26,6 +26,8 @@ import { fetchAllUsers, createTenantUser, updateUser, deleteUser } from '../serv
 import { TranslatedText } from '../components/translated-text';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import CurrencySelector from '../components/common/CurrencySelector';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useTranslation } from '../hooks/useTranslation';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
@@ -37,6 +39,7 @@ import { CurrencyManagementSection } from '../components/Admin/CurrencyManagemen
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
+  const { language, setLanguage } = useTranslation();
   // const { setCurrency, availableCurrencies } = useCurrency(); // Removed
   const [activeTab, setActiveTab] = useState('general');
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -113,6 +116,13 @@ const Settings: React.FC = () => {
     }
   }, [user?.role, activeTab]);
 
+  // Keep preferences.language in sync with the live i18n language switcher
+  useEffect(() => {
+    setPreferences(prev => (
+      prev.language === language ? prev : { ...prev, language }
+    ));
+  }, [language]);
+
   useEffect(() => {
     if (activeTab === 'team') {
       loadReceivers();
@@ -135,7 +145,7 @@ const Settings: React.FC = () => {
   });
 
   const [preferences, setPreferences] = useState({
-    language: 'en',
+    language: language || 'en',
     timezone: 'Africa/Nairobi',
     currency: 'USD',
     theme: 'light',
@@ -229,6 +239,9 @@ const Settings: React.FC = () => {
     
     if (key === 'theme') {
       setTheme(value);
+    }
+    if (key === 'language') {
+      setLanguage(value);
     }
   };
 
@@ -816,18 +829,15 @@ const Settings: React.FC = () => {
                       <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
                         Language
                       </label>
-                      <div className="relative group">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4" />
-                        <select
-                          value={preferences.language}
-                          onChange={(e) => handlePreferenceChange('language', e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:ring-2 focus:ring-[#2c5173] focus:border-transparent transition-all outline-none appearance-none"
-                        >
-                          <option value="en">English</option>
-                          <option value="sw">Swahili</option>
-                          <option value="fr">French</option>
-                        </select>
+                      <div className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl">
+                        <Globe className="text-slate-400 dark:text-slate-500 w-4 h-4 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <LanguageSwitcher />
+                        </div>
                       </div>
+                      <p className="text-[10px] text-slate-400 mt-1.5">
+                        Changes apply immediately across the platform.
+                      </p>
                     </div>
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
