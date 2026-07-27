@@ -358,27 +358,76 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_dispute_escalations_dispute_camel
   ON dispute_escalations ("disputeId", "createdAt" DESC);
 
--- ── 6. Migrate legacy enum values on category/status (best-effort) ───────────
+-- ── 6. Migrate category/status columns to TypeORM enum types ─────────────────
 
-DO $$ BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'disputes_v2' AND column_name = 'category'
-  ) THEN
-    -- Normalize legacy category labels to entity enum values
-    UPDATE disputes_v2 SET category = 'PAYMENT_ISSUE'::text WHERE category::text IN ('PAYMENT', 'PAYMENT_ISSUE');
-    UPDATE disputes_v2 SET category = 'CARGO_DAMAGE'::text WHERE category::text IN ('DAMAGE', 'CARGO_DAMAGE');
-    UPDATE disputes_v2 SET category = 'DELIVERY_DELAY'::text WHERE category::text IN ('DELAY', 'DELIVERY_DELAY');
-    UPDATE disputes_v2 SET category = 'DOCUMENTATION_ISSUE'::text WHERE category::text IN ('DOCUMENTATION', 'DOCUMENTATION_ISSUE');
-    UPDATE disputes_v2 SET category = 'OTHER'::text WHERE category::text IN ('SERVICE', 'OTHER');
-  END IF;
+DO $$
+DECLARE
+  cat_udt text;
+BEGIN
+  SELECT c.udt_name INTO cat_udt
+  FROM information_schema.columns c
+  WHERE c.table_schema = 'public'
+    AND c.table_name = 'disputes_v2'
+    AND c.column_name = 'category';
 
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'disputes_v2' AND column_name = 'status'
-  ) THEN
-    UPDATE disputes_v2 SET status = 'UNDER_REVIEW'::text WHERE status::text IN ('IN_REVIEW', 'UNDER_REVIEW');
+  IF cat_udt = 'dispute_category' THEN
+    ALTER TABLE disputes_v2
+      ADD COLUMN IF NOT EXISTS category_new public."disputes_v2_category_enum";
+
+    UPDATE disputes_v2 SET category_new = (
+      CASE category::text
+        WHEN 'PAYMENT' THEN 'PAYMENT_ISSUE'
+        WHEN 'DAMAGE' THEN 'CARGO_DAMAGE'
+        WHEN 'DELAY' THEN 'DELIVERY_DELAY'
+        WHEN 'DOCUMENTATION' THEN 'DOCUMENTATION_ISSUE'
+        WHEN 'SERVICE' THEN 'OTHER'
+        ELSE category::text
+      END
+    )::public."disputes_v2_category_enum"
+    WHERE category_new IS NULL;
+
+    UPDATE disputes_v2 SET category_new = 'OTHER'::public."disputes_v2_category_enum"
+    WHERE category_new IS NULL;
+
+    ALTER TABLE disputes_v2 DROP COLUMN category;
+    ALTER TABLE disputes_v2 RENAME COLUMN category_new TO category;
+    ALTER TABLE disputes_v2 ALTER COLUMN category SET NOT NULL;
+    ALTER TABLE disputes_v2 ALTER COLUMN category SET DEFAULT 'OTHER'::public."disputes_v2_category_enum";
   END IF;
 EXCEPTION WHEN others THEN
-  RAISE NOTICE 'disputes_v2 enum value migration skipped: %', SQLERRM;
+  RAISE NOTICE 'disputes_v2 category column migration skipped: %', SQLERRM;
+END $$;
+
+DO $$
+DECLARE
+  status_udt text;
+BEGIN
+  SELECT c.udt_name INTO status_udt
+  FROM information_schema.columns c
+  WHERE c.table_schema = 'public'
+    AND c.table_name = 'disputes_v2'
+    AND c.column_name = 'status';
+
+  IF status_udt = 'dispute_status_v2' THEN
+    ALTER TABLE disputes_v2
+      ADD COLUMN IF NOT EXISTS status_new public."disputes_v2_status_enum";
+
+    UPDATE disputes_v2 SET status_new = (
+      CASE status::text
+        WHEN 'IN_REVIEW' THEN 'UNDER_REVIEW'
+        ELSE status::text
+      END
+    )::public."disputes_v2_status_enum"
+    WHERE status_new IS NULL;
+
+    UPDATE disputes_v2 SET status_new = 'OPEN'::public."disputes_v2_status_enum"
+    WHERE status_new IS NULL;
+
+    ALTER TABLE disputes_v2 DROP COLUMN status;
+    ALTER TABLE disputes_v2 RENAME COLUMN status_new TO status;
+    ALTER TABLE disputes_v2 ALTER COLUMN status SET NOT NULL;
+    ALTER TABLE disputes_v2 ALTER COLUMN status SET DEFAULT 'OPEN'::public."disputes_v2_status_enum";
+  END IF;
+EXCEPTION WHEN others THEN
+  RAISE NOTICE 'disputes_v2 status column migration skipped: %', SQLERRM;
 END $$;

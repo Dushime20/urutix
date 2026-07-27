@@ -122,13 +122,28 @@ export class DisputeV2 {
   @Column('text')
   description: string;
 
-  @Column({ type: 'enum', enum: DisputeCategory, default: DisputeCategory.OTHER })
+  @Column({
+    type: 'enum',
+    enum: DisputeCategory,
+    enumName: 'disputes_v2_category_enum',
+    default: DisputeCategory.OTHER,
+  })
   category: DisputeCategory;
 
-  @Column({ type: 'enum', enum: DisputePriority, default: DisputePriority.MEDIUM })
+  @Column({
+    type: 'enum',
+    enum: DisputePriority,
+    enumName: 'disputes_v2_priority_enum',
+    default: DisputePriority.MEDIUM,
+  })
   priority: DisputePriority;
 
-  @Column({ type: 'enum', enum: DisputeStatusV2, default: DisputeStatusV2.OPEN })
+  @Column({
+    type: 'enum',
+    enum: DisputeStatusV2,
+    enumName: 'disputes_v2_status_enum',
+    default: DisputeStatusV2.OPEN,
+  })
   status: DisputeStatusV2;
 
   // Parties
