@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { disputesAPI } from '../../../services/api';
+import { buildFileUrl } from '../../../utils/fileUrl';
 import {
   type Dispute, type DisputeMessage, type DisputeAttachment,
   type DisputeResolution, type DisputeTimeline,
@@ -202,7 +203,7 @@ const UserDisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
                     <p className="text-sm font-bold text-gray-900 truncate">{att.fileName}</p>
                     <p className="text-[10px] text-gray-400">{formatRelativeTime(att.createdAt)}</p>
                   </div>
-                  <a href={att.fileUrl} target="_blank" rel="noreferrer"
+                  <a href={buildFileUrl(att.fileUrl)} target="_blank" rel="noreferrer"
                     className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-50 flex items-center gap-1">
                     <Eye size={11} /> View
                   </a>

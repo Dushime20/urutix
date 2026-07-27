@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { disputesAPI } from '../../services/api';
+import { buildFileUrl } from '../../utils/fileUrl';
 import {
   type Dispute, type DisputeMessage, type DisputeAttachment,
   type DisputeResolution, type DisputeTimeline,
@@ -283,7 +284,7 @@ const SupportTicketDetailModal: React.FC<Props> = ({ disputeId, isAdmin = false,
                     <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{att.fileName}</p>
                     <p className="text-[10px] text-gray-400">{getUserDisplayName(att.uploader)} · {formatRelativeTime(att.createdAt)} {att.fileSize && `· ${(att.fileSize / 1024).toFixed(0)}KB`}</p>
                   </div>
-                  <a href={att.fileUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1.5 bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 text-gray-700 dark:text-slate-200 rounded-lg text-[11px] font-bold hover:bg-gray-50 dark:hover:bg-slate-500 flex items-center gap-1">
+                  <a href={buildFileUrl(att.fileUrl)} target="_blank" rel="noreferrer" className="px-2.5 py-1.5 bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 text-gray-700 dark:text-slate-200 rounded-lg text-[11px] font-bold hover:bg-gray-50 dark:hover:bg-slate-500 flex items-center gap-1">
                     <Eye size={11} /> View
                   </a>
                 </div>

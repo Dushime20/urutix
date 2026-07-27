@@ -113,7 +113,12 @@ export class DisputesController {
     const uploaded = await this.fileUploadService.uploadFile(file, 'disputes');
     const attachment = await this.disputesService.addAttachment(
       id,
-      { fileName: uploaded.originalFileName, fileUrl: uploaded.fileUrl, fileType: uploaded.mimeType, fileSize: uploaded.fileSize },
+      {
+        fileName: uploaded.originalFileName,
+        fileUrl: `/uploads/disputes/${uploaded.fileName}`,
+        fileType: uploaded.mimeType,
+        fileSize: uploaded.fileSize,
+      },
       req.user,
     );
     return { success: true, message: 'Attachment uploaded', data: attachment };
