@@ -167,7 +167,6 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                         >
                             <DropdownItem to="/dashboard/fleet/reports" label="Reports" />
                             <DropdownItem to="/dashboard/fleet/financial" label="Payments" />
-                            <DropdownItem to="/dashboard/fleet/analytics" label="Analytics" />
                         </NavDropdown>
 
                     </nav>

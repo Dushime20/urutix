@@ -204,7 +204,7 @@ const UnifiedFinancialManagement = () => {
                 <Wallet className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] dark:text-white tracking-tight">
-                Financial <span className="text-[#2c5173]">Hub</span>
+                Financial
               </h1>
             </div>
             <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest sm:tracking-[0.2em] max-w-xl">

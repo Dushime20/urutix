@@ -206,9 +206,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Truck Inventory', path: '/dashboard/fleet/trucks' },
             { label: 'Fuel & Maintenance', path: '/dashboard/fleet/fuel' },
             { label: 'Safety Records', path: '/dashboard/fleet/safety' },
-            { label: 'Team Management', path: '/dashboard/fleet/settings' },
             { label: 'Marketplace', path: '/dashboard/fleet/buy-credits' },
-            { label: 'Comms', path: '/dashboard/fleet/communicate' },
           ]
         },
         {
@@ -220,9 +218,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: '🔴 Live Tracking', path: '/dashboard/fleet/tracking' },
             { label: 'Freight Bidding', path: '/dashboard/fleet/bids' },
             { label: 'Route Planning', path: '/dashboard/fleet/routes' },
-            { label: 'Financial Hub', path: '/dashboard/fleet/financial' },
+            { label: 'Financial', path: '/dashboard/fleet/financial' },
             { label: 'Line of Credit', path: '/dashboard/fleet/credits' },
-            { label: 'Performance Analytics', path: '/dashboard/fleet/analytics' },
           ]
         },
         {
@@ -257,9 +254,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Users,
           subItems: [
             { label: 'IAM: User Directory', path: '/admin/users' },
-            { label: 'RBAC: Role Management', path: '/admin/roles' },
-            { label: 'Security Protocols', path: '/admin/security' },
-            { label: 'Enhanced Permissions', path: '/admin/enhanced-permissions' },
           ]
         },
         {
@@ -273,7 +267,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Account & Settings', path: '/admin/profile' },
             { label: 'Strategic Settings', path: '/admin/advanced-settings' },
             { label: 'System Configuration', path: '/admin/system-settings' },
-            { label: 'Activity Forensics', path: '/admin/activity-logs' },
           ]
         },
         {
@@ -652,14 +645,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         >
                           <Settings size={14} className="text-slate-400 dark:text-slate-500" />
                           <TranslatedText text="Fleet Settings" />
-                        </Link>
-                        <Link
-                          to="/dashboard/fleet/settings"
-                          onClick={() => setShowUserMenu(false)}
-                          className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors rounded-lg"
-                        >
-                          <Users size={14} className="text-slate-400 dark:text-slate-500" />
-                          <TranslatedText text="Team Management" />
                         </Link>
                       </>
                     )}

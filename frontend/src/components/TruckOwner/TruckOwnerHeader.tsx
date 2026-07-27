@@ -8,7 +8,6 @@ import {
   Settings,
   LogOut,
   Truck,
-  BarChart3,
   FileText,
   CreditCard,
   ChevronDown,
@@ -47,7 +46,6 @@ const TruckOwnerHeader: React.FC<TruckOwnerHeaderProps> = ({
     { icon: Truck, label: 'Fleet Dashboard', href: '/dashboard/fleet' },
     { icon: CreditCard, label: 'Credits', href: '/dashboard/fleet/credits' },
     { icon: FileText, label: 'Trips', href: '/dashboard/fleet/trips' },
-    { icon: BarChart3, label: 'Analytics', href: '/dashboard/fleet/analytics' },
   ];
 
   return (

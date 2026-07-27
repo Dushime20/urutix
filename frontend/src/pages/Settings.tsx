@@ -108,10 +108,17 @@ const Settings: React.FC = () => {
   };
 
   useEffect(() => {
+    if (user?.role === 'TRUCK_OWNER' && activeTab === 'team') {
+      setActiveTab('general');
+    }
+  }, [user?.role, activeTab]);
+
+  useEffect(() => {
     if (activeTab === 'team') {
       loadReceivers();
     }
   }, [activeTab]);
+
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -470,7 +477,7 @@ const Settings: React.FC = () => {
     { id: 'preferences', label: 'Preferences', icon: Palette },
     { id: 'team', label: 'Team Management', icon: Users },
     { id: 'system', label: 'System Settings', icon: Globe },
-  ];
+  ].filter((tab) => !(user?.role === 'TRUCK_OWNER' && tab.id === 'team'));
 
   const settingsContent = (
     <>

@@ -758,6 +758,30 @@ CREATE TABLE IF NOT EXISTS routes (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_routes_tenant_name ON routes("tenantId", name) WHERE deleted_at IS NULL;
 
 -- ---------------------------------------------------------------------------
+-- ROUTE_TRUCKS  (junction table — truck-to-route assignments)
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS route_trucks (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "tenantId" UUID NOT NULL,
+  "routeId"  UUID NOT NULL,
+  "truckId"  UUID NOT NULL,
+  "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_route_trucks_tenant_route_truck UNIQUE ("tenantId", "routeId", "truckId")
+);
+CREATE INDEX IF NOT EXISTS idx_route_trucks_tenant ON route_trucks("tenantId");
+CREATE INDEX IF NOT EXISTS idx_route_trucks_truck ON route_trucks("truckId");
+CREATE INDEX IF NOT EXISTS idx_route_trucks_route ON route_trucks("routeId");
+CREATE INDEX IF NOT EXISTS idx_route_trucks_tenant_created ON route_trucks("tenantId", "createdAt");
+
+DO $$ BEGIN
+  ALTER TABLE route_trucks
+    ADD CONSTRAINT fk_route_trucks_route
+    FOREIGN KEY ("routeId") REFERENCES routes(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- ---------------------------------------------------------------------------
 -- EPODS  (full schema — create table then ADD COLUMN IF NOT EXISTS for upgrades)
 -- ---------------------------------------------------------------------------
 DO $$ BEGIN

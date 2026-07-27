@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, ChevronDown, LogOut, Settings, Shield, Menu, X, LayoutDashboard, BarChart3, Users, Building2, Route, Truck, Package, Activity, Server, DollarSign, ShieldCheck, Gavel, FileText, Landmark, UserCircle, FileCheck, Tags, CreditCard, Key, ClipboardList, Bell, UserCheck, Mail } from 'lucide-react';
+import { Search, User, ChevronDown, LogOut, Settings, Shield, Menu, X, LayoutDashboard, BarChart3, Users, Building2, Route, Truck, Package, Activity, Server, DollarSign, ShieldCheck, Gavel, FileText, Landmark, UserCircle, FileCheck, Tags, CreditCard, Bell, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminNotificationDropdown from './AdminNotificationDropdown';
 import ThemeToggle from '../Theme/ThemeToggle';
@@ -246,15 +246,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                             { label: 'Subscription Plans', icon: FileText, path: '/admin/subscription-plans' },
                                             { label: 'Pricing Rules', icon: Tags, path: '/admin/pricing-rules' },
                                             { label: 'Credit Usage', icon: CreditCard, path: '/admin/credit-usage' },
-                                        ]
-                                    },
-                                    {
-                                        title: 'Security',
-                                        items: [
-                                            { label: 'Permissions', icon: Shield, path: '/admin/permissions' },
-                                            { label: 'Roles', icon: UserCheck, path: '/admin/roles' },
-                                            { label: 'Enhanced Permissions', icon: Key, path: '/admin/enhanced-permissions' },
-                                            { label: 'Activity Logs', icon: ClipboardList, path: '/admin/activity-logs' },
                                         ]
                                     },
                                     {

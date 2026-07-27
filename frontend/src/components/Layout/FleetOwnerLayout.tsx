@@ -21,6 +21,25 @@ const FleetOwnerLayout: React.FC = () => {
     }
   }, [isLoading, user, navigate]);
 
+  const truckOwnerBlockedPaths = [
+    '/dashboard/fleet/analytics',
+    '/dashboard/fleet/reports',
+    '/dashboard/fleet/communicate',
+    '/dashboard/fleet/communication',
+  ];
+
+  useEffect(() => {
+    if (user?.role !== 'TRUCK_OWNER') return;
+
+    const isBlocked = truckOwnerBlockedPaths.some(
+      (path) => location.pathname === path || location.pathname.startsWith(`${path}/`)
+    );
+
+    if (isBlocked) {
+      navigate('/dashboard/fleet', { replace: true });
+    }
+  }, [user?.role, location.pathname, navigate]);
+
   // Check if user needs onboarding
   useEffect(() => {
     if (user) {
