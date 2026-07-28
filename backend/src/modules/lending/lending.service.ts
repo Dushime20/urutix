@@ -3047,9 +3047,12 @@ export class LendingService {
   }
 
   /**
-   * Persist repayment under row lock with a fresh balance recompute (prevents
+   * Persist repayment under a row lock with a fresh balance recompute (prevents
    * concurrent double-application). Uses column-level loan updates only — never
    * saves a LoanRequest that has OneToMany children loaded.
+   *
+   * Locking rule (PostgreSQL): FOR UPDATE must not include LEFT OUTER JOINs
+   * (nullable relations). Lock the loan row alone, then load lender separately.
    */
   private async recordLoanRepayment(input: {
     loanId: string;
@@ -3077,16 +3080,25 @@ export class LendingService {
     } = input;
 
     return this.dataSource.transaction(async (manager) => {
-      const freshLoan = await manager.findOne(LoanRequest, {
-        where: { id: loanId },
-        relations: ['lender'],
-        lock: { mode: 'pessimistic_write' },
-      } as any);
+      // 1) Exclusive row lock on loan only — no joins (Postgres FOR UPDATE rule)
+      const freshLoan = await manager
+        .createQueryBuilder(LoanRequest, 'loan')
+        .setLock('pessimistic_write')
+        .where('loan.id = :loanId', { loanId })
+        .getOne();
 
       if (!freshLoan || freshLoan.status !== LoanRequestStatus.DISBURSED) {
         throw new BadRequestException('Loan is no longer eligible for repayment');
       }
 
+      // 2) Load lender after lock (needed for webhook / notifications)
+      if (freshLoan.lender_id) {
+        freshLoan.lender = await manager.findOne(Lender, {
+          where: { id: freshLoan.lender_id },
+        });
+      }
+
+      // 3) Idempotency: reject duplicate payment provider references
       if (externalTxnRef) {
         const duplicate = await manager.findOne(LoanRepayment, {
           where: { external_txn_ref: externalTxnRef },
@@ -3098,6 +3110,7 @@ export class LendingService {
         }
       }
 
+      // 4) Recompute outstanding inside the lock (authoritative balance)
       const existingRepayments = await manager.find(LoanRepayment, {
         where: { loan_request_id: loanId },
         order: { created_at: 'ASC' },
@@ -3117,6 +3130,7 @@ export class LendingService {
         throw new ConflictException('Loan has already been fully repaid');
       }
 
+      // 5) Insert repayment ledger entry (FK set explicitly; no parent cascade)
       const repayment = manager.create(LoanRepayment, {
         loan_request_id: loanId,
         amount: allocation.appliedAmount,
@@ -3141,6 +3155,7 @@ export class LendingService {
       });
       const saved = await manager.save(LoanRepayment, repayment);
 
+      // 6) Close loan via column update only (never save entity graph)
       if (allocation.fullyRepaid) {
         const repaidAt = new Date();
         await manager.update(LoanRequest, { id: loanId }, {
