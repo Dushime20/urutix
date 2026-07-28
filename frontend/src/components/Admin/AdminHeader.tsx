@@ -243,9 +243,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                         title: 'Subscription',
                                         items: [
                                             { label: 'Subscriptions', icon: FileCheck, path: '/admin/subscriptions' },
-                                            { label: 'Subscription Plans', icon: FileText, path: '/admin/subscription-plans' },
-                                            { label: 'Pricing Rules', icon: Tags, path: '/admin/pricing-rules' },
-                                            { label: 'Credit Usage', icon: CreditCard, path: '/admin/credit-usage' },
                                         ]
                                     },
                                     {

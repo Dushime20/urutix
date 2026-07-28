@@ -55,7 +55,7 @@ interface UsageStats {
   }>;
 }
 
-const CreditUsageHistory: React.FC = () => {
+const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const location = useLocation();
   const navigationState = location.state as { tenantId?: string; tenantName?: string } | null;
   
@@ -214,21 +214,17 @@ const CreditUsageHistory: React.FC = () => {
     }
   };
 
-  return (
-    <AdminPageLayout
-      title={<TranslatedText text="Credit Usage History" />}
-      description={<TranslatedText text="Track and analyze credit consumption across all tenants" />}
-      actions={
-        <button
-          onClick={exportToCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850]"
-        >
-          <FaDownload />
-          <TranslatedText text="Export CSV" />
-        </button>
-      }
-    >
-      <div className="safe-bottom">
+  const content = (
+      <div className="safe-bottom space-y-6">
+        <div className="flex justify-end">
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850]"
+          >
+            <FaDownload />
+            <TranslatedText text="Export CSV" />
+          </button>
+        </div>
 
       {/* Top Consumers */}
       {stats.topConsumers.length > 0 && (
@@ -429,8 +425,10 @@ const CreditUsageHistory: React.FC = () => {
         )}
       </div>
       </div>
-    </AdminPageLayout>
   );
+
+  if (embedded) return content;
+  return <AdminPageLayout>{content}</AdminPageLayout>;
 };
 
 export default CreditUsageHistory;

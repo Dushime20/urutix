@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
@@ -53,10 +53,14 @@ interface TenantSubscription {
   createdAt: string;
 }
 
-const TenantSubscriptions: React.FC = () => {
+const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
+  const subscriptionsBase = location.pathname.startsWith('/admin-tenant')
+    ? '/admin-tenant/subscriptions'
+    : '/admin/subscriptions';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
@@ -223,27 +227,12 @@ const TenantSubscriptions: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <AdminPageLayout title={<TranslatedText text="Tenant Subscriptions" />} description={<TranslatedText text="Manage all tenant subscriptions" />}>
-        <ModernLoader isLoading={true} type="page" showStats={true} />
-      </AdminPageLayout>
-    );
+    const loader = <ModernLoader isLoading={true} type="table" rows={8} columns={6} />;
+    if (embedded) return loader;
+    return <AdminPageLayout>{loader}</AdminPageLayout>;
   }
 
-  return (
-    <AdminPageLayout
-      title={<TranslatedText text="Tenant Subscriptions" />}
-      description={<TranslatedText text="View and manage all tenant subscriptions and billing" />}
-      actions={
-        <button
-          onClick={() => refetch()}
-          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium"
-        >
-          <FaSync className="text-sm" />
-          <TranslatedText text="Refresh" />
-        </button>
-      }
-    >
+  const content = (
       <div className="safe-bottom space-y-6">
         {/* Stats Grid */}
 
@@ -285,17 +274,26 @@ const TenantSubscriptions: React.FC = () => {
               <option value="enterprise">Enterprise</option>
             </select>
 
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('all');
-                setPlanFilter('all');
-              }}
-              className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
-            >
-              <FaTimes className="text-sm" />
-              Clear Filters
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => refetch()}
+                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <FaSync className="text-sm" />
+                <TranslatedText text="Refresh" />
+              </button>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('all');
+                  setPlanFilter('all');
+                }}
+                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <FaTimes className="text-sm" />
+                Clear
+              </button>
+            </div>
           </div>
         </div>
 
@@ -428,7 +426,7 @@ const TenantSubscriptions: React.FC = () => {
                           </button>
                           <button
                             onClick={() => {
-                              navigate('/admin/credit-usage', {
+                              navigate(`${subscriptionsBase}?tab=credit-usage`, {
                                 state: { tenantId: subscription.tenantId, tenantName: subscription.tenantName }
                               });
                             }}
@@ -808,8 +806,10 @@ const TenantSubscriptions: React.FC = () => {
           </div>
         )}
       </div>
-    </AdminPageLayout>
   );
+
+  if (embedded) return content;
+  return <AdminPageLayout>{content}</AdminPageLayout>;
 };
 
 export default TenantSubscriptions;

@@ -34,7 +34,7 @@ interface RuleFormData {
   priority: number;
 }
 
-const CreditPricingRules: React.FC = () => {
+const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -162,15 +162,12 @@ const CreditPricingRules: React.FC = () => {
   };
 
   if (isLoading && rules.length === 0) {
-    return (
-      <AdminPageLayout title={<TranslatedText text="Credit Pricing Rules" />}>
-        <ModernLoader isLoading={true} type="page" showStats={true} />
-      </AdminPageLayout>
-    );
+    const loader = <ModernLoader isLoading={true} type="table" rows={8} columns={7} />;
+    if (embedded) return loader;
+    return <AdminPageLayout>{loader}</AdminPageLayout>;
   }
 
-  return (
-    <AdminPageLayout title={<TranslatedText text="Credit Pricing Rules" />}>
+  const content = (
       <div className="safe-bottom space-y-6">
         {/* Info Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
@@ -441,8 +438,10 @@ const CreditPricingRules: React.FC = () => {
           </div>
         </div>
       </div>
-    </AdminPageLayout>
   );
+
+  if (embedded) return content;
+  return <AdminPageLayout>{content}</AdminPageLayout>;
 };
 
 export default CreditPricingRules;

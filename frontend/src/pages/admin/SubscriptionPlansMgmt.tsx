@@ -58,7 +58,7 @@ const DEFAULT_FEATURES: PlanFeatures = {
   prioritySupport: false
 };
 
-const SubscriptionPlansMgmt: React.FC = () => {
+const SubscriptionPlansMgmt: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const { format: fmtFull } = useCurrencyFormat();
   const navigate = useNavigate();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -159,20 +159,7 @@ const SubscriptionPlansMgmt: React.FC = () => {
     p.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <AdminPageLayout
-      title={<TranslatedText text="Subscription Plans Management" />}
-      description={<TranslatedText text="Create and configure subscription tiers for your platform users." />}
-      actions={
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <TranslatedText text="Back" />
-        </button>
-      }
-    >
+  const content = (
       <div className="safe-bottom space-y-6">
         
         {/* Controls */}
@@ -503,8 +490,10 @@ const SubscriptionPlansMgmt: React.FC = () => {
       )}
 
       </div>
-    </AdminPageLayout>
   );
+
+  if (embedded) return content;
+  return <AdminPageLayout>{content}</AdminPageLayout>;
 };
 
 export default SubscriptionPlansMgmt;

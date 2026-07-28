@@ -165,19 +165,10 @@ export const DashboardSkeleton: React.FC = () => {
   );
 };
 
-// Page Skeleton (with header)
+// Page Skeleton (content only — no sticky title bar)
 export const PageSkeleton: React.FC<{ showStats?: boolean }> = ({ showStats = true }) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6">
-        <div className="max-w-7xl mx-auto">
-          <Skeleton className="h-8 w-64 mb-2" />
-          <Skeleton className="h-4 w-96" />
-        </div>
-      </div>
-
-      {/* Content */}
       <div className="max-w-7xl mx-auto p-6">
         {showStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">

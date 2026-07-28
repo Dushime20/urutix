@@ -98,12 +98,9 @@ const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminD
 const TenantAdminDashboard = lazy(() => import('./pages/admin-dashboard/Dashboard'));
 const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions'));
 const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
-const CreditUsageHistory = lazy(() => import('./pages/admin/CreditUsageHistory'));
-const TenantSubscriptions = lazy(() => import('./pages/admin/TenantSubscriptions'));
-const SubscriptionPlansMgmt = lazy(() => import('./pages/admin/SubscriptionPlansMgmt'));
-// OLD: const PartnerPlans = lazy(() => import('./pages/tenant-admin/PartnerPlans')); // Replaced by CreditMarketplace
+const SubscriptionManagement = lazy(() => import('./pages/admin/SubscriptionManagement'));
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
-const CreditPricingRules = lazy(() => import('./pages/admin/CreditPricingRules'));
+// OLD: const PartnerPlans = lazy(() => import('./pages/tenant-admin/PartnerPlans')); // Replaced by CreditMarketplace
 const AdvancedSettings = lazy(() => import('./pages/admin/AdvancedSettings'));
 const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
 const AdminAccountHub = lazy(() => import('./pages/admin/AdminAccountHub'));
@@ -527,10 +524,10 @@ function App() {
                       <Route path="trips" element={<AdminTrips />} />
                       <Route path="tenants" element={<AdminTenants />} />
                       <Route path="routes" element={<AdminRoutes />} />
-                      <Route path="subscriptions" element={<TenantSubscriptions />} />
-                      <Route path="subscription-plans" element={<SubscriptionPlansMgmt />} />
-                      <Route path="pricing-rules" element={<CreditPricingRules />} />
-                      <Route path="credit-usage" element={<CreditUsageHistory />} />
+                      <Route path="subscriptions" element={<SubscriptionManagement />} />
+                      <Route path="subscription-plans" element={<Navigate to="/admin/subscriptions?tab=plans" replace />} />
+                      <Route path="pricing-rules" element={<Navigate to="/admin/subscriptions?tab=pricing-rules" replace />} />
+                      <Route path="credit-usage" element={<Navigate to="/admin/subscriptions?tab=credit-usage" replace />} />
                       <Route path="roles" element={<RoleManagement />} />
                       <Route path="permissions" element={<EnhancedPermissions />} />
                       <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
@@ -590,10 +587,10 @@ function App() {
                       <Route path="trips" element={<AdminTrips />} />
                       <Route path="tenants" element={<AdminTenants />} />
                       <Route path="routes" element={<AdminRoutes />} />
-                      <Route path="subscriptions" element={<TenantSubscriptions />} />
-                      <Route path="subscription-plans" element={<SubscriptionPlansMgmt />} />
-                      <Route path="pricing-rules" element={<CreditPricingRules />} />
-                      <Route path="credit-usage" element={<CreditUsageHistory />} />
+                      <Route path="subscriptions" element={<SubscriptionManagement />} />
+                      <Route path="subscription-plans" element={<Navigate to="/admin-tenant/subscriptions?tab=plans" replace />} />
+                      <Route path="pricing-rules" element={<Navigate to="/admin-tenant/subscriptions?tab=pricing-rules" replace />} />
+                      <Route path="credit-usage" element={<Navigate to="/admin-tenant/subscriptions?tab=credit-usage" replace />} />
                       <Route path="roles" element={<RoleManagement />} />
                       <Route path="permissions" element={<EnhancedPermissions />} />
                       <Route path="enhanced-permissions" element={<EnhancedPermissions />} />

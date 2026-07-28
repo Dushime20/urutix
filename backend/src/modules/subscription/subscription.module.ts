@@ -20,6 +20,7 @@ import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
 import { User } from '../../entities/user.entity';
+import { SystemSettings } from '../../entities/system-settings.entity';
 
 // Services
 import { SubscriptionService } from '../../services/subscription.service';
@@ -30,6 +31,8 @@ import { NotificationDeliveryService } from '../../services/notification-deliver
 import { PricingService } from '../../services/pricing.service';
 import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
 import { MobileMoneyPaymentService } from '../payments/services/mobile-money-payment.service';
+import { SystemSettingsService } from '../../services/system-settings.service';
+import { EventsModule } from '../events/events.module';
 
 // Controllers
 import { SubscriptionController } from './subscription.controller';
@@ -55,10 +58,12 @@ import { NotificationPreferencesController } from './notification-preferences.co
       Trip,
       Load,
       User,
+      SystemSettings,
     ]),
     ScheduleModule.forRoot(),
     HttpModule,
     ConfigModule,
+    EventsModule,
   ],
   controllers: [
     SubscriptionController, 
@@ -75,6 +80,7 @@ import { NotificationPreferencesController } from './notification-preferences.co
     PricingService,
     CreditConsumptionListener,
     MobileMoneyPaymentService,
+    SystemSettingsService,
   ],
   exports: [
     SubscriptionService, 

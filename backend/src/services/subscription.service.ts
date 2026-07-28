@@ -14,6 +14,7 @@ import { CreditService } from './credit.service';
 import { PricingService } from './pricing.service';
 import { Payment, PaymentMethod, PaymentStatus, PaymentType } from '../entities/payment.entity';
 import { MobileMoneyPaymentService, MobileMoneyTransfer } from '../modules/payments/services/mobile-money-payment.service';
+import { SystemSettingsService } from './system-settings.service';
 
 export interface CreateSubscriptionDto {
   tenantId: string;
@@ -52,7 +53,31 @@ export class SubscriptionService {
     private pricingService: PricingService,
     private configService: ConfigService,
     private mobileMoneyPaymentService: MobileMoneyPaymentService,
+    private systemSettingsService: SystemSettingsService,
   ) { }
+
+  /**
+   * Resolve the platform account that receives subscription fees.
+   * Priority: subscription.momo_phone in system settings → MOBILE_MONEY_ACCOUNT_PHONE env.
+   */
+  private async resolveSubscriptionCollectionPhone(): Promise<string> {
+    try {
+      const configuredPhone = await this.systemSettingsService.getSetting('subscription', 'momo_phone');
+      if (configuredPhone && String(configuredPhone).trim()) {
+        return String(configuredPhone).trim();
+      }
+    } catch {
+      // Setting not configured yet — fall back to env
+    }
+
+    const envPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+    if (!envPhone) {
+      throw new BadRequestException(
+        'Subscription collection account is not configured. Set it under Admin → Subscriptions → Payment Methods, or configure MOBILE_MONEY_ACCOUNT_PHONE.',
+      );
+    }
+    return envPhone;
+  }
 
   /**
    * Get all available subscription plans
@@ -392,12 +417,7 @@ export class SubscriptionService {
         );
       }
 
-      const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
-      if (!platformPhone) {
-        throw new BadRequestException(
-          'MOBILE_MONEY_ACCOUNT_PHONE is not configured. Cannot collect subscription payment.',
-        );
-      }
+      const platformPhone = await this.resolveSubscriptionCollectionPhone();
 
       const referenceId = `SUB-${data.tenantId.slice(-8).toUpperCase()}-${Date.now()}`;
       const senderMessage =
@@ -742,9 +762,9 @@ export class SubscriptionService {
         (subscription.metadata as any)?.payerPhone ||
         (subscription.metadata as any)?.phoneNumber;
 
-      const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+      const platformPhone = await this.resolveSubscriptionCollectionPhone();
 
-      if (!payerPhone || !platformPhone) {
+      if (!payerPhone) {
         this.logger.warn(
           `[renewSubscription] Cannot charge for subscription ${subscriptionId}: ` +
           `payerPhone=${payerPhone}, platformPhone=${platformPhone}. Skipping payment.`,

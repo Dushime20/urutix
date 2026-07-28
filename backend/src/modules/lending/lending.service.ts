@@ -2794,7 +2794,11 @@ export class LendingService {
             interest_rate: terms.interest_rate,
             interest_applied_at_repayment: true,
           };
-          await this.loanRequestRepository.save(loan);
+          // Column-level update — never save a loan loaded with OneToMany relations
+          await this.loanRequestRepository.update(loan.id, {
+            interest_amount: interestAmount,
+            metadata: loan.metadata,
+          });
           this.logger.log(
             `processRepayment: applied interest_amount=${interestAmount} from interest policy (rate=${terms.interest_rate}%) for loan ${loanId}`,
           );
@@ -2806,38 +2810,21 @@ export class LendingService {
       }
     }
 
-    const totalDue = (loan.approved_amount || 0) + interestAmount;
-    const paidSoFar = (loan.repayments || []).reduce(
-      (sum, r) => sum + Number(r.amount || 0),
-      0,
-    );
-    const outstanding = Math.max(0, totalDue - paidSoFar);
     if (finalPaymentAmount <= 0) {
       throw new BadRequestException('Payment amount must be positive');
     }
-    if (outstanding <= 0) {
+
+    const preAllocation = this.computeRepaymentAllocation(
+      loan.repayments || [],
+      Number(loan.approved_amount || 0),
+      interestAmount,
+      finalPaymentAmount,
+    );
+    if (preAllocation.outstanding <= 0) {
       throw new BadRequestException('Loan has no outstanding balance');
     }
 
-    const appliedAmount = Math.min(finalPaymentAmount, outstanding);
-    const principalOutstanding = Math.max(
-      0,
-      (loan.approved_amount || 0) -
-        (loan.repayments || []).reduce(
-          (s, r) => s + Number(r.principal_paid || 0),
-          0,
-        ),
-    );
-    const interestOutstanding = Math.max(
-      0,
-      interestAmount -
-        (loan.repayments || []).reduce(
-          (s, r) => s + Number(r.interest_paid || 0),
-          0,
-        ),
-    );
-    const interestPaid = Math.min(appliedAmount, interestOutstanding);
-    const principalPaid = appliedAmount - interestPaid;
+    const appliedAmount = preAllocation.appliedAmount;
 
     const paymentMethod = paymentMeta?.paymentMethod || 'mobile_money';
     const paymentDetails = paymentMeta?.paymentDetails || {};
@@ -2969,46 +2956,15 @@ export class LendingService {
       pendingConfirmation = paymentStatus === 'processing';
     }
 
-    const savedRepayment = await this.dataSource.transaction(async (manager) => {
-      // Re-load repayments inside txn to avoid race
-      const freshLoan = await manager.findOne(LoanRequest, {
-        where: { id: loanId },
-        relations: ['lender', 'repayments'],
-      } as any);
-      if (!freshLoan || freshLoan.status !== LoanRequestStatus.DISBURSED) {
-        throw new BadRequestException('Loan is no longer eligible for repayment');
-      }
-
-      const repayment = this.loanRepaymentRepository.create({
-        loan_request_id: loanId,
-        amount: appliedAmount,
-        principal_paid: principalPaid,
-        interest_paid: interestPaid,
-        repayment_date: new Date(),
-        external_txn_ref: externalTxnRef,
-        metadata: {
-          final_payment_amount: finalPaymentAmount,
-          payment_method: paymentMethod,
-          payment_status: paymentStatus,
-          payment_details: {
-            phoneNumber: paymentDetails.phoneNumber,
-            provider: paymentDetails.provider,
-          },
-          interest_from_policy: interestAmount,
-          principal_outstanding_before: principalOutstanding,
-          currency: loan.currency || 'RWF',
-        },
-      });
-      const saved = await manager.save(LoanRepayment, repayment);
-
-      const fullyRepaid = appliedAmount >= outstanding - 0.001;
-      if (fullyRepaid) {
-        freshLoan.status = LoanRequestStatus.REPAID;
-        freshLoan.repaid_at = new Date();
-        await manager.save(LoanRequest, freshLoan);
-      }
-
-      return { saved, fullyRepaid, freshLoan };
+    const savedRepayment = await this.recordLoanRepayment({
+      loanId,
+      finalPaymentAmount,
+      externalTxnRef,
+      paymentMethod,
+      paymentStatus,
+      paymentDetails,
+      interestAmount,
+      currency: loan.currency || 'RWF',
     });
 
     const { saved, fullyRepaid, freshLoan } = savedRepayment;
@@ -3031,6 +2987,175 @@ export class LendingService {
         transactionId: externalTxnRef,
         pendingConfirmation,
       },
+    });
+  }
+
+  /**
+   * Interest-first waterfall allocation (standard consumer/commercial lending).
+   * Incoming payments satisfy accrued interest before principal.
+   */
+  private computeRepaymentAllocation(
+    repayments: Pick<LoanRepayment, 'amount' | 'principal_paid' | 'interest_paid'>[],
+    principalAmount: number,
+    interestAmount: number,
+    paymentAmount: number,
+  ): {
+    totalDue: number;
+    paidSoFar: number;
+    outstanding: number;
+    appliedAmount: number;
+    interestPaid: number;
+    principalPaid: number;
+    principalOutstanding: number;
+    interestOutstanding: number;
+    fullyRepaid: boolean;
+  } {
+    const totalDue = principalAmount + interestAmount;
+    const paidSoFar = repayments.reduce(
+      (sum, r) => sum + Number(r.amount || 0),
+      0,
+    );
+    const outstanding = Math.max(0, totalDue - paidSoFar);
+    const appliedAmount = Math.min(Math.max(0, paymentAmount), outstanding);
+
+    const principalRepaid = repayments.reduce(
+      (s, r) => s + Number(r.principal_paid || 0),
+      0,
+    );
+    const interestRepaid = repayments.reduce(
+      (s, r) => s + Number(r.interest_paid || 0),
+      0,
+    );
+    const principalOutstanding = Math.max(0, principalAmount - principalRepaid);
+    const interestOutstanding = Math.max(0, interestAmount - interestRepaid);
+
+    const interestPaid = Math.min(appliedAmount, interestOutstanding);
+    const principalPaid = appliedAmount - interestPaid;
+    const fullyRepaid = outstanding - appliedAmount <= 0.001;
+
+    return {
+      totalDue,
+      paidSoFar,
+      outstanding,
+      appliedAmount,
+      interestPaid,
+      principalPaid,
+      principalOutstanding,
+      interestOutstanding,
+      fullyRepaid,
+    };
+  }
+
+  /**
+   * Persist repayment under row lock with a fresh balance recompute (prevents
+   * concurrent double-application). Uses column-level loan updates only — never
+   * saves a LoanRequest that has OneToMany children loaded.
+   */
+  private async recordLoanRepayment(input: {
+    loanId: string;
+    finalPaymentAmount: number;
+    externalTxnRef: string;
+    paymentMethod: string;
+    paymentStatus: 'completed' | 'processing';
+    paymentDetails: Record<string, unknown>;
+    interestAmount: number;
+    currency: string;
+  }): Promise<{
+    saved: LoanRepayment;
+    fullyRepaid: boolean;
+    freshLoan: LoanRequest;
+  }> {
+    const {
+      loanId,
+      finalPaymentAmount,
+      externalTxnRef,
+      paymentMethod,
+      paymentStatus,
+      paymentDetails,
+      interestAmount,
+      currency,
+    } = input;
+
+    return this.dataSource.transaction(async (manager) => {
+      const freshLoan = await manager.findOne(LoanRequest, {
+        where: { id: loanId },
+        relations: ['lender'],
+        lock: { mode: 'pessimistic_write' },
+      } as any);
+
+      if (!freshLoan || freshLoan.status !== LoanRequestStatus.DISBURSED) {
+        throw new BadRequestException('Loan is no longer eligible for repayment');
+      }
+
+      if (externalTxnRef) {
+        const duplicate = await manager.findOne(LoanRepayment, {
+          where: { external_txn_ref: externalTxnRef },
+        });
+        if (duplicate) {
+          throw new ConflictException(
+            'A repayment with this transaction reference has already been recorded',
+          );
+        }
+      }
+
+      const existingRepayments = await manager.find(LoanRepayment, {
+        where: { loan_request_id: loanId },
+        order: { created_at: 'ASC' },
+      });
+
+      const effectiveInterest = Number(
+        freshLoan.interest_amount ?? interestAmount,
+      );
+      const allocation = this.computeRepaymentAllocation(
+        existingRepayments,
+        Number(freshLoan.approved_amount || 0),
+        effectiveInterest,
+        finalPaymentAmount,
+      );
+
+      if (allocation.outstanding <= 0) {
+        throw new ConflictException('Loan has already been fully repaid');
+      }
+
+      const repayment = manager.create(LoanRepayment, {
+        loan_request_id: loanId,
+        amount: allocation.appliedAmount,
+        principal_paid: allocation.principalPaid,
+        interest_paid: allocation.interestPaid,
+        repayment_date: new Date(),
+        external_txn_ref: externalTxnRef,
+        metadata: {
+          final_payment_amount: finalPaymentAmount,
+          payment_method: paymentMethod,
+          payment_status: paymentStatus,
+          payment_details: {
+            phoneNumber: paymentDetails.phoneNumber,
+            provider: paymentDetails.provider,
+          },
+          interest_from_policy: effectiveInterest,
+          principal_outstanding_before: allocation.principalOutstanding,
+          interest_outstanding_before: allocation.interestOutstanding,
+          currency,
+          allocation_method: 'interest_first_waterfall',
+        },
+      });
+      const saved = await manager.save(LoanRepayment, repayment);
+
+      if (allocation.fullyRepaid) {
+        const repaidAt = new Date();
+        await manager.update(LoanRequest, { id: loanId }, {
+          status: LoanRequestStatus.REPAID,
+          repaid_at: repaidAt,
+        });
+        freshLoan.status = LoanRequestStatus.REPAID;
+        freshLoan.repaid_at = repaidAt;
+      }
+
+      return {
+        saved,
+        fullyRepaid: allocation.fullyRepaid,
+        freshLoan,
+      };
     });
   }
 
