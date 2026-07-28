@@ -104,7 +104,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: `${basePath}/support/new` },
-            { label: 'My Reports', path: `${basePath}/support` },
           ]
         },
       ];
@@ -146,7 +145,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/dashboard/broker/support/new' },
-            { label: 'My Reports', path: '/dashboard/broker/support' },
           ]
         },
       ];
@@ -184,7 +182,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/dashboard/driver/support/new' },
-            { label: 'My Reports', path: '/dashboard/driver/support' },
           ]
         },
         { label: 'Account', path: '/dashboard/driver/profile', icon: User },
@@ -225,7 +222,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/dashboard/fleet/support/new' },
-            { label: 'My Reports', path: '/dashboard/fleet/support' },
           ]
         },
       ];
@@ -321,7 +317,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/lender/support/new' },
-            { label: 'My Reports', path: '/lender/support' },
           ]
         },
       ];

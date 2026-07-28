@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   AlertCircle, 
   Clock, 
   DollarSign, 
-  Calendar,
   Package,
   CreditCard,
   CheckCircle,
@@ -133,6 +132,7 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
       setSelectedPayment(payment);
       setShowPaymentModal(true);
     }
+    onPayNow?.(paymentId);
   };
 
   const handleViewDetails = (paymentId: string) => {
@@ -141,6 +141,7 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
       setSelectedPayment(payment);
       setShowDetailModal(true);
     }
+    onViewDetails?.(paymentId);
   };
 
   const handlePaymentSuccess = () => {
@@ -226,130 +227,151 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
     }
   };
 
-  const PaymentCard: React.FC<{ payment: PendingPayment; urgencyType: 'overdue' | 'dueSoon' | 'pending' }> = ({ 
-    payment, 
-    urgencyType 
-  }) => {
-    const urgencyColors = {
-      overdue: 'border-red-200 bg-red-50',
-      dueSoon: 'border-orange-200 bg-orange-50',
-      pending: 'border-slate-200 bg-white',
-    };
+  const getUrgencyType = (payment: PendingPayment): 'overdue' | 'dueSoon' | 'pending' => {
+    if (!payment.dueDate) return 'pending';
+    const daysUntilDue = Math.ceil((new Date(payment.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (daysUntilDue < 0) return 'overdue';
+    if (daysUntilDue <= 7) return 'dueSoon';
+    return 'pending';
+  };
 
-    const urgencyTextColors = {
-      overdue: 'text-red-700',
-      dueSoon: 'text-orange-700',
-      pending: 'text-slate-700',
-    };
-
-    const isProcessing = payment.status === 'PROCESSING';
+  const getSourceLabel = (payment: PendingPayment) => {
     const paymentSource = payment.paymentSource ||
       (payment.isLenderPayment ? 'lender_disbursement' : 'direct_payment');
+    if (payment.isLoanRepaymentObligation) {
+      return `Repay Lender${payment.lenderName ? ` · ${payment.lenderName}` : ''}`;
+    }
+    if (paymentSource === 'lender_disbursement') return 'Via Lender';
+    if (paymentSource === 'direct_payment') return 'Direct Payment';
+    return 'Auto-created';
+  };
 
-    const sourceLabel =
-      payment.isLoanRepaymentObligation
-        ? { text: `Repay Lender${payment.lenderName ? ` · ${payment.lenderName}` : ''}`, color: 'bg-purple-100 text-purple-700' }
-        : paymentSource === 'lender_disbursement'
-        ? { text: 'Via Lender', color: 'bg-purple-100 text-purple-700' }
-        : paymentSource === 'direct_payment'
-        ? { text: 'Direct Payment', color: 'bg-blue-100 text-blue-700' }
-        : { text: 'Auto-created', color: 'bg-slate-100 text-slate-600' };
+  const urgencyLabel = {
+    overdue: 'Overdue',
+    dueSoon: 'Due Soon',
+    pending: 'Pending',
+  };
+
+  const PaymentRow: React.FC<{ payment: PendingPayment }> = ({ payment }) => {
+    const urgencyType = getUrgencyType(payment);
+    const isProcessing = payment.status === 'PROCESSING';
+    const sourceLabel = getSourceLabel(payment);
 
     return (
-      <div className={cn(
-        'rounded-2xl border p-6 transition-all hover:shadow-lg',
-        urgencyColors[urgencyType]
-      )}>
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-              {isCargoOwner ? <CreditCard className="w-6 h-6 text-blue-600" /> : <DollarSign className="w-6 h-6 text-green-600" />}
+      <tr className="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+        <td className="px-4 py-3.5">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
+              {isCargoOwner
+                ? <CreditCard className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                : <DollarSign className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[220px]">
                 {payment.trip?.load?.title || 'Cargo Payment'}
-              </h3>
-              <p className="text-sm text-slate-500">
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Trip #{payment.trip?.tripNumber || payment.tripId.slice(-8)}
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-lg font-bold text-slate-900">
-              {formatCurrency(payment.amount, payment.currency)}
-            </div>
-            <div className={cn('text-sm font-medium', urgencyTextColors[urgencyType])}>
-              {formatDaysUntilDue(payment.dueDate)}
-            </div>
+        </td>
+        <td className="px-4 py-3.5 hidden md:table-cell">
+          <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
+            <Package className="w-3.5 h-3.5 text-slate-400" />
+            <span>{payment.trip?.load?.cargoType || 'General'}</span>
           </div>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Package className="w-4 h-4" />
-            <span>{payment.trip?.load?.cargoType || 'General Cargo'}</span>
+        </td>
+        <td className="px-4 py-3.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+            {urgencyLabel[urgencyType]}
+          </span>
+        </td>
+        <td className="px-4 py-3.5 hidden lg:table-cell">
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-800 whitespace-nowrap">
+            {sourceLabel}
+          </span>
+        </td>
+        <td className="px-4 py-3.5 hidden sm:table-cell">
+          <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
+            {formatDaysUntilDue(payment.dueDate)}
           </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Calendar className="w-4 h-4" />
-            <span>Created: {new Date(payment.createdAt).toLocaleDateString()}</span>
+          <div className="text-[11px] text-slate-400">
+            {new Date(payment.createdAt).toLocaleDateString()}
+          </div>
+        </td>
+        <td className="px-4 py-3.5 text-right">
+          <div className="text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+            {formatCurrency(payment.amount, payment.currency)}
           </div>
           {payment.referenceNumber && (
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">
-                {payment.referenceNumber}
-              </span>
+            <div className="text-[10px] font-mono text-slate-400 truncate max-w-[120px] ml-auto">
+              {payment.referenceNumber}
             </div>
           )}
-          {/* Payment source badge */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', sourceLabel.color)}>
-              {sourceLabel.text}
-            </span>
-            {payment.isLenderPayment && payment.lenderName && (
-              <span className="text-xs text-slate-500">by {payment.lenderName}</span>
+        </td>
+        <td className="px-4 py-3.5">
+          <div className="flex items-center justify-end gap-1.5">
+            {isCargoOwner && (
+              isProcessing ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  Processing
+                </span>
+              ) : (
+                <button
+                  onClick={() => handlePayNow(payment.id)}
+                  disabled={processPaymentMutation.isPending}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 text-xs font-semibold"
+                  title="Pay Now"
+                >
+                  {processPaymentMutation.isPending ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-3.5 h-3.5" />
+                  )}
+                  <span className="hidden xl:inline">Pay Now</span>
+                </button>
+              )
             )}
-            {isProcessing && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 flex items-center gap-1">
-                <RefreshCw className="w-3 h-3 animate-spin" />
-                Processing
-              </span>
-            )}
+            <button
+              onClick={() => handleViewDetails(payment.id)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-medium"
+              title="View Details"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Details</span>
+            </button>
           </div>
-        </div>
-
-        <div className="flex gap-2">
-          {isCargoOwner && (
-            isProcessing ? (
-              <div className="flex-1 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Payment in progress…
-              </div>
-            ) : (
-              <button
-                onClick={() => handlePayNow(payment.id)}
-                disabled={processPaymentMutation.isPending}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {processPaymentMutation.isPending ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CreditCard className="w-4 h-4" />
-                )}
-                Pay Now
-              </button>
-            )
-          )}
-          <button
-            onClick={() => handleViewDetails(payment.id)}
-            className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
-          >
-            <Eye className="w-4 h-4" />
-            Details
-          </button>
-        </div>
-      </div>
+        </td>
+      </tr>
     );
   };
+
+  const PaymentTable = ({ payments }: { payments: PendingPayment[] }) => (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px]">
+          <thead>
+            <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50">
+              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Cargo / Trip</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 hidden md:table-cell">Type</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 hidden lg:table-cell">Source</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 hidden sm:table-cell">Due</th>
+              <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Amount</th>
+              <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payments.map((payment) => (
+              <PaymentRow key={payment.id} payment={payment} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -364,13 +386,13 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
   if (error) {
     return (
       <div className={cn('space-y-6', className)}>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Payments</h3>
-          <p className="text-red-600 mb-4">Failed to load payment information</p>
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 text-center">
+          <XCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Error Loading Payments</h3>
+          <p className="text-slate-500 dark:text-slate-400 mb-4">Failed to load payment information</p>
           <button
             onClick={() => refetch()}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors text-sm font-semibold"
           >
             Try Again
           </button>
@@ -385,9 +407,11 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
     return (
       <div className={cn('space-y-6', className)}>
         <div className="text-center py-12">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-slate-900 mb-2">All Caught Up!</h3>
-          <p className="text-slate-600">
+          <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-primary-600 dark:text-primary-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">All Caught Up!</h3>
+          <p className="text-slate-500 dark:text-slate-400">
             {isCargoOwner 
               ? "You have no pending payments at this time." 
               : "No expected payments at this time."
@@ -401,13 +425,13 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
   return (
     <div className={cn('space-y-6', className)}>
       {/* Header with Summary */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
               {isCargoOwner ? 'Pending Payments' : 'Expected Payments'}
             </h2>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               {isCargoOwner 
                 ? 'Payments you need to make for completed deliveries'
                 : 'Payments you will receive for completed deliveries'
@@ -416,36 +440,43 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
           </div>
           <button
             onClick={() => refetch()}
-            className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+            className="p-2.5 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            title="Refresh"
           >
             <RefreshCw className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Summary Cards */}
+        {/* Summary Cards — system palette only */}
         {paymentsData?.summary && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-50 rounded-xl p-4">
-              <div className="text-sm text-slate-600">Total Amount</div>
-              <div className="text-lg font-bold text-slate-900">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Amount</div>
+              <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {formatCurrency(paymentsData.summary.totalAmount, paymentsData.summary.currency)}
               </div>
             </div>
-            <div className="bg-red-50 rounded-xl p-4">
-              <div className="text-sm text-red-600">Overdue</div>
-              <div className="text-lg font-bold text-red-700">
-                {paymentsData.summary.overdueCount} ({formatCurrency(paymentsData.summary.overdueAmount, paymentsData.summary.currency)})
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Overdue</div>
+              <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {paymentsData.summary.overdueCount}
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-1.5">
+                  ({formatCurrency(paymentsData.summary.overdueAmount, paymentsData.summary.currency)})
+                </span>
               </div>
             </div>
-            <div className="bg-orange-50 rounded-xl p-4">
-              <div className="text-sm text-orange-600">Due Soon</div>
-              <div className="text-lg font-bold text-orange-700">
-                {paymentsData.summary.dueSoonCount} ({formatCurrency(paymentsData.summary.dueSoonAmount, paymentsData.summary.currency)})
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Due Soon</div>
+              <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {paymentsData.summary.dueSoonCount}
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-1.5">
+                  ({formatCurrency(paymentsData.summary.dueSoonAmount, paymentsData.summary.currency)})
+                </span>
               </div>
             </div>
-            <div className="bg-blue-50 rounded-xl p-4">
-              <div className="text-sm text-blue-600">Total Payments</div>
-              <div className="text-lg font-bold text-blue-700">
+            <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800/50 p-4">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-primary-600/70 dark:text-primary-400/70 mb-1">Total Payments</div>
+              <div className="text-lg font-bold text-primary-700 dark:text-primary-300">
                 {paymentsData.summary.totalPayments}
               </div>
             </div>
@@ -453,13 +484,13 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
         )}
 
         {/* Filters */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-1 text-sm"
+              className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400"
             >
               <option value="all">All Status</option>
               <option value="PENDING">Pending</option>
@@ -469,7 +500,7 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="border border-slate-300 rounded-lg px-3 py-1 text-sm"
+            className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400"
           >
             <option value="dueDate">Sort by Due Date</option>
             <option value="amount">Sort by Amount</option>
@@ -478,50 +509,30 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
         </div>
       </div>
 
-      {/* Overdue Payments */}
-      {overdue.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-red-700 mb-4 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5" />
-            Overdue ({overdue.length})
-          </h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {overdue.map((payment) => (
-              <PaymentCard key={payment.id} payment={payment} urgencyType="overdue" />
-            ))}
-          </div>
+      {/* Payments table — row format */}
+      <div>
+        <div className="flex flex-wrap items-center gap-3 mb-3 text-xs text-slate-500 dark:text-slate-400">
+          {overdue.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <AlertCircle className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+              Overdue: {overdue.length}
+            </span>
+          )}
+          {dueSoon.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <Clock className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+              Due Soon: {dueSoon.length}
+            </span>
+          )}
+          {pending.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 font-medium">
+              <DollarSign className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+              Pending: {pending.length}
+            </span>
+          )}
         </div>
-      )}
-
-      {/* Due Soon Payments */}
-      {dueSoon.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-orange-700 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Due Soon ({dueSoon.length})
-          </h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {dueSoon.map((payment) => (
-              <PaymentCard key={payment.id} payment={payment} urgencyType="dueSoon" />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Pending Payments */}
-      {pending.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            Pending ({pending.length})
-          </h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {pending.map((payment) => (
-              <PaymentCard key={payment.id} payment={payment} urgencyType="pending" />
-            ))}
-          </div>
-        </div>
-      )}
+        <PaymentTable payments={[...overdue, ...dueSoon, ...pending]} />
+      </div>
 
       {/* Payment Modal */}
       <PaymentModal

@@ -231,6 +231,114 @@ const FinancialDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Recent activity — placed at top for quicker access */}
+      <section>
+        <SectionHeader title="Recent Activity" description="Latest advances and invoices" />
+        <div className={cn('grid gap-6', isFleet ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1')}>
+          {isFleet && (
+            <div className={cn(CARD, 'overflow-hidden')}>
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Driver Advances</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Latest requests from your drivers</p>
+              </div>
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {(recentAdvances || []).slice(0, 5).length > 0 ? (
+                  (recentAdvances || []).slice(0, 5).map((adv: any) => {
+                    const driverName = adv.driver
+                      ? `${adv.driver.firstName} ${adv.driver.lastName}`
+                      : 'Driver';
+                    const StatusIcon =
+                      adv.status === 'APPROVED' ? CheckCircle : adv.status === 'REJECTED' ? XCircle : Clock;
+                    const routeLabel = adv.trip
+                      ? `${formatLocation(adv.trip.origin, '?')} → ${formatLocation(adv.trip.destination, '?')}`
+                      : 'No trip assigned';
+                    return (
+                      <div
+                        key={adv.id}
+                        className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                            <StatusIcon size={16} className="text-slate-500 dark:text-slate-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{driverName}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              {routeLabel} · {new Date(adv.advanceDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">
+                            {formatCurrency(Number(adv.advanceAmount))}
+                          </p>
+                          <span
+                            className={cn(
+                              'inline-flex items-center h-6 px-2.5 rounded-md text-[10px] font-semibold uppercase border',
+                              advanceStatusStyles[adv.status] || advanceStatusStyles.PENDING,
+                            )}
+                          >
+                            {adv.status}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="px-6 py-12 text-center text-sm text-slate-400">No advances recorded yet</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className={cn(CARD, 'overflow-hidden')}>
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Invoices</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Latest billing records</p>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {recentTransactions.length > 0 ? (
+                recentTransactions.map((transaction: any) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                        <CreditCard size={16} className="text-slate-500 dark:text-slate-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                          {transaction.description}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(transaction.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                      <span
+                        className={cn(
+                          'inline-flex items-center h-6 px-2.5 rounded-md text-[10px] font-semibold uppercase border mt-1',
+                          invoiceStatusStyles(transaction.status),
+                        )}
+                      >
+                        {transaction.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="px-6 py-12 text-center text-sm text-slate-400">No recent invoices</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Charts — fleet breakdown + expense analytics */}
       <section>
         <SectionHeader title="Analytics" description="Trends and breakdowns for the selected period" />
@@ -422,114 +530,6 @@ const FinancialDashboard: React.FC = () => {
               </div>
             )}
           </ChartCard>
-        </div>
-      </section>
-
-      {/* Recent activity */}
-      <section>
-        <SectionHeader title="Recent Activity" description="Latest advances and invoices" />
-        <div className={cn('grid gap-6', isFleet ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1')}>
-          {isFleet && (
-            <div className={cn(CARD, 'overflow-hidden')}>
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Driver Advances</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Latest requests from your drivers</p>
-              </div>
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {(recentAdvances || []).slice(0, 5).length > 0 ? (
-                  (recentAdvances || []).slice(0, 5).map((adv: any) => {
-                    const driverName = adv.driver
-                      ? `${adv.driver.firstName} ${adv.driver.lastName}`
-                      : 'Driver';
-                    const StatusIcon =
-                      adv.status === 'APPROVED' ? CheckCircle : adv.status === 'REJECTED' ? XCircle : Clock;
-                    const routeLabel = adv.trip
-                      ? `${formatLocation(adv.trip.origin, '?')} → ${formatLocation(adv.trip.destination, '?')}`
-                      : 'No trip assigned';
-                    return (
-                      <div
-                        key={adv.id}
-                        className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                            <StatusIcon size={16} className="text-slate-500 dark:text-slate-400" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{driverName}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                              {routeLabel} · {new Date(adv.advanceDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          <p className="text-sm font-bold text-slate-900 dark:text-white">
-                            {formatCurrency(Number(adv.advanceAmount))}
-                          </p>
-                          <span
-                            className={cn(
-                              'inline-flex items-center h-6 px-2.5 rounded-md text-[10px] font-semibold uppercase border',
-                              advanceStatusStyles[adv.status] || advanceStatusStyles.PENDING,
-                            )}
-                          >
-                            {adv.status}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="px-6 py-12 text-center text-sm text-slate-400">No advances recorded yet</div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className={cn(CARD, 'overflow-hidden')}>
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Invoices</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Latest billing records</p>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {recentTransactions.length > 0 ? (
-                recentTransactions.map((transaction: any) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
-                        <CreditCard size={16} className="text-slate-500 dark:text-slate-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                          {transaction.description}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {new Date(transaction.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                      <span
-                        className={cn(
-                          'inline-flex items-center h-6 px-2.5 rounded-md text-[10px] font-semibold uppercase border mt-1',
-                          invoiceStatusStyles(transaction.status),
-                        )}
-                      >
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="px-6 py-12 text-center text-sm text-slate-400">No recent invoices</div>
-              )}
-            </div>
-          </div>
         </div>
       </section>
     </div>
