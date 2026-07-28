@@ -10,7 +10,8 @@ import {
   FaCalendarAlt,
   FaDollarSign,
   FaBox,
-  FaTruck
+  FaTruck,
+  FaEye,
 } from 'react-icons/fa';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -187,6 +188,17 @@ const InvoiceViewer: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedInvoice(invoice);
+                      }}
+                      className="px-3 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors flex items-center gap-2"
+                      title="View Detail"
+                    >
+                      <FaEye className="w-4 h-4" />
+                      View Detail
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

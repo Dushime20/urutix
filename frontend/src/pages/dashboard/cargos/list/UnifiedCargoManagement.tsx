@@ -39,6 +39,7 @@ import { BrokerAssignmentWizard } from "@/components/Cargo/BrokerAssignmentWizar
 import { getStatusColor, getStatusDisplayName } from "./utils";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
 import { compactNumber } from "@/utils/formatNumber";
+import { brokerAPI } from "@/services/brokerApi";
 
 type TabType = "all" | "active" | "drafts" | "broker-managed" | "create" | "template" | "bidding";
 
@@ -151,6 +152,9 @@ const UnifiedCargoManagement = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
+  const [contractViewerOpen, setContractViewerOpen] = useState(false);
+  const [contractLoading, setContractLoading] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
 
   // Broker assignment state
   const [showAssignBrokerModal, setShowAssignBrokerModal] = useState(false);
@@ -479,6 +483,43 @@ const UnifiedCargoManagement = () => {
   const handleAssignReceiver = (load: any) => {
     setSelectedLoadForReceiver(load);
     setShowAssignReceiverModal(true);
+  };
+
+  const handleViewContract = async (load: any) => {
+    if (!load?.id) return;
+    try {
+      setContractLoading(true);
+      const response = await brokerAPI.getContracts({ loadId: load.id });
+      const payload = response?.data?.data ?? response?.data ?? [];
+      const contracts = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.contracts)
+          ? payload.contracts
+          : Array.isArray(payload?.items)
+            ? payload.items
+            : [];
+
+      const signedContract =
+        contracts.find((c: any) => c.status === "SIGNED") ||
+        contracts.find((c: any) => c.status === "ACTIVE") ||
+        contracts.find((c: any) => c.status === "COMPLETED") ||
+        contracts[0];
+
+      if (!signedContract) {
+        toast.error("No signed contract found for this cargo yet.");
+        return;
+      }
+
+      setSelectedContract({
+        ...signedContract,
+        cargoTitle: load.title || "Untitled Cargo",
+      });
+      setContractViewerOpen(true);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to load contract");
+    } finally {
+      setContractLoading(false);
+    }
   };
 
   const handleReceiverAssignmentComplete = async () => {
@@ -977,6 +1018,7 @@ const UnifiedCargoManagement = () => {
                               handleAssignBroker={isReceiver || activeTab === "broker-managed" ? undefined : handleAssignBroker}
                               handleUnassignBroker={isReceiver ? undefined : handleUnassignBroker}
                               handleAssignReceiver={isReceiver || activeTab === "broker-managed" ? undefined : handleAssignReceiver}
+                              handleViewContract={activeTab === "broker-managed" ? handleViewContract : undefined}
                             />
                           ))}
                         </div>
@@ -1009,6 +1051,9 @@ const UnifiedCargoManagement = () => {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <button onClick={() => handleViewClick(load)} className="p-2 text-slate-400 hover:text-[#345E85]"><Eye className="w-4 h-4" /></button>
+                                    {activeTab === "broker-managed" && (
+                                      <button onClick={() => handleViewContract(load)} className="p-2 text-blue-500 hover:text-blue-700" title="View Signed Contract"><FileText className="w-4 h-4" /></button>
+                                    )}
                                     {!isReceiver && !load.broker && <button onClick={() => handleEditCargo(load)} className="p-2 text-slate-400 hover:text-primary-600"><Edit className="w-4 h-4" /></button>}
                                     {!isReceiver && !load.broker && <button onClick={() => handleAssignBroker(load)} className="p-2 text-purple-600"><Users className="w-4 h-4" /></button>}
                                     {!isReceiver && !load.broker && <button onClick={() => handleDeleteCargo(load)} className="p-2 text-red-400"><Trash2 className="w-4 h-4" /></button>}
@@ -1078,6 +1123,15 @@ const UnifiedCargoManagement = () => {
                                         >
                                           <Eye className="w-4 h-4" />
                                         </button>
+                                        {activeTab === "broker-managed" && (
+                                          <button
+                                            onClick={() => handleViewContract(load)}
+                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                            title="View Signed Contract"
+                                          >
+                                            <FileText className="w-4 h-4" />
+                                          </button>
+                                        )}
                                         {!isReceiver && !load.broker && (
                                           <button
                                             onClick={() => handleEditCargo(load)}
@@ -1302,6 +1356,52 @@ const UnifiedCargoManagement = () => {
 
       {/* Confirmation Dialog */}
       {DialogComponent}
+
+      {contractViewerOpen && selectedContract && (
+        <div className="fixed inset-0 z-[400] bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">Signed Contract</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{selectedContract.cargoTitle}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setContractViewerOpen(false);
+                  setSelectedContract(null);
+                }}
+                className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+                  <div className="text-slate-400 uppercase tracking-wider font-black">Status</div>
+                  <div className="text-slate-900 dark:text-slate-100 font-bold mt-1">{selectedContract.status || "N/A"}</div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+                  <div className="text-slate-400 uppercase tracking-wider font-black">Contract ID</div>
+                  <div className="text-slate-900 dark:text-slate-100 font-bold mt-1">{selectedContract.id || "N/A"}</div>
+                </div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-black mb-2">Contract Content</div>
+                <div className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
+                  {selectedContract.contractContent || "No contract content available."}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {contractLoading && (
+        <div className="fixed bottom-4 right-4 z-[410] px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-lg">
+          Loading contract...
+        </div>
+      )}
     </>
   );
 };

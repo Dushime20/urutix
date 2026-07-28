@@ -19,6 +19,7 @@ import {
   UserX,
   Briefcase,
   ChevronLeft,
+  FileText,
 } from "lucide-react";
 import {
   getCargoTypeDisplayName,
@@ -56,6 +57,7 @@ export default function LoadItem({
   handleAssignBroker,
   handleUnassignBroker,
   handleAssignReceiver,
+  handleViewContract,
 }: {
   load: Cargo;
   handleViewClick: (load: Cargo) => void;
@@ -65,6 +67,7 @@ export default function LoadItem({
   handleAssignBroker?: (load: Cargo) => void;
   handleUnassignBroker?: (load: Cargo) => void;
   handleAssignReceiver?: (load: Cargo) => void;
+  handleViewContract?: (load: Cargo) => void;
 }) {
   const navigate = useNavigate();
   const [showMobileDetails, setShowMobileDetails] = useState(false);
@@ -268,6 +271,15 @@ export default function LoadItem({
                       title="Assign Receiver"
                     >
                       <Users className="w-4 h-4" />
+                    </button>
+                  )}
+                  {handleViewContract && load.broker && (
+                    <button
+                      onClick={() => handleViewContract(load)}
+                      className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl transition-all duration-300 active:scale-95"
+                      title="View Signed Contract"
+                    >
+                      <FileText className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -654,6 +666,16 @@ export default function LoadItem({
                     <UserX className="w-4 h-4" />
                     <span className="hidden xs:inline">Unassign Broker</span>
                     <span className="xs:hidden">Unassign</span>
+                  </button>
+                )}
+                {handleViewContract && load.broker && (
+                  <button
+                    className="flex-1 min-w-[120px] px-4 py-2.5 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg font-medium text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-300 flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+                    onClick={() => handleViewContract(load)}
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span className="hidden xs:inline">View Contract</span>
+                    <span className="xs:hidden">Contract</span>
                   </button>
                 )}
                 {!load.broker && (
@@ -1047,6 +1069,15 @@ export default function LoadItem({
                 disabled={!!load.receiverId}
               >
                 <Users className="w-4 h-4" />
+              </button>
+            )}
+            {handleViewContract && load.broker && (
+              <button
+                className="p-3 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
+                title="View Signed Contract"
+                onClick={() => handleViewContract(load)}
+              >
+                <FileText className="w-4 h-4" />
               </button>
             )}
             {handleUnassignBroker && load.broker && (
