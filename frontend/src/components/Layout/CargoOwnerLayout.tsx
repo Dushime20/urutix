@@ -57,7 +57,7 @@ const CargoOwnerLayout: React.FC = () => {
         {!hideHeader && <DashboardHeader />}
         
         <main className="flex-1 flex flex-col">
-          <div className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 py-2 md:py-4 lg:px-6 w-full overflow-x-hidden">
+          <div className="flex-1 max-w-7xl mx-auto px-2 sm:px-4 py-2 md:py-4 lg:px-6 w-full">
             <Outlet />
           </div>
           {!hideHeader && <DashboardFooter />}

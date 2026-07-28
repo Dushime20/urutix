@@ -48,12 +48,13 @@
 
 @layer base {
   html {
-    overflow-x: hidden;
+    /* clip avoids creating a scroll containment that breaks position:sticky/fixed headers */
+    overflow-x: clip;
     font-family: 'Mona Sans', 'system-ui', 'sans-serif';
   }
   
   body {
-    overflow-x: hidden;
+    overflow-x: clip;
     @apply bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-100;
   }
 

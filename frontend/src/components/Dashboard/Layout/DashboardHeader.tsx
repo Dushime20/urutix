@@ -56,7 +56,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
     return (
         <>
             {/* Marquee Alert Bar */}
-            <div className="bg-[#0a101f] text-white py-2 overflow-hidden border-b border-white/5">
+            <div className="bg-[#0a101f] text-white py-2 overflow-hidden border-b border-white/5 fixed top-0 left-0 right-0 z-[301]">
                 <div className="flex items-center animate-marquee whitespace-nowrap">
                     <div className="flex gap-16 items-center text-[11px] font-bold tracking-widest uppercase opacity-80">
                         <span className="flex items-center gap-2 text-amber-400">
@@ -76,7 +76,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
             </div>
 
             {/* Header Section - Dark Theme */}
-            <div className="bg-[#0f172a] text-white">
+            <div className="bg-[#0f172a] text-white fixed top-8 left-0 right-0 z-[300]">
                 <header className="max-w-[1536px] mx-auto flex items-center justify-between px-4 md:px-8 lg:px-12 xl:px-20 py-5 border-b border-white/10">
                     <div className="flex items-center gap-4 md:gap-10">
                         {/* Mobile Menu Toggle */}
@@ -207,6 +207,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onCreateClick }) => {
                     </div>
                 )}
             </div>
+            <div className="h-[120px]" aria-hidden="true" />
         </>
     );
 };

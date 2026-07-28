@@ -78,7 +78,7 @@ const RoleBasedLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 relative z-10">
+        <header className="bg-white border-b border-gray-200 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 sticky top-0 z-[300] shrink-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               

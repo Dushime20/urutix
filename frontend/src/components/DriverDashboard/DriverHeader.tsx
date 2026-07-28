@@ -97,7 +97,8 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 sticky top-0 z-[300]">
+    <>
+    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 fixed top-0 left-0 right-0 z-[300]">
       <div className="max-w-[1920px] mx-auto flex items-center justify-between">
         <header className="flex-1 flex items-center justify-between gap-4">
 
@@ -504,6 +505,8 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
         )}
       </AnimatePresence>
     </div>
+    <div className="h-[76px] sm:h-[88px] lg:h-[100px]" aria-hidden="true" />
+    </>
   );
 };
 

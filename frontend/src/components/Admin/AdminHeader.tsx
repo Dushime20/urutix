@@ -58,7 +58,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
     return (
         <>
-            <header className="sticky top-0 z-[300] w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 h-20 flex items-center justify-between">
+            <header className="sticky top-0 z-[300] shrink-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-6 h-20 flex items-center justify-between">
             {/* Left: Branding/Search */}
             <div className="flex items-center gap-4 lg:gap-8 flex-1">
                 {/* Mobile Menu Toggle */}

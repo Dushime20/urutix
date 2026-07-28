@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query'; // Import useQuery
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight,
-  Calendar, Filter, Download,
+  Calendar, Filter, Download, Activity,
 } from 'lucide-react';
 import { Line, Doughnut } from 'react-chartjs-2';
 import { motion, AnimatePresence } from 'framer-motion';

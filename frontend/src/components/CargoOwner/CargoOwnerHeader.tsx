@@ -52,7 +52,8 @@ const CargoOwnerHeader: React.FC<CargoOwnerHeaderProps> = ({
   ];
 
   return (
-    <header className={`bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-800 ${className}`}>
+    <>
+    <header className={`bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-800 fixed top-0 left-0 right-0 z-[300] ${className}`}>
       <div className="flex items-center justify-between px-4 py-3 lg:px-6">
         {/* Left Section */}
         <div className="flex items-center gap-4">
@@ -226,6 +227,8 @@ const CargoOwnerHeader: React.FC<CargoOwnerHeaderProps> = ({
         />
       )}
     </header>
+    <div className="h-16" aria-hidden="true" />
+    </>
   );
 };
 

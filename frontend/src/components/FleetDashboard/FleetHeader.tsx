@@ -109,7 +109,8 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
     );
 
     return (
-        <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[300] shadow-sm">
+        <>
+        <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 fixed top-0 left-0 right-0 z-[300] shadow-sm">
             <header className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 flex items-center justify-between">
 
                 {/* Logo Section */}
@@ -256,5 +257,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                 </div>
             )}
         </div>
+        <div className="h-[76px] sm:h-[88px] lg:h-[100px]" aria-hidden="true" />
+        </>
     );
 };
