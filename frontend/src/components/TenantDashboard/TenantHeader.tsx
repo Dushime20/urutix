@@ -82,7 +82,6 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
       items: [
         { id: 'financial', label: 'Escrow Account', icon: DollarSign, description: 'Revenue & credit intelligence' },
         { id: 'purchase-credits', label: 'Purchase Credits', icon: DollarSign, description: 'Top up your account balance' },
-        { id: 'billing', label: 'Billing Dashboard', icon: DollarSign, description: 'Manage plans and invoices' },
       ]
     }
   ];
