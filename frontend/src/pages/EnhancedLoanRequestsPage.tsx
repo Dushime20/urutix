@@ -25,6 +25,8 @@ interface Lender { id: string; name: string; type: string; email: string; phone:
 interface LoanRequest {
   id: string; cargo_id: string; tenant_id: string; trip_id: string;
   requested_amount: number; approved_amount?: number;
+  interest_amount?: number;
+  currency?: string;
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'overdue';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   created_at: string; due_date?: string;
@@ -1159,10 +1161,13 @@ const TruckOwnerLoanRequestsView: React.FC<{
                             {req.rejection_reason}
                           </span>
                         )}
-                        {(req.status === 'approved' || req.status === 'disbursed') && req.borrower_accepted_at && (
-                          <EnhancedRepayButton 
-                            loanId={req.id} 
+                        {req.status === 'disbursed' && req.borrower_accepted_at && (
+                          <EnhancedRepayButton
+                            loanId={req.id}
                             amount={req.approved_amount ?? req.requested_amount}
+                            interestAmount={req.interest_amount ?? 0}
+                            interestRate={req.interest_rate}
+                            currency={req.currency || 'USD'}
                             onRepaymentSuccess={onRefresh}
                           />
                         )}
@@ -1335,6 +1340,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             trip_id: req.trip_id || req.tripId || '',
             requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
             approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
+            interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
+            currency: req.currency || 'USD',
             status: req.status || 'pending',
             priority: 'medium' as const,
             created_at: req.created_at || req.createdAt || new Date().toISOString(),
@@ -1431,6 +1438,8 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             trip_id: req.trip_id || req.tripId || '',
             requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
             approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
+            interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
+            currency: req.currency || 'USD',
             status: req.status || 'pending',
             priority: 'medium' as const,
             created_at: req.created_at || req.createdAt || new Date().toISOString(),
@@ -1550,7 +1559,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             return {
               id: req.id, cargo_id: req.cargo_id || req.cargoId, tenant_id: req.tenant_id || req.tenantId,
               trip_id: req.trip_id || req.tripId, requested_amount: req.requested_amount || req.requestedAmount || 0,
-              approved_amount: req.approved_amount || req.approvedAmount, status: req.status || 'pending',
+              approved_amount: req.approved_amount || req.approvedAmount,
+              interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
+              currency: req.currency || 'USD',
+              status: req.status || 'pending',
               priority: req.priority || 'medium', created_at: req.created_at || req.createdAt,
               due_date: req.due_date || req.dueDate,
               borrower_name: borrowerName,

@@ -899,7 +899,16 @@ export class LendingController {
         final_payment_amount: {
           type: 'number',
           format: 'float',
-          description: 'Amount being repaid (can be partial or full)',
+          description: 'Amount being repaid (can be partial or full). Should include interest when settling in full.',
+        },
+        paymentMethod: {
+          type: 'string',
+          enum: ['card', 'mobile_money'],
+          description: 'Payment method used by the borrower',
+        },
+        paymentDetails: {
+          type: 'object',
+          description: 'Card or mobile-money payment details',
         },
       },
       required: ['final_payment_amount'],
@@ -937,11 +946,20 @@ export class LendingController {
   })
   async processRepayment(
     @Param('loanId', ParseUUIDPipe) loanId: string,
-    @Body() body: { final_payment_amount: number },
+    @Body()
+    body: {
+      final_payment_amount: number;
+      paymentMethod?: string;
+      paymentDetails?: Record<string, unknown>;
+    },
   ) {
     return await this.lendingService.processRepayment(
       loanId,
       body.final_payment_amount,
+      {
+        paymentMethod: body.paymentMethod,
+        paymentDetails: body.paymentDetails,
+      },
     );
   }
 

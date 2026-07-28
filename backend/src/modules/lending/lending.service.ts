@@ -1593,7 +1593,7 @@ export class LendingService {
   async getLoanOfferDisclosure(loanId: string): Promise<any> {
     const loan = await this.loanRequestRepository.findOne({
       where: { id: loanId },
-      relations: ['lender', 'loanTerms'],
+      relations: ['lender', 'loanTerms', 'borrower'],
     });
 
     if (!loan) {
@@ -1601,12 +1601,41 @@ export class LendingService {
     }
 
     const approvedAmount = Number(loan.approved_amount ?? loan.requested_amount);
-    const interestAmount = Number(loan.interest_amount ?? 0);
+    let interestAmount = Number(loan.interest_amount ?? 0);
+    let nominalRate =
+      loan.metadata?.interest_rate ?? loan.loanTerms?.[0]?.nominal_rate ?? null;
+
+    // If interest was never contracted, derive from active interest-rate policy
+    if (interestAmount <= 0 && loan.lender_id) {
+      try {
+        const borrowerCreditScore =
+          (loan as any).borrower?.credit_score ?? null;
+        const terms = await this.computeLoanTerms(
+          loan.lender_id,
+          borrowerCreditScore,
+          loan.id,
+        );
+        if (terms.interest_rate != null) {
+          nominalRate = terms.interest_rate;
+          const termMonthsForInterest = Number(loan.loan_term_months || 3);
+          interestAmount =
+            Math.round(
+              approvedAmount *
+                (terms.interest_rate / 100) *
+                (termMonthsForInterest / 12) *
+                100,
+            ) / 100;
+        }
+      } catch (err: any) {
+        this.logger.warn(
+          `getLoanOfferDisclosure: interest policy lookup failed for ${loanId}: ${err.message}`,
+        );
+      }
+    }
+
     const originationFee = Number(loan.origination_fee_amount ?? 0);
     const totalRepayable = approvedAmount + interestAmount + originationFee;
     const termMonths = Number(loan.loan_term_months || 3);
-    const nominalRate =
-      loan.metadata?.interest_rate ?? loan.loanTerms?.[0]?.nominal_rate ?? null;
     const monthlyInstalment =
       termMonths > 0 ? Math.round((totalRepayable / termMonths) * 100) / 100 : totalRepayable;
 
@@ -2542,53 +2571,212 @@ export class LendingService {
   async processRepayment(
     loanId: string,
     finalPaymentAmount: number,
-  ): Promise<LoanRepayment> {
-    return await this.dataSource.transaction(async (manager) => {
-      const loan = await manager.findOne(LoanRequest, {
-        where: { id: loanId },
-        relations: ['lender', 'repayments'],
-      } as any);
+    paymentMeta?: {
+      paymentMethod?: string;
+      paymentDetails?: Record<string, unknown>;
+    },
+  ): Promise<LoanRepayment & { payment?: { status: string; transactionId?: string; pendingConfirmation?: boolean } }> {
+    const loan = await this.loanRequestRepository.findOne({
+      where: { id: loanId },
+      relations: ['lender', 'repayments', 'borrower'],
+    } as any);
 
-      if (!loan) {
-        throw new NotFoundException('Loan request not found');
+    if (!loan) {
+      throw new NotFoundException('Loan request not found');
+    }
+
+    if (loan.status !== LoanRequestStatus.DISBURSED) {
+      throw new BadRequestException(
+        'Loan must be disbursed before repayment',
+      );
+    }
+
+    // Ensure contracted interest from interest-rate policy is applied when configured
+    let interestAmount = Number(loan.interest_amount || 0);
+    if ((!loan.interest_amount || interestAmount <= 0) && loan.lender_id) {
+      try {
+        const borrowerCreditScore =
+          (loan as any).borrower?.credit_score ?? null;
+        const terms = await this.computeLoanTerms(
+          loan.lender_id,
+          borrowerCreditScore,
+          loan.id,
+        );
+        if (terms.interest_rate != null) {
+          const approvedAmount = Number(
+            loan.approved_amount || loan.requested_amount || 0,
+          );
+          const termMonths = Number(loan.loan_term_months || 3);
+          interestAmount =
+            Math.round(
+              approvedAmount *
+                (terms.interest_rate / 100) *
+                (termMonths / 12) *
+                100,
+            ) / 100;
+          loan.interest_amount = interestAmount;
+          loan.metadata = {
+            ...(loan.metadata || {}),
+            interest_rate: terms.interest_rate,
+            interest_applied_at_repayment: true,
+          };
+          await this.loanRequestRepository.save(loan);
+          this.logger.log(
+            `processRepayment: applied interest_amount=${interestAmount} from interest policy (rate=${terms.interest_rate}%) for loan ${loanId}`,
+          );
+        }
+      } catch (policyErr: any) {
+        this.logger.warn(
+          `processRepayment: could not resolve interest policy for loan ${loanId}: ${policyErr.message}`,
+        );
       }
+    }
 
-      if (loan.status !== LoanRequestStatus.DISBURSED) {
+    const totalDue = (loan.approved_amount || 0) + interestAmount;
+    const paidSoFar = (loan.repayments || []).reduce(
+      (sum, r) => sum + Number(r.amount || 0),
+      0,
+    );
+    const outstanding = Math.max(0, totalDue - paidSoFar);
+    if (finalPaymentAmount <= 0) {
+      throw new BadRequestException('Payment amount must be positive');
+    }
+    if (outstanding <= 0) {
+      throw new BadRequestException('Loan has no outstanding balance');
+    }
+
+    const appliedAmount = Math.min(finalPaymentAmount, outstanding);
+    const principalOutstanding = Math.max(
+      0,
+      (loan.approved_amount || 0) -
+        (loan.repayments || []).reduce(
+          (s, r) => s + Number(r.principal_paid || 0),
+          0,
+        ),
+    );
+    const interestOutstanding = Math.max(
+      0,
+      interestAmount -
+        (loan.repayments || []).reduce(
+          (s, r) => s + Number(r.interest_paid || 0),
+          0,
+        ),
+    );
+    const interestPaid = Math.min(appliedAmount, interestOutstanding);
+    const principalPaid = appliedAmount - interestPaid;
+
+    const paymentMethod = paymentMeta?.paymentMethod || 'mobile_money';
+    const paymentDetails = paymentMeta?.paymentDetails || {};
+    let externalTxnRef = `REPAY-${Date.now()}`;
+    let paymentStatus: 'completed' | 'processing' = 'completed';
+    let pendingConfirmation = false;
+
+    // Card not integrated with payment gateway — same policy as subscriptions
+    if (paymentMethod === 'card') {
+      throw new BadRequestException(
+        'Card payments are not yet supported. Please use mobile_money.',
+      );
+    }
+
+    // ── Real payment via ishema (MOBILE_MONEY_* from .env) ─────────────────
+    if (paymentMethod === 'mobile_money') {
+      const payerPhone = String(paymentDetails.phoneNumber || '').trim();
+      if (!payerPhone) {
         throw new BadRequestException(
-          'Loan must be disbursed before repayment',
+          'phoneNumber is required in paymentDetails for mobile_money repayment.',
         );
       }
 
-      // Compute outstanding
-      const totalDue =
-        (loan.approved_amount || 0) + (loan.interest_amount || 0);
-      const paidSoFar = (loan.repayments || []).reduce(
-        (sum, r) => sum + Number(r.amount || 0),
-        0,
+      const platformPhone = this.configService.get<string>(
+        'MOBILE_MONEY_ACCOUNT_PHONE',
       );
-      const outstanding = Math.max(0, totalDue - paidSoFar);
-      if (finalPaymentAmount <= 0) {
-        throw new BadRequestException('Payment amount must be positive');
+      if (!platformPhone) {
+        throw new BadRequestException(
+          'MOBILE_MONEY_ACCOUNT_PHONE is not configured. Cannot collect loan repayment.',
+        );
       }
-      const appliedAmount = Math.min(finalPaymentAmount, outstanding);
-      const principalOutstanding = Math.max(
-        0,
-        (loan.approved_amount || 0) -
-          (loan.repayments || []).reduce(
-            (s, r) => s + Number(r.principal_paid || 0),
-            0,
-          ),
+
+      const MobileMoneyModule = await import(
+        '../payments/services/mobile-money-payment.service'
       );
-      const interestOutstanding = Math.max(
-        0,
-        (loan.interest_amount || 0) -
-          (loan.repayments || []).reduce(
-            (s, r) => s + Number(r.interest_paid || 0),
-            0,
-          ),
+      const MobileMoneyClass = MobileMoneyModule.MobileMoneyPaymentService;
+      const mobileMoneyService = this.moduleRef.get(MobileMoneyClass, {
+        strict: false,
+      });
+
+      if (!mobileMoneyService) {
+        throw new BadRequestException(
+          'Mobile Money payment service is not available.',
+        );
+      }
+
+      const loanCurrency = loan.currency || 'RWF';
+      const { amount: momoAmount, currency: momoCurrency, exchangeRate } =
+        await this.resolveDisbursementAmount(appliedAmount, loanCurrency);
+
+      const referenceId = `LREP-${loan.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
+      const senderMessage =
+        `Loan repayment #${loan.loan_number || loan.id.slice(0, 8)} — ${momoAmount} ${momoCurrency}`.substring(
+          0,
+          160,
+        );
+      const callbackUrl = this.configService.get<string>(
+        'MOBILE_MONEY_CALLBACK_URL',
       );
-      const interestPaid = Math.min(appliedAmount, interestOutstanding);
-      const principalPaid = appliedAmount - interestPaid;
+
+      const transfers = [
+        {
+          percentage: 100,
+          phoneNumber: platformPhone,
+          receiverMessage: senderMessage,
+        },
+      ];
+
+      this.logger.log(
+        `Initiating loan repayment: ${momoAmount} ${momoCurrency} from ${payerPhone} ` +
+          `to platform ${platformPhone} | loan: ${loanId} | ref: ${referenceId}` +
+          (exchangeRate ? ` | rate=${exchangeRate}` : ''),
+      );
+
+      const mmResponse = await mobileMoneyService.createTransaction(
+        momoAmount,
+        payerPhone,
+        referenceId,
+        senderMessage,
+        transfers,
+        callbackUrl,
+      );
+
+      const txn = mmResponse.savedTransaction || mmResponse.transaction;
+      externalTxnRef = txn?.externalId || txn?.id || referenceId;
+      const txnStatus = txn?.status || 'pending';
+
+      if (txnStatus === 'failed') {
+        throw new BadRequestException(
+          'Mobile Money repayment was rejected by the provider.',
+        );
+      }
+
+      paymentStatus =
+        txnStatus === 'success' || txnStatus === 'completed'
+          ? 'completed'
+          : 'processing';
+      pendingConfirmation = paymentStatus === 'processing';
+
+      this.logger.log(
+        `Loan repayment accepted by payment API: externalId=${externalTxnRef}, status=${txnStatus}`,
+      );
+    }
+
+    const savedRepayment = await this.dataSource.transaction(async (manager) => {
+      // Re-load repayments inside txn to avoid race
+      const freshLoan = await manager.findOne(LoanRequest, {
+        where: { id: loanId },
+        relations: ['lender', 'repayments'],
+      } as any);
+      if (!freshLoan || freshLoan.status !== LoanRequestStatus.DISBURSED) {
+        throw new BadRequestException('Loan is no longer eligible for repayment');
+      }
 
       const repayment = this.loanRepaymentRepository.create({
         loan_request_id: loanId,
@@ -2596,22 +2784,139 @@ export class LendingService {
         principal_paid: principalPaid,
         interest_paid: interestPaid,
         repayment_date: new Date(),
-        external_txn_ref: `REPAY-${Date.now()}`,
-        metadata: { final_payment_amount: finalPaymentAmount },
+        external_txn_ref: externalTxnRef,
+        metadata: {
+          final_payment_amount: finalPaymentAmount,
+          payment_method: paymentMethod,
+          payment_status: paymentStatus,
+          payment_details: {
+            phoneNumber: paymentDetails.phoneNumber,
+            provider: paymentDetails.provider,
+          },
+          interest_from_policy: interestAmount,
+          principal_outstanding_before: principalOutstanding,
+          currency: loan.currency || 'RWF',
+        },
       });
-      const savedRepayment = await manager.save(LoanRepayment, repayment);
+      const saved = await manager.save(LoanRepayment, repayment);
 
-      if (appliedAmount >= outstanding - 0.001) {
-        loan.status = LoanRequestStatus.REPAID;
-        await manager.save(LoanRequest, loan);
+      const fullyRepaid = appliedAmount >= outstanding - 0.001;
+      if (fullyRepaid) {
+        freshLoan.status = LoanRequestStatus.REPAID;
+        await manager.save(LoanRequest, freshLoan);
       }
 
-      if (loan.lender?.callback_url) {
-        await this.notifyLenderRepayment(loan, savedRepayment);
-      }
-
-      return savedRepayment;
+      return { saved, fullyRepaid, freshLoan };
     });
+
+    const { saved, fullyRepaid, freshLoan } = savedRepayment;
+
+    // External lender webhook (if configured)
+    if (freshLoan.lender?.callback_url) {
+      await this.notifyLenderRepayment(freshLoan, saved);
+    }
+
+    // In-app notifications for borrower + lender
+    await this.notifyRepaymentParties(freshLoan, saved, {
+      fullyRepaid,
+      paymentMethod,
+      pendingConfirmation,
+    });
+
+    return Object.assign(saved, {
+      payment: {
+        status: paymentStatus,
+        transactionId: externalTxnRef,
+        pendingConfirmation,
+      },
+    });
+  }
+
+  /** Notify borrower and lender in-app after a repayment is recorded */
+  private async notifyRepaymentParties(
+    loan: LoanRequest,
+    repayment: LoanRepayment,
+    opts: {
+      fullyRepaid: boolean;
+      paymentMethod?: string;
+      pendingConfirmation?: boolean;
+    },
+  ): Promise<void> {
+    try {
+      const currency = loan.currency || 'RWF';
+      const amount = Number(repayment.amount || 0);
+
+      const borrowerUser = await this.userRepository.findOne({
+        where: { id: loan.created_by },
+        relations: ['profile'],
+      });
+      const borrowerName = borrowerUser?.profile
+        ? `${borrowerUser.profile.firstName || ''} ${borrowerUser.profile.lastName || ''}`.trim() ||
+          borrowerUser.email
+        : borrowerUser?.email || 'Borrower';
+
+      if (borrowerUser) {
+        await this.loanNotificationService.notifyBorrowerRepaymentConfirmed(
+          borrowerUser.id,
+          loan.tenant_id,
+          loan.id,
+          amount,
+          {
+            currency,
+            principalPaid: Number(repayment.principal_paid || 0),
+            interestPaid: Number(repayment.interest_paid || 0),
+            fullyRepaid: opts.fullyRepaid,
+            paymentMethod: opts.paymentMethod,
+            lenderName: loan.lender?.name,
+          },
+        );
+      }
+
+      if (loan.lender?.contact_email) {
+        const lenderUser = await this.userRepository.findOne({
+          where: { email: loan.lender.contact_email },
+        });
+        if (lenderUser) {
+          await this.loanNotificationService.notifyLenderRepaymentReceived(
+            lenderUser.id,
+            loan.tenant_id,
+            loan.id,
+            amount,
+            borrowerName,
+            currency,
+          );
+        }
+      }
+
+      // Also notify lender team users if present
+      try {
+        if (loan.lender_id) {
+          const lenderUsers = await this.lenderUserRepository.find({
+            where: {
+              lender_id: loan.lender_id,
+              status: LenderUserStatus.ACTIVE,
+            },
+            take: 5,
+          });
+          for (const lu of lenderUsers) {
+            await this.loanNotificationService.notifyLenderRepaymentReceived(
+              lu.id,
+              loan.tenant_id,
+              loan.id,
+              amount,
+              borrowerName,
+              currency,
+            );
+          }
+        }
+      } catch {
+        /* team notify optional */
+      }
+    } catch (err: any) {
+      this.logger.warn(
+        `notifyRepaymentParties failed for loan ${loan.id}: ${err.message}`,
+      );
+    }
   }
 
   private async notifyLenderRepayment(

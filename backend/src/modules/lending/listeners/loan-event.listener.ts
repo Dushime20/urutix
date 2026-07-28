@@ -22,22 +22,35 @@ export class LoanEventListener {
   ) {}
 
   @OnEvent('loan.repayment.received')
-  async handleRepaymentReceived(payload: { loanId: string; amount: number }) {
+  async handleRepaymentReceived(payload: {
+    loanId: string;
+    amount: number;
+    interestPaid?: number;
+    principalPaid?: number;
+    fullyRepaid?: boolean;
+    paymentMethod?: string;
+    currency?: string;
+  }) {
     try {
       const loan = await this.loanRequestRepository.findOne({ where: { id: payload.loanId } });
       if (!loan) return;
 
+      const currency = payload.currency || loan.currency || 'RWF';
       const lender = loan.lender_id
         ? await this.lenderRepository.findOne({ where: { id: loan.lender_id } })
         : null;
 
+      const borrowerUser = await this.userRepository.findOne({
+        where: { id: loan.created_by },
+        relations: ['profile'],
+      });
+      const borrowerName = borrowerUser?.profile
+        ? `${borrowerUser.profile.firstName || ''} ${borrowerUser.profile.lastName || ''}`.trim() || borrowerUser.email
+        : borrowerUser?.email || 'Borrower';
+
+      // Notify lender
       if (lender) {
         const lenderUser = await this.userRepository.findOne({ where: { email: lender.contact_email } });
-        const borrowerUser = await this.userRepository.findOne({ where: { id: loan.created_by }, relations: ['profile'] });
-        const borrowerName = borrowerUser?.profile
-          ? `${borrowerUser.profile.firstName || ''} ${borrowerUser.profile.lastName || ''}`.trim() || borrowerUser.email
-          : borrowerUser?.email || 'Borrower';
-
         if (lenderUser) {
           await this.loanNotificationService.notifyLenderRepaymentReceived(
             lenderUser.id,
@@ -45,8 +58,27 @@ export class LoanEventListener {
             loan.id,
             payload.amount,
             borrowerName,
+            currency,
           );
         }
+      }
+
+      // Notify borrower
+      if (borrowerUser) {
+        await this.loanNotificationService.notifyBorrowerRepaymentConfirmed(
+          borrowerUser.id,
+          loan.tenant_id,
+          loan.id,
+          payload.amount,
+          {
+            currency,
+            principalPaid: payload.principalPaid,
+            interestPaid: payload.interestPaid,
+            fullyRepaid: payload.fullyRepaid,
+            paymentMethod: payload.paymentMethod,
+            lenderName: lender?.name,
+          },
+        );
       }
     } catch (err) {
       this.logger.warn(`loan.repayment.received notification failed: ${err.message}`);

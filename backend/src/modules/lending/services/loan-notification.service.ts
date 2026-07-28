@@ -156,18 +156,62 @@ export class LoanNotificationService {
     loanId: string,
     amount: number,
     borrowerName: string,
+    currency: string = 'RWF',
   ) {
     await this.send(
       lenderId,
       tenantId,
       NotificationType.LOAN_REPAYMENT_RECEIVED,
       NotificationCategory.LOAN,
-      NotificationPriority.NORMAL,
+      NotificationPriority.HIGH,
       'Loan Repayment Received',
-      `${borrowerName} has made a repayment of ${amount.toLocaleString()} RWF.`,
+      `${borrowerName} has made a repayment of ${amount.toLocaleString()} ${currency}.`,
       loanId,
       `/lender/requests?loan=${loanId}`,
-      { loanId, amount, borrowerName },
+      { loanId, amount, borrowerName, currency },
+    );
+  }
+
+  /** Borrower receives: confirmation that their repayment was submitted */
+  async notifyBorrowerRepaymentConfirmed(
+    borrowerId: string,
+    tenantId: string,
+    loanId: string,
+    amount: number,
+    details: {
+      currency?: string;
+      principalPaid?: number;
+      interestPaid?: number;
+      fullyRepaid?: boolean;
+      paymentMethod?: string;
+      lenderName?: string;
+    } = {},
+  ) {
+    const currency = details.currency || 'RWF';
+    const title = details.fullyRepaid
+      ? 'Loan Fully Repaid'
+      : 'Repayment Submitted';
+    const interestNote =
+      details.interestPaid != null && details.interestPaid > 0
+        ? ` (includes ${Number(details.interestPaid).toLocaleString()} ${currency} interest)`
+        : '';
+    const message = details.fullyRepaid
+      ? `Your repayment of ${amount.toLocaleString()} ${currency}${interestNote} was received` +
+        `${details.lenderName ? ` by ${details.lenderName}` : ''}. Your loan is now fully repaid.`
+      : `Your repayment of ${amount.toLocaleString()} ${currency}${interestNote} was submitted successfully` +
+        `${details.paymentMethod === 'mobile_money' ? '. Confirm the mobile money prompt on your phone if prompted.' : '.'}`;
+
+    await this.send(
+      borrowerId,
+      tenantId,
+      NotificationType.PAYMENT_RECEIVED,
+      NotificationCategory.LOAN,
+      NotificationPriority.HIGH,
+      title,
+      message,
+      loanId,
+      `/dashboard/loan-requests?loan=${loanId}`,
+      { loanId, amount, ...details },
     );
   }
 

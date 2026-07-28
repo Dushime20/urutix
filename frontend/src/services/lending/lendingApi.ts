@@ -135,9 +135,18 @@ export const lendingApi = {
     return response.data;
   },
 
-  processRepayment: async (loanId: string, finalPaymentAmount: number): Promise<LoanRepayment> => {
+  processRepayment: async (
+    loanId: string,
+    finalPaymentAmount: number,
+    payment?: {
+      paymentMethod?: string;
+      paymentDetails?: Record<string, unknown>;
+    },
+  ): Promise<LoanRepayment> => {
     const response = await api.post(`/lending/repayments/${loanId}`, {
-      final_payment_amount: finalPaymentAmount
+      final_payment_amount: finalPaymentAmount,
+      paymentMethod: payment?.paymentMethod,
+      paymentDetails: payment?.paymentDetails,
     });
     return response.data;
   },

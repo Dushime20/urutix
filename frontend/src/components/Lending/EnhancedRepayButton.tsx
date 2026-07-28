@@ -1,100 +1,238 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Loader2, AlertTriangle, Wallet, DollarSign } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import {
+  CheckCircle,
+  Loader2,
+  DollarSign,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
 import api from '../../services/api';
+import { lendingApi } from '../../services/lending/lendingApi';
 import toast from 'react-hot-toast';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import CurrencySelector from '../common/CurrencySelector';
 
 interface EnhancedRepayButtonProps {
   loanId: string;
+  /** Principal (approved or requested amount) */
   amount: number;
+  /** Contracted interest from interest-rate policy (if already known) */
+  interestAmount?: number;
+  /** Nominal interest rate % p.a. for display */
+  interestRate?: number | null;
+  /** ISO currency the loan amounts are stored in */
+  currency?: string;
   onRepaymentSuccess?: () => void;
 }
 
-interface WalletBalance {
-  available: number;
+type PaymentMethod = 'card' | 'mobile_money';
+
+interface RepaymentBreakdown {
+  principal: number;
+  interest: number;
+  interestRate: number | null;
+  total: number;
   currency: string;
+  loading: boolean;
 }
 
-const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({ 
-  loanId, 
+const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
+  loanId,
   amount,
-  onRepaymentSuccess 
+  interestAmount = 0,
+  interestRate = null,
+  currency: loanCurrency = 'USD',
+  onRepaymentSuccess,
 }) => {
+  const { format: fmtFull } = useCurrencyFormat();
+
   const [repaying, setRepaying] = useState(false);
   const [repaid, setRepaid] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
-  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
+  const [paymentData, setPaymentData] = useState({
+    cardNumber: '',
+    cardName: '',
+    expiryDate: '',
+    cvv: '',
+    phoneNumber: '',
+    mobileProvider: 'mtn',
+  });
+  const [breakdown, setBreakdown] = useState<RepaymentBreakdown>({
+    principal: amount,
+    interest: interestAmount,
+    interestRate,
+    total: amount + (interestAmount || 0),
+    currency: loanCurrency,
+    loading: false,
+  });
 
-  // Fetch wallet balance when confirmation dialog opens
+  // Load accurate outstanding (principal + policy interest) when modal opens
   useEffect(() => {
-    if (showConfirmDialog && !walletBalance) {
-      fetchWalletBalance();
-    }
-  }, [showConfirmDialog]);
+    if (!showPaymentModal) return;
 
-  const fetchWalletBalance = async () => {
-    setLoadingBalance(true);
-    try {
-      // Try multiple endpoints for wallet balance
-      let response;
+    let cancelled = false;
+    const loadBreakdown = async () => {
+      setBreakdown((prev) => ({ ...prev, loading: true }));
       try {
-        response = await api.get('/payments/wallet/balance');
+        const loan = await lendingApi.getLoanRequest(loanId);
+        const data = (loan as any)?.data ?? loan;
+        const principal = Number(
+          data?.approved_amount ?? data?.approvedAmount ?? amount,
+        );
+        let interest = Number(
+          data?.interest_amount ?? data?.interestAmount ?? interestAmount ?? 0,
+        );
+        let rate =
+          data?.interest_rate != null
+            ? Number(data.interest_rate)
+            : data?.metadata?.interest_rate != null
+              ? Number(data.metadata.interest_rate)
+              : interestRate;
+
+        // Always consult offer disclosure so policy interest is included when configured
+        try {
+          const disclosure = await lendingApi.getLoanOfferDisclosure(loanId);
+          const d = disclosure?.data ?? disclosure;
+          const disclosureInterest = Number(d?.interest_amount ?? 0);
+          if (disclosureInterest > interest) {
+            interest = disclosureInterest;
+          }
+          if (d?.nominal_rate != null) rate = Number(d.nominal_rate);
+          else if (d?.apr != null && rate == null) rate = Number(d.apr);
+        } catch {
+          /* disclosure optional */
+        }
+
+        // Subtract amounts already repaid
+        const repayments: any[] = data?.repayments ?? [];
+        const paidSoFar = repayments.reduce(
+          (s, r) => s + Number(r.amount || 0),
+          0,
+        );
+        const totalDue = principal + interest;
+        const outstanding = Math.max(0, Math.round((totalDue - paidSoFar) * 100) / 100);
+
+        if (!cancelled) {
+          setBreakdown({
+            principal,
+            interest,
+            interestRate: rate ?? null,
+            total: outstanding > 0 ? outstanding : totalDue,
+            currency: data?.currency || loanCurrency || 'USD',
+            loading: false,
+          });
+        }
       } catch {
-        response = await api.get('/financial/wallet/balance');
+        if (!cancelled) {
+          const interest = interestAmount || 0;
+          setBreakdown({
+            principal: amount,
+            interest,
+            interestRate,
+            total: amount + interest,
+            currency: loanCurrency,
+            loading: false,
+          });
+        }
       }
-      
-      const balance = response.data?.balance || response.data?.data?.balance || response.data;
-      setWalletBalance({
-        available: balance?.available || balance?.amount || 0,
-        currency: balance?.currency || 'USD'
-      });
-    } catch (err) {
-      console.error('Failed to fetch wallet balance:', err);
-      toast.error('Could not fetch wallet balance');
-    } finally {
-      setLoadingBalance(false);
-    }
-  };
+    };
+
+    loadBreakdown();
+    return () => {
+      cancelled = true;
+    };
+  }, [showPaymentModal, loanId, amount, interestAmount, interestRate, loanCurrency]);
 
   const handleRepayClick = () => {
     if (repaid) return;
-    setShowConfirmDialog(true);
+    setShowPaymentModal(true);
   };
 
-  const handleConfirmRepay = async () => {
-    if (repaid) return;
+  const handleClose = () => {
+    if (repaying) return;
+    setShowPaymentModal(false);
+    setPaymentData({
+      cardNumber: '',
+      cardName: '',
+      expiryDate: '',
+      cvv: '',
+      phoneNumber: '',
+      mobileProvider: 'mtn',
+    });
+  };
 
-    // Check if wallet has sufficient balance
-    if (walletBalance && walletBalance.available < amount) {
-      toast.error('Insufficient wallet balance for repayment');
+  const handlePayment = async () => {
+    if (repaid || repaying) return;
+
+    if (paymentMethod === 'card') {
+      if (
+        !paymentData.cardNumber ||
+        !paymentData.cardName ||
+        !paymentData.expiryDate ||
+        !paymentData.cvv
+      ) {
+        toast.error('Please fill in all card details');
+        return;
+      }
+    } else if (!paymentData.phoneNumber) {
+      toast.error('Please enter your phone number');
+      return;
+    }
+
+    if (breakdown.total <= 0) {
+      toast.error('Nothing outstanding to repay');
       return;
     }
 
     setRepaying(true);
-    setShowConfirmDialog(false);
-
     try {
-      await api.post(`/lending/repayments/${loanId}`, { 
-        final_payment_amount: amount 
+      const response = await api.post(`/lending/repayments/${loanId}`, {
+        final_payment_amount: breakdown.total,
+        paymentMethod,
+        paymentDetails:
+          paymentMethod === 'card'
+            ? {
+                cardNumber: paymentData.cardNumber,
+                cardName: paymentData.cardName,
+                expiryDate: paymentData.expiryDate,
+                cvv: paymentData.cvv,
+              }
+            : {
+                phoneNumber: paymentData.phoneNumber,
+                provider: paymentData.mobileProvider,
+              },
       });
-      
+
+      const paymentInfo = response.data?.payment ?? response.data?.data?.payment;
+      const pending =
+        paymentMethod === 'mobile_money' &&
+        (paymentInfo?.pendingConfirmation ||
+          paymentInfo?.status === 'processing');
+
       setRepaid(true);
-      toast.success('Loan repaid successfully!', {
-        icon: '✅',
-        duration: 4000,
-      });
-      
-      // Call success callback if provided
+      setShowPaymentModal(false);
+      toast.success(
+        pending
+          ? 'Mobile money request sent! Approve the prompt on your phone to complete repayment.'
+          : 'Loan repaid successfully!',
+        { duration: 5000 },
+      );
       onRepaymentSuccess?.();
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message || 'Repayment failed. Please try again.';
-      toast.error(errorMessage, {
-        duration: 5000,
-      });
+      const errorMessage =
+        err?.response?.data?.message || 'Repayment failed. Please try again.';
+      toast.error(
+        Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage,
+        { duration: 5000 },
+      );
     } finally {
       setRepaying(false);
     }
   };
+
+  const fmt = (value: number) => fmtFull(value, breakdown.currency);
 
   if (repaid) {
     return (
@@ -124,92 +262,303 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
         )}
       </button>
 
-      {/* Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-4">
-              <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-                <DollarSign size={20} />
-                Confirm Repayment
-              </h3>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              {/* Amount to Repay */}
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
-                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">
-                  Repayment Amount
-                </p>
-                <p className="text-3xl font-black text-slate-900 dark:text-white">
-                  ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-
-              {/* Wallet Balance */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Wallet size={16} className="text-blue-600 dark:text-blue-400" />
-                    <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                      Wallet Balance
+      {showPaymentModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      Complete Your Repayment
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Principal + interest from lender policy
                     </p>
                   </div>
-                  {loadingBalance ? (
-                    <Loader2 size={16} className="animate-spin text-blue-600 dark:text-blue-400" />
-                  ) : walletBalance ? (
-                    <p className="text-lg font-black text-blue-900 dark:text-blue-300">
-                      ${walletBalance.available.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <CurrencySelector variant="compact" />
+                    <button
+                      onClick={handleClose}
+                      className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+                      aria-label="Close"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                {/* Order Summary */}
+                <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-6 border border-emerald-100 dark:border-emerald-800">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                    Repayment Summary
+                  </h3>
+                  {breakdown.loading ? (
+                    <div className="flex items-center justify-center py-6 text-slate-500 gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span className="text-sm">Loading amounts…</span>
+                    </div>
                   ) : (
-                    <p className="text-sm text-blue-600 dark:text-blue-400">N/A</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Principal:
+                        </span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {fmt(breakdown.principal)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          Interest
+                          {breakdown.interestRate != null
+                            ? ` (${Number(breakdown.interestRate).toFixed(2)}% p.a.)`
+                            : ' (policy)'}:
+                        </span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {fmt(breakdown.interest)}
+                        </span>
+                      </div>
+                      <div className="pt-3 border-t border-emerald-200 dark:border-emerald-700">
+                        <div className="flex items-center justify-between">
+                          <span className="text-base font-black text-slate-900 dark:text-white">
+                            Total Due:
+                          </span>
+                          <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                            {fmt(breakdown.total)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* Insufficient Balance Warning */}
-              {walletBalance && walletBalance.available < amount && (
-                <div className="bg-rose-50 dark:bg-rose-900/20 rounded-2xl p-4 border border-rose-200 dark:border-rose-800 flex items-start gap-3">
-                  <AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+                {/* Payment Method */}
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                    Payment Method
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('card')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        paymentMethod === 'card'
+                          ? 'border-[#345E85] bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">💳</div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                          Credit Card
+                        </div>
+                        <div className="text-[10px] text-amber-600 mt-1 font-semibold">
+                          Coming soon
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('mobile_money')}
+                      className={`p-4 rounded-xl border-2 transition-all ${
+                        paymentMethod === 'mobile_money'
+                          ? 'border-[#345E85] bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">📱</div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                          Mobile Money
+                        </div>
+                        <div className="text-[10px] text-emerald-600 mt-1 font-semibold">
+                          Recommended
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {paymentMethod === 'card' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Card Number
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                        value={paymentData.cardNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\s/g, '');
+                          const formatted =
+                            value.match(/.{1,4}/g)?.join(' ') || value;
+                          setPaymentData({
+                            ...paymentData,
+                            cardNumber: formatted,
+                          });
+                        }}
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Cardholder Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="John Doe"
+                        value={paymentData.cardName}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            cardName: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          Expiry Date
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          maxLength={5}
+                          value={paymentData.expiryDate}
+                          onChange={(e) => {
+                            let value = e.target.value.replace(/\D/g, '');
+                            if (value.length >= 2) {
+                              value =
+                                value.slice(0, 2) + '/' + value.slice(2, 4);
+                            }
+                            setPaymentData({
+                              ...paymentData,
+                              expiryDate: value,
+                            });
+                          }}
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                          CVV
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="123"
+                          maxLength={4}
+                          value={paymentData.cvv}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            setPaymentData({ ...paymentData, cvv: value });
+                          }}
+                          className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {paymentMethod === 'mobile_money' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Mobile Provider
+                      </label>
+                      <select
+                        value={paymentData.mobileProvider}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            mobileProvider: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      >
+                        <option value="mtn">MTN Mobile Money</option>
+                        <option value="airtel">Airtel Money</option>
+                        <option value="tigo">Tigo Cash</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="+250 788 123 456"
+                        value={paymentData.phoneNumber}
+                        onChange={(e) =>
+                          setPaymentData({
+                            ...paymentData,
+                            phoneNumber: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
+                      />
+                      <p className="text-xs text-slate-500 mt-2">
+                        You will receive a prompt on your phone to confirm the
+                        payment
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                  <ShieldCheck className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-bold text-rose-900 dark:text-rose-300">
-                      Insufficient Balance
-                    </p>
-                    <p className="text-xs text-rose-700 dark:text-rose-400 mt-1">
-                      You need ${(amount - walletBalance.available).toLocaleString('en-US', { minimumFractionDigits: 2 })} more to complete this repayment.
+                    <div className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                      Secure Payment
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Your payment information is encrypted and secure. Interest
+                      is applied from the lender&apos;s active interest-rate
+                      policy when configured. Amounts convert to your preferred
+                      currency for display.
                     </p>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Confirmation Message */}
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Are you sure you want to repay this loan? This action cannot be undone.
-              </p>
+              {/* Footer */}
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={repaying}
+                  className="px-6 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePayment}
+                  disabled={repaying || breakdown.loading || breakdown.total <= 0}
+                  className="px-8 py-3 text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-md hover:shadow-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                >
+                  {repaying ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    `Pay ${fmt(breakdown.total)}`
+                  )}
+                </button>
+              </div>
             </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 p-6 pt-0">
-              <button
-                onClick={() => setShowConfirmDialog(false)}
-                className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmRepay}
-                disabled={walletBalance ? walletBalance.available < amount : false}
-                className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <DollarSign size={14} />
-                Confirm Repayment
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 };
