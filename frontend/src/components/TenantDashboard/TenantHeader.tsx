@@ -131,7 +131,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-50 sticky top-0 isolate">
+    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-[300] sticky top-0 isolate">
       <div className="max-w-[1920px] mx-auto flex items-center justify-between min-w-0">
         {/* Left side - Logo and Navigation */}
         <div className="flex items-center gap-4 lg:gap-10 min-w-0 flex-1">

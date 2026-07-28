@@ -109,7 +109,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
     );
 
     return (
-        <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[100] shadow-sm">
+        <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 sticky top-0 z-[300] shadow-sm">
             <header className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 flex items-center justify-between">
 
                 {/* Logo Section */}

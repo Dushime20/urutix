@@ -32,7 +32,7 @@ const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
                 {/* Content Area */}
                 <main className="flex-1 lg:overflow-y-auto bg-[#fafafa] dark:bg-slate-900">
                     {/* Page Header / Title Area */}
-                    <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-20 z-[200]">
                         <div className="max-w-[1536px] mx-auto px-6 md:px-10 lg:px-14 xl:px-20 py-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
                                 <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">

@@ -531,7 +531,7 @@ export const FleetDashboard: React.FC = () => {
         <DashboardHeader />
 
         {/* Intelligence Header Context */}
-        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-200">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 relative overflow-hidden transition-colors duration-200 sticky top-[76px] sm:top-[84px] lg:top-[96px] z-[200]">
           <div className="absolute top-0 right-0 p-10 opacity-[0.02] dark:opacity-[0.03] scale-[1.5] pointer-events-none rotate-12">
             <Layers size={100} className="text-[#2c5173] dark:text-[#2c5173]" />
           </div>

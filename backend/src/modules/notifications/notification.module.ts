@@ -13,8 +13,10 @@ import { PushNotificationService } from './services/push-notification.service';
 import { WebhookService } from './services/webhook.service';
 import { CargoNotificationListener } from './listeners/cargo-notification.listener';
 import { DriverBreakNotificationListener } from './listeners/driver-break-notification.listener';
+import { SystemAdminNotificationListener } from './listeners/system-admin-notification.listener';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { MessengerModule } from '../messenger/messenger.module';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { MessengerModule } from '../messenger/messenger.module';
     // Provides EmailService (with ConfigService/SMTP properly initialized)
     EnhancedAuthModule,
     MessengerModule,
+    EventsModule,
   ],
   controllers: [NotificationController],
   providers: [
@@ -32,6 +35,7 @@ import { MessengerModule } from '../messenger/messenger.module';
     WebhookService,
     CargoNotificationListener,
     DriverBreakNotificationListener,
+    SystemAdminNotificationListener,
   ],
   exports: [NotificationService],
 })

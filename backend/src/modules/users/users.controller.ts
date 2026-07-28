@@ -11,6 +11,7 @@ import {
   Request,
   ForbiddenException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ApiTags,
   ApiOperation,
@@ -24,7 +25,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @Post()
   async create(@Body() payload: any) {
@@ -150,6 +154,17 @@ export class UsersController {
       ...createUserDto,
       tenantId,
     });
+
+    if (caller.role === UserRole.TENANT_ADMIN) {
+      this.eventEmitter.emit('system.admin.tenant_user_created', {
+        tenantId,
+        actorId: caller.userId || caller.id,
+        actorRole: caller.role,
+        newUserId: user.id,
+        newUserRole: user.role,
+        newUserEmail: user.email,
+      });
+    }
 
     return {
       success: true,

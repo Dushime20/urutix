@@ -31,6 +31,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FleetService } from './fleet.service';
 import { CreateTruckDto } from './dto/create-truck.dto';
 import { CreateFleetDriverDto } from './dto/create-driver.dto';
@@ -68,6 +69,7 @@ export class FleetController {
   constructor(
     private readonly fleetService: FleetService,
     @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   // Truck endpoints
@@ -142,6 +144,18 @@ export class FleetController {
         req.user.userId,
         req.user.tenantId,
       );
+
+      if (req.user.role === UserRole.TRUCK_OWNER) {
+        this.eventEmitter.emit('system.admin.truck_created', {
+          tenantId: req.user.tenantId,
+          actorId: req.user.userId,
+          actorRole: req.user.role,
+          truckId: truck.id,
+          plateNumber: truck.plateNumber,
+          make: truck.make,
+          model: truck.model,
+        });
+      }
 
       return {
         message: 'Truck created successfully',

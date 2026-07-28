@@ -10,7 +10,6 @@ import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 import { TranslatedText } from '../translated-text';
 import TenantCreditBalance from '../CreditBalance/TenantCreditBalance';
 import ThemeToggle from '../Theme/ThemeToggle';
-import LanguageSwitcher from '../LanguageSwitcher';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DashboardHeaderProps {
@@ -85,18 +84,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Accepted Matches', path: `${basePath}/accepted-matches` },
             { label: 'Freight Bidding', path: `${basePath}/bidding` },
             { label: '🔴 Live Tracking', path: `${basePath}/tracking` },
-            { label: 'Receiver Directory', path: `${basePath}/receivers` },
-            { label: 'Drafts & Templates', path: `${basePath}/cargos/list?status=DRAFT` },
-            { label: 'Documents & Contracts', path: `${basePath}/documents` },
-            { label: 'Cargo Inspections', path: `${basePath}/customs-inspections` },
           ]
         },
         {
           label: 'Intelligence & Capital',
-          path: `${basePath}/analytics/operational`,
+          path: `${basePath}/invoices`,
           icon: BarChart3,
           subItems: [
-            { label: 'Operational Insights', path: `${basePath}/analytics/operational` },
+            { label: 'Receiver Directory', path: `${basePath}/receivers` },
+            { label: 'Drafts & Templates', path: `${basePath}/cargos/list?status=DRAFT` },
+            { label: 'Cargo Inspections', path: `${basePath}/customs-inspections` },
             { label: 'Invoice Vault', path: `${basePath}/invoices` },
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
           ]
@@ -489,7 +486,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   }, []);
 
   return (
-    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-1.5 sm:px-6 sm:py-3 lg:py-4 sticky top-0 z-[100] transition-colors duration-300">
+    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-1.5 sm:px-6 sm:py-3 lg:py-4 sticky top-0 z-[300] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-1.5 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
@@ -595,7 +592,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
           <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0 ml-auto">
             <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
-              {user?.role !== 'TRUCK_OWNER' && <LanguageSwitcher />}
               <div className="hidden sm:block">
                 <ThemeToggle />
               </div>
@@ -827,17 +823,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 {/* Footer Controls Card */}
                 <div className="flex-shrink-0 p-4 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/30">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-2 shadow-sm mb-3">
-                    <div className={`grid gap-1 ${user?.role === 'TRUCK_OWNER' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    <div className="grid gap-1 grid-cols-1">
                       <div className="flex items-center gap-2 p-1.5">
                         <ThemeToggle />
                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Mode</span>
                       </div>
-                      {user?.role !== 'TRUCK_OWNER' && (
-                        <div className="flex items-center gap-2 p-1.5 justify-end">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Lang</span>
-                          <LanguageSwitcher />
-                        </div>
-                      )}
                     </div>
                     <div className="mt-1 pt-1 border-t border-slate-100 dark:border-slate-700 px-1.5 pb-0.5 flex items-center justify-between">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Currency</span>

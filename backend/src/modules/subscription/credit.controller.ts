@@ -14,6 +14,7 @@ import { CreditService, ConsumeCreditsDto } from '../../services/credit.service'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreditPackage } from '../../entities/credit-package.entity';
 import { FeatureCreditCost } from '../../entities/feature-credit-cost.entity';
 import { CreditConsumptionListener } from '../../services/credit-consumption.listener';
@@ -33,6 +34,7 @@ export class CreditController {
     private featureCreditCostRepository: Repository<FeatureCreditCost>,
     @InjectRepository(Payment)
     private paymentRepository: Repository<Payment>,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   @Get('balance')
@@ -332,6 +334,20 @@ export class CreditController {
       }
     }
     // ─────────────────────────────────────────────────────────────────────
+
+    if (req.user?.role === 'TENANT_ADMIN') {
+      this.eventEmitter.emit('system.admin.credit_purchased', {
+        tenantId,
+        actorId: req.user.id,
+        actorRole: req.user.role,
+        packageId: pkg.id,
+        packageName: pkg.name,
+        credits: pkg.credits,
+        amount: Number(pkg.price || 0),
+        currency: 'USD',
+        paymentId: mockPaymentId,
+      });
+    }
 
     return {
       success: true,
