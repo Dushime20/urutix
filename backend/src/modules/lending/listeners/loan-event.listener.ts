@@ -59,6 +59,9 @@ export class LoanEventListener {
             payload.amount,
             borrowerName,
             currency,
+            {
+              fullyRepaid: payload.fullyRepaid,
+            },
           );
         }
       }

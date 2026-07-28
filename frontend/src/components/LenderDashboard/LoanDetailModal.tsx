@@ -12,6 +12,20 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
   const { format: formatCurrency } = useCurrencyFormat();
   if (!loan) return null;
 
+  // Amounts are stored in loan.currency (default RWF) — never assume USD
+  const loanCurrency = loan.currency || 'RWF';
+  const fmt = (amount: number) => formatCurrency(amount, loanCurrency);
+
+  const borrowerName =
+    loan.borrower_name ||
+    loan.borrower?.contact_name ||
+    loan.borrower?.company_name ||
+    loan.borrower?.name ||
+    null;
+  const borrowerEmail = loan.borrower_email || loan.borrower?.email || null;
+  const borrowerPhone = loan.borrower_phone || loan.borrower?.phone || null;
+  const borrowerCompany = loan.borrower_company || loan.borrower?.company_name || null;
+
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
@@ -85,24 +99,24 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Name</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{loan.borrower_name || 'N/A'}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{borrowerName || 'N/A'}</p>
               </div>
-              {loan.borrower_company && (
+              {borrowerCompany && (
                 <div>
                   <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Company</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{loan.borrower_company}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{borrowerCompany}</p>
                 </div>
               )}
-              {loan.borrower_email && (
+              {borrowerEmail && (
                 <div>
                   <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Email</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{loan.borrower_email}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{borrowerEmail}</p>
                 </div>
               )}
-              {loan.borrower_phone && (
+              {borrowerPhone && (
                 <div>
                   <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Phone</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{loan.borrower_phone}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{borrowerPhone}</p>
                 </div>
               )}
             </div>
@@ -122,12 +136,12 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Requested Amount</p>
-                <p className="text-xl font-black text-slate-900 dark:text-white">{formatCurrency(loan.requested_amount || 0)}</p>
+                <p className="text-xl font-black text-slate-900 dark:text-white">{fmt(loan.requested_amount || 0)}</p>
               </div>
               {loan.approved_amount && (
                 <div>
                   <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Approved Amount</p>
-                  <p className="text-xl font-black text-green-600 dark:text-green-400">{formatCurrency(loan.approved_amount)}</p>
+                  <p className="text-xl font-black text-green-600 dark:text-green-400">{fmt(loan.approved_amount)}</p>
                 </div>
               )}
               {loan.interest_rate && (
@@ -192,8 +206,8 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
               ? principal + totalInterest + (originationFee ?? 0) : null;
             const monthlyInstalment = totalRepayable != null && termMonths != null && termMonths > 0
               ? totalRepayable / termMonths : null;
-            const fmtMoney = (n: number) => formatCurrency(n);
-            const fmt = (n: number | null) => n != null ? fmtMoney(n) : '—';
+            const fmtMoney = (n: number) => fmt(n);
+            const fmtNull = (n: number | null) => n != null ? fmtMoney(n) : '—';
 
             return (
               <div className="bg-gradient-to-br from-[#345E85]/5 to-indigo-50 dark:from-slate-800/50 dark:to-indigo-900/10 rounded-2xl p-6 border border-[#345E85]/10 dark:border-slate-700">
@@ -252,8 +266,8 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
                   <div className="divide-y divide-slate-50 dark:divide-slate-700">
                     {[
                       { label: 'Principal (Disbursed)', value: fmtMoney(principal), colour: 'text-slate-900 dark:text-white' },
-                      { label: rate != null && termMonths != null ? `Interest (${rate}% × ${termMonths}m)` : 'Interest', value: fmt(totalInterest), colour: 'text-amber-600' },
-                      { label: originationFeeRate != null ? `Origination Fee (${originationFeeRate}%)` : 'Origination Fee', value: fmt(originationFee), colour: 'text-rose-500' },
+                      { label: rate != null && termMonths != null ? `Interest (${rate}% × ${termMonths}m)` : 'Interest', value: fmtNull(totalInterest), colour: 'text-amber-600' },
+                      { label: originationFeeRate != null ? `Origination Fee (${originationFeeRate}%)` : 'Origination Fee', value: fmtNull(originationFee), colour: 'text-rose-500' },
                     ].map(row => (
                       <div key={row.label} className="flex justify-between items-center px-5 py-3">
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{row.label}</span>
@@ -262,11 +276,11 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
                     ))}
                     <div className="flex justify-between items-center px-5 py-4 bg-[#345E85]/5 dark:bg-blue-900/20">
                       <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Total Repayable</span>
-                      <span className="text-2xl font-black text-[#345E85] dark:text-blue-400">{fmt(totalRepayable)}</span>
+                      <span className="text-2xl font-black text-[#345E85] dark:text-blue-400">{fmtNull(totalRepayable)}</span>
                     </div>
                     <div className="flex justify-between items-center px-5 py-3 border-t-2 border-dashed border-slate-100 dark:border-slate-700">
                       <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Monthly Instalment{termMonths != null ? ` × ${termMonths}` : ''}</span>
-                      <span className="text-base font-black text-[#345E85] dark:text-blue-400">{fmt(monthlyInstalment)}</span>
+                      <span className="text-base font-black text-[#345E85] dark:text-blue-400">{fmtNull(monthlyInstalment)}</span>
                     </div>
                   </div>
                 </div>

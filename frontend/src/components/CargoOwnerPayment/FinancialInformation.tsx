@@ -109,6 +109,19 @@ const FinancialInformation: React.FC<FinancialInformationProps> = ({
       toast.error('Please provide at least one payment method');
       return;
     }
+    if (paymentInfo.phoneNumber) {
+      let cleaned = paymentInfo.phoneNumber.replace(/\D/g, '');
+      while (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+      if (!cleaned.startsWith('250')) cleaned = `250${cleaned}`;
+      if (!/^2507\d{8}$/.test(cleaned)) {
+        toast.error('Enter a valid Rwanda MoMo number, e.g. 0788123456');
+        return;
+      }
+    }
+    if (paymentInfo.accountNumber && !/^\d{8,20}$/.test(paymentInfo.accountNumber.replace(/\s/g, ''))) {
+      toast.error('Enter a valid bank account number (8–20 digits)');
+      return;
+    }
     savePaymentInfoMutation.mutate(paymentInfo);
   };
 

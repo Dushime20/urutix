@@ -73,6 +73,12 @@ services:
       SMTP_PASS: "tmio mopw fmba bwuu"
       SMTP_SECURE: true
       FRONTEND_URL: http://localhost:5173
+      MOBILE_MONEY_API_URL: ${MOBILE_MONEY_API_URL:-https://api.payment.ishema.rw}
+      MOBILE_MONEY_API_KEY: ${MOBILE_MONEY_API_KEY}
+      MOBILE_MONEY_CALLBACK_URL: ${MOBILE_MONEY_CALLBACK_URL:-http://localhost:3005/api/payments/webhooks/mobile-money}
+      MOBILE_MONEY_CURRENCY: ${MOBILE_MONEY_CURRENCY:-RWF}
+      MOBILE_MONEY_ACCOUNT_PHONE: ${MOBILE_MONEY_ACCOUNT_PHONE}
+      MOBILE_MONEY_WEBHOOK_SECRET: ${MOBILE_MONEY_WEBHOOK_SECRET:-}
     ports:
       - "3005:3005"
     volumes:

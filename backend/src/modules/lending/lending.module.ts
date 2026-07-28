@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ConfigModule } from '@nestjs/config';
 import { LendingService } from './lending.service';
 import { LendingController } from './lending.controller';
 import { RiskAssessmentService } from './services/risk-assessment.service';
@@ -44,6 +45,8 @@ import { LoanNotificationService } from './services/loan-notification.service';
 import { LoanEventListener } from './listeners/loan-event.listener';
 import { Notification } from '../../entities/notification.entity';
 import { CurrencyModule } from '../currency/currency.module';
+import { EventsModule } from '../events/events.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -74,6 +77,9 @@ import { CurrencyModule } from '../currency/currency.module';
     ]),
     EnhancedAuthModule,
     CurrencyModule,
+    EventsModule,
+    NotificationsModule,
+    ConfigModule,
     // PaymentsModule, // Temporarily comment out
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),

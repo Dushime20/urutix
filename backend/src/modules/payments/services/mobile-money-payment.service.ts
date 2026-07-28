@@ -33,9 +33,9 @@ export interface MobileMoneyTransfer {
  *   phoneNumber  = user's phone         ← charged
  *   transfers[0] = MOBILE_MONEY_ACCOUNT_PHONE  ← receives funds
  *
- * Disbursement pattern (platform pays truck owner / lender):
- *   phoneNumber  = MOBILE_MONEY_ACCOUNT_PHONE  ← charged (platform account)
- *   transfers[0] = truck owner / lender phone  ← receives funds
+ * Disbursement pattern (lender pays truck owner):
+ *   phoneNumber  = lender-entered MoMo phone  ← charged (PIN popup)
+ *   transfers[0] = truck owner phone         ← receives funds
  */
 export interface MobileMoneyCreateTransactionRequest {
   amount: number;
@@ -122,17 +122,30 @@ export class MobileMoneyPaymentService {
   }
 
   /**
-   * Format phone number to ishema format: 250XXXXXXXXX (12 digits, no +)
+   * Format phone number to ishema format: 250XXXXXXXXX (12 digits, no +).
+   * This is the number that receives the MoMo PIN / USSD popup when used as payer.
    */
   formatPhoneNumber(phone: string): string {
+    if (!phone || typeof phone !== 'string') {
+      throw new BadRequestException('Phone number is required.');
+    }
+
     let cleaned = phone.replace(/\D/g, '');
 
-    if (cleaned.startsWith('0')) {
+    // Strip leading trunk zeros (0788… → 788…, 00250… → 250…)
+    while (cleaned.startsWith('0')) {
       cleaned = cleaned.substring(1);
     }
 
     if (!cleaned.startsWith('250')) {
       cleaned = '250' + cleaned;
+    }
+
+    // Rwanda MoMo: 250 + 9-digit local = 12 digits (e.g. 250788123456)
+    if (!/^2507\d{8}$/.test(cleaned)) {
+      throw new BadRequestException(
+        `Invalid mobile money phone "${phone}". Use a Rwanda number like 0788123456 or 250788123456.`,
+      );
     }
 
     return cleaned;

@@ -163,6 +163,14 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
     });
   };
 
+  /** Normalize Rwanda MoMo number to 2507XXXXXXXX (same rules as backend). */
+  const normalizeMomoPhone = (raw: string): string | null => {
+    let cleaned = raw.replace(/\D/g, '');
+    while (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+    if (!cleaned.startsWith('250')) cleaned = `250${cleaned}`;
+    return /^2507\d{8}$/.test(cleaned) ? cleaned : null;
+  };
+
   const handlePayment = async () => {
     if (repaid || repaying) return;
 
@@ -176,9 +184,15 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
         toast.error('Please fill in all card details');
         return;
       }
-    } else if (!paymentData.phoneNumber) {
-      toast.error('Please enter your phone number');
-      return;
+    } else {
+      if (!paymentData.phoneNumber.trim()) {
+        toast.error('Enter the MoMo number that will pay (receives the PIN prompt)');
+        return;
+      }
+      if (!normalizeMomoPhone(paymentData.phoneNumber)) {
+        toast.error('Enter a valid Rwanda MoMo number, e.g. 0788123456');
+        return;
+      }
     }
 
     if (breakdown.total <= 0) {
@@ -188,6 +202,11 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
 
     setRepaying(true);
     try {
+      const normalizedPhone =
+        paymentMethod === 'mobile_money'
+          ? normalizeMomoPhone(paymentData.phoneNumber)
+          : null;
+
       const response = await api.post(`/lending/repayments/${loanId}`, {
         final_payment_amount: breakdown.total,
         paymentMethod,
@@ -200,7 +219,10 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
                 cvv: paymentData.cvv,
               }
             : {
-                phoneNumber: paymentData.phoneNumber,
+                // Sender / payer — this phone gets the MoMo PIN popup
+                phoneNumber: normalizedPhone,
+                phone: normalizedPhone,
+                payerPhone: normalizedPhone,
                 provider: paymentData.mobileProvider,
               },
       });
@@ -491,11 +513,12 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                        Phone Number
+                        Payer MoMo Number
                       </label>
                       <input
                         type="tel"
-                        placeholder="+250 788 123 456"
+                        inputMode="tel"
+                        placeholder="0788123456"
                         value={paymentData.phoneNumber}
                         onChange={(e) =>
                           setPaymentData({
@@ -506,8 +529,8 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
                         className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white"
                       />
                       <p className="text-xs text-slate-500 mt-2">
-                        You will receive a prompt on your phone to confirm the
-                        payment
+                        Enter the number that will <span className="font-semibold text-slate-700">pay</span>.
+                        That phone receives the PIN / USSD popup (e.g. 0788… or 250788…).
                       </p>
                     </div>
                   </div>

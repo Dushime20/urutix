@@ -346,6 +346,13 @@ export const lendingApi = {
     paymentMethod: string;
     phoneNumber?: string;
     truckOwnerPhoneNumber?: string;
+    bankAccountNumber?: string;
+    bankName?: string;
+    accountHolderName?: string;
+    cardNumber?: string;
+    cardName?: string;
+    expiryDate?: string;
+    cvv?: string;
   }) => {
     const response = await api.post(`/lending/loan-requests/${loanId}/disburse-with-payment`, paymentData);
     return response.data;

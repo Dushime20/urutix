@@ -42,6 +42,8 @@ interface ActiveLoan {
     purpose: string | null;
     repayment_count: number;
     lender_name: string | null;
+    /** ISO currency the loan amounts are stored in */
+    currency: string;
     _rawData?: any;
 }
 
@@ -66,8 +68,8 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
     const { compact } = useCurrencyFormat();
     const { tSync: t } = useTranslation();
 
-    // Loans are stored in RWF — convert to user preferred currency
-    const cpt = (n: number) => compact(n, 'RWF');
+    // Convert from each loan's stored currency → user preferred currency
+    const cpt = (n: number, fromCurrency = 'RWF') => compact(n, fromCurrency);
 
     const handleExport = () => {
         if (loans.length === 0) return;
@@ -179,7 +181,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                         <span className="font-black text-slate-900 text-[11px]">
-                            {cpt(loan.principal_amount)}
+                            {cpt(loan.principal_amount, loan.currency || 'RWF')}
                         </span>
                         {loan.interest_rate && (
                             <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-black">
@@ -202,7 +204,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                     <div className="space-y-2 min-w-[120px]">
                         <div className="flex justify-between items-center mb-1">
                             <span className="font-black text-slate-900 text-[11px]">
-                                {cpt(loan.outstanding_balance)}
+                                {cpt(loan.outstanding_balance, loan.currency || 'RWF')}
                             </span>
                             <span className="text-[10px] font-black text-[#345E85]">{progress.toFixed(0)}%</span>
                         </div>
