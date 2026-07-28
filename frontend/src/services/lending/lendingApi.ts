@@ -112,8 +112,9 @@ export interface LenderDashboardData {
 
 export const lendingApi = {
   resolveLenderId: async (): Promise<string> => {
-    const response = await api.get('/lending/me/lender-id');
-    return response.data.lenderId;
+    const response = await api.get('/lending/my-lender-id');
+    const body = response.data;
+    return body?.lenderId ?? body?.data?.lenderId;
   },
 
   // Loan requests
@@ -428,7 +429,11 @@ export const lendingApi = {
     sortOrder?: string;
   }) => {
     const response = await api.get(`/lending/lenders/${lenderId}/disbursements`, { params });
-    return response.data;
+    const body = response.data;
+    // Support both raw and wrapped { success, data } shapes
+    if (body?.disbursements) return body;
+    if (body?.data?.disbursements) return body.data;
+    return body?.data ?? body;
   },
 
   getDisbursementDetails: async (disbursementId: string) => {
@@ -470,7 +475,11 @@ export const lendingApi = {
     sortOrder?: string;
   }) => {
     const response = await api.get(`/lending/lenders/${lenderId}/repayments`, { params });
-    return response.data;
+    const body = response.data;
+    // Service returns { data: repayments[], pagination }; support wrapped shapes too
+    if (Array.isArray(body?.data) || body?.pagination) return body;
+    if (body?.data && (Array.isArray(body.data?.data) || body.data?.pagination)) return body.data;
+    return body?.data ?? body;
   },
 
   getLenderInterestSummary: async (lenderId: string) => {

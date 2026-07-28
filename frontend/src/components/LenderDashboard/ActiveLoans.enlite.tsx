@@ -63,11 +63,11 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
     onViewDetails
 }) => {
     const [viewMode, setViewMode] = useState<'table' | 'grouped'>('table');
-    const { format } = useCurrencyFormat();
+    const { compact } = useCurrencyFormat();
     const { tSync: t } = useTranslation();
 
     // Loans are stored in RWF — convert to user preferred currency
-    const fmt  = (n: number) => format(n, 'RWF');
+    const cpt = (n: number) => compact(n, 'RWF');
 
     const handleExport = () => {
         if (loans.length === 0) return;

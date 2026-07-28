@@ -974,6 +974,7 @@ export class LendingController {
   // ===== LENDER REPAYMENTS ENDPOINT =====
 
   @Get('lending/lenders/:lenderId/repayments')
+  @Roles(UserRole.LENDER, UserRole.ADMIN, UserRole.TENANT_ADMIN)
   @ApiOperation({
     summary: 'Get repayments for a lender',
     description: 'Returns all repayments across loans assigned to this lender, with optional date range filtering and pagination.',

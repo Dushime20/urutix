@@ -12,8 +12,6 @@ const DisbursementsPage: React.FC = () => {
   const [statusFilter, setStatusFilter]   = useState('all');
   const [searchTerm, setSearchTerm]       = useState('');
 
-  const lenderId = user?.id;
-
   /**
    * Map a raw disbursement from the API.
    * Only fields that exist in the response are populated — no fallbacks.
@@ -36,7 +34,7 @@ const DisbursementsPage: React.FC = () => {
   });
 
   const fetchDisbursements = useCallback(async () => {
-    if (!lenderId) {
+    if (!user?.id) {
       setLoading(false);
       toast.error('No lender session found. Please log in again.');
       return;
@@ -45,6 +43,14 @@ const DisbursementsPage: React.FC = () => {
     try {
       setLoading(true);
 
+      let lenderId = user.id;
+      try {
+        const resolved = await lendingApi.resolveLenderId();
+        if (resolved) lenderId = resolved;
+      } catch {
+        // Backend also resolves user → lender when user.id is passed
+      }
+
       const response = await lendingApi.getLenderDisbursements(lenderId, {
         page: 1,
         limit: 200,
@@ -52,7 +58,11 @@ const DisbursementsPage: React.FC = () => {
         search: searchTerm || undefined,
       });
 
-      const raw: any[] = response?.disbursements ?? [];
+      const raw: any[] = Array.isArray(response?.disbursements)
+        ? response.disbursements
+        : Array.isArray(response)
+          ? response
+          : [];
       setDisbursements(raw.map(mapDisbursement));
 
       if (raw.length === 0) {
@@ -65,7 +75,7 @@ const DisbursementsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [lenderId, statusFilter, searchTerm]);
+  }, [user?.id, statusFilter, searchTerm]);
 
   useEffect(() => {
     fetchDisbursements();

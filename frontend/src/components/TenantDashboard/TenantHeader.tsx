@@ -80,8 +80,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
       label: 'Financials',
       icon: DollarSign,
       items: [
-        { id: 'financial', label: 'Escrow Account', icon: DollarSign, description: 'Revenue & credit intelligence' },
-        { id: 'purchase-credits', label: 'Purchase Credits', icon: DollarSign, description: 'Top up your account balance' },
+        { id: 'purchase-credits', label: 'Subscription Plans', icon: DollarSign, description: 'Plans, marketplace & credit history' },
       ]
     }
   ];
@@ -266,7 +265,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
 
             {/* Credit Balance Badge */}
             <div
-              onClick={() => setSelectedView('financial')}
+              onClick={() => { navigate('/tenant-admin/subscription-plans'); setSelectedView('subscription-plans'); }}
               className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all group"
             >
               <div className="p-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm">

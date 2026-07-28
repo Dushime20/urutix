@@ -41,6 +41,7 @@ import { ApiResponseDto } from '../../common/dto/api-response.dto';
   UserRole.FLEET_MANAGER,
   UserRole.FLEET_ACCOUNTANT,
   UserRole.CARGO_OWNER,
+  UserRole.LENDER,
 )
 @ApiBearerAuth('JWT-auth')
 export class FinancialController {

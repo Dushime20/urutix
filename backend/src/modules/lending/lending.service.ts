@@ -16,7 +16,7 @@ import {
   InvalidLoanStateException,
 } from './exceptions/lending.exceptions';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, ILike } from 'typeorm';
 import { Lender, LenderStatus } from '../../entities/lender.entity';
 import { LenderPolicy } from '../../entities/lender-policy.entity';
 import { LoanRequest, LoanRequestStatus } from '../../entities/loan-request.entity';
@@ -1993,6 +1993,7 @@ export class LendingService {
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
         beneficiaries: beneficiaries,
+        amount: loan.approved_amount || loan.requested_amount,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
         interest_rate: loan.metadata?.interest_rate ?? null,
@@ -2126,6 +2127,7 @@ export class LendingService {
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
         beneficiaries: beneficiaries,
+        amount: lockedAmount,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
         interest_rate: loan.metadata?.interest_rate ?? null,
@@ -2886,9 +2888,39 @@ export class LendingService {
   }
 
   async getLenderByUserEmail(email: string): Promise<Lender | null> {
+    if (!email) return null;
+    const normalized = email.trim().toLowerCase();
+    // Case-insensitive match — lender contact_email is stored lowercased at creation
     return await this.lenderRepository.findOne({
-      where: { contact_email: email },
+      where: { contact_email: ILike(normalized) },
     });
+  }
+
+  /**
+   * Resolve a frontend-passed ID (User.id or Lender.id) to the lenders table PK.
+   * Returns null when no lender entity can be resolved (caller should treat as empty).
+   */
+  private async resolveLenderEntityId(lenderId: string): Promise<string | null> {
+    if (!lenderId) return null;
+
+    const byId = await this.lenderRepository.findOne({ where: { id: lenderId } });
+    if (byId) return byId.id;
+
+    const user = await this.userRepository.findOne({
+      where: { id: lenderId, role: UserRole.LENDER },
+    });
+    if (!user?.email) {
+      this.logger.warn(`resolveLenderEntityId: no LENDER user for id ${lenderId}`);
+      return null;
+    }
+
+    const byEmail = await this.getLenderByUserEmail(user.email);
+    if (byEmail) return byEmail.id;
+
+    this.logger.warn(
+      `resolveLenderEntityId: no lender entity for user ${lenderId} (${user.email})`,
+    );
+    return null;
   }
 
   async getLenderById(lenderId: string): Promise<Lender> {
@@ -2929,9 +2961,7 @@ export class LendingService {
 
       if (user) {
         // Try to find Lender by contact_email matching user email
-        lender = await this.lenderRepository.findOne({
-          where: { contact_email: user.email },
-        });
+        lender = await this.getLenderByUserEmail(user.email);
 
         if (!lender) {
           // Create a new Lender entity for this user
@@ -2941,7 +2971,7 @@ export class LendingService {
                   (user.profile?.firstName && user.profile?.lastName 
                     ? `${user.profile.firstName} ${user.profile.lastName}` 
                     : user.email) || 'Unknown Lender',
-            contact_email: user.email,
+            contact_email: user.email.trim().toLowerCase(),
             status: 'active' as any,
             tenant_id: user.tenantId,
             api_key_hash: '', // Will be set later if needed
@@ -4284,15 +4314,13 @@ export class LendingService {
       sortOrder = 'desc',
     } = query;
 
-    // Resolve actual lender entity ID (user ID may be passed)
-    let actualLenderId = lenderId;
-    const lenderEntity = await this.lenderRepository.findOne({ where: { id: lenderId } });
-    if (!lenderEntity) {
-      const user = await this.userRepository.findOne({ where: { id: lenderId, role: UserRole.LENDER } });
-      if (user) {
-        const lenderByEmail = await this.lenderRepository.findOne({ where: { contact_email: user.email } });
-        if (lenderByEmail) actualLenderId = lenderByEmail.id;
-      }
+    const actualLenderId = await this.resolveLenderEntityId(lenderId);
+    if (!actualLenderId) {
+      return {
+        disbursements: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+        stats: await this.calculateDisbursementStats(lenderId),
+      };
     }
 
     const queryBuilder = this.loanDisbursementRepository
@@ -4300,7 +4328,7 @@ export class LendingService {
       .leftJoinAndSelect('disbursement.loan_request', 'loan')
       .leftJoinAndSelect('loan.lender', 'lender')
       .leftJoinAndSelect('loan.borrower', 'borrower')
-      .where('lender.id = :lenderId', { lenderId: actualLenderId });
+      .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
 
     if (status) {
       queryBuilder.andWhere('disbursement.status = :status', { status });
@@ -4312,7 +4340,7 @@ export class LendingService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(borrower.name ILIKE :search OR disbursement.id::text ILIKE :search OR loan.id::text ILIKE :search)',
+        '(borrower.contact_name ILIKE :search OR borrower.company_name ILIKE :search OR disbursement.id::text ILIKE :search OR loan.id::text ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -4337,7 +4365,64 @@ export class LendingService {
 
     const [disbursements, total] = await queryBuilder.getManyAndCount();
 
-    // Calculate stats using the resolved lender entity ID
+    // Fallback: loans marked disbursed/repaid with no loan_disbursements rows
+    // (legacy flows that only updated loan status)
+    if (total === 0 && !status && !priority && !search) {
+      const loanQb = this.loanRequestRepository
+        .createQueryBuilder('loan')
+        .leftJoinAndSelect('loan.borrower', 'borrower')
+        .where('loan.lender_id = :lenderId', { lenderId: actualLenderId })
+        .andWhere('loan.status IN (:...statuses)', {
+          statuses: [
+            LoanRequestStatus.DISBURSED,
+            LoanRequestStatus.REPAID,
+            LoanRequestStatus.DEFAULTED,
+          ],
+        })
+        .orderBy('loan.updated_at', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit);
+
+      const [loans, loanTotal] = await loanQb.getManyAndCount();
+      if (loanTotal > 0) {
+        const synthetic = loans.map((loan) =>
+          this.formatDisbursementResponse({
+            id: loan.id,
+            amount: loan.approved_amount ?? loan.requested_amount,
+            status: DisbursementStatus.DISBURSED,
+            created_at: loan.created_at,
+            updated_at: loan.updated_at,
+            disbursement_date:
+              loan.metadata?.disbursement?.disbursed_at
+                ? new Date(loan.metadata.disbursement.disbursed_at)
+                : loan.updated_at,
+            purpose: loan.metadata?.purpose ?? null,
+            interest_rate: loan.metadata?.interest_rate ?? null,
+            notes: null,
+            priority: null,
+            documents: null,
+            risk_score: null,
+            credit_score: null,
+            collateral_value: null,
+            disbursement_method: null,
+            term_months: loan.loan_term_months ?? null,
+            loan_request: loan,
+          }),
+        );
+
+        return {
+          disbursements: synthetic,
+          pagination: {
+            page,
+            limit,
+            total: loanTotal,
+            totalPages: Math.ceil(loanTotal / limit),
+          },
+          stats: await this.calculateDisbursementStats(actualLenderId),
+        };
+      }
+    }
+
     const stats = await this.calculateDisbursementStats(actualLenderId);
 
     return {
@@ -4418,10 +4503,10 @@ export class LendingService {
   }
 
   private async calculateDisbursementStats(lenderId: string) {
+    const resolvedId = (await this.resolveLenderEntityId(lenderId)) || lenderId;
     const stats = await this.loanDisbursementRepository
       .createQueryBuilder('disbursement')
       .leftJoin('disbursement.loan_request', 'loan')
-      .leftJoin('loan.lender', 'lender')
       .select([
         'COUNT(*) as total',
         "COUNT(CASE WHEN disbursement.status = 'pending' THEN 1 END) as pending",
@@ -4433,7 +4518,7 @@ export class LendingService {
         "COALESCE(SUM(CASE WHEN disbursement.status = 'disbursed' THEN disbursement.amount ELSE 0 END), 0) as disbursed_amount",
         "COALESCE(SUM(CASE WHEN disbursement.status = 'pending' THEN disbursement.amount ELSE 0 END), 0) as pending_amount",
       ])
-      .where('lender.id = :lenderId', { lenderId })
+      .where('loan.lender_id = :lenderId', { lenderId: resolvedId })
       .getRawOne();
 
     return {
@@ -4497,15 +4582,12 @@ export class LendingService {
     try {
       const { page = 1, limit = 10, status, startDate, endDate } = queryOptions;
 
-      // Resolve actual lender entity ID (user ID may be passed)
-      let actualLenderId = lenderId;
-      const lenderEntity = await this.lenderRepository.findOne({ where: { id: lenderId } });
-      if (!lenderEntity) {
-        const user = await this.userRepository.findOne({ where: { id: lenderId, role: UserRole.LENDER } });
-        if (user) {
-          const lenderByEmail = await this.lenderRepository.findOne({ where: { contact_email: user.email } });
-          if (lenderByEmail) actualLenderId = lenderByEmail.id;
-        }
+      const actualLenderId = await this.resolveLenderEntityId(lenderId);
+      if (!actualLenderId) {
+        return {
+          data: [],
+          pagination: { total: 0, pages: 0, page, limit },
+        };
       }
 
       const queryBuilder = this.loanRepaymentRepository
@@ -4513,7 +4595,7 @@ export class LendingService {
         .leftJoinAndSelect('repayment.loan_request', 'loan')
         .leftJoinAndSelect('loan.lender', 'lender')
         .leftJoinAndSelect('loan.borrower', 'borrower')
-        .where('lender.id = :lenderId', { lenderId: actualLenderId });
+        .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
 
       // Add date range filters (using repayment_date)
       if (startDate) {

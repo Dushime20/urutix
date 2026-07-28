@@ -10,8 +10,6 @@ const RepaymentsPage: React.FC = () => {
   const [repayments, setRepayments] = useState<RepaymentEntry[]>([]);
   const [loading, setLoading]       = useState(true);
 
-  const lenderId = user?.id;
-
   /**
    * Map a raw repayment record from the API.
    * No fallbacks — missing fields stay null.
@@ -37,7 +35,7 @@ const RepaymentsPage: React.FC = () => {
   });
 
   const fetchRepayments = useCallback(async () => {
-    if (!lenderId) {
+    if (!user?.id) {
       setLoading(false);
       toast.error('No lender session found. Please log in again.');
       return;
@@ -46,13 +44,25 @@ const RepaymentsPage: React.FC = () => {
     try {
       setLoading(true);
 
+      let lenderId = user.id;
+      try {
+        const resolved = await lendingApi.resolveLenderId();
+        if (resolved) lenderId = resolved;
+      } catch {
+        // Backend also resolves user → lender when user.id is passed
+      }
+
       const response = await lendingApi.getLenderRepayments(lenderId, {
         page: 1,
         limit: 200,
       });
 
       // API returns { data: [], pagination: {} }
-      const raw: any[] = response?.data ?? [];
+      const raw: any[] = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+          ? response
+          : [];
       setRepayments(raw.map(mapRepayment));
 
       if (raw.length === 0) {
@@ -65,7 +75,7 @@ const RepaymentsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [lenderId]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchRepayments();

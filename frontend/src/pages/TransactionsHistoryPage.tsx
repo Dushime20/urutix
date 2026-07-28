@@ -10,8 +10,6 @@ const TransactionsHistoryPage: React.FC = () => {
   const [entries, setEntries] = useState<TxEntry[]>([]);
   const [loading, setLoading]  = useState(true);
 
-  const lenderId = user?.id;
-
   /**
    * Map a raw disbursement record to a TxEntry.
    * No fallbacks — missing fields stay null.
@@ -53,7 +51,7 @@ const TransactionsHistoryPage: React.FC = () => {
   });
 
   const fetchHistory = useCallback(async () => {
-    if (!lenderId) {
+    if (!user?.id) {
       setLoading(false);
       toast.error('No lender session found. Please log in again.');
       return;
@@ -62,15 +60,32 @@ const TransactionsHistoryPage: React.FC = () => {
     try {
       setLoading(true);
 
+      // Prefer lenders.id over users.id — history APIs filter by loan.lender_id
+      let lenderId = user.id;
+      try {
+        const resolved = await lendingApi.resolveLenderId();
+        if (resolved) lenderId = resolved;
+      } catch {
+        // Fall back to user.id; backend also resolves user → lender
+      }
+
       const [disbResponse, repResponse] = await Promise.all([
         lendingApi.getLenderDisbursements(lenderId, { page: 1, limit: 200 }),
         lendingApi.getLenderRepayments(lenderId, { page: 1, limit: 200 }),
       ]);
 
       // getLenderDisbursements returns { disbursements: [], pagination: {}, stats: {} }
-      const disbursements: any[] = disbResponse?.disbursements ?? [];
+      const disbursements: any[] = Array.isArray(disbResponse?.disbursements)
+        ? disbResponse.disbursements
+        : Array.isArray(disbResponse)
+          ? disbResponse
+          : [];
       // getLenderRepayments returns { data: [], pagination: {} }
-      const repayments: any[]    = repResponse?.data ?? [];
+      const repayments: any[] = Array.isArray(repResponse?.data)
+        ? repResponse.data
+        : Array.isArray(repResponse)
+          ? repResponse
+          : [];
 
       const all: TxEntry[] = [
         ...disbursements.map(mapDisbursement),
@@ -95,95 +110,77 @@ const TransactionsHistoryPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [lenderId]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
 
   const handleExport = () => {
-    if (entries.length === 0) return;
+    if (entries.length === 0) {
+      toast.error('Nothing to export');
+      return;
+    }
 
-    const headers = [
-      'ID', 'Type', 'Date', 'Amount', 'Status',
-      'Borrower', 'Loan ID', 'Reference', 'Purpose',
-      'Interest Rate', 'Interest Paid', 'Principal Paid', 'Notes',
-    ];
-
-    const rows = entries.map(e => [
-      e.id,
-      e.source,
+    const headers = ['Date', 'Type', 'Borrower', 'Amount', 'Status', 'Loan ID', 'Reference'];
+    const rows = entries.map((e) => [
       e.date ?? '',
-      e.amount ?? '',
-      e.status ?? '',
+      e.source,
       e.borrowerName ?? '',
+      e.amount != null ? String(e.amount) : '',
+      e.status ?? '',
       e.loanId ?? '',
       e.reference ?? '',
-      e.purpose ?? '',
-      e.interestRate ?? '',
-      e.interestPaid ?? '',
-      e.principalPaid ?? '',
-      e.notes ?? '',
     ]);
 
-    const csv = [headers, ...rows]
-      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
     a.download = `transaction-history-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-
     toast.success('Transaction history exported');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
-      <div className="max-w-[1536px] mx-auto space-y-8">
-
-        {/* Header */}
-        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase flex items-center gap-3">
-              <div className="p-2 bg-slate-900 text-white rounded-xl shadow-lg shadow-slate-200">
-                <History size={24} />
-              </div>
-              Transaction Vault
-            </h1>
-            <p className="text-gray-500 mt-2 uppercase text-[10px] font-black tracking-[0.2em] opacity-70">
-              Verified ledger of all capital movements — real data only
-            </p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#345E85]/10 flex items-center justify-center text-[#345E85]">
+            <History size={24} />
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExport}
-              disabled={entries.length === 0}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Download size={14} /> Export CSV
-            </button>
-            <button
-              onClick={fetchHistory}
-              disabled={loading}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40"
-            >
-              <RotateCcw size={14} className={loading ? 'animate-spin' : ''} />
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Transaction History</h1>
+            <p className="text-sm text-slate-500">Disbursements and repayments across your portfolio</p>
           </div>
         </div>
-
-        <HistoryEnlite
-          loading={loading}
-          entries={entries}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={entries.length === 0}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+          >
+            <Download size={16} />
+            Export
+          </button>
+          <button
+            type="button"
+            onClick={fetchHistory}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg bg-[#345E85] text-white hover:bg-[#2a4c6b]"
+          >
+            <RotateCcw size={16} />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      <HistoryEnlite
+        loading={loading}
+        entries={entries}
+      />
     </div>
   );
 };
