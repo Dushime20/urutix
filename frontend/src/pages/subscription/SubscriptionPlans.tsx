@@ -21,6 +21,7 @@ import {
   FaGift,
   FaStore,
   FaInfoCircle,
+  FaHistory,
 } from 'react-icons/fa';
 import {
   XAxis,
@@ -62,7 +63,7 @@ interface SubscriptionPlan {
 const SubscriptionPlans: React.FC = () => {
   const { compact: fmtMoney, format: fmtFull } = useCurrencyFormat();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions' | 'marketplace'>('plans');
+  const [activeTab, setActiveTab] = useState<'plans' | 'subscriptions' | 'marketplace' | 'history'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showComparison, setShowComparison] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -268,6 +269,17 @@ const SubscriptionPlans: React.FC = () => {
           >
             <FaStore className={activeTab === 'marketplace' ? 'text-white' : 'text-slate-400'} />
             Marketplace
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+              activeTab === 'history'
+                ? 'bg-[#345E85] text-white shadow-lg'
+                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            <FaHistory className={activeTab === 'history' ? 'text-white' : 'text-slate-400'} />
+            Transaction History
           </button>
         </div>
 
@@ -996,6 +1008,116 @@ const SubscriptionPlans: React.FC = () => {
       {activeTab === 'marketplace' && (
         <div className="space-y-8">
           <CreditMarketplace />
+        </div>
+      )}
+
+      {/* Transaction History Tab */}
+      {activeTab === 'history' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <FaHistory className="text-[#345E85]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Transaction History</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Credit purchases, sales, and usage</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                {(creditHistoryData?.data ?? []).length} transactions
+              </span>
+            </div>
+
+            {(creditHistoryData?.data ?? []).length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50/50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Balance After</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {[...(creditHistoryData?.data ?? [])]
+                      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((txn: any) => {
+                        const isCredit =
+                          txn.amount > 0 ||
+                          ['SUBSCRIPTION_GRANT', 'PURCHASE', 'BONUS', 'REFUND'].includes(txn.type);
+                        return (
+                          <tr key={txn.id} className="hover:bg-slate-50/50 transition-all">
+                            <td className="px-8 py-5">
+                              <p className="text-sm font-black text-slate-900">
+                                {txn.description || 'Transaction'}
+                              </p>
+                              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                                {String(txn.id).substring(0, 8)}
+                              </p>
+                            </td>
+                            <td className="px-8 py-5">
+                              <span
+                                className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                  isCredit
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                    : 'bg-rose-50 text-rose-700 border border-rose-100'
+                                }`}
+                              >
+                                {String(txn.type || 'UNKNOWN').replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="px-8 py-5">
+                              <span
+                                className={`text-sm font-black ${
+                                  isCredit ? 'text-emerald-600' : 'text-rose-600'
+                                }`}
+                              >
+                                {isCredit ? '+' : '-'}
+                                {Math.abs(txn.amount || 0).toLocaleString()} credits
+                              </span>
+                            </td>
+                            <td className="px-8 py-5 text-sm font-black text-slate-900">
+                              {(txn.balanceAfter ?? 0).toLocaleString()} credits
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                {new Date(txn.createdAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                              </p>
+                              <p className="text-[9px] font-medium text-slate-300 mt-0.5">
+                                {new Date(txn.createdAt).toLocaleTimeString('en-US', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </p>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-20 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FaHistory className="text-2xl text-slate-300" />
+                </div>
+                <h4 className="text-lg font-black text-slate-900 tracking-tight mb-2">
+                  No Transactions Yet
+                </h4>
+                <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                  Your credit transaction history will appear here after purchases, sales, or usage.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
