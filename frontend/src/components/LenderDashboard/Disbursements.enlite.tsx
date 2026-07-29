@@ -25,6 +25,7 @@ export interface DisbursementEntry {
     loanId: string | null;
     borrowerName: string | null;
     amount: number | null;
+    currency?: string | null;
     status: string | null;
     requestedDate: string | null;
     approvedDate: string | null;
@@ -125,7 +126,11 @@ const DisburseModal: React.FC<{
     entry: DisbursementEntry;
     onConfirm: (id: string) => void;
     onCancel: () => void;
-}> = ({ entry, onConfirm, onCancel }) => (
+}> = ({ entry, onConfirm, onCancel }) => {
+    const { format: fmtDisburse } = useCurrencyFormat();
+    const fmtAmt = (amount: number | null) =>
+        amount === null ? '—' : fmtDisburse(amount, entry.currency || 'RWF');
+    return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
         <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
             <div className="bg-[#345E85] px-8 py-6">
@@ -142,7 +147,7 @@ const DisburseModal: React.FC<{
                     </div>
                     <div className="flex justify-between">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</span>
-                        <span className="text-sm font-black text-[#345E85]">{formatAmount(entry.amount)}</span>
+                        <span className="text-sm font-black text-[#345E85]">{fmtAmt(entry.amount)}</span>
                     </div>
                     {entry.purpose && (
                         <div className="flex justify-between">
@@ -188,7 +193,8 @@ const DisburseModal: React.FC<{
             </div>
         </div>
     </div>
-);
+    );
+};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -204,8 +210,8 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
     onReject,
 }) => {
     const { format } = useCurrencyFormat();
-    const formatAmount = (amount: number | null): string =>
-        amount === null ? '—' : format(amount, 'RWF');
+    const formatAmount = (amount: number | null, currency?: string | null): string =>
+        amount === null ? '—' : format(amount, currency || 'RWF');
     const { tSync: t } = useTranslation();
 
     const [detailLoan, setDetailLoan]         = useState<any | null>(null);
@@ -269,7 +275,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             render: (_: any, d: DisbursementEntry) => (
                 <div className="flex flex-col gap-0.5">
                     <span className="font-black text-slate-900 text-[12px]">
-                        {formatAmount(d.amount)}
+                        {formatAmount(d.amount, d.currency)}
                     </span>
                     {d.purpose && (
                         <span className="text-[9px] font-bold text-slate-400 uppercase truncate max-w-[140px]">
@@ -422,7 +428,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                                     </span>
                                     <div className="text-right">
                                         <p className="text-[11px] font-black text-slate-700">{cnt}</p>
-                                        <p className="text-[9px] text-slate-400">{formatAmount(total > 0 ? total : null)}</p>
+                                        <p className="text-[9px] text-slate-400">{formatAmount(total > 0 ? total : null, disbursements.find(d => d.status === s)?.currency)}</p>
                                     </div>
                                 </div>
                             );

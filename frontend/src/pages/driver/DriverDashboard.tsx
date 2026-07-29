@@ -221,8 +221,6 @@ const DriverDashboard: React.FC = () => {
         { id: 'trips', label: 'My Assignments', icon: Route },
         { id: 'cargo', label: 'Cargo', icon: Package },
         { id: 'inspection', label: 'Inspection', icon: ClipboardCheck },
-        { id: 'leaderboard', label: 'Elite League', icon: Trophy },
-        { id: 'announcements', label: 'Announcements', icon: Bell },
       ]
     },
     { 

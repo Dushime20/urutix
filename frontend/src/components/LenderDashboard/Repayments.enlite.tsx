@@ -27,6 +27,7 @@ export interface RepaymentEntry {
     requestedAmount: number | null;
     approvedAmount: number | null;
     status: string | null;
+    currency?: string | null;
     _rawData?: any;
 }
 
@@ -56,8 +57,8 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
     repayments,
 }) => {
     const { format: fmtCurrency } = useCurrencyFormat();
-    const formatAmount = (amount: number | null): string =>
-        amount === null ? '—' : fmtCurrency(amount);
+    const formatAmount = (amount: number | null, currency?: string | null): string =>
+        amount === null ? '—' : fmtCurrency(amount, currency || 'RWF');
 
     const [searchTerm, setSearchTerm]     = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -117,14 +118,14 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             render: (_: any, r: RepaymentEntry) => (
                 <div className="min-w-0">
                     <p className="font-semibold text-slate-900 text-sm">
-                        {formatAmount(r.amount)}
+                        {formatAmount(r.amount, r.currency)}
                     </p>
                     <div className="flex gap-2 text-[10px] font-medium uppercase tracking-wider">
                         {r.principalPaid !== null && (
-                            <span className="text-[#2c5173]">P: {formatAmount(r.principalPaid)}</span>
+                            <span className="text-[#2c5173]">P: {formatAmount(r.principalPaid, r.currency)}</span>
                         )}
                         {r.interestPaid !== null && r.interestPaid > 0 && (
-                            <span className="text-emerald-600">I: {formatAmount(r.interestPaid)}</span>
+                            <span className="text-emerald-600">I: {formatAmount(r.interestPaid, r.currency)}</span>
                         )}
                     </div>
                 </div>
@@ -136,11 +137,11 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             render: (_: any, r: RepaymentEntry) => (
                 <div className="min-w-0">
                     <p className="font-semibold text-slate-900 text-sm">
-                        {formatAmount(r.approvedAmount ?? r.requestedAmount)}
+                        {formatAmount(r.approvedAmount ?? r.requestedAmount, r.currency)}
                     </p>
                     {r.approvedAmount !== null && r.requestedAmount !== null && r.approvedAmount !== r.requestedAmount && (
                         <p className="text-[10px] text-slate-500">
-                            Req: {formatAmount(r.requestedAmount)}
+                            Req: {formatAmount(r.requestedAmount, r.currency)}
                         </p>
                     )}
                 </div>

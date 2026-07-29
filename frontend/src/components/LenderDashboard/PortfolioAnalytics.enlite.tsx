@@ -84,7 +84,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
             key: 'totalValue',
             label: 'EXPOSURE',
             render: (_: unknown, row: any) => (
-                <span className="font-black text-slate-900 text-[11px]">{formatCurrency(row.totalValue)}</span>
+                <span className="font-black text-slate-900 text-[11px]">{formatCurrency(row.totalValue, row.currency)}</span>
             )
         },
         {

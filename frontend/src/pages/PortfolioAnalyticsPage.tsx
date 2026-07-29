@@ -31,7 +31,7 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; sub?: stri
 // ── Main page ─────────────────────────────────────────────────────────────────
 const PortfolioAnalyticsPage: React.FC = () => {
   const { user } = useAuth();
-  const { compact: fmtRWF } = useCurrencyFormat();
+  const { compact: _compact } = useCurrencyFormat();
   const [months, setMonths] = useState<number>(12);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +106,7 @@ const PortfolioAnalyticsPage: React.FC = () => {
   const cargo: any[] = analytics.cargo_breakdown ?? [];
   const std = analytics.standards_summary ?? {};
   const currency: string = analytics.currency ?? 'RWF';
+  const fmtRWF = (amount: number) => _compact(amount, currency);
 
   // Bar chart max
   const maxDisbursed = Math.max(...trends.map((t: any) => t.disbursed ?? 0), 1);

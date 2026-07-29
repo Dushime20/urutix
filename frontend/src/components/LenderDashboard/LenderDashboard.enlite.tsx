@@ -114,6 +114,10 @@ const LenderDashboardEnlite: React.FC = () => {
   const roi              = dashboardData?.roi ?? 0;
   const interestCollected = dashboardData?.totalInterestCollected ?? 0;
 
+  // Currency reported by the server — fall back to analytics then dashboard, then RWF
+  const serverCurrency: string =
+    analyticsData?.currency || dashboardData?.currency || 'RWF';
+
   const totalRequests    = analyticsData?.totalLoans ?? recentRequests.length;
   const pendingCount     = recentRequests.filter(r => r.status === 'pending').length;
   const approvedCount    = recentRequests.filter(r => r.status === 'approved').length;
@@ -180,7 +184,7 @@ const LenderDashboardEnlite: React.FC = () => {
         />
         <StatCard
           title="Outstanding"
-          value={formatCurrency(outstanding)}
+          value={formatCurrency(outstanding, serverCurrency)}
           icon={<Banknote size={18} className="text-emerald-600" />}
           color="bg-emerald-50"
           sub="Total disbursed capital"
@@ -213,7 +217,7 @@ const LenderDashboardEnlite: React.FC = () => {
           value={`${roi.toFixed(1)}%`}
           icon={<Percent size={18} className="text-purple-600" />}
           color="bg-purple-50"
-          sub={formatCurrency(interestCollected) + " interest"}
+          sub={formatCurrency(interestCollected, serverCurrency) + " interest"}
           loading={loading}
         />
 
@@ -234,9 +238,9 @@ const LenderDashboardEnlite: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { label: 'Total Requests', value: analyticsData.totalLoans ?? 0 },
-              { label: 'Total Amount', value: formatCurrency(analyticsData.totalAmount ?? 0) },
+              { label: 'Total Amount', value: formatCurrency(analyticsData.totalAmount ?? 0, serverCurrency) },
               { label: 'Success Rate', value: `${(analyticsData.successRate ?? 0).toFixed(1)}%` },
-              { label: 'Avg Loan Size', value: formatCurrency(analyticsData.averageLoanSize ?? 0) },
+              { label: 'Avg Loan Size', value: formatCurrency(analyticsData.averageLoanSize ?? 0, serverCurrency) },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-2xl font-black text-slate-900">{value}</p>
@@ -298,6 +302,7 @@ const LenderDashboardEnlite: React.FC = () => {
                   const borrowerName = req.borrower?.contact_name || req.borrower?.company_name || req.created_by?.slice(0, 8) || '—';
                   const purpose = req.metadata?.purpose || req.metadata?.note || '—';
                   const split: Array<{ type: string; amount: number }> = req.requested_split || [];
+                  const loanCurrency: string = req.currency || serverCurrency;
 
                   return (
                     <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
@@ -322,9 +327,9 @@ const LenderDashboardEnlite: React.FC = () => {
 
                       {/* Amount */}
                       <td className="px-6 py-4">
-                        <p className="text-sm font-black text-slate-900">{formatCurrency(amount)}</p>
+                        <p className="text-sm font-black text-slate-900">{formatCurrency(amount, loanCurrency)}</p>
                         {approvedAmt != null && (
-                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ {formatCurrency(approvedAmt)}</p>
+                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ {formatCurrency(approvedAmt, loanCurrency)}</p>
                         )}
                       </td>
 
@@ -340,7 +345,7 @@ const LenderDashboardEnlite: React.FC = () => {
                             {split.map((s, i) => (
                               <div key={i} className="flex items-center gap-1.5">
                                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{s.type}</span>
-                                <span className="text-xs font-bold text-slate-700">{formatCurrency(s.amount)}</span>
+                                <span className="text-xs font-bold text-slate-700">{formatCurrency(s.amount, loanCurrency)}</span>
                               </div>
                             ))}
                           </div>
