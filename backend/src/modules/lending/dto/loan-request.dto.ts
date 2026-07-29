@@ -12,6 +12,8 @@ import {
   Max,
   IsNotEmpty,
   Matches,
+  IsUppercase,
+  Length,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -76,6 +78,12 @@ export class CreateLoanRequestDto {
   @IsOptional()
   due_date?: string;
 
+  @IsString()
+  @IsUppercase()
+  @Length(3, 3, { message: 'currency must be a 3-letter ISO 4217 code (e.g. RWF, USD)' })
+  @IsOptional()
+  currency?: string;
+
   @IsOptional()
   metadata?: Record<string, any>;
 }
@@ -106,4 +114,10 @@ export class LoanApprovalDto {
     mode: 'platform_initiated' | 'lender_initiated';
     expected_disbursement_date?: string;
   };
+
+  @IsString()
+  @IsUppercase()
+  @Length(3, 3, { message: 'currency must be a 3-letter ISO 4217 code (e.g. RWF, USD)' })
+  @IsOptional()
+  currency?: string;
 }

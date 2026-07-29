@@ -130,6 +130,8 @@ export class SubscriptionController {
       planId: string;
       paymentMethod: 'card' | 'mobile_money';
       paymentDetails: any;
+      /** ISO 4217 currency code sent by the client. If omitted the service falls back to MOBILE_MONEY_CURRENCY env. */
+      currency?: string;
     },
   ) {
     const tenantId = req.user.tenantId;
@@ -142,6 +144,7 @@ export class SubscriptionController {
       planId: body.planId,
       paymentMethod: body.paymentMethod,
       paymentDetails: body.paymentDetails,
+      currency: body.currency,
     });
 
     return {

@@ -88,6 +88,8 @@ export class CreditMarketplaceController {
       creditAmount: number;
       paymentMethod: 'card' | 'mobile_money';
       paymentDetails: any;
+      /** ISO 4217 currency code for the payment (e.g. 'RWF', 'USD'). Defaults to 'RWF'. */
+      currency?: string;
     },
   ) {
     const tenantId = req.user.tenantId;
@@ -99,6 +101,7 @@ export class CreditMarketplaceController {
       creditAmount: body.creditAmount,
       paymentMethod: body.paymentMethod,
       paymentDetails: body.paymentDetails,
+      currency: body.currency,
     });
 
     return result;

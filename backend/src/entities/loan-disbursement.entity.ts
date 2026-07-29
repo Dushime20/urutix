@@ -109,6 +109,10 @@ export class LoanDisbursement {
   @Column({ type: 'int', nullable: true })
   term_months: number;
 
+  /** ISO 4217 currency code for this disbursement (e.g. 'RWF', 'USD') */
+  @Column({ type: 'varchar', length: 3, nullable: true, default: 'RWF' })
+  currency: string;
+
   @CreateDateColumn()
   created_at: Date;
 

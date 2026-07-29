@@ -382,6 +382,8 @@ export class SubscriptionService {
     planId: string;
     paymentMethod: 'card' | 'mobile_money';
     paymentDetails: any; // { phoneNumber: string } for mobile_money
+    /** ISO 4217 currency code selected by the user at checkout */
+    currency?: string;
   }): Promise<any> {
     const plan = await this.getPlan(data.planId);
 
@@ -403,8 +405,8 @@ export class SubscriptionService {
     const creditsToGrant = plan.creditCostPerPartner || plan.totalCredits;
     const totalAmount = creditsToGrant === -1 ? 0 : Number(plan.pricePerCredit) * creditsToGrant;
 
-    // Currency — subscriptions are priced in RWF (align with all other ishema payments)
-    const currency = this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
+    // Prefer caller-supplied currency; fall back to env config then RWF
+    const currency = data.currency || this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
 
     let externalTransactionId: string | null = null;
 

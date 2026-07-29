@@ -951,6 +951,7 @@ export class LendingController {
       final_payment_amount: number;
       paymentMethod?: string;
       paymentDetails?: Record<string, unknown>;
+      currency?: string;
     },
   ) {
     return await this.lendingService.processRepayment(
@@ -959,6 +960,7 @@ export class LendingController {
       {
         paymentMethod: body.paymentMethod,
         paymentDetails: body.paymentDetails,
+        currency: body.currency,
       },
     );
   }

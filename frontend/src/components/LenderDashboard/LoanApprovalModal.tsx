@@ -19,6 +19,7 @@ import api from '../../services/api';
 import { lendingApi } from '../../services/lending/lendingApi';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
+import PaymentCurrencySelect from '../common/PaymentCurrencySelect';
 import {
   X, AlertCircle, ShieldCheck, CheckCircle, Loader2,
   CalendarDays, DollarSign, Clock, Info,
@@ -77,6 +78,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
   const [errorMsg, setErrorMsg] = useState('');
 
   // ── Lender-editable fields ──────────────────────────────────────────────
+  const [offerCurrency, setOfferCurrency] = useState<string>(loan?.currency || 'RWF');
   const [approvedAmount, setApprovedAmount] = useState<number>(
     loan?.approved_amount || loan?.requested_amount || 0,
   );
@@ -180,6 +182,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
         approved_amount: approvedAmount,
         due_date: dueDate,
         loan_term_months: loanTermMonths,
+        currency: offerCurrency,
       });
 
       toast.success(
@@ -375,6 +378,13 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Offer Currency */}
+              <PaymentCurrencySelect
+                value={offerCurrency}
+                onChange={setOfferCurrency}
+                label="Loan Currency"
+              />
 
               {/* Interest rate is policy-driven notice */}
               <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4">

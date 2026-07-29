@@ -1357,6 +1357,8 @@ export class LendingService {
       loan.interest_amount = financials.interest_amount;
       loan.due_date = dueDate;
       loan.loan_term_months = termMonths;
+      // Allow lender to set/confirm currency at approval time; fall back to existing loan currency
+      if ((offer as any).currency) loan.currency = (offer as any).currency;
       loan.apr = financials.apr;
       loan.origination_fee_amount = financials.origination_fee_amount;
       loan.total_cost_of_credit = financials.total_cost_of_credit;
@@ -2254,10 +2256,14 @@ export class LendingService {
             phoneNumber: truckOwnerPhone || null,
           }];
       
+      // If the disbursement modal overrides the currency, honour that choice
+      const disburseChosenCurrency = paymentDto.currency || loan.currency || 'RWF';
+
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
         beneficiaries: beneficiaries,
         amount: lockedAmount,
+        currency: disburseChosenCurrency,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
         interest_rate: loan.metadata?.interest_rate ?? null,
@@ -2268,7 +2274,7 @@ export class LendingService {
       const savedDisbursement = await manager.save(LoanDisbursement, disbursement);
 
       const { amount: disburseAmount, currency: disburseCurrency, exchangeRate } =
-        await this.resolveDisbursementAmount(lockedAmount, loan.currency || 'RWF');
+        await this.resolveDisbursementAmount(lockedAmount, disburseChosenCurrency);
 
       if (paymentDto.paymentMethod === 'card') {
         throw new BadRequestException(
@@ -2748,6 +2754,8 @@ export class LendingService {
     paymentMeta?: {
       paymentMethod?: string;
       paymentDetails?: Record<string, unknown>;
+      /** ISO 4217 currency code selected by the user in the repayment modal */
+      currency?: string;
     },
   ): Promise<LoanRepayment & { payment?: { status: string; transactionId?: string; pendingConfirmation?: boolean } }> {
     const loan = await this.loanRequestRepository.findOne({
@@ -2964,7 +2972,7 @@ export class LendingService {
       paymentStatus,
       paymentDetails,
       interestAmount,
-      currency: loan.currency || 'RWF',
+      currency: paymentMeta?.currency || loan.currency || 'RWF',
     });
 
     const { saved, fullyRepaid, freshLoan } = savedRepayment;
@@ -3138,6 +3146,7 @@ export class LendingService {
         interest_paid: allocation.interestPaid,
         repayment_date: new Date(),
         external_txn_ref: externalTxnRef,
+        currency,
         metadata: {
           final_payment_amount: finalPaymentAmount,
           payment_method: paymentMethod,

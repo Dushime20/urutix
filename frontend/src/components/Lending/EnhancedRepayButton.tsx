@@ -11,7 +11,7 @@ import api from '../../services/api';
 import { lendingApi } from '../../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import CurrencySelector from '../common/CurrencySelector';
+import PaymentCurrencySelect from '../common/PaymentCurrencySelect';
 
 interface EnhancedRepayButtonProps {
   loanId: string;
@@ -42,7 +42,7 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
   amount,
   interestAmount = 0,
   interestRate = null,
-  currency: loanCurrency = 'USD',
+  currency: loanCurrency = 'RWF',
   onRepaymentSuccess,
 }) => {
   const { format: fmtFull } = useCurrencyFormat();
@@ -51,6 +51,7 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
   const [repaid, setRepaid] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(loanCurrency);
   const [paymentData, setPaymentData] = useState({
     cardNumber: '',
     cardName: '',
@@ -210,6 +211,7 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
       const response = await api.post(`/lending/repayments/${loanId}`, {
         final_payment_amount: breakdown.total,
         paymentMethod,
+        currency: selectedCurrency,
         paymentDetails:
           paymentMethod === 'card'
             ? {
@@ -300,7 +302,13 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CurrencySelector variant="compact" />
+                    <PaymentCurrencySelect
+                      value={selectedCurrency}
+                      onChange={setSelectedCurrency}
+                      label=""
+                      layout="row"
+                      className="w-36"
+                    />
                     <button
                       onClick={handleClose}
                       className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"

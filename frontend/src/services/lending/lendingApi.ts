@@ -90,6 +90,8 @@ export interface CreateLoanRequestDto {
   lender_id?: string;
   created_by?: string;
   due_date?: string;
+  /** ISO 4217 currency code for the loan amounts (e.g. 'RWF', 'USD'). Defaults to lender policy currency or 'RWF' on the backend. */
+  currency?: string;
   metadata?: any;
 }
 
@@ -141,12 +143,15 @@ export const lendingApi = {
     payment?: {
       paymentMethod?: string;
       paymentDetails?: Record<string, unknown>;
+      /** ISO 4217 currency code the repayment amount is denominated in */
+      currency?: string;
     },
   ): Promise<LoanRepayment> => {
     const response = await api.post(`/lending/repayments/${loanId}`, {
       final_payment_amount: finalPaymentAmount,
       paymentMethod: payment?.paymentMethod,
       paymentDetails: payment?.paymentDetails,
+      currency: payment?.currency,
     });
     return response.data;
   },
@@ -304,6 +309,8 @@ export const lendingApi = {
     interest_rate?: number;
     due_date?: string;
     loan_term_months?: number;
+    /** ISO 4217 currency code for the approved amount */
+    currency?: string;
   }) => {
     const response = await api.post(`/lending/loan-requests/${loanId}/approve`, {
       status: 'approved',
@@ -353,6 +360,8 @@ export const lendingApi = {
     cardName?: string;
     expiryDate?: string;
     cvv?: string;
+    /** ISO 4217 currency code the disbursement amount is denominated in */
+    currency?: string;
   }) => {
     const response = await api.post(`/lending/loan-requests/${loanId}/disburse-with-payment`, paymentData);
     return response.data;

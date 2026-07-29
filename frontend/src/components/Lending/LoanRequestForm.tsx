@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FaDollarSign, FaTruck, FaGasPump, FaUser, FaPlus, FaTrash, FaCheck } from 'react-icons/fa';
 import { lendingApi, CreateLoanRequestDto, Beneficiary } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
+import PaymentCurrencySelect from '../common/PaymentCurrencySelect';
 
 interface LoanRequestFormProps {
   cargoId: string;
@@ -22,8 +23,11 @@ const LoanRequestForm: React.FC<LoanRequestFormProps> = ({
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const [requestCurrency, setRequestCurrency] = useState<string>(
+    () => localStorage.getItem('preferredCurrency') || 'RWF'
+  );
   const [formData, setFormData] = useState({
-    requested_amount: Math.round(totalTripValue * 0.7), // Default 70% advance
+    requested_amount: Math.round(totalTripValue * 0.7),
     due_date: '',
     beneficiaries: [
       { type: 'fuel', id: '', amount: 0 },
@@ -162,6 +166,7 @@ const LoanRequestForm: React.FC<LoanRequestFormProps> = ({
       requested_amount: formData.requested_amount,
       requested_split: formData.beneficiaries,
       due_date: formData.due_date || undefined,
+      currency: requestCurrency,
       metadata: {
         total_trip_value: totalTripValue,
         advance_percentage: (formData.requested_amount / totalTripValue) * 100
@@ -216,6 +221,13 @@ const LoanRequestForm: React.FC<LoanRequestFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Currency */}
+        <PaymentCurrencySelect
+          value={requestCurrency}
+          onChange={setRequestCurrency}
+          label="Loan Currency"
+        />
+
         {/* Loan Amount */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">

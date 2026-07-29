@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { lendingApi } from '../../services/lending/lendingApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import PaymentCurrencySelect from '../common/PaymentCurrencySelect';
 
 interface Props {
   loan: any;
@@ -40,6 +41,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
   const [loadingDisclosure, setLoadingDisclosure] = useState(true);
   const [payerPhone, setPayerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
+  const [disburseCurrency, setDisburseCurrency] = useState<string>(loan?.currency || 'RWF');
   const [cardDetails, setCardDetails] = useState({
     cardNumber: '',
     cardName: '',
@@ -139,6 +141,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
 
       const response = await lendingApi.disburseWithPayment(loan.id, {
         paymentMethod,
+        currency: disburseCurrency,
         phoneNumber: normalizedPayer ?? undefined,
         cardNumber: paymentMethod === 'card' ? cardDetails.cardNumber.replace(/\s/g, '') : undefined,
         cardName: paymentMethod === 'card' ? cardDetails.cardName.trim() : undefined,
@@ -321,6 +324,13 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
 
               {canDisburse && beneficiaryConfigured && (
                 <>
+                  {/* Disbursement Currency */}
+                  <PaymentCurrencySelect
+                    value={disburseCurrency}
+                    onChange={setDisburseCurrency}
+                    label="Disbursement Currency"
+                  />
+
                   <div>
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
                       Your Payment Method

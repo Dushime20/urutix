@@ -315,11 +315,12 @@ export class CreditController {
     const totalAmount = Number(pkg.price || 0);
     if (totalAmount > 0) {
       try {
+        const pkgCurrency: string = (pkg as any).currency || process.env.MOBILE_MONEY_CURRENCY || 'RWF';
         const payment = this.paymentRepository.create({
           tenantId,
           payerId: req.user.id,
           amount: totalAmount,
-          currency: 'USD',
+          currency: pkgCurrency,
           paymentMethod: PaymentMethod.CREDIT_CARD,
           paymentType: PaymentType.SERVICE_FEE,
           status: PaymentStatus.COMPLETED,
@@ -344,7 +345,7 @@ export class CreditController {
         packageName: pkg.name,
         credits: pkg.credits,
         amount: Number(pkg.price || 0),
-        currency: 'USD',
+        currency: pkgCurrency,
         paymentId: mockPaymentId,
       });
     }

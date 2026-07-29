@@ -14,6 +14,7 @@ import {
   FaHistory,
 } from 'react-icons/fa';
 import ModernLoader from '../../components/common/ModernLoader';
+import PaymentCurrencySelect from '../../components/common/PaymentCurrencySelect';
 
 interface MarketplaceAvailability {
   isEnabled: boolean;
@@ -21,6 +22,8 @@ interface MarketplaceAvailability {
   minPurchaseAmount: number;
   maxPurchaseAmount: number | null;
   pricePerCredit: number;
+  /** ISO 4217 currency code for prices in this marketplace */
+  currency?: string;
 }
 
 const BuyCredits: React.FC = () => {
@@ -28,6 +31,9 @@ const BuyCredits: React.FC = () => {
   const [creditAmount, setCreditAmount] = useState<string>('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'mobile_money'>('card');
+  const [paymentCurrency, setPaymentCurrency] = useState<string>(
+    () => localStorage.getItem('preferredCurrency') || 'RWF'
+  );
   const [paymentData, setPaymentData] = useState({
     cardNumber: '',
     cardName: '',
@@ -67,7 +73,7 @@ const BuyCredits: React.FC = () => {
 
   // Purchase mutation
   const purchaseCredits = useMutation({
-    mutationFn: async (data: { creditAmount: number; paymentMethod: string; paymentDetails: any }) => {
+    mutationFn: async (data: { creditAmount: number; paymentMethod: string; paymentDetails: any; currency?: string }) => {
       const response = await api.post('/credits/marketplace/purchase', data);
       return response.data;
     },
@@ -131,6 +137,7 @@ const BuyCredits: React.FC = () => {
     purchaseCredits.mutate({
       creditAmount: amount,
       paymentMethod,
+      currency: paymentCurrency,
       paymentDetails: paymentMethod === 'card' ? {
         cardNumber: paymentData.cardNumber,
         cardName: paymentData.cardName,
@@ -416,6 +423,13 @@ const BuyCredits: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Payment Currency */}
+              <PaymentCurrencySelect
+                value={paymentCurrency}
+                onChange={setPaymentCurrency}
+                label="Payment Currency"
+              />
 
               {/* Payment Method Selection */}
               <div>

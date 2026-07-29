@@ -22,6 +22,8 @@ export interface PurchaseCreditsDto {
   creditAmount: number;
   paymentMethod: 'card' | 'mobile_money';
   paymentDetails: any;
+  /** ISO 4217 currency code for the payment (e.g. 'RWF', 'USD'). Defaults to 'RWF'. */
+  currency?: string;
 }
 
 export interface MarketplaceAvailability {
@@ -30,6 +32,8 @@ export interface MarketplaceAvailability {
   minPurchaseAmount: number;
   maxPurchaseAmount: number | null;
   pricePerCredit: number;
+  /** ISO 4217 currency code for prices in this marketplace */
+  currency: string;
   totalCost: (amount: number) => number;
 }
 
@@ -122,12 +126,14 @@ export class CreditMarketplaceService {
       undefined, // Tenant-level account (userId = null)
     );
 
+    const currency: string = (settings as any).currency || process.env.MOBILE_MONEY_CURRENCY || 'RWF';
     return {
       isEnabled: settings.isEnabled,
       availableCredits: creditAccount.currentBalance,
       minPurchaseAmount: settings.minPurchaseAmount,
       maxPurchaseAmount: settings.maxPurchaseAmount,
       pricePerCredit: Number(settings.pricePerCredit),
+      currency,
       totalCost: (amount: number) => amount * Number(settings.pricePerCredit),
     };
   }
@@ -208,7 +214,7 @@ export class CreditMarketplaceService {
           tenantId: dto.tenantId,
           payerId: dto.truckOwnerUserId,
           amount: totalAmount,
-          currency: 'USD',
+          currency: dto.currency || 'RWF',
           paymentMethod: methodMap[dto.paymentMethod] ?? PaymentMethod.DIGITAL_WALLET,
           paymentType: PaymentType.SERVICE_FEE,
           status: PaymentStatus.COMPLETED,

@@ -48,6 +48,10 @@ export class LoanRepayment {
   @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
   external_txn_ref: string;
 
+  /** ISO 4217 currency code for this repayment (e.g. 'RWF', 'USD') */
+  @Column({ type: 'varchar', length: 3, nullable: true, default: 'RWF' })
+  currency: string;
+
   @Column({ type: 'json', nullable: true })
   metadata: any;
 
