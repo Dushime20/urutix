@@ -162,6 +162,9 @@ export const biddingAPI = {
   reactivateAuction: (auctionId: string) => 
     api.post(`/bidding/auctions/${auctionId}/reactivate`),
 
+  reopenAuction: (auctionId: string, data: { auctionEnd: string }) =>
+    api.post(`/bidding/auctions/${auctionId}/reopen`, data),
+
   // Real-time updates (WebSocket endpoints)
   subscribeToAuction: (auctionId: string) => 
     api.post(`/bidding/auctions/${auctionId}/subscribe`),

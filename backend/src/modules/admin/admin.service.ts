@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { User } from '../../entities/user.entity';
 import { Payment } from '../../entities/payment.entity';
 import { Notification } from '../../entities/notification.entity';
@@ -40,6 +41,7 @@ export class AdminService {
     @InjectRepository(FleetRoute)
     private readonly routeRepo: Repository<FleetRoute>,
     private readonly usersService: UsersService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // Get all routes with optional filters
@@ -1288,6 +1290,15 @@ export class AdminService {
     // Save tenant
     const savedTenant = await this.tenantRepo.save(tenant);
     this.logger.log(`Tenant created with ID: ${savedTenant.id}`);
+
+    this.eventEmitter.emit('system.admin.tenant_created', {
+      tenantId: savedTenant.id,
+      tenantName: savedTenant.name,
+      subdomain: savedTenant.subdomain,
+      contactEmail: savedTenant.contactEmail,
+      plan: savedTenant.subscriptionPlan,
+      actorRole: 'SUPER_ADMIN',
+    });
 
     return {
       tenant: savedTenant,

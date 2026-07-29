@@ -114,6 +114,13 @@ export class LoadsV2Service {
         tenantId: savedLoad.tenantId,
       });
 
+      await this.emitSuperAdminCargoCreated(
+        savedLoad,
+        user,
+        createLoadDto.pickupLocationId,
+        createLoadDto.deliveryLocationId,
+      );
+
       this.logger.log(`Load created: ${savedLoad.id} by user: ${user.id}`);
 
       return this.mapToResponseDto(savedLoad);
@@ -999,6 +1006,62 @@ export class LoadsV2Service {
   }
 
   // Private helper methods
+
+  private async emitSuperAdminCargoCreated(
+    load: Load,
+    user: User,
+    pickupLocationId?: string,
+    deliveryLocationId?: string,
+  ): Promise<void> {
+    let origin =
+      load.origin?.city ||
+      load.origin?.address ||
+      load.locations?.find((loc) => loc.type === 'PICKUP')?.locationData
+        ?.address ||
+      load.locations?.find((loc) => loc.type === 'PICKUP')?.locationData
+        ?.city ||
+      'Unknown';
+    let destination =
+      load.destination?.city ||
+      load.destination?.address ||
+      load.locations?.find((loc) => loc.type === 'DELIVERY')?.locationData
+        ?.address ||
+      load.locations?.find((loc) => loc.type === 'DELIVERY')?.locationData
+        ?.city ||
+      'Unknown';
+
+    if (pickupLocationId || deliveryLocationId) {
+      const [pickup, delivery] = await Promise.all([
+        pickupLocationId
+          ? this.locationRepository.findOne({ where: { id: pickupLocationId } })
+          : null,
+        deliveryLocationId
+          ? this.locationRepository.findOne({
+              where: { id: deliveryLocationId },
+            })
+          : null,
+      ]);
+
+      if (pickup) {
+        origin = pickup.fullAddress || pickup.name || origin;
+      }
+      if (delivery) {
+        destination = delivery.fullAddress || delivery.name || destination;
+      }
+    }
+
+    this.eventEmitter.emit('system.admin.cargo_created', {
+      tenantId: load.tenantId,
+      actorId: user.id,
+      actorRole: user.role,
+      cargoId: load.id,
+      title: load.title || 'Cargo',
+      origin,
+      destination,
+      weight: load.weight || 0,
+      amount: load.loadValue || 0,
+    });
+  }
 
   private async findLoadEntity(id: string, user: User): Promise<Load> {
     try {

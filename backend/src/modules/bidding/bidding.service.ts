@@ -1729,6 +1729,81 @@ export class BiddingService {
     return this.auctionRepository.save(auction);
   }
 
+  /**
+   * Reopen a time-CLOSED auction that has no accepted/winning bid,
+   * and extend its end time so bidding can continue.
+   */
+  async reopenAuction(
+    auctionId: string,
+    auctionEnd: Date | string,
+    userId: string,
+    tenantId: string,
+    userRole?: UserRole,
+  ): Promise<Auction> {
+    const auction = await this.auctionRepository.findOne({
+      where: { id: auctionId },
+      relations: ['load'],
+    });
+
+    if (!auction) {
+      throw new NotFoundException('Auction not found');
+    }
+
+    if (userRole === UserRole.CARGO_OWNER || !userRole) {
+      if (auction.load.tenantId !== tenantId) {
+        throw new NotFoundException('Auction not found');
+      }
+      if (auction.load.cargoOwnerId !== userId) {
+        throw new ForbiddenException('You do not have permission to reopen this auction');
+      }
+    } else if (userRole === UserRole.BROKER) {
+      if (!auction.load.brokerId || auction.load.brokerId !== userId) {
+        throw new ForbiddenException('You are not assigned as the broker for this load');
+      }
+    } else if (userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('You do not have permission to reopen auctions');
+    }
+
+    if (auction.status !== AuctionStatus.CLOSED) {
+      throw new BadRequestException('Only closed auctions can be reopened');
+    }
+
+    if (auction.winningBidId) {
+      throw new BadRequestException(
+        'Cannot reopen an auction that already has an accepted winning bid',
+      );
+    }
+
+    const acceptedBid = await this.bidRepository.findOne({
+      where: { loadId: auction.loadId, status: BidStatus.ACCEPTED },
+    });
+    if (acceptedBid) {
+      throw new BadRequestException(
+        'Cannot reopen an auction that already has an accepted bid',
+      );
+    }
+
+    const newEnd = new Date(auctionEnd);
+    if (Number.isNaN(newEnd.getTime())) {
+      throw new BadRequestException('Invalid auction end time');
+    }
+    if (newEnd <= new Date()) {
+      throw new BadRequestException('Auction end time must be in the future');
+    }
+
+    const now = new Date();
+    const auctionStart = new Date(auction.auctionStart);
+    auction.auctionEnd = newEnd;
+    auction.status = auctionStart <= now ? AuctionStatus.ACTIVE : AuctionStatus.SCHEDULED;
+    auction.cancelledAt = null;
+    auction.cancellationReason = null;
+    auction.awardedAt = null;
+    auction.winningBidId = null;
+    auction.winningBidderId = null;
+
+    return this.auctionRepository.save(auction);
+  }
+
   async getMyBids(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
     // TENANT_ADMIN and ADMIN see ALL bids in their tenant
     if (role === UserRole.TENANT_ADMIN || role === UserRole.ADMIN || role === 'TENANT_ADMIN' || role === 'ADMIN') {

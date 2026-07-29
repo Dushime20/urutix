@@ -119,6 +119,8 @@ export interface Trip {
   pickupTime: string;
   deliveryTime: string;
   notes?: string;
+  onTimePerformance?: boolean | null;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   pod?: {
     recipientName: string;
     signatureBase64: string;
@@ -176,8 +178,8 @@ function normalizeTrip(raw: any): Trip {
         : [0, 0],
     },
     scheduledDeparture: raw.plannedStartTime || raw.scheduledDeparture || '',
-    estimatedDeparture: raw.plannedStartTime || raw.estimatedDeparture || '',
-    estimatedArrival: raw.estimatedArrival || raw.plannedEndTime || '',
+    estimatedDeparture: raw.plannedStartTime || raw.estimatedDeparture || pickupEntry?.scheduledDate || load.pickupDate || '',
+    estimatedArrival: raw.eta || raw.estimatedArrival || raw.plannedEndTime || deliveryEntry?.scheduledDate || load.deliveryDate || '',
     actualDeparture: raw.actualStartTime,
     actualArrival: raw.actualEndTime,
     distance: (() => {
@@ -191,41 +193,63 @@ function normalizeTrip(raw: any): Trip {
         : [0, 0];
       return lat1 && lat2 ? Math.round(haversineKm(lat1, lng1, lat2, lng2)) : 0;
     })(),
-    estimatedDuration: Number(raw.duration || raw.estimatedDuration || 0),
+    estimatedDuration: (() => {
+      const stored = Number(raw.duration || raw.estimatedDuration || 0);
+      if (stored > 0) return stored;
+      const start = raw.plannedStartTime || raw.estimatedDeparture || pickupEntry?.scheduledDate || load.pickupDate;
+      const end = raw.eta || raw.estimatedArrival || raw.plannedEndTime || deliveryEntry?.scheduledDate || load.deliveryDate;
+      if (start && end) {
+        const mins = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000);
+        if (mins > 0) return mins;
+      }
+      return 0;
+    })(),
     progress: Number(raw.progress || 0),
     currentLocation: raw.currentLocation,
-    cargo: {
-      description: load.title || load.description || 'N/A',
-      weight: Number(load.weight || 0),
-      type: load.cargoType || 'General',
-      volume: load.volume != null ? Number(load.volume) : undefined,
-      loadType: load.loadType || undefined,
-      equipmentType: load.equipmentType || undefined,
-      packagingType: load.packagingType || undefined,
-      numberOfPieces: Number(load.numberOfPieces || 0) || undefined,
-      numberOfPallets: Number(load.numberOfPallets || 0) || undefined,
-      length: load.length != null ? Number(load.length) : undefined,
-      width: load.width != null ? Number(load.width) : undefined,
-      height: load.height != null ? Number(load.height) : undefined,
-      isFragile: !!load.isFragile,
-      isHazardous: !!load.isHazardous,
-      requiresRefrigeration: !!load.requiresRefrigeration,
-      requiresHumidityControl: !!load.requiresHumidityControl,
-      requiresForklift: !!load.requiresForklift,
-      requiresCrane: !!load.requiresCrane,
-      requiresLoadingDock: !!load.requiresLoadingDock,
-      isStackable: !!load.isStackable,
-      temperatureMin: load.temperatureMin != null ? Number(load.temperatureMin) : null,
-      temperatureMax: load.temperatureMax != null ? Number(load.temperatureMax) : null,
-      requiresTemperatureMonitoring: !!load.requiresTemperatureMonitoring,
-      hazmatClass: load.hazmatClass || undefined,
-      hazmatNumber: load.hazmatNumber || undefined,
-      specialInstructions: load.specialHandlingInstructions || undefined,
-      loadingInstructions: load.loadingInstructions || undefined,
-      unloadingInstructions: load.unloadingInstructions || undefined,
-      urgencyLevel: load.urgencyLevel || undefined,
-      isTimeCritical: !!load.isTimeCritical,
-    },
+    cargo: (() => {
+      const needsCold =
+        !!load.requiresRefrigeration || !!load.requiresTemperatureMonitoring;
+      const rawMin = load.temperatureMin != null ? Number(load.temperatureMin) : null;
+      const rawMax = load.temperatureMax != null ? Number(load.temperatureMax) : null;
+      // Treat default 0/0 without cold-chain flags as unset (not a real temp range)
+      const hasMeaningfulTemp =
+        needsCold ||
+        (rawMin != null && rawMin !== 0) ||
+        (rawMax != null && rawMax !== 0);
+
+      return {
+        description: load.title || load.description || 'N/A',
+        weight: Number(load.weight || 0),
+        type: load.cargoType || 'General',
+        volume: load.volume != null && Number(load.volume) > 0 ? Number(load.volume) : undefined,
+        loadType: load.loadType || undefined,
+        equipmentType: load.equipmentType || undefined,
+        packagingType: load.packagingType || undefined,
+        numberOfPieces: Number(load.numberOfPieces || 0) || undefined,
+        numberOfPallets: Number(load.numberOfPallets || 0) || undefined,
+        length: load.length != null && Number(load.length) > 0 ? Number(load.length) : undefined,
+        width: load.width != null && Number(load.width) > 0 ? Number(load.width) : undefined,
+        height: load.height != null && Number(load.height) > 0 ? Number(load.height) : undefined,
+        isFragile: !!load.isFragile,
+        isHazardous: !!load.isHazardous,
+        requiresRefrigeration: !!load.requiresRefrigeration,
+        requiresHumidityControl: !!load.requiresHumidityControl,
+        requiresForklift: !!load.requiresForklift,
+        requiresCrane: !!load.requiresCrane,
+        requiresLoadingDock: !!load.requiresLoadingDock,
+        isStackable: !!load.isStackable,
+        temperatureMin: hasMeaningfulTemp ? rawMin : null,
+        temperatureMax: hasMeaningfulTemp ? rawMax : null,
+        requiresTemperatureMonitoring: !!load.requiresTemperatureMonitoring,
+        hazmatClass: load.hazmatClass || undefined,
+        hazmatNumber: load.hazmatNumber || undefined,
+        specialInstructions: load.specialHandlingInstructions || undefined,
+        loadingInstructions: load.loadingInstructions || undefined,
+        unloadingInstructions: load.unloadingInstructions || undefined,
+        urgencyLevel: load.urgencyLevel || undefined,
+        isTimeCritical: !!load.isTimeCritical,
+      };
+    })(),
     customer: {
       name: load.cargoOwner?.profile
         ? `${load.cargoOwner.profile.firstName} ${load.cargoOwner.profile.lastName}`
@@ -241,6 +265,7 @@ function normalizeTrip(raw: any): Trip {
     deliveryTime: deliveryEntry?.scheduledDate || raw.plannedEndTime || load.deliveryDate || '',
     notes: raw.notes,
     pod: load.metadata?.pod,
+    onTimePerformance: raw.onTimePerformance,
     // Map urgency to priority badge
     priority: (() => {
       const u = load.urgencyLevel || raw.urgencyLevel || '';

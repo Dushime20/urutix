@@ -269,19 +269,17 @@ export class LoadsController {
             price: load.loadValue || 0,
           },
         });
-        if (req.user?.role === 'CARGO_OWNER') {
-          this.eventEmitter.emit('system.admin.cargo_created', {
-            tenantId: req.user.tenantId,
-            actorId: req.user.userId,
-            actorRole: req.user.role,
-            cargoId: load.id,
-            title: load.title || 'Cargo',
-            origin: pickupLocation?.locationData?.address || pickupLocation?.locationData?.city || 'Unknown',
-            destination: deliveryLocation?.locationData?.address || deliveryLocation?.locationData?.city || 'Unknown',
-            weight: load.weight || 0,
-            amount: load.loadValue || 0,
-          });
-        }
+        this.eventEmitter.emit('system.admin.cargo_created', {
+          tenantId: req.user.tenantId,
+          actorId: req.user.userId,
+          actorRole: req.user.role,
+          cargoId: load.id,
+          title: load.title || 'Cargo',
+          origin: pickupLocation?.locationData?.address || pickupLocation?.locationData?.city || 'Unknown',
+          destination: deliveryLocation?.locationData?.address || deliveryLocation?.locationData?.city || 'Unknown',
+          weight: load.weight || 0,
+          amount: load.loadValue || 0,
+        });
         console.log('✅ Cargo created event emitted');
       } catch (eventError) {
         console.warn('⚠️ Failed to emit cargo.created event (non-critical):', eventError.message);

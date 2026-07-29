@@ -757,7 +757,10 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             </p>
                           </div>
                         )}
-                        {(trip.cargo.requiresRefrigeration || trip.cargo.temperatureMin != null || trip.cargo.temperatureMax != null) && (
+                        {(trip.cargo.requiresRefrigeration ||
+                          trip.cargo.requiresTemperatureMonitoring ||
+                          (trip.cargo.temperatureMin != null && trip.cargo.temperatureMin !== 0) ||
+                          (trip.cargo.temperatureMax != null && trip.cargo.temperatureMax !== 0)) && (
                           <div>
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Temp Range" /></p>
                             <p className="text-sm font-black text-sky-700">

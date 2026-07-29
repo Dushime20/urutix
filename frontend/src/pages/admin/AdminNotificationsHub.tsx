@@ -23,6 +23,10 @@ const CATEGORY_CFG: Record<string, { label: string; icon: React.ReactNode; dot: 
   DRIVER:     { label: 'Driver',     icon: <Truck size={13} />,       dot: 'bg-orange-500' },
   VEHICLE:    { label: 'Vehicle',    icon: <Truck size={13} />,       dot: 'bg-red-500' },
   COMPLIANCE: { label: 'Compliance', icon: <Shield size={13} />,      dot: 'bg-yellow-500' },
+  USER:       { label: 'Users',      icon: <Activity size={13} />,    dot: 'bg-indigo-500' },
+  BUSINESS:   { label: 'Business',   icon: <Settings size={13} />,    dot: 'bg-slate-500' },
+  LOAN:       { label: 'Loans',      icon: <CreditCard size={13} />,  dot: 'bg-emerald-500' },
+  DISPUTE:    { label: 'Disputes',   icon: <AlertTriangle size={13} />, dot: 'bg-rose-500' },
 };
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {

@@ -73,6 +73,7 @@ import { CurrencyService } from '../currency/currency.service';
 import { ConfigService } from '@nestjs/config';
 import { SubmitLoanOfferDto } from './dto/loan-offer.dto';
 import { buildLoanWorkflowView } from './utils/loan-workflow.util';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class LendingService {
@@ -137,6 +138,7 @@ export class LendingService {
     private loanNotificationService: LoanNotificationService,
     private currencyService: CurrencyService,
     private configService: ConfigService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -884,6 +886,15 @@ export class LendingService {
       }
     }
 
+    this.eventEmitter.emit('system.admin.loan_requested', {
+      tenantId: savedLoan.tenant_id,
+      loanId: savedLoan.id,
+      actorId: createdBy,
+      amount: Number(savedLoan.requested_amount || 0),
+      currency: (savedLoan as any).currency || 'USD',
+      cargoId: savedLoan.cargo_id,
+    });
+
     return savedLoan;
   }
 
@@ -1019,6 +1030,15 @@ export class LendingService {
     if (!resolvedLenderId) {
       await this.processLoanRequest(savedLoan.id);
     }
+
+    this.eventEmitter.emit('system.admin.loan_requested', {
+      tenantId: savedLoan.tenant_id,
+      loanId: savedLoan.id,
+      actorId: createdBy,
+      amount: Number(savedLoan.requested_amount || 0),
+      currency: (savedLoan as any).currency || 'USD',
+      cargoId: savedLoan.cargo_id,
+    });
 
     return savedLoan;
   }

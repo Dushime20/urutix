@@ -336,19 +336,17 @@ export class CreditController {
     }
     // ─────────────────────────────────────────────────────────────────────
 
-    if (req.user?.role === 'TENANT_ADMIN') {
-      this.eventEmitter.emit('system.admin.credit_purchased', {
-        tenantId,
-        actorId: req.user.id,
-        actorRole: req.user.role,
-        packageId: pkg.id,
-        packageName: pkg.name,
-        credits: pkg.credits,
-        amount: Number(pkg.price || 0),
-        currency: pkgCurrency,
-        paymentId: mockPaymentId,
-      });
-    }
+    this.eventEmitter.emit('system.admin.credit_purchased', {
+      tenantId,
+      actorId: req.user?.id || req.user?.userId,
+      actorRole: req.user?.role,
+      packageId: pkg.id,
+      packageName: pkg.name,
+      credits: pkg.credits,
+      amount: Number(pkg.price || 0),
+      currency: pkgCurrency,
+      paymentId: mockPaymentId,
+    });
 
     return {
       success: true,

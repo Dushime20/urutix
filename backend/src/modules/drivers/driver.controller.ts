@@ -51,6 +51,7 @@ import {
   MarkReadyForReInspectionDto,
   SubmitPreTripInspectionDto,
 } from './dto/pre-trip-inspection.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -71,6 +72,7 @@ export class DriverController {
     private readonly driverService: DriverService,
     private readonly ocrService: OcrService,
     private readonly preTripInspectionService: PreTripInspectionService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   @Post()
@@ -105,6 +107,16 @@ export class DriverController {
     const driver = await this.driverService.createDriver({
       ...createDto,
       tenantId: req.user.tenantId,
+    });
+
+    this.eventEmitter.emit('system.admin.driver_created', {
+      tenantId: req.user.tenantId,
+      actorId: req.user.userId || req.user.id,
+      actorRole: req.user.role,
+      driverId: driver.id,
+      driverEmail: driver.email,
+      driverName: [driver.firstName, driver.lastName].filter(Boolean).join(' '),
+      licenseNumber: driver.licenseNumber,
     });
 
     return {

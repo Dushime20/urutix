@@ -29,6 +29,7 @@ import {
     useAcceptBidMutation,
     useUpdateAuctionMutation,
     useDeleteAuctionMutation,
+    useReopenAuctionMutation,
 } from '../../hooks/useBiddingQueries';
 
 interface Bid {
@@ -72,6 +73,7 @@ interface Auction {
     reservePrice?: number;
     currentBestBid?: number;
     totalBids?: number;
+    winningBidId?: string | null;
     load?: {
         id: string;
         title?: string;
@@ -101,6 +103,7 @@ const MyAuctions: React.FC = () => {
     const acceptBidMutation = useAcceptBidMutation();
     const updateAuctionMutation = useUpdateAuctionMutation();
     const deleteAuctionMutation = useDeleteAuctionMutation();
+    const reopenAuctionMutation = useReopenAuctionMutation();
     const [acceptingBid, setAcceptingBid] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const { confirm, DialogComponent } = useConfirmDialog();
@@ -118,6 +121,15 @@ const MyAuctions: React.FC = () => {
         minimumBidIncrement: '',
     });
     const [savingEdit, setSavingEdit] = useState(false);
+
+    // Reopen modal state
+    const [reopenAuction, setReopenAuction] = useState<Auction | null>(null);
+    const [showReopenModal, setShowReopenModal] = useState(false);
+    const [reopenEnd, setReopenEnd] = useState('');
+    const [savingReopen, setSavingReopen] = useState(false);
+
+    const canReopenAuction = (auction: Auction) =>
+        auction.status === 'CLOSED' && !auction.winningBidId;
 
     const resolveLoadId = (auction: Auction) => auction.loadId || auction.load?.id;
 
@@ -216,6 +228,38 @@ const MyAuctions: React.FC = () => {
             toast.error(msg);
         } finally {
             setSavingEdit(false);
+        }
+    };
+
+    const handleOpenReopen = (auction: Auction, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setReopenAuction(auction);
+        // Default to 24 hours from now
+        const defaultEnd = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        setReopenEnd(defaultEnd.toISOString().slice(0, 16));
+        setShowReopenModal(true);
+    };
+
+    const handleSaveReopen = async () => {
+        if (!reopenAuction || !reopenEnd) return;
+        setSavingReopen(true);
+        try {
+            await reopenAuctionMutation.mutateAsync({
+                auctionId: reopenAuction.id,
+                auctionEnd: new Date(reopenEnd).toISOString(),
+            });
+            toast.success('Auction reopened — bidding is open again');
+            setShowReopenModal(false);
+            setReopenAuction(null);
+            if (viewAuction?.id === reopenAuction.id) {
+                setShowViewModal(false);
+                setViewAuction(null);
+            }
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || 'Failed to reopen auction';
+            toast.error(msg);
+        } finally {
+            setSavingReopen(false);
         }
     };
 
@@ -430,6 +474,15 @@ const MyAuctions: React.FC = () => {
                                             <Eye size={12} />
                                             View
                                         </button>
+                                        {canReopenAuction(auction) && (
+                                            <button
+                                                onClick={(e) => handleOpenReopen(auction, e)}
+                                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors border border-emerald-100 dark:border-emerald-900/30 text-[10px] font-black uppercase tracking-wide"
+                                            >
+                                                <RefreshCw size={12} />
+                                                Reopen
+                                            </button>
+                                        )}
                                         {auction.status !== 'CLOSED' && auction.status !== 'CANCELLED' && (
                                             <button
                                                 onClick={(e) => handleOpenEdit(auction, e)}
@@ -491,6 +544,15 @@ const MyAuctions: React.FC = () => {
 
                                          {/* Bid Count and Actions */}
                                         <div className="flex items-center gap-4 shrink-0">
+                                            {canReopenAuction(auction) && (
+                                                <button
+                                                    onClick={(e) => handleOpenReopen(auction, e)}
+                                                    className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-center"
+                                                    title="Reopen Auction"
+                                                >
+                                                    <RefreshCw size={14} />
+                                                </button>
+                                            )}
                                             {auction.status !== 'CLOSED' && auction.status !== 'CANCELLED' && (
                                                 <button
                                                     onClick={(e) => handleOpenEdit(auction, e)}
@@ -820,6 +882,18 @@ const MyAuctions: React.FC = () => {
 
                         {/* Footer */}
                         <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                            {canReopenAuction(viewAuction) && (
+                                <button
+                                    onClick={(e) => {
+                                        setShowViewModal(false);
+                                        handleOpenReopen(viewAuction, e);
+                                    }}
+                                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                                >
+                                    <RefreshCw size={13} />
+                                    Reopen Auction
+                                </button>
+                            )}
                             {viewAuction.status !== 'CLOSED' && viewAuction.status !== 'CANCELLED' && (
                                 <button
                                     onClick={(e) => {
@@ -948,6 +1022,76 @@ const MyAuctions: React.FC = () => {
                                     <Check size={13} />
                                 )}
                                 Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reopen Auction Modal */}
+            {showReopenModal && reopenAuction && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                                    <RefreshCw size={18} className="text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-base font-black text-slate-900 dark:text-slate-100 uppercase italic">
+                                        Reopen Auction
+                                    </h2>
+                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate max-w-[200px]">
+                                        {reopenAuction.load?.title || `#${reopenAuction.id.slice(0, 8)}`}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowReopenModal(false)}
+                                className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        <div className="px-6 py-5 space-y-4">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                This auction closed because its end time passed and no bid was accepted.
+                                Set a new end time to reopen it for bidding — existing pending bids stay available.
+                            </p>
+
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5">
+                                    New Auction End Time *
+                                </label>
+                                <input
+                                    type="datetime-local"
+                                    value={reopenEnd}
+                                    onChange={e => setReopenEnd(e.target.value)}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowReopenModal(false)}
+                                disabled={savingReopen}
+                                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveReopen}
+                                disabled={savingReopen || !reopenEnd}
+                                className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {savingReopen ? (
+                                    <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                    <RefreshCw size={13} />
+                                )}
+                                Reopen & Extend
                             </button>
                         </div>
                     </div>

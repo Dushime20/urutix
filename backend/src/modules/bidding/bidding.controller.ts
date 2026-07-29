@@ -922,6 +922,37 @@ export class BiddingController {
     );
   }
 
+  @Post('auctions/:auctionId/reopen')
+  @ApiOperation({
+    summary: 'Reopen a closed auction',
+    description:
+      'Reopen a time-closed auction that has no accepted winning bid and extend its end time so bidding can continue.',
+  })
+  @ApiParam({ name: 'auctionId', description: 'ID of the auction to reopen' })
+  @ApiResponse({ status: 200, description: 'Auction reopened successfully' })
+  @ApiResponse({ status: 400, description: 'Auction cannot be reopened' })
+  @ApiResponse({ status: 403, description: 'No permission to reopen this auction' })
+  @ApiResponse({ status: 404, description: 'Auction not found' })
+  async reopenAuction(
+    @Param('auctionId') auctionId: string,
+    @Body() body: { auctionEnd: string },
+    @Request() req: any,
+  ): Promise<Auction> {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+    if (!body?.auctionEnd) {
+      throw new BadRequestException('auctionEnd is required');
+    }
+    return this.biddingService.reopenAuction(
+      auctionId,
+      body.auctionEnd,
+      req.user.userId,
+      req.user.tenantId,
+      req.user.role as UserRole,
+    );
+  }
+
   @Get('bids')
   @ApiOperation({ summary: 'Get my bids' })
   async getMyBids(

@@ -277,20 +277,44 @@ export function useCreateAuctionMutation() {
 }
 
 export function useUpdateAuctionMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ auctionId, data }: { auctionId: string; data: Record<string, unknown> }) =>
       biddingAPI.updateAuction(auctionId, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bidding.auctions });
+    },
   });
 }
 
 export function useDeleteAuctionMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (auctionId: string) => biddingAPI.deleteAuction(auctionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bidding.auctions });
+    },
   });
 }
 
 export function useReactivateAuctionMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (auctionId: string) => biddingAPI.reactivateAuction(auctionId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bidding.auctions });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bidding.inactive });
+    },
+  });
+}
+
+export function useReopenAuctionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ auctionId, auctionEnd }: { auctionId: string; auctionEnd: string }) =>
+      biddingAPI.reopenAuction(auctionId, { auctionEnd }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bidding.auctions });
+    },
   });
 }

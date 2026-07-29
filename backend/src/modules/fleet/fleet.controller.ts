@@ -145,17 +145,15 @@ export class FleetController {
         req.user.tenantId,
       );
 
-      if (req.user.role === UserRole.TRUCK_OWNER) {
-        this.eventEmitter.emit('system.admin.truck_created', {
-          tenantId: req.user.tenantId,
-          actorId: req.user.userId,
-          actorRole: req.user.role,
-          truckId: truck.id,
-          plateNumber: truck.plateNumber,
-          make: truck.make,
-          model: truck.model,
-        });
-      }
+      this.eventEmitter.emit('system.admin.truck_created', {
+        tenantId: req.user.tenantId,
+        actorId: req.user.userId,
+        actorRole: req.user.role,
+        truckId: truck.id,
+        plateNumber: truck.plateNumber,
+        make: truck.make,
+        model: truck.model,
+      });
 
       return {
         message: 'Truck created successfully',
@@ -2209,6 +2207,17 @@ export class FleetController {
       );
 
       console.log('✅ Driver created successfully:', result.id);
+
+      this.eventEmitter.emit('system.admin.driver_created', {
+        tenantId: req.user.tenantId,
+        actorId: req.user.userId,
+        actorRole: req.user.role,
+        driverId: result.id,
+        driverEmail: result.email || createDriverDto.email,
+        driverName: [result.firstName, result.lastName].filter(Boolean).join(' ')
+          || [createDriverDto.firstName, createDriverDto.lastName].filter(Boolean).join(' '),
+        licenseNumber: result.licenseNumber || createDriverDto.licenseNumber,
+      });
 
       return {
         message: 'Driver created successfully',

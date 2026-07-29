@@ -82,49 +82,35 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
           .join(' × ') + ' m'
       : null;
 
+  const showTemp =
+    cargo.requiresRefrigeration ||
+    cargo.requiresTemperatureMonitoring ||
+    (cargo.temperatureMin != null && cargo.temperatureMin !== 0) ||
+    (cargo.temperatureMax != null && cargo.temperatureMax !== 0);
+
   const specs = [
-    { label: 'Type', value: cargo.type || '—', icon: Box },
-    {
-      label: 'Weight',
-      value: cargo.weight != null ? `${Number(cargo.weight).toLocaleString()} kg` : '—',
-      icon: Weight,
-    },
-    {
-      label: 'Pieces',
-      value: cargo.numberOfPieces ? `${cargo.numberOfPieces}` : '—',
-      icon: Package,
-    },
-    {
-      label: 'Pallets',
-      value: cargo.numberOfPallets ? `${cargo.numberOfPallets}` : '—',
-      icon: Package,
-    },
-    {
-      label: 'Dimensions',
-      value: dimensions || '—',
-      icon: Ruler,
-    },
-    {
-      label: 'Volume',
-      value: cargo.volume != null ? `${cargo.volume} m³` : '—',
-      icon: Box,
-    },
-    {
-      label: 'Packaging',
-      value: cargo.packagingType || '—',
-      icon: Package,
-    },
-    {
-      label: 'Equipment',
-      value: cargo.equipmentType ? cargo.equipmentType.replace(/_/g, ' ') : '—',
-      icon: Truck,
-    },
-    {
-      label: 'Load Type',
-      value: cargo.loadType || '—',
-      icon: Truck,
-    },
-  ];
+    cargo.type ? { label: 'Type', value: cargo.type, icon: Box } : null,
+    cargo.weight != null && Number(cargo.weight) > 0
+      ? { label: 'Weight', value: `${Number(cargo.weight).toLocaleString()} kg`, icon: Weight }
+      : null,
+    cargo.numberOfPieces
+      ? { label: 'Pieces', value: `${cargo.numberOfPieces}`, icon: Package }
+      : null,
+    cargo.numberOfPallets
+      ? { label: 'Pallets', value: `${cargo.numberOfPallets}`, icon: Package }
+      : null,
+    dimensions ? { label: 'Dimensions', value: dimensions, icon: Ruler } : null,
+    cargo.volume != null && Number(cargo.volume) > 0
+      ? { label: 'Volume', value: `${cargo.volume} m³`, icon: Box }
+      : null,
+    cargo.packagingType
+      ? { label: 'Packaging', value: cargo.packagingType, icon: Package }
+      : null,
+    cargo.equipmentType
+      ? { label: 'Equipment', value: cargo.equipmentType.replace(/_/g, ' '), icon: Truck }
+      : null,
+    cargo.loadType ? { label: 'Load Type', value: cargo.loadType, icon: Truck } : null,
+  ].filter(Boolean) as { label: string; value: string; icon: typeof Box }[];
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -176,29 +162,28 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
         </div>
 
         <div className="p-8 space-y-6 bg-slate-50/30 overflow-y-auto">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {specs.map((spec) => (
-              <div
-                key={spec.label}
-                className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <spec.icon size={14} className="text-[#2b5271]" />
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                    <TranslatedText text={spec.label} />
+          {specs.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {specs.map((spec) => (
+                <div
+                  key={spec.label}
+                  className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <spec.icon size={14} className="text-[#2b5271]" />
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                      <TranslatedText text={spec.label} />
+                    </p>
+                  </div>
+                  <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight break-words">
+                    {spec.value}
                   </p>
                 </div>
-                <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight break-words">
-                  {spec.value}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          {(cargo.requiresRefrigeration ||
-            cargo.temperatureMin != null ||
-            cargo.temperatureMax != null ||
-            cargo.requiresTemperatureMonitoring) && (
+          {showTemp && (
             <div className="p-5 rounded-2xl border border-sky-100 bg-sky-50 flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0">
                 <Snowflake size={18} />

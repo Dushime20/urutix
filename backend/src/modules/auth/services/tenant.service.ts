@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, FindOptionsOrder, ILike, In, Repository } from 'typeorm';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Tenant, TenantStatus, TenantType, KycStatus, OnboardingStep } from '../../../entities/tenant.entity';
 import { User, UserRole, UserStatus } from '../../../entities/user.entity';
 import { UserProfile } from '../../../entities/user-profile.entity';
@@ -32,6 +33,7 @@ export class TenantService {
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
     private readonly emailService: EmailService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async createTenant(createTenantDto: any): Promise<Tenant> {
@@ -195,6 +197,14 @@ export class TenantService {
         throw error;
       }
     }
+
+    this.eventEmitter.emit('system.admin.tenant_created', {
+      tenantId: finalTenant.id,
+      tenantName: finalTenant.name,
+      subdomain: finalTenant.subdomain,
+      contactEmail: finalTenant.contactEmail || normalizedEmail,
+      plan: finalTenant.subscriptionPlan,
+    });
 
     return finalTenant;
   }
@@ -528,7 +538,15 @@ export class TenantService {
     if (kycData.taxId) tenant.taxId = kycData.taxId;
 
     this.logger.log(`=🔐 KYC submitted for tenant ${id}`);
-    return this.tenantRepository.save(tenant);
+    const saved = await this.tenantRepository.save(tenant);
+
+    this.eventEmitter.emit('system.admin.tenant_kyc_submitted', {
+      tenantId: saved.id,
+      tenantName: saved.name,
+      kycStatus: saved.kycStatus,
+    });
+
+    return saved;
   }
 
   async updateKYCStatus(id: string, status: 'APPROVED' | 'REJECTED' | 'INCOMPLETE', notes?: string): Promise<Tenant> {

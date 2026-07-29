@@ -155,16 +155,14 @@ export class UsersController {
       tenantId,
     });
 
-    if (caller.role === UserRole.TENANT_ADMIN) {
-      this.eventEmitter.emit('system.admin.tenant_user_created', {
-        tenantId,
-        actorId: caller.userId || caller.id,
-        actorRole: caller.role,
-        newUserId: user.id,
-        newUserRole: user.role,
-        newUserEmail: user.email,
-      });
-    }
+    this.eventEmitter.emit('system.admin.tenant_user_created', {
+      tenantId,
+      actorId: caller.userId || caller.id,
+      actorRole: caller.role,
+      newUserId: user.id,
+      newUserRole: user.role,
+      newUserEmail: user.email,
+    });
 
     return {
       success: true,
@@ -193,6 +191,15 @@ export class UsersController {
       tenantId,
       adminData,
     );
+
+    this.eventEmitter.emit('system.admin.tenant_user_created', {
+      tenantId,
+      actorId: 'system',
+      actorRole: 'SYSTEM',
+      newUserId: user.id,
+      newUserRole: user.role,
+      newUserEmail: user.email,
+    });
 
     return {
       success: true,
