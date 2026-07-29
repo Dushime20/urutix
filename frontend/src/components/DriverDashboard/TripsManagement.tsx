@@ -721,18 +721,91 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                           {trip.cargo.type}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-200">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-200">
                         <div>
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Weight" /></p>
                           <p className="text-sm font-black text-slate-800">{trip.cargo.weight.toLocaleString()} kg</p>
                         </div>
-                        {trip.cargo.specialInstructions && (
+                        {(trip.cargo.numberOfPieces || trip.cargo.numberOfPallets) && (
                           <div>
-                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Special Instructions" /></p>
-                            <p className="text-xs font-medium text-orange-600">{trip.cargo.specialInstructions}</p>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Quantity" /></p>
+                            <p className="text-sm font-black text-slate-800">
+                              {[
+                                trip.cargo.numberOfPieces ? `${trip.cargo.numberOfPieces} pcs` : null,
+                                trip.cargo.numberOfPallets ? `${trip.cargo.numberOfPallets} plt` : null,
+                              ].filter(Boolean).join(' · ')}
+                            </p>
+                          </div>
+                        )}
+                        {trip.cargo.packagingType && (
+                          <div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Packaging" /></p>
+                            <p className="text-sm font-black text-slate-800 uppercase">{trip.cargo.packagingType}</p>
+                          </div>
+                        )}
+                        {trip.cargo.equipmentType && (
+                          <div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Equipment" /></p>
+                            <p className="text-sm font-black text-slate-800 uppercase">{trip.cargo.equipmentType.replace(/_/g, ' ')}</p>
+                          </div>
+                        )}
+                        {(trip.cargo.length || trip.cargo.width || trip.cargo.height) && (
+                          <div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Dimensions" /></p>
+                            <p className="text-sm font-black text-slate-800">
+                              {[trip.cargo.length, trip.cargo.width, trip.cargo.height].map((v) => v ?? '—').join(' × ')} m
+                            </p>
+                          </div>
+                        )}
+                        {(trip.cargo.requiresRefrigeration || trip.cargo.temperatureMin != null || trip.cargo.temperatureMax != null) && (
+                          <div>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Temp Range" /></p>
+                            <p className="text-sm font-black text-sky-700">
+                              {trip.cargo.temperatureMin != null || trip.cargo.temperatureMax != null
+                                ? `${trip.cargo.temperatureMin ?? '—'}°C – ${trip.cargo.temperatureMax ?? '—'}°C`
+                                : 'Refrigerated'}
+                            </p>
                           </div>
                         )}
                       </div>
+                      {(trip.cargo.isFragile || trip.cargo.isHazardous || trip.cargo.requiresForklift || trip.cargo.requiresRefrigeration) && (
+                        <div className="flex flex-wrap gap-1.5 pt-2">
+                          {[
+                            trip.cargo.isFragile && 'Fragile',
+                            trip.cargo.isHazardous && 'Hazardous',
+                            trip.cargo.requiresRefrigeration && 'Refrigerated',
+                            trip.cargo.requiresForklift && 'Forklift',
+                            trip.cargo.requiresCrane && 'Crane',
+                            trip.cargo.requiresLoadingDock && 'Loading dock',
+                          ].filter(Boolean).map((flag) => (
+                            <span key={String(flag)} className="px-2 py-0.5 bg-white border border-slate-200 text-slate-600 text-[8px] font-black uppercase tracking-widest rounded-md">
+                              {flag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {(trip.cargo.specialInstructions || trip.cargo.loadingInstructions || trip.cargo.unloadingInstructions) && (
+                        <div className="space-y-2 pt-3 border-t border-slate-200">
+                          {trip.cargo.specialInstructions && (
+                            <div>
+                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Special Instructions" /></p>
+                              <p className="text-xs font-medium text-orange-600">{trip.cargo.specialInstructions}</p>
+                            </div>
+                          )}
+                          {trip.cargo.loadingInstructions && (
+                            <div>
+                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Loading" /></p>
+                              <p className="text-xs font-medium text-slate-600">{trip.cargo.loadingInstructions}</p>
+                            </div>
+                          )}
+                          {trip.cargo.unloadingInstructions && (
+                            <div>
+                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Unloading" /></p>
+                              <p className="text-xs font-medium text-slate-600">{trip.cargo.unloadingInstructions}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </section>
 

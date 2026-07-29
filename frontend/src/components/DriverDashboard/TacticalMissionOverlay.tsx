@@ -45,11 +45,13 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
       description: t('Distance to Target')
     },
     { 
-      label: t('Cargo Health'), 
-      value: t('OPTIMAL'), 
+      label: t('Cargo'), 
+      value: currentTrip.cargo?.weight
+        ? `${Number(currentTrip.cargo.weight).toLocaleString()} KG`
+        : (currentTrip.cargo?.type || '—'),
       icon: Activity, 
       color: 'text-amber-500',
-      description: t('Sensors nominal')
+      description: currentTrip.cargo?.type || t('Load details')
     }
   ];
 

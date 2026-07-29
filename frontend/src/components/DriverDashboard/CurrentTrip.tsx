@@ -18,8 +18,11 @@ import {
   CheckCircle,
   Info,
   Coffee,
-  Thermometer,
-  Award
+  Package,
+  Award,
+  Box,
+  Snowflake,
+  AlertOctagon
 } from 'lucide-react';
 
 import { cn } from '@/utils/cn';
@@ -28,50 +31,9 @@ import LocationIntelModal from '../Dashboard/Widgets/LocationIntelModal';
 import { CargoHealthModal } from './CargoHealthModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useTranslation } from '../../hooks/useTranslation';
+import type { Trip as DriverTrip } from '../../services/driverApi';
 
-interface Trip {
-  id: string;
-  tripNumber: string;
-  status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'ON_HOLD';
-  origin: {
-    address: string;
-    city: string;
-    state: string;
-    coordinates: [number, number];
-  };
-  destination: {
-    address: string;
-    city: string;
-    state: string;
-    coordinates: [number, number];
-  };
-  cargo: {
-    description: string;
-    weight: number;
-    type: string;
-    specialInstructions?: string;
-  };
-  estimatedDeparture: string;
-  estimatedArrival: string;
-  actualDeparture?: string;
-  actualArrival?: string;
-  distance: number;
-  estimatedDuration: number;
-  currentLocation?: [number, number];
-  progress: number;
-  customer: {
-    name: string;
-    phone: string;
-    email: string;
-  };
-  truck: {
-    id: string;
-    plateNumber: string;
-    model: string;
-  };
-  earnings: number;
-  notes?: string;
-}
+type Trip = DriverTrip;
 interface CurrentTripProps {
   trip: Trip;
   onStart?: () => void;
@@ -137,6 +99,31 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
     const mins = minutes % 60;
     return `${hours}H ${mins}M`;
   };
+
+  const cargo = trip.cargo;
+  const handlingFlags = [
+    cargo.isFragile && 'Fragile',
+    cargo.isHazardous && 'Hazardous',
+    cargo.requiresRefrigeration && 'Refrigerated',
+    cargo.requiresHumidityControl && 'Humidity control',
+    cargo.requiresForklift && 'Forklift required',
+    cargo.requiresCrane && 'Crane required',
+    cargo.requiresLoadingDock && 'Loading dock',
+    cargo.isStackable && 'Stackable',
+    cargo.isTimeCritical && 'Time critical',
+  ].filter(Boolean) as string[];
+
+  const dimensions =
+    cargo.length || cargo.width || cargo.height
+      ? [cargo.length, cargo.width, cargo.height]
+          .map((v) => (v != null ? `${v}` : '—'))
+          .join(' × ') + ' m'
+      : null;
+
+  const quantityParts = [
+    cargo.numberOfPieces ? `${cargo.numberOfPieces} pcs` : null,
+    cargo.numberOfPallets ? `${cargo.numberOfPallets} pallets` : null,
+  ].filter(Boolean);
 
   return (
     <motion.div
@@ -349,27 +336,189 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
           cargo={{
             ...trip.cargo,
             name: trip.cargo.description,
-            pickupLocation: trip.origin.city
+            pickupLocation: trip.origin.city,
           }}
         />
 
+        {/* Cargo Information — full load details for the driver */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-slate-800 flex items-center justify-center text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-slate-700">
+                <Package size={18} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  <TranslatedText text="Cargo Information" />
+                </p>
+                <p className="text-sm font-black text-[#0f172a] dark:text-white uppercase tracking-tight">
+                  {cargo.description}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowCargoHealth(true)}
+              className="flex items-center gap-1.5 text-[9px] font-black text-[#2b5271] uppercase tracking-widest hover:opacity-80 transition-opacity"
+            >
+              <Info size={12} />
+              <TranslatedText text="Full Details" />
+            </button>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 space-y-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Type', value: cargo.type },
+                { label: 'Weight', value: `${(cargo.weight || 0).toLocaleString()} kg` },
+                { label: 'Quantity', value: quantityParts.length ? quantityParts.join(' · ') : '—' },
+                { label: 'Packaging', value: cargo.packagingType || cargo.loadType || '—' },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                    <TranslatedText text={item.label} />
+                  </p>
+                  <p className="text-sm font-black text-[#0f172a] dark:text-white uppercase tracking-tight">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {(dimensions || cargo.volume || cargo.equipmentType) && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                {dimensions && (
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Dimensions" />
+                    </p>
+                    <p className="text-sm font-black text-[#0f172a] dark:text-white">{dimensions}</p>
+                  </div>
+                )}
+                {cargo.volume != null && (
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Volume" />
+                    </p>
+                    <p className="text-sm font-black text-[#0f172a] dark:text-white">{cargo.volume} m³</p>
+                  </div>
+                )}
+                {cargo.equipmentType && (
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Equipment" />
+                    </p>
+                    <p className="text-sm font-black text-[#0f172a] dark:text-white uppercase">{cargo.equipmentType.replace(/_/g, ' ')}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(cargo.requiresRefrigeration || cargo.temperatureMin != null || cargo.temperatureMax != null) && (
+              <div className="flex items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-slate-800 flex items-center justify-center text-sky-600 border border-sky-100 dark:border-slate-700">
+                  <Snowflake size={16} />
+                </div>
+                <div>
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                    <TranslatedText text="Temperature Range" />
+                  </p>
+                  <p className="text-sm font-black text-[#0f172a] dark:text-white">
+                    {cargo.temperatureMin != null || cargo.temperatureMax != null
+                      ? `${cargo.temperatureMin ?? '—'}°C – ${cargo.temperatureMax ?? '—'}°C`
+                      : 'Refrigeration required'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {(cargo.isHazardous || cargo.hazmatClass || cargo.hazmatNumber) && (
+              <div className="flex items-start gap-3 p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 rounded-2xl">
+                <AlertOctagon size={18} className="text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[8px] font-black text-rose-600 uppercase tracking-widest mb-1">
+                    <TranslatedText text="Hazmat" />
+                  </p>
+                  <p className="text-xs font-bold text-rose-800 dark:text-rose-300">
+                    {[cargo.hazmatClass && `Class ${cargo.hazmatClass}`, cargo.hazmatNumber && `UN ${cargo.hazmatNumber}`]
+                      .filter(Boolean)
+                      .join(' · ') || 'Hazardous materials — handle with care'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {handlingFlags.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {handlingFlags.map((flag) => (
+                  <span
+                    key={flag}
+                    className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 rounded-lg"
+                  >
+                    <TranslatedText text={flag} />
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {(cargo.specialInstructions || cargo.loadingInstructions || cargo.unloadingInstructions) && (
+              <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                {cargo.specialInstructions && (
+                  <div>
+                    <p className="text-[8px] font-black text-orange-500 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Special Handling" />
+                    </p>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {cargo.specialInstructions}
+                    </p>
+                  </div>
+                )}
+                {cargo.loadingInstructions && (
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Loading Instructions" />
+                    </p>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {cargo.loadingInstructions}
+                    </p>
+                  </div>
+                )}
+                {cargo.unloadingInstructions && (
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <TranslatedText text="Unloading Instructions" />
+                    </p>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {cargo.unloadingInstructions}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Load Intelligence Matrix */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {[
-            { label: 'Distance', value: `${trip.distance} KM`, icon: Navigation },
-            { label: 'Duration', value: formatDuration(trip.estimatedDuration), icon: Clock },
-            { label: 'Cargo Health', value: 'OPTIMAL', icon: Thermometer, color: 'text-emerald-500' },
-            { label: 'Earnings', value: formatCurrency(trip.earnings), icon: Zap, color: 'text-amber-500' },
+            { label: 'Distance', value: `${trip.distance} KM`, icon: Navigation, onClick: undefined as (() => void) | undefined },
+            { label: 'Duration', value: formatDuration(trip.estimatedDuration), icon: Clock, onClick: undefined },
+            {
+              label: 'Cargo',
+              value: trip.cargo.weight
+                ? `${trip.cargo.weight.toLocaleString()} KG`
+                : (trip.cargo.type || '—'),
+              icon: Box,
+              color: 'text-amber-600',
+              onClick: () => setShowCargoHealth(true),
+            },
+            { label: 'Earnings', value: formatCurrency(trip.earnings), icon: Zap, color: 'text-amber-500', onClick: undefined },
           ].map((stat) => (
             <div 
               key={stat.label} 
-              onClick={() => {
-                if (stat.label === 'Cargo Health') setShowCargoHealth(true);
-              }}
+              onClick={stat.onClick}
               className={cn(
                 "p-6 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-500 group relative overflow-hidden",
-                stat.label === 'Cargo Health' && "cursor-pointer"
+                !!stat.onClick && "cursor-pointer"
               )}
             >
               <div className={cn("w-10 h-10 rounded-xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 flex items-center justify-center mb-4 transition-transform group-hover:rotate-12 relative z-10", stat.color || "text-[#2b5271] dark:text-[#2b5271]")}>
@@ -380,8 +529,10 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
               </p>
               <div className="flex items-center gap-2 relative z-10">
                 <p className="text-xl font-black text-[#0f172a] dark:text-white uppercase tracking-tight">{stat.value}</p>
-                {stat.label === 'Cargo Health' && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {stat.label === 'Cargo' && (
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest truncate max-w-[5rem]">
+                    {trip.cargo.type}
+                  </span>
                 )}
               </div>
             </div>

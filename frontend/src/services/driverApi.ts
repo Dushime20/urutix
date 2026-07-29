@@ -77,7 +77,33 @@ export interface Trip {
     description: string;
     weight: number;
     type: string;
+    volume?: number;
+    loadType?: string;
+    equipmentType?: string;
+    packagingType?: string;
+    numberOfPieces?: number;
+    numberOfPallets?: number;
+    length?: number;
+    width?: number;
+    height?: number;
+    isFragile?: boolean;
+    isHazardous?: boolean;
+    requiresRefrigeration?: boolean;
+    requiresHumidityControl?: boolean;
+    requiresForklift?: boolean;
+    requiresCrane?: boolean;
+    requiresLoadingDock?: boolean;
+    isStackable?: boolean;
+    temperatureMin?: number | null;
+    temperatureMax?: number | null;
+    requiresTemperatureMonitoring?: boolean;
+    hazmatClass?: string;
+    hazmatNumber?: string;
     specialInstructions?: string;
+    loadingInstructions?: string;
+    unloadingInstructions?: string;
+    urgencyLevel?: string;
+    isTimeCritical?: boolean;
   };
   customer: {
     name: string;
@@ -172,7 +198,33 @@ function normalizeTrip(raw: any): Trip {
       description: load.title || load.description || 'N/A',
       weight: Number(load.weight || 0),
       type: load.cargoType || 'General',
+      volume: load.volume != null ? Number(load.volume) : undefined,
+      loadType: load.loadType || undefined,
+      equipmentType: load.equipmentType || undefined,
+      packagingType: load.packagingType || undefined,
+      numberOfPieces: Number(load.numberOfPieces || 0) || undefined,
+      numberOfPallets: Number(load.numberOfPallets || 0) || undefined,
+      length: load.length != null ? Number(load.length) : undefined,
+      width: load.width != null ? Number(load.width) : undefined,
+      height: load.height != null ? Number(load.height) : undefined,
+      isFragile: !!load.isFragile,
+      isHazardous: !!load.isHazardous,
+      requiresRefrigeration: !!load.requiresRefrigeration,
+      requiresHumidityControl: !!load.requiresHumidityControl,
+      requiresForklift: !!load.requiresForklift,
+      requiresCrane: !!load.requiresCrane,
+      requiresLoadingDock: !!load.requiresLoadingDock,
+      isStackable: !!load.isStackable,
+      temperatureMin: load.temperatureMin != null ? Number(load.temperatureMin) : null,
+      temperatureMax: load.temperatureMax != null ? Number(load.temperatureMax) : null,
+      requiresTemperatureMonitoring: !!load.requiresTemperatureMonitoring,
+      hazmatClass: load.hazmatClass || undefined,
+      hazmatNumber: load.hazmatNumber || undefined,
       specialInstructions: load.specialHandlingInstructions || undefined,
+      loadingInstructions: load.loadingInstructions || undefined,
+      unloadingInstructions: load.unloadingInstructions || undefined,
+      urgencyLevel: load.urgencyLevel || undefined,
+      isTimeCritical: !!load.isTimeCritical,
     },
     customer: {
       name: load.cargoOwner?.profile
