@@ -2188,6 +2188,8 @@ export class LendingService {
       cardName?: string;
       expiryDate?: string;
       cvv?: string;
+      /** ISO 4217 currency override from the disbursement modal */
+      currency?: string;
     },
     lenderUserId: string,
     tenantId: string,

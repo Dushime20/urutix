@@ -313,9 +313,9 @@ export class CreditController {
 
     // ── Record payment in payments table ──────────────────────────────────
     const totalAmount = Number(pkg.price || 0);
+    const pkgCurrency: string = (pkg as any).currency || process.env.MOBILE_MONEY_CURRENCY || 'RWF';
     if (totalAmount > 0) {
       try {
-        const pkgCurrency: string = (pkg as any).currency || process.env.MOBILE_MONEY_CURRENCY || 'RWF';
         const payment = this.paymentRepository.create({
           tenantId,
           payerId: req.user.id,
