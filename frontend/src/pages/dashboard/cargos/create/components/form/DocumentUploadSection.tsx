@@ -187,7 +187,7 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
     const getFileIcon = (doc: Document | PendingDocument) => {
         const mimeType = 'isPending' in doc && doc.isPending
             ? doc.file.type
-            : (doc as Document).mimeType;
+            : ((doc as Document).mimeType || '');
 
         if (mimeType.includes('pdf')) return <FaFilePdf className="text-red-500 text-xl" />;
         if (mimeType.includes('image')) return <FaFileImage className="text-blue-500 text-xl" />;

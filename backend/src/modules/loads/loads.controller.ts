@@ -1181,15 +1181,23 @@ export class LoadsController {
 
   @Patch(':id')
   @UseGuards(CargoOwnerGuard) // Verify ownership before allowing update
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @UseInterceptors(FilesInterceptor('files', 10))
   @ApiOperation({
     summary: 'Update Enhanced Cargo Load',
     description:
-      'Updates a cargo load with enhanced fields. All enhanced fields are optional and can be updated individually.',
+      'Updates a cargo load with enhanced fields. All enhanced fields are optional and can be updated individually. Supports optional document uploads via multipart.',
   })
   @ApiParam({ name: 'id', description: 'Cargo load ID (UUID)', type: 'string' })
   @ApiBody({
-    type: UpdateLoadDto,
-    description: 'Enhanced cargo load data to update (all fields optional)',
+    schema: {
+      type: 'object',
+      properties: {
+        data: { type: 'string', description: 'JSON-encoded UpdateLoadDto (multipart)' },
+        files: { type: 'array', items: { type: 'string', format: 'binary' }, description: 'Optional documents to attach' },
+      },
+    },
+    description: 'JSON body or multipart with `data` + optional `files`',
   })
   @ApiResponse({
     status: 200,
@@ -1211,10 +1219,23 @@ export class LoadsController {
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateLoadDto: UpdateLoadDto,
+    @Body() body: any,
+    @UploadedFiles() files: Express.Multer.File[],
     @Req() req: Request,
   ): Promise<{ message: string; load: LoadResponseDto }> {
     try {
+      // Support both multipart/form-data (data field = JSON string) and application/json
+      let updateLoadDto: UpdateLoadDto;
+      if (body?.data && typeof body.data === 'string') {
+        try {
+          updateLoadDto = JSON.parse(body.data);
+        } catch {
+          throw new BadRequestException('Invalid JSON in `data` field');
+        }
+      } else {
+        updateLoadDto = body as UpdateLoadDto;
+      }
+
       const load = await this.loadsService.update(
         id,
         updateLoadDto,
@@ -1222,9 +1243,32 @@ export class LoadsController {
         req.user.userId,
       );
 
+      // Upload any new documents attached alongside the update
+      if (files && files.length > 0) {
+        for (const file of files) {
+          try {
+            await this.loadsService.uploadDocument(
+              load.id,
+              { type: DocumentType.OTHER, file },
+              req.user.userId,
+              req.user.tenantId,
+            );
+          } catch (docErr) {
+            console.error(`Failed to upload document ${file.originalname}:`, docErr.message);
+          }
+        }
+      }
+
+      // Re-fetch so response includes documents and full relations
+      const refreshed = await this.loadsService.findOne(
+        id,
+        req.user.tenantId,
+        req.user,
+      );
+
       return {
         message: 'Load updated successfully',
-        load: this.transformLoadToResponse(load),
+        load: this.transformLoadToResponse(refreshed),
       };
     } catch (error) {
       throw new HttpException(
@@ -2022,16 +2066,44 @@ export class LoadsController {
 
   // Private helper method to transform Load entity to LoadResponseDto
   private transformLoadToResponse(load: any): LoadResponseDto {
+    const mapLocation = (loc: any) => {
+      if (!loc?.locationData) return undefined;
+      const coords = loc.locationData.coordinates || {};
+      const latitude = Number(coords.latitude) || 0;
+      const longitude = Number(coords.longitude) || 0;
+      return {
+        id: loc.id || '',
+        name: loc.locationData.name || '',
+        address: loc.locationData.address || '',
+        latitude,
+        longitude,
+        coordinates: {
+          type: 'Point',
+          coordinates: [longitude, latitude],
+          latitude,
+          longitude,
+        },
+      };
+    };
+
+    const pickupLoc = load.locations?.find((loc: any) => loc.type === 'PICKUP');
+    const deliveryLoc = load.locations?.find((loc: any) => loc.type === 'DELIVERY');
+
     return {
       id: load.id,
       title: load.title,
       description: load.description,
-      weight: load.weight,
-      volume: load.volume,
+      weight: load.weight != null ? Number(load.weight) : load.weight,
+      volume: load.volume != null ? Number(load.volume) : load.volume,
       cargoType: load.cargoType,
       status: load.status,
-      loadValue: load.loadValue,
-      offeredPrice: load.offeredPrice,
+      loadType: load.loadType,
+      equipmentType: load.equipmentType,
+      visibility: load.visibility,
+      unitsRequired: load.unitsRequired,
+      paymentTerms: load.paymentTerms,
+      loadValue: load.loadValue != null ? Number(load.loadValue) : load.loadValue,
+      offeredPrice: load.offeredPrice != null ? Number(load.offeredPrice) : load.offeredPrice,
       currencyCode: load.currencyCode,
       pickupDate: load.pickupDate,
       deliveryDate: load.deliveryDate,
@@ -2040,11 +2112,43 @@ export class LoadsController {
       isFragile: load.isFragile,
       isHazardous: load.isHazardous,
       requiresRefrigeration: load.requiresRefrigeration,
-      length: load.length,
-      width: load.width,
-      height: load.height,
+      autoMatchEnabled: load.autoMatchEnabled,
+      contactInfo: load.contactInfo || {},
+      length: load.length != null ? Number(load.length) : load.length,
+      width: load.width != null ? Number(load.width) : load.width,
+      height: load.height != null ? Number(load.height) : load.height,
+      stackableHeight: load.stackableHeight != null ? Number(load.stackableHeight) : load.stackableHeight,
+      isStackable: load.isStackable,
+      temperatureMin: load.temperatureMin != null ? Number(load.temperatureMin) : load.temperatureMin,
+      temperatureMax: load.temperatureMax != null ? Number(load.temperatureMax) : load.temperatureMax,
+      requiresHumidityControl: load.requiresHumidityControl,
+      requiresForklift: load.requiresForklift,
+      requiresCrane: load.requiresCrane,
+      requiresLoadingDock: load.requiresLoadingDock,
+      loadingTimeEstimate: load.loadingTimeEstimate != null ? Number(load.loadingTimeEstimate) : load.loadingTimeEstimate,
+      unloadingTimeEstimate: load.unloadingTimeEstimate != null ? Number(load.unloadingTimeEstimate) : load.unloadingTimeEstimate,
+      hazmatClass: load.hazmatClass,
+      hazmatNumber: load.hazmatNumber,
+      maxTransitTime: load.maxTransitTime != null ? Number(load.maxTransitTime) : load.maxTransitTime,
+      packagingType: load.packagingType,
+      numberOfPieces: load.numberOfPieces,
+      numberOfPallets: load.numberOfPallets,
       requiresGpsMonitoring: load.requiresGpsMonitoring,
       requiresTemperatureMonitoring: load.requiresTemperatureMonitoring,
+      insuranceValue: load.insuranceValue != null ? Number(load.insuranceValue) : load.insuranceValue,
+      requiresLowClearanceRoute: load.requiresLowClearanceRoute,
+      maxClearanceHeight: load.maxClearanceHeight != null ? Number(load.maxClearanceHeight) : load.maxClearanceHeight,
+      requiresEscortVehicle: load.requiresEscortVehicle,
+      requiresPreShipmentInspection: load.requiresPreShipmentInspection,
+      requiresDeliveryInspection: load.requiresDeliveryInspection,
+      requiresPhotographicDocumentation: load.requiresPhotographicDocumentation,
+      specialHandlingInstructions: load.specialHandlingInstructions,
+      loadingInstructions: load.loadingInstructions,
+      unloadingInstructions: load.unloadingInstructions,
+      emergencyContactInfo: load.emergencyContactInfo,
+      truckRequirements: load.truckRequirements || {},
+      carrierPreferences: load.carrierPreferences || {},
+      costPreferences: load.costPreferences || {},
       publishedAt: load.publishedAt,
       createdAt: load.createdAt,
       updatedAt: load.updatedAt,
@@ -2060,7 +2164,6 @@ export class LoadsController {
           return undefined;
         }
 
-        // Try to get profile from the raw query result
         const brokerProfile = (load as any).brokerProfile || load.broker?.profile;
 
         if (load.broker) {
@@ -2077,7 +2180,6 @@ export class LoadsController {
           };
         }
 
-        // Fallback if only brokerId exists
         return {
           id: load.brokerId,
           email: 'Broker Assigned',
@@ -2087,43 +2189,13 @@ export class LoadsController {
       brokerId: load.brokerId,
       brokerCommissionRate: load.brokerCommissionRate,
       brokerCommissionAmount: load.brokerCommissionAmount,
-      pickupLocation: (() => {
-        try {
-          const pickupLoc = load.locations?.find((loc) => loc.type === 'PICKUP');
-          if (!pickupLoc || !pickupLoc.locationData) return undefined;
-          return {
-            id: pickupLoc.id || '',
-            name: pickupLoc.locationData.name || '',
-            address: pickupLoc.locationData.address || '',
-            coordinates: pickupLoc.locationData.coordinates || { latitude: 0, longitude: 0 },
-          };
-        } catch (error) {
-          console.warn('Error transforming pickup location:', error);
-          return undefined;
-        }
-      })(),
-      deliveryLocation: (() => {
-        try {
-          const deliveryLoc = load.locations?.find(
-            (loc) => loc.type === 'DELIVERY',
-          );
-          if (!deliveryLoc || !deliveryLoc.locationData) return undefined;
-          return {
-            id: deliveryLoc.id || '',
-            name: deliveryLoc.locationData.name || '',
-            address: deliveryLoc.locationData.address || '',
-            coordinates: deliveryLoc.locationData.coordinates || { latitude: 0, longitude: 0 },
-          };
-        } catch (error) {
-          console.warn('Error transforming delivery location:', error);
-          return undefined;
-        }
-      })(),
+      pickupLocation: mapLocation(pickupLoc),
+      deliveryLocation: mapLocation(deliveryLoc),
       documents: Array.isArray((load as any).documents)
         ? (load as any).documents.map((d: any) => ({
             id: d.id,
-            documentType: d.documentType,
-            title: d.title,
+            documentType: d.documentType || d.type || 'OTHER',
+            title: d.title || d.fileName,
             fileUrl: d.fileUrl,
             fileName: d.fileName,
             fileSize: d.fileSize,

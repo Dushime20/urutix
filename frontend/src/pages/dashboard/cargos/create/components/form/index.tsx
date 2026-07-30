@@ -73,6 +73,37 @@ interface EnhancedCargoFormProps {
 const generateTempId = (prefix: string) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+/** Convert ISO / Date / datetime-local values to yyyy-MM-dd for <input type="date"> */
+const toDateInputValue = (value?: string | Date | null): string => {
+  if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) {
+    const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : "";
+  }
+  return d.toISOString().split("T")[0];
+};
+
+const extractLatLng = (loc: any): { latitude: number; longitude: number } => {
+  if (!loc) return { latitude: 0, longitude: 0 };
+  if (typeof loc.latitude === "number" && typeof loc.longitude === "number") {
+    return { latitude: loc.latitude, longitude: loc.longitude };
+  }
+  const c = loc.coordinates;
+  if (!c) return { latitude: 0, longitude: 0 };
+  if (typeof c.latitude === "number") {
+    return { latitude: c.latitude, longitude: Number(c.longitude) || 0 };
+  }
+  if (Array.isArray(c.coordinates) && c.coordinates.length >= 2) {
+    return { latitude: Number(c.coordinates[1]) || 0, longitude: Number(c.coordinates[0]) || 0 };
+  }
+  if (Array.isArray(c) && c.length >= 2) {
+    return { latitude: Number(c[1]) || 0, longitude: Number(c[0]) || 0 };
+  }
+  return { latitude: 0, longitude: 0 };
+};
+
 const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   mode,
   isOpen,
@@ -87,12 +118,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
   aiSuggestions,
 }) => {
   const { tSync } = useTranslation();
-  // Debug logging
-  console.log("EnhancedCargoForm rendered with:", {
-    isOpen,
-    mode,
-    onClose: typeof onClose,
-  });
   const [formData, setFormData] = useState<CargoFormData>({
     title: "",
     description: "",
@@ -146,7 +171,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState("basic");
+  const [activeSection, setActiveSection] = useState("cargo");
   // Track completed sections
   const [completedSections, setCompletedSections] = useState<{
     [key: string]: boolean;
@@ -181,22 +206,33 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
 
   // Apply template data when initialData changes (for editing or continuing drafts)
   useEffect(() => {
-    console.log("🔄 Form useEffect triggered:", { isOpen, mode, hasInitialData: !!initialData, initialDataId: initialData?.id });
-
     // Full data population for: edit mode OR create mode with existing cargo/draft (has id)
     const shouldFullyPopulate = initialData && (mode === "edit" || initialData.id);
 
     if (shouldFullyPopulate) {
-      console.log("📝 Applying full cargo/draft data to form:", initialData);
+      const contact = initialData.contactInfo || {};
+      const pickupCoords = extractLatLng(initialData.pickupLocation);
+      const deliveryCoords = extractLatLng(initialData.deliveryLocation);
+
       // Transform and apply all cargo data to form
       const transformedData: any = {
         ...initialData,
+        // Normalize dates for <input type="date">
+        pickupDate: toDateInputValue(initialData.pickupDate),
+        deliveryDate: toDateInputValue(initialData.deliveryDate),
         // Ensure defaults for fields that might be missing
         loadType: initialData.loadType || "FTL",
         equipmentType: initialData.equipmentType || "DRY_VAN",
         visibility: initialData.visibility || "public",
         unitsRequired: initialData.unitsRequired !== undefined ? initialData.unitsRequired : 1,
         paymentTerms: initialData.paymentTerms || "Net30",
+        contactPerson: initialData.contactPerson || contact.contactPerson || "",
+        contactPhone: initialData.contactPhone || contact.contactPhone || "",
+        contactEmail: initialData.contactEmail || contact.contactEmail || "",
+        specialRequirements:
+          initialData.specialRequirements ||
+          initialData.specialHandlingInstructions ||
+          "",
         // Ensure boolean fields are properly set
         isFragile: initialData.isFragile ?? false,
         isHazardous: initialData.isHazardous ?? false,
@@ -215,10 +251,26 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         requiresPreShipmentInspection: initialData.requiresPreShipmentInspection ?? false,
         requiresDeliveryInspection: initialData.requiresDeliveryInspection ?? false,
         requiresPhotographicDocumentation: initialData.requiresPhotographicDocumentation ?? false,
+        // Numeric fields
+        length: initialData.length != null ? Number(initialData.length) : undefined,
+        width: initialData.width != null ? Number(initialData.width) : undefined,
+        height: initialData.height != null ? Number(initialData.height) : undefined,
+        stackableHeight: initialData.stackableHeight != null ? Number(initialData.stackableHeight) : undefined,
+        temperatureMin: initialData.temperatureMin != null ? Number(initialData.temperatureMin) : undefined,
+        temperatureMax: initialData.temperatureMax != null ? Number(initialData.temperatureMax) : undefined,
+        loadingTimeEstimate: initialData.loadingTimeEstimate != null ? Number(initialData.loadingTimeEstimate) : undefined,
+        unloadingTimeEstimate: initialData.unloadingTimeEstimate != null ? Number(initialData.unloadingTimeEstimate) : undefined,
+        maxTransitTime: initialData.maxTransitTime != null ? Number(initialData.maxTransitTime) : undefined,
+        maxClearanceHeight: initialData.maxClearanceHeight != null ? Number(initialData.maxClearanceHeight) : undefined,
+        insuranceValue: initialData.insuranceValue != null ? Number(initialData.insuranceValue) : undefined,
+        numberOfPieces: initialData.numberOfPieces != null ? Number(initialData.numberOfPieces) : undefined,
+        numberOfPallets: initialData.numberOfPallets != null ? Number(initialData.numberOfPallets) : undefined,
         // Ensure complex objects are properly initialized
         truckRequirements: initialData.truckRequirements || {},
         carrierPreferences: initialData.carrierPreferences || {},
         costPreferences: initialData.costPreferences || {},
+        // Prefill existing documents (edit mode)
+        documents: Array.isArray(initialData.documents) ? initialData.documents : [],
         // Ensure urgency level has a default
         urgencyLevel: initialData.urgencyLevel || "NORMAL",
       };
@@ -227,23 +279,26 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         ...prev,
         ...transformedData,
       }));
+      setActiveSection("cargo");
 
       // Set location data if available
       if (initialData.pickupLocation) {
         setPickupLocation({
+          id: initialData.pickupLocation.id,
           name: initialData.pickupLocation.name || "",
           address: initialData.pickupLocation.address || "",
-          latitude: initialData.pickupLocation.latitude || 0,
-          longitude: initialData.pickupLocation.longitude || 0,
+          latitude: pickupCoords.latitude,
+          longitude: pickupCoords.longitude,
         });
       }
 
       if (initialData.deliveryLocation) {
         setDeliveryLocation({
+          id: initialData.deliveryLocation.id,
           name: initialData.deliveryLocation.name || "",
           address: initialData.deliveryLocation.address || "",
-          latitude: initialData.deliveryLocation.latitude || 0,
-          longitude: initialData.deliveryLocation.longitude || 0,
+          latitude: deliveryCoords.latitude,
+          longitude: deliveryCoords.longitude,
         });
       }
 
@@ -483,35 +538,46 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     e?.preventDefault();
     setLoading(true);
     setError(null);
-    setSubmitStatus("Creating cargo...");
+    setSubmitStatus(mode === "edit" ? "Updating cargo..." : "Creating cargo...");
 
     try {
       // Basic validation on submit
       if (!formData.title?.trim()) {
-        setError("Cargo title is required. Please go back to Basic Information.");
-        setActiveSection("basic");
+        setError("Cargo title is required. Please go back to Cargo Details.");
+        setActiveSection("cargo");
         setLoading(false);
         return;
       }
       if (!formData.weight || formData.weight <= 0) {
-        setError("Weight must be greater than 0. Please go back to Basic Information.");
-        setActiveSection("basic");
+        setError("Weight must be greater than 0. Please go back to Cargo Details.");
+        setActiveSection("cargo");
         setLoading(false);
         return;
       }
       if (!formData.loadValue || formData.loadValue <= 0) {
-        setError("Load value must be greater than 0. Please go back to Basic Information.");
-        setActiveSection("basic");
+        setError("Load value must be greater than 0. Please go back to Cargo Details.");
+        setActiveSection("cargo");
         setLoading(false);
         return;
       }
 
-      // Validate documents are present (mandatory)
-      const pendingDocsCheck = (formData.documents || []).filter(
-        (doc: any) => 'isPending' in doc && doc.isPending
+      // Validate documents: create requires new uploads; edit accepts existing docs or new uploads
+      const allDocs = formData.documents || [];
+      const pendingDocsCheck = allDocs.filter(
+        (doc: any) => "isPending" in doc && doc.isPending
       );
-      if (pendingDocsCheck.length === 0) {
+      const existingDocs = allDocs.filter(
+        (doc: any) => !("isPending" in doc && doc.isPending)
+      );
+      if (mode === "create" && pendingDocsCheck.length === 0) {
         setError("At least one cargo document is required. Please go back to the Documentation step and upload a document.");
+        setActiveSection("documents");
+        setLoading(false);
+        return;
+      }
+      if (mode === "edit" && pendingDocsCheck.length === 0 && existingDocs.length === 0) {
+        setError("At least one cargo document is required. Please go back to the Documentation step and upload a document.");
+        setActiveSection("documents");
         setLoading(false);
         return;
       }
@@ -537,16 +603,16 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
 
       // weight max 100 t (backend @Max(100000 kg), stored as tonnes on frontend)
       if (formData.weight > 100) {
-        setError("Weight must be at most 100 t (100,000 kg). Please go back to Basic Information.");
-        setActiveSection("basic");
+        setError("Weight must be at most 100 t (100,000 kg). Please go back to Cargo Details.");
+        setActiveSection("cargo");
         setLoading(false);
         return;
       }
 
       // volume max 1000 m³ (backend @Max(1000))
       if (formData.volume && formData.volume > 1000) {
-        setError("Volume must be at most 1,000 m³. Please go back to Basic Information.");
-        setActiveSection("basic");
+        setError("Volume must be at most 1,000 m³. Please go back to Cargo Details.");
+        setActiveSection("cargo");
         setLoading(false);
         return;
       }
@@ -554,7 +620,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       // title max 200 chars
       if (formData.title.length > 200) {
         setError("Cargo title must be at most 200 characters.");
-        setActiveSection("basic");
+        setActiveSection("cargo");
         setLoading(false);
         return;
       }
@@ -666,16 +732,23 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       ) as PendingDocument[];
 
       if (pendingDocs.length > 0) {
-        setSubmitStatus(`Creating cargo & uploading ${pendingDocs.length} document${pendingDocs.length > 1 ? 's' : ''}...`);
+        setSubmitStatus(
+          mode === "edit"
+            ? `Updating cargo & uploading ${pendingDocs.length} document${pendingDocs.length > 1 ? "s" : ""}...`
+            : `Creating cargo & uploading ${pendingDocs.length} document${pendingDocs.length > 1 ? "s" : ""}...`
+        );
       }
 
       const result = await onSubmit(submissionData);
 
-      toast.success(
-        pendingDocs.length > 0
-          ? `Cargo and ${pendingDocs.length} document${pendingDocs.length > 1 ? 's' : ''} saved successfully!`
-          : 'Cargo created successfully!'
-      );
+      // Parent handlers (list update) already toast — avoid duplicate noise on edit
+      if (mode === "create") {
+        toast.success(
+          pendingDocs.length > 0
+            ? `Cargo and ${pendingDocs.length} document${pendingDocs.length > 1 ? "s" : ""} saved successfully!`
+            : "Cargo created successfully!"
+        );
+      }
 
       // Step 3 — advance UI
       if (mode === "create" && showTruckSelection && result?.id) {
@@ -694,29 +767,18 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
     }
   };
 
+  // 5-step wizard: Cargo → Schedule → Handling → Documents → Review
   const sections = [
-    { id: "basic", label: "Basic Information", icon: FaBox },
-    {
-      id: "dimensions",
-      label: "Dimensions & Packaging",
-      icon: FaRulerCombined,
-    },
-    {
-      id: "environmental",
-      label: "Environmental Requirements",
-      icon: FaThermometerHalf,
-    },
-    { id: "loading", label: "Loading & Unloading", icon: FaTruck },
-    { id: "security", label: "Security & Insurance", icon: FaShieldAlt },
-    { id: "route", label: "Route & Access", icon: FaLocationArrow },
-    { id: "urgency", label: "Urgency & Timing", icon: FaClock },
-    { id: "quality", label: "Quality & Inspection", icon: FaCameraRetro },
-    { id: "documents", label: "Documentation", icon: FileText },
+    { id: "cargo", label: "Cargo Details", icon: FaBox },
+    { id: "schedule", label: "Route & Schedule", icon: FaLocationArrow },
+    { id: "handling", label: "Handling & Security", icon: FaTruck },
+    { id: "documents", label: "Quality & Documents", icon: FileText },
   ];
 
   // Simple section validation (customize as needed)
   const isSectionComplete = (sectionId: string) => {
     switch (sectionId) {
+      case "cargo":
       case "basic":
         return (
           !!formData.title &&
@@ -724,13 +786,16 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           formData.weight > 0 &&
           formData.loadValue > 0
         );
+      case "schedule":
       case "route":
         return (
           !!formData.pickupDate &&
           !!formData.deliveryDate
         );
+      case "documents":
+        return (formData.documents || []).length > 0;
       default:
-        return true; // For demo, mark others as complete
+        return true;
     }
   };
 
@@ -826,6 +891,20 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         }
         setError(null);
       }
+      if (activeSection === "cargo") {
+        if (!formData.title?.trim() || !formData.weight || formData.weight <= 0 || !formData.loadValue || formData.loadValue <= 0) {
+          setError("Please fill in title, weight, and load value before continuing.");
+          return;
+        }
+        setError(null);
+      }
+      if (activeSection === "schedule") {
+        if (!formData.pickupDate || !formData.deliveryDate) {
+          setError("Pickup and delivery dates are required.");
+          return;
+        }
+        setError(null);
+      }
       setActiveSection(STEPS[currentStepIndex + 1].id);
     }
   };
@@ -867,8 +946,14 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           <FaCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div>
-          <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Ready to Create</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Review all details carefully before submitting. You cannot undo this action.</p>
+          <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight">
+            {mode === "edit" ? "Ready to Update" : "Ready to Create"}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            {mode === "edit"
+              ? "Review all details carefully before saving your changes."
+              : "Review all details carefully before submitting. You cannot undo this action."}
+          </p>
         </div>
         <div className="ml-auto text-right flex-shrink-0">
           <div className="text-2xl font-black text-[#345E85] dark:text-blue-400">{completionPercentage}%</div>
@@ -1105,8 +1190,8 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
             {/* ── Review Step ──────────────────────────────────────────────────── */}
             {isReviewStep && renderReviewStep()}
 
-            {/* ── Basic Information ────────────────────────────────────────────── */}
-            {activeSection === "basic" && (
+            {/* ── Cargo Details (basic + dimensions) ─────────────────────────── */}
+            {activeSection === "cargo" && (
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center">
                   <FaBox className="w-4 h-4 mr-2" />
@@ -1175,11 +1260,14 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     <span className="text-xs text-gray-700">Requires Refrigeration</span>
                   </label>
                 </div>
+
+                {/* Dimensions rendered via CargoFormSections for cargo step */}
+                <CargoFormSections formData={formData} handleChange={handleChange} handleNumberChange={handleNumberChange} activeSection="cargo" />
               </div>
             )}
 
-            {/* ── Route Information ────────────────────────────────────────────── */}
-            {activeSection === "route" && (
+            {/* ── Route & Schedule ────────────────────────────────────────────── */}
+            {activeSection === "schedule" && (
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center">
                   <FaLocationArrow className="w-4 h-4 mr-2" />
@@ -1240,31 +1328,38 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                     <Input id="deliveryDate" type="date" name="deliveryDate" value={formData.deliveryDate} onChange={handleChange} required className="w-full text-sm" />
                   </div>
                 </div>
+
+                <CargoFormSections formData={formData} handleChange={handleChange} handleNumberChange={handleNumberChange} activeSection="schedule" />
               </div>
             )}
 
-            {/* ── Section Tabs (dimensions, environmental, loading, security, urgency, quality) */}
-            <CargoFormSections formData={formData} handleChange={handleChange} handleNumberChange={handleNumberChange} activeSection={activeSection} />
+            {/* ── Handling & Security ─────────────────────────────────────────── */}
+            {activeSection === "handling" && (
+              <CargoFormSections formData={formData} handleChange={handleChange} handleNumberChange={handleNumberChange} activeSection="handling" />
+            )}
 
-            {/* ── Documentation ────────────────────────────────────────────────── */}
+            {/* ── Quality & Documentation ─────────────────────────────────────── */}
             {activeSection === "documents" && (
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 dark:bg-slate-800">
-                    <FileText className="w-4 h-4 text-[#345E85] dark:text-blue-400" />
+              <div className="space-y-8">
+                <CargoFormSections formData={formData} handleChange={handleChange} handleNumberChange={handleNumberChange} activeSection="documents" />
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 dark:bg-slate-800">
+                      <FileText className="w-4 h-4 text-[#345E85] dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-[#0f172a] dark:text-slate-100 tracking-tight uppercase">Documentation</h3>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Upload Permits, Invoices & Photos</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-black text-[#0f172a] dark:text-slate-100 tracking-tight uppercase">Documentation</h3>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Upload Permits, Invoices & Photos</p>
+                  <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <DocumentUploadSection
+                      cargoId={createdCargoId || initialData?.id || null}
+                      documents={formData.documents || []}
+                      onDocumentsChange={(docs) => setFormData(prev => ({ ...prev, documents: docs }))}
+                      allowPendingDocuments={true}
+                    />
                   </div>
-                </div>
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <DocumentUploadSection
-                    cargoId={createdCargoId || initialData?.id || null}
-                    documents={formData.documents || []}
-                    onDocumentsChange={(docs) => setFormData(prev => ({ ...prev, documents: docs }))}
-                    allowPendingDocuments={true}
-                  />
                 </div>
               </div>
             )}

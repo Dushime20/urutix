@@ -463,6 +463,23 @@ class DriverApiService {
     }
   }
 
+  async getActiveTrips(driverId: string): Promise<Trip[]> {
+    try {
+      const response = await api.get('/trips/my-trips');
+      const data = response.data?.data || {};
+      const raw: any[] = Array.isArray(data.active)
+        ? data.active
+        : data.current
+          ? [data.current]
+          : [];
+      return raw.map(normalizeTrip);
+    } catch (error: any) {
+      if (error.response?.status === 404) return [];
+      console.error('Error fetching active trips:', error);
+      return [];
+    }
+  }
+
   async getUpcomingTrips(driverId: string): Promise<Trip[]> {
     try {
       const response = await api.get('/trips/my-trips');

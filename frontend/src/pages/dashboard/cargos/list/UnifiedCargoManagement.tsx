@@ -549,89 +549,146 @@ const UnifiedCargoManagement = () => {
     }
   };
 
-  const handleEditCargo = (load: any) => {
-    // Transform the load data to match the form schema
-    const editData: any = {
-      id: load.id,
-      title: load.title,
-      description: load.description,
-      weight: load.weight,
-      volume: load.volume,
-      cargoType: load.cargoType,
-      loadType: load.loadType || "FTL",
-      equipmentType: load.equipmentType || "DRY_VAN",
-      visibility: load.visibility || "public",
-      unitsRequired: load.unitsRequired || 1,
-      pickupDate: load.pickupDate,
-      deliveryDate: load.deliveryDate,
-      loadValue: load.loadValue,
-      offeredPrice: load.offeredPrice,
-      currencyCode: load.currencyCode || "USD",
-      paymentTerms: load.paymentTerms || "Net30",
-      isFragile: load.isFragile ?? false,
-      isHazardous: load.isHazardous ?? false,
-      requiresRefrigeration: load.requiresRefrigeration ?? false,
-      specialRequirements: load.specialHandlingInstructions,
-      autoMatchEnabled: load.autoMatchEnabled ?? true,
-      loadingInstructions: load.loadingInstructions,
-      unloadingInstructions: load.unloadingInstructions,
-      contactPerson: load.contactInfo?.contactPerson,
-      contactPhone: load.contactInfo?.contactPhone,
-      contactEmail: load.contactInfo?.contactEmail,
-      length: Number(load.length) || undefined,
-      width: Number(load.width) || undefined,
-      height: Number(load.height) || undefined,
-      stackableHeight: Number(load.stackableHeight) || undefined,
-      isStackable: load.isStackable ?? false,
-      temperatureMin: Number(load.temperatureMin) || undefined,
-      temperatureMax: Number(load.temperatureMax) || undefined,
-      requiresHumidityControl: load.requiresHumidityControl ?? false,
-      requiresForklift: load.requiresForklift ?? false,
-      requiresCrane: load.requiresCrane ?? false,
-      requiresLoadingDock: load.requiresLoadingDock ?? false,
-      loadingTimeEstimate: Number(load.loadingTimeEstimate) || undefined,
-      unloadingTimeEstimate: Number(load.unloadingTimeEstimate) || undefined,
-      hazmatClass: load.hazmatClass,
-      hazmatNumber: load.hazmatNumber,
-      urgencyLevel: load.urgencyLevel || "NORMAL",
-      isTimeCritical: load.isTimeCritical ?? false,
-      maxTransitTime: Number(load.maxTransitTime) || undefined,
-      packagingType: load.packagingType,
-      numberOfPieces: load.numberOfPieces,
-      numberOfPallets: load.numberOfPallets,
-      requiresGpsMonitoring: load.requiresGpsMonitoring ?? false,
-      requiresTemperatureMonitoring: load.requiresTemperatureMonitoring ?? false,
-      insuranceValue: load.insuranceValue,
-      requiresLowClearanceRoute: load.requiresLowClearanceRoute ?? false,
-      maxClearanceHeight: Number(load.maxClearanceHeight) || undefined,
-      requiresEscortVehicle: load.requiresEscortVehicle ?? false,
-      specialHandlingInstructions: load.specialHandlingInstructions,
-      emergencyContactInfo: load.emergencyContactInfo,
-      truckRequirements: load.truckRequirements || {},
-      carrierPreferences: load.carrierPreferences || {},
-      costPreferences: load.costPreferences || {},
-      requiresPreShipmentInspection: load.requiresPreShipmentInspection ?? false,
-      requiresDeliveryInspection: load.requiresDeliveryInspection ?? false,
-      requiresPhotographicDocumentation: load.requiresPhotographicDocumentation ?? false,
-      // Transform locations if available
-      // map locations safely if needed by the form, or omit if not part of schema
-      // locations: load.locations || [], // Commented out to fix TS error as it's not in schema
-      pickupLocation: load.pickupLocation ? {
-        name: load.pickupLocation.name || "",
-        address: load.pickupLocation.address || "",
-        latitude: load.pickupLocation.coordinates?.coordinates?.[1] || load.pickupLocation.latitude || 0,
-        longitude: load.pickupLocation.coordinates?.coordinates?.[0] || load.pickupLocation.longitude || 0,
-      } : undefined,
-      deliveryLocation: load.deliveryLocation ? {
-        name: load.deliveryLocation.name || "",
-        address: load.deliveryLocation.address || "",
-        latitude: load.deliveryLocation.coordinates?.coordinates?.[1] || load.deliveryLocation.latitude || 0,
-        longitude: load.deliveryLocation.coordinates?.coordinates?.[0] || load.deliveryLocation.longitude || 0,
-      } : undefined,
-    };
+  const handleEditCargo = async (load: any) => {
+    try {
+      toast.loading("Loading cargo details...", { id: "edit-cargo-load" });
 
-    setEditingCargo(editData);
-    setIsEditModalOpen(true);
+      // Always fetch full cargo so dates, documents, and enhanced fields are complete
+      let fullLoad = load;
+      try {
+        const response = await loadsAPI.getById(load.id);
+        const payload = (response as any)?.data ?? response;
+        fullLoad = payload?.load || payload || load;
+      } catch (fetchError) {
+        console.warn("Could not fetch full cargo, using list row data:", fetchError);
+      }
+
+      const toDateInputValue = (value?: string | Date | null): string => {
+        if (!value) return "";
+        if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+        const d = new Date(value);
+        if (isNaN(d.getTime())) {
+          const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+          return match ? match[1] : "";
+        }
+        return d.toISOString().split("T")[0];
+      };
+
+      const extractLatLng = (loc: any): { latitude: number; longitude: number } => {
+        if (!loc) return { latitude: 0, longitude: 0 };
+        if (typeof loc.latitude === "number" && typeof loc.longitude === "number") {
+          return { latitude: loc.latitude, longitude: loc.longitude };
+        }
+        const c = loc.coordinates;
+        if (!c) return { latitude: 0, longitude: 0 };
+        if (typeof c.latitude === "number") {
+          return { latitude: c.latitude, longitude: Number(c.longitude) || 0 };
+        }
+        if (Array.isArray(c.coordinates) && c.coordinates.length >= 2) {
+          return {
+            latitude: Number(c.coordinates[1]) || 0,
+            longitude: Number(c.coordinates[0]) || 0,
+          };
+        }
+        if (Array.isArray(c) && c.length >= 2) {
+          return { latitude: Number(c[1]) || 0, longitude: Number(c[0]) || 0 };
+        }
+        return { latitude: 0, longitude: 0 };
+      };
+
+      const pickupCoords = extractLatLng(fullLoad.pickupLocation);
+      const deliveryCoords = extractLatLng(fullLoad.deliveryLocation);
+      const contact = fullLoad.contactInfo || {};
+
+      const editData: any = {
+        id: fullLoad.id,
+        title: fullLoad.title,
+        description: fullLoad.description,
+        weight: Number(fullLoad.weight) || 0,
+        volume: fullLoad.volume != null ? Number(fullLoad.volume) : undefined,
+        cargoType: fullLoad.cargoType,
+        loadType: fullLoad.loadType || "FTL",
+        equipmentType: fullLoad.equipmentType || "DRY_VAN",
+        visibility: fullLoad.visibility || "public",
+        unitsRequired: fullLoad.unitsRequired || 1,
+        pickupDate: toDateInputValue(fullLoad.pickupDate),
+        deliveryDate: toDateInputValue(fullLoad.deliveryDate),
+        loadValue: Number(fullLoad.loadValue) || 0,
+        offeredPrice: fullLoad.offeredPrice != null ? Number(fullLoad.offeredPrice) : undefined,
+        currencyCode: fullLoad.currencyCode || "USD",
+        paymentTerms: fullLoad.paymentTerms || "Net30",
+        isFragile: fullLoad.isFragile ?? false,
+        isHazardous: fullLoad.isHazardous ?? false,
+        requiresRefrigeration: fullLoad.requiresRefrigeration ?? false,
+        specialRequirements: fullLoad.specialHandlingInstructions,
+        specialHandlingInstructions: fullLoad.specialHandlingInstructions,
+        autoMatchEnabled: fullLoad.autoMatchEnabled ?? true,
+        loadingInstructions: fullLoad.loadingInstructions,
+        unloadingInstructions: fullLoad.unloadingInstructions,
+        contactPerson: contact.contactPerson || fullLoad.contactPerson,
+        contactPhone: contact.contactPhone || fullLoad.contactPhone,
+        contactEmail: contact.contactEmail || fullLoad.contactEmail,
+        length: fullLoad.length != null ? Number(fullLoad.length) : undefined,
+        width: fullLoad.width != null ? Number(fullLoad.width) : undefined,
+        height: fullLoad.height != null ? Number(fullLoad.height) : undefined,
+        stackableHeight: fullLoad.stackableHeight != null ? Number(fullLoad.stackableHeight) : undefined,
+        isStackable: fullLoad.isStackable ?? false,
+        temperatureMin: fullLoad.temperatureMin != null ? Number(fullLoad.temperatureMin) : undefined,
+        temperatureMax: fullLoad.temperatureMax != null ? Number(fullLoad.temperatureMax) : undefined,
+        requiresHumidityControl: fullLoad.requiresHumidityControl ?? false,
+        requiresForklift: fullLoad.requiresForklift ?? false,
+        requiresCrane: fullLoad.requiresCrane ?? false,
+        requiresLoadingDock: fullLoad.requiresLoadingDock ?? false,
+        loadingTimeEstimate: fullLoad.loadingTimeEstimate != null ? Number(fullLoad.loadingTimeEstimate) : undefined,
+        unloadingTimeEstimate: fullLoad.unloadingTimeEstimate != null ? Number(fullLoad.unloadingTimeEstimate) : undefined,
+        hazmatClass: fullLoad.hazmatClass,
+        hazmatNumber: fullLoad.hazmatNumber,
+        urgencyLevel: fullLoad.urgencyLevel || "NORMAL",
+        isTimeCritical: fullLoad.isTimeCritical ?? false,
+        maxTransitTime: fullLoad.maxTransitTime != null ? Number(fullLoad.maxTransitTime) : undefined,
+        packagingType: fullLoad.packagingType,
+        numberOfPieces: fullLoad.numberOfPieces,
+        numberOfPallets: fullLoad.numberOfPallets,
+        requiresGpsMonitoring: fullLoad.requiresGpsMonitoring ?? false,
+        requiresTemperatureMonitoring: fullLoad.requiresTemperatureMonitoring ?? false,
+        insuranceValue: fullLoad.insuranceValue != null ? Number(fullLoad.insuranceValue) : undefined,
+        requiresLowClearanceRoute: fullLoad.requiresLowClearanceRoute ?? false,
+        maxClearanceHeight: fullLoad.maxClearanceHeight != null ? Number(fullLoad.maxClearanceHeight) : undefined,
+        requiresEscortVehicle: fullLoad.requiresEscortVehicle ?? false,
+        emergencyContactInfo: fullLoad.emergencyContactInfo,
+        truckRequirements: fullLoad.truckRequirements || {},
+        carrierPreferences: fullLoad.carrierPreferences || {},
+        costPreferences: fullLoad.costPreferences || {},
+        requiresPreShipmentInspection: fullLoad.requiresPreShipmentInspection ?? false,
+        requiresDeliveryInspection: fullLoad.requiresDeliveryInspection ?? false,
+        requiresPhotographicDocumentation: fullLoad.requiresPhotographicDocumentation ?? false,
+        documents: Array.isArray(fullLoad.documents) ? fullLoad.documents : [],
+        pickupLocation: fullLoad.pickupLocation
+          ? {
+              id: fullLoad.pickupLocation.id,
+              name: fullLoad.pickupLocation.name || "",
+              address: fullLoad.pickupLocation.address || "",
+              latitude: pickupCoords.latitude,
+              longitude: pickupCoords.longitude,
+            }
+          : undefined,
+        deliveryLocation: fullLoad.deliveryLocation
+          ? {
+              id: fullLoad.deliveryLocation.id,
+              name: fullLoad.deliveryLocation.name || "",
+              address: fullLoad.deliveryLocation.address || "",
+              latitude: deliveryCoords.latitude,
+              longitude: deliveryCoords.longitude,
+            }
+          : undefined,
+      };
+
+      toast.dismiss("edit-cargo-load");
+      setEditingCargo(editData);
+      setIsEditModalOpen(true);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to load cargo for editing", { id: "edit-cargo-load" });
+    }
   };
 
   const handleUpdateCargo = async (data: ICargoBody): Promise<ICargoResponse> => {

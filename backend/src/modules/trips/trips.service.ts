@@ -259,7 +259,12 @@ export class TripsService {
   async getMyTrips(
     userId: string,
     tenantId: string,
-  ): Promise<{ current: Trip | null; upcoming: Trip[]; history: Trip[] }> {
+  ): Promise<{
+    current: Trip | null;
+    active: Trip[];
+    upcoming: Trip[];
+    history: Trip[];
+  }> {
     // Find the driver record linked to this user
     const trips = await this.tripRepository
       .createQueryBuilder('trip')
@@ -273,9 +278,8 @@ export class TripsService {
       .orderBy('trip.plannedStartTime', 'DESC')
       .getMany();
 
-    const current = trips.find(
-      (t) => t.status === TripStatus.IN_PROGRESS,
-    ) || null;
+    const active = trips.filter((t) => t.status === TripStatus.IN_PROGRESS);
+    const current = active[0] || null;
 
     const upcoming = trips.filter(
       (t) => t.status === TripStatus.PLANNED || t.status === TripStatus.DELAYED,
@@ -285,7 +289,7 @@ export class TripsService {
       (t) => t.status === TripStatus.COMPLETED || t.status === TripStatus.CANCELLED,
     );
 
-    return { current, upcoming, history };
+    return { current, active, upcoming, history };
   }
 
   async updateTripStatus(

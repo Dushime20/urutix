@@ -48,6 +48,48 @@ export class LoadResponseDto {
   cargoType: CargoType;
 
   @ApiProperty({
+    description: 'Load type (FTL/LTL)',
+    required: false,
+  })
+  loadType?: string;
+
+  @ApiProperty({
+    description: 'Equipment type',
+    required: false,
+  })
+  equipmentType?: string;
+
+  @ApiProperty({
+    description: 'Visibility',
+    required: false,
+  })
+  visibility?: string;
+
+  @ApiProperty({
+    description: 'Units required',
+    required: false,
+  })
+  unitsRequired?: number;
+
+  @ApiProperty({
+    description: 'Payment terms',
+    required: false,
+  })
+  paymentTerms?: string;
+
+  @ApiProperty({
+    description: 'Contact information',
+    required: false,
+  })
+  contactInfo?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Auto-match enabled',
+    required: false,
+  })
+  autoMatchEnabled?: boolean;
+
+  @ApiProperty({
     description: 'Load status',
     enum: LoadStatus,
     example: LoadStatus.DRAFT,
@@ -136,6 +178,72 @@ export class LoadResponseDto {
     required: false,
   })
   height?: number;
+
+  @ApiProperty({
+    description: 'Stackable height in meters',
+    required: false,
+  })
+  stackableHeight?: number;
+
+  @ApiProperty({
+    description: 'Whether cargo can be stacked',
+    required: false,
+  })
+  isStackable?: boolean;
+
+  @ApiProperty({ description: 'Minimum temperature', required: false })
+  temperatureMin?: number;
+
+  @ApiProperty({ description: 'Maximum temperature', required: false })
+  temperatureMax?: number;
+
+  @ApiProperty({ description: 'Requires humidity control', required: false })
+  requiresHumidityControl?: boolean;
+
+  @ApiProperty({ description: 'Requires forklift', required: false })
+  requiresForklift?: boolean;
+
+  @ApiProperty({ description: 'Requires crane', required: false })
+  requiresCrane?: boolean;
+
+  @ApiProperty({ description: 'Requires loading dock', required: false })
+  requiresLoadingDock?: boolean;
+
+  @ApiProperty({ description: 'Loading time estimate (hours)', required: false })
+  loadingTimeEstimate?: number;
+
+  @ApiProperty({ description: 'Unloading time estimate (hours)', required: false })
+  unloadingTimeEstimate?: number;
+
+  @ApiProperty({ description: 'Hazmat class', required: false })
+  hazmatClass?: string;
+
+  @ApiProperty({ description: 'Hazmat number', required: false })
+  hazmatNumber?: string;
+
+  @ApiProperty({ description: 'Max transit time (hours)', required: false })
+  maxTransitTime?: number;
+
+  @ApiProperty({ description: 'Packaging type', required: false })
+  packagingType?: string;
+
+  @ApiProperty({ description: 'Number of pieces', required: false })
+  numberOfPieces?: number;
+
+  @ApiProperty({ description: 'Number of pallets', required: false })
+  numberOfPallets?: number;
+
+  @ApiProperty({ description: 'Special handling instructions', required: false })
+  specialHandlingInstructions?: string;
+
+  @ApiProperty({ description: 'Truck requirements', required: false })
+  truckRequirements?: Record<string, any>;
+
+  @ApiProperty({ description: 'Carrier preferences', required: false })
+  carrierPreferences?: Record<string, any>;
+
+  @ApiProperty({ description: 'Cost preferences', required: false })
+  costPreferences?: Record<string, any>;
 
   @ApiProperty({
     description: 'Requires GPS monitoring',
@@ -317,9 +425,13 @@ export class LoadResponseDto {
     id: string;
     name: string;
     address: string;
+    latitude?: number;
+    longitude?: number;
     coordinates: {
       type: string;
       coordinates: number[];
+      latitude?: number;
+      longitude?: number;
     };
   };
 
@@ -331,9 +443,13 @@ export class LoadResponseDto {
     id: string;
     name: string;
     address: string;
+    latitude?: number;
+    longitude?: number;
     coordinates: {
       type: string;
       coordinates: number[];
+      latitude?: number;
+      longitude?: number;
     };
   };
 

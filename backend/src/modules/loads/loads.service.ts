@@ -4143,15 +4143,59 @@ export class LoadsService {
    * Transform Load entity to LoadResponseDto
    */
   private transformLoadToResponse(load: Load): LoadResponseDto {
+    const mapLocation = (loc: any) => {
+      if (!loc?.locationData) return undefined;
+      const coords = loc.locationData.coordinates || {};
+      const latitude = Number(coords.latitude) || 0;
+      const longitude = Number(coords.longitude) || 0;
+      return {
+        id: loc.id || '',
+        name: loc.locationData.name || '',
+        address: loc.locationData.address || '',
+        latitude,
+        longitude,
+        coordinates: {
+          type: 'Point',
+          coordinates: [longitude, latitude] as number[],
+          latitude,
+          longitude,
+        },
+      };
+    };
+
+    let pickupLocation: any;
+    let deliveryLocation: any;
+
+    if (load.locations && Array.isArray(load.locations)) {
+      pickupLocation = mapLocation(
+        load.locations.find((loc: any) => loc.type === 'PICKUP'),
+      );
+      deliveryLocation = mapLocation(
+        load.locations.find((loc: any) => loc.type === 'DELIVERY'),
+      );
+    }
+    if (!pickupLocation && load.pickupLocation?.locationData) {
+      pickupLocation = mapLocation(load.pickupLocation);
+    }
+    if (!deliveryLocation && load.deliveryLocation?.locationData) {
+      deliveryLocation = mapLocation(load.deliveryLocation);
+    }
+
     return {
       id: load.id,
       title: load.title,
       description: load.description,
-      weight: load.weight,
-      volume: load.volume,
+      weight: load.weight != null ? Number(load.weight) : (load.weight as any),
+      volume: load.volume != null ? Number(load.volume) : load.volume,
       cargoType: load.cargoType,
-
       status: load.status,
+      loadType: load.loadType as any,
+      equipmentType: load.equipmentType as any,
+      visibility: load.visibility as any,
+      unitsRequired: load.unitsRequired,
+      paymentTerms: load.paymentTerms as any,
+      contactInfo: load.contactInfo || {},
+      autoMatchEnabled: load.autoMatchEnabled,
       urgencyLevel: load.urgencyLevel,
       isTimeCritical: load.isTimeCritical,
       isFragile: load.isFragile,
@@ -4159,10 +4203,28 @@ export class LoadsService {
       requiresRefrigeration: load.requiresRefrigeration,
       pickupDate: load.pickupDate,
       deliveryDate: load.deliveryDate,
-      loadValue: load.loadValue,
-      offeredPrice: load.offeredPrice,
+      loadValue: load.loadValue != null ? Number(load.loadValue) : (load.loadValue as any),
+      offeredPrice: load.offeredPrice != null ? Number(load.offeredPrice) : load.offeredPrice,
       currencyCode: load.currencyCode,
-
+      length: load.length != null ? Number(load.length) : load.length,
+      width: load.width != null ? Number(load.width) : load.width,
+      height: load.height != null ? Number(load.height) : load.height,
+      stackableHeight: load.stackableHeight != null ? Number(load.stackableHeight) : load.stackableHeight,
+      isStackable: load.isStackable,
+      temperatureMin: load.temperatureMin != null ? Number(load.temperatureMin) : load.temperatureMin,
+      temperatureMax: load.temperatureMax != null ? Number(load.temperatureMax) : load.temperatureMax,
+      requiresHumidityControl: load.requiresHumidityControl,
+      requiresForklift: load.requiresForklift,
+      requiresCrane: load.requiresCrane,
+      requiresLoadingDock: load.requiresLoadingDock,
+      loadingTimeEstimate: load.loadingTimeEstimate != null ? Number(load.loadingTimeEstimate) : load.loadingTimeEstimate,
+      unloadingTimeEstimate: load.unloadingTimeEstimate != null ? Number(load.unloadingTimeEstimate) : load.unloadingTimeEstimate,
+      hazmatClass: load.hazmatClass,
+      hazmatNumber: load.hazmatNumber,
+      maxTransitTime: load.maxTransitTime != null ? Number(load.maxTransitTime) : load.maxTransitTime,
+      packagingType: load.packagingType as any,
+      numberOfPieces: load.numberOfPieces,
+      numberOfPallets: load.numberOfPallets,
       requiresGpsMonitoring: load.requiresGpsMonitoring,
       requiresTemperatureMonitoring: load.requiresTemperatureMonitoring,
       requiresLowClearanceRoute: load.requiresLowClearanceRoute,
@@ -4170,13 +4232,15 @@ export class LoadsService {
       requiresPreShipmentInspection: load.requiresPreShipmentInspection,
       requiresDeliveryInspection: load.requiresDeliveryInspection,
       requiresPhotographicDocumentation: load.requiresPhotographicDocumentation,
-
+      specialHandlingInstructions: load.specialHandlingInstructions,
       loadingInstructions: load.loadingInstructions,
       unloadingInstructions: load.unloadingInstructions,
-      insuranceValue: load.insuranceValue,
+      insuranceValue: load.insuranceValue != null ? Number(load.insuranceValue) : load.insuranceValue,
       emergencyContactInfo: load.emergencyContactInfo,
-      maxClearanceHeight: load.maxClearanceHeight,
-
+      maxClearanceHeight: load.maxClearanceHeight != null ? Number(load.maxClearanceHeight) : load.maxClearanceHeight,
+      truckRequirements: load.truckRequirements || {},
+      carrierPreferences: load.carrierPreferences || {},
+      costPreferences: load.costPreferences || {},
       publishedAt: load.publishedAt,
       createdAt: load.createdAt,
       updatedAt: load.updatedAt,
@@ -4192,8 +4256,6 @@ export class LoadsService {
           return undefined;
         }
 
-        // Try to get profile from the raw query result
-        // TypeORM might not map it automatically, so we check the raw data
         const brokerProfile = (load as any).brokerProfile || load.broker?.profile;
 
         if (load.broker) {
@@ -4212,7 +4274,6 @@ export class LoadsService {
           };
         }
 
-        // Fallback if only brokerId exists
         return {
           id: load.brokerId,
           email: 'Broker Assigned',
@@ -4237,78 +4298,21 @@ export class LoadsService {
             : undefined,
         }
         : undefined,
-      pickupLocation: (() => {
-        // Try new format: locations JSONB array
-        if (load.locations && Array.isArray(load.locations)) {
-          const pickupLoc = load.locations.find((loc: any) => loc.type === 'PICKUP');
-          if (pickupLoc && pickupLoc.locationData) {
-            const coords = pickupLoc.locationData.coordinates;
-            return {
-              id: pickupLoc.id || '',
-              name: pickupLoc.locationData.name || '',
-              address: pickupLoc.locationData.address || '',
-              coordinates: {
-                type: 'Point',
-                coordinates: coords && coords.longitude && coords.latitude
-                  ? [coords.longitude, coords.latitude]
-                  : [0, 0],
-              },
-            };
-          }
-        }
-        // Try old format: separate pickupLocation relation
-        if (load.pickupLocation && load.pickupLocation.locationData) {
-          const coords = load.pickupLocation.locationData.coordinates;
-          return {
-            id: load.pickupLocation.id,
-            name: load.pickupLocation.locationData.name || '',
-            address: load.pickupLocation.locationData.address || '',
-            coordinates: {
-              type: 'Point',
-              coordinates: coords && coords.longitude && coords.latitude
-                ? [coords.longitude, coords.latitude]
-                : [0, 0],
-            },
-          };
-        }
-        return undefined;
-      })(),
-      deliveryLocation: (() => {
-        // Try new format: locations JSONB array
-        if (load.locations && Array.isArray(load.locations)) {
-          const deliveryLoc = load.locations.find((loc: any) => loc.type === 'DELIVERY');
-          if (deliveryLoc && deliveryLoc.locationData) {
-            const coords = deliveryLoc.locationData.coordinates;
-            return {
-              id: deliveryLoc.id || '',
-              name: deliveryLoc.locationData.name || '',
-              address: deliveryLoc.locationData.address || '',
-              coordinates: {
-                type: 'Point',
-                coordinates: coords && coords.longitude && coords.latitude
-                  ? [coords.longitude, coords.latitude]
-                  : [0, 0],
-              },
-            };
-          }
-        }
-        // Try old format: separate deliveryLocation relation
-        if (load.deliveryLocation && load.deliveryLocation.locationData) {
-          const coords = load.deliveryLocation.locationData.coordinates;
-          return {
-            id: load.deliveryLocation.id,
-            name: load.deliveryLocation.locationData.name || '',
-            address: load.deliveryLocation.locationData.address || '',
-            coordinates: {
-              type: 'Point',
-              coordinates: coords && coords.longitude && coords.latitude
-                ? [coords.longitude, coords.latitude]
-                : [0, 0],
-            },
-          };
-        }
-        return undefined;
-      })(),
+      pickupLocation,
+      deliveryLocation,
+      documents: Array.isArray((load as any).documents)
+        ? (load as any).documents.map((d: any) => ({
+            id: d.id,
+            documentType: d.documentType || d.type || 'OTHER',
+            title: d.title || d.fileName,
+            fileUrl: d.fileUrl,
+            fileName: d.fileName,
+            fileSize: d.fileSize,
+            mimeType: d.mimeType,
+            status: d.status,
+            createdAt: d.createdAt,
+          }))
+        : [],
     };
   }
 

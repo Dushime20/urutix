@@ -171,7 +171,7 @@ export class TripsController {
   @Get('my-trips')
   @ApiOperation({
     summary: 'Get trips for the logged-in driver',
-    description: 'Returns current, upcoming, and history trips for the authenticated driver',
+    description: 'Returns current, active, upcoming, and history trips for the authenticated driver',
   })
   @ApiOkResponse({ description: 'Driver trips retrieved successfully' })
   async getMyTrips(@Request() req): Promise<ApiResponseDto> {

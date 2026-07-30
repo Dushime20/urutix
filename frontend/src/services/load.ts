@@ -223,8 +223,23 @@ export const loadsAPI = {
     // No files — plain JSON (backward compatible)
     return api.post<ICargoResponse>('/loads', cleanPayload).then((res) => res.data);
   },
-  update: (id: string, data: any) =>
-    api.patch(`/loads/${id}`, sanitizeCargoPayload(data)).then((res) => res.data),
+  update: (id: string, data: any) => {
+    // Extract pending File objects before sanitizing (same as create)
+    const pendingFiles: File[] = ((data as any).documents || [])
+      .filter((d: any) => d.isPending && d.file instanceof File)
+      .map((d: any) => d.file as File);
+
+    const cleanPayload = sanitizeCargoPayload(data);
+
+    if (pendingFiles.length > 0) {
+      const form = new FormData();
+      form.append("data", JSON.stringify(cleanPayload));
+      pendingFiles.forEach((file) => form.append("files", file));
+      return api.patch(`/loads/${id}`, form).then((res) => res.data);
+    }
+
+    return api.patch(`/loads/${id}`, cleanPayload).then((res) => res.data);
+  },
   delete: (id: string) => api.delete(`/loads/${id}`),
   saveDraft: (data: any) => {
     // Ensure all dates are valid ISO strings
