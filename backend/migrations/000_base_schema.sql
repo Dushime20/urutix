@@ -1903,6 +1903,7 @@ CREATE TABLE IF NOT EXISTS loan_disbursements (
   disbursement_method VARCHAR(50) NOT NULL DEFAULT 'bank_transfer',
   notes TEXT, purpose VARCHAR(500),
   interest_rate DECIMAL(5,2), term_months INTEGER,
+  currency VARCHAR(3) NOT NULL DEFAULT 'RWF',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -1918,6 +1919,7 @@ CREATE TABLE IF NOT EXISTS loan_repayments (
   repayment_date TIMESTAMPTZ NOT NULL,
   external_txn_ref VARCHAR(255) UNIQUE,
   metadata JSON,
+  currency VARCHAR(3) NOT NULL DEFAULT 'RWF',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_loan_repayments_request ON loan_repayments(loan_request_id, repayment_date);
