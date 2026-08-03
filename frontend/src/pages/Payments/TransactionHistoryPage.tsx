@@ -141,10 +141,10 @@ const TransactionHistoryPage = () => {
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-        <p className="text-red-600 font-semibold">Failed to load transaction history.</p>
+        <p className="text-slate-700 font-semibold">Failed to load transaction history.</p>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+          className="px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 text-sm font-semibold"
         >
           Try Again
         </button>
@@ -154,14 +154,14 @@ const TransactionHistoryPage = () => {
 
   return (
     <div className="space-y-8">
-      {/* Summary strip */}
+      {/* Summary strip — slate + primary only, matches pending payments */}
       {apiData?.summary && !isLoading && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
               Total Paid
             </p>
-            <p className="text-xl font-black text-slate-900 mt-1">
+            <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: apiData.summary.currency || 'RWF',
@@ -169,27 +169,27 @@ const TransactionHistoryPage = () => {
               }).format(apiData.summary.totalAmount)}
             </p>
           </div>
-          <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
-            <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wide">
+          <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800/50 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary-600/70 dark:text-primary-400/70 mb-1">
               Transactions
             </p>
-            <p className="text-xl font-black text-emerald-800 mt-1">
+            <p className="text-lg font-bold text-primary-700 dark:text-primary-300">
               {apiData.summary.totalPayments}
             </p>
           </div>
-          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
-            <p className="text-xs text-blue-600 font-semibold uppercase tracking-wide">
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
               Trip Payments
             </p>
-            <p className="text-xl font-black text-blue-800 mt-1">
+            <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
               {apiData.summary.tripPaymentsCount}
             </p>
           </div>
-          <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
-            <p className="text-xs text-orange-600 font-semibold uppercase tracking-wide">
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
               Advances
             </p>
-            <p className="text-xl font-black text-orange-800 mt-1">
+            <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
               {apiData.summary.advancePaymentsCount}
             </p>
           </div>

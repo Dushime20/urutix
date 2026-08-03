@@ -102,7 +102,7 @@ const CompletedTransactionsSection: React.FC<CompletedTransactionsSectionProps> 
             </p>
           )}
           {transaction.isLenderPayment && transaction.lenderName && (
-            <span className="inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 uppercase tracking-wide">
+            <span className="inline-block mt-1 text-[9px] font-bold px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 border border-primary-100 uppercase tracking-wide">
               Via {transaction.lenderName}
             </span>
           )}
@@ -136,7 +136,7 @@ const CompletedTransactionsSection: React.FC<CompletedTransactionsSectionProps> 
       key: 'status',
       label: 'Status',
       render: () => (
-        <StatusBadge status="completed" label="COMPLETED" />
+        <StatusBadge variant="neutral" label="COMPLETED" />
       ),
     },
   ], []);
@@ -160,8 +160,8 @@ const CompletedTransactionsSection: React.FC<CompletedTransactionsSectionProps> 
     <StandardDataTable
       title="Completed Transactions"
       subtitle={`Transaction History • ${pagination.total} Total`}
-      icon={<CheckCircle className="w-5 h-5 text-emerald-600" />}
-      headerColor="success"
+      icon={<CheckCircle className="w-5 h-5 text-primary-600" />}
+      headerColor="primary"
       columns={columns}
       data={transactions}
       loading={isLoading}

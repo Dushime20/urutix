@@ -82,7 +82,7 @@ const FleetTransactionHistoryPage = () => {
       render: (_v, row) =>
         row.isLenderPayment ? (
           <div className="flex items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-100 text-violet-700">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-100">
               <Building className="w-2.5 h-2.5" /> Lender
             </span>
             {row.lenderName && (
@@ -90,7 +90,7 @@ const FleetTransactionHistoryPage = () => {
             )}
           </div>
         ) : (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
             <User className="w-2.5 h-2.5" /> Direct
           </span>
         ),
@@ -109,7 +109,7 @@ const FleetTransactionHistoryPage = () => {
       label: 'Amount',
       sortable: true,
       render: (_v, row) => (
-        <span className="text-base font-black text-emerald-600 whitespace-nowrap">
+        <span className="text-base font-bold text-slate-900 whitespace-nowrap">
           {fmt(row.amount, row.currency)}{' '}
           <span className="text-xs font-bold text-slate-400">{row.currency}</span>
         </span>
