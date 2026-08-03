@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { toastActionSuccess, toastActionError, TRIP_COMPLETE_SUPPRESS_TYPES } from '../../utils/actionToast';
 import { cn } from '@/utils/cn';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -134,9 +135,12 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
       queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
-      toast.success(t('Trip completed successfully'));
+      toastActionSuccess(t('Trip completed successfully'), {
+        id: 'trip-complete',
+        suppressTypes: TRIP_COMPLETE_SUPPRESS_TYPES,
+      });
     },
-    onError: (error: any) => toast.error(getApiErrorMessage(error)),
+    onError: (error: any) => toastActionError(getApiErrorMessage(error), { id: 'trip-complete' }),
   });
 
   // Filtering & Sorting

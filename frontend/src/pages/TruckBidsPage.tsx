@@ -16,6 +16,7 @@ import { FaTimes, FaStar, FaRegStar, FaUser, FaArrowRight, FaClock } from 'react
 import { Grid, Table, Clock, Search, Filter, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 const TruckBidsPage: React.FC = () => {
 	const { compact: fmtBid } = useCurrencyFormat();
@@ -401,7 +402,71 @@ const TruckBidsPage: React.FC = () => {
 
 	// --- UI COMPONENTS (Copied from FleetOwnerDashboard) ---
 
+	const tableColumns: Column<any>[] = useMemo(() => [
+		{
+			key: 'title',
+			label: 'Load Details',
+			render: (_v, a) => (
+				<div className="flex items-center gap-3">
+					<button onClick={() => toggleWatch(a)} className={`transition-colors ${watchedIds.has(a.id) ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}>
+						{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
+					</button>
+					<div>
+						<div className="font-bold text-gray-900">{a?.load?.title || 'Untitled Load'}</div>
+						<div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+							<FaUser size={10} /> {getCargoOwnerName(a?.load) || 'Unknown Owner'}
+						</div>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: 'route',
+			label: 'Route',
+			render: (_v, a) => (
+				<div className="flex items-center gap-2 text-sm text-gray-900 font-medium">
+					<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'PICKUP')}>{getLocationName(a?.load, 'PICKUP')}</span>
+					<FaArrowRight className="text-gray-300 text-xs flex-shrink-0" />
+					<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'DELIVERY')}>{getLocationName(a?.load, 'DELIVERY')}</span>
+				</div>
+			),
+		},
+		{
+			key: 'status',
+			label: 'Status',
+			sortable: true,
+			render: (_v, a) => <StatusBadge status={a.status} label={a.status} />,
+		},
+		{
+			key: 'currentBid',
+			label: 'Pricing',
+			sortable: true,
+			render: (_v, a) => (
+				<div>
+					<div className="font-bold text-gray-900">{a.currentHighestBid ?? a.currentBid ? fmtBid(a.currentHighestBid ?? a.currentBid) : '—'}</div>
+					<div className="text-xs text-gray-500">Current Bid</div>
+				</div>
+			),
+		},
+		{
+			key: 'auctionEnd',
+			label: 'Time Remaining',
+			render: (_v, a) => (
+				<div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+					<Clock className="text-gray-400" size={14} />
+					{a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}
+				</div>
+			),
+		},
+	], [watchedIds, fmtBid]);
 
+	const tableActions: TableAction<any>[] = useMemo(() => [
+		{
+			key: 'bid',
+			label: 'Place Bid',
+			onClick: (a) => openBidModal(a),
+		},
+	], []);
 
 	return (
 		<div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-500/30 flex flex-col">
@@ -593,77 +658,22 @@ const TruckBidsPage: React.FC = () => {
 						)}
 					</div>
 				) : (
-					<div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-						<div className="overflow-x-auto">
-							<table className="min-w-full divide-y divide-gray-200">
-								<thead className="bg-gray-50">
-									<tr>
-										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Load Details</th>
-										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Route</th>
-										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Pricing</th>
-										<th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Time Remaining</th>
-										<th className="px-6 py-4"></th>
-									</tr>
-								</thead>
-								<tbody className="bg-white divide-y divide-gray-200">
-									{loading ? (
-										<tr><td className="px-6 py-12 text-center text-gray-500" colSpan={6}>Loading...</td></tr>
-									) : filtered.length === 0 ? (
-										<tr><td className="px-6 py-12 text-center text-gray-500" colSpan={6}>No auctions found matching your criteria.</td></tr>
-									) : (
-										filtered.map((a) => (
-											<tr key={a.id} className="hover:bg-blue-50/30 transition-colors group">
-												<td className="px-6 py-4">
-													<div className="flex items-center gap-3">
-														<button onClick={() => toggleWatch(a)} className={`transition-colors ${watchedIds.has(a.id) ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}>
-															{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
-														</button>
-														<div>
-															<div className="font-bold text-gray-900">{a?.load?.title || 'Untitled Load'}</div>
-															<div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
-																<FaUser size={10} /> {getCargoOwnerName(a?.load) || 'Unknown Owner'}
-															</div>
-														</div>
-													</div>
-												</td>
-												<td className="px-6 py-4">
-													<div className="flex items-center gap-2 text-sm text-gray-900 font-medium">
-														<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'PICKUP')}>{getLocationName(a?.load, 'PICKUP')}</span>
-														<FaArrowRight className="text-gray-300 text-xs flex-shrink-0" />
-														<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'DELIVERY')}>{getLocationName(a?.load, 'DELIVERY')}</span>
-													</div>
-												</td>
-												<td className="px-6 py-4">
-													<span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${a.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
-														{a.status}
-													</span>
-												</td>
-												<td className="px-6 py-4">
-													<div className="font-bold text-gray-900">{a.currentHighestBid ?? a.currentBid ? fmtBid(a.currentHighestBid ?? a.currentBid) : '—'}</div>
-													<div className="text-xs text-gray-500">Current Bid</div>
-												</td>
-												<td className="px-6 py-4">
-													<div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-														<Clock className="text-gray-400" size={14} />
-														{a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}
-													</div>
-												</td>
-												<td className="px-6 py-4 text-right">
-													<button
-														onClick={() => openBidModal(a)}
-														className="px-4 py-2 rounded-lg bg-[#0f172a] text-white text-xs font-bold hover:bg-blue-600 transition-colors shadow-sm opacity-0 group-hover:opacity-100"
-													>
-														Place Bid
-													</button>
-												</td>
-											</tr>
-										))
-									)}
-								</tbody>
-							</table>
-						</div>
-					</div>
+					<StandardDataTable
+						columns={tableColumns}
+						data={filtered}
+						loading={loading}
+						getRowId={(row) => row.id}
+						searchable={false}
+						pagination
+						columnVisibility
+						stickyHeader
+						striped
+						hoverable
+						rowActions={tableActions}
+						emptyMessage="No auctions found matching your criteria."
+						ariaLabel="Truck auctions"
+						embedded
+					/>
 				)}
 
 			</main>

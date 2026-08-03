@@ -1,23 +1,18 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type BrokerCommission } from '../../services/brokerApi';
 import { 
   DollarSign, 
-  ArrowRight,
-  Loader2,
   Wallet,
-  AlertCircle,
-  Plus,
-  Activity,
   Zap,
   Shield,
-  Clock,
-  CheckCircle2,
+  Activity,
   X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 
 const PayoutsPage: React.FC = () => {
   const { format: fmtFull, compact: fmtMoney } = useCurrencyFormat();
@@ -74,17 +69,42 @@ const PayoutsPage: React.FC = () => {
     }
   };
 
-  const getStatusPrimeStyle = (status: string) => {
-    switch (status) {
-      case 'PAID':
-      case 'COMPLETED': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'PENDING': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'APPROVED': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
-      case 'REJECTED':
-      case 'CANCELLED': return 'bg-rose-50 text-rose-600 border-rose-100';
-      default: return 'bg-slate-50 text-slate-500 border-slate-100';
-    }
-  };
+  const payoutColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'id',
+      label: 'Ref',
+      render: (_v, row) => (
+        <span className="text-xs font-bold text-slate-900 uppercase italic dark:text-white">
+          PAY-{row.id.substring(0, 8)}
+        </span>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Value',
+      sortable: true,
+      render: (_v, row) => (
+        <span className="text-sm font-bold text-slate-900 dark:text-white">{fmtFull(row.amount)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Stage',
+      sortable: true,
+      render: (_v, row) => <StatusBadge status={row.status} label={row.status} />,
+    },
+    {
+      key: 'createdAt',
+      label: 'Logged',
+      sortable: true,
+      align: 'right',
+      render: (_v, row) => (
+        <span className="text-xs font-bold text-slate-400 uppercase">
+          {new Date(row.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+  ], [fmtFull]);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -161,36 +181,20 @@ const PayoutsPage: React.FC = () => {
             )}
           </div>
 
-          <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm space-y-10 dark:bg-slate-900 dark:border-slate-800">
+          <div className="bg-white rounded-[3.5rem] border border-slate-100 p-10 shadow-sm space-y-6 dark:bg-slate-900 dark:border-slate-800">
              <h3 className="text-sm font-bold text-slate-900 uppercase flex items-center gap-3 dark:text-white">
                <div className="w-2 h-2 bg-slate-400 rounded-full"></div> History
              </h3>
-             <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 dark:bg-slate-800/50 dark:border-slate-800">
-                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-400 uppercase">Ref</th>
-                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-400 uppercase">Value</th>
-                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-400 uppercase">Stage</th>
-                      <th className="px-8 py-5 text-right text-xs font-bold text-slate-400 uppercase">Logged</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {payoutRequests.map((req) => (
-                      <tr key={req.id} className="group hover:bg-slate-50/50 transition-all">
-                        <td className="px-8 py-6 text-xs font-bold text-slate-900 uppercase italic dark:text-white">PAY-{req.id.substring(0, 8)}</td>
-                        <td className="px-8 py-6 text-sm font-bold text-slate-900 dark:text-white">{fmtFull(req.amount)}</td>
-                        <td className="px-8 py-6">
-                           <span className={`px-4 py-1 rounded-lg text-xs font-bold uppercase ${getStatusPrimeStyle(req.status)} border`}>
-                             {req.status}
-                           </span>
-                        </td>
-                        <td className="px-8 py-6 text-right text-xs font-bold text-slate-400 uppercase">{new Date(req.createdAt).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-             </div>
+             <StandardDataTable
+               columns={payoutColumns}
+               data={payoutRequests}
+               getRowId={(row) => row.id}
+               searchPlaceholder="Search payouts..."
+               searchKeys={['id', 'status', 'amount']}
+               emptyMessage="No payout history yet"
+               ariaLabel="Payout history"
+               embedded
+             />
           </div>
         </div>
 

@@ -1,11 +1,11 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadContract, type CreateContractData } from '../../services/brokerApi';
-import { Plus, Search, CheckCircle2, X, Eye, Download, Shield, TrendingUp, Lock, FileCheck, DollarSign, Activity, Loader2, FileText } from 'lucide-react';
+import { Plus, CheckCircle2, X, Eye, Download, Shield, TrendingUp, Lock, FileCheck, DollarSign, Activity, Loader2, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-
 import jsPDF from 'jspdf';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 const ContractManagement: React.FC = () => {
   const { user } = useAuth();
@@ -130,21 +130,76 @@ const ContractManagement: React.FC = () => {
     toast.success('Contract PDF downloaded');
   };
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'SIGNED':
-      case 'ACTIVE':
-        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'PENDING_SIGNATURE':
-      case 'PENDING_BROKER_ACCEPTANCE':
-        return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'CANCELLED':
-      case 'REJECTED':
-        return 'bg-rose-50 text-rose-600 border-rose-100';
-      default:
-        return 'bg-slate-50 text-slate-500 border-slate-100';
-    }
-  };
+  const columns: Column<LoadContract>[] = useMemo(() => [
+    {
+      key: 'id',
+      label: 'Contract',
+      render: (_v, contract) => (
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 dark:bg-slate-800/50 dark:border-slate-800">
+            <Activity size={16} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">#{contract.id.slice(0, 8)}</p>
+            <p className="text-sm font-bold text-slate-400 uppercase mt-1">Load {contract.loadId.slice(0, 8)}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'agreedRate',
+      label: 'Earnings',
+      sortable: true,
+      render: (_v, contract) => (
+        <div>
+          <p className="text-sm font-bold text-slate-900 dark:text-white">{contract.agreedRate.toLocaleString()} <span className="text-sm text-slate-300 uppercase">{contract.currencyCode}</span></p>
+          <p className="text-xs font-bold text-primary-600 uppercase mt-1">Commission: {contract.commissionAmount.toLocaleString()}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'pickupDate',
+      label: 'Dates',
+      sortable: true,
+      render: (_v, contract) => (
+        <div>
+          <p className="text-xs font-bold text-slate-900 uppercase dark:text-white">{contract.pickupDate ? new Date(contract.pickupDate).toLocaleDateString() : 'TBD'}</p>
+          <p className="text-xs font-bold text-slate-400 uppercase mt-1">Pickup Date</p>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, contract) => (
+        <StatusBadge status={contract.status} label={contract.status.replace(/_/g, ' ')} />
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<LoadContract>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye size={16} />,
+      onClick: (contract) => setSelectedContract(contract),
+    },
+    {
+      key: 'download',
+      label: 'Download PDF',
+      icon: <Download size={16} />,
+      onClick: (contract) => generatePDF(contract),
+    },
+    {
+      key: 'accept',
+      label: 'Accept Contract',
+      icon: <CheckCircle2 size={16} />,
+      variant: 'success',
+      hidden: (contract) => contract.status !== 'PENDING_SIGNATURE',
+      onClick: (contract) => handleAcceptContract(contract.id),
+    },
+  ], []);
 
   if (loading && contracts.length === 0) {
     return <DashboardSkeleton />;
@@ -185,114 +240,42 @@ const ContractManagement: React.FC = () => {
       </div>
 
       {/* Contract Table Terminal */}
-      <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
-        <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6 dark:border-slate-800/50">
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-600 transition-colors" size={18} />
-            <input
-              type="text"
-              placeholder="Search Contracts..."
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-16 pr-8 py-4 text-xs font-bold text-slate-900 placeholder:text-slate-300 outline-none focus:bg-white focus:border-primary-100 transition-all dark:bg-slate-800/50 dark:text-white dark:border-slate-800"
-            />
-          </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="bg-slate-50 border border-slate-100 rounded-2xl px-8 py-4 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer flex-1 md:flex-none dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-800"
-            >
-              <option value="">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="SIGNED">Signed</option>
-              <option value="PENDING_SIGNATURE">Pending</option>
-              <option value="CANCELLED">Voided</option>
-            </select>
-          </div>
-        </div>
-
-        {contracts.length === 0 ? (
-          <div className="p-32 text-center space-y-8">
-            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200 dark:bg-slate-800/50">
-              <Shield size={48} />
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-slate-900 uppercase dark:text-white">No Contracts Found</h3>
-              <p className="text-xs font-semibold text-slate-400 uppercase leading-relaxed max-w-xs mx-auto">You have not created any contracts yet.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50/50">
-                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800">Contract</th>
-                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800">Earnings</th>
-                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800">Dates</th>
-                  <th className="px-10 py-8 text-left text-sm font-bold text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800">Status</th>
-                  <th className="px-10 py-8 text-right text-sm font-bold text-slate-400 uppercase border-b border-slate-100 dark:border-slate-800">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {contracts.map((contract) => (
-                  <tr key={contract.id} className="group hover:bg-slate-50/50 transition-all duration-300">
-                    <td className="px-10 py-8">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all shadow-sm dark:bg-slate-800/50 dark:border-slate-800">
-                          <Activity size={16} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">#{contract.id.slice(0, 8)}</p>
-                          <p className="text-sm font-bold text-slate-400 uppercase mt-1">Load {contract.loadId.slice(0, 8)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{contract.agreedRate.toLocaleString()} <span className="text-sm text-slate-300 uppercase">{contract.currencyCode}</span></p>
-                      <p className="text-xs font-bold text-primary-600 uppercase mt-1">Commission: {contract.commissionAmount.toLocaleString()}</p>
-                    </td>
-                    <td className="px-10 py-8">
-                      <p className="text-xs font-bold text-slate-900 uppercase dark:text-white">{contract.pickupDate ? new Date(contract.pickupDate).toLocaleDateString() : 'TBD'}</p>
-                      <p className="text-xs font-bold text-slate-400 uppercase mt-1">Pickup Date</p>
-                    </td>
-                    <td className="px-10 py-8">
-                      <span className={`px-4 py-2 rounded-xl text-xs font-bold uppercase border flex items-center gap-2 w-fit ${getStatusStyle(contract.status)}`}>
-                        {contract.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-10 py-8 text-right">
-                      <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                        <button
-                          onClick={() => setSelectedContract(contract)}
-                          className="p-3 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"
-                          title="View Details"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button
-                          onClick={() => generatePDF(contract)}
-                          className="p-3 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"
-                          title="Download PDF"
-                        >
-                          <Download size={18} />
-                        </button>
-                        {contract.status === 'PENDING_SIGNATURE' && (
-                          <button
-                            onClick={() => handleAcceptContract(contract.id)}
-                            className="p-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all shadow-lg"
-                            title="Accept Contract"
-                          >
-                            <CheckCircle2 size={18} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <StandardDataTable
+        columns={columns}
+        data={contracts}
+        loading={loading}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search Contracts..."
+        searchKeys={['id', 'loadId', 'status']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'ACTIVE', label: 'Active' },
+              { value: 'SIGNED', label: 'Signed' },
+              { value: 'PENDING_SIGNATURE', label: 'Pending' },
+              { value: 'CANCELLED', label: 'Voided' },
+            ],
+          },
+        ]}
+        filterValues={{ status: filters.status || 'all' }}
+        onFilterChange={(key, value) => {
+          if (key === 'status') setFilters({ ...filters, status: value === 'all' ? '' : value });
+        }}
+        rowActions={rowActions}
+        onRefresh={fetchContracts}
+        emptyMessage="No contracts found"
+        ariaLabel="Broker contracts"
+        headerActions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-primary-600 hover:bg-primary-500 text-white font-bold uppercase px-6 py-2 rounded-xl shadow-xl shadow-primary-900/20 active:scale-95 transition-all flex items-center gap-2 text-sm md:hidden"
+          >
+            <Plus size={14} /> New
+          </button>
+        }
+      />
 
       {showCreateModal && (
         <CreateContractModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateContract} />

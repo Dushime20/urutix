@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   Eye,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import toast from 'react-hot-toast';
+import { toastActionSuccess, toastActionError, BID_ACCEPT_SUPPRESS_TYPES } from '../../utils/actionToast';
 import { createPortal } from 'react-dom';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../../utils/paymentCalculations';
@@ -24,6 +25,12 @@ import {
   useWithdrawBidMutation,
   useAcceptBidMutation,
 } from '../../hooks/useBiddingQueries';
+import {
+  StandardDataTable,
+  StatusBadge,
+  type Column,
+  type TableAction,
+} from '../EnliteUI/Tables';
 
 interface Bid {
   id: string;
@@ -128,32 +135,20 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
 
     try {
       await acceptBidMutation.mutateAsync(bidId);
-      toast.success('Bid accepted successfully! The load has been assigned to the truck owner. The assigned driver will see it in their cargo management dashboard.');
+      toastActionSuccess(
+        'Bid accepted successfully! The load has been assigned to the truck owner. The assigned driver will see it in their cargo management dashboard.',
+        { id: 'accept-bid', suppressTypes: BID_ACCEPT_SUPPRESS_TYPES },
+      );
     } catch (error: any) {
       console.error('Accept bid error:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to accept bid';
-      toast.error(errorMessage);
+      toastActionError(errorMessage, { id: 'accept-bid' });
     }
   };
 
-   const getStatusBadge = (status: string) => {
-    const variants: { [key: string]: string } = {
-      PENDING: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800',
-      ACCEPTED: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800',
-      REJECTED: 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800',
-      WITHDRAWN: 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-800',
-      EXPIRED: 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-800',
-    };
-    return (
-      <span className={cn(
-        "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm flex items-center gap-1.5",
-        variants[status] || 'bg-slate-50 text-slate-500 border-slate-100'
-      )}>
-        <span className="w-1.5 h-1.5 rounded-full bg-current" />
-        {status}
-      </span>
-    );
-  };
+   const getStatusBadge = (status: string) => (
+    <StatusBadge status={status} label={status} />
+  );
 
   const getAINegotiationBadge = () => (
     <span className="px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full bg-blue-500 dark:bg-blue-600 text-white border border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/20 flex items-center gap-1.5 animate-pulse">
@@ -161,8 +156,6 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
       Neural AI Counter
     </span>
   );
-
-
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -173,6 +166,118 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
       minute: '2-digit',
     });
   };
+
+  const tableColumns: Column<Bid>[] = useMemo(() => {
+    const cols: Column<Bid>[] = [
+      {
+        key: 'load.title',
+        label: 'Context',
+        sortable: true,
+        alwaysVisible: true,
+        render: (_: any, bid: Bid) => (
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0">
+              <Truck size={20} className="text-[#345E85] dark:text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-black text-[#0f172a] dark:text-slate-100 leading-tight truncate">{bid.load.title}</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Ref: {bid.id.slice(0, 8)}</p>
+            </div>
+          </div>
+        ),
+      },
+    ];
+
+    if (userRole === 'CARGO_OWNER' || userRole === 'BROKER') {
+      cols.push({
+        key: 'truckOwner',
+        label: 'Bidder',
+        render: (_: any, bid: Bid) => {
+          const truckOwnerName = bid.truckOwner?.profile
+            ? `${bid.truckOwner.profile.firstName || ''} ${bid.truckOwner.profile.lastName || ''}`.trim() || 'Unknown'
+            : bid.truckOwner?.email || 'Unknown';
+          return (
+            <div className="flex flex-col">
+              <span className="text-xs font-black text-slate-900 dark:text-slate-100">{truckOwnerName}</span>
+              {bid.truckOwner?.profile?.companyName && (
+                <span className="text-[9px] font-black text-[#345E85] dark:text-blue-400 uppercase tracking-widest mt-1 opacity-70">
+                  {bid.truckOwner.profile.companyName}
+                </span>
+              )}
+            </div>
+          );
+        },
+      });
+    }
+
+    cols.push(
+      {
+        key: 'bidAmount',
+        label: 'Financials',
+        sortable: true,
+        render: (_: any, bid: Bid) => (
+          <div>
+            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(bid.bidAmount, bid.bidCurrency)}</div>
+            {bid.successProbability && (
+              <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase mt-1">{bid.successProbability}% MATCH</div>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        render: (_: any, bid: Bid) => (
+          <div className="flex flex-col gap-1.5">
+            {getStatusBadge(bid.status)}
+            {bid.isCounterOffer && getAINegotiationBadge()}
+          </div>
+        ),
+      },
+      {
+        key: 'createdAt',
+        label: 'Timeline',
+        sortable: true,
+        render: (value: string) => (
+          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
+            <Clock size={12} />
+            <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(value)}</span>
+          </div>
+        ),
+      },
+    );
+
+    return cols;
+  }, [userRole, formatCurrency]);
+
+  const tableActions: TableAction<Bid>[] = useMemo(() => [
+    {
+      key: 'details',
+      label: 'Details',
+      icon: <Eye size={14} />,
+      onClick: (bid) => {
+        setSelectedBid(bid);
+        setShowDetailsModal(true);
+      },
+    },
+    {
+      key: 'withdraw',
+      label: 'Withdraw',
+      icon: <Trash2 size={14} />,
+      variant: 'danger',
+      hidden: (bid) => !(bid.status === 'PENDING' && userRole === 'TRUCK_OWNER'),
+      onClick: (bid) => handleWithdrawBid(bid.id),
+    },
+    {
+      key: 'accept',
+      label: 'Accept',
+      icon: <CheckCircle size={14} />,
+      variant: 'success',
+      hidden: (bid) => !(bid.status === 'PENDING' && (userRole === 'CARGO_OWNER' || userRole === 'BROKER')),
+      onClick: (bid) => handleAcceptBid(bid.id),
+    },
+  ], [userRole]);
 
   const renderFilters = () => (
     <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 rounded-[2rem] border border-slate-100 dark:border-slate-800 mb-8">
@@ -277,107 +382,24 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
       ) : (
         <>
           {viewMode === 'table' ? (
-            <div className="w-full overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-separate border-spacing-y-3">
-                  <thead>
-                    <tr>
-                      <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Context</th>
-                      {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && (
-                        <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Bidder</th>
-                      )}
-                      <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Financials</th>
-                      <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Status</th>
-                      <th className="px-6 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Timeline</th>
-                      <th className="px-6 py-2 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bids.map((bid) => {
-                      const truckOwnerName = bid.truckOwner?.profile
-                        ? `${bid.truckOwner.profile.firstName || ''} ${bid.truckOwner.profile.lastName || ''}`.trim() || 'Unknown'
-                        : bid.truckOwner?.email || 'Unknown';
-
-                      return (
-                        <tr key={bid.id} className="group transition-all">
-                          <td className="px-6 py-4 bg-white dark:bg-slate-900 border-y border-l border-slate-100 dark:border-slate-800 first:rounded-l-[1.5rem] group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0 group-hover:bg-white dark:group-hover:bg-slate-900 group-hover:scale-110 transition-all">
-                                <Truck size={20} className="text-[#345E85] dark:text-blue-400" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-black text-[#0f172a] dark:text-slate-100 leading-tight truncate">{bid.load.title}</p>
-                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Ref: {bid.id.slice(0, 8)}</p>
-                              </div>
-                            </div>
-                          </td>
-                          {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && (
-                            <td className="px-6 py-4 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50">
-                              <div className="flex flex-col">
-                                <span className="text-xs font-black text-slate-900 dark:text-slate-100">{truckOwnerName}</span>
-                                {bid.truckOwner?.profile?.companyName && (
-                                  <span className="text-[9px] font-black text-[#345E85] dark:text-blue-400 uppercase tracking-widest mt-1 opacity-70">{bid.truckOwner.profile.companyName}</span>
-                                )}
-                              </div>
-                            </td>
-                          )}
-                          <td className="px-6 py-4 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50">
-                            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(bid.bidAmount, bid.bidCurrency)}</div>
-                            {bid.successProbability && (
-                              <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase mt-1">{bid.successProbability}% MATCH</div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50">
-                            <div className="flex flex-col gap-1.5">
-                              {getStatusBadge(bid.status)}
-                              {bid.isCounterOffer && getAINegotiationBadge()}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50">
-                            <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
-                              <Clock size={12} />
-                              <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(bid.createdAt)}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 bg-white dark:bg-slate-900 border-y border-r border-slate-100 dark:border-slate-800 last:rounded-r-[1.5rem] group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedBid(bid);
-                                  setShowDetailsModal(true);
-                                }}
-                                className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
-                              >
-                                <Eye size={18} />
-                              </button>
-                               {bid.status === 'PENDING' && userRole === 'TRUCK_OWNER' && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleWithdrawBid(bid.id)}
-                                  className="p-2.5 text-rose-400 dark:text-rose-500 hover:text-rose-600 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-rose-100 dark:hover:border-rose-900/30"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              )}
-                              {(bid.status === 'PENDING' && (userRole === 'CARGO_OWNER' || userRole === 'BROKER')) && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleAcceptBid(bid.id)}
-                                  className="p-2.5 text-emerald-400 dark:text-emerald-500 hover:text-emerald-600 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all shadow-sm border border-transparent hover:border-emerald-100 dark:hover:border-emerald-900/30"
-                                >
-                                  <CheckCircle size={18} />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <StandardDataTable<Bid>
+              embedded
+              columns={tableColumns}
+              data={bids}
+              getRowId={(row) => row.id}
+              searchable
+              searchPlaceholder="Search offers…"
+              searchKeys={['id', 'status', 'load.title']}
+              pagination
+              pageSize={10}
+              columnVisibility
+              stickyHeader
+              striped
+              hoverable
+              emptyMessage="No bidding history found"
+              rowActions={tableActions}
+              ariaLabel="Bid history"
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {bids.map((bid) => {

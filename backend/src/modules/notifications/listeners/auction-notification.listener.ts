@@ -544,19 +544,20 @@ export class AuctionNotificationListener {
       );
       this.eventsGateway.emitNotification(payload.winnerId, savedWinner);
 
-      // Also notify the Cargo Owner
+      // Cargo owner already gets an in-UI success toast when they accept the bid.
+      // Persist an inbox record without a realtime toast (NORMAL priority).
       const cargoOwnerNotification = this.notificationRepository.create({
         recipientId: payload.cargoOwnerId,
         tenantId: payload.tenantId,
         notificationType: NotificationType.AUCTION_WON,
         category: NotificationCategory.AUCTION,
-        priority: NotificationPriority.HIGH,
+        priority: NotificationPriority.NORMAL,
         title: 'Auction Winner Selected',
         message: `${payload.winnerName} has been selected as the winner for your auction${payload.cargoTitle ? ` "${payload.cargoTitle}"` : ''} with a bid of ${payload.winningBid.toLocaleString()} RWF.`,
         shortMessage: `Winner: ${payload.winnerName}`,
         entityType: EntityType.AUCTION,
         entityId: payload.auctionId,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+        channels: [NotificationChannel.IN_APP],
         status: NotificationStatus.SENT,
         isRead: false,
         requiresAction: false,
@@ -572,7 +573,7 @@ export class AuctionNotificationListener {
         userPreferences: {
           emailEnabled: true,
           smsEnabled: false,
-          pushEnabled: true,
+          pushEnabled: false,
         },
         analytics: {
           openCount: 0,
@@ -580,13 +581,7 @@ export class AuctionNotificationListener {
         },
       });
 
-      const savedCargoOwner = await this.notificationRepository.save(
-        cargoOwnerNotification,
-      );
-      this.eventsGateway.emitNotification(
-        payload.cargoOwnerId,
-        savedCargoOwner,
-      );
+      await this.notificationRepository.save(cargoOwnerNotification);
 
       this.logger.log(
         `Successfully sent auction winner notifications to winner ${payload.winnerId} and cargo owner ${payload.cargoOwnerId}`,

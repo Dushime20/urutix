@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lendingApi } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,25 +12,7 @@ import {
 } from 'lucide-react';
 import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../translated-text';
-
-// ── Status badge ─────────────────────────────────────────────────────────────
-const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const map: Record<string, string> = {
-    pending:   'bg-amber-50 text-amber-700 border-amber-200',
-    approved:  'bg-emerald-50 text-emerald-700 border-emerald-200',
-    rejected:  'bg-rose-50 text-rose-700 border-rose-200',
-    disbursed: 'bg-blue-50 text-blue-700 border-blue-200',
-    repaid:    'bg-emerald-50 text-emerald-700 border-emerald-100',
-    defaulted: 'bg-rose-100 text-rose-700 border-rose-200',
-    failed:    'bg-slate-100 text-slate-600 border-slate-200',
-  };
-  const cls = map[status?.toLowerCase()] ?? 'bg-slate-50 text-slate-600 border-slate-200';
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${cls}`}>
-      {status}
-    </span>
-  );
-};
+import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 
 // ── Stat card ── uses shared EnliteUI StatCard ────────────────────────────────
 const StatCard: React.FC<{
@@ -106,6 +88,147 @@ const LenderDashboardEnlite: React.FC = () => {
     } finally { setRejectingId(null); }
   };
 
+  const serverCurrency: string =
+    analyticsData?.currency || dashboardData?.currency || 'RWF';
+
+  const recentRequestColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'id',
+      label: <TranslatedText text="Loan ID" /> as unknown as string,
+      render: (_v, req) => (
+        <>
+          <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}…</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{new Date(req.created_at).toLocaleDateString()}</p>
+        </>
+      ),
+    },
+    {
+      key: 'borrower',
+      label: <TranslatedText text="Borrower" /> as unknown as string,
+      render: (_v, req) => {
+        const borrowerName = req.borrower?.contact_name || req.borrower?.company_name || req.created_by?.slice(0, 8) || '—';
+        return (
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-[#345E85]/10 flex items-center justify-center text-[#345E85] font-black text-xs flex-shrink-0">
+              {borrowerName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">{borrowerName}</p>
+              <p className="text-[10px] text-slate-400">{req.borrower?.email || ''}</p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'requested_amount',
+      label: <TranslatedText text="Amount" /> as unknown as string,
+      render: (_v, req) => {
+        const amount = Number(req.requested_amount || req.requestedAmount) || 0;
+        const approvedAmt = req.approved_amount != null ? Number(req.approved_amount) : null;
+        const loanCurrency: string = req.currency || serverCurrency;
+        return (
+          <>
+            <p className="text-sm font-black text-slate-900">{formatCurrency(amount, loanCurrency)}</p>
+            {approvedAmt != null && (
+              <p className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ {formatCurrency(approvedAmt, loanCurrency)}</p>
+            )}
+          </>
+        );
+      },
+    },
+    {
+      key: 'purpose',
+      label: <TranslatedText text="Purpose" /> as unknown as string,
+      render: (_v, req) => {
+        const purpose = req.metadata?.purpose || req.metadata?.note || '—';
+        return <p className="text-sm font-semibold text-slate-700 capitalize">{purpose}</p>;
+      },
+    },
+    {
+      key: 'requested_split',
+      label: <TranslatedText text="Fund Split" /> as unknown as string,
+      render: (_v, req) => {
+        const split: Array<{ type: string; amount: number }> = req.requested_split || [];
+        const loanCurrency: string = req.currency || serverCurrency;
+        return split.length > 0 ? (
+          <div className="space-y-1">
+            {split.map((s, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{s.type}</span>
+                <span className="text-xs font-bold text-slate-700">{formatCurrency(s.amount, loanCurrency)}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-[10px] text-slate-300">—</span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      label: <TranslatedText text="Status" /> as unknown as string,
+      render: (_v, req) => <StatusBadge status={req.status} label={req.status} />,
+    },
+    {
+      key: 'due_date',
+      label: <TranslatedText text="Due Date" /> as unknown as string,
+      render: (_v, req) => (
+        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+          {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
+        </p>
+      ),
+    },
+    {
+      key: 'actions',
+      label: <TranslatedText text="Actions" /> as unknown as string,
+      alwaysVisible: true,
+      hideable: false,
+      render: (_v, req) => (
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => navigate('/lender/requests')}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+            title="View details"
+          >
+            <Eye size={14} />
+          </button>
+          {req.status === 'pending' && (
+            <>
+              <button
+                onClick={() => handleApprove(req)}
+                className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors"
+                title="Approve"
+              >
+                <Check size={14} />
+              </button>
+              <button
+                onClick={() => handleReject(req.id)}
+                disabled={rejectingId === req.id}
+                className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500 transition-colors disabled:opacity-50"
+                title="Reject"
+              >
+                {rejectingId === req.id
+                  ? <RefreshCw size={14} className="animate-spin" />
+                  : <X size={14} />
+                }
+              </button>
+            </>
+          )}
+          {req.status === 'approved' && (
+            <button
+              onClick={() => navigate('/lender/disbursements')}
+              className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+              title="Disburse"
+            >
+              <DollarSign size={14} />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ], [formatCurrency, serverCurrency, navigate, handleApprove, handleReject, rejectingId]);
+
   // ── Derived stats ────────────────────────────────────────────────────────────
   const totalIssued      = dashboardData?.totalLoansIssued ?? 0;
   const outstanding      = dashboardData?.totalOutstandingPrincipal ?? 0;
@@ -113,10 +236,6 @@ const LenderDashboardEnlite: React.FC = () => {
   const defaultRate      = dashboardData?.defaultRate ?? 0;
   const roi              = dashboardData?.roi ?? 0;
   const interestCollected = dashboardData?.totalInterestCollected ?? 0;
-
-  // Currency reported by the server — fall back to analytics then dashboard, then RWF
-  const serverCurrency: string =
-    analyticsData?.currency || dashboardData?.currency || 'RWF';
 
   const totalRequests    = analyticsData?.totalLoans ?? recentRequests.length;
   const pendingCount     = recentRequests.filter(r => r.status === 'pending').length;
@@ -286,133 +405,16 @@ const LenderDashboardEnlite: React.FC = () => {
             <p className="text-slate-400 text-sm"><TranslatedText text="Requests from truck owners will appear here" /></p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-50">
-                  {['Loan ID', 'Borrower', 'Amount', 'Purpose', 'Fund Split', 'Status', 'Due Date', 'Actions'].map(h => (
-                    <th key={h} className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap"><TranslatedText text={h} /></th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {recentRequests.map(req => {
-                  const amount = Number(req.requested_amount || req.requestedAmount) || 0;
-                  const approvedAmt = req.approved_amount != null ? Number(req.approved_amount) : null;
-                  const borrowerName = req.borrower?.contact_name || req.borrower?.company_name || req.created_by?.slice(0, 8) || '—';
-                  const purpose = req.metadata?.purpose || req.metadata?.note || '—';
-                  const split: Array<{ type: string; amount: number }> = req.requested_split || [];
-                  const loanCurrency: string = req.currency || serverCurrency;
-
-                  return (
-                    <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
-                      {/* Loan ID */}
-                      <td className="px-6 py-4">
-                        <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}…</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{new Date(req.created_at).toLocaleDateString()}</p>
-                      </td>
-
-                      {/* Borrower */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-[#345E85]/10 flex items-center justify-center text-[#345E85] font-black text-xs flex-shrink-0">
-                            {borrowerName.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800">{borrowerName}</p>
-                            <p className="text-[10px] text-slate-400">{req.borrower?.email || ''}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Amount */}
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-black text-slate-900">{formatCurrency(amount, loanCurrency)}</p>
-                        {approvedAmt != null && (
-                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ {formatCurrency(approvedAmt, loanCurrency)}</p>
-                        )}
-                      </td>
-
-                      {/* Purpose */}
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-semibold text-slate-700 capitalize">{purpose}</p>
-                      </td>
-
-                      {/* Fund Split */}
-                      <td className="px-6 py-4">
-                        {split.length > 0 ? (
-                          <div className="space-y-1">
-                            {split.map((s, i) => (
-                              <div key={i} className="flex items-center gap-1.5">
-                                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{s.type}</span>
-                                <span className="text-xs font-bold text-slate-700">{formatCurrency(s.amount, loanCurrency)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : <span className="text-[10px] text-slate-300">—</span>}
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-6 py-4">
-                        <StatusBadge status={req.status} />
-                      </td>
-
-                      {/* Due Date */}
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
-                          {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
-                        </p>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => navigate('/lender/requests')}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
-                            title="View details"
-                          >
-                            <Eye size={14} />
-                          </button>
-                          {req.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => handleApprove(req)}
-                                className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors"
-                                title="Approve"
-                              >
-                                <Check size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleReject(req.id)}
-                                disabled={rejectingId === req.id}
-                                className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500 transition-colors disabled:opacity-50"
-                                title="Reject"
-                              >
-                                {rejectingId === req.id
-                                  ? <RefreshCw size={14} className="animate-spin" />
-                                  : <X size={14} />
-                                }
-                              </button>
-                            </>
-                          )}
-                          {req.status === 'approved' && (
-                            <button
-                              onClick={() => navigate('/lender/disbursements')}
-                              className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
-                              title="Disburse"
-                            >
-                              <DollarSign size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <StandardDataTable
+            embedded
+            columns={recentRequestColumns}
+            data={recentRequests}
+            getRowId={(row) => row.id}
+            searchable={false}
+            pagination={false}
+            hoverable
+            ariaLabel="Recent loan requests"
+          />
         )}
       </div>
 

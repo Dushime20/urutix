@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaSearch, FaEye } from 'react-icons/fa';
+import { FaEye } from 'react-icons/fa';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
 import { operationalAdminApi } from '../../services/operationalAdminApi';
-import ModernLoader from '../../components/common/ModernLoader';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
+
 const OperationalAdminLoads: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loads, setLoads] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     fetchLoads();
@@ -30,106 +29,98 @@ const OperationalAdminLoads: React.FC = () => {
     }
   };
 
-  const filteredLoads = useMemo(() => {
-    return loads.filter((load) => {
-      const titleMatch = load.title?.toLowerCase().includes(searchTerm.toLowerCase());
-      const originMatch = typeof load.origin === 'object' 
-        ? load.origin?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        : load.origin?.toLowerCase().includes(searchTerm.toLowerCase());
-      const destMatch = typeof load.destination === 'object'
-        ? load.destination?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-        : load.destination?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-      const matchSearch = searchTerm === '' || titleMatch || originMatch || destMatch;
-      const matchStatus = statusFilter === 'all' || load.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [loads, searchTerm, statusFilter]);
+  const columns: Column<any>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Title',
+      sortable: true,
+      render: (_v, row) => (
+        <span className="font-semibold text-gray-900 dark:text-white">
+          {row.title || `Load #${String(row.id || '').slice(0, 6)}`}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, row) => (
+        <StatusBadge
+          status={row.status}
+          label={row.status?.replace(/_/g, ' ') || 'Unknown'}
+        />
+      ),
+    },
+    {
+      key: 'cargoType',
+      label: 'Cargo Type',
+      render: (_v, row) => (
+        <span className="text-gray-600 dark:text-slate-300">
+          {row.cargoType?.replace(/_/g, ' ') || 'General Cargo'}
+        </span>
+      ),
+    },
+    {
+      key: 'origin',
+      label: 'Origin',
+      render: (_v, row) => (
+        <span className="text-gray-600 dark:text-slate-300">
+          {typeof row.origin === 'object' ? row.origin?.name || row.origin?.city : row.origin || 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'destination',
+      label: 'Destination',
+      render: (_v, row) => (
+        <span className="text-gray-600 dark:text-slate-300">
+          {typeof row.destination === 'object' ? row.destination?.name || row.destination?.city : row.destination || 'N/A'}
+        </span>
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<any>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <FaEye size={14} />,
+      onClick: () => {},
+    },
+  ], []);
 
   return (
     <OperationalPageLayout
       title="Load Management"
       description="Manage and monitor all loads within your tenant's operations"
     >
-      {loading ? (
-        <ModernLoader isLoading={true} type="page" />
-      ) : (
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-4">
-            <div className="relative flex-1">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search loads by title or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 outline-none"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 outline-none"
-            >
-              <option value="all">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="ASSIGNED">Assigned</option>
-              <option value="IN_TRANSIT">In Transit</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-800 text-gray-500">
-                <tr>
-                  <th className="px-6 py-4 font-semibold">Title</th>
-                  <th className="px-6 py-4 font-semibold">Status</th>
-                  <th className="px-6 py-4 font-semibold">Cargo Type</th>
-                  <th className="px-6 py-4 font-semibold">Origin</th>
-                  <th className="px-6 py-4 font-semibold">Destination</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {filteredLoads.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                      No loads found matching your criteria.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLoads.map((load) => (
-                    <tr key={load.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50">
-                      <td className="px-6 py-4 font-semibold">{load.title || `Load #${load.id.slice(0, 6)}`}</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
-                          {load.status?.replace(/_/g, ' ') || 'Unknown'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">{load.cargoType?.replace(/_/g, ' ') || 'General Cargo'}</td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {typeof load.origin === 'object' ? load.origin?.name || load.origin?.city : load.origin || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {typeof load.destination === 'object' ? load.destination?.name || load.destination?.city : load.destination || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-primary-600 hover:text-primary-800 p-2">
-                          <FaEye size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <StandardDataTable
+        columns={columns}
+        data={loads}
+        loading={loading}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search loads by title or location..."
+        searchKeys={['title', 'origin', 'destination', 'cargoType']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'DRAFT', label: 'Draft' },
+              { value: 'PUBLISHED', label: 'Published' },
+              { value: 'ASSIGNED', label: 'Assigned' },
+              { value: 'IN_TRANSIT', label: 'In Transit' },
+              { value: 'DELIVERED', label: 'Delivered' },
+              { value: 'COMPLETED', label: 'Completed' },
+              { value: 'CANCELLED', label: 'Cancelled' },
+            ],
+          },
+        ]}
+        rowActions={rowActions}
+        onRefresh={fetchLoads}
+        emptyMessage="No loads found matching your criteria."
+        ariaLabel="Operational loads"
+      />
     </OperationalPageLayout>
   );
 };

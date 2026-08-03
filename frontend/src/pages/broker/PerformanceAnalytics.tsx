@@ -1,8 +1,9 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { brokerAPI, type TransporterPerformance } from '../../services/brokerApi';
 import { BarChart3, CheckCircle2, Search, Activity, Zap, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { StandardDataTable, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 const PerformanceAnalytics: React.FC = () => {
   const [performance, setPerformance] = useState<TransporterPerformance | null>(null);
@@ -66,6 +67,64 @@ const PerformanceAnalytics: React.FC = () => {
   if (loading) {
     return <DashboardSkeleton />;
   }
+
+  const perfColumns = useMemo<Column<TransporterPerformance>[]>(() => [
+    {
+      key: 'transporterId',
+      label: 'Reference',
+      sortable: true,
+      render: (_v, perf) => (
+        <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">#{perf.transporterId.slice(0, 8)}</p>
+      ),
+    },
+    {
+      key: 'reliabilityScore',
+      label: 'Reliability',
+      sortable: true,
+      render: (_v, perf) => (
+        <p className="text-lg font-bold text-slate-900 dark:text-white">{perf.reliabilityScore.toFixed(1)}%</p>
+      ),
+    },
+    {
+      key: 'onTimeDeliveryRate',
+      label: 'On-Time',
+      sortable: true,
+      render: (_v, perf) => (
+        <span className="text-sm font-bold text-slate-900 dark:text-white">{perf.onTimeDeliveryRate.toFixed(1)}%</span>
+      ),
+    },
+    {
+      key: 'damageRate',
+      label: 'Damages',
+      sortable: true,
+      render: (_v, perf) => (
+        <span className="text-sm font-bold text-rose-500">{perf.damageRate.toFixed(1)}%</span>
+      ),
+    },
+    {
+      key: 'predictiveMatchSuccess',
+      label: 'Success Probability',
+      sortable: true,
+      render: (_v, perf) => (
+        <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold uppercase">
+          {perf.predictiveMatchSuccess.toFixed(1)}% PROB
+        </span>
+      ),
+    },
+  ], []);
+
+  const perfActions = useMemo<TableAction<TransporterPerformance>[]>(() => [
+    {
+      key: 'details',
+      label: 'Details',
+      icon: <ArrowRight size={14} />,
+      onClick: (perf) => {
+        setSelectedTransporter(perf.transporterId);
+        setPerformance(perf);
+        setViewMode('single');
+      },
+    },
+  ], []);
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
@@ -181,49 +240,24 @@ const PerformanceAnalytics: React.FC = () => {
 
       {/* Global View (Table View) */}
       {viewMode === 'all' && (
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden animate-slide-up dark:bg-slate-900 dark:border-slate-800">
-          <div className="p-10 border-b border-slate-50 flex items-center justify-between bg-slate-50/50 dark:border-slate-800/50">
-            <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Global Repository</h3>
-            <div className="px-4 py-2 bg-white rounded-full text-xs font-bold text-slate-400 uppercase border border-slate-100 shadow-sm dark:bg-slate-900 dark:border-slate-800">
-              Units: {allPerformances.length}
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-white dark:bg-slate-900">
-                  {['Reference', 'Reliability', 'On-Time', 'Damages', 'Success Probability', 'Details'].map((header) => (
-                    <th key={header} className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {allPerformances.map((perf) => (
-                  <tr key={perf.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => { setSelectedTransporter(perf.transporterId); setPerformance(perf); setViewMode('single'); }}>
-                    <td className="px-10 py-10">
-                      <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">#{perf.transporterId.slice(0, 8)}</p>
-                    </td>
-                    <td className="px-10 py-10">
-                      <p className="text-lg font-bold text-slate-900 dark:text-white">{perf.reliabilityScore.toFixed(1)}%</p>
-                    </td>
-                    <td className="px-10 py-10 text-sm font-bold text-slate-900 dark:text-white">{perf.onTimeDeliveryRate.toFixed(1)}%</td>
-                    <td className="px-10 py-10 text-sm font-bold text-rose-500">{perf.damageRate.toFixed(1)}%</td>
-                    <td className="px-10 py-10">
-                      <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold uppercase">
-                        {perf.predictiveMatchSuccess.toFixed(1)}% PROB
-                      </span>
-                    </td>
-                    <td className="px-10 py-10">
-                      <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"><ArrowRight size={16} /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <StandardDataTable<TransporterPerformance>
+          embedded
+          className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm p-4 animate-slide-up dark:bg-slate-900 dark:border-slate-800"
+          title={<span className="text-sm font-bold text-slate-900 uppercase dark:text-white">Global Repository</span>}
+          subtitle={<span className="text-xs font-bold text-slate-400 uppercase">Units: {allPerformances.length}</span>}
+          columns={perfColumns}
+          data={allPerformances}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Search transporters…"
+          searchKeys={['transporterId']}
+          rowActions={perfActions}
+          onRowClick={(perf) => { setSelectedTransporter(perf.transporterId); setPerformance(perf); setViewMode('single'); }}
+          stickyHeader
+          columnVisibility
+          pagination
+          emptyMessage="No performance records"
+          ariaLabel="Transporter performance"
+        />
       )}
     </div>
   );

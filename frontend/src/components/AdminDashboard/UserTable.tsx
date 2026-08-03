@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { 
+import React, { useMemo, useState } from 'react';
+import {
   FaUsers, FaEdit, FaTrash, FaPlus, FaSearch, FaDownload,
   FaEye, FaUserCheck, FaUserTimes, FaShieldAlt
 } from 'react-icons/fa';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface User {
   id: string;
@@ -13,6 +14,13 @@ interface User {
   lastActive: string;
   joinedAt: string;
 }
+
+const ROLE_VARIANT: Record<User['role'], 'error' | 'primary' | 'success' | 'warning'> = {
+  ADMIN: 'error',
+  CARGO_OWNER: 'primary',
+  FLEET_OWNER: 'success',
+  DRIVER: 'warning',
+};
 
 const UserTable: React.FC = () => {
   const [users] = useState<User[]>([
@@ -58,25 +66,6 @@ const UserTable: React.FC = () => {
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'bg-red-100 text-red-800';
-      case 'CARGO_OWNER': return 'bg-blue-100 text-blue-800';
-      case 'FLEET_OWNER': return 'bg-green-100 text-green-800';
-      case 'DRIVER': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
-      case 'SUSPENDED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'ACTIVE': return <FaUserCheck className="text-green-500" />;
@@ -93,6 +82,85 @@ const UserTable: React.FC = () => {
     const matchesStatus = !filterStatus || user.status === filterStatus;
     return matchesSearch && matchesRole && matchesStatus;
   });
+
+  const userColumns: Column<User>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'User',
+      sortable: true,
+      render: (_, user) => (
+        <div className="flex items-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+            {user.name.charAt(0)}
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+            <div className="text-sm text-gray-500">{user.email}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortable: true,
+      render: (_, user) => (
+        <StatusBadge
+          label={user.role.replace('_', ' ')}
+          variant={ROLE_VARIANT[user.role]}
+        />
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_, user) => (
+        <div className="flex items-center">
+          {getStatusIcon(user.status)}
+          <StatusBadge label={user.status} status={user.status} className="ml-2" />
+        </div>
+      ),
+    },
+    {
+      key: 'lastActive',
+      label: 'Last Active',
+      sortable: true,
+      render: (_, user) => (
+        <span className="text-sm text-gray-900">{new Date(user.lastActive).toLocaleDateString()}</span>
+      ),
+    },
+    {
+      key: 'joinedAt',
+      label: 'Joined',
+      sortable: true,
+      render: (_, user) => (
+        <span className="text-sm text-gray-900">{new Date(user.joinedAt).toLocaleDateString()}</span>
+      ),
+    },
+  ], []);
+
+  const userRowActions: TableAction<User>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <FaEye />,
+      onClick: () => {},
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <FaEdit />,
+      onClick: () => {},
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <FaTrash />,
+      variant: 'danger',
+      onClick: () => {},
+    },
+  ], []);
 
   return (
     <div className="space-y-6">
@@ -190,71 +258,22 @@ const UserTable: React.FC = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Active</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {user.name.charAt(0)}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                      {user.role.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {getStatusIcon(user.status)}
-                      <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}>
-                        {user.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(user.lastActive).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(user.joinedAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors">
-                        <FaEye />
-                      </button>
-                      <button className="text-green-600 hover:text-green-900 p-1 rounded transition-colors">
-                        <FaEdit />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900 p-1 rounded transition-colors">
-                        <FaTrash />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StandardDataTable<User>
+        embedded
+        searchable={false}
+        columnVisibility={false}
+        className="bg-white rounded-xl shadow-lg overflow-hidden px-4 py-4"
+        columns={userColumns}
+        data={filteredUsers}
+        getRowId={(row) => row.id}
+        rowActions={userRowActions}
+        stickyHeader
+        pagination={filteredUsers.length > 10}
+        pageSize={10}
+        defaultSortKey="name"
+        emptyMessage="No users match your current filters"
+        ariaLabel="User management"
+      />
     </div>
   );
 };

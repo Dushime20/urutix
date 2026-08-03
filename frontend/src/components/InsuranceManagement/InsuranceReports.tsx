@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
-import { FaDownload, FaFilter, FaCalendarAlt, FaChartBar, FaFileAlt, FaDollarSign, FaShieldAlt, FaExclamationTriangle, FaCheckCircle, FaTruck } from 'react-icons/fa';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import {
+  FaDownload, FaFilter, FaChartBar, FaFileAlt, FaDollarSign,
+  FaShieldAlt, FaExclamationTriangle,
+} from 'react-icons/fa';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
+} from 'recharts';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
+
+interface ClaimSummaryRow {
+  type: string;
+  count: number;
+  amount: number;
+  avgAmount: number;
+}
 
 const InsuranceReports: React.FC = () => {
   const [reportType, setReportType] = useState('premium');
   const [dateRange, setDateRange] = useState('6months');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Mock data for reports
   const premiumData = [
     { month: 'Jan', premium: 4500, claims: 1200, netCost: 3300 },
     { month: 'Feb', premium: 4800, claims: 800, netCost: 4000 },
@@ -17,7 +30,7 @@ const InsuranceReports: React.FC = () => {
     { month: 'Jun', premium: 5400, claims: 1300, netCost: 4100 },
   ];
 
-  const claimsData = [
+  const claimsData: ClaimSummaryRow[] = [
     { type: 'Collision', count: 12, amount: 45000, avgAmount: 3750 },
     { type: 'Cargo Damage', count: 8, amount: 28000, avgAmount: 3500 },
     { type: 'Theft', count: 3, amount: 135000, avgAmount: 45000 },
@@ -39,24 +52,45 @@ const InsuranceReports: React.FC = () => {
   ];
 
   const generateReport = () => {
-    // This would integrate with backend to generate actual reports
     console.log('Generating report:', { reportType, dateRange });
   };
 
   const downloadReport = (format: string) => {
-    // This would trigger actual report download
     console.log('Downloading report in', format, 'format');
   };
 
+  const claimsColumns: Column<ClaimSummaryRow>[] = [
+    {
+      key: 'type',
+      label: 'Claim Type',
+      alwaysVisible: true,
+      render: (value) => <span className="text-sm font-medium text-gray-900 dark:text-slate-100">{value}</span>,
+    },
+    {
+      key: 'count',
+      label: 'Count',
+      render: (value) => <span className="text-sm text-gray-500">{value}</span>,
+    },
+    {
+      key: 'amount',
+      label: 'Total Amount',
+      render: (value) => <span className="text-sm text-gray-500">${Number(value).toLocaleString()}</span>,
+    },
+    {
+      key: 'avgAmount',
+      label: 'Average Amount',
+      render: (value) => <span className="text-sm text-gray-500">${Number(value).toLocaleString()}</span>,
+    },
+  ];
+
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Insurance Reports</h1>
           <p className="text-gray-600">Comprehensive insurance analytics and reporting</p>
         </div>
-        
+
         <div className="flex space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -65,7 +99,7 @@ const InsuranceReports: React.FC = () => {
             <FaFilter className="mr-2" />
             Filters
           </button>
-          
+
           <button
             onClick={generateReport}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
@@ -76,7 +110,6 @@ const InsuranceReports: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
       {showFilters && (
         <div className="bg-white rounded-lg border p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -94,7 +127,7 @@ const InsuranceReports: React.FC = () => {
                 <option value="comprehensive">Comprehensive Report</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
               <select
@@ -108,7 +141,7 @@ const InsuranceReports: React.FC = () => {
                 <option value="custom">Custom Range</option>
               </select>
             </div>
-            
+
             <div className="flex items-end">
               <button
                 onClick={() => setShowFilters(false)}
@@ -121,7 +154,6 @@ const InsuranceReports: React.FC = () => {
         </div>
       )}
 
-      {/* Report Type Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8">
           {['premium', 'claims', 'coverage', 'risk'].map((type) => (
@@ -140,10 +172,8 @@ const InsuranceReports: React.FC = () => {
         </nav>
       </div>
 
-      {/* Premium Analysis Report */}
       {reportType === 'premium' && (
         <div className="space-y-6">
-          {/* Premium vs Claims Chart */}
           <div className="bg-white rounded-lg border p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Premium vs Claims Trend</h3>
@@ -177,7 +207,6 @@ const InsuranceReports: React.FC = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Premium Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
@@ -190,7 +219,7 @@ const InsuranceReports: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
                 <FaExclamationTriangle className="h-8 w-8 text-red-600" />
@@ -202,7 +231,7 @@ const InsuranceReports: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
                 <FaShieldAlt className="h-8 w-8 text-green-600" />
@@ -214,7 +243,7 @@ const InsuranceReports: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
                 <FaChartBar className="h-8 w-8 text-purple-600" />
@@ -230,7 +259,6 @@ const InsuranceReports: React.FC = () => {
         </div>
       )}
 
-      {/* Claims Analysis Report */}
       {reportType === 'claims' && (
         <div className="space-y-6">
           <div className="bg-white rounded-lg border p-6">
@@ -266,38 +294,25 @@ const InsuranceReports: React.FC = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Claims Summary Table */}
-          <div className="bg-white rounded-lg border overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Claims Summary</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claim Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {claimsData.map((claim) => (
-                    <tr key={claim.type} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{claim.type}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{claim.count}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">${claim.amount.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">${claim.avgAmount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <StandardDataTable
+            title="Claims Summary"
+            icon={<FaFileAlt className="w-5 h-5" />}
+            headerColor="primary"
+            columns={claimsColumns}
+            data={claimsData}
+            getRowId={(row) => row.type}
+            searchPlaceholder="Search claim types..."
+            searchKeys={['type']}
+            pagination={false}
+            columnVisibility={false}
+            emptyMessage="No claims summary data"
+            onExport={() => downloadReport('excel')}
+            exportLabel="Export"
+            ariaLabel="Claims summary"
+          />
         </div>
       )}
 
-      {/* Coverage Analysis Report */}
       {reportType === 'coverage' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -330,8 +345,8 @@ const InsuranceReports: React.FC = () => {
                 {coverageData.map((coverage) => (
                   <div key={coverage.name} className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div 
-                        className="w-4 h-4 rounded-full mr-3" 
+                      <div
+                        className="w-4 h-4 rounded-full mr-3"
                         style={{ backgroundColor: coverage.color }}
                       />
                       <span className="text-sm font-medium text-gray-900">{coverage.name}</span>
@@ -345,7 +360,6 @@ const InsuranceReports: React.FC = () => {
         </div>
       )}
 
-      {/* Risk Assessment Report */}
       {reportType === 'risk' && (
         <div className="space-y-6">
           <div className="bg-white rounded-lg border p-6">
@@ -361,13 +375,12 @@ const InsuranceReports: React.FC = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Risk Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {riskAnalysisData.map((risk) => (
               <div key={risk.risk} className="bg-white rounded-lg border p-6">
                 <div className="flex items-center">
-                  <div 
-                    className="w-8 h-8 rounded-full mr-4" 
+                  <div
+                    className="w-8 h-8 rounded-full mr-4"
                     style={{ backgroundColor: risk.color }}
                   />
                   <div>
@@ -382,7 +395,6 @@ const InsuranceReports: React.FC = () => {
         </div>
       )}
 
-      {/* Download Options */}
       <div className="bg-white rounded-lg border p-6 mt-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Reports</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -393,7 +405,7 @@ const InsuranceReports: React.FC = () => {
             <FaFileAlt className="h-6 w-6 text-red-400 mr-2" />
             <span className="text-gray-600">PDF Report</span>
           </button>
-          
+
           <button
             onClick={() => downloadReport('excel')}
             className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"
@@ -401,7 +413,7 @@ const InsuranceReports: React.FC = () => {
             <FaChartBar className="h-6 w-6 text-green-400 mr-2" />
             <span className="text-gray-600">Excel Report</span>
           </button>
-          
+
           <button
             onClick={() => downloadReport('csv')}
             className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"

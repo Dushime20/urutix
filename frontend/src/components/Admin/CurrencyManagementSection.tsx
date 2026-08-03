@@ -12,6 +12,7 @@ import type {
 } from '../../services/currencyApi';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../config/errorMessages';
+import { StandardDataTable, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface CurrencyFormState {
   code: string;
@@ -227,95 +228,117 @@ export const CurrencyManagementSection: React.FC = () => {
       </div>
 
       {/* Table */}
-      {isLoading ? (
-        <div className="h-32 flex items-center justify-center text-xs text-slate-400">Loading currencies…</div>
-      ) : (
-        <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-slate-800">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 dark:bg-slate-950 border-b border-gray-100 dark:border-slate-800">
-              <tr>
-                {['Currency','Symbol','Locale','Dec','Live Rate','Manual Override','Status','Actions'].map(h => (
-                  <th key={h} className="px-3 py-3 text-left font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50 dark:divide-slate-800 bg-white dark:bg-slate-900">
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-400 text-xs">No currencies found</td>
-                </tr>
-              )}
-              {filtered.map(c => {
-                const isBase   = c.code === 'USD';
-                const liveRate = isBase ? 1 : (rates[c.code] ?? null);
-                return (
-                  <tr key={c.code} className={`hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${!c.isActive ? 'opacity-50' : ''}`}>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm leading-none">{c.flag}</span>
-                        <div>
-                          <p className="font-black text-slate-800 dark:text-slate-100">{c.code}</p>
-                          <p className="text-[10px] text-slate-400 truncate max-w-[100px]">{c.name}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2.5 font-bold text-slate-700 dark:text-slate-300">{c.symbol}</td>
-                    <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400">{c.locale}</td>
-                    <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400">{c.decimals}</td>
-                    <td className="px-3 py-2.5">
-                      {isBase
-                        ? <span className="text-slate-400 italic text-[10px]">base</span>
-                        : liveRate !== null
-                          ? <span className="font-bold text-slate-700 dark:text-slate-200">{Number(liveRate).toFixed(4)}</span>
-                          : <span className="text-slate-300">—</span>}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      {c.manualRate !== null
-                        ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md font-bold">
-                            <Lock size={9} />{Number(c.manualRate).toFixed(4)}
-                          </span>
-                        : <span className="text-slate-300 text-[10px]">—</span>}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <button
-                        onClick={() => !isBase && toggleActive(c)}
-                        disabled={isBase}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-colors
-                          ${c.isActive ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
-                                       : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'}
-                          ${isBase ? 'cursor-default' : 'cursor-pointer'}`}
-                      >
-                        {c.isActive ? <><Check size={9} />Active</> : <><EyeOff size={9} />Inactive</>}
-                      </button>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => setViewTarget(c)}
-                          className="p-1.5 text-slate-400 hover:text-[#2c5173] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="View">
-                          <Eye size={12} />
-                        </button>
-                        <button onClick={() => openEdit(c)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
-                          <Edit size={12} />
-                        </button>
-                        {!isBase
-                          ? <button onClick={() => setDeleteTarget(c)}
-                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
-                              <Trash2 size={12} />
-                            </button>
-                          : <span className="p-1.5 text-slate-200 dark:text-slate-700" title="Base currency — protected"><Lock size={12} /></span>
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <StandardDataTable
+        embedded
+        columns={[
+          {
+            key: 'code',
+            label: 'Currency',
+            sortable: true,
+            render: (_: string, c: AdminCurrency) => (
+              <div className="flex items-center gap-2">
+                <span className="text-sm leading-none">{c.flag}</span>
+                <div>
+                  <p className="font-black text-slate-800 dark:text-slate-100">{c.code}</p>
+                  <p className="text-[10px] text-slate-400 truncate max-w-[100px]">{c.name}</p>
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'symbol',
+            label: 'Symbol',
+            render: (symbol: string) => (
+              <span className="font-bold text-slate-700 dark:text-slate-300">{symbol}</span>
+            ),
+          },
+          { key: 'locale', label: 'Locale', sortable: true },
+          { key: 'decimals', label: 'Dec', sortable: true },
+          {
+            key: 'liveRate',
+            label: 'Live Rate',
+            render: (_: any, c: AdminCurrency) => {
+              const isBase = c.code === 'USD';
+              const liveRate = isBase ? 1 : (rates[c.code] ?? null);
+              if (isBase) return <span className="text-slate-400 italic text-[10px]">base</span>;
+              if (liveRate !== null) {
+                return <span className="font-bold text-slate-700 dark:text-slate-200">{Number(liveRate).toFixed(4)}</span>;
+              }
+              return <span className="text-slate-300">—</span>;
+            },
+          },
+          {
+            key: 'manualRate',
+            label: 'Manual Override',
+            render: (manualRate: number | null) =>
+              manualRate !== null ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md font-bold">
+                  <Lock size={9} />{Number(manualRate).toFixed(4)}
+                </span>
+              ) : (
+                <span className="text-slate-300 text-[10px]">—</span>
+              ),
+          },
+          {
+            key: 'isActive',
+            label: 'Status',
+            sortable: true,
+            render: (isActive: boolean, c: AdminCurrency) => {
+              const isBase = c.code === 'USD';
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); if (!isBase) toggleActive(c); }}
+                  disabled={isBase}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-colors
+                    ${isActive ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400'
+                               : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'}
+                    ${isBase ? 'cursor-default' : 'cursor-pointer'}`}
+                >
+                  {isActive ? <><Check size={9} />Active</> : <><EyeOff size={9} />Inactive</>}
+                </button>
+              );
+            },
+          },
+        ] as Column<AdminCurrency>[]}
+        data={filtered}
+        loading={isLoading}
+        getRowId={(row) => row.code}
+        searchable={false}
+        pagination
+        pageSize={25}
+        columnVisibility
+        stickyHeader
+        striped
+        hoverable
+        dense
+        emptyMessage="No currencies found"
+        rowClassName={(row) => (!row.isActive ? 'opacity-50' : '')}
+        rowActions={[
+          {
+            key: 'view',
+            label: 'View',
+            icon: <Eye size={12} />,
+            onClick: (c) => setViewTarget(c),
+          },
+          {
+            key: 'edit',
+            label: 'Edit',
+            icon: <Edit size={12} />,
+            onClick: (c) => openEdit(c),
+          },
+          {
+            key: 'delete',
+            label: 'Delete',
+            icon: <Trash2 size={12} />,
+            variant: 'danger',
+            divider: true,
+            hidden: (c) => c.code === 'USD',
+            onClick: (c) => setDeleteTarget(c),
+          },
+        ] as TableAction<AdminCurrency>[]}
+        ariaLabel="Currency management"
+      />
 
       {/* ── Create modal ──────────────────────────────────────────────────── */}
       {showCreate && (

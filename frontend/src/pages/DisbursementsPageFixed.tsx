@@ -1,26 +1,28 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { LendingApi } from '../services/lending/lendingApi';
+import {
+  StandardDataTable,
+  StatusBadge,
+  type Column,
+  type TableAction,
+  type StatusBadgeVariant,
+} from '../components/EnliteUI/Tables';
 import { 
   FaMoneyBillWave, 
   FaClock, 
   FaCheckCircle, 
   FaExclamationTriangle,
   FaSearch,
-  FaFilter,
   FaDownload,
   FaEye,
   FaTimesCircle,
   FaFileInvoiceDollar,
   FaCalendarAlt,
   FaUser,
-  FaTruck,
   FaMapMarkerAlt,
-  FaSortAmountDown,
-  FaSortAmountUp,
   FaChartLine,
   FaArrowUp,
-  FaArrowDown
 } from 'react-icons/fa';
 
 interface Disbursement {
@@ -94,7 +96,7 @@ const DisbursementsPage: React.FC = () => {
   // Load disbursements from API
   useEffect(() => {
     loadDisbursements();
-  }, [searchTerm, statusFilter, priorityFilter, sortField, sortDirection, pagination.page]);
+  }, [searchTerm, statusFilter, priorityFilter, sortField, sortDirection, pagination.page, pagination.limit]);
 
   const loadDisbursements = async () => {
     try {
@@ -145,40 +147,83 @@ const DisbursementsPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'disbursed': return 'bg-blue-100 text-blue-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'on_hold': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
+  const getPriorityVariant = (priority: string): StatusBadgeVariant => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'urgent': return 'error';
+      case 'high': return 'orange';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'neutral';
     }
   };
 
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
-  const handleViewDetails = (disbursement: Disbursement) => {
+  const handleViewDetails = useCallback((disbursement: Disbursement) => {
     setSelectedDisbursement(disbursement);
     setShowDetails(true);
-  };
+  }, []);
+
+  const disbursementColumns: Column<Disbursement>[] = useMemo(() => [
+    {
+      key: 'id',
+      label: 'ID',
+      render: (_v, d) => <span className="text-sm font-medium text-gray-900">{d.id}</span>,
+    },
+    {
+      key: 'borrowerName',
+      label: 'Borrower',
+      render: (_v, d) => (
+        <div className="flex items-center">
+          <FaUser className="h-4 w-4 text-gray-400 mr-2" />
+          <div>
+            <div className="text-sm font-medium text-gray-900">{d.borrowerName}</div>
+            <div className="text-sm text-gray-500">{d.cargoType}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      render: (_v, d) => <span className="text-sm text-gray-900">{fmtMoney(d.amount)}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, d) => (
+        <StatusBadge
+          status={d.status}
+          label={d.status.replace('_', ' ')}
+          icon={getStatusIcon(d.status)}
+        />
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      render: (_v, d) => (
+        <StatusBadge variant={getPriorityVariant(d.priority)} label={d.priority} />
+      ),
+    },
+    {
+      key: 'requestedDate',
+      label: 'Requested Date',
+      render: (_v, d) => (
+        <div className="flex items-center">
+          <FaCalendarAlt className="h-4 w-4 text-gray-400 mr-2" />
+          <span className="text-sm text-gray-900">{d.requestedDate}</span>
+        </div>
+      ),
+    },
+  ], [fmtMoney]);
+
+  const disbursementRowActions: TableAction<Disbursement>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <FaEye />,
+      onClick: handleViewDetails,
+    },
+  ], [handleViewDetails]);
 
   const handleExport = () => {
     const csvContent = [
@@ -355,186 +400,34 @@ const DisbursementsPage: React.FC = () => {
         </div>
 
         {/* Disbursements Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('id')}
-                  >
-                    <div className="flex items-center gap-1">
-                      ID
-                      {sortField === 'id' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('borrowerName')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Borrower
-                      {sortField === 'borrowerName' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('amount')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Amount
-                      {sortField === 'amount' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('requestedDate')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Requested Date
-                      {sortField === 'requestedDate' && (
-                        sortDirection === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />
-                      )}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredDisbursements.map((disbursement) => (
-                  <tr key={disbursement.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {disbursement.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <FaUser className="h-4 w-4 text-gray-400 mr-2" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {disbursement.borrowerName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {disbursement.cargoType}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {fmtMoney(disbursement.amount)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(disbursement.status)}`}>
-                        {getStatusIcon(disbursement.status)}
-                        <span className="ml-1 capitalize">{disbursement.status.replace('_', ' ')}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(disbursement.priority)}`}>
-                        {disbursement.priority}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center">
-                        <FaCalendarAlt className="h-4 w-4 text-gray-400 mr-2" />
-                        {disbursement.requestedDate}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleViewDetails(disbursement)}
-                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-                      >
-                        <FaEye />
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Empty State */}
-          {!loading && filteredDisbursements.length === 0 && (
-            <div className="text-center py-12">
-              <FaFileInvoiceDollar className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No disbursements found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {error ? 'There was an error loading disbursements.' : 'No disbursements match your current filters.'}
-              </p>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setPagination({...pagination, page: Math.max(1, pagination.page - 1)})}
-                  disabled={pagination.page === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setPagination({...pagination, page: Math.min(pagination.totalPages, pagination.page + 1)})}
-                  disabled={pagination.page === pagination.totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing{' '}
-                    <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span>
-                    {' '}to{' '}
-                    <span className="font-medium">
-                      {Math.min(pagination.page * pagination.limit, pagination.total)}
-                    </span>
-                    {' '}of{' '}
-                    <span className="font-medium">{pagination.total}</span>
-                    {' '}results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setPagination({...pagination, page: Math.max(1, pagination.page - 1)})}
-                      disabled={pagination.page === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setPagination({...pagination, page: Math.min(pagination.totalPages, pagination.page + 1)})}
-                      disabled={pagination.page === pagination.totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                    >
-                      Next
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <StandardDataTable
+          embedded
+          columns={disbursementColumns}
+          data={filteredDisbursements}
+          loading={loading}
+          error={error}
+          onRetry={loadDisbursements}
+          getRowId={(row) => row.id}
+          searchable={false}
+          columnVisibility={false}
+          sortKey={sortField}
+          sortDirection={sortDirection}
+          onSort={(key, direction) => {
+            setSortField(key);
+            setSortDirection(direction);
+          }}
+          rowActions={disbursementRowActions}
+          actionsLabel="Actions"
+          pagination
+          pageSize={pagination.limit}
+          totalItems={pagination.total}
+          page={pagination.page}
+          onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+          onPageSizeChange={(limit) => setPagination((prev) => ({ ...prev, limit, page: 1 }))}
+          emptyMessage={error ? 'There was an error loading disbursements.' : 'No disbursements match your current filters.'}
+          ariaLabel="Loan disbursements"
+          className="bg-white rounded-lg shadow-md overflow-hidden p-4"
+        />
       </div>
 
       {/* Disbursement Details Modal */}
@@ -589,14 +482,20 @@ const DisbursementsPage: React.FC = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center">
                       <strong>Status:</strong>
-                      <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedDisbursement.status)}`}>
-                        {getStatusIcon(selectedDisbursement.status)}
-                        <span className="ml-1 capitalize">{selectedDisbursement.status.replace('_', ' ')}</span>
+                      <span className="ml-2">
+                        <StatusBadge
+                          status={selectedDisbursement.status}
+                          label={selectedDisbursement.status.replace('_', ' ')}
+                          icon={getStatusIcon(selectedDisbursement.status)}
+                        />
                       </span>
                     </div>
-                    <div><strong>Priority:</strong> 
-                      <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(selectedDisbursement.priority)}`}>
-                        {selectedDisbursement.priority}
+                    <div><strong>Priority:</strong>
+                      <span className="ml-2">
+                        <StatusBadge
+                          variant={getPriorityVariant(selectedDisbursement.priority)}
+                          label={selectedDisbursement.priority}
+                        />
                       </span>
                     </div>
                     <div><strong>Requested:</strong> {selectedDisbursement.requestedDate}</div>

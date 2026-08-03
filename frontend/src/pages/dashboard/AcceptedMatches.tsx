@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -119,6 +120,133 @@ const AcceptedMatches: React.FC = () => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
+  const matchColumns = useMemo<Column<any>[]>(() => [
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, match) => <StatusBadge status={match.status} label={match.status} />,
+    },
+    {
+      key: 'load',
+      label: 'Cargo',
+      render: (_v, match) => (
+        <div className="max-w-[160px]">
+          <p className="font-black text-slate-900 text-xs truncate">{match.load?.title || `Cargo ${match.loadId?.slice(0, 8)}`}</p>
+          <p className="text-[10px] text-slate-400 truncate">{match.load?.cargoType || '—'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'weight',
+      label: 'Weight',
+      render: (_v, match) => (
+        <span className="text-xs text-slate-600 whitespace-nowrap">{Number(match.load?.weight || 0).toLocaleString()} kg</span>
+      ),
+    },
+    {
+      key: 'truck',
+      label: 'Truck',
+      render: (_v, match) => (
+        <div>
+          <p className="text-xs font-bold text-slate-700 whitespace-nowrap">{match.truck?.plateNumber || '—'}</p>
+          <p className="text-[10px] text-slate-400">{`${match.truck?.make || ''} ${match.truck?.model || ''}`.trim() || '—'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'owner',
+      label: 'Truck Owner',
+      render: (_v, match) => {
+        const details = match.matchDetails ?? match.match_details;
+        return (
+          <span className="text-xs text-slate-600 max-w-[120px] truncate block">
+            {match.truck?.owner?.profile?.firstName
+              ? `${match.truck.owner.profile.firstName} ${match.truck.owner.profile.lastName || ''}`.trim()
+              : details?.ownerName || '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'route',
+      label: 'Route',
+      render: (_v, match) => (
+        <div className="flex items-center gap-1 text-xs text-slate-600 whitespace-nowrap">
+          <span className="truncate max-w-[70px]">
+            {match.load?.origin?.city
+              || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city
+              || '—'}
+          </span>
+          <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
+          <span className="truncate max-w-[70px]">
+            {match.load?.destination?.city
+              || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city
+              || '—'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'distance',
+      label: 'Distance',
+      render: (_v, match) => <span className="text-xs text-slate-600 whitespace-nowrap">{getDistance(match)}</span>,
+    },
+    {
+      key: 'cost',
+      label: 'Est. Cost',
+      render: (_v, match) => <span className="text-xs font-black text-slate-900 whitespace-nowrap">{getPrice(match)}</span>,
+    },
+    {
+      key: 'score',
+      label: 'Score',
+      sortable: true,
+      render: (_v, match) => (
+        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black border whitespace-nowrap ${
+          (match.score || 0) >= 0.9 ? 'bg-green-50 text-green-600 border-green-200' :
+          (match.score || 0) >= 0.8 ? 'bg-blue-50 text-blue-600 border-blue-200' :
+          (match.score || 0) >= 0.7 ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
+          'bg-red-50 text-red-600 border-red-200'
+        }`}>{Math.round((match.score || 0) * 100)}%</span>
+      ),
+    },
+    {
+      key: 'pickupDate',
+      label: 'Pickup Date',
+      render: (_v, match) => <span className="text-xs text-slate-500 whitespace-nowrap">{fmtDate(match.load?.pickupDate)}</span>,
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      render: (_v, match) => (
+        <div className="whitespace-nowrap">
+          {match.status === 'ACCEPTED' && !match.trip && (
+            <button
+              onClick={() => handleCreateTrip(match.id)}
+              disabled={processingId === match.id}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+            >
+              {processingId === match.id
+                ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <><CheckCircle className="w-3 h-3" /> Start Trip</>}
+            </button>
+          )}
+          {match.status === 'ACCEPTED' && match.trip && (
+            <button
+              onClick={() => navigate('/dashboard/tracking')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+            >
+              <Navigation className="w-3 h-3" /> Track
+            </button>
+          )}
+          {match.status === 'REQUESTED' && (
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Awaiting...</span>
+          )}
+        </div>
+      ),
+    },
+  ], [getPrice, navigate, processingId]);
+
   return (
     <div className="space-y-6 pb-16">
       {/* Header */}
@@ -192,113 +320,20 @@ const AcceptedMatches: React.FC = () => {
         <div className="space-y-4">
           {/* ── TABLE VIEW ─────────────────────────────────────────── */}
           {viewMode === 'table' && (
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                      {['Status', 'Cargo', 'Weight', 'Truck', 'Truck Owner', 'Route', 'Distance', 'Est. Cost', 'Score', 'Pickup Date', 'Action'].map(h => (
-                        <th key={h} className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 whitespace-nowrap">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {sorted.map(match => {
-                      const details = match.matchDetails ?? match.match_details;
-                      return (
-                        <tr key={match.id} className="hover:bg-slate-50/60 transition-colors">
-                          {/* Status */}
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border whitespace-nowrap ${
-                              match.status === 'ACCEPTED'
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                : 'bg-slate-50 text-slate-500 border-slate-200'
-                            }`}>{match.status}</span>
-                          </td>
-                          {/* Cargo */}
-                          <td className="px-4 py-3 max-w-[160px]">
-                            <p className="font-black text-slate-900 text-xs truncate">{match.load?.title || `Cargo ${match.loadId?.slice(0, 8)}`}</p>
-                            <p className="text-[10px] text-slate-400 truncate">{match.load?.cargoType || '—'}</p>
-                          </td>
-                          {/* Weight */}
-                          <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">
-                            {Number(match.load?.weight || 0).toLocaleString()} kg
-                          </td>
-                          {/* Truck */}
-                          <td className="px-4 py-3">
-                            <p className="text-xs font-bold text-slate-700 whitespace-nowrap">{match.truck?.plateNumber || '—'}</p>
-                            <p className="text-[10px] text-slate-400">{`${match.truck?.make || ''} ${match.truck?.model || ''}`.trim() || '—'}</p>
-                          </td>
-                          {/* Truck Owner */}
-                          <td className="px-4 py-3 text-xs text-slate-600 max-w-[120px] truncate">
-                            {match.truck?.owner?.profile?.firstName
-                              ? `${match.truck.owner.profile.firstName} ${match.truck.owner.profile.lastName || ''}`.trim()
-                              : details?.ownerName || '—'}
-                          </td>
-                          {/* Route */}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1 text-xs text-slate-600 whitespace-nowrap">
-                              <span className="truncate max-w-[70px]">
-                                {match.load?.origin?.city
-                                  || match.load?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData?.city
-                                  || '—'}
-                              </span>
-                              <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
-                              <span className="truncate max-w-[70px]">
-                                {match.load?.destination?.city
-                                  || match.load?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData?.city
-                                  || '—'}
-                              </span>
-                            </div>
-                          </td>
-                          {/* Distance */}
-                          <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{getDistance(match)}</td>
-                          {/* Est. Cost */}
-                          <td className="px-4 py-3 text-xs font-black text-slate-900 whitespace-nowrap">{getPrice(match)}</td>
-                          {/* Score */}
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black border whitespace-nowrap ${
-                              (match.score || 0) >= 0.9 ? 'bg-green-50 text-green-600 border-green-200' :
-                              (match.score || 0) >= 0.8 ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                              (match.score || 0) >= 0.7 ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
-                              'bg-red-50 text-red-600 border-red-200'
-                            }`}>{Math.round((match.score || 0) * 100)}%</span>
-                          </td>
-                          {/* Pickup Date */}
-                          <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{fmtDate(match.load?.pickupDate)}</td>
-                          {/* Action */}
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {match.status === 'ACCEPTED' && !match.trip && (
-                              <button
-                                onClick={() => handleCreateTrip(match.id)}
-                                disabled={processingId === match.id}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#345E85] hover:bg-slate-800 disabled:bg-slate-200 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
-                              >
-                                {processingId === match.id
-                                  ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                  : <><CheckCircle className="w-3 h-3" /> Start Trip</>
-                                }
-                              </button>
-                            )}
-                            {match.status === 'ACCEPTED' && match.trip && (
-                              <button
-                                onClick={() => navigate('/dashboard/tracking')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
-                              >
-                                <Navigation className="w-3 h-3" /> Track
-                              </button>
-                            )}
-                            {match.status === 'REQUESTED' && (
-                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Awaiting...</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <StandardDataTable<any>
+              embedded
+              className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-2"
+              columns={matchColumns}
+              data={sorted}
+              getRowId={(row) => row.id}
+              searchPlaceholder="Search matches…"
+              searchKeys={['status', 'load.title', 'truck.plateNumber']}
+              stickyHeader
+              columnVisibility
+              pagination
+              emptyMessage="No accepted matches yet"
+              ariaLabel="Accepted matches"
+            />
           )}
 
           {/* ── CARDS VIEW ─────────────────────────────────────────── */}

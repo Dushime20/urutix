@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-hot-toast';
+import { shouldSuppressRealtimeToast } from '../utils/actionToast';
 import { Activity, Bell } from 'lucide-react';
 
 interface SocketContextType {
@@ -57,8 +58,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // --- Global Listeners ---
 
-        // General Notifications
+        // General Notifications — dedupe by notification id; skip after local action toasts
         socketInstance.on('notification', (data: any) => {
+            if (shouldSuppressRealtimeToast(data?.notificationType || data?.type, data?.title)) {
+                return;
+            }
+            const toastId = data?.id ? `notif-${data.id}` : undefined;
             toast.custom((t) => (
                 <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
                     <div className="flex-1 w-0 p-4">
@@ -77,7 +82,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         </div>
                     </div>
                 </div>
-            ));
+            ), { id: toastId });
         });
 
         // System updates

@@ -25,7 +25,7 @@ import {
   InsertDriveFile,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import { EnhancedTable } from '../../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../../EnliteUI/Tables';
 
 interface KycDocumentsTabProps {
   documents: any[];
@@ -304,11 +304,15 @@ export const KycDocumentsTab: React.FC<KycDocumentsTabProps> = ({
             Uploaded Documents
           </Typography>
           
-          <EnhancedTable
+          <StandardDataTable
+            embedded
             columns={tableColumns}
             data={documents}
-            hoverable
             emptyMessage="No documents uploaded yet"
+            searchPlaceholder="Search documents..."
+            stickyHeader
+            columnVisibility
+            pagination
           />
         </motion.div>
       )}

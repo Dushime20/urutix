@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Package,
   MapPin,
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 
 import toast from 'react-hot-toast';
+import { toastActionSuccess, toastActionError, BID_ACCEPT_SUPPRESS_TYPES } from '../utils/actionToast';
 import { getApiErrorMessage } from '../config/errorMessages';import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import ModernLoader from '../components/common/ModernLoader';
 import type { Cargo } from '../types/cargo';
@@ -38,6 +39,7 @@ import QuickBidModal from '../components/Fleet/QuickBidModal';
 import logoUrutiX from '../assets/logo-urutix.png';
 import { biddingAPI } from '../services/biddingApi';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface AuctionWithLoad {
   id: string;
@@ -261,11 +263,14 @@ const FleetBidsPage: React.FC = () => {
         )
       );
 
-      toast.success('Cargo bid accepted successfully!');
+      toastActionSuccess('Cargo bid accepted successfully!', {
+        id: 'accept-bid',
+        suppressTypes: BID_ACCEPT_SUPPRESS_TYPES,
+      });
       setSelectedBid(null);
     } catch (error: any) {
       console.error('Error accepting bid:', error);
-      toast.error(getApiErrorMessage(error));
+      toastActionError(getApiErrorMessage(error) || 'Failed to accept cargo bid', { id: 'accept-bid' });
     } finally {
       setProcessingAction(null);
     }
@@ -360,7 +365,84 @@ const FleetBidsPage: React.FC = () => {
     }
   };
 
+  const tableColumns: Column<CargoBid>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Cargo',
+      sortable: true,
+      render: (_v, bid) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85]">
+            <Package size={14} />
+          </div>
+          <div className="max-w-[180px]">
+            <p className="text-sm font-bold text-slate-900 truncate">{bid.title}</p>
+            <p className="text-[10px] font-medium text-slate-400">{bid.cargoOwnerCompany}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'route',
+      label: 'Route',
+      render: (_v, bid) => (
+        <div className="flex flex-col gap-1 max-w-[200px]">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <span className="text-xs font-medium text-slate-600 truncate">{bid.pickupLocation?.address}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+            <span className="text-xs font-medium text-slate-600 truncate">{bid.deliveryLocation?.address}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'weight',
+      label: 'Details',
+      render: (_v, bid) => (
+        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded-lg w-fit">
+          <Scale size={12} className="text-slate-400" />
+          {bid.weight?.toLocaleString()} kg
+        </span>
+      ),
+    },
+    {
+      key: 'offeredPrice',
+      label: 'Price',
+      sortable: true,
+      render: (_v, bid) => (
+        <span className="text-sm font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
+      ),
+    },
+    {
+      key: 'bidStatus',
+      label: 'Status',
+      sortable: true,
+      render: (_v, bid) => (
+        <StatusBadge
+          status={bid.bidStatus}
+          label={<>{getStatusIcon(bid.bidStatus)} {bid.bidStatus}</>}
+        />
+      ),
+    },
+  ], [formatCurrency]);
 
+  const tableActions: TableAction<CargoBid>[] = useMemo(() => [
+    {
+      key: 'bid',
+      label: 'Bid',
+      icon: <Gavel size={14} />,
+      onClick: (bid) => handleQuickBid(bid),
+    },
+    {
+      key: 'details',
+      label: 'Details',
+      icon: <ArrowRight size={14} />,
+      onClick: (bid) => setSelectedBid(bid),
+    },
+  ], []);
 
   if (loading) {
     return <ModernLoader isLoading={true} type="page" />;
@@ -570,88 +652,21 @@ const FleetBidsPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-100">
-                    <thead className="bg-slate-50/50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Cargo</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Route</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Details</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Price</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-50">
-                      {filteredBids.map((bid) => (
-                        <tr key={bid.id} className="hover:bg-blue-50/30 transition-colors group">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-[#345E85]">
-                                <Package size={14} />
-                              </div>
-                              <div className="max-w-[180px]">
-                                <p className="text-sm font-bold text-slate-900 truncate">{bid.title}</p>
-                                <p className="text-[10px] font-medium text-slate-400">{bid.cargoOwnerCompany}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1 max-w-[200px]">
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                <span className="text-xs font-medium text-slate-600 truncate">{bid.pickupLocation?.address}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                                <span className="text-xs font-medium text-slate-600 truncate">{bid.deliveryLocation?.address}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded-lg">
-                                <Scale size={12} className="text-slate-400" />
-                                {bid.weight?.toLocaleString()} kg
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm font-black text-[#345E85]">{formatCurrency(bid.offeredPrice || 0, bid.currencyCode)}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={cn(
-                              "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5",
-                              getStatusColor(bid.bidStatus)
-                            )}>
-                              {getStatusIcon(bid.bidStatus)}
-                              {bid.bidStatus}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleQuickBid(bid)}
-                                className="px-3 py-2 bg-[#345E85] text-white rounded-lg text-xs font-black uppercase tracking-wider hover:bg-[#2a4d6d] transition-all flex items-center gap-1.5"
-                              >
-                                <Gavel size={14} />
-                                Bid
-                              </button>
-                              <button
-                                onClick={() => setSelectedBid(bid)}
-                                className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#345E85] transition-colors"
-                              >
-                                <ArrowRight size={18} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <StandardDataTable
+                columns={tableColumns}
+                data={filteredBids}
+                getRowId={(row) => row.id}
+                searchable={false}
+                pagination
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                rowActions={tableActions}
+                emptyMessage="No bids found"
+                ariaLabel="Fleet bids"
+                embedded
+              />
             )}
           </>
         )}

@@ -1,8 +1,9 @@
- import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { lendingApi } from '../services/lending/lendingApi';
 import toast from 'react-hot-toast';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 import {
   Trash2,
   Plus,
@@ -10,7 +11,6 @@ import {
   Mail,
   Phone,
   Building2,
-  MoreHorizontal,
   Copy,
   Check,
   Search,
@@ -73,7 +73,6 @@ const AdminLenderRegistrationPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'totalLoans' | 'approvalRate'>('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [openActionRow, setOpenActionRow] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive'>('all');
   const [riskFilter, setRiskFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [showAnalytics, setShowAnalytics] = useState(true);
@@ -219,15 +218,6 @@ const AdminLenderRegistrationPage: React.FC = () => {
     }
   };
 
-  const toggleSort = (field: 'name' | 'createdAt' | 'totalLoans' | 'approvalRate') => {
-    if (sortBy === field) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortDir('asc');
-    }
-  };
-
   const handleCopy = (id: string, apiKey: string) => {
     navigator.clipboard.writeText(apiKey).then(() => {
       setCopiedId(id);
@@ -307,6 +297,86 @@ const AdminLenderRegistrationPage: React.FC = () => {
       default: return 'bg-gray-50 text-gray-400 border-gray-100';
     }
   };
+
+  const lenderColumns: Column<Lender>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Provider Matrix',
+      sortable: true,
+      render: (_v, l) => (
+        <div className="flex items-center gap-4">
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white text-xs font-black ${l.status === 'active' ? 'bg-gray-900' : l.status === 'pending' ? 'bg-slate-400' : 'bg-slate-300'}`}>
+            {l.name.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-sm font-black text-gray-900 tracking-tight uppercase mb-1">{l.name}</p>
+            <StatusBadge status={l.status || 'active'} label={l.status || 'Active Agent'} />
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Communication',
+      render: (_v, l) => (
+        <div className="space-y-1">
+          <p className="text-xs font-black text-gray-900 flex items-center gap-2"><Mail className="text-slate-400" size={10} />{l.email}</p>
+          <p className="text-xs font-medium text-slate-500 flex items-center gap-2"><Phone className="text-slate-400" size={10} />{l.phone}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'totalLoans',
+      label: 'Asset Flow',
+      sortable: true,
+      render: (_v, l) => (
+        <div>
+          <p className="text-sm font-black text-gray-900">{(l.totalLoans || 0).toLocaleString()} Issued</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase">{fmtMoney(l.totalAmount || 0)} Flow</p>
+        </div>
+      ),
+    },
+    {
+      key: 'approvalRate',
+      label: 'Efficiency',
+      sortable: true,
+      render: (_v, l) => (
+        <span className="text-xs font-black text-gray-900">{l.approvalRate?.toFixed(1) || 0}%</span>
+      ),
+    },
+    {
+      key: 'api_key',
+      label: 'Protocol ID',
+      render: (_v, l) => {
+        const masked = l.api_key.length > 8 ? l.api_key.slice(0, 4) + '••••' + l.api_key.slice(-4) : l.api_key;
+        return (
+          <div className="inline-flex items-center gap-2 font-mono text-[10px] bg-[#fafafa] rounded-xl px-3 py-2 border border-gray-100">
+            <Key size={10} className="text-slate-400" />
+            <span className="font-bold">{masked}</span>
+            <button onClick={() => handleCopy(l.id, l.api_key)} className="text-slate-400 hover:text-indigo-600">
+              {copiedId === l.id ? <Check className="text-emerald-500" size={10} /> : <Copy size={10} />}
+            </button>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'riskRating',
+      label: 'Risk',
+      render: (_v, l) => (
+        <StatusBadge
+          status={l.riskRating === 'low' ? 'completed' : l.riskRating === 'medium' ? 'pending' : 'rejected'}
+          label={l.riskRating || 'validated'}
+        />
+      ),
+    },
+  ], [fmtMoney, copiedId]);
+
+  const lenderActions: TableAction<Lender>[] = useMemo(() => [
+    { key: 'view', label: 'Analyze Agent', icon: <Eye size={14} />, onClick: (l) => handleViewDetails(l) },
+    { key: 'toggle', label: 'Toggle Status', icon: <ShieldCheck size={14} />, onClick: (l) => handleStatusToggle(l.id, l.status || 'active') },
+    { key: 'delete', label: 'Purge Profile', icon: <Trash2 size={14} />, variant: 'danger', onClick: (l) => handleDelete(l.id) },
+  ], []);
 
   return (
     <AdminPageLayout
@@ -520,233 +590,29 @@ const AdminLenderRegistrationPage: React.FC = () => {
       )}
 
       {/* Lenders Table */}
-      {fetching ? (
-        <div className="bg-white rounded-[32px] border border-gray-100 p-12 overflow-hidden shadow-sm">
-          <div className="space-y-4 animate-pulse">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-[#fafafa] rounded-2xl border border-gray-50" />
-            ))}
-          </div>
-        </div>
-      ) : sorted.length === 0 ? (
-        <div className="bg-white rounded-[32px] border border-gray-100 p-20 text-center shadow-sm">
-          <div className="w-20 h-20 bg-[#fafafa] rounded-3xl flex items-center justify-center mx-auto mb-6 group hover:scale-110 transition-transform">
-            <Building2 className="text-slate-300 group-hover:text-indigo-400 transition-colors" size={40} />
-          </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Registry Search Results</p>
-          <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-4">No Providers Identified</h3>
-          <p className="max-w-xs mx-auto text-sm text-slate-500 mb-8 font-medium">
-            {search || statusFilter !== 'all' || riskFilter !== 'all'
-              ? 'Refine your parameters to identify the required provider matrix.'
-              : 'Begin by initializing the first lending partner profile.'
-            }
-          </p>
-          {!search && statusFilter === 'all' && riskFilter === 'all' && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-8 py-3 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all shadow-xl shadow-gray-200 flex items-center justify-center gap-3 mx-auto"
-            >
-              <Plus size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">Register Provider</span>
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[#fafafa]/50 border-b border-gray-50">
-                  <th onClick={() => toggleSort('name')} className="px-8 py-6 text-left cursor-pointer group">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-gray-900 transition-colors">Provider Matrix</span>
-                      {sortBy === 'name' && <TrendingUp size={12} className={`text-indigo-600 ${sortDir === 'asc' ? '' : 'rotate-180'} transition-transform`} />}
-                    </div>
-                  </th>
-                  <th className="px-8 py-6 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Endpoint</span>
-                  </th>
-                  <th onClick={() => toggleSort('totalLoans')} className="px-8 py-6 text-left cursor-pointer group">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-gray-900 transition-colors">Asset Flow Metrics</span>
-                      {sortBy === 'totalLoans' && <TrendingUp size={12} className={`text-indigo-600 ${sortDir === 'asc' ? '' : 'rotate-180'} transition-transform`} />}
-                    </div>
-                  </th>
-                  <th onClick={() => toggleSort('approvalRate')} className="px-8 py-6 text-left cursor-pointer group">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-gray-900 transition-colors">Efficiency Core</span>
-                      {sortBy === 'approvalRate' && <TrendingUp size={12} className={`text-indigo-600 ${sortDir === 'asc' ? '' : 'rotate-180'} transition-transform`} />}
-                    </div>
-                  </th>
-                  <th className="px-8 py-6 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol ID</span>
-                  </th>
-                  <th className="px-8 py-6 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vulnerability Tier</span>
-                  </th>
-                  <th className="px-8 py-6 text-right">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operations</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {sorted.map((l) => {
-                  const masked = l.api_key.length > 8 ? l.api_key.slice(0, 4) + '••••' + l.api_key.slice(-4) : l.api_key;
-                  return (
-                    <tr key={l.id} className="hover:bg-[#fafafa]/50 transition-colors group">
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white text-xs font-black shadow-lg shadow-gray-200 transition-transform group-hover:scale-110 ${l.status === 'active' ? 'bg-gray-900' :
-                            l.status === 'pending' ? 'bg-slate-400' : 'bg-slate-300'
-                            }`}>
-                            {l.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-sm font-black text-gray-900 tracking-tight uppercase mb-1">{l.name}</p>
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-colors ${l.status === 'active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                l.status === 'pending' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-                                  'bg-slate-50 text-slate-500 border-slate-100'
-                                }`}>
-                                <div className={`w-1 h-1 rounded-full ${l.status === 'active' ? 'bg-emerald-600 animate-pulse' : 'bg-current'}`}></div>
-                                {l.status || 'Active Agent'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="space-y-1">
-                          <p className="text-xs font-black text-gray-900 tracking-tight uppercase flex items-center gap-2">
-                            <Mail className="text-slate-400" size={10} />
-                            {l.email}
-                          </p>
-                          <p className="text-xs font-medium text-slate-500 flex items-center gap-2">
-                            <Phone className="text-slate-400" size={10} />
-                            {l.phone}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="space-y-1">
-                          <p className="text-sm font-black text-gray-900 tracking-tight">{(l.totalLoans || 0).toLocaleString()} <span className="text-[10px] text-slate-400 uppercase tracking-widest font-black ml-1">Issued</span></p>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{fmtMoney(l.totalAmount || 0)} Flow</p>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="w-16 h-1.5 rounded-full bg-gray-100 overflow-hidden shadow-inner flex-shrink-0">
-                            <div
-                              className={`h-full transition-all duration-1000 ${(l.approvalRate || 0) >= 80 ? 'bg-indigo-600' :
-                                (l.approvalRate || 0) >= 60 ? 'bg-blue-500' : 'bg-slate-400'
-                                }`}
-                              style={{ width: `${l.approvalRate || 0}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs font-black text-gray-900 tracking-tight">{l.approvalRate?.toFixed(1) || 0}%</span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-3 font-mono text-[10px] bg-[#fafafa] rounded-xl px-4 py-2 border border-gray-100 group-hover:border-indigo-100 transition-colors">
-                          <Key className="text-slate-400 group-hover:text-indigo-600 transition-colors" size={10} />
-                          <span className="text-gray-900 font-bold tracking-wider">{masked}</span>
-                          <button
-                            onClick={() => handleCopy(l.id, l.api_key)}
-                            className="text-slate-400 hover:text-indigo-600 transition-colors"
-                          >
-                            {copiedId === l.id ? <Check className="text-emerald-500 animate-enter" size={10} /> : <Copy size={10} />}
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border border-gray-100 ${l.riskRating === 'low' ? 'bg-white text-emerald-600' :
-                          l.riskRating === 'medium' ? 'bg-white text-amber-600' :
-                            'bg-rose-50 text-rose-600 border-rose-100'
-                          }`}>
-                          {l.riskRating === 'low' ? <CheckCircle2 size={10} /> :
-                            l.riskRating === 'medium' ? <Clock size={10} /> :
-                              <AlertTriangle size={10} />}
-                          {l.riskRating || 'validated'}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right relative">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleViewDetails(l)}
-                            className="w-9 h-9 border border-gray-100 rounded-xl hover:bg-white hover:border-indigo-100 hover:text-indigo-600 transition-all flex items-center justify-center text-slate-400"
-                            title="Analyze Profile"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <div className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenActionRow(r => r === l.id ? null : l.id);
-                              }}
-                              className={`w-9 h-9 border rounded-xl transition-all flex items-center justify-center ${openActionRow === l.id ? 'bg-gray-900 border-gray-900 text-white' : 'border-gray-100 hover:bg-white hover:border-gray-200 text-slate-400'
-                                }`}
-                            >
-                              <MoreHorizontal size={16} />
-                            </button>
-                            {openActionRow === l.id && (
-                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-[24px] shadow-2xl border border-gray-100 z-20 py-3 overflow-hidden animate-enter">
-                                <div className="px-4 py-2 mb-1 border-b border-gray-50">
-                                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Protocol Sync</p>
-                                </div>
-                                <button
-                                  onClick={() => { handleViewDetails(l); setOpenActionRow(null); }}
-                                  className="w-full text-left px-4 py-2.5 hover:bg-[#fafafa] text-gray-900 flex items-center gap-3 group/item"
-                                >
-                                  <Eye className="text-slate-400 group-hover/item:text-indigo-600 transition-colors" size={14} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest">Analyze Agent</span>
-                                </button>
-                                <button
-                                  onClick={() => { handleStatusToggle(l.id, l.status || 'active'); setOpenActionRow(null); }}
-                                  className="w-full text-left px-4 py-2.5 hover:bg-[#fafafa] text-gray-900 flex items-center gap-3 group/item"
-                                >
-                                  <ShieldCheck className="text-slate-400 group-hover/item:text-amber-600 transition-colors" size={14} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest">
-                                    {l.status === 'active' ? 'Pause Agent' : 'Activate Agent'}
-                                  </span>
-                                </button>
-                                <button
-                                  className="w-full text-left px-4 py-2.5 hover:bg-[#fafafa] text-gray-900 flex items-center gap-3 group/item"
-                                >
-                                  <Key className="text-slate-400 group-hover/item:text-indigo-600 transition-colors" size={14} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest">Rotate Cipher</span>
-                                </button>
-                                <div className="border-t border-gray-50 my-2"></div>
-                                <button
-                                  onClick={() => { handleDelete(l.id); setOpenActionRow(null); }}
-                                  className="w-full text-left px-4 py-2.5 hover:bg-rose-50 text-rose-600 flex items-center gap-3 group/item"
-                                >
-                                  <Trash2 className="text-rose-400 group-hover/item:text-rose-600 transition-colors" size={14} />
-                                  <span className="text-[10px] font-black uppercase tracking-widest">Purge Profile</span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="bg-[#fafafa]/50 px-8 py-4 border-t border-gray-50 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operational Agents: {sorted.length}</span>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Cache: {fmtMoney(sorted.reduce((acc, l) => acc + (l.totalAmount || 0), 0))}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">System Status: Optimal</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-      )}
+      <StandardDataTable
+        title="Lender Registry"
+        icon={<Building2 className="w-5 h-5" />}
+        headerColor="primary"
+        columns={lenderColumns}
+        data={sorted}
+        loading={fetching}
+        getRowId={(row) => row.id}
+        searchable={false}
+        pagination
+        pageSize={10}
+        columnVisibility
+        stickyHeader
+        striped
+        hoverable
+        rowActions={lenderActions}
+        emptyMessage={
+          search || statusFilter !== 'all' || riskFilter !== 'all'
+            ? 'No lenders match your current filters'
+            : 'No lenders registered yet'
+        }
+        ariaLabel="Lender registry"
+      />
 
       {/* Lender Details Modal */}
       {showDetailsModal && selectedLender && (

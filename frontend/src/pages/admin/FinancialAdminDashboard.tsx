@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   DollarSign,
   Activity,
@@ -30,6 +30,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { adminAPI } from '../../services/adminApi';
 import ModernLoader from '../../components/common/ModernLoader';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 interface Transaction {
   id: string;
@@ -282,6 +283,104 @@ const FinancialAdminDashboard: React.FC = () => {
     setShowDetailsModal(true);
   };
 
+  const transactionColumns: Column<Transaction>[] = useMemo(() => [
+    {
+      key: 'description',
+      label: 'Transaction Identity',
+      render: (_: unknown, transaction: Transaction) => (
+        <div className="flex items-center gap-4">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${getTypeColor(transaction.type)}`}>
+            {getTypeIcon(transaction.type)}
+          </div>
+          <div>
+            <div className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{transaction.description}</div>
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{transaction.transactionId}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'fromAccount',
+      label: 'Parties',
+      render: (_: unknown, transaction: Transaction) => (
+        <div className="space-y-1">
+          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{transaction.fromAccount}</div>
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
+            <span className="w-4 h-[1px] bg-slate-200" /> TO <span className="w-4 h-[1px] bg-slate-200" />
+          </div>
+          <div className="text-sm font-black text-slate-700 tracking-tight leading-none uppercase">{transaction.toAccount}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Fiscal Yield',
+      render: (_: unknown, transaction: Transaction) => (
+        <div className="space-y-1">
+          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{fmtFull(transaction.amount)}</div>
+          <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
+            NET: {fmtFull(transaction.netAmount)}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'paymentMethod',
+      label: 'Method',
+      render: (_: unknown, transaction: Transaction) => (
+        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 rounded-lg border border-gray-100 w-fit">
+          {getPaymentMethodIcon(transaction.paymentMethod)}
+          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+            {transaction.paymentMethod.replace('_', ' ')}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_: unknown, transaction: Transaction) => (
+        <StatusBadge
+          status={transaction.status}
+          label={
+            <span className="inline-flex items-center gap-1.5">
+              {getStatusIcon(transaction.status)}
+              {transaction.status}
+            </span>
+          }
+        />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Timestamp',
+      render: (_: unknown, transaction: Transaction) => (
+        <div className="space-y-1">
+          <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{getTimeAgo(transaction.createdAt)}</div>
+          {transaction.processedAt && (
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">SYNCED {getTimeAgo(transaction.processedAt)}</div>
+          )}
+        </div>
+      ),
+    },
+  ], [fmtFull]);
+
+  const transactionRowActions: TableAction<Transaction>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye size={14} />,
+      onClick: (transaction) => handleViewDetails(transaction),
+    },
+    {
+      key: 'complete',
+      label: 'Mark Complete',
+      icon: <CheckCircle2 size={14} />,
+      onClick: (transaction) => handleTransactionStatusChange(transaction.id, 'completed'),
+      hidden: (transaction) => transaction.status !== 'pending',
+    },
+  ], [transactions]);
+
   return (
     <AdminPageLayout
       title={<TranslatedText text="Financial Dashboard" />}
@@ -479,123 +578,24 @@ const FinancialAdminDashboard: React.FC = () => {
         </div>
 
         {/* Transactions Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#fafafa] border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transaction Identity</span>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Parties</span>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fiscal Yield</span>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</span>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</span>
-                  </th>
-                  <th className="px-6 py-4 text-left">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Timestamp</span>
-                  </th>
-                  <th className="px-6 py-4 text-center">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {filteredTransactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <FileText size={40} className="text-slate-200" />
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No transactions identified</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${getTypeColor(transaction.type)} group-hover:scale-105 transition-transform`}>
-                            {getTypeIcon(transaction.type)}
-                          </div>
-                          <div>
-                            <div className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{transaction.description}</div>
-                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{transaction.transactionId}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="space-y-1">
-                          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{transaction.fromAccount}</div>
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                            <span className="w-4 h-[1px] bg-slate-200" /> TO <span className="w-4 h-[1px] bg-slate-200" />
-                          </div>
-                          <div className="text-sm font-black text-slate-700 tracking-tight leading-none uppercase">{transaction.toAccount}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="space-y-1">
-                          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{fmtFull(transaction.amount)}</div>
-                          <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                            NET: {fmtFull(transaction.netAmount)}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 rounded-lg border border-gray-100 w-fit">
-                          {getPaymentMethodIcon(transaction.paymentMethod)}
-                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                            {transaction.paymentMethod.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${getStatusColor(transaction.status)}`}>
-                          {getStatusIcon(transaction.status)}
-                          {transaction.status}
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="space-y-1">
-                          <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{getTimeAgo(transaction.createdAt)}</div>
-                          {transaction.processedAt && (
-                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">SYNCED {getTimeAgo(transaction.processedAt)}</div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <button
-                            onClick={() => handleViewDetails(transaction)}
-                            className="p-2 text-slate-400 hover:text-[#2c5173] hover:bg-primary-50 rounded-xl transition-all bg-white border border-gray-100"
-                            title="View Details"
-                          >
-                            <Eye size={14} />
-                          </button>
-                          {transaction.status === 'pending' && (
-                            <button
-                              onClick={() => handleTransactionStatusChange(transaction.id, 'completed')}
-                              className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all bg-white border border-gray-100"
-                              title="Mark Complete"
-                            >
-                              <CheckCircle2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4">
+          <StandardDataTable<Transaction>
+            embedded
+            columns={transactionColumns}
+            data={filteredTransactions}
+            loading={loading}
+            getRowId={(row) => row.id}
+            searchable={false}
+            pagination
+            pageSize={10}
+            columnVisibility
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage="No transactions identified"
+            rowActions={transactionRowActions}
+            ariaLabel="Financial transactions"
+          />
         </div>
 
         {/* Transaction Details Modal */}

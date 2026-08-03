@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   FaFileInvoice, 
@@ -18,6 +18,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 interface Invoice {
   id: string;
   invoiceNumber: string;
@@ -111,6 +112,40 @@ const InvoiceViewer: React.FC = () => {
       day: 'numeric',
     });
   };
+
+  const invoiceItemColumns = useMemo<Column<InvoiceItem>[]>(() => [
+    {
+      key: 'description',
+      label: 'Description',
+      render: (_value, row) => <span className="text-gray-900">{row.description}</span>,
+    },
+    {
+      key: 'quantity',
+      label: 'Quantity',
+      align: 'right',
+      render: (_value, row) => <span className="text-gray-600">{row.quantity}</span>,
+    },
+    {
+      key: 'unitPrice',
+      label: 'Unit Price',
+      align: 'right',
+      render: (_value, row) => (
+        <span className="text-gray-600">
+          {selectedInvoice ? formatCurrency(row.unitPrice, selectedInvoice.currency) : row.unitPrice}
+        </span>
+      ),
+    },
+    {
+      key: 'totalPrice',
+      label: 'Total',
+      align: 'right',
+      render: (_value, row) => (
+        <span className="font-semibold text-gray-900">
+          {selectedInvoice ? formatCurrency(row.totalPrice, selectedInvoice.currency) : row.totalPrice}
+        </span>
+      ),
+    },
+  ], [selectedInvoice, formatCurrency]);
 
   if (isLoading) {
     return (
@@ -270,30 +305,19 @@ const InvoiceViewer: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-semibold text-gray-500 uppercase mb-4">Items</h4>
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Quantity</th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Unit Price</th>
-                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {selectedInvoice.items.map((item) => (
-                          <tr key={item.id}>
-                            <td className="px-4 py-3 text-gray-900">{item.description}</td>
-                            <td className="px-4 py-3 text-right text-gray-600">{item.quantity}</td>
-                            <td className="px-4 py-3 text-right text-gray-600">
-                              {formatCurrency(item.unitPrice, selectedInvoice.currency)}
-                            </td>
-                            <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                              {formatCurrency(item.totalPrice, selectedInvoice.currency)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <StandardDataTable<InvoiceItem>
+                      embedded
+                      dense
+                      searchable={false}
+                      pagination={false}
+                      sortable={false}
+                      columnVisibility={false}
+                      columns={invoiceItemColumns}
+                      data={selectedInvoice.items}
+                      getRowId={(row) => row.id}
+                      emptyMessage="No items"
+                      ariaLabel="Invoice items"
+                    />
                   </div>
                 </div>
               )}

@@ -68,42 +68,53 @@ export const CardSkeleton: React.FC<{ className?: string }> = ({ className }) =>
   );
 };
 
-// Table Row Skeleton
+// Table Row Skeleton (div-based — matches StandardDataTable / EnhancedTable layout)
 export const TableRowSkeleton: React.FC<{ columns?: number }> = ({ columns = 5 }) => {
   return (
-    <tr className="border-b border-slate-200 dark:border-slate-700">
+    <div
+      className="grid gap-0 border-b border-gray-100 dark:border-slate-800 last:border-b-0"
+      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      role="presentation"
+    >
       {Array.from({ length: columns }).map((_, i) => (
-        <td key={i} className="px-6 py-4">
+        <div key={i} className="px-6 py-4">
           <Skeleton className="h-4 w-full" />
-        </td>
+        </div>
       ))}
-    </tr>
+    </div>
   );
 };
 
-// Table Skeleton
+// Table Skeleton — mirrors StandardDataTable chrome without a raw <table>
 export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({ 
   rows = 5, 
   columns = 5 
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <table className="w-full">
-        <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-          <tr>
-            {Array.from({ length: columns }).map((_, i) => (
-              <th key={i} className="px-6 py-4">
-                <Skeleton className="h-4 w-full" />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
+    <div
+      className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg dark:shadow-none border border-transparent dark:border-slate-800 overflow-hidden"
+      role="status"
+      aria-busy="true"
+      aria-label="Loading table data"
+    >
+      <div className="overflow-x-auto">
+        <div
+          className="grid bg-[#fafafa] dark:bg-slate-800/80 border-b border-gray-100 dark:border-slate-700"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+        >
+          {Array.from({ length: columns }).map((_, i) => (
+            <div key={i} className="px-6 py-4">
+              <Skeleton className="h-3 w-20" />
+            </div>
+          ))}
+        </div>
+        <div>
           {Array.from({ length: rows }).map((_, i) => (
             <TableRowSkeleton key={i} columns={columns} />
           ))}
-        </tbody>
-      </table>
+        </div>
+      </div>
+      <span className="sr-only">Loading table data</span>
     </div>
   );
 };

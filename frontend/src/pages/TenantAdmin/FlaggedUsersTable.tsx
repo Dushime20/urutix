@@ -1,21 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FaEye,
   FaBan,
   FaFlag,
   FaCheckCircle,
-  FaChevronLeft,
-  FaChevronRight,
 } from 'react-icons/fa';
 import axios from 'axios';
-
-/**
- * FlaggedUsersTable
- * 
- * Displays users with risk flags.
- * Supports filtering by severity and status.
- * Provides quick actions for reviewing flags.
- */
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 interface RiskFlag {
   id: string;
@@ -30,19 +21,26 @@ interface RiskFlag {
   createdAt: string;
 }
 
+const severityVariant = (severity: string) => {
+  switch (severity) {
+    case 'critical': return 'error' as const;
+    case 'high': return 'orange' as const;
+    case 'medium': return 'warning' as const;
+    case 'low': return 'success' as const;
+    default: return 'neutral' as const;
+  }
+};
+
 const FlaggedUsersTable: React.FC = () => {
   const [flags, setFlags] = useState<RiskFlag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('pending');
 
   useEffect(() => {
     fetchFlaggedUsers();
-  }, [page, rowsPerPage, severityFilter, statusFilter]);
+  }, [severityFilter, statusFilter]);
 
   const fetchFlaggedUsers = async () => {
     try {
@@ -55,14 +53,13 @@ const FlaggedUsersTable: React.FC = () => {
       if (severityFilter !== 'all') params.append('severity', severityFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await axios.get(
+      await axios.get(
         `${import.meta.env.VITE_API_URL}/governance/risk-flags?${params.toString()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      // Mock data for now since endpoint returns placeholder
       const mockFlags: RiskFlag[] = [
         {
           id: '1',
@@ -91,7 +88,6 @@ const FlaggedUsersTable: React.FC = () => {
       ];
 
       setFlags(mockFlags);
-      setTotalCount(mockFlags.length);
     } catch (err: any) {
       console.error('Error fetching flagged users:', err);
       setError(err.response?.data?.message || 'Failed to load flagged users');
@@ -100,58 +96,93 @@ const FlaggedUsersTable: React.FC = () => {
     }
   };
 
-  const handleChangePage = (newPage: number) => {
-    setPage(newPage);
-  };
+  const columns: Column<RiskFlag>[] = useMemo(() => [
+    {
+      key: 'userName',
+      label: 'User',
+      alwaysVisible: true,
+      render: (_v, flag) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900">{flag.userName}</div>
+          <div className="text-sm text-gray-500">{flag.userEmail}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'reason',
+      label: 'Reason',
+      render: (v) => <div className="text-sm text-gray-900 max-w-xs truncate">{v}</div>,
+    },
+    {
+      key: 'riskType',
+      label: 'Risk Type',
+      render: (v) => (
+        <span className="px-2 py-1 text-xs font-medium border rounded-full bg-gray-50 text-gray-700 border-gray-200">
+          {v}
+        </span>
+      ),
+    },
+    {
+      key: 'severity',
+      label: 'Severity',
+      render: (_v, flag) => (
+        <StatusBadge variant={severityVariant(flag.severity)} label={flag.severity.toUpperCase()} />
+      ),
+    },
+    {
+      key: 'riskScore',
+      label: 'Risk Score',
+      sortable: true,
+      render: (_v, flag) => (
+        <div className="flex items-center gap-1">
+          <span className="text-sm font-bold text-gray-900">{flag.riskScore}</span>
+          <span className="text-xs text-gray-500">/ 100</span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, flag) => (
+        <StatusBadge status={flag.status} label={flag.status} />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Date',
+      sortable: true,
+      render: (_v, flag) => (
+        <span className="text-xs text-gray-500">
+          {new Date(flag.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+  ], []);
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'reviewed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'dismissed':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-3 p-4 animate-pulse">
-        {[1,2,3,4,5].map(i => (
-          <div key={i} className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-lg w-3/4" />
-              <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-lg w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const rowActions: TableAction<RiskFlag>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <FaEye className="w-3.5 h-3.5" />,
+      onClick: () => {},
+    },
+    {
+      key: 'review',
+      label: 'Review Flag',
+      icon: <FaCheckCircle className="w-3.5 h-3.5" />,
+      variant: 'success',
+      hidden: (flag) => flag.status !== 'pending',
+      onClick: () => {},
+    },
+    {
+      key: 'suspend',
+      label: 'Suspend User',
+      icon: <FaBan className="w-3.5 h-3.5" />,
+      variant: 'danger',
+      hidden: (flag) => flag.status !== 'pending',
+      onClick: () => {},
+    },
+  ], []);
 
   if (error) {
     return (
@@ -161,20 +192,23 @@ const FlaggedUsersTable: React.FC = () => {
     );
   }
 
-  const totalPages = Math.ceil(totalCount / rowsPerPage);
-  const startIndex = page * rowsPerPage;
-  const endIndex = Math.min(startIndex + rowsPerPage, totalCount);
-
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      {/* Filters */}
-      <div className="p-4 border-b border-gray-200 flex flex-wrap gap-4 items-center">
-        <h3 className="text-lg font-semibold text-gray-900 flex-grow">Flagged Users</h3>
-        <div className="flex gap-3">
+    <StandardDataTable
+      title="Flagged Users"
+      subtitle="Users with risk flags"
+      icon={<FaFlag className="w-5 h-5" />}
+      columns={columns}
+      data={flags}
+      loading={loading}
+      getRowId={(row) => row.id}
+      searchPlaceholder="Search flagged users..."
+      searchKeys={['userName', 'userEmail', 'reason', 'riskType', 'status']}
+      toolbarExtra={
+        <div className="flex gap-2">
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-xs font-semibold"
           >
             <option value="all">All Severities</option>
             <option value="critical">Critical</option>
@@ -185,7 +219,7 @@ const FlaggedUsersTable: React.FC = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="px-3 py-2 border border-gray-300 rounded-lg text-xs font-semibold"
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
@@ -193,155 +227,12 @@ const FlaggedUsersTable: React.FC = () => {
             <option value="dismissed">Dismissed</option>
           </select>
         </div>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Reason
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Risk Type
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Severity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Risk Score
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {flags.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-6 py-12 text-center">
-                  <p className="text-gray-500">No flagged users found</p>
-                </td>
-              </tr>
-            ) : (
-              flags.map((flag) => (
-                <tr key={flag.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{flag.userName}</div>
-                      <div className="text-sm text-gray-500">{flag.userEmail}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900 max-w-xs truncate">{flag.reason}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-medium border rounded-full bg-gray-50 text-gray-700 border-gray-200">
-                      {flag.riskType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium border rounded-full ${getSeverityColor(flag.severity)}`}>
-                      {flag.severity.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-bold text-gray-900">{flag.riskScore}</span>
-                      <span className="text-xs text-gray-500">/ 100</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium border rounded-full ${getStatusColor(flag.status)}`}>
-                      {flag.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-xs text-gray-500">
-                      {new Date(flag.createdAt).toLocaleDateString()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="View Details"
-                      >
-                        <FaEye />
-                      </button>
-                      {flag.status === 'pending' && (
-                        <>
-                          <button
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Review Flag"
-                          >
-                            <FaCheckCircle />
-                          </button>
-                          <button
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Suspend User"
-                          >
-                            <FaBan />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-700">Rows per page:</span>
-          <select
-            value={rowsPerPage}
-            onChange={handleChangeRowsPerPage}
-            className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-700">
-            {startIndex + 1}-{endIndex} of {totalCount}
-          </span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => handleChangePage(page - 1)}
-              disabled={page === 0}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <FaChevronLeft />
-            </button>
-            <button
-              onClick={() => handleChangePage(page + 1)}
-              disabled={page >= totalPages - 1}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <FaChevronRight />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      }
+      rowActions={rowActions}
+      onRefresh={fetchFlaggedUsers}
+      emptyMessage="No flagged users found"
+      ariaLabel="Flagged users"
+    />
   );
 };
 

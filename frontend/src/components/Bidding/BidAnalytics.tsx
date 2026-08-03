@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   BarChart2,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useBidAnalyticsQuery } from '../../hooks/useBiddingQueries';
+import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 
 interface LoadPerformance {
   title: string;
@@ -49,6 +50,44 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
     const mins = minutes % 60;
     return hours > 0 ? `${hours}H ${mins}M` : `${mins}M`;
   };
+
+  const topLoadColumns: Column<LoadPerformance>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Entity Context',
+      render: (_: unknown, load: LoadPerformance) => (
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[#345E85] dark:text-blue-400">
+            <Truck size={18} />
+          </div>
+          <span className="text-sm font-black text-[#0f172a] dark:text-slate-100 uppercase italic leading-none">{load.title}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'totalBids',
+      label: 'Engagement',
+      align: 'center',
+      render: (_: unknown, load: LoadPerformance) => (
+        <span className="text-xs font-black text-slate-900 dark:text-slate-100">{load.totalBids} BIDS</span>
+      ),
+    },
+    {
+      key: 'finalPrice',
+      label: 'Final Valuation',
+      render: (_: unknown, load: LoadPerformance) => (
+        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 italic tracking-tight">{formatCurrency(load.finalPrice)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      align: 'right',
+      render: (_: unknown, load: LoadPerformance) => (
+        <StatusBadge status={load.status} label={load.status} />
+      ),
+    },
+  ], [formatCurrency]);
 
   if (loading) {
     return (
@@ -163,49 +202,23 @@ const BidAnalytics: React.FC<BidAnalyticsProps> = ({ userRole }) => {
             <h5 className="text-[10px] font-black text-[#0f172a] dark:text-slate-100 uppercase tracking-[0.2em]">High yield opportunities</h5>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-separate border-spacing-y-3">
-              <thead>
-                 <tr>
-                  <th className="px-8 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Entity Context</th>
-                  <th className="px-8 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] text-center">Engagement</th>
-                  <th className="px-8 py-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Final Valuation</th>
-                  <th className="px-8 py-2 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {analytics.topPerformingLoads.map((load: any, index: number) => (
-                   <tr key={index} className="group transition-all">
-                    <td className="px-8 py-5 bg-white dark:bg-slate-900 border-y border-l border-slate-100 dark:border-slate-800 first:rounded-l-[2rem] group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[#345E85] dark:text-blue-400 group-hover:bg-white dark:group-hover:bg-slate-900 group-hover:scale-110 transition-all">
-                          <Truck size={18} />
-                        </div>
-                        <span className="text-sm font-black text-[#0f172a] dark:text-slate-100 uppercase italic leading-none">{load.title}</span>
-                      </div>
-                    </td>
-                     <td className="px-8 py-5 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50 text-center">
-                      <span className="text-xs font-black text-slate-900 dark:text-slate-100">{load.totalBids} BIDS</span>
-                    </td>
-                    <td className="px-8 py-5 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800 group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50">
-                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 italic tracking-tight">{formatCurrency(load.finalPrice)}</span>
-                    </td>
-                     <td className="px-8 py-5 bg-white dark:bg-slate-900 border-y border-r border-slate-100 dark:border-slate-800 last:rounded-r-[2rem] group-hover:bg-slate-50/50 dark:group-hover:bg-slate-800/50 text-right">
-                      <span className={cn(
-                        "px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full border shadow-sm inline-flex items-center gap-1.5",
-                        load.status === 'COMPLETED' 
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' 
-                          : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800'
-                      )}>
-                        <span className="w-1 h-1 rounded-full bg-current" />
-                        {load.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StandardDataTable<LoadPerformance>
+            embedded
+            columns={topLoadColumns}
+            data={analytics.topPerformingLoads}
+            getRowId={(row, index) => row.title || String(index)}
+            searchable
+            searchPlaceholder="Search loads…"
+            searchKeys={['title', 'status']}
+            pagination
+            pageSize={10}
+            columnVisibility={false}
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage="No high-yield opportunities found"
+            ariaLabel="High yield opportunities"
+          />
         </div>
       )}
 

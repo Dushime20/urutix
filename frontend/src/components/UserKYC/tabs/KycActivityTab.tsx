@@ -17,7 +17,7 @@ import {
   Security,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import { EnhancedTable } from '../../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../../EnliteUI/Tables';
 import { userKycApi } from '../../../services/userKycApi';
 
 export const KycActivityTab: React.FC = () => {
@@ -212,13 +212,16 @@ export const KycActivityTab: React.FC = () => {
           Recent Activities
         </Typography>
         
-        <EnhancedTable
+        <StandardDataTable
+          embedded
           columns={tableColumns}
           data={auditLog}
           loading={loading}
           emptyMessage="No activity recorded yet"
-          hoverable
-          striped
+          searchPlaceholder="Search activity..."
+          stickyHeader
+          columnVisibility
+          pagination
         />
       </motion.div>
 

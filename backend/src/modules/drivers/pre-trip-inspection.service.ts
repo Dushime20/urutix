@@ -19,16 +19,21 @@ import { User, UserRole } from '../../entities/user.entity';
 import {
   MarkReadyForReInspectionDto,
   ApprovePreTripInspectionDto,
+  CompleteTruckInspectionDto,
   SubmitPreTripInspectionDto,
 } from './dto/pre-trip-inspection.dto';
 import {
+  canDriverPerformCargoInspection,
+  getPreTripDisplayLabel,
   getPreTripInspectionMetadata,
   isPreTripInspectionApproved,
+  isTruckInspectionCompleted,
   PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
   PreTripInspectionIssue,
   PreTripInspectionMetadata,
   PreTripInspectionWorkflowStatus,
   requiresPreTripOwnerResolution,
+  resolvePreTripResumeStep,
 } from './pre-trip-inspection.types';
 import { NotificationService } from '../notifications/notification.service';
 import {
@@ -82,6 +87,7 @@ export class PreTripInspectionService {
       const status = load.preTripInspection.status;
       return [
         PreTripInspectionWorkflowStatus.PENDING,
+        PreTripInspectionWorkflowStatus.TRUCK_INSPECTION_COMPLETED,
         PreTripInspectionWorkflowStatus.IN_PROGRESS,
         PreTripInspectionWorkflowStatus.FAILED,
         PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION,
@@ -99,6 +105,7 @@ export class PreTripInspectionService {
     const load = await this.getAssignedLoadForDriver(loadId, driver, tenantId);
     let workflow = getPreTripInspectionMetadata(load.metadata);
 
+    // Opening a re-inspection form marks cargo step in progress — truck stays completed.
     if (
       workflow.status === PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION
     ) {
@@ -109,13 +116,130 @@ export class PreTripInspectionService {
     }
 
     const history = await this.getInspectionHistoryRecords(loadId);
+    const resumeStep = resolvePreTripResumeStep(workflow);
 
     return {
       cargo: load,
       workflowStatus: workflow.status,
+      displayStatus: getPreTripDisplayLabel(workflow.status, {
+        currentAttempt: workflow.currentAttempt,
+      }),
+      resumeStep,
+      truckInspection: workflow.truckInspection || null,
+      truckInspectionCompleted: isTruckInspectionCompleted(workflow),
       checklist: this.buildPreTripChecklist(load),
       history,
       canInspect: this.canDriverInspect(workflow.status),
+      canStartTrip: workflow.status === PreTripInspectionWorkflowStatus.APPROVED,
+      skipTruckInspection:
+        resumeStep === 'CARGO' ||
+        resumeStep === 'READY_TO_START' ||
+        resumeStep === 'WAITING' ||
+        resumeStep === 'BLOCKED',
+    };
+  }
+
+  /**
+   * Persist truck/vehicle pre-trip checklist. Never required again after
+   * completion unless a brand-new inspection process is started.
+   * Re-inspection after issue resolution does NOT clear this record.
+   */
+  async completeTruckInspection(
+    driverIdOrUserId: string,
+    loadId: string,
+    dto: CompleteTruckInspectionDto,
+    tenantId: string,
+  ) {
+    const driver = await this.resolveDriver(driverIdOrUserId, tenantId);
+    const load = await this.getAssignedLoadForDriver(loadId, driver, tenantId);
+    const workflow = getPreTripInspectionMetadata(load.metadata);
+
+    if (workflow.status === PreTripInspectionWorkflowStatus.APPROVED) {
+      throw new BadRequestException(
+        'Inspection is already approved. Proceed to Start Trip — truck inspection cannot be repeated.',
+      );
+    }
+
+    if (
+      workflow.status ===
+        PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL ||
+      workflow.status === PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION ||
+      workflow.status === PreTripInspectionWorkflowStatus.FAILED
+    ) {
+      throw new BadRequestException(
+        'Truck inspection is locked while cargo inspection is awaiting owner action.',
+      );
+    }
+
+    // Re-inspection path: truck already done — return existing record, do not overwrite.
+    if (
+      workflow.status ===
+        PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION ||
+      (workflow.status === PreTripInspectionWorkflowStatus.IN_PROGRESS &&
+        isTruckInspectionCompleted(workflow))
+    ) {
+      return {
+        workflowStatus: workflow.status,
+        resumeStep: resolvePreTripResumeStep(workflow),
+        truckInspection: workflow.truckInspection,
+        message:
+          'Truck inspection already completed. Continue with cargo re-inspection.',
+      };
+    }
+
+    if (
+      workflow.status !== PreTripInspectionWorkflowStatus.PENDING &&
+      workflow.status !==
+        PreTripInspectionWorkflowStatus.TRUCK_INSPECTION_COMPLETED &&
+      workflow.status !== PreTripInspectionWorkflowStatus.IN_PROGRESS
+    ) {
+      throw new BadRequestException(
+        'Truck inspection cannot be submitted for this shipment in its current state.',
+      );
+    }
+
+    const checklist = (dto.checklist || []).map((item) => ({
+      id: item.id,
+      label: item.label,
+      verified: item.verified,
+      notes: item.notes,
+    }));
+
+    const requiredUnchecked = checklist.filter((item) => !item.verified);
+    if (checklist.length > 0 && requiredUnchecked.length > 0) {
+      throw new BadRequestException(
+        'All required truck inspection items must be verified before continuing.',
+      );
+    }
+
+    const truckInspection = {
+      completed: true,
+      completedAt: new Date().toISOString(),
+      completedById: driver.userId,
+      checklist,
+      documents: dto.documents || [],
+      notes: dto.notes,
+    };
+
+    const nextWorkflow: PreTripInspectionMetadata = {
+      ...workflow,
+      status: PreTripInspectionWorkflowStatus.TRUCK_INSPECTION_COMPLETED,
+      lastDriverUserId: driver.userId,
+      truckInspection,
+    };
+
+    await this.persistPreTripWorkflow(
+      load,
+      nextWorkflow,
+      'TRUCK_INSPECTION_COMPLETED',
+    );
+
+    return {
+      workflowStatus: nextWorkflow.status,
+      displayStatus: getPreTripDisplayLabel(nextWorkflow.status),
+      resumeStep: 'CARGO' as const,
+      truckInspection,
+      message: 'Truck inspection completed. Continue to cargo inspection.',
     };
   }
 
@@ -286,6 +410,8 @@ export class PreTripInspectionService {
       preTripPending: shipments.filter(
         (s) =>
           s.preTrip.workflowStatus === PreTripInspectionWorkflowStatus.PENDING ||
+          s.preTrip.workflowStatus ===
+            PreTripInspectionWorkflowStatus.TRUCK_INSPECTION_COMPLETED ||
           s.preTrip.workflowStatus === PreTripInspectionWorkflowStatus.IN_PROGRESS,
       ).length,
       preTripAwaitingAction: shipments.filter((s) => s.preTrip.requiresAction)
@@ -347,6 +473,12 @@ export class PreTripInspectionService {
     const load = await this.getAssignedLoadForDriver(loadId, driver, tenantId);
     const workflow = getPreTripInspectionMetadata(load.metadata);
 
+    if (workflow.status === PreTripInspectionWorkflowStatus.APPROVED) {
+      throw new BadRequestException(
+        'This inspection is already approved. Duplicate inspections are not allowed — proceed to Start Trip.',
+      );
+    }
+
     if (!this.canDriverInspect(workflow.status)) {
       throw new BadRequestException(
         workflow.status === PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION ||
@@ -362,6 +494,18 @@ export class PreTripInspectionService {
     const previousAttempts = await this.cargoInspectionRepository.count({
       where: { loadId, inspectionType: CargoInspectionType.PRE_TRIP },
     });
+
+    // Re-inspection after issue resolution skips truck — never re-run Step 1.
+    const isReInspection =
+      previousAttempts > 0 ||
+      workflow.status ===
+        PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION;
+
+    if (!isReInspection && !isTruckInspectionCompleted(workflow)) {
+      throw new BadRequestException(
+        'Complete the truck inspection before submitting the cargo inspection.',
+      );
+    }
 
     const attemptNumber = previousAttempts + 1;
     const passed = dto.decision === InspectionDecision.PASSED;
@@ -435,20 +579,25 @@ export class PreTripInspectionService {
     const savedInspection =
       await this.cargoInspectionRepository.save(inspection);
 
+    // Preserve truck inspection forever — never overwrite previous cargo records.
     const nextWorkflow: PreTripInspectionMetadata = passed
       ? {
+          ...workflow,
           status: PreTripInspectionWorkflowStatus.AWAITING_CARGO_OWNER_APPROVAL,
           lastInspectionId: savedInspection.id,
           lastDriverUserId: driver.userId,
           submittedForApprovalAt: new Date().toISOString(),
           currentAttempt: attemptNumber,
+          truckInspection: workflow.truckInspection,
         }
       : {
+          ...workflow,
           status: PreTripInspectionWorkflowStatus.AWAITING_RESOLUTION,
           lastInspectionId: savedInspection.id,
           lastDriverUserId: driver.userId,
           lastFailedAt: new Date().toISOString(),
           currentAttempt: attemptNumber,
+          truckInspection: workflow.truckInspection,
         };
 
     await this.updateLoadWorkflow(load, nextWorkflow, dto, passed);
@@ -466,7 +615,12 @@ export class PreTripInspectionService {
     return {
       inspection: savedInspection,
       workflowStatus: nextWorkflow.status,
+      displayStatus: getPreTripDisplayLabel(nextWorkflow.status, {
+        currentAttempt: attemptNumber,
+      }),
+      resumeStep: resolvePreTripResumeStep(nextWorkflow),
       canProceed: false,
+      attemptNumber,
     };
   }
 
@@ -503,6 +657,7 @@ export class PreTripInspectionService {
       approvedAt: new Date().toISOString(),
       approvedById: userId,
       approvalNotes: dto.approvalNotes,
+      truckInspection: workflow.truckInspection,
     };
 
     await this.loadRepository.update(loadId, {
@@ -696,11 +851,24 @@ export class PreTripInspectionService {
   private async buildInspectionSummary(load: Load) {
     const workflow = getPreTripInspectionMetadata(load.metadata);
     const history = await this.getInspectionHistoryRecords(load.id);
+    const resumeStep = resolvePreTripResumeStep(workflow);
 
     return {
       ...workflow,
       historyCount: history.length,
       latestInspection: history[0] || null,
+      resumeStep,
+      displayStatus: getPreTripDisplayLabel(workflow.status, {
+        currentAttempt: workflow.currentAttempt,
+      }),
+      truckInspectionCompleted: isTruckInspectionCompleted(workflow),
+      canInspect: this.canDriverInspect(workflow.status),
+      canStartTrip: workflow.status === PreTripInspectionWorkflowStatus.APPROVED,
+      skipTruckInspection:
+        resumeStep === 'CARGO' ||
+        resumeStep === 'READY_TO_START' ||
+        resumeStep === 'WAITING' ||
+        resumeStep === 'BLOCKED',
     };
   }
 
@@ -712,11 +880,7 @@ export class PreTripInspectionService {
   }
 
   private canDriverInspect(status: PreTripInspectionWorkflowStatus): boolean {
-    return [
-      PreTripInspectionWorkflowStatus.PENDING,
-      PreTripInspectionWorkflowStatus.IN_PROGRESS,
-      PreTripInspectionWorkflowStatus.READY_FOR_RE_INSPECTION,
-    ].includes(status);
+    return canDriverPerformCargoInspection(status);
   }
 
   private buildPreTripChecklist(load: Load) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -10,6 +10,7 @@ import { customsApi } from '../../services/customsApi';
 import { cn } from '../../utils/cn';
 import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 
 const BRAND = '#2c5173';
 
@@ -104,14 +105,72 @@ const CustomsDashboard: React.FC = () => {
     { label: 'Analytics', icon: BarChart3, path: '/dashboard/customs/analytics', color: 'text-indigo-700', bg: 'bg-indigo-50 hover:bg-indigo-100' },
   ];
 
-  const statusBadge: Record<string, string> = {
-    PENDING:     'bg-amber-100 text-amber-700',
-    IN_PROGRESS: 'bg-blue-100 text-blue-700',
-    CLEARED:     'bg-emerald-100 text-emerald-700',
-    REJECTED:    'bg-rose-100 text-rose-700',
-    ON_HOLD:     'bg-purple-100 text-purple-700',
-    HIGH_RISK:   'bg-red-100 text-red-700',
-  };
+  const inspectionColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'plateNumber',
+      label: 'Plate / Ref',
+      render: (_v, ins) => (
+        <div>
+          <p className="text-sm font-bold text-slate-800 dark:text-white">{ins.plateNumber || '—'}</p>
+          <p className="text-[10px] text-slate-400 font-mono">{ins.shipmentReference || ins.containerNumber || '—'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'cargoType',
+      label: 'Cargo',
+      render: (_v, ins) => (
+        <span className="text-xs text-slate-600 dark:text-slate-300">{ins.cargoType || '—'}</span>
+      ),
+    },
+    {
+      key: 'route',
+      label: 'Route',
+      render: (_v, ins) => (
+        <span className="text-xs text-slate-600 dark:text-slate-300">
+          {ins.originCountry && ins.destinationCountry
+            ? `${ins.originCountry} → ${ins.destinationCountry}`
+            : ins.originCountry || ins.destinationCountry || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'officer',
+      label: 'Officer',
+      render: (_v, ins) => (
+        <span className="text-xs text-slate-500">{ins.officer?.email?.split('@')[0] || '—'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, ins) => (
+        <StatusBadge status={ins.status} label={ins.status?.replace(/_/g, ' ')} />
+      ),
+    },
+    {
+      key: 'riskLevel',
+      label: 'Risk',
+      sortable: true,
+      render: (_v, ins) => (
+        <StatusBadge
+          status={ins.riskLevel === 'LOW' ? 'completed' : ins.riskLevel === 'MEDIUM' ? 'pending' : 'rejected'}
+          label={ins.riskLevel}
+        />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Date',
+      sortable: true,
+      render: (_v, ins) => (
+        <span className="text-xs text-slate-400 whitespace-nowrap">
+          {new Date(ins.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+  ], []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,58 +328,23 @@ const CustomsDashboard: React.FC = () => {
             View All <Eye size={12} />
           </button>
         </div>
-        <table className="min-w-full divide-y divide-slate-50 dark:divide-slate-800">
-          <thead className="bg-slate-50 dark:bg-slate-800/50">
-            <tr>
-              {['Plate / Ref', 'Cargo', 'Route', 'Officer', 'Status', 'Risk', 'Date'].map(h => (
-                <th key={h} className="px-5 py-3 text-left text-[9px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-            {recent.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-400 font-bold">No inspections yet</td>
-              </tr>
-            ) : recent.map((ins: any) => (
-              <tr
-                key={ins.id}
-                className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
-                onClick={() => navigate(`/dashboard/customs/inspections/${ins.id}`)}
-              >
-                <td className="px-5 py-4">
-                  <p className="text-sm font-bold text-slate-800 dark:text-white">{ins.plateNumber || '—'}</p>
-                  <p className="text-[10px] text-slate-400 font-mono">{ins.shipmentReference || ins.containerNumber || '—'}</p>
-                </td>
-                <td className="px-5 py-4 text-xs text-slate-600 dark:text-slate-300">{ins.cargoType || '—'}</td>
-                <td className="px-5 py-4 text-xs text-slate-600 dark:text-slate-300">
-                  {ins.originCountry && ins.destinationCountry
-                    ? `${ins.originCountry} → ${ins.destinationCountry}`
-                    : ins.originCountry || ins.destinationCountry || '—'}
-                </td>
-                <td className="px-5 py-4 text-xs text-slate-500">{ins.officer?.email?.split('@')[0] || '—'}</td>
-                <td className="px-5 py-4">
-                  <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wide', statusBadge[ins.status] || 'bg-slate-100 text-slate-600')}>
-                    {ins.status?.replace(/_/g, ' ')}
-                  </span>
-                </td>
-                <td className="px-5 py-4">
-                  <span className={cn('text-[9px] font-bold px-2 py-0.5 rounded-lg uppercase', {
-                    'bg-emerald-100 text-emerald-700': ins.riskLevel === 'LOW',
-                    'bg-amber-100 text-amber-700': ins.riskLevel === 'MEDIUM',
-                    'bg-rose-100 text-rose-700': ins.riskLevel === 'HIGH',
-                    'bg-red-900 text-white': ins.riskLevel === 'CRITICAL',
-                  })}>
-                    {ins.riskLevel}
-                  </span>
-                </td>
-                <td className="px-5 py-4 text-xs text-slate-400 whitespace-nowrap">
-                  {new Date(ins.createdAt).toLocaleDateString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="p-2">
+          <StandardDataTable
+            columns={inspectionColumns}
+            data={recent}
+            getRowId={(row) => row.id}
+            searchable={false}
+            pagination={false}
+            columnVisibility
+            stickyHeader
+            striped
+            hoverable
+            onRowClick={(ins) => navigate(`/dashboard/customs/inspections/${ins.id}`)}
+            emptyMessage="No inspections yet"
+            ariaLabel="Recent inspections"
+            embedded
+          />
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   HelpCircle,
@@ -24,6 +24,7 @@ import {
   Plus,
   CheckCircle2
 } from 'lucide-react';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface FAQ {
   id: string;
@@ -165,25 +166,66 @@ const LenderSupportPage: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'open': return 'bg-sky-50 text-sky-600 border-sky-100';
-      case 'in-progress': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'closed': return 'bg-slate-50 text-slate-600 border-slate-100';
-      default: return 'bg-slate-50 text-slate-600 border-slate-100';
-    }
-  };
+  const ticketColumns = useMemo<Column<SupportTicket>[]>(() => [
+    {
+      key: 'id',
+      label: 'Identification',
+      sortable: true,
+      render: (v) => <span className="text-xs font-black text-[#345E85]">{String(v)}</span>,
+    },
+    {
+      key: 'subject',
+      label: 'Subject Payload',
+      sortable: true,
+      render: (v) => <p className="text-sm font-bold text-slate-900">{String(v)}</p>,
+    },
+    {
+      key: 'status',
+      label: 'Status Vector',
+      sortable: true,
+      render: (_v, ticket) => (
+        <StatusBadge
+          status={ticket.status === 'in-progress' ? 'in_progress' : ticket.status}
+          label={ticket.status}
+        />
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority Tier',
+      sortable: true,
+      render: (_v, ticket) => (
+        <StatusBadge
+          status={ticket.priority === 'urgent' || ticket.priority === 'high' ? 'cancelled' : ticket.priority === 'medium' ? 'pending' : 'info'}
+          label={ticket.priority}
+          variant={
+            ticket.priority === 'urgent' ? 'error' :
+            ticket.priority === 'high' ? 'orange' :
+            ticket.priority === 'medium' ? 'warning' : 'info'
+          }
+        />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Temporal Stamp',
+      sortable: true,
+      render: (_v, ticket) => (
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+          {ticket.createdAt.toLocaleDateString()}
+        </p>
+      ),
+    },
+  ], []);
 
-  const getPriorityStyle = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return 'bg-rose-50 text-rose-600 border-rose-100';
-      case 'high': return 'bg-orange-50 text-orange-600 border-orange-100';
-      case 'medium': return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'low': return 'bg-sky-50 text-sky-600 border-sky-100';
-      default: return 'bg-slate-50 text-slate-600 border-slate-100';
-    }
-  };
+  const ticketActions = useMemo<TableAction<SupportTicket>[]>(() => [
+    {
+      key: 'open',
+      label: 'Open',
+      icon: <ArrowRight size={14} />,
+      onClick: () => {},
+    },
+  ], []);
 
   const renderFaqTab = () => (
     <motion.div
@@ -462,50 +504,20 @@ const LenderSupportPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-slate-50">
-              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 pl-4">Identification</th>
-              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Subject Payload</th>
-              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status Vector</th>
-              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Priority Tier</th>
-              <th className="text-left py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Temporal Stamp</th>
-              <th className="text-right py-4 pr-4"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {supportTickets.map(ticket => (
-              <tr key={ticket.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="py-6 pl-4">
-                  <span className="text-xs font-black text-[#345E85]">{ticket.id}</span>
-                </td>
-                <td className="py-6">
-                  <p className="text-sm font-bold text-slate-900">{ticket.subject}</p>
-                </td>
-                <td className="py-6">
-                  <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(ticket.status)}`}>
-                    {ticket.status}
-                  </span>
-                </td>
-                <td className="py-6">
-                  <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${getPriorityStyle(ticket.priority)}`}>
-                    {ticket.priority}
-                  </span>
-                </td>
-                <td className="py-6">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{ticket.createdAt.toLocaleDateString()}</p>
-                </td>
-                <td className="py-6 pr-4 text-right">
-                  <button className="h-10 w-10 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:border-[#345E85] transition-all opacity-0 group-hover:opacity-100">
-                    <ArrowRight size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <StandardDataTable<SupportTicket>
+        embedded
+        columns={ticketColumns}
+        data={supportTickets}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search tickets…"
+        searchKeys={['id', 'subject', 'status', 'priority']}
+        rowActions={ticketActions}
+        stickyHeader
+        columnVisibility
+        pagination
+        emptyMessage="No support tickets"
+        ariaLabel="Support tickets"
+      />
     </motion.div>
   );
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   FileCheck, CheckCircle2, Clock, AlertTriangle, Download,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { tripsAPI } from '../../services/api';
 import toast from 'react-hot-toast';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 
 interface EpodViewerProps {
   tripId: string;
@@ -27,6 +28,12 @@ const invoiceStatusConfig = {
   overdue:  { label: 'Overdue',  color: 'text-red-600 bg-red-50 border-red-200' },
   cancelled:{ label: 'Cancelled',color: 'text-slate-400 bg-slate-50 border-slate-200' },
 };
+
+interface InvoiceLineItem {
+  id: string;
+  description: string;
+  totalPrice: number;
+}
 
 export const EpodViewer: React.FC<EpodViewerProps> = ({ tripId, tripNumber, canConfirm = false }) => {
   const queryClient = useQueryClient();
@@ -57,6 +64,27 @@ export const EpodViewer: React.FC<EpodViewerProps> = ({ tripId, tripNumber, canC
     },
   });
 
+  const invoice = invoiceRes?.data;
+
+  const invoiceLineItemColumns = useMemo<Column<InvoiceLineItem>[]>(() => [
+    {
+      key: 'description',
+      label: 'Description',
+      render: (_value, row) => <span className="text-slate-700">{row.description}</span>,
+    },
+    {
+      key: 'totalPrice',
+      label: 'Amount',
+      align: 'right',
+      render: (_value, row) => (
+        <span className="font-semibold text-slate-800">
+          {invoice?.currency}{' '}
+          {Number(row.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        </span>
+      ),
+    },
+  ], [invoice?.currency]);
+
   if (epodLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -78,7 +106,6 @@ export const EpodViewer: React.FC<EpodViewerProps> = ({ tripId, tripNumber, canC
   }
 
   const epod = epodRes.data;
-  const invoice = invoiceRes?.data;
   const statusCfg = statusConfig[epod.status as keyof typeof statusConfig] || statusConfig.PENDING;
   const StatusIcon = statusCfg.icon;
 
@@ -278,40 +305,38 @@ export const EpodViewer: React.FC<EpodViewerProps> = ({ tripId, tripNumber, canC
 
             {/* Line items */}
             <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                    <th className="text-right px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.items?.map((item: any) => (
-                    <tr key={item.id} className="border-b border-slate-50 last:border-0">
-                      <td className="px-4 py-3 text-slate-700">{item.description}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-slate-800">
-                        {invoice.currency} {Number(item.totalPrice).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  {invoice.taxAmount > 0 && (
-                    <tr className="border-t border-slate-100">
-                      <td className="px-4 py-2.5 text-slate-500 text-xs">Tax</td>
-                      <td className="px-4 py-2.5 text-right text-slate-600 text-xs">
-                        {invoice.currency} {Number(invoice.taxAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  )}
-                  <tr className="border-t-2 border-slate-200 bg-white">
-                    <td className="px-4 py-3 font-black text-slate-900 text-sm">Total</td>
-                    <td className="px-4 py-3 text-right font-black text-blue-600 text-base">
-                      {invoice.currency} {Number(invoice.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+              <StandardDataTable<InvoiceLineItem>
+                embedded
+                dense
+                searchable={false}
+                pagination={false}
+                sortable={false}
+                columnVisibility={false}
+                columns={invoiceLineItemColumns}
+                data={invoice.items ?? []}
+                getRowId={(row) => row.id}
+                emptyMessage="No line items"
+                ariaLabel="Invoice line items"
+                hoverable={false}
+              />
+              <div className="border-t border-slate-100 bg-white text-sm">
+                {invoice.taxAmount > 0 && (
+                  <div className="flex justify-between px-4 py-2.5 text-xs text-slate-500 border-b border-slate-100">
+                    <span>Tax</span>
+                    <span className="text-slate-600">
+                      {invoice.currency}{' '}
+                      {Number(invoice.taxAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between px-4 py-3 border-t-2 border-slate-200">
+                  <span className="font-black text-slate-900">Total</span>
+                  <span className="font-black text-blue-600 text-base">
+                    {invoice.currency}{' '}
+                    {Number(invoice.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {invoice.notes && (

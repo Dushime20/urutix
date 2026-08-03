@@ -14,7 +14,6 @@ import {
   Grid,
   Table,
   ArrowRight,
-  Activity,
   AlertCircle,
   Download,
   Clock,
@@ -27,6 +26,12 @@ import {
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import { generateBrokerContract, type BrokerContractData } from '@/templates/brokerContract';
+import {
+  StandardDataTable,
+  StatusBadge,
+  type Column,
+  type TableAction,
+} from '../../components/EnliteUI/Tables';
 
 const BrokerLoadsPage: React.FC = () => {
   const { user } = useAuth();
@@ -440,65 +445,100 @@ const BrokerLoadsPage: React.FC = () => {
           })}
         </div>
       ) : (
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 overflow-hidden shadow-sm dark:bg-slate-900 dark:border-slate-800">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Carrier Payload</th>
-                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Route Details</th>
-                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Yield Index</th>
-                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredLoads.map((load) => (
-                <tr key={load.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}>
-                  <td className="px-10 py-10">
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800">
-                        <Package size={20} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{load.title}</p>
-                        <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">#{load.id.slice(0, 8)}</p>
-                      </div>
+        <StandardDataTable<BrokerLoad>
+          embedded
+          columns={[
+            {
+              key: 'title',
+              label: 'Carrier Payload',
+              sortable: true,
+              alwaysVisible: true,
+              render: (_: any, load: BrokerLoad) => (
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-center text-slate-300 shadow-sm">
+                    <Package size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{load.title}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">#{load.id.slice(0, 8)}</p>
+                    <div className="mt-1">
+                      <StatusBadge status={load.status} label={load.status.replace(/_/g, ' ')} />
                     </div>
-                  </td>
-                  <td className="px-10 py-10">
-                    <div className="flex items-center gap-4 text-sm font-bold text-slate-600 uppercase opacity-60 group-hover:opacity-100 transition-all dark:text-slate-300">
-                       <LocationLabel
-                         address={getPickupAddress(load)}
-                         lat={getPickupCoords(load)?.lat}
-                         lng={getPickupCoords(load)?.lng}
-                         fallback="N/A"
-                         className="truncate max-w-[120px]"
-                       />
-                       <ArrowRight size={10} className="shrink-0" />
-                       <LocationLabel
-                         address={getDeliveryAddress(load)}
-                         lat={getDeliveryCoords(load)?.lat}
-                         lng={getDeliveryCoords(load)?.lng}
-                         fallback="N/A"
-                         className="truncate max-w-[120px]"
-                       />
-                    </div>
-                  </td>
-                  <td className="px-10 py-10 text-right">
-                    <p className="text-lg font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
-                    {load.brokerCommissionRate && <p className="text-xs font-bold text-primary-500 uppercase">Comm: {load.brokerCommissionRate}%</p>}
-                  </td>
-                  <td className="px-10 py-10 text-right">
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                       <button onClick={(e) => { e.stopPropagation(); handleOpenAssignReceiverModal(load.id); }} className="p-4 bg-teal-50 border border-teal-100 text-teal-600 rounded-xl hover:bg-teal-600 hover:text-white transition-all dark:bg-teal-900/20 dark:border-teal-800/50 dark:text-teal-400 dark:hover:bg-teal-600" title="Assign Existing Receiver"><Users size={16} /></button>
-                       <button onClick={(e) => { e.stopPropagation(); handleDownloadContract(load.id); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all dark:bg-slate-900 dark:border-slate-800"><Download size={16} /></button>
-                       <button className="p-4 bg-slate-900 text-white rounded-xl shadow-xl transition-all dark:bg-slate-950"><Eye size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'pickupLocation',
+              label: 'Route Details',
+              render: (_: any, load: BrokerLoad) => (
+                <div className="flex items-center gap-3 text-sm font-bold text-slate-600 uppercase dark:text-slate-300">
+                  <LocationLabel
+                    address={getPickupAddress(load)}
+                    lat={getPickupCoords(load)?.lat}
+                    lng={getPickupCoords(load)?.lng}
+                    fallback="N/A"
+                    className="truncate max-w-[120px]"
+                  />
+                  <ArrowRight size={10} className="shrink-0" />
+                  <LocationLabel
+                    address={getDeliveryAddress(load)}
+                    lat={getDeliveryCoords(load)?.lat}
+                    lng={getDeliveryCoords(load)?.lng}
+                    fallback="N/A"
+                    className="truncate max-w-[120px]"
+                  />
+                </div>
+              ),
+            },
+            {
+              key: 'loadValue',
+              label: 'Yield Index',
+              sortable: true,
+              align: 'right',
+              render: (_: any, load: BrokerLoad) => (
+                <div>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
+                  {load.brokerCommissionRate ? (
+                    <p className="text-xs font-bold text-primary-500 uppercase">Comm: {load.brokerCommissionRate}%</p>
+                  ) : null}
+                </div>
+              ),
+            },
+          ] as Column<BrokerLoad>[]}
+          data={filteredLoads}
+          getRowId={(row) => row.id}
+          onRowClick={(row) => navigate(`/dashboard/broker/loads/${row.id}`)}
+          searchable={false}
+          pagination
+          pageSize={10}
+          columnVisibility
+          stickyHeader
+          striped
+          hoverable
+          emptyMessage="No loads in pipeline matching criteria"
+          rowActions={[
+            {
+              key: 'assign',
+              label: 'Assign receiver',
+              icon: <Users size={14} />,
+              onClick: (row) => handleOpenAssignReceiverModal(row.id),
+            },
+            {
+              key: 'download',
+              label: 'Download contract',
+              icon: <Download size={14} />,
+              onClick: (row) => handleDownloadContract(row.id),
+            },
+            {
+              key: 'view',
+              label: 'View details',
+              icon: <Eye size={14} />,
+              onClick: (row) => navigate(`/dashboard/broker/loads/${row.id}`),
+            },
+          ] as TableAction<BrokerLoad>[]}
+          ariaLabel="Broker loads table"
+        />
       )}
 
       {showContractModal && selectedContract && (

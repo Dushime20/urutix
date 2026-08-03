@@ -3,19 +3,14 @@ import {
     DollarSign,
     CheckCircle,
     XCircle,
-    AlertTriangle,
     Calendar,
     User,
-    Search,
-    Filter,
     ArrowUpRight,
     AlertCircle,
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import LoanDetailModal from './LoanDetailModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -218,28 +213,12 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
     const [rejectTarget, setRejectTarget]     = useState<DisbursementEntry | null>(null);
     const [disburseTarget, setDisburseTarget] = useState<DisbursementEntry | null>(null);
 
-    // ── Derived stats — only from real data ───────────────────────────────────
-
-    const approvedCount   = disbursements.filter(d => d.status === 'approved').length;
-
-    // ── Filtered data ─────────────────────────────────────────────────────────
-
-    const filtered = disbursements.filter(d => {
-        const q = searchTerm.toLowerCase();
-        const matchSearch =
-            (d.borrowerName ?? '').toLowerCase().includes(q) ||
-            (d.loanId ?? '').toLowerCase().includes(q) ||
-            d.id.toLowerCase().includes(q);
-        const matchStatus = statusFilter === 'all' || d.status === statusFilter;
-        return matchSearch && matchStatus;
-    });
-
-    // ── Table columns ─────────────────────────────────────────────────────────
+    const approvedCount = disbursements.filter(d => d.status === 'approved').length;
 
     const columns = [
         {
             key: 'id',
-                        label: t('DISBURSEMENT ID'),
+            label: t('DISBURSEMENT ID'),
             render: (id: string, d: DisbursementEntry) => (
                 <div className="flex flex-col gap-0.5">
                     <span className="text-[11px] font-black text-slate-900 font-mono">
@@ -336,7 +315,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             label: 'ACTIONS',
             render: (_: any, d: DisbursementEntry) => (
                 <div className="flex items-center justify-end gap-1.5">
-                    {/* View loan details */}
                     <button
                         onClick={() => setDetailLoan(d._rawData)}
                         className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-lg transition-all border border-transparent hover:border-blue-100"
@@ -345,7 +323,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                         <ArrowUpRight size={14} />
                     </button>
 
-                    {/* Approve — pending → approved */}
                     {d.status === 'pending' && (
                         <button
                             onClick={() => onApprove(d.id)}
@@ -356,7 +333,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                         </button>
                     )}
 
-                    {/* Disburse — approved → disbursed (the actual payment action) */}
                     {d.status === 'approved' && (
                         <button
                             onClick={() => setDisburseTarget(d)}
@@ -367,7 +343,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                         </button>
                     )}
 
-                    {/* Reject — pending or approved */}
                     {(d.status === 'pending' || d.status === 'approved') && (
                         <button
                             onClick={() => setRejectTarget(d)}
@@ -382,12 +357,9 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
         },
     ];
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
 
-            {/* Approved loans alert — these need action */}
             {approvedCount > 0 && (
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-6 py-4 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
@@ -404,13 +376,9 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                 </div>
             )}
 
-            {/* ── Main Layout ── */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
 
-                {/* Sidebar */}
                 <div className="lg:col-span-1 space-y-4">
-
-                    {/* Status breakdown */}
                     <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-2">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
                             Status Breakdown
@@ -438,7 +406,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                         )}
                     </div>
 
-                    {/* Workflow guide */}
                     <div className="bg-[#345E85] rounded-2xl p-5 text-white shadow-xl shadow-blue-100 relative overflow-hidden">
                         <div className="relative z-10">
                             <AlertCircle className="mb-3 opacity-50" size={24} />
@@ -456,55 +423,50 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                     </div>
                 </div>
 
-                {/* Main table */}
                 <div className="lg:col-span-3">
-                    <DataCard
+                    <StandardDataTable
                         title={t("DISBURSEMENT PIPELINE")}
                         subtitle={t("Authorize and track loan funding operations")}
-                    >
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between gap-4 py-2 mt-2">
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="SEARCH DISBURSEMENTS..."
-                                        value={searchTerm}
-                                        onChange={e => onSearchChange(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black tracking-widest uppercase focus:ring-2 focus:ring-[#345E85] focus:outline-none transition-all"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Filter size={14} className="text-slate-400" />
-                                    <select
-                                        value={statusFilter}
-                                        onChange={e => onStatusFilterChange(e.target.value)}
-                                        className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black tracking-widest uppercase focus:outline-none"
-                                    >
-                                        <option value="all">ALL STATUS</option>
-                                        <option value="pending">PENDING</option>
-                                        <option value="approved">APPROVED</option>
-                                        <option value="disbursed">DISBURSED</option>
-                                        <option value="rejected">REJECTED</option>
-                                        <option value="on_hold">ON HOLD</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <EnhancedTable
-                                columns={columns}
-                                data={filtered}
-                                loading={loading}
-                                striped
-                                hoverable
-                                emptyMessage={t("No disbursements match the current filters")}
-                            />
-                        </div>
-                    </DataCard>
+                        icon={<DollarSign className="w-5 h-5" />}
+                        headerColor="primary"
+                        columns={columns}
+                        data={disbursements}
+                        loading={loading}
+                        getRowId={(row) => row.id}
+                        searchable
+                        searchPlaceholder="Search disbursements…"
+                        searchKeys={['borrowerName', 'loanId', 'id', 'purpose', 'status']}
+                        searchValue={searchTerm}
+                        onSearchChange={onSearchChange}
+                        filters={[
+                            {
+                                key: 'status',
+                                label: 'Status',
+                                options: [
+                                    { value: 'pending', label: 'Pending' },
+                                    { value: 'approved', label: 'Approved' },
+                                    { value: 'disbursed', label: 'Disbursed' },
+                                    { value: 'rejected', label: 'Rejected' },
+                                    { value: 'on_hold', label: 'On Hold' },
+                                ],
+                            },
+                        ]}
+                        filterValues={{ status: statusFilter }}
+                        onFilterChange={(key, value) => {
+                            if (key === 'status') onStatusFilterChange(value);
+                        }}
+                        pagination
+                        pageSize={10}
+                        columnVisibility
+                        stickyHeader
+                        striped
+                        hoverable
+                        emptyMessage={t("No disbursements match the current filters")}
+                        ariaLabel={t("DISBURSEMENT PIPELINE")}
+                    />
                 </div>
             </div>
 
-            {/* Loan Detail Modal */}
             {detailLoan && (
                 <LoanDetailModal
                     loan={detailLoan}
@@ -512,7 +474,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                 />
             )}
 
-            {/* Reject Modal */}
             {rejectTarget && (
                 <RejectModal
                     disbursementId={rejectTarget.id}
@@ -525,7 +486,6 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                 />
             )}
 
-            {/* Disburse Confirm Modal */}
             {disburseTarget && (
                 <DisburseModal
                     entry={disburseTarget}

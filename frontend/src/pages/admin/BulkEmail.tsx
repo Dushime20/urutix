@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import AIEmailAssistant from '../../components/Admin/AIEmailAssistant';
 import { TranslatedText } from '../../components/translated-text';
@@ -11,6 +11,7 @@ import {
   Mail, MessageSquare, Smartphone, Bell, ChevronDown, ChevronUp,
   Zap, BarChart2, Clock, Megaphone, Settings, Search, X, Building2,
 } from 'lucide-react';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -275,6 +276,120 @@ const BulkEmail: React.FC = () => {
     { id: 'templates', label: 'Templates', icon: FileText },
     { id: 'logs',      label: 'History',   icon: BarChart2 },
   ];
+
+  const templateColumns: Column<EmailTemplate>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Name',
+      sortable: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <div>
+          <p className="font-bold text-slate-700 text-sm">{t.name}</p>
+          <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[180px]">{t.description}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'subject',
+      label: 'Subject',
+      sortable: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <span className="text-slate-600 text-sm max-w-xs truncate block">{t.subject}</span>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <span className="inline-flex px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wide">{t.category}</span>
+      ),
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      sortable: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <StatusBadge label={t.isActive ? 'Active' : 'Inactive'} status={t.isActive ? 'active' : 'inactive'} />
+      ),
+    },
+  ], []);
+
+  const templateRowActions: TableAction<EmailTemplate>[] = useMemo(() => [
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <Settings size={15} />,
+      onClick: (t) => {
+        setEditingTemplate(t);
+        setTemplateForm({ name: t.name, subject: t.subject, htmlBody: t.htmlBody, textBody: t.textBody || '', description: t.description, category: t.category, isActive: t.isActive });
+        setIsTemplateModalOpen(true);
+      },
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <Trash2 size={15} />,
+      variant: 'danger',
+      onClick: (t) => handleDeleteTemplate(t.id),
+    },
+  ], []);
+
+  const logColumns: Column<CampaignLog>[] = useMemo(() => [
+    {
+      key: 'subject',
+      label: 'Subject',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-medium text-slate-700 text-sm max-w-xs truncate block">{log.subject}</span>
+      ),
+    },
+    {
+      key: 'recipientsCount',
+      label: 'Recipients',
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-mono text-xs font-bold text-slate-600">{log.recipientsCount}</span>
+      ),
+    },
+    {
+      key: 'sentCount',
+      label: 'Sent',
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-bold text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{log.sentCount}</span>
+      ),
+    },
+    {
+      key: 'failedCount',
+      label: 'Failed',
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-bold text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{log.failedCount}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <StatusBadge label={log.status} status={log.status} />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Date',
+      align: 'right',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="text-xs text-slate-400 font-medium tabular-nums">{new Date(log.createdAt).toLocaleString()}</span>
+      ),
+    },
+  ], []);
 
   if (pageLoading) {
     return (
@@ -706,50 +821,22 @@ const BulkEmail: React.FC = () => {
                 <p className="text-xs text-slate-400 mt-1"><TranslatedText text="Create your first email template to reuse in campaigns." /></p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-slate-100">
-                <table className="w-full">
-                  <thead className="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Name" /></th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Subject" /></th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Category" /></th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {templates.map(t => (
-                      <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4">
-                          <p className="font-bold text-slate-700 text-sm">{t.name}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[180px]">{t.description}</p>
-                        </td>
-                        <td className="px-6 py-4 text-slate-600 text-sm max-w-xs truncate">{t.subject}</td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wide">{t.category}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${t.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                            <TranslatedText text={t.isActive ? 'Active' : 'Inactive'} />
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => { setEditingTemplate(t); setTemplateForm({ name: t.name, subject: t.subject, htmlBody: t.htmlBody, textBody: t.textBody || '', description: t.description, category: t.category, isActive: t.isActive }); setIsTemplateModalOpen(true); }}
-                              className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
-                              <Settings size={15} />
-                            </button>
-                            <button onClick={() => handleDeleteTemplate(t.id)}
-                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <StandardDataTable
+                embedded
+                columns={templateColumns}
+                data={templates}
+                getRowId={(row) => row.id}
+                rowActions={templateRowActions}
+                searchable
+                searchPlaceholder="Search templates..."
+                searchKeys={['name', 'subject', 'category', 'description']}
+                columnVisibility
+                stickyHeader
+                defaultSortKey="name"
+                className="overflow-hidden rounded-xl border border-slate-100"
+                emptyMessage="No templates yet"
+                ariaLabel="Email templates"
+              />
             )}
           </div>
         )}
@@ -777,44 +864,23 @@ const BulkEmail: React.FC = () => {
                 <p className="font-bold text-slate-500"><TranslatedText text="No campaigns yet" /></p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-slate-100">
-                <table className="w-full">
-                  <thead className="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Subject" /></th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Recipients" /></th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Sent" /></th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Failed" /></th>
-                      <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Date" /></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {logs.map(log => (
-                      <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-700 text-sm max-w-xs truncate">{log.subject}</td>
-                        <td className="px-6 py-4 text-center font-mono text-xs font-bold text-slate-600">{log.recipientsCount}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="font-bold text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{log.sentCount}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="font-bold text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{log.failedCount}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                            log.status === 'sent' || log.status === 'sending' ? 'bg-emerald-50 text-emerald-600'
-                            : log.status === 'failed' ? 'bg-red-50 text-red-600'
-                            : 'bg-amber-50 text-amber-600'
-                          }`}>{log.status}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right text-xs text-slate-400 font-medium tabular-nums">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <StandardDataTable
+                embedded
+                columns={logColumns}
+                data={logs}
+                getRowId={(row) => row.id}
+                searchable
+                searchPlaceholder="Search campaigns..."
+                searchKeys={['subject', 'status']}
+                columnVisibility
+                stickyHeader
+                defaultSortKey="createdAt"
+                defaultSortDirection="desc"
+                onRefresh={fetchLogs}
+                className="overflow-hidden rounded-xl border border-slate-100"
+                emptyMessage="No campaigns yet"
+                ariaLabel="Campaign history"
+              />
             )}
           </div>
         )}

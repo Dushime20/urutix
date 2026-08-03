@@ -2,17 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  Plus, Search, Receipt, 
+  Plus, Receipt, 
   Trash2, Edit3, Eye, CheckCircle, XCircle, 
   Clock, Fuel, Wrench, MapPin, Truck, 
   User as UserIcon, ArrowRight,
   ShieldCheck, Landmark
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { financialAPI, fleetAPI, tripsAPI } from '@/services/api';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
-import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface Expense {
   id: string;
@@ -37,13 +36,11 @@ interface Expense {
 
 const ExpenseManagement: React.FC = () => {
   const queryClient = useQueryClient();
-  const { format: formatCurrency } = useCurrencyFormat();
   const [showAddModal, setShowAddModal] = useState(false);
   const [viewExpense, setViewExpense] = useState<Expense | null>(null);
   const [editExpense, setEditExpense] = useState<Expense | null>(null);
   const [deleteExpense, setDeleteExpense] = useState<Expense | null>(null);
   const [editForm, setEditForm] = useState<Partial<Expense>>({});
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedTruckId, setSelectedTruckId] = useState('');
   const [filters, setFilters] = useState({
     type: '',
@@ -135,15 +132,7 @@ const ExpenseManagement: React.FC = () => {
   };
 
   // Computed Values
-  const filteredExpenses = useMemo(() => {
-    if (!expensesData) return [];
-    return expensesData.filter((e: Expense) => 
-      e.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      e.vendor?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [expensesData, searchTerm]);
-
+  const expenses: Expense[] = expensesData || [];
 
   const expenseTypes = [
     { value: 'fuel', label: 'Fuel', icon: Fuel, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
@@ -155,174 +144,170 @@ const ExpenseManagement: React.FC = () => {
     { value: 'other', label: 'Other', icon: Receipt, color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-800' }
   ];
 
+  const columns: Column<Expense>[] = useMemo(() => [
+    {
+      key: 'description',
+      label: 'Expense Details',
+      sortable: true,
+      render: (_v, expense) => {
+        const typeInfo = expenseTypes.find(t => t.value === expense.type) || expenseTypes[6];
+        const Icon = typeInfo.icon;
+        return (
+          <div className="flex items-center gap-4">
+            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", typeInfo.bg)}>
+              <Icon className={cn("w-5 h-5", typeInfo.color)} />
+            </div>
+            <div>
+              <p className="text-sm font-black text-[#0f172a] dark:text-slate-100 uppercase tracking-tight">{expense.description}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{expense.category}</span>
+                <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                  {expense.vendor || 'Unknown Vendor'}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'truckId',
+      label: 'Entity',
+      render: (_v, expense) => (
+        <div className="flex flex-col gap-1">
+          {expense.truckId ? (
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
+              <Truck className="w-3 h-3 text-slate-300 dark:text-slate-500" />
+              <span>TRK-{expense.truckId.substring(0,6)}</span>
+            </div>
+          ) : (
+            <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest italic">General Business</span>
+          )}
+          {expense.location && (
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              <MapPin className="w-3 h-3" />
+              <span>{expense.location}</span>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      render: (_v, expense) => (
+        <div className="flex flex-col">
+          <span className="text-lg font-black text-[#0f172a] dark:text-slate-100 tracking-tight">
+            ${Number(expense.amount).toLocaleString()}
+          </span>
+          {expense.taxDeductible && (
+            <span className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1 mt-1">
+              <CheckCircle className="w-2.5 h-2.5" /> Tax Deductible
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'date',
+      label: 'Timing',
+      sortable: true,
+      render: (_v, expense) => (
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+            {new Date(expense.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+            Added {new Date(expense.createdAt).toLocaleDateString()}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, expense) => (
+        <StatusBadge
+          status={expense.status}
+          label={<>
+            {expense.status === 'paid' && <CheckCircle className="w-3 h-3" />}
+            {expense.status === 'pending' && <Clock className="w-3 h-3" />}
+            {expense.status}
+          </>}
+        />
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<Expense>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <Eye className="w-4 h-4" />,
+      onClick: (expense) => setViewExpense(expense),
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <Edit3 className="w-4 h-4" />,
+      onClick: (expense) => handleOpenEdit(expense),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <Trash2 className="w-4 h-4" />,
+      variant: 'danger',
+      onClick: (expense) => setDeleteExpense(expense),
+    },
+  ], []);
+
   return (
     <div className="space-y-12 animate-in fade-in duration-500">
-      {/* Control Bar */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full md:w-96 group">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-500 group-focus-within:text-[#345E85] dark:group-focus-within:text-blue-400 transition-colors" />
-          <input 
-            type="text"
-            placeholder="Search expenses, vendors or categories..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:bg-white dark:focus:bg-slate-900 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-          />
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <select 
-            value={filters.type}
-            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-            className="px-6 py-4 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 transition-all cursor-pointer"
-          >
-            <option value="">All Categories</option>
-            {expenseTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="flex-1 md:flex-none px-8 py-4 bg-[#345E85] dark:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/10 dark:shadow-blue-500/10 active:scale-95"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Record Expense</span>
-          </button>
-        </div>
+      <div className="flex justify-end">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="px-8 py-4 bg-[#345E85] dark:bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/10 dark:shadow-blue-500/10 active:scale-95"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Record Expense</span>
+        </button>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Expense Details</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Entity</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Amount</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Timing</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Status</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-              {expensesLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-20 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
-                  </td>
-                </tr>
-              ) : filteredExpenses.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-20 h-20 bg-slate-50 dark:bg-slate-950 rounded-[2rem] flex items-center justify-center">
-                        <Receipt className="w-10 h-10 text-slate-200 dark:text-slate-700" />
-                      </div>
-                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">No expenses found matching criteria</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredExpenses.map((expense: Expense) => {
-                const typeInfo = expenseTypes.find(t => t.value === expense.type) || expenseTypes[6];
-                const Icon = typeInfo.icon;
-                
-                return (
-                  <tr key={expense.id} className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all duration-300">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", typeInfo.bg)}>
-                          <Icon className={cn("w-5 h-5", typeInfo.color)} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-[#0f172a] dark:text-slate-100 uppercase tracking-tight">{expense.description}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{expense.category}</span>
-                            <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                              {expense.vendor || 'Unknown Vendor'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col gap-1">
-                        {expense.truckId ? (
-                          <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
-                             <Truck className="w-3 h-3 text-slate-300 dark:text-slate-500" />
-                             <span>TRK-{expense.truckId.substring(0,6)}</span>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest italic">General Business</span>
-                        )}
-                        {expense.location && (
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                            <MapPin className="w-3 h-3" />
-                            <span>{expense.location}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col">
-                        <span className="text-lg font-black text-[#0f172a] dark:text-slate-100 tracking-tight">
-                          ${Number(expense.amount).toLocaleString()}
-                        </span>
-                        {expense.taxDeductible && (
-                          <span className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1 mt-1">
-                            <CheckCircle className="w-2.5 h-2.5" /> Tax Deductible
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                          {new Date(expense.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
-                          Added {new Date(expense.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className={cn(
-                        "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest",
-                        expense.status === 'paid' ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800" :
-                        expense.status === 'pending' ? "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800" :
-                        "bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-800"
-                      )}>
-                        {expense.status === 'paid' && <CheckCircle className="w-3 h-3" />}
-                        {expense.status === 'pending' && <Clock className="w-3 h-3" />}
-                        {expense.status}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                        <button
-                          onClick={() => setViewExpense(expense)}
-                          className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 hover:border-[#345E85] dark:hover:border-blue-500 transition-all shadow-sm">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenEdit(expense)}
-                          className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all shadow-sm">
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setDeleteExpense(expense)}
-                          className="p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-600 dark:hover:border-rose-500 transition-all shadow-sm">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StandardDataTable
+        columns={columns}
+        data={expenses}
+        loading={expensesLoading}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search expenses, vendors or categories..."
+        searchKeys={['description', 'category', 'vendor']}
+        filters={[
+          {
+            key: 'type',
+            label: 'Category',
+            options: expenseTypes.map(t => ({ value: t.value, label: t.label })),
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'pending', label: 'Pending' },
+              { value: 'approved', label: 'Approved' },
+              { value: 'paid', label: 'Paid' },
+              { value: 'rejected', label: 'Rejected' },
+            ],
+          },
+        ]}
+        filterValues={{ type: filters.type || 'all', status: filters.status || 'all' }}
+        onFilterChange={(key, value) => {
+          setFilters(prev => ({ ...prev, [key]: value === 'all' ? '' : value }));
+        }}
+        rowActions={rowActions}
+        emptyMessage="No expenses found matching criteria"
+        ariaLabel="Expenses"
+      />
 
       {/* Delete Confirmation Modal */}
       {deleteExpense && createPortal(

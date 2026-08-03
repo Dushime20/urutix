@@ -3,13 +3,14 @@
  * Route: /tenant-admin/integrations
  * Layout: DashboardLayout (TenantAdminLayout)
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Key, Webhook, Plus, Trash2, Copy, CheckCircle, Play, Eye, EyeOff, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiMarketplaceApi } from '../../services/featuresApi';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
+import { StandardDataTable, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 type Tab = 'api-keys' | 'webhooks';
 
@@ -64,6 +65,51 @@ const IntegrationsPage: React.FC = () => {
   const copyKey = (key: string) => { navigator.clipboard.writeText(key); setCopiedKey(true); setTimeout(() => setCopiedKey(false), 2000); toast.success('Key copied to clipboard'); };
 
   const toggleEvent = (event: string) => setWhEvents(prev => prev.includes(event) ? prev.filter(e => e !== event) : [...prev, event]);
+
+  const apiKeyColumns = useMemo<Column<any>[]>(() => [
+    {
+      key: 'name',
+      label: 'Name',
+      sortable: true,
+      render: (v) => <span className="font-black text-slate-900 dark:text-white text-xs">{String(v)}</span>,
+    },
+    {
+      key: 'keyPrefix',
+      label: 'Key Prefix',
+      render: (v) => (
+        <code className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+          {String(v)}...
+        </code>
+      ),
+    },
+    {
+      key: 'permissions',
+      label: 'Permissions',
+      render: (_v, row) => (
+        <span className="text-xs text-slate-500 dark:text-slate-400">{row.permissions?.join(', ') || 'read'}</span>
+      ),
+    },
+    {
+      key: 'lastUsedAt',
+      label: 'Last Used',
+      sortable: true,
+      render: (v) => (
+        <span className="text-xs text-slate-400 dark:text-slate-500">
+          {v ? new Date(String(v)).toLocaleDateString() : 'Never'}
+        </span>
+      ),
+    },
+  ], []);
+
+  const apiKeyActions = useMemo<TableAction<any>[]>(() => [
+    {
+      key: 'revoke',
+      label: 'Revoke',
+      icon: <Trash2 size={13} />,
+      variant: 'danger',
+      onClick: (row) => revokeKeyMutation.mutate(row.id),
+    },
+  ], [revokeKeyMutation]);
 
   return (
     <div className="space-y-6">
@@ -136,39 +182,21 @@ const IntegrationsPage: React.FC = () => {
 
           {/* Key List */}
           {keysLoading ? <ModernLoader isLoading type="table" rows={3} columns={3} /> : (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-              {(keys as any[]).length === 0 ? (
-                <div className="p-10 text-center text-slate-400 dark:text-slate-500 text-sm">
-                  <Key size={32} className="mx-auto mb-3 opacity-30" />
-                  <TranslatedText text="No API keys yet." />
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                    <tr>
-                      {['Name', 'Key Prefix', 'Permissions', 'Last Used', ''].map(h => (
-                        <th key={h} className="px-5 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {(keys as any[]).map((k: any) => (
-                      <tr key={k.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="px-5 py-4 font-black text-slate-900 dark:text-white text-xs">{k.name}</td>
-                        <td className="px-5 py-4"><code className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{k.keyPrefix}...</code></td>
-                        <td className="px-5 py-4 text-xs text-slate-500 dark:text-slate-400">{k.permissions?.join(', ') || 'read'}</td>
-                        <td className="px-5 py-4 text-xs text-slate-400 dark:text-slate-500">{k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleDateString() : 'Never'}</td>
-                        <td className="px-5 py-4">
-                          <button onClick={() => revokeKeyMutation.mutate(k.id)} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all">
-                            <Trash2 size={13} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <StandardDataTable<any>
+              embedded
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-2"
+              columns={apiKeyColumns}
+              data={keys as any[]}
+              getRowId={(row) => row.id}
+              searchPlaceholder="Search API keys…"
+              searchKeys={['name', 'keyPrefix']}
+              rowActions={apiKeyActions}
+              emptyMessage="No API keys yet."
+              stickyHeader
+              columnVisibility
+              pagination
+              ariaLabel="API keys"
+            />
           )}
         </div>
       )}

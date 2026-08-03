@@ -6,13 +6,11 @@ import ModernLoader from '../components/common/ModernLoader';
 import {
   FaTruck,
   FaEdit,
-  FaSearch,
   FaDownload,
   FaEye,
   FaCheck,
   FaTimes,
   FaMapMarkerAlt,
-  FaSort,
   FaShippingFast,
   FaExclamationTriangle,
   FaUser,
@@ -24,6 +22,7 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import { cn } from '../utils/cn';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface Trip {
   id: string;
@@ -102,16 +101,8 @@ const AdminTrips: React.FC = () => {
   });
 
   // UI state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [tenantFilter, setTenantFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [tripToCancel, setTripToCancel] = useState<Trip | null>(null);
 
@@ -252,47 +243,156 @@ const AdminTrips: React.FC = () => {
     }));
   }, [allTrips, tenantMap]);
 
-  // Filter and sort trips
-  const filteredTrips = useMemo(() => {
-    return mappedTrips
-      .filter((trip: Trip) => {
-        if (!trip || typeof trip !== 'object') return false;
+  const getProgressColor = (progress: number, status: string) => {
+    if (status === 'completed') return 'bg-emerald-500';
+    if (status === 'cancelled') return 'bg-rose-500';
+    if (status === 'delayed') return 'bg-amber-500';
+    if (progress >= 80) return 'bg-blue-600';
+    if (progress >= 50) return 'bg-blue-500';
+    return 'bg-blue-400';
+  };
 
-        const locStr = (v: any) => typeof v === 'object' && v ? (v.city || v.address || '') : (v || '');
-        const searchFields = [
-          trip.reference,
-          trip.driverName,
-          locStr(trip.origin),
-          locStr(trip.destination),
-          trip.cargoType,
-          trip.tenantName
-        ].filter(Boolean).map((field: string) => field.toLowerCase());
+  const formatWeight = (kg: number) => `${((kg || 0) / 1000).toFixed(1)} t`;
 
-        const matchesSearch = searchTerm === '' || searchFields.some(field =>
-          field.includes(searchTerm.toLowerCase())
-        );
+  const calculateProfit = (revenue: number, fuelCost: number, tollCost: number) => {
+    return (revenue ?? 0) - (fuelCost ?? 0) - (tollCost ?? 0);
+  };
 
-        const matchesStatus = statusFilter === 'all' || trip.status === statusFilter;
-        const matchesTenant = tenantFilter === 'all' || trip.tenantId === tenantFilter;
-        const matchesPriority = priorityFilter === 'all' || trip.priority === priorityFilter;
-        return matchesSearch && matchesStatus && matchesTenant && matchesPriority;
-      })
-      .sort((a: Trip, b: Trip) => {
-        const aValue = a[sortBy as keyof Trip] || '';
-        const bValue = b[sortBy as keyof Trip] || '';
-        if (sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        }
-        return aValue < bValue ? 1 : -1;
-      });
-  }, [mappedTrips, searchTerm, statusFilter, tenantFilter, priorityFilter, sortBy, sortOrder]);
+  const locLabel = (v: string | { city?: string; address?: string }) => {
+    if (typeof v === 'object' && v) return (v.city || v.address || 'N/A').split(',')[0];
+    return (v || 'N/A').split(',')[0];
+  };
 
-  const total = filteredTrips.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const startIdx = (currentPage - 1) * pageSize;
-  const endIdx = startIdx + pageSize;
-  const pagedTrips = filteredTrips.slice(startIdx, endIdx);
+  const tripColumns = useMemo<Column<Trip>[]>(() => [
+    {
+      key: 'reference',
+      label: 'Trip Reference',
+      sortable: true,
+      render: (_value, trip) => (
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gray-900 dark:bg-slate-950 rounded-2xl flex items-center justify-center border border-transparent dark:border-slate-800">
+            <FaBarcode className="text-white dark:text-blue-400 text-lg" />
+          </div>
+          <div>
+            <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{trip.reference}</div>
+            <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{trip.tenantName}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'routeName',
+      label: 'Route & Progress',
+      sortable: false,
+      render: (_value, trip) => (
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">
+              <FaMapMarkerAlt className="text-emerald-500 w-3 h-3" /> {locLabel(trip.origin)}
+            </div>
+            <div className="flex items-center gap-2 text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">
+              <FaMapMarkerAlt className="text-rose-500 w-3 h-3" /> {locLabel(trip.destination)}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-end">
+              <StatusBadge
+                label={(trip.status || 'scheduled').replace('_', ' ')}
+                status={trip.status}
+              />
+              <span className="text-[10px] font-black text-gray-900 dark:text-slate-300">{trip.progress ?? 0}%</span>
+            </div>
+            <div className="w-32 bg-gray-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-500',
+                  getProgressColor(trip.progress, trip.status)
+                )}
+                style={{ width: `${trip.progress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'driverName',
+      label: 'Driver & Assets',
+      sortable: true,
+      render: (_value, trip) => (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <FaUser className="text-slate-400 dark:text-slate-500 w-3 h-3" />
+            <span className="text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">{trip.driverName}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FaTruck className="text-slate-400 dark:text-slate-500 w-3 h-3" />
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{trip.truckNumber}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'cargoType',
+      label: 'Cargo Detail',
+      sortable: true,
+      render: (_value, trip) => (
+        <div className="space-y-2">
+          <div className="text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">{trip.cargoType}</div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <FaWeightHanging className="text-slate-400 dark:text-slate-500 w-3 h-3" />
+              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{formatWeight(trip.cargoWeight)}</span>
+            </div>
+            {trip.isFragile && (
+              <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/10 px-1.5 py-0.5 rounded border dark:border-rose-800/30">
+                <TranslatedText text="Fragile" />
+              </span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'revenue',
+      label: 'Financials',
+      sortable: true,
+      render: (_value, trip) => (
+        <div className="space-y-1">
+          <div className="text-sm font-black text-gray-900 dark:text-slate-100 tracking-tight">{formatCurrency(trip.revenue)}</div>
+          <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+            <TranslatedText text="Net Profit" />:{' '}
+            <span className="text-blue-600 dark:text-blue-400">
+              {formatCurrency(calculateProfit(trip.revenue, trip.fuelCost, trip.tollCost))}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+  ], [formatCurrency, formatWeight, calculateProfit, getProgressColor]);
+
+  const tripRowActions = useMemo<TableAction<Trip>[]>(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <FaEye size={14} />,
+      onClick: (trip) => {
+        setSelectedTrip(trip);
+        setShowDetailsModal(true);
+      },
+    },
+    {
+      key: 'cancel',
+      label: 'Cancel Trip',
+      icon: <FaTimes size={14} />,
+      variant: 'danger',
+      hidden: (trip) => trip.status === 'completed' || trip.status === 'cancelled',
+      onClick: (trip) => {
+        setTripToCancel(trip);
+        setShowCancelModal(true);
+      },
+    },
+  ], []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -305,24 +405,10 @@ const AdminTrips: React.FC = () => {
     }
   };
 
-  const getProgressColor = (progress: number, status: string) => {
-    if (status === 'completed') return 'bg-emerald-500';
-    if (status === 'cancelled') return 'bg-rose-500';
-    if (status === 'delayed') return 'bg-amber-500';
-    if (progress >= 80) return 'bg-blue-600';
-    if (progress >= 50) return 'bg-blue-500';
-    return 'bg-blue-400';
-  };
-
   const formatDistance = (km: number) => `${(km || 0).toLocaleString()} km`;
-  const formatWeight = (kg: number) => `${((kg || 0) / 1000).toFixed(1)} t`;
   const formatDateTime = (dateStr: string | null | undefined) => {
     if (!dateStr) return '---';
     return new Date(dateStr).toLocaleString();
-  };
-
-  const calculateProfit = (revenue: number, fuelCost: number, tollCost: number) => {
-    return (revenue ?? 0) - (fuelCost ?? 0) - (tollCost ?? 0);
   };
 
   const stats = [
@@ -387,234 +473,50 @@ const AdminTrips: React.FC = () => {
 
       {!isLoading && !error && (
         <div className="space-y-6">
-          {/* Stats Grid */}
-
-          {/* Filters and Search */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-transparent dark:border-slate-800">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-3.5 h-3.5" />
-                <input
-                  type="text"
-                  placeholder="Search trips..."
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-transparent dark:text-slate-100 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              <select
-                className="px-3 py-2 text-xs bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 outline-none"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all"><TranslatedText text="All Status" /></option>
-                <option value="scheduled"><TranslatedText text="Scheduled" /></option>
-                <option value="in_progress"><TranslatedText text="In Progress" /></option>
-                <option value="completed"><TranslatedText text="Completed" /></option>
-                <option value="cancelled"><TranslatedText text="Cancelled" /></option>
-                <option value="delayed"><TranslatedText text="Delayed" /></option>
-              </select>
-
-              <select
-                className="px-3 py-2 text-xs bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 outline-none"
-                value={tenantFilter}
-                onChange={(e) => setTenantFilter(e.target.value)}
-              >
-                <option value="all"><TranslatedText text="All Tenants" /></option>
-                {tenants.map((tenant) => (
-                  <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-                ))}
-              </select>
-
-              <select
-                className="px-3 py-2 text-xs bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 transition-all font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 outline-none"
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <option value="all"><TranslatedText text="All Priorities" /></option>
-                <option value="high"><TranslatedText text="High Priority" /></option>
-                <option value="medium"><TranslatedText text="Medium Priority" /></option>
-                <option value="low"><TranslatedText text="Low Priority" /></option>
-              </select>
-
-              <button className="px-3 py-2 text-xs bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                <FaDownload className="w-3.5 h-3.5" />
-                <span><TranslatedText text="Export" /></span>
-              </button>
-            </div>
-          </div>
-
-          {/* Table Container */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-transparent dark:border-slate-800">
-            <div className="overflow-x-auto text-slate-900 dark:text-slate-100">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#fafafa] dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
-                    <th className="px-6 py-4">
-                      <button
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-gray-900 dark:hover:text-white transition-colors"
-                        onClick={() => {
-                          setSortBy('reference');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        <TranslatedText text="Trip Reference" />
-                        <FaSort size={10} />
-                      </button>
-                    </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Route & Progress" /></th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Driver & Assets" /></th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Cargo Detail" /></th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Financials" /></th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Action" /></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50">
-                  {pagedTrips.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest text-[10px]"><TranslatedText text="No trips identified." /></td>
-                    </tr>
-                  ) : (
-                    pagedTrips.map((trip: Trip) => (
-                      <tr key={trip.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors group">
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gray-900 dark:bg-slate-950 rounded-2xl flex items-center justify-center border border-transparent dark:border-slate-800">
-                              <FaBarcode className="text-white dark:text-blue-400 text-lg" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{trip.reference}</div>
-                              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{trip.tenantName}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="space-y-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">
-                                <FaMapMarkerAlt className="text-emerald-500 w-3 h-3" /> {(typeof trip.origin === 'object' ? (trip.origin?.city || trip.origin?.address || 'N/A') : (trip.origin || 'N/A')).split(',')[0]}
-                              </div>
-                              <div className="flex items-center gap-2 text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">
-                                <FaMapMarkerAlt className="text-rose-500 w-3 h-3" /> {(typeof trip.destination === 'object' ? (trip.destination?.city || trip.destination?.address || 'N/A') : (trip.destination || 'N/A')).split(',')[0]}
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between items-end">
-                                <span className={cn(
-                                  "px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shadow-sm",
-                                  getStatusColor(trip.status || 'scheduled'),
-                                  "dark:bg-opacity-10 dark:border dark:border-current"
-                                )}>
-                                  {(trip.status || 'scheduled').replace('_', ' ')}
-                                </span>
-                                <span className="text-[10px] font-black text-gray-900 dark:text-slate-300">{trip.progress ?? 0}%</span>
-                              </div>
-                              <div className="w-32 bg-gray-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
-                                <div
-                                  className={cn(
-                                    "h-full rounded-full transition-all duration-500",
-                                    getProgressColor(trip.progress, trip.status)
-                                  )}
-                                  style={{ width: `${trip.progress}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <FaUser className="text-slate-400 dark:text-slate-500 w-3 h-3" />
-                              <span className="text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">{trip.driverName}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <FaTruck className="text-slate-400 dark:text-slate-500 w-3 h-3" />
-                              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{trip.truckNumber}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="space-y-2">
-                            <div className="text-xs font-black text-gray-900 dark:text-slate-200 tracking-tight">{trip.cargoType}</div>
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-1.5">
-                                <FaWeightHanging className="text-slate-400 dark:text-slate-500 w-3 h-3" />
-                                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{formatWeight(trip.cargoWeight)}</span>
-                              </div>
-                              {trip.isFragile && (
-                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/10 px-1.5 py-0.5 rounded border dark:border-rose-800/30"><TranslatedText text="Fragile" /></span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="space-y-1">
-                            <div className="text-sm font-black text-gray-900 dark:text-slate-100 tracking-tight">{formatCurrency(trip.revenue)}</div>
-                            <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                              <TranslatedText text="Net Profit" />: <span className="text-blue-600 dark:text-blue-400">{formatCurrency(calculateProfit(trip.revenue, trip.fuelCost, trip.tollCost))}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => {
-                                setSelectedTrip(trip);
-                                setShowDetailsModal(true);
-                              }}
-                              className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl transition-all"
-                              title="View Details"
-                            >
-                              <FaEye size={16} />
-                            </button>
-                            {trip.status !== 'completed' && trip.status !== 'cancelled' && (
-                              <button 
-                                onClick={() => {
-                                  setTripToCancel(trip);
-                                  setShowCancelModal(true);
-                                }}
-                                className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all"
-                                title="Cancel Trip"
-                              >
-                                <FaTimes size={16} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            <div className="px-6 py-5 border-t border-gray-50 dark:border-slate-800 flex items-center justify-between bg-[#fafafa] dark:bg-slate-800/30">
-              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                <TranslatedText text="Showing" /> <span className="text-gray-900 dark:text-white">{startIdx + 1}-{Math.min(endIdx, total)}</span> <TranslatedText text="of" /> <span className="text-gray-900 dark:text-white">{total}</span> <TranslatedText text="Records" />
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setPage(page - 1)}
-                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 border border-gray-200 dark:border-slate-800 rounded-xl disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
-                >
-                  <TranslatedText text="Prev" />
-                </button>
-                <div className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2 text-[10px] font-black text-gray-900 dark:text-white">
-                  {currentPage} <span className="mx-1 text-slate-300 dark:text-slate-700">/</span> {totalPages}
-                </div>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setPage(page + 1)}
-                  className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 border border-gray-200 dark:border-slate-800 rounded-xl disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
-                >
-                  <TranslatedText text="Next" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <StandardDataTable<Trip>
+            embedded
+            className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-transparent dark:border-slate-800"
+            columns={tripColumns}
+            data={mappedTrips}
+            getRowId={(row) => row.id}
+            searchPlaceholder="Search trips…"
+            searchKeys={['reference', 'driverName', 'origin', 'destination', 'cargoType', 'tenantName']}
+            filters={[
+              {
+                key: 'status',
+                label: 'Status',
+                options: [
+                  { value: 'scheduled', label: 'Scheduled' },
+                  { value: 'in_progress', label: 'In Progress' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                  { value: 'delayed', label: 'Delayed' },
+                ],
+              },
+              {
+                key: 'tenantId',
+                label: 'Tenant',
+                options: tenants.map((t) => ({ value: t.id, label: t.name })),
+              },
+              {
+                key: 'priority',
+                label: 'Priority',
+                options: [
+                  { value: 'high', label: 'High' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'low', label: 'Low' },
+                ],
+              },
+            ]}
+            defaultSortKey="createdAt"
+            defaultSortDirection="desc"
+            rowActions={tripRowActions}
+            emptyMessage="No trips identified."
+            stickyHeader
+            columnVisibility
+            pagination
+            ariaLabel="Trip management"
+          />
         </div>
       )}
 

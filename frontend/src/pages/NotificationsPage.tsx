@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Bell, Trash2, CheckCircle, Box, Truck, CreditCard, Settings, ExternalLink } from 'lucide-react';
@@ -7,6 +7,7 @@ import type { Notification } from '../services/notifications/notificationApi';
 import { TranslatedText } from '../components/translated-text';
 import { useAuth } from '../contexts/AuthContext';
 import { navigateFromNotification } from '../utils/notificationNavigation';
+import { StandardDataTable, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -150,6 +151,107 @@ const NotificationsPage: React.FC = () => {
     setCurrentPage(1);
   }, []);
 
+  const notifications = notificationsData?.notifications ?? [];
+
+  const notificationColumns: Column<Notification>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Notification',
+      render: (_: unknown, notification: Notification) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-8 w-8">
+            <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Bell className="w-4 h-4 text-blue-600" />
+            </div>
+          </div>
+          <div className="ml-3">
+            <div className="text-xs font-medium text-gray-900">
+              {notification.title}
+            </div>
+            <div className="text-xs text-gray-500">
+              {notification.shortMessage || `${notification.message.substring(0, 50)}...`}
+            </div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              {notificationApi.formatTimestamp(notification.createdAt)}
+            </div>
+            {notification.requiresAction && (
+              <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                <TranslatedText text="Action Required" />
+              </span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (_: unknown, notification: Notification) => (
+        <div className="flex items-center">
+          <span className="text-sm mr-1.5">
+            {notificationApi.getCategoryIcon(notification.category)}
+          </span>
+          <span className="text-xs text-gray-900">{notification.category}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_: unknown, notification: Notification) => (
+        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${notificationApi.getNotificationStatusColor(notification.status)}`}>
+          {notification.status}
+        </span>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      render: (_: unknown, notification: Notification) => (
+        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${notificationApi.getNotificationPriorityColor(notification.priority)}`}>
+          {notification.priority}
+        </span>
+      ),
+    },
+    {
+      key: 'channels',
+      label: 'Channels',
+      render: (_: unknown, notification: Notification) => (
+        <div className="flex gap-1">
+          {notification.channels.map((channel: string) => (
+            <span key={channel} className="text-sm" title={channel}>
+              {notificationApi.getChannelIcon(channel)}
+            </span>
+          ))}
+        </div>
+      ),
+    },
+  ], []);
+
+  const notificationRowActions: TableAction<Notification>[] = useMemo(() => [
+    {
+      key: 'open',
+      label: 'Open',
+      icon: <ExternalLink className="w-3.5 h-3.5" />,
+      onClick: (notification) => handleOpenNotification(notification),
+    },
+    {
+      key: 'mark-read',
+      label: 'Mark as Read',
+      icon: <CheckCircle className="w-3.5 h-3.5" />,
+      variant: 'success',
+      hidden: (notification) => !!notification.readAt,
+      onClick: (notification) => markAsReadMutation.mutate(notification.id),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <Trash2 className="w-3.5 h-3.5" />,
+      variant: 'danger',
+      onClick: (notification) => deleteMutation.mutate(notification.id),
+    },
+  ], [handleOpenNotification, markAsReadMutation, deleteMutation]);
+
 
 
   if (error) {
@@ -290,160 +392,32 @@ const NotificationsPage: React.FC = () => {
       )}
 
       {/* Notifications Table - Desktop */}
-      <div className="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedNotifications(
-                          notificationsData?.notifications.map((n: Notification) => n.id) || [],
-                        );
-                      } else {
-                        setSelectedNotifications([]);
-                      }
-                    }}
-                    checked={selectedNotifications.length === (notificationsData?.notifications.length || 0)}
-                  />
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Notification" />
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Category" />
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Status" />
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Priority" />
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Channels" />
-                </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <TranslatedText text="Actions" />
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-4 text-center text-xs text-gray-500">
-                    <TranslatedText text="Loading notifications..." />
-                  </td>
-                </tr>
-              ) : notificationsData?.notifications.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-4 text-center text-xs text-gray-500">
-                    <TranslatedText text="No notifications found" />
-                  </td>
-                </tr>
-              ) : (
-                notificationsData?.notifications.map((notification: Notification) => (
-                  <tr
-                    key={notification.id}
-                    className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => handleOpenNotification(notification)}
-                  >
-                    <td className="px-4 py-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
-                        checked={selectedNotifications.includes(notification.id)}
-                        onChange={(e) => handleNotificationSelect(notification.id, e.target.checked)}
-                      />
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8">
-                          <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                            <Bell className="w-4 h-4 text-blue-600" />
-                          </div>
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-xs font-medium text-gray-900">
-                            {notification.title}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {notification.shortMessage || notification.message.substring(0, 50)}...
-                          </div>
-                          <div className="text-xs text-gray-400 mt-0.5">
-                            {notificationApi.formatTimestamp(notification.createdAt)}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className="text-sm mr-1.5">
-                          {notificationApi.getCategoryIcon(notification.category)}
-                        </span>
-                        <span className="text-xs text-gray-900">{notification.category}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${notificationApi.getNotificationStatusColor(notification.status)}`}>
-                        {notification.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${notificationApi.getNotificationPriorityColor(notification.priority)}`}>
-                        {notification.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex gap-1">
-                        {notification.channels.map((channel: string) => (
-                          <span key={channel} className="text-sm" title={channel}>
-                            {notificationApi.getChannelIcon(channel)}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-xs font-medium" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex gap-1.5 items-center">
-                        {notification.requiresAction && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-                            <TranslatedText text="Action Required" />
-                          </span>
-                        )}
-                        <button
-                          onClick={() => handleOpenNotification(notification)}
-                          className="text-indigo-600 hover:text-indigo-900 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                          title={notification.actionText || 'Open'}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </button>
-                        {!notification.readAt && (
-                          <button
-                            onClick={() => markAsReadMutation.mutate(notification.id)}
-                            className="text-green-600 hover:text-green-900 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                            title="Mark as Read"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteMutation.mutate(notification.id)}
-                          className="text-red-600 hover:text-red-900 transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="hidden md:block">
+        <StandardDataTable<Notification>
+          columns={notificationColumns}
+          data={notifications}
+          loading={isLoading}
+          getRowId={(row) => row.id}
+          searchable={false}
+          sortable={false}
+          columnVisibility={false}
+          selectable
+          selectedIds={selectedNotifications}
+          onSelectionChange={setSelectedNotifications}
+          onRowClick={handleOpenNotification}
+          rowActions={notificationRowActions}
+          actionsLabel="Actions"
+          pagination
+          pageSize={20}
+          pageSizeOptions={[20]}
+          totalItems={notificationsData?.total ?? 0}
+          page={currentPage}
+          onPageChange={setCurrentPage}
+          emptyMessage="No notifications found"
+          embedded
+          ariaLabel="Notifications"
+          className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm p-3"
+        />
       </div>
 
       {/* Notifications Cards - Mobile */}
@@ -548,9 +522,9 @@ const NotificationsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination - Mobile */}
       {notificationsData && notificationsData.totalPages > 1 && (
-        <div className="flex justify-center">
+        <div className="flex justify-center md:hidden">
           <nav className="flex flex-wrap justify-center gap-1.5 sm:gap-1.5">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}

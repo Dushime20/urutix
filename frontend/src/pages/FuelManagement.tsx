@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     FaGasPump,
     FaTruck,
@@ -17,6 +17,7 @@ import { fuelApi, type FuelLog, type CreateFuelLogData } from '../services/fuelA
 import { fleetApi } from '../services/fleetApi';
 import toast from 'react-hot-toast';
 import { cn } from '../utils/cn';
+import { StandardDataTable, type Column } from '../components/EnliteUI/Tables';
 
 type TabType = 'all' | 'flagged';
 
@@ -138,6 +139,68 @@ const FuelManagement: React.FC = () => {
         ? (formData.gallons * formData.pricePerGallon).toFixed(2)
         : '0.00';
 
+    const fuelColumns = useMemo<Column<FuelLog>[]>(() => [
+        {
+            key: 'fuelDate',
+            label: 'Date',
+            sortable: true,
+            render: (_v, log) => (
+                <div>
+                    <div className="text-sm text-gray-900">{new Date(log.fuelDate).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-500">
+                        {new Date(log.fuelDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'truck',
+            label: 'Vehicle',
+            render: (_v, log) => (
+                <div className="flex items-center gap-2">
+                    <div className="bg-gray-100 rounded p-1.5">
+                        <FaTruck className="w-3 h-3 text-gray-600" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{log.truck?.plateNumber || 'N/A'}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'driver',
+            label: 'Driver',
+            render: (_v, log) => (
+                <div className="text-sm text-gray-900">
+                    {log.driver ? `${log.driver.firstName} ${log.driver.lastName}` : 'N/A'}
+                </div>
+            ),
+        },
+        {
+            key: 'location',
+            label: 'Location',
+            sortable: true,
+            render: (v) => <div className="text-sm text-gray-900 max-w-xs truncate">{String(v ?? '')}</div>,
+        },
+        {
+            key: 'gallons',
+            label: 'Gallons',
+            sortable: true,
+            align: 'right',
+            render: (v) => <span className="text-sm font-medium text-gray-900">{Number(v).toFixed(1)}</span>,
+        },
+        {
+            key: 'totalCost',
+            label: 'Cost',
+            sortable: true,
+            align: 'right',
+            render: (_v, log) => (
+                <div>
+                    <div className="text-sm font-semibold text-gray-900">${Number(log.totalCost).toFixed(2)}</div>
+                    <div className="text-xs text-gray-500">${Number(log.pricePerGallon).toFixed(2)} / gal</div>
+                </div>
+            ),
+        },
+    ], []);
+
     return (
         <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
@@ -197,78 +260,22 @@ const FuelManagement: React.FC = () => {
                     <div className="flex items-center justify-center py-12">
                         <FaSpinner className="w-8 h-8 text-primary-600 animate-spin" />
                     </div>
-                ) : filteredLogs.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                        <FaGasPump className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Fuel Logs</h3>
-                        <p className="text-gray-600">
-                            {activeTab === 'flagged' ? 'No flagged logs found' : 'No fuel logs recorded yet'}
-                        </p>
-                    </div>
                 ) : (
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50 border-b border-gray-200">
-                                    <tr>
-                                        <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Date</th>
-                                        <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Vehicle</th>
-                                        <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Driver</th>
-                                        <th className="text-left py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Location</th>
-                                        <th className="text-right py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Gallons</th>
-                                        <th className="text-right py-3 px-4 text-xs sm:text-sm font-semibold text-gray-700">Cost</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredLogs.map((log) => (
-                                        <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="py-3 px-4">
-                                                <div className="text-sm text-gray-900">
-                                                    {new Date(log.fuelDate).toLocaleDateString()}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {new Date(log.fuelDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="bg-gray-100 rounded p-1.5">
-                                                        <FaTruck className="w-3 h-3 text-gray-600" />
-                                                    </div>
-                                                    <span className="text-sm font-medium text-gray-900">
-                                                        {log.truck?.plateNumber || 'N/A'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className="text-sm text-gray-900">
-                                                    {log.driver ? `${log.driver.firstName} ${log.driver.lastName}` : 'N/A'}
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className="text-sm text-gray-900 max-w-xs truncate">
-                                                    {log.location}
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4 text-right">
-                                                <span className="text-sm font-medium text-gray-900">
-                                                    {Number(log.gallons).toFixed(1)}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-right">
-                                                <div className="text-sm font-semibold text-gray-900">
-                                                    ${Number(log.totalCost).toFixed(2)}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    ${Number(log.pricePerGallon).toFixed(2)} / gal
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <StandardDataTable<FuelLog>
+                        embedded
+                        className="bg-white rounded-lg border border-gray-200 p-2"
+                        columns={fuelColumns}
+                        data={filteredLogs}
+                        getRowId={(row) => row.id}
+                        searchPlaceholder="Search fuel logs…"
+                        searchKeys={['location', 'truck.plateNumber']}
+                        emptyMessage={activeTab === 'flagged' ? 'No flagged logs found' : 'No fuel logs recorded yet'}
+                        stickyHeader
+                        columnVisibility
+                        pagination
+                        onRefresh={loadData}
+                        ariaLabel="Fuel logs"
+                    />
                 )}
             </div>
 

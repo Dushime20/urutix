@@ -30,6 +30,7 @@ import {
 } from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement,
@@ -65,6 +66,74 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
   const totalDeductions = currentData.reduce((s, d) => s + d.deductions, 0);
   const avgPerHour     = totalHours > 0 ? totalEarnings / totalHours : 0;
   const avgPerKm       = totalDistance > 0 ? totalEarnings / totalDistance : 0;
+
+  type LedgerRow = (typeof currentData)[number];
+
+  const ledgerColumns: Column<LedgerRow>[] = useMemo(() => [
+    {
+      key: 'period',
+      label: t('Period'),
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-bold text-slate-700">{item.period}</span>
+      ),
+    },
+    {
+      key: 'trips',
+      label: t('Trips'),
+      align: 'right',
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-medium text-slate-500">{item.trips}</span>
+      ),
+    },
+    {
+      key: 'hours',
+      label: t('Hours'),
+      align: 'right',
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-medium text-slate-500">{item.hours.toFixed(1)}h</span>
+      ),
+    },
+    {
+      key: 'distance',
+      label: t('Distance'),
+      align: 'right',
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-medium text-slate-500">{item.distance.toLocaleString()} km</span>
+      ),
+    },
+    {
+      key: 'earnings',
+      label: t('Base'),
+      align: 'right',
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-bold text-slate-700">{formatCurrency(item.earnings)}</span>
+      ),
+    },
+    {
+      key: 'bonuses',
+      label: t('Bonus'),
+      align: 'right',
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-bold text-emerald-600">+{formatCurrency(item.bonuses)}</span>
+      ),
+    },
+    {
+      key: 'deductions',
+      label: t('Ded.'),
+      align: 'right',
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-bold text-rose-600">-{formatCurrency(item.deductions)}</span>
+      ),
+    },
+    {
+      key: 'netEarnings',
+      label: t('Net Earned'),
+      align: 'right',
+      render: (_: unknown, item: LedgerRow) => (
+        <span className="text-sm font-black text-slate-900">{formatCurrency(item.netEarnings)}</span>
+      ),
+    },
+  ], [formatCurrency, t]);
 
   const chartOptions = {
     responsive: true,
@@ -304,31 +373,20 @@ export const EarningsOverview: React.FC<EarningsOverviewProps> = ({ driverId }) 
               >
                 <div className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-lg shadow-slate-200/50 mt-4">
                   <h3 className="text-lg font-black text-slate-800 mb-6"><TranslatedText text="Ledger Details" /></h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b-2 border-slate-100">
-                          {['Period', 'Trips', 'Hours', 'Distance', 'Base', 'Bonus', 'Ded.', 'Net Earned'].map(h => (
-                            <th key={h} className={`pb-4 text-[10px] font-black text-slate-400 uppercase tracking-wider ${h === 'Period' ? 'text-left' : 'text-right'}`}><TranslatedText text={h} /></th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {currentData.map((item, idx) => (
-                          <tr key={idx} className="group hover:bg-slate-50 transition-colors">
-                            <td className="py-4 text-sm font-bold text-slate-700">{item.period}</td>
-                            <td className="py-4 text-right text-sm font-medium text-slate-500">{item.trips}</td>
-                            <td className="py-4 text-right text-sm font-medium text-slate-500">{item.hours.toFixed(1)}h</td>
-                            <td className="py-4 text-right text-sm font-medium text-slate-500">{item.distance.toLocaleString()} km</td>
-                            <td className="py-4 text-right text-sm font-bold text-slate-700">{formatCurrency(item.earnings)}</td>
-                            <td className="py-4 text-right text-sm font-bold text-emerald-600">+{formatCurrency(item.bonuses)}</td>
-                            <td className="py-4 text-right text-sm font-bold text-rose-600">-{formatCurrency(item.deductions)}</td>
-                            <td className="py-4 text-right text-sm font-black text-slate-900 group-hover:text-[#345E85] transition-colors">{formatCurrency(item.netEarnings)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <StandardDataTable<LedgerRow>
+                    embedded
+                    columns={ledgerColumns}
+                    data={currentData}
+                    getRowId={(row, index) => row.period || String(index)}
+                    searchable={false}
+                    pagination={false}
+                    columnVisibility={false}
+                    stickyHeader
+                    striped
+                    hoverable
+                    emptyMessage="No ledger entries for this period"
+                    ariaLabel="Ledger details"
+                  />
                 </div>
               </motion.div>
             )}

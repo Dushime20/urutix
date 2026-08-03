@@ -8,6 +8,9 @@ import {
   History,
   ShieldCheck,
   ArrowRight,
+  Truck,
+  Loader2,
+  Rocket,
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -17,10 +20,18 @@ import { driverApi } from '../../services/driverApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import { CargoInspection } from './CargoInspection';
 import {
+  VehiclePreTripChecklist,
+  useVehicleChecklist,
+  VEHICLE_CHECKLIST_ITEMS,
+} from './VehiclePreTripChecklist';
+import {
+  canOpenCargoInspection,
+  getInspectionActionLabel,
   getInspectionStatusLabel,
   getInspectionStatusStyles,
   getPreTripStatusFromLoad,
   PreTripInspectionWorkflowStatus,
+  resolveResumeStep,
 } from './preTripInspection';
 import { usePreTripInspectionLoads } from '../../hooks/useDriverQueries';
 
@@ -28,33 +39,135 @@ interface PreTripInspectionHubProps {
   driverId: string;
 }
 
+type HubView =
+  | { mode: 'list' }
+  | { mode: 'truck'; loadId: string }
+  | { mode: 'cargo'; loadId: string }
+  | { mode: 'history'; loadId: string };
+
 export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driverId }) => {
   const { tSync: t } = useTranslation();
   const { data: loads = [], isLoading: loading, refetch } = usePreTripInspectionLoads(driverId);
-  const [selectedLoadId, setSelectedLoadId] = useState<string | null>(null);
-  const [historyLoadId, setHistoryLoadId] = useState<string | null>(null);
+  const [view, setView] = useState<HubView>({ mode: 'list' });
   const [history, setHistory] = useState<any[]>([]);
+  const [persistingTruck, setPersistingTruck] = useState(false);
+  const { checkedItems, toggle, allRequiredChecked, reset } = useVehicleChecklist();
 
   const openHistory = async (loadId: string) => {
     try {
       const records = await driverApi.getPreTripInspectionHistory(driverId, loadId);
       setHistory(records);
-      setHistoryLoadId(loadId);
+      setView({ mode: 'history', loadId });
     } catch (error: any) {
       toast.error(t(getApiErrorMessage(error)));
     }
   };
 
-  if (selectedLoadId) {
+  const openWorkflow = (load: any) => {
+    const status = getPreTripStatusFromLoad(load) as PreTripInspectionWorkflowStatus;
+    const resume =
+      load?.preTripInspection?.resumeStep ||
+      resolveResumeStep(status, {
+        truckCompleted: Boolean(load?.preTripInspection?.truckInspectionCompleted),
+        currentAttempt: load?.preTripInspection?.currentAttempt,
+      });
+
+    if (status === 'APPROVED') {
+      toast.success(t('Inspection already approved. Open My Assignments → Start Trip.'));
+      return;
+    }
+
+    if (status === 'AWAITING_CARGO_OWNER_APPROVAL' || status === 'AWAITING_RESOLUTION' || status === 'FAILED') {
+      openHistory(load.id);
+      return;
+    }
+
+    reset();
+    if (resume === 'CARGO' || canOpenCargoInspection(status)) {
+      setView({ mode: 'cargo', loadId: load.id });
+    } else {
+      setView({ mode: 'truck', loadId: load.id });
+    }
+  };
+
+  const handleTruckComplete = async (loadId: string) => {
+    if (!allRequiredChecked) return;
+    setPersistingTruck(true);
+    try {
+      await driverApi.completeTruckPreTripInspection(driverId, loadId, {
+        checklist: VEHICLE_CHECKLIST_ITEMS.map((item) => ({
+          id: item.id,
+          label: item.label,
+          verified: checkedItems.has(item.id),
+          notes: item.description,
+        })),
+      });
+      toast.success(t('Truck inspection completed. Continue to cargo inspection.'));
+      await refetch();
+      setView({ mode: 'cargo', loadId });
+    } catch (error: any) {
+      toast.error(t(getApiErrorMessage(error)));
+    } finally {
+      setPersistingTruck(false);
+    }
+  };
+
+  if (view.mode === 'truck') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <Truck className="w-5 h-5 text-[#345E85]" />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">
+              <TranslatedText text="Step 1 — Truck Inspection" />
+            </h2>
+            <p className="text-xs text-slate-500">
+              <TranslatedText text="Complete vehicle checks once. They will not be repeated after approval or for cargo re-inspection." />
+            </p>
+          </div>
+        </div>
+        <VehiclePreTripChecklist checkedItems={checkedItems} onToggle={toggle} />
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              reset();
+              setView({ mode: 'list' });
+            }}
+            className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all"
+          >
+            <TranslatedText text="Back" />
+          </button>
+          <button
+            onClick={() => handleTruckComplete(view.loadId)}
+            disabled={!allRequiredChecked || persistingTruck}
+            className="flex-[2] h-12 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {persistingTruck ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <TranslatedText text="Continue to Cargo Inspection" />
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (view.mode === 'cargo') {
     return (
       <CargoInspection
-        cargoId={selectedLoadId}
+        cargoId={view.loadId}
         driverId={driverId}
         onInspectionComplete={async () => {
           await refetch();
-          setSelectedLoadId(null);
+          setView({ mode: 'list' });
         }}
-        onCancel={() => setSelectedLoadId(null)}
+        onCancel={() => setView({ mode: 'list' })}
       />
     );
   }
@@ -79,7 +192,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
           <TranslatedText text="Pre-Trip Inspection" />
         </h2>
         <p className="text-sm text-slate-400 font-medium mt-0.5">
-          <TranslatedText text="Mandatory cargo verification before loading and trip start" />
+          <TranslatedText text="Multi-step truck + cargo verification. Progress is remembered — approved inspections skip to Start Trip." />
         </p>
       </div>
 
@@ -87,12 +200,19 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
         {loads.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-2xl border border-slate-100">
             <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 font-medium"><TranslatedText text="No assigned cargo requiring inspection." /></p>
+            <p className="text-slate-500 font-medium">
+              <TranslatedText text="No assigned cargo requiring inspection." />
+            </p>
           </div>
         ) : (
           loads.map((load, index) => {
             const status = getPreTripStatusFromLoad(load) as PreTripInspectionWorkflowStatus;
-            const canInspect = ['PENDING', 'IN_PROGRESS', 'READY_FOR_RE_INSPECTION'].includes(status);
+            const attempt = load.preTripInspection?.currentAttempt ?? 1;
+            const truckDone = Boolean(load.preTripInspection?.truckInspectionCompleted);
+            const actionLabel = getInspectionActionLabel(status);
+            const showPrimaryAction = ![
+              // Approved is handled with Start Trip hint button
+            ].includes(status);
 
             return (
               <motion.div
@@ -112,18 +232,31 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                       <span
                         className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border ${getInspectionStatusStyles(status)}`}
                       >
-                        <TranslatedText text={getInspectionStatusLabel(status)} />
+                        <TranslatedText
+                          text={getInspectionStatusLabel(status, { currentAttempt: attempt })}
+                        />
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">
-                      {load.description || <TranslatedText text="Assigned shipment awaiting pre-trip verification" />}
+                      {load.description || (
+                        <TranslatedText text="Assigned shipment awaiting pre-trip verification" />
+                      )}
                     </p>
-                    {load.preTripInspection?.historyCount > 0 && (
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-2 flex items-center gap-1">
-                        <History className="w-3 h-3" />
-                        {load.preTripInspection.historyCount} <TranslatedText text="inspection attempt(s) on record" />
-                      </p>
-                    )}
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      {truckDone && (
+                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <Truck className="w-3 h-3" />
+                          <TranslatedText text="Truck Inspection Completed" />
+                        </p>
+                      )}
+                      {load.preTripInspection?.historyCount > 0 && (
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <History className="w-3 h-3" />
+                          {load.preTripInspection.historyCount}{' '}
+                          <TranslatedText text="inspection attempt(s) on record" />
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -133,27 +266,31 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                     >
                       <History className="w-3 h-3" /> <TranslatedText text="History" />
                     </button>
-                    {canInspect ? (
+
+                    {status === 'APPROVED' ? (
+                      <span className="px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                        <Rocket className="w-3 h-3" /> <TranslatedText text="Ready to Start Trip" />
+                      </span>
+                    ) : status === 'AWAITING_RESOLUTION' || status === 'FAILED' ? (
+                      <span className="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                        <Clock className="w-3 h-3" /> <TranslatedText text="Awaiting Resolution" />
+                      </span>
+                    ) : status === 'AWAITING_CARGO_OWNER_APPROVAL' ? (
                       <button
-                        onClick={() => setSelectedLoadId(load.id)}
+                        onClick={() => openHistory(load.id)}
+                        className="px-4 py-2.5 bg-violet-50 text-violet-700 border border-violet-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-violet-100"
+                      >
+                        <Clock className="w-3 h-3" /> <TranslatedText text="View Submitted Inspection" />
+                      </button>
+                    ) : showPrimaryAction ? (
+                      <button
+                        onClick={() => openWorkflow(load)}
                         className="px-4 py-2.5 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center gap-1.5 shadow-md"
                       >
                         <Search className="w-3 h-3" />
-                        {status === 'READY_FOR_RE_INSPECTION' ? <TranslatedText text="Re-Inspect" /> : <TranslatedText text="Start Inspection" />}
+                        <TranslatedText text={actionLabel} />
                         <ArrowRight className="w-3 h-3" />
                       </button>
-                    ) : status === 'AWAITING_RESOLUTION' ? (
-                      <span className="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" /> <TranslatedText text="Blocked — Awaiting Owner" />
-                      </span>
-                    ) : status === 'AWAITING_CARGO_OWNER_APPROVAL' ? (
-                      <span className="px-4 py-2.5 bg-violet-50 text-violet-600 border border-violet-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" /> <TranslatedText text="Awaiting Owner Approval" />
-                      </span>
-                    ) : status === 'APPROVED' ? (
-                      <span className="px-4 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                        <CheckCircle className="w-3 h-3" /> <TranslatedText text="Approved" />
-                      </span>
                     ) : (
                       <span className="px-4 py-2.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
                         <AlertTriangle className="w-3 h-3" /> <TranslatedText text="Action Required" />
@@ -167,25 +304,28 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
         )}
       </div>
 
-      {historyLoadId && (
+      {view.mode === 'history' && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setHistoryLoadId(null)}
+            onClick={() => setView({ mode: 'list' })}
           />
           <div className="relative w-full sm:max-w-lg bg-white rounded-t-[2rem] sm:rounded-2xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl">
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
               <History className="w-4 h-4" /> <TranslatedText text="Inspection Timeline" />
             </h3>
             {history.length === 0 ? (
-              <p className="text-sm text-slate-500"><TranslatedText text="No inspection records yet." /></p>
+              <p className="text-sm text-slate-500">
+                <TranslatedText text="No inspection records yet." />
+              </p>
             ) : (
               <div className="space-y-3">
                 {history.map((record) => (
                   <div key={record.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                        <TranslatedText text="Attempt #" />{record.attemptNumber}
+                        <TranslatedText text="Attempt #" />
+                        {record.attemptNumber}
                       </span>
                       <span
                         className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border ${
@@ -197,7 +337,9 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                         <TranslatedText text={record.decision || record.status} />
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600">{record.overallNotes || <TranslatedText text="No notes recorded" />}</p>
+                    <p className="text-xs text-slate-600">
+                      {record.overallNotes || <TranslatedText text="No notes recorded" />}
+                    </p>
                     <p className="text-[10px] text-slate-400 mt-2">
                       {record.completedAt
                         ? new Date(record.completedAt).toLocaleString()
@@ -208,7 +350,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
               </div>
             )}
             <button
-              onClick={() => setHistoryLoadId(null)}
+              onClick={() => setView({ mode: 'list' })}
               className="mt-4 w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider"
             >
               <TranslatedText text="Close" />

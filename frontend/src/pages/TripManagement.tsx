@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Truck,
@@ -10,7 +10,6 @@ import {
   Search,
   Route,
   Calendar,
-  DollarSign,
   ArrowUpDown,
   LayoutGrid,
   List,
@@ -29,6 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { cn } from '../utils/cn';
 import ModernLoader from '../components/common/ModernLoader';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 /**
  * Build a full URL for a backend-served file.
@@ -319,6 +319,114 @@ const TripManagement: React.FC = () => {
 
   const { format: formatCurrency } = useCurrencyFormat();
 
+  const tripColumns = useMemo<Column<Trip>[]>(() => [
+    {
+      key: 'tripNumber',
+      label: 'Trip ID',
+      sortable: true,
+      render: (_v, trip) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-[#345E85] dark:text-blue-400">
+            <Route size={14} />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{trip.tripNumber}</div>
+            <div className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Ref: {trip.loadId}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, trip) => (
+        <div className="flex flex-col gap-1.5">
+          <StatusBadge
+            status={trip.status}
+            label={trip.status.replace('_', ' ')}
+            icon={getStatusIcon(trip.status)}
+          />
+          {(trip as any)._raw?.epod && (
+            <StatusBadge status="completed" label="ePOD Ready" icon={<CheckCircle size={8} />} />
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'pickupLocation',
+      label: 'Route',
+      render: (_v, trip) => (
+        <div className="flex flex-col gap-1 min-w-[180px]">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[150px]" title={trip.pickupLocation}>
+              {trip.pickupLocation}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[150px]" title={trip.deliveryLocation}>
+              {trip.deliveryLocation}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'truckPlate',
+      label: 'Vehicle & Driver',
+      render: (_v, trip) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
+            <Truck size={12} className="text-slate-400 dark:text-slate-500" />
+            {trip.truckPlate}
+          </div>
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <User size={12} className="text-slate-400 dark:text-slate-500" />
+            {trip.driverName}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'plannedStartTime',
+      label: 'Schedule',
+      sortable: true,
+      render: (_v, trip) => (
+        <div>
+          <div className="text-xs font-medium text-slate-600 dark:text-slate-400">{formatDate(trip.plannedStartTime)}</div>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500">to {formatDate(trip.plannedEndTime)}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'agreedPrice',
+      label: 'Price',
+      sortable: true,
+      align: 'right',
+      render: (_v, trip) => (
+        <div className="text-sm font-bold text-[#345E85] dark:text-blue-400">{formatCurrency(trip.agreedPrice)}</div>
+      ),
+    },
+  ], [formatCurrency]);
+
+  const tripRowActions = useMemo<TableAction<Trip>[]>(() => [
+    {
+      key: 'epod',
+      label: 'View ePOD',
+      icon: <FileText size={14} />,
+      hidden: (trip) => trip.status !== 'COMPLETED',
+      onClick: (trip) => handleSelectTrip(trip),
+    },
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye size={14} />,
+      onClick: (trip) => handleSelectTrip(trip),
+    },
+  ], []);
+
   if (loading) {
     return <ModernLoader isLoading={true} type="dashboard" showStats={true} />;
   }
@@ -512,116 +620,20 @@ const TripManagement: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
-                  <thead className="bg-slate-50/50 dark:bg-slate-800/50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Trip ID</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Route</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Vehicle & Driver</th>
-                      <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Schedule</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Price</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-50 dark:divide-slate-800">
-                    {sortedTrips.map((trip: Trip) => (
-                      <tr key={trip.id} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center text-[#345E85] dark:text-blue-400">
-                              <Route size={14} />
-                            </div>
-                            <div>
-                              <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{trip.tripNumber}</div>
-                              <div className="text-[10px] font-medium text-slate-400 dark:text-slate-500">Ref: {trip.loadId}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1.5">
-                            <span className={cn(
-                              "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1.5 border border-transparent shadow-sm",
-                              getStatusColor(trip.status),
-                              "dark:bg-opacity-10 dark:border-current"
-                            )}>
-                              {getStatusIcon(trip.status)}
-                              {trip.status.replace('_', ' ')}
-                            </span>
-                            {(trip as any)._raw?.epod && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 flex items-center justify-center w-fit shadow-sm">
-                                <CheckCircle size={8} className="mr-1" />
-                                ePOD Ready
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col gap-1 min-w-[180px]">
-                            <div className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[150px]" title={trip.pickupLocation}>
-                                {trip.pickupLocation}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate max-w-[150px]" title={trip.deliveryLocation}>
-                                {trip.deliveryLocation}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
-                              <Truck size={12} className="text-slate-400 dark:text-slate-500" />
-                              {trip.truckPlate}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                              <User size={12} className="text-slate-400 dark:text-slate-500" />
-                              {trip.driverName}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                            {formatDate(trip.plannedStartTime)}
-                          </div>
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                            to {formatDate(trip.plannedEndTime)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="text-sm font-bold text-[#345E85] dark:text-blue-400">{formatCurrency(trip.agreedPrice)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex items-center gap-1">
-                            {trip.status === 'COMPLETED' && (
-                              <button
-                                onClick={() => handleSelectTrip(trip)}
-                                title="View ePOD"
-                                className="p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                              >
-                                <FileText size={16} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleSelectTrip(trip)}
-                              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-500 hover:text-[#345E85] dark:hover:text-blue-400 transition-colors"
-                            >
-                              <Eye size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <StandardDataTable<Trip>
+              embedded
+              className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm p-2"
+              columns={tripColumns}
+              data={sortedTrips}
+              getRowId={(row) => row.id}
+              searchable={false}
+              columnVisibility
+              stickyHeader
+              pagination
+              rowActions={tripRowActions}
+              emptyMessage="No trips found"
+              ariaLabel="Trips"
+            />
           )}
         </>
       )}

@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { fleetApi } from '../services/fleetApi';
 import type { Route } from '../services/fleetApi';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import {
   Plus,
   RefreshCcw,
-  Navigation,
   Clock,
   Trash2,
   Edit3,
@@ -18,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import MapLocationPicker from '@/components/FleetDashboard/MapLocationPicker';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const { confirm, DialogComponent } = useConfirmDialog();
@@ -204,6 +204,86 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     return Math.round(d);
   }
 
+  const routeColumns = useMemo<Column<Route>[]>(() => [
+    {
+      key: 'name',
+      label: 'Route Manifest',
+      sortable: true,
+      render: (_v, route) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <Box size={14} />
+          </div>
+          <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">{route.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'origin',
+      label: 'Origin',
+      sortable: true,
+      render: (v) => <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{String(v)}</span>,
+    },
+    {
+      key: 'destination',
+      label: 'Destination',
+      sortable: true,
+      render: (v) => <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{String(v)}</span>,
+    },
+    {
+      key: 'distance',
+      label: 'Magnitude',
+      sortable: true,
+      render: (_v, route) => (
+        <div className="flex items-center gap-2">
+          <TrendingUp size={12} className="text-[#345E85] dark:text-blue-400" />
+          <span className="text-xs font-black text-[#0f172a] dark:text-white">{route.distance} KM</span>
+        </div>
+      ),
+    },
+    {
+      key: 'estimatedTime',
+      label: 'Temporal Path',
+      sortable: true,
+      render: (_v, route) => (
+        <div className="flex items-center gap-2">
+          <Clock size={12} className="text-slate-400 dark:text-slate-500" />
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{route.estimatedTime} H</span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Protocol',
+      sortable: true,
+      render: (_v, route) => (
+        <StatusBadge
+          status={route.status}
+          label={route.status}
+          variant={
+            route.status?.toLowerCase() === 'active' ? 'success' :
+            route.status?.toLowerCase() === 'maintenance' ? 'warning' : 'neutral'
+          }
+        />
+      ),
+    },
+  ], []);
+
+  const routeActions = useMemo<TableAction<Route>[]>(() => [
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <Edit3 size={14} />,
+      onClick: (route) => openEdit(route),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <Trash2 size={14} />,
+      variant: 'danger',
+      onClick: (route) => handleDelete(route),
+    },
+  ], []);
 
   return (
     <div className={cn("space-y-12 animate-in fade-in duration-700", isEmbedded ? "p-0" : "p-0")}>
@@ -236,93 +316,33 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
         </div>
       </div>
 
-      {/* Manifest Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Route Manifest</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Origin</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Destination</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Magnitude</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Temporal Path</th>
-                <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Protocol</th>
-                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Operations</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-              {routes.map((route) => (
-                <tr key={route.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-[#345E85] dark:group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        <Box size={14} />
-                      </div>
-                      <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">{route.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{route.origin}</span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{route.destination}</span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp size={12} className="text-[#345E85] dark:text-blue-400" />
-                      <span className="text-xs font-black text-[#0f172a] dark:text-white">{route.distance} KM</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-2">
-                      <Clock size={12} className="text-slate-400 dark:text-slate-500" />
-                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{route.estimatedTime} H</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                      route.status?.toLowerCase() === 'active' ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" :
-                        route.status?.toLowerCase() === 'maintenance' ? "bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400" :
-                          "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
-                    )}>
-                      {route.status}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => openEdit(route)}
-                        className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-[#345E85] dark:hover:bg-blue-600 hover:text-white transition-all"
-                      >
-                        <Edit3 size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(route)}
-                        className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {routes.length === 0 && (
-            <div className="p-20 flex flex-col items-center justify-center gap-4 text-center">
-              <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-[2rem] flex items-center justify-center">
-                <Navigation size={32} className="text-slate-200 dark:text-slate-700" />
-              </div>
-              <div>
-                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Topology Void Detect</h4>
-                <p className="text-xs font-bold text-slate-300 dark:text-slate-600 mt-1 uppercase">Initialize your first route manifestation</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <StandardDataTable<Route>
+        embedded
+        className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-4"
+        columns={routeColumns}
+        data={routes}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search routes…"
+        searchKeys={['name', 'origin', 'destination', 'status']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+              { value: 'maintenance', label: 'Maintenance' },
+            ],
+          },
+        ]}
+        rowActions={routeActions}
+        emptyMessage="Initialize your first route manifestation"
+        stickyHeader
+        columnVisibility
+        pagination
+        onRefresh={loadRoutes}
+        ariaLabel="Routes"
+      />
 
       {/* Create/Edit Modal */}
       {showForm && (

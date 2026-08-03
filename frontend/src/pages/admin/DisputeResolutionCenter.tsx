@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Gavel, AlertTriangle, Search, Download, Eye, Clock,
@@ -15,11 +15,12 @@ import {
   type Dispute, type DisputeStatus, type DisputeCategory, type DisputePriority,
   type DisputeAnalytics,
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
-  getStatusColor, getPriorityColor, getUserDisplayName, formatRelativeTime,
+  getUserDisplayName, formatRelativeTime,
   asDisputeList,
 } from '../../types/dispute';
 import DisputeDetailModal from './dispute/DisputeDetailModal';
 import CreateDisputeModal from './dispute/CreateDisputeModal';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 // ── Stat card ──────────────────────────────────────────────────────────────────
 const Stat: React.FC<{ label: string; value: number | string; icon: React.ReactNode; color?: string }> = ({
@@ -65,6 +66,76 @@ const DisputeResolutionCenter: React.FC = () => {
 
   const disputes: Dispute[] = asDisputeList(listData);
   const analytics: DisputeAnalytics | null = analyticsData?.data ?? null;
+
+  const columns: Column<Dispute>[] = useMemo(() => [
+    {
+      key: 'referenceNumber',
+      label: 'Reference',
+      sortable: true,
+      render: (_: unknown, d: Dispute) => (
+        <span className="font-mono text-xs text-[#2c5173] font-bold">{d.referenceNumber}</span>
+      ),
+    },
+    {
+      key: 'title',
+      label: 'Title',
+      sortable: true,
+      render: (_: unknown, d: Dispute) => (
+        <div className="max-w-[180px]">
+          <p className="text-sm font-bold text-gray-900 truncate">{d.title}</p>
+          {d.trip && <p className="text-[10px] text-gray-400 mt-0.5">{d.trip.tripNumber}</p>}
+        </div>
+      ),
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      render: (_: unknown, d: Dispute) => (
+        <span className="text-xs text-gray-600 whitespace-nowrap">{CATEGORY_LABELS[d.category]}</span>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      render: (_: unknown, d: Dispute) => (
+        <StatusBadge label={PRIORITY_LABELS[d.priority]} status={d.priority} />
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_: unknown, d: Dispute) => (
+        <StatusBadge label={STATUS_LABELS[d.status]} status={d.status} />
+      ),
+    },
+    {
+      key: 'complainant',
+      label: 'Complainant',
+      render: (_: unknown, d: Dispute) => (
+        <span className="text-xs text-gray-700 whitespace-nowrap">{getUserDisplayName(d.complainant)}</span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      sortable: true,
+      render: (_: unknown, d: Dispute) => (
+        <span className="text-[10px] text-gray-400 whitespace-nowrap">{formatRelativeTime(d.createdAt)}</span>
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<Dispute>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye className="w-4 h-4" />,
+      onClick: (d) => setSelectedId(d.id),
+    },
+  ], []);
 
   const handleExport = useCallback(() => {
     const headers = ['Ref', 'Title', 'Category', 'Priority', 'Status', 'Complainant', 'Created'];
@@ -150,61 +221,24 @@ const DisputeResolutionCenter: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {['Reference', 'Title', 'Category', 'Priority', 'Status', 'Complainant', 'Created', 'Actions'].map(h => (
-                  <th key={h} className={`px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${h === 'Actions' ? 'text-right' : 'text-left'}`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {disputes.length === 0 ? (
-                <tr><td colSpan={8} className="px-6 py-16 text-center">
-                  <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <Gavel className="w-7 h-7 text-gray-300" />
-                  </div>
-                  <p className="text-sm font-medium text-gray-500">No disputes found</p>
-                </td></tr>
-              ) : disputes.map(d => (
-                <tr key={d.id} className="hover:bg-gray-50/60 transition-colors group">
-                  <td className="px-5 py-4 font-mono text-xs text-[#2c5173] font-bold whitespace-nowrap">{d.referenceNumber}</td>
-                  <td className="px-5 py-4 max-w-[180px]">
-                    <p className="text-sm font-bold text-gray-900 truncate">{d.title}</p>
-                    {d.trip && <p className="text-[10px] text-gray-400 mt-0.5">{d.trip.tripNumber}</p>}
-                  </td>
-                  <td className="px-5 py-4 text-xs text-gray-600 whitespace-nowrap">{CATEGORY_LABELS[d.category]}</td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getPriorityColor(d.priority)}`}>{PRIORITY_LABELS[d.priority]}</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getStatusColor(d.status)}`}>{STATUS_LABELS[d.status]}</span>
-                  </td>
-                  <td className="px-5 py-4 text-xs text-gray-700 whitespace-nowrap">{getUserDisplayName(d.complainant)}</td>
-                  <td className="px-5 py-4 text-[10px] text-gray-400 whitespace-nowrap">
-                    <div>{formatRelativeTime(d.createdAt)}</div>
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    <button onClick={() => setSelectedId(d.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 ml-auto opacity-0 group-hover:opacity-100 transition-all">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {disputes.length > 0 && (
-          <div className="px-6 py-3 border-t border-gray-50 bg-gray-50/50">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Showing <span className="text-gray-900">{disputes.length}</span> disputes
-            </p>
-          </div>
-        )}
-      </div>
+      <StandardDataTable
+        embedded
+        columns={columns}
+        data={disputes}
+        getRowId={(row) => row.id}
+        loading={isLoading}
+        searchable={false}
+        columnVisibility
+        stickyHeader
+        defaultSortKey="createdAt"
+        defaultSortDirection="desc"
+        rowActions={rowActions}
+        onRefresh={() => refetch()}
+        onExport={handleExport}
+        emptyMessage="No disputes found"
+        ariaLabel="Dispute resolution"
+        className="bg-white rounded-[24px] border border-gray-100 overflow-hidden"
+      />
 
       {selectedId && (
         <DisputeDetailModal disputeId={selectedId} onClose={() => { setSelectedId(null); qc.invalidateQueries({ queryKey: ['disputes-admin'] }); }} />

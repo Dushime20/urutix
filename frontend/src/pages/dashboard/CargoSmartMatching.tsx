@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FaTruck, FaStar, FaMapMarkerAlt, FaClock, FaWeightHanging,
@@ -12,6 +12,7 @@ import type { MatchedTruck, MarketInsights } from '../../services/cargoOwnerAPI'
 import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
 import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, type Column } from '../../components/EnliteUI/Tables';
 
 const CargoSmartMatching: React.FC = () => {
   const navigate = useNavigate();
@@ -157,6 +158,97 @@ const CargoSmartMatching: React.FC = () => {
     if (score >= 70) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
     return 'text-red-600 bg-red-50 border-red-200';
   };
+
+  const truckTableColumns = useMemo<Column<MatchedTruck>[]>(() => [
+    {
+      key: 'owner',
+      label: 'Owner / Truck',
+      sortable: false,
+      render: (_, truck) => (
+        <>
+          <p className="font-black text-slate-900 text-xs">{truck.truckOwner?.name}</p>
+          <p className="text-[10px] text-slate-400">{truck.truck?.make} {truck.truck?.model}</p>
+        </>
+      ),
+    },
+    {
+      key: 'score',
+      label: 'Score',
+      sortable: false,
+      render: (_, truck) => (
+        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(truck.score)}`}>
+          {truck.score}%
+        </span>
+      ),
+    },
+    {
+      key: 'estimatedCost',
+      label: 'Cost (USD)',
+      sortable: false,
+      render: (_, truck) => <span className="font-black text-slate-900 text-xs">{fmt(truck.estimatedCost)}</span>,
+    },
+    {
+      key: 'estimatedRevenue',
+      label: 'Revenue (USD)',
+      sortable: false,
+      render: (_, truck) => <span className="font-black text-green-600 text-xs">{fmt(truck.estimatedRevenue)}</span>,
+    },
+    {
+      key: 'profitMargin',
+      label: 'Margin',
+      sortable: false,
+      render: (_, truck) => (
+        <span className="text-xs font-bold text-slate-600">{Math.round((truck.profitMargin || 0) * 100)}%</span>
+      ),
+    },
+    {
+      key: 'routeDistanceKm',
+      label: 'Route Dist.',
+      sortable: false,
+      render: (_, truck) => <span className="text-xs text-slate-500">{truck.routeDistanceKm} km</span>,
+    },
+    {
+      key: 'estimatedTime',
+      label: 'Time',
+      sortable: false,
+      render: (_, truck) => <span className="text-xs text-slate-500">{truck.estimatedTime}h</span>,
+    },
+    {
+      key: 'rating',
+      label: 'Rating',
+      sortable: false,
+      render: (_, truck) => <span className="text-xs text-slate-500">{truck.driver?.rating} ★</span>,
+    },
+    {
+      key: 'features',
+      label: 'Features',
+      sortable: false,
+      render: (_, truck) => (
+        <div className="flex gap-1 flex-wrap">
+          {truck.truck?.hasGpsTracking && <span className="text-[8px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-black">GPS</span>}
+          {truck.truck?.hasRefrigeration && <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black">Fridge</span>}
+          {truck.truck?.hasHazmatPermit && <span className="text-[8px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-black">Hazmat</span>}
+        </div>
+      ),
+    },
+    {
+      key: 'select',
+      label: '',
+      sortable: false,
+      align: 'right',
+      alwaysVisible: true,
+      hideable: false,
+      render: (_, truck) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setSelectedTruck(truck); }}
+          className="text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:underline"
+        >
+          Select
+        </button>
+      ),
+    },
+  ], [fmt]);
 
   const filteredTrucks = matchedTrucks
     .filter(t => {
@@ -554,43 +646,21 @@ const CargoSmartMatching: React.FC = () => {
 
           {/* Table View */}
           {viewMode === 'table' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50/50 border-b border-slate-100">
-                  <tr>
-                    {['Owner / Truck', 'Score', 'Cost (USD)', 'Revenue (USD)', 'Margin', 'Route Dist.', 'Time', 'Rating', 'Features', ''].map(h => (
-                      <th key={h} className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredTrucks.map(truck => (
-                    <tr key={truck.id} className={`hover:bg-slate-50/50 transition-colors ${selectedTruck?.id === truck.id ? 'bg-blue-50/50' : ''}`}>
-                      <td className="px-5 py-3">
-                        <p className="font-black text-slate-900 text-xs">{truck.truckOwner?.name}</p>
-                        <p className="text-[10px] text-slate-400">{truck.truck?.make} {truck.truck?.model}</p>
-                      </td>
-                      <td className="px-5 py-3"><span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(truck.score)}`}>{truck.score}%</span></td>
-                      <td className="px-5 py-3 font-black text-slate-900 text-xs">{fmt(truck.estimatedCost)}</td>
-                      <td className="px-5 py-3 font-black text-green-600 text-xs">{fmt(truck.estimatedRevenue)}</td>
-                      <td className="px-5 py-3 text-xs font-bold text-slate-600">{Math.round((truck.profitMargin || 0) * 100)}%</td>
-                      <td className="px-5 py-3 text-xs text-slate-500">{truck.routeDistanceKm} km</td>
-                      <td className="px-5 py-3 text-xs text-slate-500">{truck.estimatedTime}h</td>
-                      <td className="px-5 py-3 text-xs text-slate-500">{truck.driver?.rating} ★</td>
-                      <td className="px-5 py-3">
-                        <div className="flex gap-1 flex-wrap">
-                          {truck.truck?.hasGpsTracking && <span className="text-[8px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded font-black">GPS</span>}
-                          {truck.truck?.hasRefrigeration && <span className="text-[8px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-black">Fridge</span>}
-                          {truck.truck?.hasHazmatPermit && <span className="text-[8px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-black">Hazmat</span>}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3">
-                        <button onClick={() => setSelectedTruck(truck)} className="text-[10px] font-black uppercase tracking-widest text-[#345E85] hover:underline">Select</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="px-2 pb-2">
+              <StandardDataTable<MatchedTruck>
+                embedded
+                searchable={false}
+                pagination={false}
+                sortable={false}
+                columnVisibility={false}
+                columns={truckTableColumns}
+                data={filteredTrucks}
+                getRowId={(row) => row.id}
+                rowClassName={(truck) => (selectedTruck?.id === truck.id ? 'bg-blue-50/50' : '')}
+                ariaLabel="Matched trucks"
+                emptyMessage="No trucks match your current filters"
+                dense
+              />
             </div>
           )}
 
@@ -602,47 +672,69 @@ const CargoSmartMatching: React.FC = () => {
                 Check boxes in list view to compare up to 3 trucks
               </div>
             );
-            const rows = [
-              { label: 'Score', render: (t: MatchedTruck) => <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(t.score)}`}>{t.score}%</span> },
-              { label: 'Cost', render: (t: MatchedTruck) => <span className="font-black text-slate-900">{fmt(t.estimatedCost)}</span> },
-              { label: 'Distance', render: (t: MatchedTruck) => `${t.distance} mi` },
-              { label: 'Est. Time', render: (t: MatchedTruck) => `${t.estimatedTime}h` },
-              { label: 'Driver Rating', render: (t: MatchedTruck) => `${t.driver?.rating} ★` },
-              { label: 'Experience', render: (t: MatchedTruck) => `${t.driver?.experience} yrs` },
-              { label: 'GPS', render: (t: MatchedTruck) => t.truck?.hasGpsTracking ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
-              { label: 'Refrigeration', render: (t: MatchedTruck) => t.truck?.hasRefrigeration ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
-              { label: 'Hazmat', render: (t: MatchedTruck) => t.truck?.hasHazmatPermit ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
+            type CompRow = { key: string; label: string; render: (t: MatchedTruck) => React.ReactNode };
+            const compRows: CompRow[] = [
+              { key: 'score', label: 'Score', render: (t) => <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black ${getScoreColor(t.score)}`}>{t.score}%</span> },
+              { key: 'cost', label: 'Cost', render: (t) => <span className="font-black text-slate-900">{fmt(t.estimatedCost)}</span> },
+              { key: 'distance', label: 'Distance', render: (t) => `${t.distance} mi` },
+              { key: 'time', label: 'Est. Time', render: (t) => `${t.estimatedTime}h` },
+              { key: 'rating', label: 'Driver Rating', render: (t) => `${t.driver?.rating} ★` },
+              { key: 'experience', label: 'Experience', render: (t) => `${t.driver?.experience} yrs` },
+              { key: 'gps', label: 'GPS', render: (t) => t.truck?.hasGpsTracking ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
+              { key: 'fridge', label: 'Refrigeration', render: (t) => t.truck?.hasRefrigeration ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
+              { key: 'hazmat', label: 'Hazmat', render: (t) => t.truck?.hasHazmatPermit ? <FaCheck className="text-green-500 mx-auto" /> : <FaTimes className="text-red-400 mx-auto" /> },
+              {
+                key: 'select',
+                label: '',
+                render: (t) => (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTruck(t)}
+                    className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                  >
+                    Select
+                  </button>
+                ),
+              },
+            ];
+            const comparisonData = compRows.map((r) => ({ key: r.key, label: r.label }));
+            const comparisonColumns: Column<{ key: string; label: string }>[] = [
+              {
+                key: 'label',
+                label: 'Criteria',
+                sortable: false,
+                width: '8rem',
+                render: (_, row) => (
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{row.label}</span>
+                ),
+              },
+              ...items.map((item) => ({
+                key: item.id,
+                label: `${item.truckOwner?.name || 'Unknown'} · ${item.truck?.make || ''} ${item.truck?.model || ''}`.trim(),
+                sortable: false,
+                align: 'center' as const,
+                render: (_: unknown, row: { key: string; label: string }) => {
+                  const def = compRows.find((r) => r.key === row.key);
+                  return def ? <span className="text-xs text-slate-700">{def.render(item)}</span> : null;
+                },
+              })),
             ];
             return (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50/50 border-b border-slate-100">
-                    <tr>
-                      <th className="px-5 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 w-32">Criteria</th>
-                      {items.map(t => (
-                        <th key={t.id} className="px-5 py-3 text-center text-[9px] font-black uppercase tracking-[0.2em] text-slate-700">
-                          {t.truckOwner?.name}<br /><span className="text-slate-400 font-bold normal-case">{t.truck?.make} {t.truck?.model}</span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {rows.map(row => (
-                      <tr key={row.label} className="hover:bg-slate-50/30">
-                        <td className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">{row.label}</td>
-                        {items.map(t => <td key={t.id} className="px-5 py-3 text-center text-xs text-slate-700">{row.render(t)}</td>)}
-                      </tr>
-                    ))}
-                    <tr>
-                      <td className="px-5 py-3" />
-                      {items.map(t => (
-                        <td key={t.id} className="px-5 py-3 text-center">
-                          <button onClick={() => setSelectedTruck(t)} className="px-4 py-2 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors">Select</button>
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="px-2 pb-2">
+                <StandardDataTable
+                  embedded
+                  searchable={false}
+                  pagination={false}
+                  sortable={false}
+                  columnVisibility={false}
+                  columns={comparisonColumns}
+                  data={comparisonData}
+                  getRowId={(row) => row.key}
+                  ariaLabel="Truck comparison"
+                  emptyMessage="No trucks selected for comparison"
+                  dense
+                  hoverable
+                />
               </div>
             );
           })()}

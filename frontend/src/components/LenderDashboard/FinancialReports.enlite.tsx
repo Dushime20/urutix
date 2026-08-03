@@ -3,14 +3,12 @@ import {
     FileText,
     Download,
     Mail,
-    Search,
-    Filter,
     Play,
     LayoutTemplate,
     Archive,
 } from 'lucide-react';
 import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 
 export interface ReportTemplate {
     id: string;
@@ -157,7 +155,6 @@ const FinancialReportsEnlite: React.FC<FinancialReportsEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            {/* Tab switcher */}
             <div className="flex items-center gap-2 px-1">
                 {tabs.map(tab => (
                     <button
@@ -175,117 +172,106 @@ const FinancialReportsEnlite: React.FC<FinancialReportsEnliteProps> = ({
                 ))}
             </div>
 
-            {/* Main content */}
-            <DataCard
-                title={tabs.find(t => t.id === activeTab)?.label ?? 'Reports'}
-                subtitle={activeTab === 'templates'
-                    ? 'Select a template to generate a financial document'
-                    : 'Access and download previously generated reports'}
-                icon={activeTab === 'templates'
-                    ? <LayoutTemplate className="w-5 h-5" />
-                    : <Archive className="w-5 h-5" />}
-                headerColor="primary"
-                actions={
-                    <div className="flex items-center gap-2">
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" size={14} />
-                            <input
-                                type="text"
-                                placeholder="SEARCH..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="w-48 lg:w-56 pl-9 pr-3 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
-                            />
-                        </div>
-                        {activeTab === 'templates' && (
-                            <div className="flex items-center gap-1.5">
-                                <Filter size={14} className="text-white/70" />
-                                <select
-                                    value={filterCategory}
-                                    onChange={e => setFilterCategory(e.target.value)}
-                                    className="px-2.5 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white focus:outline-none"
-                                >
-                                    <option value="all" className="text-slate-900">ALL CLASSES</option>
-                                    <option value="portfolio" className="text-slate-900">PORTFOLIO</option>
-                                    <option value="financial" className="text-slate-900">FINANCIAL</option>
-                                    <option value="risk" className="text-slate-900">RISK</option>
-                                    <option value="compliance" className="text-slate-900">COMPLIANCE</option>
-                                </select>
+            {activeTab === 'templates' ? (
+                <DataCard
+                    title="Report Templates"
+                    subtitle="Select a template to generate a financial document"
+                    icon={<LayoutTemplate className="w-5 h-5" />}
+                    headerColor="primary"
+                    actions={
+                        <div className="flex items-center gap-2">
+                            <div className="relative hidden md:block">
+                                <input
+                                    type="text"
+                                    placeholder="SEARCH..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="w-48 lg:w-56 pl-3 pr-3 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                                />
                             </div>
+                            <select
+                                value={filterCategory}
+                                onChange={e => setFilterCategory(e.target.value)}
+                                className="px-2.5 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white focus:outline-none"
+                            >
+                                <option value="all" className="text-slate-900">ALL CLASSES</option>
+                                <option value="portfolio" className="text-slate-900">PORTFOLIO</option>
+                                <option value="financial" className="text-slate-900">FINANCIAL</option>
+                                <option value="risk" className="text-slate-900">RISK</option>
+                                <option value="compliance" className="text-slate-900">COMPLIANCE</option>
+                            </select>
+                        </div>
+                    }
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredTemplates.length === 0 ? (
+                            <div className="col-span-2 py-16 text-center">
+                                <p className="text-sm font-semibold text-slate-500">
+                                    No templates match your filters
+                                </p>
+                            </div>
+                        ) : (
+                            filteredTemplates.map(template => (
+                                <div
+                                    key={template.id}
+                                    className="p-5 bg-white rounded-2xl border border-slate-100 hover:border-[#2c5173] hover:shadow-lg hover:shadow-slate-100 transition-all group flex flex-col justify-between min-h-[180px]"
+                                >
+                                    <div>
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-[#2c5173] group-hover:bg-[#2c5173] group-hover:text-white transition-colors border border-slate-200">
+                                                {template.icon}
+                                            </div>
+                                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg border bg-slate-50 text-slate-500 uppercase tracking-wider">
+                                                {template.estimatedTime}
+                                            </span>
+                                        </div>
+                                        <h5 className="font-semibold text-slate-900 text-sm mb-1">{template.name}</h5>
+                                        <p className="text-[10px] text-slate-500 tracking-wider line-clamp-2 leading-relaxed">
+                                            {template.description}
+                                        </p>
+                                    </div>
+                                    <div className="mt-4 flex items-center justify-between gap-3">
+                                        <button
+                                            onClick={() => onViewDetails(template)}
+                                            className="flex-1 py-1.5 px-3 bg-slate-50 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-wider hover:bg-slate-100 transition-all"
+                                        >
+                                            View Details
+                                        </button>
+                                        <button
+                                            onClick={() => onGenerate(template)}
+                                            className="flex-1 py-1.5 px-3 bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-lg text-[9px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                        >
+                                            Generate <Play size={10} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
-                }
-            >
-                <div className="space-y-4">
-                    <div className="relative md:hidden">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173]"
-                        />
-                    </div>
-
-                    {activeTab === 'templates' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {filteredTemplates.length === 0 ? (
-                                <div className="col-span-2 py-16 text-center">
-                                    <p className="text-sm font-semibold text-slate-500">
-                                        No templates match your filters
-                                    </p>
-                                </div>
-                            ) : (
-                                filteredTemplates.map(template => (
-                                    <div
-                                        key={template.id}
-                                        className="p-5 bg-white rounded-2xl border border-slate-100 hover:border-[#2c5173] hover:shadow-lg hover:shadow-slate-100 transition-all group flex flex-col justify-between min-h-[180px]"
-                                    >
-                                        <div>
-                                            <div className="flex items-start justify-between mb-3">
-                                                <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-[#2c5173] group-hover:bg-[#2c5173] group-hover:text-white transition-colors border border-slate-200">
-                                                    {template.icon}
-                                                </div>
-                                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-lg border bg-slate-50 text-slate-500 uppercase tracking-wider">
-                                                    {template.estimatedTime}
-                                                </span>
-                                            </div>
-                                            <h5 className="font-semibold text-slate-900 text-sm mb-1">{template.name}</h5>
-                                            <p className="text-[10px] text-slate-500 tracking-wider line-clamp-2 leading-relaxed">
-                                                {template.description}
-                                            </p>
-                                        </div>
-                                        <div className="mt-4 flex items-center justify-between gap-3">
-                                            <button
-                                                onClick={() => onViewDetails(template)}
-                                                className="flex-1 py-1.5 px-3 bg-slate-50 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-wider hover:bg-slate-100 transition-all"
-                                            >
-                                                View Details
-                                            </button>
-                                            <button
-                                                onClick={() => onGenerate(template)}
-                                                className="flex-1 py-1.5 px-3 bg-[#2c5173] hover:bg-[#1e3850] text-white rounded-lg text-[9px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                            >
-                                                Generate <Play size={10} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    ) : (
-                        <EnhancedTable
-                            columns={columns}
-                            data={recentReports}
-                            loading={loading}
-                            striped
-                            hoverable
-                            emptyMessage="No reports in archive. Generate a document to get started."
-                        />
-                    )}
-                </div>
-            </DataCard>
+                </DataCard>
+            ) : (
+                <StandardDataTable
+                    title="Document Archive"
+                    subtitle="Access and download previously generated reports"
+                    icon={<Archive className="w-5 h-5" />}
+                    headerColor="primary"
+                    columns={columns}
+                    data={recentReports}
+                    loading={loading}
+                    getRowId={(row) => row.id}
+                    searchable
+                    searchPlaceholder="Search reports…"
+                    searchKeys={['name', 'id', 'category', 'generatedBy', 'status']}
+                    pagination
+                    pageSize={10}
+                    columnVisibility
+                    stickyHeader
+                    striped
+                    hoverable
+                    emptyMessage="No reports in archive. Generate a document to get started."
+                    ariaLabel="Document Archive"
+                />
+            )}
         </div>
     );
 };

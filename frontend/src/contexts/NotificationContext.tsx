@@ -4,6 +4,7 @@ import { notificationApi } from '../services/notifications/notificationApi';
 import type { Notification } from '../services/notifications/notificationApi';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
+import { shouldSuppressRealtimeToast } from '../utils/actionToast';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -140,7 +141,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setIsConnected(false);
     });
 
-    // Real-time notification push from backend
+    // Real-time notification push from backend (single event — backend also emits
+    // `notification:new` with the same payload; listening to both would double toasts).
     socket.on('notification', (newNotif: Notification) => {
       // Role-based filter: LOW_BALANCE is only for TRUCK_OWNER and TENANT_ADMIN
       const notifType = ((newNotif as any).notificationType || (newNotif as any).type || '').toUpperCase();
@@ -161,12 +163,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (!newNotif.readAt) {
         setUnreadCount(prev => prev + 1);
       }
-      // Show toast for high-priority
+
+      // One toast per notification id; skip when the user just got an action toast
+      if (shouldSuppressRealtimeToast(notifType, newNotif.title)) {
+        return;
+      }
+
       const priority = newNotif.priority;
-      if (priority === 'HIGH' || priority === 'URGENT' || priority === 'CRITICAL') {
+      const isPreTrip =
+        notifType === 'PRE_TRIP_APPROVED' ||
+        notifType === 'PRE_TRIP_READY_FOR_RE_INSPECTION' ||
+        (notifType === 'DRIVER_ALERT' &&
+          String(newNotif.title || '').toLowerCase().includes('re-inspection'));
+
+      if (
+        priority === 'HIGH' ||
+        priority === 'URGENT' ||
+        priority === 'CRITICAL' ||
+        isPreTrip
+      ) {
+        const toastId = newNotif.id ? `notif-${newNotif.id}` : `notif-${notifType}-${newNotif.title}`;
         toast(newNotif.title || 'New notification', {
-          icon: getCategoryEmoji(newNotif.category),
-          duration: 5000,
+          id: toastId,
+          icon: isPreTrip ? '🟢' : getCategoryEmoji(newNotif.category),
+          duration: isPreTrip ? 8000 : 5000,
         });
       }
     });

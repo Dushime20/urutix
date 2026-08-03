@@ -34,6 +34,7 @@ import {
   Battery,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastActionSuccess, toastActionError, TRIP_COMPLETE_SUPPRESS_TYPES } from '../../utils/actionToast';
 import { useGpsTracking } from '../../hooks/useGpsTracking';
 import { driverApi } from '../../services/driverApi';
 import { cn } from '../../utils/cn';
@@ -153,10 +154,13 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
     setEnding(true);
     try {
       await driverApi.completeTrip(trip.id);
-      toast.success(t('Trip completed successfully!'), { icon: '🏁' });
+      toastActionSuccess(t('Trip completed successfully!'), {
+        id: 'trip-complete',
+        suppressTypes: TRIP_COMPLETE_SUPPRESS_TYPES,
+      });
       onTripEnded?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || t('Failed to end trip'));
+      toastActionError(err?.response?.data?.message || t('Failed to end trip'), { id: 'trip-complete' });
     } finally {
       setEnding(false);
     }

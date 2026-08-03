@@ -1106,25 +1106,31 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                       disabled={idx > currentStepIndex}
                       title={step.label}
                       className={`flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0 transition-all duration-300 text-[10px] font-black border-2
-                        ${isDone ? 'bg-emerald-500 border-emerald-500 text-white cursor-pointer' : ''}
-                        ${isActive ? 'bg-[#345E85] border-[#345E85] text-white scale-110 shadow-md shadow-blue-900/20' : ''}
+                        ${isDone ? 'bg-primary-500 border-primary-500 text-white cursor-pointer' : ''}
+                        ${isActive ? 'bg-primary-600 border-primary-600 text-white scale-110 shadow-md shadow-primary-900/20' : ''}
                         ${!isDone && !isActive ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed' : ''}
                       `}
                     >
                       {isDone ? <FaCheck className="w-2.5 h-2.5" /> : <StepIcon className="w-2.5 h-2.5" />}
                     </button>
                     {idx < STEPS.length - 1 && (
-                      <div className={`flex-1 h-0.5 rounded-full transition-all duration-500 ${idx < currentStepIndex ? 'bg-emerald-400' : 'bg-slate-100 dark:bg-slate-800'}`} />
+                      <div
+                        className={`flex-1 h-0.5 rounded-full transition-all duration-500 ${
+                          idx < currentStepIndex
+                            ? 'bg-primary-400'
+                            : 'bg-slate-100 dark:bg-slate-800'
+                        }`}
+                      />
                     )}
                   </React.Fragment>
                 );
               })}
             </div>
             {/* Thin bar for mobile */}
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
               <div
-                className="h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${((currentStepIndex) / (STEPS.length - 1)) * 100}%`, background: 'linear-gradient(90deg, #345E85, #10b981)' }}
+                className="h-1.5 rounded-full transition-all duration-500 bg-primary-500"
+                style={{ width: `${(currentStepIndex / (STEPS.length - 1)) * 100}%` }}
               />
             </div>
           </div>

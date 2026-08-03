@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fleetApi, type TCOAnalysis } from '../services/fleetApi';
 import { fuelApi } from '../services/fuelApi';
@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column } from '../components/EnliteUI/Tables';
 
 const FleetAnalytics: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
@@ -35,6 +36,52 @@ const FleetAnalytics: React.FC = () => {
     const criticalIssues = logs.filter((l: any) => l.status === 'FAULT_REPORT').length;
     const pendingServices = logs.filter((l: any) => l.status === 'scheduled').length;
     const healthScore = Math.max(70, 100 - (criticalIssues * 15) - (pendingServices * 2));
+
+    const maintenanceColumns: Column<any>[] = useMemo(() => [
+      {
+        key: 'truck',
+        label: 'Vehicle',
+        render: (_: unknown, log: any) => (
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">{log.truck?.plateNumber || log.truckId}</span>
+            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{log.truck?.make || ''}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'taskName',
+        label: 'Task',
+        render: (_: unknown, log: any) => (
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{log.taskName}</span>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        align: 'center',
+        render: (_: unknown, log: any) => (
+          <StatusBadge
+            status={log.status}
+            label={log.status}
+            variant={
+              log.status === 'FAULT_REPORT' ? 'error'
+                : log.status === 'completed' ? 'success'
+                  : 'info'
+            }
+          />
+        ),
+      },
+      {
+        key: 'cost',
+        label: 'Cost',
+        align: 'right',
+        render: (_: unknown, log: any) => (
+          <span className="text-xs font-black text-[#0f172a] dark:text-white">
+            {log.cost ? fmtMoney(Number(log.cost)) : '—'}
+          </span>
+        ),
+      },
+    ], [fmtMoney]);
 
     if (logsLoading) {
       return (
@@ -116,42 +163,20 @@ const FleetAnalytics: React.FC = () => {
           {logs.length === 0 ? (
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center py-8">No maintenance records found</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="border-b border-slate-50 dark:border-slate-800">
-                  <tr>
-                    <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest">Vehicle</th>
-                    <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest">Task</th>
-                    <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest text-center">Status</th>
-                    <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest text-right">Cost</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {logs.slice(0, 8).map((log: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="py-4">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">{log.truck?.plateNumber || log.truckId}</span>
-                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{log.truck?.make || ''}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{log.taskName}</td>
-                      <td className="py-4 text-center">
-                        <span className={cn(
-                          "px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border",
-                          log.status === 'FAULT_REPORT' ? "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30" :
-                          log.status === 'completed' ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30" :
-                          "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30"
-                        )}>{log.status}</span>
-                      </td>
-                      <td className="py-4 text-right text-xs font-black text-[#0f172a] dark:text-white">
-                        {log.cost ? fmtMoney(Number(log.cost)) : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable
+              embedded
+              columns={maintenanceColumns}
+              data={logs.slice(0, 8)}
+              getRowId={(row, index) => row.id ?? `${row.truckId}-${index}`}
+              searchable={false}
+              pagination={false}
+              columnVisibility={false}
+              stickyHeader
+              striped
+              hoverable
+              emptyMessage="No maintenance records found"
+              ariaLabel="Maintenance logs"
+            />
           )}
         </div>
       </div>

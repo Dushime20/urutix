@@ -23,6 +23,7 @@ import {
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 
 // Register Chart.js components
 ChartJS.register(
@@ -97,6 +98,64 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
 
   const transactions = transactionData?.transactions || [];
   const transactionSummary = transactionData?.summary;
+
+  const isCreditInflow = (type: string) =>
+    type === 'SUBSCRIPTION_GRANT' || type === 'PURCHASE' || type === 'BONUS';
+
+  const transactionColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'description',
+      label: tSync('Details'),
+      render: (_: unknown, txn: any) => (
+        <div>
+          <p className="text-sm font-black text-slate-900 dark:text-slate-100">{txn.description || 'Transaction'}</p>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">
+            {txn.id.substring(0, 8)}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      label: tSync('Type'),
+      render: (_: unknown, txn: any) => (
+        <StatusBadge
+          status={txn.type}
+          label={<TranslatedText text={txn.type.replace(/_/g, ' ')} />}
+          variant={isCreditInflow(txn.type) ? 'success' : 'error'}
+        />
+      ),
+    },
+    {
+      key: 'amount',
+      label: tSync('Amount'),
+      render: (_: unknown, txn: any) => (
+        <span className={`text-sm font-black ${isCreditInflow(txn.type) ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+          {isCreditInflow(txn.type) ? '+' : '-'}
+          {txn.amount.toLocaleString()} credits
+        </span>
+      ),
+    },
+    {
+      key: 'balanceAfter',
+      label: tSync('Balance'),
+      render: (_: unknown, txn: any) => (
+        <span className="text-sm font-black text-slate-900 dark:text-slate-100">
+          {txn.balanceAfter.toLocaleString()} credits
+        </span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: tSync('Date'),
+      align: 'right',
+      render: (_: unknown, txn: any) => (
+        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+          {new Date(txn.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </p>
+      ),
+    },
+  ], [tSync]);
 
   // Fetch Partner Plans Summary for allocation calculation
   const { data: partnerPlans } = useQuery({
@@ -459,77 +518,24 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
               className="space-y-8"
             >
               {/* Transaction History Table */}
-              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
-                {transactions && transactions.length > 0 ? (
-                  <table className="w-full text-left">
-                    <thead className="bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800">
-                      <tr>
-                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Details" /></th>
-                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Type" /></th>
-                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Amount" /></th>
-                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Balance" /></th>
-                        <th className="px-10 py-6 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right"><TranslatedText text="Date" /></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                      {transactions.map((txn: any) => (
-                        <tr key={txn.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-all">
-                          <td className="px-10 py-6">
-                            <div>
-                              <p className="text-sm font-black text-slate-900 dark:text-slate-100">{txn.description || 'Transaction'}</p>
-                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">
-                                {txn.id.substring(0, 8)}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-10 py-6">
-                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                              txn.type === 'SUBSCRIPTION_GRANT' || txn.type === 'PURCHASE' || txn.type === 'BONUS' 
-                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                                : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
-                            }`}>
-                              <TranslatedText text={txn.type.replace(/_/g, ' ')} />
-                            </span>
-                          </td>
-                          <td className="px-10 py-6">
-                            <span className={`text-sm font-black ${
-                              txn.type === 'SUBSCRIPTION_GRANT' || txn.type === 'PURCHASE' || txn.type === 'BONUS'
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-rose-600 dark:text-rose-400'
-                            }`}>
-                              {txn.type === 'SUBSCRIPTION_GRANT' || txn.type === 'PURCHASE' || txn.type === 'BONUS' ? '+' : '-'}
-                              {txn.amount.toLocaleString()} credits
-                            </span>
-                          </td>
-                          <td className="px-10 py-6 text-sm font-black text-slate-900 dark:text-slate-100">
-                            {txn.balanceAfter.toLocaleString()} credits
-                          </td>
-                          <td className="px-10 py-6 text-right">
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                              {new Date(txn.createdAt).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric', 
-                                year: 'numeric' 
-                              })}
-                            </p>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="py-20 text-center">
-                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Activity className="w-8 h-8 text-slate-400 dark:text-slate-500" />
-                    </div>
-                    <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-2">
-                      <TranslatedText text="No Transactions Yet" />
-                    </h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      <TranslatedText text="Your credit transaction history will appear here" />
-                    </p>
-                  </div>
-                )}
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden p-6">
+                <StandardDataTable
+                  embedded
+                  columns={transactionColumns}
+                  data={transactions}
+                  getRowId={(row) => row.id}
+                  searchable
+                  searchPlaceholder="Search transactions…"
+                  searchKeys={['description', 'type', 'id']}
+                  pagination
+                  pageSize={10}
+                  columnVisibility
+                  stickyHeader
+                  striped
+                  hoverable
+                  emptyMessage="Your credit transaction history will appear here"
+                  ariaLabel="Transaction history"
+                />
               </div>
             </motion.div>
           )}

@@ -6,14 +6,16 @@ import {
   Gavel, ChevronDown, ChevronUp, Check, X, Eye, RefreshCw,
   Loader2, Star, TrendingDown, User, Calendar, Truck, Clock,
   DollarSign, AlertCircle, Package, FileText, Award,
-  CheckCircle2, XCircle, Info, ArrowUpDown, Plus, Zap,
+  CheckCircle2, XCircle, Info, Plus, Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastActionSuccess, toastActionError, BID_ACCEPT_SUPPRESS_TYPES } from '../../utils/actionToast';
 import { biddingAPI } from '../../services/biddingApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { cn } from '@/utils/cn';
 import { useAuth } from '../../contexts/AuthContext';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -318,106 +320,6 @@ function BidDetailModal({ bid, auction, onClose, onAccept, accepting, auctionClo
   );
 }
 
-// ─── BidRow (table row) ───────────────────────────────────────────────────────
-
-interface BidRowProps {
-  bid: Bid;
-  rank: number;
-  isLowest: boolean;
-  auction: Auction;
-  onView: () => void;
-  onAccept: (id: string) => void;
-  accepting: boolean;
-  auctionClosed: boolean;
-}
-
-function BidRow({ bid, rank, isLowest, auction, onView, onAccept, accepting, auctionClosed }: BidRowProps) {
-  const { formatIn } = useCurrencyFormat();
-  const currency = bid.bidCurrency || auction.load?.currencyCode || 'USD';
-  const isWinner = bid.status === 'ACCEPTED';
-  const canAccept = bid.status === 'PENDING' && !auctionClosed;
-
-  return (
-    <tr className={cn(
-      'transition-colors',
-      isWinner
-        ? 'bg-emerald-50/60 dark:bg-emerald-900/10'
-        : isLowest && bid.status === 'PENDING'
-          ? 'bg-amber-50/40 dark:bg-amber-900/5'
-          : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/30',
-    )}>
-      {/* Rank */}
-      <td className="px-4 py-3 w-10">
-        <span className={cn('w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black', isLowest && bid.status === 'PENDING' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400')}>
-          {rank}
-        </span>
-      </td>
-      {/* Truck Owner */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 text-[10px] font-black text-slate-500 dark:text-slate-400">
-            {ownerName(bid).charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{ownerName(bid)}</p>
-            {bid.bidDetails?.driverInfo?.rating && (
-              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500">
-                <Star size={9} className="fill-amber-400 text-amber-400" />{bid.bidDetails.driverInfo.rating}
-              </span>
-            )}
-          </div>
-        </div>
-      </td>
-      {/* Amount */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-1.5">
-          {isLowest && bid.status === 'PENDING' && <TrendingDown size={12} className="text-amber-500 shrink-0" />}
-          <span className={cn('text-sm font-black', isLowest && bid.status === 'PENDING' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100')}>
-            {formatIn(bid.bidAmount, currency)}
-          </span>
-        </div>
-        {isLowest && bid.status === 'PENDING' && (
-          <p className="text-[9px] font-bold text-amber-500 uppercase">Lowest Bid</p>
-        )}
-      </td>
-      {/* Pickup */}
-      <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 font-medium whitespace-nowrap">{fmt(bid.proposedPickupDate)}</td>
-      {/* Delivery */}
-      <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400 font-medium whitespace-nowrap">{fmt(bid.proposedDeliveryDate)}</td>
-      {/* Transit */}
-      <td className="px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{transitDays(bid.proposedPickupDate, bid.proposedDeliveryDate)}</td>
-      {/* Status */}
-      <td className="px-4 py-3"><BidStatusBadge status={bid.status} /></td>
-      {/* Winner indicator */}
-      <td className="px-4 py-3">
-        {isWinner && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-black uppercase border border-emerald-200 dark:border-emerald-800">
-            <Award size={9} />Winner
-          </span>
-        )}
-      </td>
-      {/* Actions */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <button onClick={onView} className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="View Details">
-            <Eye size={13} />
-          </button>
-          {canAccept && (
-            <button
-              onClick={() => onAccept(bid.id)}
-              disabled={accepting}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {accepting ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
-              Accept
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
-}
-
 // ─── AuctionBidPanel ──────────────────────────────────────────────────────────
 
 interface AuctionBidPanelProps {
@@ -429,8 +331,9 @@ interface AuctionBidPanelProps {
 
 function AuctionBidPanel({ auction, onAcceptBid, accepting, highlightBidId }: AuctionBidPanelProps) {
   const queryClient = useQueryClient();
-  const [sortKey, setSortKey] = useState<SortKey>('amount');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const { formatIn } = useCurrencyFormat();
+  const sortKey: SortKey = 'amount';
+  const sortDir: SortDir = 'asc';
   const [viewBid, setViewBid] = useState<Bid | null>(null);
   const [bidFilter, setBidFilter] = useState<string>('all');
 
@@ -474,20 +377,6 @@ function AuctionBidPanel({ auction, onAcceptBid, accepting, highlightBidId }: Au
 
   const lowestAmount = bids.filter(b => b.status === 'PENDING').reduce((min, b) => Math.min(min, b.bidAmount), Infinity);
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('asc'); }
-  }
-
-  function SortBtn({ k, label }: { k: SortKey; label: string }) {
-    return (
-      <button onClick={() => toggleSort(k)} className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
-        {label}
-        <ArrowUpDown size={9} className={cn(sortKey === k && 'text-primary-500')} />
-      </button>
-    );
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
@@ -530,40 +419,157 @@ function AuctionBidPanel({ auction, onAcceptBid, accepting, highlightBidId }: Au
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px]">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-4 py-3 text-left w-10">#</th>
-                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Truck Owner</th>
-                <th className="px-4 py-3 text-left"><SortBtn k="amount" label="Amount" /></th>
-                <th className="px-4 py-3 text-left"><SortBtn k="date" label="Pickup" /></th>
-                <th className="px-4 py-3 text-left"><SortBtn k="delivery" label="Delivery" /></th>
-                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Transit</th>
-                <th className="px-4 py-3 text-left"><SortBtn k="status" label="Status" /></th>
-                <th className="px-4 py-3 text-left text-[9px] font-black uppercase tracking-widest text-slate-400 w-20">Winner</th>
-                <th className="px-4 py-3 text-right text-[9px] font-black uppercase tracking-widest text-slate-400">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
-              {sorted.map((bid, i) => (
-                <BidRow
-                  key={bid.id}
-                  bid={bid}
-                  rank={i + 1}
-                  isLowest={bid.bidAmount === lowestAmount}
-                  auction={auction}
-                  onView={() => setViewBid(bid)}
-                  onAccept={(id) => onAcceptBid(id, auction.id)}
-                  accepting={accepting === bid.id}
-                  auctionClosed={auctionClosed || hasAccepted}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StandardDataTable
+        embedded
+        columns={[
+          {
+            key: 'rank',
+            label: '#',
+            width: '40px',
+            render: (_: any, bid: Bid, index: number) => {
+              const isLowest = bid.bidAmount === lowestAmount;
+              return (
+                <span className={cn(
+                  'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black',
+                  isLowest && bid.status === 'PENDING'
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',
+                )}>
+                  {index + 1}
+                </span>
+              );
+            },
+          },
+          {
+            key: 'truckOwner',
+            label: 'Truck Owner',
+            render: (_: any, bid: Bid) => (
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 text-[10px] font-black text-slate-500 dark:text-slate-400">
+                  {ownerName(bid).charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{ownerName(bid)}</p>
+                  {bid.bidDetails?.driverInfo?.rating && (
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500">
+                      <Star size={9} className="fill-amber-400 text-amber-400" />{bid.bidDetails.driverInfo.rating}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'bidAmount',
+            label: 'Amount',
+            sortable: true,
+            render: (amount: number, bid: Bid) => {
+              const currency = bid.bidCurrency || auction.load?.currencyCode || 'USD';
+              const isLowest = amount === lowestAmount;
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    {isLowest && bid.status === 'PENDING' && <TrendingDown size={12} className="text-amber-500 shrink-0" />}
+                    <span className={cn('text-sm font-black', isLowest && bid.status === 'PENDING' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100')}>
+                      {formatIn(amount, currency)}
+                    </span>
+                  </div>
+                  {isLowest && bid.status === 'PENDING' && (
+                    <p className="text-[9px] font-bold text-amber-500 uppercase">Lowest Bid</p>
+                  )}
+                </div>
+              );
+            },
+          },
+          {
+            key: 'proposedPickupDate',
+            label: 'Pickup',
+            sortable: true,
+            render: (d: string) => <span className="text-xs text-slate-600 dark:text-slate-400 font-medium whitespace-nowrap">{fmt(d)}</span>,
+          },
+          {
+            key: 'proposedDeliveryDate',
+            label: 'Delivery',
+            sortable: true,
+            render: (d: string) => <span className="text-xs text-slate-600 dark:text-slate-400 font-medium whitespace-nowrap">{fmt(d)}</span>,
+          },
+          {
+            key: 'transit',
+            label: 'Transit',
+            render: (_: any, bid: Bid) => (
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                {transitDays(bid.proposedPickupDate, bid.proposedDeliveryDate)}
+              </span>
+            ),
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            sortable: true,
+            render: (status: string) => <BidStatusBadge status={status as Bid['status']} />,
+          },
+          {
+            key: 'winner',
+            label: 'Winner',
+            render: (_: any, bid: Bid) =>
+              bid.status === 'ACCEPTED' ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[9px] font-black uppercase border border-emerald-200 dark:border-emerald-800">
+                  <Award size={9} />Winner
+                </span>
+              ) : null,
+          },
+          {
+            key: 'actions',
+            label: 'Actions',
+            align: 'right',
+            alwaysVisible: true,
+            hideable: false,
+            render: (_: any, bid: Bid) => {
+              const canAccept = bid.status === 'PENDING' && !(auctionClosed || hasAccepted);
+              return (
+                <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={() => setViewBid(bid)}
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    title="View Details"
+                  >
+                    <Eye size={13} />
+                  </button>
+                  {canAccept && (
+                    <button
+                      type="button"
+                      onClick={() => onAcceptBid(bid.id, auction.id)}
+                      disabled={accepting === bid.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {accepting === bid.id ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+                      Accept
+                    </button>
+                  )}
+                </div>
+              );
+            },
+          },
+        ] as Column<Bid>[]}
+        data={sorted}
+        getRowId={(row) => row.id}
+        searchable={false}
+        pagination={false}
+        columnVisibility
+        stickyHeader
+        striped={false}
+        hoverable
+        emptyMessage="No bids match this filter"
+        rowClassName={(bid) =>
+          bid.status === 'ACCEPTED'
+            ? 'bg-emerald-50/60 dark:bg-emerald-900/10'
+            : bid.bidAmount === lowestAmount && bid.status === 'PENDING'
+              ? 'bg-amber-50/40 dark:bg-amber-900/5'
+              : ''
+        }
+        ariaLabel="Auction bids"
+      />
 
       {/* View bid detail modal */}
       {viewBid && (
@@ -724,13 +730,16 @@ const BrokerBidManagement: React.FC<BrokerBidManagementProps> = ({ onCreateAucti
     setAccepting(bidId);
     try {
       await biddingAPI.acceptBid(bidId);
-      toast.success('Bid accepted! Other bids have been rejected.');
+      toastActionSuccess('Bid accepted! Other bids have been rejected.', {
+        id: 'accept-bid',
+        suppressTypes: BID_ACCEPT_SUPPRESS_TYPES,
+      });
       // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['broker-assigned-auctions'] });
       queryClient.invalidateQueries({ queryKey: ['auction-bids'] });
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Failed to accept bid';
-      toast.error(msg);
+      toastActionError(msg, { id: 'accept-bid' });
     } finally {
       setAccepting(null);
     }

@@ -7,7 +7,6 @@ import {
     Eye,
     Check,
     X,
-    Download,
     Building,
     ArrowUpRight,
     CreditCard,
@@ -16,13 +15,11 @@ import {
     Send,
     Hourglass,
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import ExportModal from '../ExportModal/ExportModal';
 import { prepareLoanRequestsForExport } from '../../utils/exportUtils';
 import LoanApprovalModal from './LoanApprovalModal';
 import LoanRejectModal from './LoanRejectModal';
-import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import LoanDisbursementModal from './LoanDisbursementModal';
 import type { LoanApprovalPayload } from './LoanApprovalModal';
@@ -315,32 +312,43 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            {/* Requests Management */}
-            <DataCard
-                title={t("Loan Workflow Management")}
+            <StandardDataTable
+                title={t('Loan Workflow Management')}
                 icon={<Activity className="w-5 h-5" />}
                 headerColor="primary"
-                actions={
-                    <button
-                        onClick={handleExport}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-md text-xs font-bold transition-colors"
-                    >
-                        <Download className="w-3.5 h-3.5" />
-                        <TranslatedText text="EXPORT DATA" />
-                    </button>
-                }
-            >
-                <EnhancedTable
-                    columns={columns}
-                    data={requests}
-                    loading={loading}
-                    striped
-                    hoverable
-                    emptyMessage={t("No loan requests match your current filters")}
-                />
-            </DataCard>
+                columns={columns}
+                data={requests}
+                loading={loading}
+                getRowId={(row) => row.id}
+                searchPlaceholder={t('Search loans…')}
+                searchKeys={['borrower_name', 'borrower_company', 'id', 'cargo_type', 'status']}
+                filters={[
+                    {
+                        key: 'status',
+                        label: t('Status'),
+                        options: [
+                            { value: 'pending', label: 'Pending' },
+                            { value: 'approved', label: 'Approved' },
+                            { value: 'rejected', label: 'Rejected' },
+                            { value: 'disbursed', label: 'Disbursed' },
+                            { value: 'repaid', label: 'Repaid' },
+                        ],
+                    },
+                ]}
+                defaultSortKey="created_at"
+                defaultSortDirection="desc"
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage={t('No loan requests match your current filters')}
+                onExport={handleExport}
+                exportLabel={t('Export Data')}
+                ariaLabel={t('Loan Workflow Management')}
+            />
 
-            {/* Export Modal */}
             <ExportModal
                 isOpen={showExportModal}
                 onClose={() => setShowExportModal(false)}
@@ -369,7 +377,6 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     onSuccess={() => {
                         const id = rejectLoan.id;
                         setRejectLoan(null);
-                        // Modal already rejected via API — refresh list
                         void onApprove(id, {
                             approvedAmount: rejectLoan.requested_amount,
                             loanTermMonths: rejectLoan.loan_term_months ?? 3,

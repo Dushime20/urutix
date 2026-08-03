@@ -27,6 +27,7 @@ import {
   FaBan,
   FaUnlock
 } from 'react-icons/fa';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface LenderUser {
   id: string;
@@ -798,171 +799,132 @@ const LenderTeamManagementPage: React.FC = () => {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedUsers(filteredUsers.map(u => u.id));
-                        } else {
-                          setSelectedUsers([]);
-                        }
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Member</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Role & Permissions</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Department</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Status</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Last Login</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="py-4 px-6">
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedUsers(prev => [...prev, user.id]);
-                          } else {
-                            setSelectedUsers(prev => prev.filter(id => id !== user.id));
-                          }
+        <StandardDataTable
+          title="Team Members"
+          icon={<FaUsers className="w-5 h-5" />}
+          headerColor="primary"
+          columns={[
+            {
+              key: 'firstName',
+              label: 'Member',
+              sortable: true,
+              render: (_: string, user: LenderUser) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-gray-600">
+                      {user.firstName[0]}{user.lastName[0]}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {user.firstName} {user.lastName}
+                    </div>
+                    <div className="text-sm text-gray-600">{user.email}</div>
+                    {user.phone && <div className="text-sm text-gray-500">{user.phone}</div>}
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'role',
+              label: 'Role & Permissions',
+              render: (_: any, user: LenderUser) => (
+                <div>
+                  <div className="flex items-center gap-3">
+                    {getRoleIcon(user.role.id)}
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">{user.role.name}</div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowPermissions(showPermissions === user.id ? null : user.id);
                         }}
-                        className="rounded border-gray-300"
-                      />
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {user.firstName[0]}{user.lastName[0]}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        {getRolePermissions(user.role.id).length} permissions
+                      </button>
+                    </div>
+                  </div>
+                  {showPermissions === user.id && (
+                    <div className="mt-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                      <div className="grid grid-cols-1 gap-1 text-xs">
+                        {getRolePermissions(user.role.id).map(permission => (
+                          <div key={permission.id} className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${
+                              permission.level === 'admin' ? 'bg-red-500' :
+                              permission.level === 'write' ? 'bg-yellow-500' : 'bg-green-500'
+                            }`} />
+                            <span>{permission.name}</span>
                           </div>
-                          <div className="text-sm text-gray-600">{user.email}</div>
-                          {user.phone && (
-                            <div className="text-sm text-gray-500">{user.phone}</div>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        {getRoleIcon(user.role.id)}
-                        <div>
-                          <div className="font-medium text-gray-900">{user.role.name}</div>
-                          <button
-                            onClick={() => setShowPermissions(showPermissions === user.id ? null : user.id)}
-                            className="text-sm text-blue-600 hover:text-blue-800"
-                          >
-                            {getRolePermissions(user.role.id).length} permissions
-                          </button>
-                        </div>
-                      </div>
-                      {showPermissions === user.id && (
-                        <div className="mt-2 p-3 bg-gray-50 rounded-lg">
-                          <div className="grid grid-cols-1 gap-1 text-xs">
-                            {getRolePermissions(user.role.id).map(permission => (
-                              <div key={permission.id} className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${
-                                  permission.level === 'admin' ? 'bg-red-500' :
-                                  permission.level === 'write' ? 'bg-yellow-500' : 'bg-green-500'
-                                }`}></span>
-                                <span>{permission.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="text-gray-900">{user.department}</span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(user.status)}`}>
-                        {user.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="text-sm text-gray-600">
-                        {user.lastLogin.toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setEditingUser(user)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                          title="Edit user"
-                        >
-                          <FaEdit className="h-4 w-4" />
-                        </button>
-                        
-                        {user.status === 'active' ? (
-                          <button
-                            onClick={() => handleStatusChange(user.id, 'inactive')}
-                            className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded"
-                            title="Deactivate user"
-                          >
-                            <FaEyeSlash className="h-4 w-4" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleStatusChange(user.id, 'active')}
-                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
-                            title="Activate user"
-                          >
-                            <FaEye className="h-4 w-4" />
-                          </button>
-                        )}
-                        
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                          title="Delete user"
-                        >
-                          <FaTrash className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-12">
-              <FaUsers className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No team members found</h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm ? 'Try adjusting your search or filters.' : 'Get started by adding your first team member.'}
-              </p>
-              {!searchTerm && (
-                <button
-                  onClick={() => setShowAddUser(true)}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Add Team Member
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: 'department',
+              label: 'Department',
+              sortable: true,
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              sortable: true,
+              render: (status: string) => (
+                <StatusBadge label={status.toUpperCase()} status={status} />
+              ),
+            },
+            {
+              key: 'lastLogin',
+              label: 'Last Login',
+              sortable: true,
+              render: (lastLogin: Date) => (
+                <span className="text-sm text-gray-600">
+                  {lastLogin instanceof Date ? lastLogin.toLocaleDateString() : new Date(lastLogin).toLocaleDateString()}
+                </span>
+              ),
+            },
+          ] as Column<LenderUser>[]}
+          data={filteredUsers}
+          getRowId={(row) => row.id}
+          searchable={false}
+          selectable
+          selectedIds={selectedUsers}
+          onSelectionChange={setSelectedUsers}
+          pagination
+          pageSize={10}
+          columnVisibility
+          stickyHeader
+          striped
+          hoverable
+          emptyMessage={searchTerm ? 'Try adjusting your search or filters.' : 'Get started by adding your first team member.'}
+          rowActions={[
+            {
+              key: 'edit',
+              label: 'Edit',
+              icon: <FaEdit className="h-3.5 w-3.5" />,
+              onClick: (user) => setEditingUser(user),
+            },
+            {
+              key: 'toggle',
+              label: 'Toggle Status',
+              icon: <FaEyeSlash className="h-3.5 w-3.5" />,
+              onClick: (user) => handleStatusChange(user.id, user.status === 'active' ? 'inactive' : 'active'),
+            },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: <FaTrash className="h-3.5 w-3.5" />,
+              variant: 'danger',
+              divider: true,
+              onClick: (user) => handleDeleteUser(user.id),
+            },
+          ] as TableAction<LenderUser>[]}
+          ariaLabel="Lender team members"
+        />
 
         {/* Add User Modal */}
         {showAddUser && (

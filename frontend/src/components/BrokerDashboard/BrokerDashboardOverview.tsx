@@ -14,6 +14,7 @@ import { brokerAPI, getPickupAddress, getDeliveryAddress, type BrokerLoad } from
 import { useAuth } from '../../contexts/AuthContext';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,17 +45,6 @@ interface BrokerActivityItem {
   icon: React.ReactNode;
   iconBg: string;
 }
-
-const getLoadStatusStyle = (status: string) => {
-  switch (status) {
-    case 'IN_TRANSIT': return 'bg-indigo-50 text-indigo-700 border border-indigo-100';
-    case 'DELIVERED':
-    case 'COMPLETED': return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
-    case 'CANCELLED': return 'bg-rose-50 text-rose-700 border border-rose-100';
-    case 'ASSIGNED': return 'bg-primary-50 text-primary-700 border border-primary-100';
-    default: return 'bg-gray-50 text-gray-600 border border-gray-200';
-  }
-};
 
 const formatRoute = (load: BrokerLoad) => {
   const origin = getPickupAddress(load) || load.origin?.city || 'Origin TBD';
@@ -348,49 +338,66 @@ export const BrokerDashboardOverview: React.FC<BrokerDashboardOverviewProps> = (
               <p className="text-xs font-medium">No assigned cargo yet</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    {['Cargo', 'Route', 'Value', 'Commission', 'Status', 'Assigned'].map(h => (
-                      <th key={h} className="text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider pb-3 pr-4">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {recentAssignments.slice(0, 6).map((load) => (
-                    <tr
-                      key={load.id}
-                      className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}
-                    >
-                      <td className="py-3 pr-4 font-medium text-gray-800 dark:text-gray-200 max-w-[140px] truncate">
-                        {load.title || `Load ${load.id.slice(0, 8)}`}
-                      </td>
-                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400 max-w-[180px] truncate">
-                        {formatRoute(load)}
-                      </td>
-                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">{fmt(load.loadValue ?? 0)}</td>
-                      <td className="py-3 pr-4 text-gray-600 dark:text-gray-400">
-                        {load.brokerCommissionRate
-                          ? `${Number(load.brokerCommissionRate).toFixed(1)}%`
-                          : load.brokerCommissionAmount
-                            ? fmt(load.brokerCommissionAmount)
-                            : '—'}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${getLoadStatusStyle(load.status)}`}>
-                          {String(load.status || 'ASSIGNED').replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td className="py-3 text-gray-500">
-                        {new Date(load.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable
+              embedded
+              dense
+              data={recentAssignments.slice(0, 6)}
+              getRowId={(load) => load.id}
+              searchable={false}
+              pagination={false}
+              emptyMessage="No assigned cargo yet"
+              onRowClick={(load) => navigate(`/dashboard/broker/loads/${load.id}`)}
+              columns={[
+                {
+                  key: 'title',
+                  label: 'Cargo',
+                  render: (_: any, load: BrokerLoad) => (
+                    <span className="font-medium text-gray-800 dark:text-gray-200 max-w-[140px] truncate block">
+                      {load.title || `Load ${load.id.slice(0, 8)}`}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'route',
+                  label: 'Route',
+                  render: (_: any, load: BrokerLoad) => (
+                    <span className="text-gray-600 dark:text-gray-400 max-w-[180px] truncate block">{formatRoute(load)}</span>
+                  ),
+                },
+                {
+                  key: 'loadValue',
+                  label: 'Value',
+                  render: (v: number) => <span className="text-gray-600 dark:text-gray-400">{fmt(v ?? 0)}</span>,
+                },
+                {
+                  key: 'brokerCommissionRate',
+                  label: 'Commission',
+                  render: (_: any, load: BrokerLoad) => (
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {load.brokerCommissionRate
+                        ? `${Number(load.brokerCommissionRate).toFixed(1)}%`
+                        : load.brokerCommissionAmount
+                          ? fmt(load.brokerCommissionAmount)
+                          : '—'}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  render: (status: string) => <StatusBadge status={status || 'ASSIGNED'} />,
+                },
+                {
+                  key: 'createdAt',
+                  label: 'Assigned',
+                  render: (d: string) => (
+                    <span className="text-gray-500">
+                      {new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                    </span>
+                  ),
+                },
+              ] as Column<BrokerLoad>[]}
+            />
           )}
         </div>
 

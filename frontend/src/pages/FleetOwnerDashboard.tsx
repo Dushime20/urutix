@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Icon } from 'leaflet';
@@ -23,6 +23,7 @@ import logoUrutiX from '../assets/urutiX Logistics Logo (1).svg';
 import toast from 'react-hot-toast';
 import { FleetFormEnhanced as FleetForm } from '../components/FleetDashboard/FleetFormEnhanced';
 import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column } from '../components/EnliteUI/Tables';
 
 // Fix Leaflet icons
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -498,6 +499,61 @@ const FleetOwnerDashboard: React.FC = () => {
     </footer>
   );
 
+  const recentTrips = useMemo(() => trips.slice(0, 5), [trips]);
+
+  const tripColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'tripId',
+      label: 'Dispatch ID',
+      render: (_: unknown, trip: any, index?: number) => (
+        <span className="text-sm font-bold text-blue-600">
+          {trip.tripId || trip.id ? `#${(trip.tripId || trip.id).substring(0, 8)}` : `DISP-${4420 + (index ?? 0)}`}
+        </span>
+      ),
+    },
+    {
+      key: 'truck',
+      label: 'Truck & Driver',
+      render: (_: unknown, trip: any) => (
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gray-100 rounded-lg text-gray-400"><FaTruck /></div>
+          <div>
+            <p className="text-sm font-bold text-gray-900">{trip.truck?.plateNumber || trip.truckId || 'Unassigned'}</p>
+            <p className="text-xs text-gray-500">{trip.driver?.name || trip.driverId || 'No Driver'}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'destination',
+      label: 'Destination',
+      render: (_: unknown, trip: any) => (
+        <span className="text-sm text-gray-600">{trip.route?.destination || trip.destination || 'N/A'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_: unknown, trip: any) => (
+        <StatusBadge status={trip.status || 'PENDING'} label={trip.status || 'PENDING'} />
+      ),
+    },
+    {
+      key: 'rating',
+      label: 'Rating',
+      align: 'right',
+      render: (_: unknown, trip: any) => (
+        <div className="flex items-center justify-end gap-1 text-sm font-medium text-gray-900">
+          {['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? (
+            <><FaStar className="text-yellow-400" /> 5.0</>
+          ) : (
+            <span className="text-gray-400 text-xs">In Progress</span>
+          )}
+        </div>
+      ),
+    },
+  ], []);
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-500/30 flex flex-col">
       {/* Dark Header */}
@@ -751,63 +807,20 @@ const FleetOwnerDashboard: React.FC = () => {
               <h3 className="text-lg font-bold text-gray-900">Recent Trips</h3>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left border-b border-gray-100">
-                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Dispatch ID</th>
-                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Truck & Driver</th>
-                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Destination</th>
-                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                    <th className="pb-3 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Rating</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {trips.length > 0 ? trips.slice(0, 5).map((trip, i) => (
-                    <tr key={i} className="group hover:bg-gray-50/50">
-                      <td className="py-4">
-                        <span className="text-sm font-bold text-blue-600">
-                          {trip.tripId || trip.id ? `#${(trip.tripId || trip.id).substring(0, 8)}` : `DISP-${4420 + i}`}
-                        </span>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gray-100 rounded-lg text-gray-400"><FaTruck /></div>
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">{trip.truck?.plateNumber || trip.truckId || 'Unassigned'}</p>
-                            <p className="text-xs text-gray-500">{trip.driver?.name || trip.driverId || 'No Driver'}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 text-sm text-gray-600">{trip.route?.destination || trip.destination || 'N/A'}</td>
-                      <td className="py-4">
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                          ['active', 'in_progress', 'started'].includes(trip.status?.toLowerCase()) ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                            'bg-gray-100 text-gray-700 border-gray-200'
-                          }`}>
-                          {trip.status || 'PENDING'}
-                        </span>
-                      </td>
-                      <td className="py-4 text-right">
-                        <div className="flex items-center justify-end gap-1 text-sm font-medium text-gray-900">
-                          {['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? (
-                            <><FaStar className="text-yellow-400" /> 5.0</>
-                          ) : (
-                            <span className="text-gray-400 text-xs">In Progress</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-gray-500 text-sm">
-                        No recent trips found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable
+              embedded
+              columns={tripColumns}
+              data={recentTrips}
+              getRowId={(row, index) => row.id ?? row.tripId ?? String(index)}
+              searchable={false}
+              pagination={false}
+              columnVisibility={false}
+              stickyHeader
+              striped
+              hoverable
+              emptyMessage="No recent trips found."
+              ariaLabel="Recent trips"
+            />
           </div>
 
           {/* Maintenance Alerts */}

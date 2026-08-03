@@ -18,6 +18,7 @@ import {
   Sparkles,
   GripVertical
 } from 'lucide-react';
+import { StandardDataTable, type Column } from '../../../components/EnliteUI/Tables';
 import {
   BarChart,
   Bar,
@@ -207,24 +208,31 @@ export const CustomReportBuilder: React.FC = () => {
         return (
           <div className="h-full bg-white rounded-xl p-4 overflow-auto">
             <h4 className="font-bold text-gray-900 mb-3">{widget.title}</h4>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-2 border-gray-200">
-                  <th className="text-left p-2">Month</th>
-                  <th className="text-right p-2">Shipments</th>
-                  <th className="text-right p-2">Growth</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sampleData.shipments.map((row, idx) => (
-                  <tr key={idx} className="border-b border-gray-100">
-                    <td className="p-2">{row.month}</td>
-                    <td className="text-right p-2">{row.value}</td>
-                    <td className="text-right p-2 text-emerald-600">+{idx * 2}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <StandardDataTable
+              embedded
+              dense
+              searchable={false}
+              pagination={false}
+              columnVisibility={false}
+              data={sampleData.shipments.map((row, idx) => ({
+                id: String(idx),
+                month: row.month,
+                value: row.value,
+                growth: `+${idx * 2}%`,
+              }))}
+              getRowId={(row) => row.id}
+              columns={[
+                { key: 'month', label: 'Month' },
+                { key: 'value', label: 'Shipments', align: 'right' },
+                {
+                  key: 'growth',
+                  label: 'Growth',
+                  align: 'right',
+                  render: (g: string) => <span className="text-emerald-600">{g}</span>,
+                },
+              ] as Column[]}
+              emptyMessage="No sample data"
+            />
           </div>
         );
 

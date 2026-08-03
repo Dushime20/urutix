@@ -7,6 +7,7 @@ import {
   AlertTriangle, Info, Clock, Gauge,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastActionSuccess, toastActionError, TRIP_COMPLETE_SUPPRESS_TYPES } from '../../utils/actionToast';
 import { tripsAPI } from '../../services/api';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -204,10 +205,16 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
       await tripsAPI.submitEpod(tripId, fd);
 
       setSubmitted(true);
-      toast.success(t('ePOD submitted — trip completed & invoice generated.'), { duration: 6000 });
+      toastActionSuccess(t('ePOD submitted — trip completed & invoice generated.'), {
+        id: 'trip-complete',
+        duration: 6000,
+        suppressTypes: TRIP_COMPLETE_SUPPRESS_TYPES,
+      });
       setTimeout(onComplete, 2500);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err.message || t('Failed to submit ePOD'));
+      toastActionError(err?.response?.data?.message || err.message || t('Failed to submit ePOD'), {
+        id: 'trip-complete',
+      });
     } finally {
       setSubmitting(false);
     }

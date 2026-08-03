@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FaUsers, FaEdit, FaTrash, FaPlus, FaSearch, FaDownload,
-  FaEye, FaShieldAlt, FaFilter,
-  FaSort, FaEllipsisV, FaCheck, FaTimes, FaBan, FaUnlock,
+  FaEye, FaShieldAlt, FaCheck, FaTimes, FaBan,
   FaEnvelope, FaPhone, FaMapMarkerAlt, FaCalendarAlt, FaKey,
 } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +12,7 @@ import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import ModernLoader from '../../components/common/ModernLoader';
 import { RolePermissionsMatrix } from '../../components/Admin/Permissions/RolePermissionsMatrix';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 import { permissionApi } from '../../services/permissionApi';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -364,7 +364,6 @@ type ActiveTab = 'users' | 'role-permissions';
 
 const UserManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('users');
-  const [loading, setLoading] = useState(false);
 
   const { user: authUser } = useAuth();
   const { hasPermission } = usePermission();
@@ -428,8 +427,6 @@ const UserManagement: React.FC = () => {
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterVerification, setFilterVerification] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -442,16 +439,6 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     setShowBulkActions(selectedUsers.length > 0);
   }, [selectedUsers]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'suspended': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -466,56 +453,103 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const getVerificationColor = (status: string) => {
-    switch (status) {
-      case 'verified': return 'bg-green-100 text-green-800';
-      case 'unverified': return 'bg-red-100 text-red-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const filteredUsers = useMemo(() => users.filter((user) => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = !filterRole || user.role === filterRole;
+    const matchesStatus = !filterStatus || user.status === filterStatus;
+    const matchesVerification = !filterVerification || user.verificationStatus === filterVerification;
+    return matchesSearch && matchesRole && matchesStatus && matchesVerification;
+  }), [users, searchTerm, filterRole, filterStatus, filterVerification]);
+
+  const openUserModal = (user: User) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
   };
 
-  const filteredAndSortedUsers = users
-    .filter(user => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.company?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRole = !filterRole || user.role === filterRole;
-      const matchesStatus = !filterStatus || user.status === filterStatus;
-      const matchesVerification = !filterVerification || user.verificationStatus === filterVerification;
-      return matchesSearch && matchesRole && matchesStatus && matchesVerification;
-    })
-    .sort((a, b) => {
-      let aValue: any = a[sortBy as keyof User];
-      let bValue: any = b[sortBy as keyof User];
-
-      if (sortBy === 'joinDate' || sortBy === 'lastLogin') {
-        aValue = new Date(aValue).getTime();
-        bValue = new Date(bValue).getTime();
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-  const handleUserSelect = (userId: string) => {
-    setSelectedUsers(prev =>
-      prev.includes(userId)
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
+  const openPermModal = (user: User) => {
+    setPermUser(user);
+    setShowPermModal(true);
   };
 
-  const handleSelectAll = () => {
-    if (selectedUsers.length === filteredAndSortedUsers.length) {
-      setSelectedUsers([]);
-    } else {
-      setSelectedUsers(filteredAndSortedUsers.map(user => user.id));
-    }
-  };
+  const userColumns: Column<User>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: tSync('User'),
+      alwaysVisible: true,
+      render: (_v, user) => (
+        <div className="flex items-center">
+          <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
+            {user.name.charAt(0)}
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+            <div className="text-sm text-gray-500">{user.email}</div>
+            {user.company && (
+              <div className="text-xs text-gray-400">{user.company}</div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      label: tSync('Role'),
+      render: (_v, user) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
+          {user.role.replace('_', ' ')}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: tSync('Status'),
+      render: (_v, user) => (
+        <StatusBadge status={user.status} label={user.status} />
+      ),
+    },
+    {
+      key: 'verificationStatus',
+      label: tSync('Verification'),
+      render: (_v, user) => (
+        <StatusBadge status={user.verificationStatus} label={user.verificationStatus} />
+      ),
+    },
+    {
+      key: 'joinDate',
+      label: tSync('Join Date'),
+      render: (_v, user) => (
+        <span className="text-sm text-gray-900">
+          {new Date(user.joinDate).toLocaleDateString()}
+        </span>
+      ),
+    },
+  ], [tSync]);
+
+  const userRowActions: TableAction<User>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: tSync('View Details'),
+      icon: <FaEye className="w-3.5 h-3.5" />,
+      hidden: () => !canViewUsers,
+      onClick: (user) => openUserModal(user),
+    },
+    {
+      key: 'edit',
+      label: tSync('Edit'),
+      icon: <FaEdit className="w-3.5 h-3.5" />,
+      hidden: () => !canManageUsers,
+      onClick: () => {},
+    },
+    {
+      key: 'permissions',
+      label: tSync('Manage Permissions'),
+      icon: <FaShieldAlt className="w-3.5 h-3.5" />,
+      hidden: () => !isSuperAdmin,
+      onClick: (user) => openPermModal(user),
+    },
+  ], [tSync, canViewUsers, canManageUsers, isSuperAdmin]);
 
   const handleBulkAction = async (action: string) => {
     if (action === 'delete') {
@@ -547,19 +581,9 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const openUserModal = (user: User) => {
-    setSelectedUser(user);
-    setShowUserModal(true);
-  };
-
   const closeUserModal = () => {
     setShowUserModal(false);
     setSelectedUser(null);
-  };
-
-  const openPermModal = (user: User) => {
-    setPermUser(user);
-    setShowPermModal(true);
   };
 
   if (usersLoading && !usersData) {
@@ -724,130 +748,23 @@ const UserManagement: React.FC = () => {
       )}
 
       {/* Enhanced User Table */}
-      <div className="bg-white rounded-lg overflow-hidden border border-transparent">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
-            <thead className="bg-[#fafafa] border-b border-slate-200">
-              <tr>
-                <th className="px-4 lg:px-6 py-4 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.length === filteredAndSortedUsers.length && filteredAndSortedUsers.length > 0}
-                    onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                </th>
-                <th className="px-4 lg:px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  <button
-                    onClick={() => {
-                      setSortBy('name');
-                      setSortOrder(sortBy === 'name' && sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                    className="flex items-center space-x-1 hover:text-slate-900 transition-colors"
-                  >
-                    <span><TranslatedText text="User" /></span>
-                    <FaSort className="text-[10px]" />
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Role" /></th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Status" /></th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Verification" /></th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  <button
-                    onClick={() => {
-                      setSortBy('joinDate');
-                      setSortOrder(sortBy === 'joinDate' && sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                    className="flex items-center space-x-1 hover:text-slate-900 transition-colors"
-                  >
-                    <span><TranslatedText text="Join Date" /></span>
-                    <FaSort className="text-[10px]" />
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredAndSortedUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.includes(user.id)}
-                      onChange={() => handleUserSelect(user.id)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {user.name.charAt(0)}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                        {user.company && (
-                          <div className="text-xs text-gray-400">{user.company}</div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                      {user.role.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(user.status)}`}>
-                      {user.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getVerificationColor(user.verificationStatus)}`}>
-                      {user.verificationStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(user.joinDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      {canViewUsers && (
-                        <button
-                          onClick={() => openUserModal(user)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors"
-                          title={tSync("View Details")}
-                        >
-                          <FaEye />
-                        </button>
-                      )}
-                      {canManageUsers && (
-                        <button className="text-green-600 hover:text-green-900 p-1 rounded transition-colors" title={tSync("Edit")}>
-                          <FaEdit />
-                        </button>
-                      )}
-                      {isSuperAdmin && (
-                        <button
-                          onClick={() => openPermModal(user)}
-                          className="text-yellow-600 hover:text-yellow-900 p-1 rounded transition-colors"
-                          title={tSync("Manage Permissions")}
-                        >
-                          <FaShieldAlt />
-                        </button>
-                      )}
-                      <div className="relative">
-                        <button className="text-gray-600 hover:text-gray-900 p-1 rounded transition-colors" title={tSync("More Actions")}>
-                          <FaEllipsisV />
-                        </button>
-                        {/* Dropdown menu would go here */}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="bg-white rounded-lg overflow-hidden border border-transparent p-4 lg:p-6">
+        <StandardDataTable
+          embedded
+          columns={userColumns}
+          data={filteredUsers}
+          getRowId={(row) => row.id}
+          searchable={false}
+          selectable
+          selectedIds={selectedUsers}
+          onSelectionChange={setSelectedUsers}
+          rowActions={userRowActions}
+          defaultSortKey="name"
+          defaultSortDirection="asc"
+          emptyMessage={tSync('No users match your current filters')}
+          onRefresh={() => refetch()}
+          ariaLabel={tSync('User list')}
+        />
       </div>
 
       {/* User Details Modal */}
@@ -920,9 +837,7 @@ const UserManagement: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2"><TranslatedText text="Verification" /></label>
-                  <span className={`inline-flex px-3 py-2 text-sm font-semibold rounded-lg ${getVerificationColor(selectedUser.verificationStatus)}`}>
-                    {selectedUser.verificationStatus}
-                  </span>
+                  <StatusBadge status={selectedUser.verificationStatus} label={selectedUser.verificationStatus} />
                 </div>
               </div>
 

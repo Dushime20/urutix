@@ -48,6 +48,7 @@ import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { OcrService } from '../ocr/ocr.service';
 import { PreTripInspectionService } from './pre-trip-inspection.service';
 import {
+  CompleteTruckInspectionDto,
   MarkReadyForReInspectionDto,
   SubmitPreTripInspectionDto,
 } from './dto/pre-trip-inspection.dto';
@@ -701,10 +702,31 @@ export class DriverController {
     );
   }
 
+  @Post(':id/loads/:loadId/pre-trip-inspection/truck')
+  @ApiOperation({
+    summary: 'Complete truck / vehicle pre-trip inspection',
+    description:
+      'Persists the truck checklist. Required before first cargo inspection. Never repeated on cargo re-inspection after issue resolution.',
+  })
+  async completeTruckPreTripInspection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('loadId', ParseUUIDPipe) loadId: string,
+    @Body() body: CompleteTruckInspectionDto,
+    @Request() req,
+  ) {
+    return this.preTripInspectionService.completeTruckInspection(
+      id,
+      loadId,
+      body,
+      req.user.tenantId,
+    );
+  }
+
   @Post(':id/loads/:loadId/pre-trip-inspection')
   @ApiOperation({
     summary: 'Submit a pre-trip cargo inspection',
-    description: 'Creates an immutable inspection record. Failed inspections block loading and trip start until resolved.',
+    description:
+      'Creates an immutable inspection record. Failed inspections block loading and trip start until resolved. Duplicate submits after approval are rejected.',
   })
   async submitPreTripInspection(
     @Param('id', ParseUUIDPipe) id: string,

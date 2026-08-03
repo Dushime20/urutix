@@ -9,10 +9,8 @@ import {
     Eye,
     Box
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 
 export interface ReceiptData {
@@ -202,26 +200,46 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <DataCard
+            <StandardDataTable
                 title={t("Payment Archive")}
                 subtitle={t("Official financial records for institutional auditing")}
-                actions={
-                    <div className="flex items-center gap-3">
-                        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                            <button className="px-3 py-1.5 bg-white text-[#345E85] rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Current</button>
-                            <button className="px-3 py-1.5 text-slate-500 hover:text-slate-700 text-[10px] font-black uppercase tracking-widest">Archival</button>
-                        </div>
+                icon={<FileText className="w-5 h-5" />}
+                headerColor="primary"
+                headerActions={
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+                        <button className="px-3 py-1.5 bg-white text-[#345E85] rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Current</button>
+                        <button className="px-3 py-1.5 text-slate-500 hover:text-slate-700 text-[10px] font-black uppercase tracking-widest">Archival</button>
                     </div>
                 }
-            >
-                <EnhancedTable
-                    columns={columns}
-                    data={receipts}
-                    loading={loading}
-                    emptyMessage={t("No institutional receipts generated for this period")}
-                    rowClassName={() => 'group'}
-                />
-            </DataCard>
+                columns={columns}
+                data={receipts}
+                loading={loading}
+                getRowId={(row) => row.id}
+                searchable
+                searchPlaceholder={t('Search receipts…')}
+                searchKeys={['receiptNumber', 'cargoName', 'cargoOwnerName', 'status', 'referenceNumber']}
+                filters={[
+                    {
+                        key: 'status',
+                        label: 'Status',
+                        options: [
+                            { value: 'paid', label: 'Paid' },
+                            { value: 'issued', label: 'Issued' },
+                            { value: 'draft', label: 'Draft' },
+                            { value: 'cancelled', label: 'Cancelled' },
+                        ],
+                    },
+                ]}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage={t("No institutional receipts generated for this period")}
+                rowClassName={() => 'group'}
+                ariaLabel={t("Payment Archive")}
+            />
         </div>
     );
 };

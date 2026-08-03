@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type InsuranceVerification, type VerifyInsuranceData, type ComplianceCheck } from '../../services/brokerApi';
-import { Shield, Plus, Search, CheckCircle2, XCircle, AlertTriangle, Loader2, FileCheck, Clock, Zap, Activity, Info, ShieldCheck, X } from 'lucide-react';
+import { Shield, Plus, Search, CheckCircle2, XCircle, AlertTriangle, Loader2, FileCheck, Activity, ShieldCheck, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 
 const InsuranceVerification: React.FC = () => {
   const { user } = useAuth();
@@ -60,18 +61,50 @@ const InsuranceVerification: React.FC = () => {
     }
   };
 
-  const getStatusPrimeStyle = (status: string) => {
-    switch (status) {
-      case 'VERIFIED':
-        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'EXPIRED':
-        return 'bg-rose-50 text-rose-600 border-rose-100';
-      case 'REQUIRES_UPDATE':
-        return 'bg-amber-50 text-amber-600 border-amber-100';
-      default:
-        return 'bg-slate-100 text-slate-500 border-slate-200';
-    }
-  };
+  const columns: Column<InsuranceVerification>[] = useMemo(() => [
+    {
+      key: 'verificationType',
+      label: 'Record Type',
+      sortable: true,
+      render: (_v, row) => (
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 dark:bg-slate-800/50 dark:border-slate-800">
+            <Shield size={16} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900 tracking-tight uppercase italic dark:text-white">{row.verificationType.replace(/_/g, ' ')}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">Authorized Node</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, row) => <StatusBadge status={row.status} label={row.status} />,
+    },
+    {
+      key: 'policyNumber',
+      label: 'Value',
+      render: (_v, row) => (
+        <span className="font-mono text-[11px] font-bold text-slate-700 tracking-wider dark:text-slate-200">
+          {row.policyNumber || row.licenseNumber || 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'expiryDate',
+      label: 'Expiry',
+      sortable: true,
+      align: 'right',
+      render: (_v, row) => (
+        <p className="text-xs font-bold text-slate-900 uppercase dark:text-white">
+          {row.expiryDate ? new Date(row.expiryDate).toLocaleDateString() : 'Infinite'}
+        </p>
+      ),
+    },
+  ], []);
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-12 animate-fade-in pb-24">
@@ -184,67 +217,19 @@ const InsuranceVerification: React.FC = () => {
         </div>
 
         <div className="lg:col-span-2 space-y-8 animate-slide-up">
-          <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] dark:bg-slate-900 dark:border-slate-800">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between dark:border-slate-800/50">
-              <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">Verified Records</h3>
-              <div className="px-4 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-400 uppercase dark:bg-slate-800/50">
-                Nodes: {verifications.length}
-              </div>
-            </div>
-            
-            {loading && !complianceCheck ? (
-              <div className="py-32 text-center space-y-6">
-                <Loader2 className="w-12 h-12 animate-spin text-primary-600 mx-auto" />
-                <p className="text-sm font-bold text-slate-400 uppercase">Accessing Verification Records...</p>
-              </div>
-            ) : verifications.length === 0 ? (
-              <div className="py-48 text-center space-y-8 opacity-50">
-                <Shield className="w-24 h-24 text-slate-100 mx-auto" />
-                <p className="text-xs font-bold text-slate-400 uppercase">No verified records found for this Transporter.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-8 py-6 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Record Type</th>
-                      <th className="px-8 py-6 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Status</th>
-                      <th className="px-8 py-6 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Value</th>
-                      <th className="px-8 py-6 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Expiry</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {verifications.map((v) => (
-                      <tr key={v.id} className="group hover:bg-slate-50/50 transition-colors">
-                        <td className="px-8 py-10">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all dark:bg-slate-800/50 dark:border-slate-800">
-                              <Shield size={16} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-900 tracking-tight uppercase italic dark:text-white">{v.verificationType.replace('_', ' ')}</p>
-                              <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">Authorized Node</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-10">
-                          <span className={`px-4 py-2 rounded-xl text-xs font-bold uppercase border ${getStatusPrimeStyle(v.status)}`}>
-                            {v.status}
-                          </span>
-                        </td>
-                        <td className="px-8 py-10 font-mono text-[11px] font-bold text-slate-700 tracking-wider dark:text-slate-200">
-                          {v.policyNumber || v.licenseNumber || 'N/A'}
-                        </td>
-                        <td className="px-8 py-10 text-right">
-                          <p className="text-xs font-bold text-slate-900 uppercase dark:text-white">{v.expiryDate ? new Date(v.expiryDate).toLocaleDateString() : 'Infinite'}</p>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <StandardDataTable
+            title="Verified Records"
+            subtitle={`Nodes: ${verifications.length}`}
+            columns={columns}
+            data={verifications}
+            loading={loading && !complianceCheck}
+            getRowId={(row) => row.id}
+            searchPlaceholder="Search records..."
+            searchKeys={['verificationType', 'status', 'policyNumber', 'licenseNumber']}
+            emptyMessage="No verified records found for this Transporter."
+            ariaLabel="Insurance verifications"
+            onRefresh={fetchVerifications}
+          />
         </div>
       </div>
 

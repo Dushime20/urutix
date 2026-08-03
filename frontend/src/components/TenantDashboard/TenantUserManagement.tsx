@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   Users,
   UserPlus,
-  Search,
   Truck,
   Box,
   ArrowRight,
@@ -13,8 +12,6 @@ import {
   Gavel,
   Navigation,
   DollarSign,
-  ChevronLeft,
-  ChevronRight
 } from 'lucide-react';
 import PartnerDetailView from './PartnerDetailView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,6 +21,7 @@ import { toast } from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAuth } from '../../contexts/AuthContext';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface PartnerProfile {
     firstName: string;
@@ -55,10 +53,6 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
     const [roleFilter, setRoleFilter] = useState<'ALL' | 'TRUCK_OWNER' | 'CARGO_OWNER' | 'BROKER' | 'DRIVER' | 'LENDER' | 'FLEET_MANAGER'>('ALL');
     const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
     const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
-    
-    // Pagination state
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
 
     // Onboarding Form State
     const [onboardForm, setOnboardForm] = useState({
@@ -88,30 +82,9 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
         }
     });
 
-    const filteredUsers = useMemo(() => {
-        return users.filter((user: Partner) => {
-            const matchesSearch =
-                user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.profile?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.profile?.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
-
-            const matchesRole =
-                roleFilter === 'ALL' || user.role === roleFilter;
-
-            return matchesSearch && matchesRole;
-        });
-    }, [users, searchTerm, roleFilter]);
-
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredUsers.length / pageSize);
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-
-    // Reset to first page when filters change
-    React.useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, roleFilter, pageSize]);
+    const roleFilteredUsers = useMemo(() => {
+        return users.filter((user: Partner) => roleFilter === 'ALL' || user.role === roleFilter);
+    }, [users, roleFilter]);
 
     const getRoleIcon = (role: string) => {
         switch (role) {
@@ -123,6 +96,82 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
             default: return <Users className="w-4 h-4 text-slate-400" />;
         }
     };
+
+    const columns: Column<Partner>[] = useMemo(() => [
+        {
+            key: 'email',
+            label: 'User Info',
+            alwaysVisible: true,
+            render: (_v, user) => (
+                <div className="flex items-center gap-5">
+                    <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-[18px] flex items-center justify-center border border-primary-100 dark:border-primary-800">
+                        <span className="text-primary-600 dark:text-primary-400 font-black text-sm italic">
+                            {user.profile?.firstName?.[0] || 'U'}
+                        </span>
+                    </div>
+                    <div>
+                        <p className="text-base font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                            {user.profile?.firstName} {user.profile?.lastName}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
+                            {user.id.split('-')[0]}
+                        </p>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'role',
+            label: 'Role',
+            render: (_v, user) => (
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                        {getRoleIcon(user.role)}
+                    </div>
+                    <span className="text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">
+                        <TranslatedText text={user.role.replace(/_/g, ' ')} />
+                    </span>
+                </div>
+            ),
+        },
+        {
+            key: 'phone',
+            label: 'Contact',
+            render: (_v, user) => (
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+                        <Mail className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+                        <span>{user.email}</span>
+                    </div>
+                    {user.phone && (
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
+                            <Phone className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+                            <span>{user.phone}</span>
+                        </div>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            render: (_v, user) => (
+                <StatusBadge
+                    status={user.status}
+                    label={user.status === 'PENDING_VERIFICATION' ? 'PENDING' : user.status}
+                />
+            ),
+        },
+    ], []);
+
+    const rowActions: TableAction<Partner>[] = useMemo(() => [
+        {
+            key: 'view',
+            label: 'View',
+            icon: <ArrowRight className="w-3.5 h-3.5" />,
+            onClick: (user) => setSelectedPartner(user),
+        },
+    ], []);
 
     const handleOnboardSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -154,17 +203,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                 </div>
 
                 <div className="px-6 md:px-10 py-6 md:py-8 border-b border-slate-50 dark:border-slate-800 flex flex-col lg:flex-row gap-4 md:gap-6 bg-slate-50/20 dark:bg-slate-800/10">
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
-                        <input
-                            type="text"
-                            placeholder={tSync('Search by name, email, or ID...')}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-14 pr-6 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[20px] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-600 transition-all outline-none text-xs md:text-sm font-medium shadow-sm text-slate-900 dark:text-slate-100"
-                        />
-                    </div>
-                    <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
+                    <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1 lg:pb-0 w-full">
                         <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-sm min-w-max">
                             {(['ALL', 'TRUCK_OWNER', 'FLEET_MANAGER', 'CARGO_OWNER', 'BROKER', 'DRIVER', 'LENDER'] as const).map((role) => (
                                 <button
@@ -182,188 +221,23 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                     </div>
                 </div>
 
-                {/* Ecosystem Table */}
-                <div className="flex-1 overflow-x-auto custom-scrollbar">
-                    <table className="w-full min-w-[800px]">
-                        <thead className="bg-slate-50/30 dark:bg-slate-800/30 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-left">
-                            <tr>
-                                <th className="px-10 py-6 italic"><TranslatedText text="User Info" /></th>
-                                <th className="px-10 py-6"><TranslatedText text="Role" /></th>
-                                <th className="px-10 py-6"><TranslatedText text="Contact" /></th>
-                                <th className="px-10 py-6"><TranslatedText text="Status" /></th>
-                                <th className="px-10 py-6 text-right"><TranslatedText text="Actions" /></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                            {isLoading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={5} className="px-10 py-8">
-                                            <div className="h-12 bg-slate-50 rounded-2xl w-full"></div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : paginatedUsers.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-10 py-20 text-center">
-                                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-[28px] flex items-center justify-center mx-auto mb-6 border border-slate-100 dark:border-slate-800">
-                                            <Users className="text-slate-200 dark:text-slate-700 w-10 h-10" />
-                                        </div>
-                                        <h5 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest"><TranslatedText text="No Users Found" /></h5>
-                                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">
-                                            {filteredUsers.length === 0 ? <TranslatedText text="No users match your search criteria." /> : <TranslatedText text="Start by adding users to your tenant." />}
-                                        </p>
-                                    </td>
-                                </tr>
-                            ) : paginatedUsers.map((user: Partner) => (
-                                <motion.tr
-                                    key={user.id}
-                                    layout
-                                    className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
-                                    onClick={() => setSelectedPartner(user)}
-                                >
-                                    <td className="px-10 py-6">
-                                        <div className="flex items-center gap-5">
-                                            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-[18px] flex items-center justify-center border border-primary-100 dark:border-primary-800 group-hover:bg-primary-600 group-hover:border-primary-600 transition-all duration-300">
-                                                <span className="text-primary-600 dark:text-primary-400 font-black text-sm group-hover:text-white italic">
-                                                    {user.profile?.firstName?.[0] || 'U'}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <p className="text-base font-black text-slate-900 dark:text-slate-100 tracking-tight group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                                                    {user.profile?.firstName} {user.profile?.lastName}
-                                                </p>
-                                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
-                                                    {user.id.split('-')[0]}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-10 py-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                                                {getRoleIcon(user.role)}
-                                            </div>
-                                            <span className="text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">
-                                                <TranslatedText text={user.role.replace(/_/g, ' ')} />
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-10 py-6">
-                                        <div className="flex flex-col gap-1.5">
-                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-                                                <Mail className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
-                                                <span>{user.email}</span>
-                                            </div>
-                                            {user.phone && (
-                                                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400">
-                                                    <Phone className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
-                                                    <span>{user.phone}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-10 py-6">
-                                        <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${user.status === 'ACTIVE'
-                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800'
-                                            : user.status === 'SUSPENDED' ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800' 
-                                            : user.status === 'PENDING_VERIFICATION' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800'
-                                            : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-700'
-                                            }`}>
-                                            <div className={`w-1.5 h-1.5 rounded-full mr-2 ${user.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400 dark:bg-slate-600'}`}></div>
-                                            <TranslatedText text={user.status === 'PENDING_VERIFICATION' ? 'PENDING' : user.status} />
-                                        </div>
-                                    </td>
-                                    <td className="px-10 py-6 text-right">
-                                        <button className="text-slate-400 dark:text-slate-500 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors p-3 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl">
-                                            <ArrowRight className="w-5 h-5 translate-x-0 group-hover:translate-x-1 transition-transform" />
-                                        </button>
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="px-4 md:px-6 py-4">
+                    <StandardDataTable
+                        embedded
+                        columns={columns}
+                        data={roleFilteredUsers}
+                        loading={isLoading}
+                        getRowId={(row) => row.id}
+                        searchPlaceholder={tSync('Search by name, email, or ID...')}
+                        searchKeys={['email', 'phone', 'status', 'role']}
+                        searchValue={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        rowActions={rowActions}
+                        onRowClick={(user) => setSelectedPartner(user)}
+                        emptyMessage={tSync('No Users Found')}
+                        ariaLabel="Tenant users"
+                    />
                 </div>
-
-                {/* Pagination Controls */}
-                {!isLoading && filteredUsers.length > 0 && (
-                    <div className="px-6 md:px-10 py-6 border-t border-slate-50 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        {/* Results Info */}
-                        <div className="flex items-center gap-4">
-                            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                                <TranslatedText text="Showing" /> {startIndex + 1} <TranslatedText text="to" /> {Math.min(endIndex, filteredUsers.length)} <TranslatedText text="of" /> {filteredUsers.length} <TranslatedText text="users" />
-                            </p>
-                            
-                            {/* Page Size Selector */}
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-400 dark:text-slate-500"><TranslatedText text="Show:" /></span>
-                                <select
-                                    value={pageSize}
-                                    onChange={(e) => setPageSize(Number(e.target.value))}
-                                    className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-500/10 outline-none"
-                                >
-                                    <option value={5}>5</option>
-                                    <option value={10}>10</option>
-                                    <option value={25}>25</option>
-                                    <option value={50}>50</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Pagination Navigation */}
-                        {totalPages > 1 && (
-                            <div className="flex items-center gap-2">
-                                {/* Previous Button */}
-                                <button
-                                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                                    disabled={currentPage === 1}
-                                    className="p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-100 dark:hover:border-primary-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </button>
-
-                                {/* Page Numbers */}
-                                <div className="flex items-center gap-1">
-                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                        let pageNum;
-                                        if (totalPages <= 5) {
-                                            pageNum = i + 1;
-                                        } else if (currentPage <= 3) {
-                                            pageNum = i + 1;
-                                        } else if (currentPage >= totalPages - 2) {
-                                            pageNum = totalPages - 4 + i;
-                                        } else {
-                                            pageNum = currentPage - 2 + i;
-                                        }
-
-                                        return (
-                                            <button
-                                                key={pageNum}
-                                                onClick={() => setCurrentPage(pageNum)}
-                                                className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
-                                                    currentPage === pageNum
-                                                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-100 dark:shadow-none'
-                                                        : 'text-slate-400 hover:text-primary-600 dark:text-slate-500 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20'
-                                                }`}
-                                            >
-                                                {pageNum}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Next Button */}
-                                <button
-                                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className="p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-100 dark:hover:border-primary-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
 
             {/* Deep Analytics Slideover/Modal */}

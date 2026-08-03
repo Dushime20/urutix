@@ -602,7 +602,6 @@ const DriverDashboard: React.FC = () => {
                   queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
                   queryClient.invalidateQueries({ queryKey: ['driver-stats'] });
                   setActiveTab('overview');
-                  toast.success(t('Mission finalized — ePOD submitted & invoice generated.'), { duration: 5000 });
                 }}
                 onCancel={() => setShowPostTripModal(false)}
               />

@@ -20,6 +20,7 @@ import {
   FaEye,
   FaSync
 } from 'react-icons/fa';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface RouteStats {
   totalRoutes: number;
@@ -406,158 +407,138 @@ const TenantAdminRoutes: React.FC = () => {
       </div>
 
       {/* Routes Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {routesError ? (
-          <div className="p-6 text-center">
-            <div className="text-red-600 mb-2">Failed to load routes</div>
-            <button
-              onClick={() => refetchRoutes()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Retry
-            </button>
-          </div>
-        ) : filteredAndSortedRoutes.length === 0 ? (
-          <div className="p-12 text-center">
-            <FaRoute className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg mb-2">No routes found</p>
-            <p className="text-gray-500 text-sm mb-4">
-              {searchTerm || statusFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Create your first route to get started'}
-            </p>
-            {!searchTerm && statusFilter === 'all' && (
-              <button
-                onClick={openCreateModal}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Create Route
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Route Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Origin
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Destination
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Distance
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ETA
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned Trucks
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedRoutes.map((route) => (
-                  <tr key={route.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{route.name}</div>
-                      {route.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {route.description}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <FaMapMarkerAlt className="w-4 h-4 text-green-500" />
-                        {route.origin}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <FaMapMarkerAlt className="w-4 h-4 text-red-500" />
-                        {route.destination}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <FaRoad className="w-4 h-4 text-gray-400" />
-                        {route.distance || 0} km
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <FaClock className="w-4 h-4 text-gray-400" />
-                        {route.estimatedDuration || route.estimatedTime || 0} hrs
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          route.status,
-                        )}`}
-                      >
-                        {getStatusIcon(route.status)}
-                        {(route.status || 'active').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <FaTruck className="w-4 h-4 text-gray-400" />
-                        {Array.isArray(route.assignedTrucks)
-                          ? route.assignedTrucks.length
-                          : route.assignedTrucks || 0}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openDetailsModal(route)}
-                          className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
-                          title="View Details"
-                        >
-                          <FaEye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(route)}
-                          className="text-gray-600 hover:text-gray-900 p-2 hover:bg-gray-50 rounded transition-colors"
-                          title="Edit Route"
-                        >
-                          <FaEdit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openAssignModal(route)}
-                          className="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded transition-colors"
-                          title="Assign to Truck"
-                        >
-                          <FaTruck className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(route)}
-                          className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
-                          title="Delete Route"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <StandardDataTable
+        title="Routes"
+        icon={<FaRoute className="w-5 h-5" />}
+        headerColor="primary"
+        columns={[
+          {
+            key: 'name',
+            label: 'Route Name',
+            sortable: true,
+            render: (_: any, route: Route) => (
+              <div>
+                <div className="font-semibold text-slate-900 dark:text-white">{route.name}</div>
+                {route.description && (
+                  <div className="text-xs text-slate-500 truncate max-w-xs">{route.description}</div>
+                )}
+              </div>
+            ),
+          },
+          {
+            key: 'origin',
+            label: 'Origin',
+            sortable: true,
+            render: (origin: string) => (
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <FaMapMarkerAlt className="w-3.5 h-3.5 text-emerald-500" />
+                {origin}
+              </div>
+            ),
+          },
+          {
+            key: 'destination',
+            label: 'Destination',
+            sortable: true,
+            render: (destination: string) => (
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <FaMapMarkerAlt className="w-3.5 h-3.5 text-rose-500" />
+                {destination}
+              </div>
+            ),
+          },
+          {
+            key: 'distance',
+            label: 'Distance',
+            sortable: true,
+            render: (distance: number) => (
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <FaRoad className="w-3.5 h-3.5 text-slate-400" />
+                {distance || 0} km
+              </div>
+            ),
+          },
+          {
+            key: 'estimatedTime',
+            label: 'ETA',
+            sortable: true,
+            render: (_: any, route: Route) => (
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <FaClock className="w-3.5 h-3.5 text-slate-400" />
+                {(route as any).estimatedDuration || route.estimatedTime || 0} hrs
+              </div>
+            ),
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            sortable: true,
+            render: (status: string) => (
+              <StatusBadge
+                label={(status || 'active').toUpperCase()}
+                status={status || 'active'}
+                icon={getStatusIcon(status)}
+              />
+            ),
+          },
+          {
+            key: 'assignedTrucks',
+            label: 'Assigned Trucks',
+            render: (assigned: any) => (
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+                <FaTruck className="w-3.5 h-3.5 text-slate-400" />
+                {Array.isArray(assigned) ? assigned.length : assigned || 0}
+              </div>
+            ),
+          },
+        ] as Column<Route>[]}
+        data={filteredAndSortedRoutes}
+        loading={routesLoading}
+        error={routesError ? 'Failed to load routes' : null}
+        onRetry={() => refetchRoutes()}
+        getRowId={(row) => row.id}
+        searchable={false}
+        pagination
+        pageSize={10}
+        columnVisibility
+        stickyHeader
+        striped
+        hoverable
+        emptyMessage={
+          searchTerm || statusFilter !== 'all'
+            ? 'No routes match your current filters'
+            : 'Create your first route to get started'
+        }
+        rowActions={[
+          {
+            key: 'view',
+            label: 'View Details',
+            icon: <FaEye className="w-3.5 h-3.5" />,
+            onClick: openDetailsModal,
+          },
+          {
+            key: 'edit',
+            label: 'Edit Route',
+            icon: <FaEdit className="w-3.5 h-3.5" />,
+            onClick: openEditModal,
+          },
+          {
+            key: 'assign',
+            label: 'Assign to Truck',
+            icon: <FaTruck className="w-3.5 h-3.5" />,
+            onClick: openAssignModal,
+          },
+          {
+            key: 'delete',
+            label: 'Delete Route',
+            icon: <FaTrash className="w-3.5 h-3.5" />,
+            variant: 'danger',
+            divider: true,
+            onClick: handleDelete,
+          },
+        ] as TableAction<Route>[]}
+        ariaLabel="Tenant routes"
+      />
 
       {/* Create Route Modal */}
       {showCreateModal && (

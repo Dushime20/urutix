@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaInfoCircle } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaInfoCircle, FaCoins } from 'react-icons/fa';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
 import api from '../../services/api';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 interface PricingRule {
   id: string;
@@ -160,6 +161,78 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
     };
     return labels[type] || type;
   };
+
+  const columns: Column<PricingRule>[] = useMemo(() => [
+    {
+      key: 'ruleName',
+      label: 'Rule Name',
+      alwaysVisible: true,
+      render: (v) => <div className="text-sm font-medium text-gray-900">{v}</div>,
+    },
+    {
+      key: 'ruleType',
+      label: 'Type',
+      render: (v) => <span className="text-sm text-gray-600">{getRuleTypeLabel(v)}</span>,
+    },
+    {
+      key: 'creditCost',
+      label: 'Cost',
+      render: (_v, rule) => (
+        <div className="text-sm text-gray-900">
+          {rule.creditCost} credits / {rule.unit}
+        </div>
+      ),
+    },
+    {
+      key: 'minValue',
+      label: 'Range',
+      render: (_v, rule) => (
+        <div className="text-sm text-gray-600">
+          {rule.minValue || rule.maxValue ? (
+            <>
+              {rule.minValue ? `${rule.minValue}+` : ''}
+              {rule.minValue && rule.maxValue ? ' - ' : ''}
+              {rule.maxValue ? `${rule.maxValue}` : ''}
+            </>
+          ) : (
+            <TranslatedText text="All values" />
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      render: (v) => <span className="text-sm text-gray-600">{v}</span>,
+    },
+    {
+      key: 'isActive',
+      label: 'Status',
+      render: (_v, rule) => (
+        <StatusBadge
+          status={rule.isActive ? 'active' : 'inactive'}
+          label={rule.isActive ? 'Active' : 'Inactive'}
+        />
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<PricingRule>[] = useMemo(() => [
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <FaEdit className="w-3.5 h-3.5" />,
+      onClick: (rule) => handleEdit(rule),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <FaTrash className="w-3.5 h-3.5" />,
+      variant: 'danger',
+      onClick: (rule) => handleDelete(rule.id),
+    },
+  ], []);
 
   if (isLoading && rules.length === 0) {
     const loader = <ModernLoader isLoading={true} type="table" rows={8} columns={7} />;
@@ -334,109 +407,34 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
         )}
 
         {/* Rules List */}
-        <div className="bg-white rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Rule Name" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Type" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Cost" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Range" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Priority" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Status" />
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Actions" />
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      <TranslatedText text="Loading pricing rules..." />
-                    </td>
-                  </tr>
-                ) : rules.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                      <TranslatedText text="No pricing rules found. Create one to get started." />
-                    </td>
-                  </tr>
-                ) : (
-                  rules.map((rule: PricingRule) => (
-                    <tr key={rule.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{rule.ruleName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{getRuleTypeLabel(rule.ruleType)}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {rule.creditCost} credits / {rule.unit}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
-                          {rule.minValue || rule.maxValue ? (
-                            <>
-                              {rule.minValue ? `${rule.minValue}+` : ''}
-                              {rule.minValue && rule.maxValue ? ' - ' : ''}
-                              {rule.maxValue ? `${rule.maxValue}` : ''}
-                            </>
-                          ) : (
-                            <TranslatedText text="All values" />
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{rule.priority}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            rule.isActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {rule.isActive ? <TranslatedText text="Active" /> : <TranslatedText text="Inactive" />}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleEdit(rule)}
-                          className="text-[#2c5173] hover:text-[#1e3850] mr-3"
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(rule.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <FaTrash />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <StandardDataTable
+          title="Pricing Rules"
+          subtitle="Manage credit consumption rules"
+          icon={<FaCoins className="w-5 h-5" />}
+          columns={columns}
+          data={rules}
+          loading={isLoading}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Search rules..."
+          searchKeys={['ruleName', 'ruleType', 'unit']}
+          filters={[
+            {
+              key: 'ruleType',
+              label: 'Type',
+              options: [
+                { value: 'weight', label: 'Weight-based' },
+                { value: 'distance', label: 'Distance-based' },
+                { value: 'time', label: 'Time-based' },
+                { value: 'flat', label: 'Flat Rate' },
+              ],
+            },
+          ]}
+          defaultSortKey="priority"
+          defaultSortDirection="desc"
+          rowActions={rowActions}
+          emptyMessage="No pricing rules found. Create one to get started."
+          ariaLabel="Credit pricing rules"
+        />
       </div>
   );
 

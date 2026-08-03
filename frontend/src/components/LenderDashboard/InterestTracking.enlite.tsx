@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import {
     TrendingUp,
-    Search,
-    Filter,
     ArrowUpRight,
     Calendar,
     User,
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import LoanDetailModal from './LoanDetailModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -82,19 +79,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
     const formatAmount = (amount: number | null): string =>
         amount === null ? '—' : fmtCurrency(amount);
 
-    const [searchTerm, setSearchTerm]     = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [detailLoan, setDetailLoan]     = useState<any | null>(null);
-
-    const filtered = loans.filter(l => {
-        const q = searchTerm.toLowerCase();
-        const matchSearch =
-            (l.borrowerName ?? '').toLowerCase().includes(q) ||
-            (l.businessName ?? '').toLowerCase().includes(q) ||
-            l.loanId.toLowerCase().includes(q);
-        const matchStatus = statusFilter === 'all' || l.status === statusFilter;
-        return matchSearch && matchStatus;
-    });
+    const [detailLoan, setDetailLoan] = useState<any | null>(null);
 
     const columns = [
         {
@@ -223,64 +208,40 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            {/* Interest Records */}
-            <DataCard
+            <StandardDataTable
                 title="Interest Revenue"
                 subtitle="Per-loan interest breakdown from verified repayment records"
                 icon={<TrendingUp className="w-5 h-5" />}
                 headerColor="primary"
-                actions={
-                    <div className="flex items-center gap-2">
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" size={14} />
-                            <input
-                                type="text"
-                                placeholder="SEARCH LOANS..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="w-48 lg:w-56 pl-9 pr-3 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
-                            />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Filter size={14} className="text-white/70" />
-                            <select
-                                value={statusFilter}
-                                onChange={e => setStatusFilter(e.target.value)}
-                                className="px-2.5 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white focus:outline-none"
-                            >
-                                <option value="all" className="text-slate-900">ALL STATUS</option>
-                                <option value="pending" className="text-slate-900">PENDING</option>
-                                <option value="approved" className="text-slate-900">APPROVED</option>
-                                <option value="disbursed" className="text-slate-900">DISBURSED</option>
-                                <option value="repaid" className="text-slate-900">REPAID</option>
-                                <option value="defaulted" className="text-slate-900">DEFAULTED</option>
-                            </select>
-                        </div>
-                    </div>
-                }
-            >
-                <div className="space-y-4">
-                    <div className="relative md:hidden">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Search loans..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173]"
-                        />
-                    </div>
-
-                    <EnhancedTable
-                        columns={columns}
-                        data={filtered}
-                        loading={loading}
-                        striped
-                        hoverable
-                        emptyMessage="No interest records found"
-                    />
-                </div>
-            </DataCard>
+                columns={columns}
+                data={loans}
+                loading={loading}
+                getRowId={(row) => row.loanId}
+                searchable
+                searchPlaceholder="Search loans…"
+                searchKeys={['borrowerName', 'businessName', 'loanId', 'status', 'purpose']}
+                filters={[
+                    {
+                        key: 'status',
+                        label: 'Status',
+                        options: [
+                            { value: 'pending', label: 'Pending' },
+                            { value: 'approved', label: 'Approved' },
+                            { value: 'disbursed', label: 'Disbursed' },
+                            { value: 'repaid', label: 'Repaid' },
+                            { value: 'defaulted', label: 'Defaulted' },
+                        ],
+                    },
+                ]}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage="No interest records found"
+                ariaLabel="Interest Revenue"
+            />
 
             {detailLoan && (
                 <LoanDetailModal

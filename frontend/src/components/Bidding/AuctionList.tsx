@@ -34,6 +34,7 @@ import {
   useToggleAuctionWatch,
   useSubmitBidMutation,
 } from '../../hooks/useBiddingQueries';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 
 interface LoadLocation {
   id: string;
@@ -683,91 +684,106 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               {auctions.map(renderAuctionCard)}
             </div>
           ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-gray-50/50 dark:bg-slate-950/50 border-b border-gray-100 dark:border-slate-800">
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Auction / Load</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Route</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Type / weight</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Current Bid</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Time Left</th>
-                      <th className="px-6 py-4 text-right text-[10px] font-black text-gray-500 dark:text-slate-500 uppercase tracking-widest">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
-                    {auctions.map((auction) => (
-                      <tr key={auction.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gray-900 dark:bg-slate-950 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                              <Gavel size={18} className="text-white" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-black text-gray-900 dark:text-slate-100 leading-tight">{auction.load?.title || 'Unknown Cargo'}</p>
-                              <div className="mt-1">{getStatusBadge(auction.status)}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'pickup')}</span>
-                            <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight italic">to</span>
-                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'delivery')}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.weight?.toLocaleString() || '0'} kg</span>
-                            <div>{getAuctionTypeBadge(auction.auctionType)}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {auction.currentHighestBid ? (
-                            <>
-                              <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(auction.currentHighestBid)}</div>
-                              <div className="text-[9px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-tight mt-0.5">Lowest so far — bid lower</div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="text-sm font-black text-slate-400 dark:text-slate-500 italic">No bids yet</div>
-                              <div className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-tight mt-0.5">Be first — bid your best</div>
-                            </>
-                          )}
-                          <div className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-gray-500 dark:text-slate-500">
-                            <Clock size={12} />
-                            <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(auction.auctionEnd)}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {userRole !== 'BROKER' && (
-                              <button
-                                onClick={() => openBidModal(auction)}
-                                disabled={auction.status !== 'ACTIVE'}
-                                className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all bg-slate-900 text-white hover:bg-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900"
-                              >
-                                <Gavel size={14} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => openDetailsModal(auction)}
-                              className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all"
-                            >
-                              <Eye size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <StandardDataTable
+              embedded
+              data={auctions}
+              getRowId={(a) => a.id}
+              searchable={false}
+              pagination={false}
+              emptyMessage="No auctions found matching your criteria."
+              columns={[
+                {
+                  key: 'load',
+                  label: 'Auction / Load',
+                  render: (_: any, auction: Auction) => (
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-gray-900 dark:bg-slate-950 rounded-xl flex items-center justify-center shrink-0">
+                        <Gavel size={18} className="text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-gray-900 dark:text-slate-100 leading-tight">{auction.load?.title || 'Unknown Cargo'}</p>
+                        <div className="mt-1">{getStatusBadge(auction.status)}</div>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'route',
+                  label: 'Route',
+                  render: (_: any, auction: Auction) => (
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'pickup')}</span>
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight italic">to</span>
+                      <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'delivery')}</span>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'weight',
+                  label: 'Type / weight',
+                  render: (_: any, auction: Auction) => (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.weight?.toLocaleString() || '0'} kg</span>
+                      <div>{getAuctionTypeBadge(auction.auctionType)}</div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'currentHighestBid',
+                  label: 'Current Bid',
+                  render: (_: any, auction: Auction) => (
+                    <div>
+                      {auction.currentHighestBid ? (
+                        <>
+                          <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(auction.currentHighestBid)}</div>
+                          <div className="text-[9px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-tight mt-0.5">Lowest so far — bid lower</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-sm font-black text-slate-400 dark:text-slate-500 italic">No bids yet</div>
+                          <div className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-tight mt-0.5">Be first — bid your best</div>
+                        </>
+                      )}
+                      <div className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'auctionEnd',
+                  label: 'Time Left',
+                  render: (end: string) => (
+                    <div className="flex items-center gap-2 text-gray-500 dark:text-slate-500">
+                      <Clock size={12} />
+                      <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(end)}</span>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'actions',
+                  label: 'Action',
+                  align: 'right',
+                  render: (_: any, auction: Auction) => (
+                    <div className="flex items-center justify-end gap-2">
+                      {userRole !== 'BROKER' && (
+                        <button
+                          onClick={() => openBidModal(auction)}
+                          disabled={auction.status !== 'ACTIVE'}
+                          className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all bg-slate-900 text-white hover:bg-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900"
+                        >
+                          <Gavel size={14} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openDetailsModal(auction)}
+                        className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all"
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  ),
+                },
+              ] as Column<Auction>[]}
+            />
           )}
         </>
       )}

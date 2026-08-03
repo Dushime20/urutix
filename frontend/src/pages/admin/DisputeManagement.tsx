@@ -1,10 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Gavel,
   AlertTriangle,
-  Search,
-  Download,
   Eye,
   Clock,
   CheckCircle,
@@ -22,6 +20,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import { adminAPI, type AdminDispute } from '../../services/adminApi';
 import ModernLoader from '../../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -261,11 +260,19 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+const disputeStatusVariant = (status: string) => {
+  switch (status) {
+    case 'OPEN': return 'warning' as const;
+    case 'RESOLVED': return 'success' as const;
+    case 'ESCALATED': return 'orange' as const;
+    case 'REJECTED': return 'error' as const;
+    default: return 'neutral' as const;
+  }
+};
+
 const DisputeManagement: React.FC = () => {
   const qc = useQueryClient();
 
-  const [searchTerm, setSearchTerm]       = useState('');
-  const [filterStatus, setFilterStatus]   = useState('');
   const [selectedDispute, setSelectedDispute] = useState<AdminDispute | null>(null);
   const [showDetails, setShowDetails]     = useState(false);
   const [resolveTarget, setResolveTarget] = useState<AdminDispute | null>(null);
@@ -295,31 +302,10 @@ const DisputeManagement: React.FC = () => {
     },
   });
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
-  const filtered = disputes.filter(d => {
-    const q = searchTerm.toLowerCase();
-    const matchSearch = !q ||
-      d.reason?.toLowerCase().includes(q) ||
-      d.id.toLowerCase().includes(q) ||
-      getDisplayName(d.raisedBy).toLowerCase().includes(q) ||
-      d.trip?.tripNumber?.toLowerCase().includes(q);
-    const matchStatus = !filterStatus || d.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
-
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const stats = {
-    total:     disputes.length,
-    open:      disputes.filter(d => d.status === 'OPEN').length,
-    resolved:  disputes.filter(d => d.status === 'RESOLVED').length,
-    escalated: disputes.filter(d => d.status === 'ESCALATED').length,
-    rejected:  disputes.filter(d => d.status === 'REJECTED').length,
-  };
-
   // ── CSV Export ─────────────────────────────────────────────────────────────
   const handleExport = useCallback(() => {
     const headers = ['ID', 'Status', 'Raised By', 'Trip', 'Reason', 'Resolution', 'Created'];
-    const rows = filtered.map(d => [
+    const rows = disputes.map(d => [
       d.id,
       d.status,
       getDisplayName(d.raisedBy),
@@ -334,7 +320,102 @@ const DisputeManagement: React.FC = () => {
     const a    = document.createElement('a');
     a.href = url; a.download = 'disputes.csv'; a.click();
     URL.revokeObjectURL(url);
-  }, [filtered]);
+  }, [disputes]);
+
+  const columns: Column<AdminDispute>[] = useMemo(() => [
+    {
+      key: 'reason',
+      label: 'Dispute',
+      alwaysVisible: true,
+      render: (_v, dispute) => (
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Gavel className="w-4 h-4 text-red-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-900 line-clamp-2 max-w-[220px]">
+              {dispute.reason?.slice(0, 70) || 'No reason provided'}
+              {(dispute.reason?.length || 0) > 70 ? '...' : ''}
+            </p>
+            <p className="text-[10px] font-mono text-gray-400 mt-0.5">{dispute.id.slice(0, 16)}...</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'raisedBy',
+      label: 'Raised By',
+      render: (_v, dispute) => {
+        const raisedByName = getDisplayName(dispute.raisedBy);
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[#2c5173] font-bold text-[10px] flex-shrink-0">
+              {raisedByName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-900">{raisedByName}</p>
+              {dispute.raisedBy?.role && (
+                <p className="text-[10px] text-gray-400 capitalize">{dispute.raisedBy.role.replace(/_/g, ' ')}</p>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'tripId',
+      label: 'Trip',
+      render: (_v, dispute) => (
+        <span className="text-xs font-bold text-[#2c5173] bg-slate-100 px-2 py-1 rounded-lg whitespace-nowrap">
+          {dispute.trip?.tripNumber || (dispute.tripId ? dispute.tripId.slice(0, 10) + '...' : 'N/A')}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, dispute) => {
+        const cfg = getStatusCfg(dispute.status);
+        return (
+          <StatusBadge
+            variant={disputeStatusVariant(dispute.status)}
+            label={cfg.label}
+            icon={cfg.icon}
+          />
+        );
+      },
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      sortable: true,
+      render: (_v, dispute) => (
+        <div>
+          <div className="text-[10px] text-gray-500 flex items-center gap-1.5">
+            <Clock className="w-3 h-3" /> {getTimeAgo(dispute.createdAt)}
+          </div>
+          <div className="text-[10px] text-gray-400 mt-0.5">{formatDate(dispute.createdAt)}</div>
+        </div>
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<AdminDispute>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye className="w-3.5 h-3.5" />,
+      onClick: (dispute) => { setSelectedDispute(dispute); setShowDetails(true); },
+    },
+    {
+      key: 'update',
+      label: 'Update Status',
+      icon: <CheckCircle className="w-3.5 h-3.5" />,
+      variant: 'success',
+      hidden: (d) => d.status === 'RESOLVED' || d.status === 'REJECTED',
+      onClick: (dispute) => setResolveTarget(dispute),
+    },
+  ], []);
 
   // ── Loading / Error ────────────────────────────────────────────────────────
   if (isLoading) {
@@ -372,180 +453,33 @@ const DisputeManagement: React.FC = () => {
       description={<TranslatedText text="Manage and resolve platform disputes" />}
     >
       <div className="safe-bottom">
-      {/* Stats */}
-
-      {/* Filters */}
-      <div className="bg-white rounded-[24px] border border-gray-100 p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search by reason, ID, user, or trip number..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent"
-            />
-          </div>
-          <div className="relative">
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-[#2c5173] focus:border-transparent"
-            >
-              <option value="">All Status</option>
-              <option value="OPEN">Open</option>
-              <option value="RESOLVED">Resolved</option>
-              <option value="ESCALATED">Escalated</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className="w-4 h-4" /> Refresh
-            </button>
-            <button
-              onClick={handleExport}
-              className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" /> Export
-            </button>
-            <span className="px-3 py-2 bg-slate-100 text-[#2c5173] rounded-xl text-sm font-semibold self-center whitespace-nowrap">
-              {filtered.length} disputes
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                {['Dispute', 'Raised By', 'Trip', 'Status', 'Created', 'Actions'].map(h => (
-                  <th
-                    key={h}
-                    className={`px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${h === 'Actions' ? 'text-right' : 'text-left'}`}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center">
-                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                      <Gavel className="w-8 h-8 text-gray-300" />
-                    </div>
-                    <p className="text-sm font-medium text-gray-500">No disputes found</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {disputes.length === 0 ? 'No disputes have been raised yet' : 'Try adjusting your filters'}
-                    </p>
-                  </td>
-                </tr>
-              ) : filtered.map(dispute => {
-                const cfg = getStatusCfg(dispute.status);
-                const raisedByName = getDisplayName(dispute.raisedBy);
-                return (
-                  <tr key={dispute.id} className="hover:bg-gray-50/60 transition-colors group">
-
-                    {/* Dispute */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Gavel className="w-4 h-4 text-red-500" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-gray-900 line-clamp-2 max-w-[220px]">
-                            {dispute.reason?.slice(0, 70) || 'No reason provided'}
-                            {(dispute.reason?.length || 0) > 70 ? '...' : ''}
-                          </p>
-                          <p className="text-[10px] font-mono text-gray-400 mt-0.5">{dispute.id.slice(0, 16)}...</p>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Raised By */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-[#2c5173] font-bold text-[10px] flex-shrink-0">
-                          {raisedByName.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-900">{raisedByName}</p>
-                          {dispute.raisedBy?.role && (
-                            <p className="text-[10px] text-gray-400 capitalize">{dispute.raisedBy.role.replace(/_/g, ' ')}</p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Trip */}
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-bold text-[#2c5173] bg-slate-100 px-2 py-1 rounded-lg whitespace-nowrap">
-                        {dispute.trip?.tripNumber || (dispute.tripId ? dispute.tripId.slice(0, 10) + '...' : 'N/A')}
-                      </span>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${cfg.color}`}>
-                        {cfg.icon} {cfg.label}
-                      </span>
-                    </td>
-
-                    {/* Created */}
-                    <td className="px-6 py-4">
-                      <div className="text-[10px] text-gray-500 flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" /> {getTimeAgo(dispute.createdAt)}
-                      </div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">{formatDate(dispute.createdAt)}</div>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => { setSelectedDispute(dispute); setShowDetails(true); }}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        {dispute.status !== 'RESOLVED' && dispute.status !== 'REJECTED' && (
-                          <button
-                            onClick={() => setResolveTarget(dispute)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-green-50 text-green-600 transition-colors"
-                            title="Update Status"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer count */}
-        {filtered.length > 0 && (
-          <div className="px-6 py-3 border-t border-gray-50 bg-gray-50/50">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Showing <span className="text-gray-900">{filtered.length}</span> of <span className="text-gray-900">{disputes.length}</span> disputes
-            </p>
-          </div>
-        )}
-      </div>
+      <StandardDataTable
+        embedded
+        columns={columns}
+        data={disputes}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search by reason, ID, user, or trip number..."
+        searchKeys={['reason', 'id', 'status', 'tripId']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'OPEN', label: 'Open' },
+              { value: 'RESOLVED', label: 'Resolved' },
+              { value: 'ESCALATED', label: 'Escalated' },
+              { value: 'REJECTED', label: 'Rejected' },
+            ],
+          },
+        ]}
+        defaultSortKey="createdAt"
+        defaultSortDirection="desc"
+        rowActions={rowActions}
+        onRefresh={() => refetch()}
+        onExport={handleExport}
+        emptyMessage="No disputes found"
+        ariaLabel="Dispute management"
+      />
 
       {/* Detail Modal */}
       {showDetails && selectedDispute && (

@@ -26,6 +26,7 @@ import {
   LayoutGrid,
   List,
 } from 'lucide-react';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 const TenantAdminDrivers: React.FC = () => {
   const queryClient = useQueryClient();
@@ -371,6 +372,126 @@ const TenantAdminDrivers: React.FC = () => {
     return 'bg-gray-100 text-gray-800';
   };
 
+  const driverColumns: Column<Driver>[] = useMemo(() => [
+    {
+      key: 'firstName',
+      label: 'Driver',
+      alwaysVisible: true,
+      render: (_v, driver) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <User className="w-5 h-5 text-blue-600" />
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900 dark:text-slate-100">
+              {driver.firstName} {driver.lastName}
+            </div>
+            <div className="text-sm text-gray-500">{driver.email}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'Contact',
+      render: (_v, driver) => (
+        <div className="text-sm text-gray-700 dark:text-slate-300">
+          {driver.phone && (
+            <div className="flex items-center gap-2">
+              <Phone className="w-3 h-3 text-gray-400" />
+              {driver.phone}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'licenseNumber',
+      label: 'License',
+      render: (_v, driver) => (
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <CreditCard className="w-4 h-4 text-gray-400" />
+          {driver.licenseNumber}
+        </div>
+      ),
+    },
+    {
+      key: 'experience',
+      label: 'Experience',
+      render: (_v, driver) => (
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <Briefcase className="w-4 h-4 text-gray-400" />
+          {typeof driver.experience === 'number'
+            ? `${driver.experience} yrs`
+            : driver.experience || '0 yrs'}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, driver) => (
+        <StatusBadge
+          status={driver.status}
+          label={(driver.status || 'ACTIVE').toUpperCase()}
+        />
+      ),
+    },
+    {
+      key: 'availabilityStatus',
+      label: 'Availability',
+      render: (_v, driver) => (
+        <StatusBadge
+          status={driver.availabilityStatus}
+          label={(driver.availabilityStatus || 'AVAILABLE').toUpperCase()}
+        />
+      ),
+    },
+    {
+      key: 'currentTruckId',
+      label: 'Assigned Truck',
+      sortable: false,
+      render: (_v, driver) =>
+        driver.currentTruckId ? (
+          <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+            <Truck className="w-4 h-4 text-gray-400" />
+            <span className="text-xs">Assigned</span>
+          </div>
+        ) : (
+          <span className="text-sm text-gray-400">Not assigned</span>
+        ),
+    },
+  ], []);
+
+  const driverRowActions: TableAction<Driver>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye className="w-3.5 h-3.5" />,
+      onClick: (driver) => openDetailsModal(driver),
+    },
+    {
+      key: 'edit',
+      label: 'Edit Driver',
+      icon: <Edit2 className="w-3.5 h-3.5" />,
+      onClick: (driver) => openEditModal(driver),
+    },
+    {
+      key: 'assign',
+      label: 'Assign to Truck',
+      icon: <Truck className="w-3.5 h-3.5" />,
+      onClick: (driver) => openAssignModal(driver),
+    },
+    {
+      key: 'delete',
+      label: 'Delete Driver',
+      icon: <Trash2 className="w-3.5 h-3.5" />,
+      variant: 'danger',
+      divider: true,
+      onClick: (driver) => handleDelete(driver),
+    },
+  ], []);
+
   if (driversLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -523,141 +644,20 @@ const TenantAdminDrivers: React.FC = () => {
             )}
           </div>
         ) : viewMode === 'table' ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Driver
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    License
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Experience
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Availability
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assigned Truck
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedDrivers.map((driver) => (
-                  <tr key={driver.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {driver.firstName} {driver.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">{driver.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-700">
-                        {driver.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-3 h-3 text-gray-400" />
-                            {driver.phone}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <CreditCard className="w-4 h-4 text-gray-400" />
-                        {driver.licenseNumber}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4 text-gray-400" />
-                        {typeof driver.experience === 'number'
-                          ? `${driver.experience} yrs`
-                          : driver.experience || '0 yrs'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          driver.status,
-                        )}`}
-                      >
-                        {getStatusIcon(driver.status)}
-                        {(driver.status || 'ACTIVE').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getAvailabilityColor(
-                          driver.availabilityStatus,
-                        )}`}
-                      >
-                        {(driver.availabilityStatus || 'AVAILABLE').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {driver.currentTruckId ? (
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <Truck className="w-4 h-4 text-gray-400" />
-                          <span className="text-xs">Assigned</span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">Not assigned</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openDetailsModal(driver)}
-                          className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(driver)}
-                          className="text-gray-600 hover:text-gray-900 p-2 hover:bg-gray-50 rounded transition-colors"
-                          title="Edit Driver"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openAssignModal(driver)}
-                          className="text-green-600 hover:text-green-900 p-2 hover:bg-green-50 rounded transition-colors"
-                          title="Assign to Truck"
-                        >
-                          <Truck className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(driver)}
-                          className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
-                          title="Delete Driver"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="p-4">
+            <StandardDataTable
+              embedded
+              columns={driverColumns}
+              data={filteredAndSortedDrivers}
+              getRowId={(row) => row.id}
+              searchable={false}
+              columnVisibility
+              rowActions={driverRowActions}
+              pagination
+              pageSize={10}
+              emptyMessage="No drivers match your current filters"
+              ariaLabel="Fleet drivers"
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">

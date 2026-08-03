@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 import {
   Send, Edit2, Eye, FileText,
   CheckCircle, XCircle, Filter, RefreshCw, Megaphone,
@@ -208,6 +209,108 @@ const TenantBulkEmail: React.FC = () => {
     { id: 'templates', label: 'Templates', icon: FileText },
     { id: 'history',   label: 'History',   icon: BarChart2 },
   ];
+
+  const templateColumns: Column<EmailTemplate>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: tSync('Internal Template Name'),
+      sortable: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <span className="font-black text-slate-700 dark:text-slate-200 text-sm">{t.name}</span>
+      ),
+    },
+    {
+      key: 'subject',
+      label: tSync('Broadcast Subject'),
+      sortable: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <span className="text-slate-500 dark:text-slate-400 text-sm max-w-sm truncate italic block">{t.subject}</span>
+      ),
+    },
+    {
+      key: 'isActive',
+      label: tSync('Operational Status'),
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <StatusBadge label={t.isActive ? tSync('Active') : tSync('Inactive')} status={t.isActive ? 'active' : 'inactive'} />
+      ),
+    },
+    {
+      key: 'actions',
+      label: tSync('Action'),
+      align: 'right',
+      hideable: false,
+      alwaysVisible: true,
+      render: (_: unknown, t: EmailTemplate) => (
+        <button
+          disabled={!t.isActive}
+          onClick={() => { setSelectedTemplate(t.id); setUseTemplate(true); setActiveTab('compose'); }}
+          className="px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest hover:bg-primary-600 dark:hover:bg-primary-500 shadow-lg disabled:opacity-30 transition-all active:scale-95"
+        >
+          <TranslatedText text="Utilize" />
+        </button>
+      ),
+    },
+  ], [tSync]);
+
+  const logColumns: Column<CampaignLog>[] = useMemo(() => [
+    {
+      key: 'subject',
+      label: tSync('Subject Matter'),
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <p className="font-black text-slate-700 dark:text-slate-200 text-sm max-w-xs truncate">{log.subject}</p>
+      ),
+    },
+    {
+      key: 'recipientsCount',
+      label: tSync('Targets'),
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-black text-xs text-slate-500 dark:text-slate-400 tabular-nums">{log.recipientsCount}</span>
+      ),
+    },
+    {
+      key: 'sentCount',
+      label: tSync('Success'),
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-black text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800/50 tabular-nums">{log.sentCount}</span>
+      ),
+    },
+    {
+      key: 'failedCount',
+      label: tSync('Failures'),
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-black text-xs text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-lg border border-rose-100 dark:border-rose-800/50 tabular-nums">{log.failedCount}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: tSync('Execution Status'),
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <StatusBadge label={tSync(log.status)} status={log.status} />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: tSync('Timestamp'),
+      align: 'right',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-tighter tabular-nums">
+          {new Date(log.createdAt).toLocaleString()}
+        </span>
+      ),
+    },
+  ], [tSync]);
 
   return (
     <div className="space-y-6">
@@ -595,40 +698,20 @@ const TenantBulkEmail: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm transition-all shadow-slate-100 dark:shadow-none">
-              <table className="w-full">
-                <thead className="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
-                  <tr>
-                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Internal Template Name" /></th>
-                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Broadcast Subject" /></th>
-                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Operational Status" /></th>
-                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Action" /></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {templates.map(t => (
-                    <tr key={t.id} className="hover:bg-primary-50/20 dark:hover:bg-primary-900/10 transition-colors group">
-                      <td className="px-8 py-6 font-black text-slate-700 dark:text-slate-200 text-sm group-hover:text-primary-600 transition-colors">{t.name}</td>
-                      <td className="px-8 py-6 text-slate-500 dark:text-slate-400 text-sm max-w-sm truncate italic">{t.subject}</td>
-                      <td className="px-8 py-6 text-center">
-                        <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${t.isActive ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}`}>
-                          {t.isActive ? tSync('Active') : tSync('Inactive')}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right">
-                        <button
-                          disabled={!t.isActive}
-                          onClick={() => { setSelectedTemplate(t.id); setUseTemplate(true); setActiveTab('compose'); }}
-                          className="px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-black text-[10px] uppercase tracking-widest hover:bg-primary-600 dark:hover:bg-primary-500 shadow-lg disabled:opacity-30 transition-all active:scale-95"
-                        >
-                          <TranslatedText text="Utilize" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable
+              embedded
+              searchable={false}
+              columnVisibility={false}
+              pagination={false}
+              columns={templateColumns}
+              data={templates}
+              getRowId={(row) => row.id}
+              defaultSortKey="name"
+              stickyHeader
+              className="overflow-hidden rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm transition-all shadow-slate-100 dark:shadow-none"
+              emptyMessage={tSync('No Templates Available')}
+              ariaLabel="Communication templates"
+            />
           )}
         </div>
       )}
@@ -664,50 +747,22 @@ const TenantBulkEmail: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm transition-all shadow-slate-100 dark:shadow-none">
-              <table className="w-full">
-                <thead className="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
-                  <tr>
-                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Subject Matter" /></th>
-                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Targets" /></th>
-                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Success" /></th>
-                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Failures" /></th>
-                    <th className="px-8 py-5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Execution Status" /></th>
-                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Timestamp" /></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {logs.map(log => (
-                    <tr key={log.id} className="hover:bg-primary-50/20 dark:hover:bg-primary-900/10 transition-colors group">
-                      <td className="px-8 py-6">
-                        <p className="font-black text-slate-700 dark:text-slate-200 text-sm max-w-xs truncate group-hover:text-primary-600 transition-colors">{log.subject}</p>
-                      </td>
-                      <td className="px-8 py-6 text-center font-black text-xs text-slate-500 dark:text-slate-400 tabular-nums">{log.recipientsCount}</td>
-                      <td className="px-8 py-6 text-center">
-                        <span className="font-black text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800/50 tabular-nums">{log.sentCount}</span>
-                      </td>
-                      <td className="px-8 py-6 text-center">
-                        <span className="font-black text-xs text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-3 py-1 rounded-lg border border-rose-100 dark:border-rose-800/50 tabular-nums">{log.failedCount}</span>
-                      </td>
-                      <td className="px-8 py-6 text-center">
-                        <span className={`inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                          log.status === 'sent' || log.status === 'sending'
-                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                            : log.status === 'failed'
-                            ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'
-                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
-                        }`}>
-                          {tSync(log.status)}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6 text-right text-[10px] text-slate-400 dark:text-slate-500 font-black tracking-tighter tabular-nums">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable
+              embedded
+              searchable={false}
+              columnVisibility={false}
+              pagination={false}
+              loading={logsLoading}
+              columns={logColumns}
+              data={logs}
+              getRowId={(row) => row.id}
+              defaultSortKey="createdAt"
+              defaultSortDirection="desc"
+              stickyHeader
+              className="overflow-hidden rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm transition-all shadow-slate-100 dark:shadow-none"
+              emptyMessage={tSync('No Historical Data')}
+              ariaLabel="Campaign transmission audit"
+            />
           )}
         </div>
       )}

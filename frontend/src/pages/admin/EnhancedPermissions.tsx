@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import ModernLoader from '../../components/common/ModernLoader';
+import { StandardDataTable, type Column } from '../../components/EnliteUI/Tables';
 
 interface Permission {
     id: string;
@@ -429,6 +430,52 @@ const EnhancedPermissions: React.FC = () => {
         bulkAssignMutation.mutate({ roleId, permissionIds: newPermissionIds });
     };
 
+    const matrixColumns = useMemo((): Column<Permission>[] => {
+        const roles = matrixData?.roles ?? [];
+        return [
+            {
+                key: 'permission',
+                label: 'Permission Resource',
+                align: 'left',
+                sortable: false,
+                hideable: false,
+                alwaysVisible: true,
+                render: (_, permission) => (
+                    <div className="flex flex-col">
+                        <span className="font-bold text-slate-700 text-xs mb-0.5 group-hover:text-[#2c5173] transition-colors">
+                            {permission.resource}.{permission.action}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">{permission.description}</span>
+                    </div>
+                ),
+            },
+            ...roles.map((role: Role) => ({
+                key: role.id,
+                label: role.isSystem ? `${role.name} (system)` : role.name,
+                align: 'center' as const,
+                sortable: false,
+                hideable: false,
+                width: '100px',
+                render: (_: unknown, permission: Permission) => {
+                    const hasPermission = role.permissions.some((p: Permission) => p.id === permission.id);
+                    return (
+                        <button
+                            onClick={() => !role.isSystem && togglePermission(role.id, permission.id, role.permissions)}
+                            disabled={role.isSystem}
+                            title={role.isSystem ? 'System role — cannot modify' : hasPermission ? 'Revoke permission' : 'Grant permission'}
+                            className={`w-8 h-8 rounded-lg inline-flex items-center justify-center transition-all duration-200 ${hasPermission
+                                ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100'
+                                : 'bg-slate-50 text-slate-300 hover:bg-slate-100 hover:text-slate-400'
+                                } ${role.isSystem ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-110 active:scale-95'}`}
+                        >
+                            {hasPermission ? <Check size={14} strokeWidth={3} /> : <X size={14} />}
+                        </button>
+                    );
+                },
+            })),
+        ];
+    }, [matrixData?.roles, togglePermission]);
+
     if (matrixLoading && !matrixData) {
         return (
             <AdminPageLayout
@@ -512,52 +559,20 @@ const EnhancedPermissions: React.FC = () => {
                                 </div>
 
                                 {/* Matrix Table */}
-                                <div className="overflow-x-auto rounded-xl border border-slate-100">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-slate-50/80 border-b border-slate-100">
-                                            <tr>
-                                                <th className="px-6 py-4 text-left font-black text-[10px] text-slate-400 uppercase tracking-widest">Permission Resource</th>
-                                                {matrixData?.roles?.map((role: Role) => (
-                                                    <th key={role.id} className="px-4 py-4 text-center font-black text-[10px] text-slate-400 uppercase tracking-widest min-w-[100px]">
-                                                        {role.name}
-                                                        {role.isSystem && <Lock size={10} className="inline ml-1 text-[#2c5173]" />}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50 bg-white">
-                                            {matrixData?.permissions?.map((permission: Permission) => (
-                                                <tr key={permission.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-slate-700 text-xs mb-0.5 group-hover:text-[#2c5173] transition-colors">
-                                                                {permission.resource}.{permission.action}
-                                                            </span>
-                                                            <span className="text-[10px] text-slate-400 font-medium">{permission.description}</span>
-                                                        </div>
-                                                    </td>
-                                                    {matrixData?.roles?.map((role: Role) => {
-                                                        const hasPermission = role.permissions.some((p: Permission) => p.id === permission.id);
-                                                        return (
-                                                            <td key={role.id} className="px-4 py-3 text-center">
-                                                                <button
-                                                                    onClick={() => !role.isSystem && togglePermission(role.id, permission.id, role.permissions)}
-                                                                    disabled={role.isSystem}
-                                                                    className={`w-8 h-8 rounded-lg inline-flex items-center justify-center transition-all duration-200 ${hasPermission
-                                                                        ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100'
-                                                                        : 'bg-slate-50 text-slate-300 hover:bg-slate-100 hover:text-slate-400'
-                                                                        } ${role.isSystem ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-110 active:scale-95'}`}
-                                                                >
-                                                                    {hasPermission ? <Check size={14} strokeWidth={3} /> : <X size={14} />}
-                                                                </button>
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <StandardDataTable<Permission>
+                                    embedded
+                                    searchable={false}
+                                    pagination={false}
+                                    sortable={false}
+                                    columnVisibility={false}
+                                    columns={matrixColumns}
+                                    data={matrixData?.permissions ?? []}
+                                    getRowId={(row) => row.id}
+                                    loading={matrixLoading}
+                                    ariaLabel="Permission matrix"
+                                    className="rounded-xl border border-slate-100 overflow-hidden"
+                                    rowClassName={() => 'group'}
+                                />
                             </>
                         )}
                     </div>

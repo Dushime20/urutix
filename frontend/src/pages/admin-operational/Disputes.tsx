@@ -1,15 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Gavel, AlertTriangle, Search, Download,
+  Gavel, AlertTriangle,
   Eye, CheckCircle, XCircle, Hourglass, Scale,
   FileText, Flag, X, ChevronDown, RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { TranslatedText } from '../../components/translated-text';
 import { adminAPI, type AdminDispute } from '../../services/adminApi';
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
-import ModernLoader from '../../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -252,13 +251,10 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
 const OperationalAdminDisputes: React.FC = () => {
   const qc = useQueryClient();
 
-  const [searchTerm, setSearchTerm]       = useState('');
-  const [filterStatus, setFilterStatus]   = useState('');
   const [selectedDispute, setSelectedDispute] = useState<AdminDispute | null>(null);
   const [showDetails, setShowDetails]     = useState(false);
   const [resolveTarget, setResolveTarget] = useState<AdminDispute | null>(null);
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-disputes'],
     queryFn: () => adminAPI.getDisputes().then(r => r.data),
@@ -267,7 +263,6 @@ const OperationalAdminDisputes: React.FC = () => {
 
   const disputes: AdminDispute[] = data?.disputes || [];
 
-  // ── Mutation ───────────────────────────────────────────────────────────────
   const updateMutation = useMutation({
     mutationFn: ({ id, status, resolution }: { id: string; status: string; resolution?: string }) =>
       adminAPI.updateDisputeStatus(id, status, resolution),
@@ -283,19 +278,6 @@ const OperationalAdminDisputes: React.FC = () => {
     },
   });
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
-  const filtered = disputes.filter(d => {
-    const q = searchTerm.toLowerCase();
-    const matchSearch = !q ||
-      d.reason?.toLowerCase().includes(q) ||
-      d.id.toLowerCase().includes(q) ||
-      getDisplayName(d.raisedBy).toLowerCase().includes(q) ||
-      d.trip?.tripNumber?.toLowerCase().includes(q);
-    const matchStatus = !filterStatus || d.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
-
-  // ── Handlers ────────────────────────────────────────────────────────────────
   const onView = useCallback((dispute: AdminDispute) => {
     setSelectedDispute(dispute);
     setShowDetails(true);
@@ -315,131 +297,111 @@ const OperationalAdminDisputes: React.FC = () => {
     });
   }, [resolveTarget, updateMutation]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const columns: Column<AdminDispute>[] = useMemo(() => [
+    {
+      key: 'id',
+      label: 'ID',
+      render: (_v, row) => (
+        <span className="text-[10px] font-mono text-gray-500 dark:text-slate-400">{row.id.slice(0, 12)}...</span>
+      ),
+    },
+    {
+      key: 'raisedBy',
+      label: 'Raised By',
+      render: (_v, row) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">{getDisplayName(row.raisedBy)}</div>
+          {row.raisedBy?.role && (
+            <div className="text-[10px] text-gray-500 dark:text-slate-400 capitalize">{row.raisedBy.role.replace(/_/g, ' ')}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'reason',
+      label: 'Reason',
+      render: (_v, row) => (
+        <div className="text-sm text-gray-700 dark:text-slate-300 max-w-xs truncate">{row.reason || 'No reason'}</div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, row) => {
+        const cfg = getStatusCfg(row.status);
+        return (
+          <StatusBadge
+            status={row.status}
+            label={<>{cfg.icon} {cfg.label}</>}
+          />
+        );
+      },
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      sortable: true,
+      render: (_v, row) => (
+        <div>
+          <div className="text-xs text-gray-600 dark:text-slate-400">{formatDate(row.createdAt)}</div>
+          <div className="text-[10px] text-gray-400 dark:text-slate-500">{getTimeAgo(row.createdAt)}</div>
+        </div>
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<AdminDispute>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye className="w-4 h-4" />,
+      onClick: onView,
+    },
+  ], [onView]);
+
+  const tableData = useMemo(() =>
+    disputes.map((d) => ({
+      ...d,
+      raisedByName: getDisplayName(d.raisedBy),
+      tripNumber: d.trip?.tripNumber || '',
+    })),
+  [disputes]);
+
   return (
     <OperationalPageLayout
       title="Dispute Resolution"
       description="Manage and resolve platform disputes"
     >
-        {/* Controls */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 mb-6">
-          <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by reason, ID, user, or trip number..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-transparent dark:bg-slate-700 dark:text-white"
-              />
-            </div>
-            <div className="flex gap-3">
-              <select
-                value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-gray-200 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-transparent dark:bg-slate-700 dark:text-white"
-              >
-                <option value="">All Status</option>
-                <option value="OPEN">Open</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="ESCALATED">Escalated</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-              <button
-                onClick={() => refetch()}
-                className="px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors"
-              >
-                <RefreshCw className="w-4 h-4 text-gray-600 dark:text-slate-400" />
-              </button>
-              <button className="px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg transition-colors flex items-center gap-2">
-                <Download className="w-4 h-4 text-gray-600 dark:text-slate-400" />
-                <span className="text-sm text-gray-600 dark:text-slate-400">Export</span>
-              </button>
-            </div>
-          </div>
+      <StandardDataTable
+        columns={columns}
+        data={tableData}
+        loading={isLoading}
+        error={error ? 'Error loading disputes' : null}
+        onRetry={() => refetch()}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search by reason, ID, user, or trip number..."
+        searchKeys={['reason', 'id', 'raisedByName', 'tripNumber']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'OPEN', label: 'Open' },
+              { value: 'RESOLVED', label: 'Resolved' },
+              { value: 'ESCALATED', label: 'Escalated' },
+              { value: 'REJECTED', label: 'Rejected' },
+            ],
+          },
+        ]}
+        defaultSortKey="createdAt"
+        defaultSortDirection="desc"
+        rowActions={rowActions}
+        onRefresh={() => refetch()}
+        emptyMessage="No disputes found"
+        ariaLabel="Operational disputes"
+      />
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-slate-700/50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">ID</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Raised By</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Reason</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Status</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Created</th>
-                  <th className="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center">
-                      <ModernLoader isLoading={true} text="Loading disputes..." />
-                    </td>
-                  </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-red-600 dark:text-red-400">
-                      Error loading disputes
-                    </td>
-                  </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-slate-400">
-                      {disputes.length === 0 ? 'No disputes found' : 'No matches for your search'}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map(dispute => {
-                    const cfg = getStatusCfg(dispute.status);
-                    return (
-                      <tr key={dispute.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td className="px-4 py-3">
-                          <span className="text-[10px] font-mono text-gray-500 dark:text-slate-400">{dispute.id.slice(0, 12)}...</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">{getDisplayName(dispute.raisedBy)}</div>
-                          {dispute.raisedBy?.role && (
-                            <div className="text-[10px] text-gray-500 dark:text-slate-400 capitalize">{dispute.raisedBy.role.replace(/_/g, ' ')}</div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm text-gray-700 dark:text-slate-300 max-w-xs truncate">{dispute.reason || 'No reason'}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${cfg.color}`}>
-                            {cfg.icon} {cfg.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-xs text-gray-600 dark:text-slate-400">{formatDate(dispute.createdAt)}</div>
-                          <div className="text-[10px] text-gray-400 dark:text-slate-500">{getTimeAgo(dispute.createdAt)}</div>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => onView(dispute)}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-600 rounded-lg transition-colors"
-                          >
-                            <Eye className="w-4 h-4 text-gray-600 dark:text-slate-400" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Footer */}
-          <div className="px-4 py-3 bg-gray-50 dark:bg-slate-700/50 border-t border-gray-200 dark:border-slate-700 text-xs text-gray-500 dark:text-slate-400">
-            {filtered.length} of {disputes.length} disputes
-          </div>
-        </div>
-
-      {/* Modals */}
       {showDetails && selectedDispute && (
         <DetailModal
           dispute={selectedDispute}

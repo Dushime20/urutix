@@ -11,7 +11,7 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import { notificationApi } from '../../services/notifications/notificationApi';
 import type { Notification } from '../../services/notifications/notificationApi';
-import ModernLoader from '../../components/common/ModernLoader';
+import { StandardDataTable, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -170,7 +170,6 @@ const AdminNotificationsHub: React.FC = () => {
   });
 
   const notifications: Notification[] = data?.notifications ?? [];
-  const totalPages = data?.totalPages ?? 1;
   const total      = data?.total ?? 0;
 
   const markReadMut = useMutation({
@@ -199,12 +198,6 @@ const AdminNotificationsHub: React.FC = () => {
       toast.success('Marked as read');
     },
   });
-
-  const toggleSelect = (id: string) =>
-    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
-
-  const selectAll = () =>
-    setSelected(notifications.map(n => n.id));
 
   const clearFilter = () => {
     setSearch(''); setCategory(''); setStatus('');
@@ -283,140 +276,124 @@ const AdminNotificationsHub: React.FC = () => {
         )}
 
         {/* ── Table ─────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          {isLoading ? (
-            <div className="p-10"><ModernLoader isLoading type="table" /></div>
-          ) : notifications.length === 0 ? (
-            <div className="py-20 text-center">
-              <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <Bell className="w-7 h-7 text-gray-200" />
-              </div>
-              <p className="text-sm font-bold text-gray-400">No notifications found</p>
-              {hasFilter && (
-                <button onClick={clearFilter} className="mt-2 text-xs text-[#2c5173] font-bold hover:underline">
-                  Clear filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
-                  <tr>
-                    <th className="px-4 py-3 text-left">
-                      <input type="checkbox" className="rounded"
-                        checked={selected.length === notifications.length && notifications.length > 0}
-                        onChange={e => e.target.checked ? selectAll() : setSelected([])} />
-                    </th>
-                    {['Notification', 'Category', 'Priority', 'Status', 'Channels', 'Sent', ''].map(h => (
-                      <th key={h} className={`px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest ${h === '' ? 'text-right' : 'text-left'}`}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {notifications.map(n => {
-                    const statusCfg   = STATUS_CFG[n.status]      ?? { label: n.status,   cls: 'bg-gray-50 text-gray-600 border-gray-200' };
-                    const priorityCfg = PRIORITY_CFG[n.priority]  ?? { label: n.priority, cls: 'bg-gray-50 text-gray-500 border-gray-200' };
-                    const catCfg      = CATEGORY_CFG[n.category]  ?? { label: n.category, icon: <Bell size={11} />, dot: 'bg-gray-400' };
-                    const isUnread    = !n.readAt;
-                    return (
-                      <tr key={n.id} className={`transition-colors group ${isUnread ? 'bg-blue-50/30' : 'hover:bg-gray-50/60'}`}>
-                        <td className="px-4 py-3">
-                          <input type="checkbox" className="rounded"
-                            checked={selected.includes(n.id)}
-                            onChange={() => toggleSelect(n.id)} />
-                        </td>
-                        <td className="px-4 py-3 max-w-[260px]">
-                          <div className="flex items-start gap-2.5">
-                            {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
-                            <div className="min-w-0">
-                              <p className={`text-xs truncate ${isUnread ? 'font-black text-gray-900' : 'font-medium text-gray-700'}`}>{n.title}</p>
-                              <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[220px]">
-                                {n.shortMessage || n.message}
-                              </p>
-                              {n.requiresAction && (
-                                <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200">
-                                  <AlertTriangle size={8} /> Action Required
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-600">
-                            <span className={`w-1.5 h-1.5 rounded-full ${catCfg.dot}`} />
-                            {catCfg.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${priorityCfg.cls}`}>
-                            {priorityCfg.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${statusCfg.cls}`}>
-                            {statusCfg.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-0.5">
-                            {(n.channels ?? []).map((ch: string) => (
-                              <span key={ch} title={ch} className="text-sm">{notificationApi.getChannelIcon(ch)}</span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-[11px] text-gray-400 whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <Clock size={10} /> {fmtTime(n.createdAt)}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => setDetail(n)} title="View"
-                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#2c5173]">
-                              <Activity size={13} />
-                            </button>
-                            {isUnread && (
-                              <button onClick={() => markReadMut.mutate(n.id)} title="Mark read"
-                                disabled={markReadMut.isPending}
-                                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-green-50 text-green-600">
-                                <CheckCircle size={13} />
-                              </button>
-                            )}
-                            <button onClick={() => deleteMut.mutate(n.id)} title="Delete"
-                              disabled={deleteMut.isPending}
-                              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-500">
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* pagination */}
-          {totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-gray-50 bg-gray-50/50 flex items-center justify-between">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40">
-                  Prev
-                </button>
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-40">
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <StandardDataTable
+          embedded
+          loading={isLoading}
+          data={notifications}
+          getRowId={(n) => n.id}
+          searchable={false}
+          selectable
+          selectedIds={selected}
+          onSelectionChange={setSelected}
+          pagination
+          pageSize={25}
+          totalItems={total}
+          page={page}
+          onPageChange={setPage}
+          emptyMessage={hasFilter ? 'No notifications found. Try clearing filters.' : 'No notifications found'}
+          columns={[
+            {
+              key: 'title',
+              label: 'Notification',
+              render: (_: any, n: Notification) => {
+                const isUnread = !n.readAt;
+                return (
+                  <div className="flex items-start gap-2.5 max-w-[260px]">
+                    {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
+                    <div className="min-w-0">
+                      <p className={`text-xs truncate ${isUnread ? 'font-black text-gray-900' : 'font-medium text-gray-700'}`}>{n.title}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[220px]">
+                        {n.shortMessage || n.message}
+                      </p>
+                      {n.requiresAction && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200">
+                          <AlertTriangle size={8} /> Action Required
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'category',
+              label: 'Category',
+              render: (cat: string) => {
+                const catCfg = CATEGORY_CFG[cat] ?? { label: cat, icon: <Bell size={11} />, dot: 'bg-gray-400' };
+                return (
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-600">
+                    <span className={`w-1.5 h-1.5 rounded-full ${catCfg.dot}`} />
+                    {catCfg.label}
+                  </span>
+                );
+              },
+            },
+            {
+              key: 'priority',
+              label: 'Priority',
+              render: (p: string) => {
+                const priorityCfg = PRIORITY_CFG[p] ?? { label: p, cls: 'bg-gray-50 text-gray-500 border-gray-200' };
+                return (
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${priorityCfg.cls}`}>
+                    {priorityCfg.label}
+                  </span>
+                );
+              },
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              render: (s: string) => {
+                const statusCfg = STATUS_CFG[s] ?? { label: s, cls: 'bg-gray-50 text-gray-600 border-gray-200' };
+                return (
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${statusCfg.cls}`}>
+                    {statusCfg.label}
+                  </span>
+                );
+              },
+            },
+            {
+              key: 'channels',
+              label: 'Channels',
+              render: (channels: string[]) => (
+                <div className="flex gap-0.5">
+                  {(channels ?? []).map((ch: string) => (
+                    <span key={ch} title={ch} className="text-sm">{notificationApi.getChannelIcon(ch)}</span>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              key: 'createdAt',
+              label: 'Sent',
+              render: (ts: string) => (
+                <div className="flex items-center gap-1 text-[11px] text-gray-400 whitespace-nowrap">
+                  <Clock size={10} /> {fmtTime(ts)}
+                </div>
+              ),
+            },
+          ] as Column<Notification>[]}
+          rowActions={[
+            {
+              label: 'View',
+              icon: <Activity size={13} />,
+              onClick: (n) => setDetail(n),
+            },
+            {
+              label: 'Mark read',
+              icon: <CheckCircle size={13} />,
+              onClick: (n) => markReadMut.mutate(n.id),
+              hidden: (n) => !!n.readAt,
+            },
+            {
+              label: 'Delete',
+              icon: <Trash2 size={13} />,
+              onClick: (n) => deleteMut.mutate(n.id),
+              variant: 'danger',
+            },
+          ] as TableAction<Notification>[]}
+          rowClassName={(n) => (!n.readAt ? 'bg-blue-50/30' : '')}
+        />
       </div>
 
       {detail && <DetailModal n={detail} onClose={() => setDetail(null)} />}

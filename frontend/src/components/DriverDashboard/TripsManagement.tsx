@@ -37,6 +37,12 @@ import {
 import type { Trip } from '../../services/driverApi';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import {
+  StandardDataTable,
+  StatusBadge,
+  type Column,
+  type TableAction,
+} from '../EnliteUI/Tables';
 
 interface TripsManagementProps {
   driverId: string;
@@ -246,120 +252,132 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             {activeLoading ? (
               <div className="h-40 bg-white border border-slate-100 rounded-2xl animate-pulse" />
             ) : activeTrips.length > 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[880px]">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/80">
-                        {[
-                          { label: 'Mission', align: 'text-left' },
-                          { label: 'Route', align: 'text-left' },
-                          { label: 'Status', align: 'text-left' },
-                          { label: 'Progress', align: 'text-left' },
-                          { label: 'Distance', align: 'text-right' },
-                          { label: 'ETA', align: 'text-right' },
-                          { label: 'Cargo', align: 'text-right' },
-                          { label: 'Earnings', align: 'text-right' },
-                          { label: 'Actions', align: 'text-right' },
-                        ].map((h) => (
-                          <th
-                            key={h.label}
-                            className={cn(
-                              'px-4 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap',
-                              h.align
-                            )}
-                          >
-                            <TranslatedText text={h.label} />
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {activeTrips.map((trip) => (
-                        <tr
-                          key={trip.id}
-                          className="group hover:bg-slate-50/80 transition-colors"
-                        >
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span className="text-xs font-black text-primary-500 uppercase tracking-widest">
-                              ORD-{trip.tripNumber}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2 min-w-[160px]">
-                              <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
-                                {trip.origin.city}
-                              </span>
-                              <ArrowRight size={12} className="text-slate-300 shrink-0" />
-                              <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
-                                {trip.destination.city}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-primary-50 text-primary-600 border border-primary-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse" />
-                              <TranslatedText text="In Progress" />
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 min-w-[120px]">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-primary-500 rounded-full transition-all"
-                                  style={{ width: `${Math.min(100, Number(trip.progress) || 0)}%` }}
-                                />
-                              </div>
-                              <span className="text-[10px] font-black text-slate-500 tabular-nums w-8 text-right">
-                                {Number(trip.progress) || 0}%
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap">
-                            <span className="text-sm font-bold text-slate-700">
-                              {trip.distance} km
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap">
-                            <span className="text-sm font-medium text-slate-600">
-                              {formatShortDateTime(trip.estimatedArrival || trip.deliveryTime)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap">
-                            <span className="text-sm font-bold text-slate-700">
-                              {trip.cargo.weight.toLocaleString()} kg
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap">
-                            <span className="text-sm font-black text-slate-900">
-                              {formatCurrency(trip.earnings)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap">
-                            <div className="inline-flex items-center gap-2 justify-end">
-                              <button
-                                onClick={() => setSelectedTripDetail(trip.id)}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-white border border-slate-200 text-slate-600 hover:border-primary-200 hover:text-primary-500 transition-all"
-                                title={t('View trip details')}
-                              >
-                                <Eye size={13} />
-                                <TranslatedText text="Details" />
-                              </button>
-                              <button
-                                onClick={() => handleCompleteTrip(trip)}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-primary-500 text-white hover:bg-primary-600 transition-all"
-                              >
-                                <CheckCircle size={13} />
-                                <TranslatedText text="Complete" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <StandardDataTable<Trip>
+                embedded
+                columns={[
+                  {
+                    key: 'tripNumber',
+                    label: 'Mission',
+                    sortable: true,
+                    alwaysVisible: true,
+                    render: (_: any, trip: Trip) => (
+                      <span className="text-xs font-black text-primary-500 uppercase tracking-widest">
+                        ORD-{trip.tripNumber}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'origin.city',
+                    label: 'Route',
+                    render: (_: any, trip: Trip) => (
+                      <div className="flex items-center gap-2 min-w-[160px]">
+                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                          {trip.origin.city}
+                        </span>
+                        <ArrowRight size={12} className="text-slate-300 shrink-0" />
+                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                          {trip.destination.city}
+                        </span>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    render: () => (
+                      <StatusBadge
+                        status="in_progress"
+                        label={<TranslatedText text="In Progress" />}
+                        icon={<span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse" />}
+                      />
+                    ),
+                  },
+                  {
+                    key: 'progress',
+                    label: 'Progress',
+                    sortable: true,
+                    render: (_: any, trip: Trip) => (
+                      <div className="flex items-center gap-2 min-w-[120px]">
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary-500 rounded-full transition-all"
+                            style={{ width: `${Math.min(100, Number(trip.progress) || 0)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-500 tabular-nums w-8 text-right">
+                          {Number(trip.progress) || 0}%
+                        </span>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'distance',
+                    label: 'Distance',
+                    sortable: true,
+                    align: 'right',
+                    render: (value: number) => (
+                      <span className="text-sm font-bold text-slate-700">{value} km</span>
+                    ),
+                  },
+                  {
+                    key: 'estimatedArrival',
+                    label: 'ETA',
+                    align: 'right',
+                    render: (_: any, trip: Trip) => (
+                      <span className="text-sm font-medium text-slate-600">
+                        {formatShortDateTime(trip.estimatedArrival || trip.deliveryTime)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'cargo.weight',
+                    label: 'Cargo',
+                    align: 'right',
+                    render: (_: any, trip: Trip) => (
+                      <span className="text-sm font-bold text-slate-700">
+                        {trip.cargo.weight.toLocaleString()} kg
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'earnings',
+                    label: 'Earnings',
+                    sortable: true,
+                    align: 'right',
+                    render: (value: number) => (
+                      <span className="text-sm font-black text-slate-900">{formatCurrency(value)}</span>
+                    ),
+                  },
+                ] as Column<Trip>[]}
+                data={activeTrips}
+                getRowId={(row) => row.id}
+                searchable
+                searchPlaceholder="Search active trips…"
+                searchKeys={['tripNumber', 'origin.city', 'destination.city', 'status']}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage="No active trip"
+                rowActions={[
+                  {
+                    key: 'details',
+                    label: 'Details',
+                    icon: <Eye size={14} />,
+                    onClick: (trip) => setSelectedTripDetail(trip.id),
+                  },
+                  {
+                    key: 'complete',
+                    label: 'Complete',
+                    icon: <CheckCircle size={14} />,
+                    variant: 'success',
+                    onClick: (trip) => handleCompleteTrip(trip),
+                  },
+                ] as TableAction<Trip>[]}
+                ariaLabel="Active trips"
+              />
             ) : (
               <div className="bg-white rounded-2xl border border-dashed border-slate-200 py-12 px-6 text-center">
                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-100">
@@ -406,97 +424,111 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 ))}
               </div>
             ) : upcomingTrips && upcomingTrips.length > 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[800px]">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/80">
-                        {[
-                          { label: 'Mission', align: 'text-left' },
-                          { label: 'Route', align: 'text-left' },
-                          { label: 'Pickup', align: 'text-left' },
-                          { label: 'Delivery', align: 'text-left' },
-                          { label: 'Distance', align: 'text-right' },
-                          { label: 'Cargo', align: 'text-right' },
-                          { label: 'Actions', align: 'text-right' },
-                        ].map((h) => (
-                          <th
-                            key={h.label}
-                            className={cn(
-                              'px-4 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap',
-                              h.align
-                            )}
+              <StandardDataTable<Trip>
+                embedded
+                columns={[
+                  {
+                    key: 'tripNumber',
+                    label: 'Mission',
+                    sortable: true,
+                    alwaysVisible: true,
+                    render: (_: any, trip: Trip) => (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-primary-500 uppercase tracking-widest">
+                          ORD-{trip.tripNumber}
+                        </span>
+                        {trip.loadId && (
+                          <span
+                            className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${getInspectionStatusStyles(getLoadInspectionStatus(trip.loadId))}`}
                           >
-                            <TranslatedText text={h.label} />
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {upcomingTrips.map((trip) => (
-                        <tr key={trip.id} className="group hover:bg-slate-50/80 transition-colors">
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-black text-primary-500 uppercase tracking-widest">
-                                ORD-{trip.tripNumber}
-                              </span>
-                              {trip.loadId && (
-                                <span
-                                  className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${getInspectionStatusStyles(getLoadInspectionStatus(trip.loadId))}`}
-                                >
-                                  {getInspectionStatusLabel(getLoadInspectionStatus(trip.loadId))}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2 min-w-[160px]">
-                              <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
-                                {trip.origin.city}
-                              </span>
-                              <ArrowRight size={12} className="text-slate-300 shrink-0" />
-                              <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
-                                {trip.destination.city}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-600">
-                            {formatShortDateTime((trip as any).pickupTime || trip.scheduledDeparture)}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-600">
-                            {formatShortDateTime((trip as any).deliveryTime || trip.estimatedArrival)}
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap text-sm font-bold text-slate-700">
-                            {trip.distance} km
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap text-sm font-bold text-slate-700">
-                            {trip.cargo.weight.toLocaleString()} kg
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap">
-                            <div className="inline-flex items-center gap-2 justify-end">
-                              <button
-                                onClick={() => setSelectedTripDetail(trip.id)}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-white border border-slate-200 text-slate-600 hover:border-primary-200 hover:text-primary-500 transition-all"
-                                title={t('View trip details')}
-                              >
-                                <Eye size={13} />
-                                <TranslatedText text="Details" />
-                              </button>
-                              <button
-                                onClick={() => setSelectedTripForStart(trip)}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-primary-500 text-white hover:bg-primary-600 transition-all"
-                              >
-                                <TranslatedText text="Start Trip" />
-                                <ArrowRight size={13} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                            {getInspectionStatusLabel(getLoadInspectionStatus(trip.loadId))}
+                          </span>
+                        )}
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'origin.city',
+                    label: 'Route',
+                    render: (_: any, trip: Trip) => (
+                      <div className="flex items-center gap-2 min-w-[160px]">
+                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                          {trip.origin.city}
+                        </span>
+                        <ArrowRight size={12} className="text-slate-300 shrink-0" />
+                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                          {trip.destination.city}
+                        </span>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'scheduledDeparture',
+                    label: 'Pickup',
+                    render: (_: any, trip: Trip) => (
+                      <span className="text-sm font-medium text-slate-600">
+                        {formatShortDateTime((trip as any).pickupTime || trip.scheduledDeparture)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'estimatedArrival',
+                    label: 'Delivery',
+                    render: (_: any, trip: Trip) => (
+                      <span className="text-sm font-medium text-slate-600">
+                        {formatShortDateTime((trip as any).deliveryTime || trip.estimatedArrival)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'distance',
+                    label: 'Distance',
+                    sortable: true,
+                    align: 'right',
+                    render: (value: number) => (
+                      <span className="text-sm font-bold text-slate-700">{value} km</span>
+                    ),
+                  },
+                  {
+                    key: 'cargo.weight',
+                    label: 'Cargo',
+                    align: 'right',
+                    render: (_: any, trip: Trip) => (
+                      <span className="text-sm font-bold text-slate-700">
+                        {trip.cargo.weight.toLocaleString()} kg
+                      </span>
+                    ),
+                  },
+                ] as Column<Trip>[]}
+                data={upcomingTrips}
+                getRowId={(row) => row.id}
+                searchable
+                searchPlaceholder="Search upcoming trips…"
+                searchKeys={['tripNumber', 'origin.city', 'destination.city']}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage="No upcoming assignments"
+                rowActions={[
+                  {
+                    key: 'details',
+                    label: 'Details',
+                    icon: <Eye size={14} />,
+                    onClick: (trip) => setSelectedTripDetail(trip.id),
+                  },
+                  {
+                    key: 'start',
+                    label: 'Start Trip',
+                    icon: <ArrowRight size={14} />,
+                    variant: 'success',
+                    onClick: (trip) => setSelectedTripForStart(trip),
+                  },
+                ] as TableAction<Trip>[]}
+                ariaLabel="Upcoming trips"
+              />
             ) : (
               <div className="p-12 text-center bg-white rounded-[2rem] border border-slate-100 shadow-sm">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
@@ -536,66 +568,69 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 ))}
               </div>
             ) : tripHistory && tripHistory.length > 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[640px]">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/80">
-                        {[
-                          { label: 'Status', align: 'text-left' },
-                          { label: 'Route', align: 'text-left' },
-                          { label: 'Date', align: 'text-right' },
-                        ].map((h) => (
-                          <th
-                            key={h.label}
-                            className={cn(
-                              'px-4 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap',
-                              h.align
-                            )}
-                          >
-                            <TranslatedText text={h.label} />
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {tripHistory.map((trip) => (
-                        <tr key={trip.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle size={14} className="text-primary-500" />
-                              <span className="text-xs font-black text-primary-600 uppercase tracking-widest">
-                                <TranslatedText text="Completed" />
-                              </span>
-                              {trip.pod && (
-                                <span className="ml-1 px-2 py-0.5 bg-primary-50 text-primary-600 border border-primary-100 rounded text-[8px] font-black uppercase tracking-widest">
-                                  <TranslatedText text="POD SECURED" />
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
-                                {trip.origin.city}
-                              </span>
-                              <ArrowRight size={14} className="text-slate-300" />
-                              <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
-                                {trip.destination.city}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 text-right whitespace-nowrap">
-                            <span className="text-sm font-black text-slate-900 uppercase tracking-tight">
-                              {new Date(trip.actualArrival || trip.estimatedArrival).toLocaleDateString()}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <StandardDataTable<Trip>
+                embedded
+                columns={[
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    alwaysVisible: true,
+                    render: (_: any, trip: Trip) => (
+                      <div className="flex items-center gap-2">
+                        <StatusBadge
+                          status="completed"
+                          label={<TranslatedText text="Completed" />}
+                          icon={<CheckCircle size={12} />}
+                        />
+                        {trip.pod && (
+                          <span className="ml-1 px-2 py-0.5 bg-primary-50 text-primary-600 border border-primary-100 rounded text-[8px] font-black uppercase tracking-widest">
+                            <TranslatedText text="POD SECURED" />
+                          </span>
+                        )}
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'origin.city',
+                    label: 'Route',
+                    render: (_: any, trip: Trip) => (
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
+                          {trip.origin.city}
+                        </span>
+                        <ArrowRight size={14} className="text-slate-300" />
+                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
+                          {trip.destination.city}
+                        </span>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'actualArrival',
+                    label: 'Date',
+                    sortable: true,
+                    align: 'right',
+                    render: (_: any, trip: Trip) => (
+                      <span className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                        {new Date(trip.actualArrival || trip.estimatedArrival).toLocaleDateString()}
+                      </span>
+                    ),
+                  },
+                ] as Column<Trip>[]}
+                data={tripHistory}
+                getRowId={(row) => row.id}
+                searchable
+                searchPlaceholder="Search trip history…"
+                searchKeys={['tripNumber', 'origin.city', 'destination.city', 'status']}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage="No trip history"
+                ariaLabel="Previous missions"
+              />
             ) : (
               <div className="p-12 text-center bg-white rounded-[2rem] border border-slate-100 shadow-sm">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">

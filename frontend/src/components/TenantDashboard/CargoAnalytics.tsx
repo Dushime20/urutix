@@ -23,6 +23,7 @@ import { useCurrencyFormat } from "../../hooks/useCurrencyFormat";
 import FilterSelect from "@/components/common/FilterSelect";
 import { tenantApi } from '../../services/tenantApi';
 import { loadsAPI } from '../../services/load';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface CargoAnalyticsProps {
   tenantId?: string;
@@ -108,22 +109,6 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
     return filtered;
   }, [loads, selectedFilter, searchTerm]);
 
-  const getStatusColor = (status: string) => {
-    const normalizedStatus = status?.toLowerCase();
-    switch (normalizedStatus) {
-      case 'draft': return 'text-slate-500 bg-slate-50 border-slate-100';
-      case 'created': return 'text-primary-600 bg-primary-50 border-primary-100';
-      case 'published': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-      case 'completed':
-      case 'delivered': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-      case 'in-transit':
-      case 'in_transit': return 'text-sky-600 bg-sky-50 border-sky-100';
-      case 'assigned': return 'text-amber-600 bg-amber-50 border-amber-100';
-      case 'cancelled': return 'text-rose-600 bg-rose-50 border-rose-100';
-      default: return 'text-slate-500 bg-slate-50 border-slate-100 dark:bg-slate-900/50';
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     const normalizedStatus = status?.toLowerCase();
     switch (normalizedStatus) {
@@ -139,6 +124,94 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
       default: return <Clock className="w-3 h-3" />;
     }
   };
+
+  const loadColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'id',
+      label: tSync('Shipment ID'),
+      render: (_: unknown, load: any) => (
+        <span className="text-sm font-black text-slate-800 dark:text-slate-100">{load.id}</span>
+      ),
+    },
+    {
+      key: 'cargoType',
+      label: tSync('Category'),
+      render: (_: unknown, load: any) => (
+        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{tSync(load.cargoType || 'General')}</span>
+      ),
+    },
+    {
+      key: 'route',
+      label: tSync('Route'),
+      render: (_: unknown, load: any) => {
+        const origin = load.pickupLocation?.locationData?.city || load.pickupLocation?.locationData?.name || 'Unknown';
+        const destination = load.deliveryLocation?.locationData?.city || load.deliveryLocation?.locationData?.name || 'Unknown';
+        return (
+          <div className="flex items-center">
+            <FaMapMarkerAlt className="w-3.5 h-3.5 text-primary-400 mr-2.5" />
+            <div>
+              <div className="text-[13px] font-black text-slate-800 dark:text-slate-200">{tSync(origin)}</div>
+              <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">→ {tSync(destination)}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'status',
+      label: tSync('Status'),
+      render: (_: unknown, load: any) => (
+        <StatusBadge
+          status={load.status}
+          label={
+            <span className="inline-flex items-center gap-1.5">
+              {getStatusIcon(load.status)}
+              {tSync(load.status)}
+            </span>
+          }
+        />
+      ),
+    },
+    {
+      key: 'weight',
+      label: tSync('Weight'),
+      render: (_: unknown, load: any) => (
+        <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
+          {load.weight ? `${load.weight} kg` : 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'loadValue',
+      label: tSync('Income'),
+      render: (_: unknown, load: any) => (
+        <span className="text-sm font-black text-slate-800 dark:text-slate-100">{formatFullCurrency(load.loadValue || 0)}</span>
+      ),
+    },
+    {
+      key: 'assignedDriver',
+      label: tSync('Truck/Driver'),
+      render: (_: unknown, load: any) => {
+        const driver = load.assignedDriver ? `${load.assignedDriver.firstName || ''} ${load.assignedDriver.lastName || ''}`.trim() : 'Unassigned';
+        const truck = load.assignedTruck?.plateNumber || 'N/A';
+        return (
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{driver}</span>
+            <span className="text-[11px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{truck}</span>
+          </div>
+        );
+      },
+    },
+  ], [tSync, formatFullCurrency]);
+
+  const loadRowActions: TableAction<any>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: tSync('View'),
+      icon: <Eye className="w-4 h-4" />,
+      onClick: () => {},
+    },
+  ], [tSync]);
 
   // formatCurrency and formatFullCurrency provided by useCurrencyFormat hook above
 
@@ -231,17 +304,6 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
     }
   };
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  const totalPages = Math.ceil(filteredLoads.length / itemsPerPage);
-  
-  const paginatedLoads = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredLoads.slice(start, start + itemsPerPage);
-  }, [filteredLoads, currentPage]);
-
-  // Show loading state
   if (metricsLoading || loadsLoading) {
     return (
       <div className="space-y-10">
@@ -360,100 +422,25 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-50 dark:divide-slate-800">
-            <thead className="bg-gray-50/50 dark:bg-slate-800/10">
-              <tr>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Shipment ID" /></th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Category" /></th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Route" /></th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Status" /></th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Weight" /></th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Income" /></th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Truck/Driver" /></th>
-                <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right"><TranslatedText text="Actions" /></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-50 dark:divide-slate-800">
-              {paginatedLoads.map((load: any) => {
-                const origin = load.pickupLocation?.locationData?.city || load.pickupLocation?.locationData?.name || 'Unknown';
-                const destination = load.deliveryLocation?.locationData?.city || load.deliveryLocation?.locationData?.name || 'Unknown';
-                const weight = load.weight ? `${load.weight} kg` : 'N/A';
-                const driver = load.assignedDriver ? `${load.assignedDriver.firstName || ''} ${load.assignedDriver.lastName || ''}`.trim() : 'Unassigned';
-                const truck = load.assignedTruck?.plateNumber || 'N/A';
-                
-                return (
-                  <tr key={load.id} className="hover:bg-primary-50/10 dark:hover:bg-primary-900/10 transition-colors">
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <span className="text-sm font-black text-slate-800 dark:text-slate-100">{load.id}</span>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{tSync(load.cargoType || 'General')}</span>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <FaMapMarkerAlt className="w-3.5 h-3.5 text-primary-400 mr-2.5" />
-                        <div>
-                          <div className="text-[13px] font-black text-slate-800 dark:text-slate-200">{tSync(origin)}</div>
-                          <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">→ {tSync(destination)}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(load.status)} dark:bg-slate-900/50`}>
-                        {getStatusIcon(load.status)}
-                        <span className="ml-1.5">{tSync(load.status)}</span>
-                      </span>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">
-                      {weight}
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap text-sm font-black text-slate-800 dark:text-slate-100">
-                      {formatFullCurrency(load.loadValue || 0)}
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-400">{driver}</span>
-                        <span className="text-[11px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest">{truck}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 whitespace-nowrap text-right">
-                      <button className="p-2 text-slate-400 dark:text-slate-600 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 rounded-lg transition-all">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="px-8 pb-6">
+          <StandardDataTable
+            embedded
+            columns={loadColumns}
+            data={filteredLoads}
+            loading={loadsLoading}
+            getRowId={(row) => row.id}
+            searchable={false}
+            pagination
+            pageSize={5}
+            columnVisibility
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage="No cargo loads match your filters"
+            rowActions={loadRowActions}
+            ariaLabel="Cargo loads"
+          />
         </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="px-8 py-4 bg-gray-50/30 dark:bg-slate-800/20 border-t border-gray-50 dark:border-slate-800 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest">
-              <TranslatedText text="Showing page" /> {currentPage} <TranslatedText text="of" /> {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 disabled:opacity-50 transition-all hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 shadow-sm"
-              >
-                <TranslatedText text="Prev" />
-              </button>
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 disabled:opacity-50 transition-all hover:bg-primary-50 dark:hover:bg-slate-800 hover:text-primary-600 dark:hover:text-primary-400 shadow-sm"
-              >
-                <TranslatedText text="Next" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

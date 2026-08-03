@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import {
     Shield,
-    Search,
-    Filter,
     ArrowUpRight,
     User,
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import LoanDetailModal from './LoanDetailModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -78,19 +75,7 @@ const RiskAnalysisEnlite: React.FC<RiskAnalysisEnliteProps> = ({
     const formatAmount = (amount: number | null): string =>
         amount === null ? '—' : fmtCurrency(amount);
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [tierFilter, setTierFilter] = useState('all');
     const [detailLoan, setDetailLoan] = useState<any | null>(null);
-
-    const filtered = entries.filter(e => {
-        const q = searchTerm.toLowerCase();
-        const matchSearch =
-            (e.borrowerName ?? '').toLowerCase().includes(q) ||
-            (e.businessName ?? '').toLowerCase().includes(q) ||
-            e.loanId.toLowerCase().includes(q);
-        const matchTier = tierFilter === 'all' || e.riskTier === tierFilter;
-        return matchSearch && matchTier;
-    });
 
     const columns = [
         {
@@ -184,62 +169,39 @@ const RiskAnalysisEnlite: React.FC<RiskAnalysisEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            <DataCard
+            <StandardDataTable
                 title="Risk Queue"
                 subtitle="Portfolio risk analysis based on verified loan and borrower data"
                 icon={<Shield className="w-5 h-5" />}
                 headerColor="primary"
-                actions={
-                    <div className="flex items-center gap-2">
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" size={14} />
-                            <input
-                                type="text"
-                                placeholder="SEARCH BORROWERS..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="w-48 lg:w-56 pl-9 pr-3 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
-                            />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Filter size={14} className="text-white/70" />
-                            <select
-                                value={tierFilter}
-                                onChange={e => setTierFilter(e.target.value)}
-                                className="px-2.5 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white focus:outline-none"
-                            >
-                                <option value="all" className="text-slate-900">ALL TIERS</option>
-                                <option value="low" className="text-slate-900">LOW</option>
-                                <option value="medium" className="text-slate-900">MEDIUM</option>
-                                <option value="high" className="text-slate-900">HIGH</option>
-                                <option value="critical" className="text-slate-900">CRITICAL</option>
-                            </select>
-                        </div>
-                    </div>
-                }
-            >
-                <div className="space-y-4">
-                    <div className="relative md:hidden">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Search borrowers..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173]"
-                        />
-                    </div>
-
-                    <EnhancedTable
-                        columns={columns}
-                        data={filtered}
-                        loading={loading}
-                        striped
-                        hoverable
-                        emptyMessage="No loans match the current filters"
-                    />
-                </div>
-            </DataCard>
+                columns={columns}
+                data={entries}
+                loading={loading}
+                getRowId={(row) => row.loanId}
+                searchable
+                searchPlaceholder="Search borrowers…"
+                searchKeys={['borrowerName', 'businessName', 'loanId', 'status', 'purpose']}
+                filters={[
+                    {
+                        key: 'riskTier',
+                        label: 'Risk Tier',
+                        options: [
+                            { value: 'low', label: 'Low' },
+                            { value: 'medium', label: 'Medium' },
+                            { value: 'high', label: 'High' },
+                            { value: 'critical', label: 'Critical' },
+                        ],
+                    },
+                ]}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage="No loans match the current filters"
+                ariaLabel="Risk Queue"
+            />
 
             {detailLoan && (
                 <LoanDetailModal

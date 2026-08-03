@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { loadsAPI } from '../../services/load';
-import { useAuth } from '../../contexts/AuthContext';
 import EnhancedCargoForm from '../../pages/dashboard/cargos/create/components/form';
 import type { ICargoBody } from '../../pages/dashboard/cargos/create/types/cargo';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -11,8 +10,6 @@ import {
   FaPlus,
   FaEdit,
   FaTrash,
-  FaSearch,
-  FaFilter,
   FaMapMarkerAlt,
   FaWeight,
   FaCube,
@@ -26,6 +23,7 @@ import {
   FaTruck,
   FaUser
 } from 'react-icons/fa';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface CargoLoad {
   id: string;
@@ -76,21 +74,15 @@ interface CargoStats {
 }
 
 const TenantAdminCargo: React.FC = () => {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { confirm, DialogComponent } = useConfirmDialog();
 
   // State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [cargoTypeFilter, setCargoTypeFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedCargo, setSelectedCargo] = useState<CargoLoad | null>(null);
   const [editingCargo, setEditingCargo] = useState<CargoLoad | null>(null);
-  const [sortBy, setSortBy] = useState<'title' | 'weight' | 'status' | 'createdAt'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Form state for simple edit modal (keeping for backward compatibility)
   const [formData, setFormData] = useState({
@@ -220,62 +212,7 @@ const TenantAdminCargo: React.FC = () => {
     };
   }, [cargoLoads]);
 
-  // Filter and sort cargo
-  const filteredAndSortedCargo = useMemo(() => {
-    const filtered = cargoLoads.filter((cargo) => {
-      const matchesSearch =
-        !searchTerm ||
-        cargo.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cargo.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cargo.cargoType?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === 'all' || cargo.status?.toUpperCase() === statusFilter.toUpperCase();
-
-      const matchesCargoType =
-        cargoTypeFilter === 'all' ||
-        cargo.cargoType?.toUpperCase() === cargoTypeFilter.toUpperCase();
-
-      return matchesSearch && matchesStatus && matchesCargoType;
-    });
-
-    // Sort
-    filtered.sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-
-      switch (sortBy) {
-        case 'title':
-          aValue = a.title || '';
-          bValue = b.title || '';
-          break;
-        case 'weight':
-          aValue = typeof a.weight === 'number' ? a.weight : Number(a.weight) || 0;
-          bValue = typeof b.weight === 'number' ? b.weight : Number(b.weight) || 0;
-          break;
-        case 'status':
-          aValue = a.status || '';
-          bValue = b.status || '';
-          break;
-        case 'createdAt':
-          aValue = new Date(a.createdAt || 0).getTime();
-          bValue = new Date(b.createdAt || 0).getTime();
-          break;
-        default:
-          return 0;
-      }
-
-      if (typeof aValue === 'string') {
-        return sortOrder === 'asc'
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-    });
-
-    return filtered;
-  }, [cargoLoads, searchTerm, statusFilter, cargoTypeFilter, sortBy, sortOrder]);
+  // Filter and sort cargo — handled by StandardDataTable
 
   const resetForm = () => {
     setFormData({
@@ -428,6 +365,114 @@ const TenantAdminCargo: React.FC = () => {
     return 'bg-gray-100 text-gray-800';
   };
 
+  const getUrgencyVariant = (urgency?: string) => {
+    const u = (urgency || '').toUpperCase();
+    if (u === 'CRITICAL') return 'error' as const;
+    if (u === 'HIGH') return 'orange' as const;
+    if (u === 'NORMAL') return 'info' as const;
+    if (u === 'LOW') return 'neutral' as const;
+    return 'neutral' as const;
+  };
+
+  const columns: Column<CargoLoad>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Cargo Title',
+      alwaysVisible: true,
+      render: (_v, cargo) => (
+        <div>
+          <div className="font-medium text-gray-900 dark:text-slate-100">{cargo.title}</div>
+          {cargo.description && (
+            <div className="text-sm text-gray-500 truncate max-w-xs">{cargo.description}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'cargoType',
+      label: 'Type',
+      render: (_v, cargo) => (
+        <span className="text-sm text-gray-700 dark:text-slate-300">{cargo.cargoType || 'GENERAL'}</span>
+      ),
+    },
+    {
+      key: 'weight',
+      label: 'Weight',
+      render: (_v, cargo) => (
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <FaWeight className="w-4 h-4 text-gray-400" />
+          {typeof cargo.weight === 'number' ? `${cargo.weight} kg` : `${Number(cargo.weight) || 0} kg`}
+        </div>
+      ),
+    },
+    {
+      key: 'loadValue',
+      label: 'Value',
+      render: (_v, cargo) => (
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+          <FaDollarSign className="w-4 h-4 text-gray-400" />
+          {cargo.currencyCode || 'USD'}{' '}
+          {typeof cargo.loadValue === 'number'
+            ? cargo.loadValue.toFixed(2)
+            : (Number(cargo.loadValue) || 0).toFixed(2)}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, cargo) => (
+        <StatusBadge
+          status={cargo.status}
+          label={(cargo.status || 'DRAFT').replace(/_/g, ' ')}
+        />
+      ),
+    },
+    {
+      key: 'urgencyLevel',
+      label: 'Urgency',
+      render: (_v, cargo) => (
+        <StatusBadge
+          variant={getUrgencyVariant(cargo.urgencyLevel)}
+          label={(cargo.urgencyLevel || 'NORMAL').toUpperCase()}
+        />
+      ),
+    },
+    {
+      key: 'cargoOwner',
+      label: 'Owner',
+      sortable: false,
+      render: (_v, cargo) => (
+        <span className="text-sm text-gray-700 dark:text-slate-300">
+          {cargo.cargoOwner?.profile?.companyName || cargo.cargoOwner?.email || 'N/A'}
+        </span>
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<CargoLoad>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <FaEye className="w-3.5 h-3.5" />,
+      onClick: (cargo) => openDetailsModal(cargo),
+    },
+    {
+      key: 'edit',
+      label: 'Edit Cargo',
+      icon: <FaEdit className="w-3.5 h-3.5" />,
+      onClick: (cargo) => openEditModal(cargo),
+    },
+    {
+      key: 'delete',
+      label: 'Delete Cargo',
+      icon: <FaTrash className="w-3.5 h-3.5" />,
+      variant: 'danger',
+      divider: true,
+      onClick: (cargo) => handleDelete(cargo),
+    },
+  ], []);
+
   if (cargoLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -469,213 +514,53 @@ const TenantAdminCargo: React.FC = () => {
 
       </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <div className="relative sm:col-span-2 lg:col-span-1">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search cargo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          >
-            <option value="all">All Status</option>
-            <option value="DRAFT">Draft</option>
-            <option value="PENDING">Pending</option>
-            <option value="ACTIVE">Active</option>
-            <option value="IN_TRANSIT">In Transit</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="DELIVERED">Delivered</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-          <select
-            value={cargoTypeFilter}
-            onChange={(e) => setCargoTypeFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          >
-            <option value="all">All Types</option>
-            <option value="GENERAL">General</option>
-            <option value="FRAGILE">Fragile</option>
-            <option value="HAZARDOUS">Hazardous</option>
-            <option value="REFRIGERATED">Refrigerated</option>
-            <option value="OVERSIZED">Oversized</option>
-          </select>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-          >
-            <option value="createdAt">Sort by Date</option>
-            <option value="title">Sort by Title</option>
-            <option value="weight">Sort by Weight</option>
-            <option value="status">Sort by Status</option>
-          </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
-          >
-            <FaFilter className="w-4 h-4" />
-            {sortOrder === 'asc' ? 'Asc' : 'Desc'}
-          </button>
-        </div>
-      </div>
-
       {/* Cargo Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {cargoError ? (
-          <div className="p-6 text-center">
-            <div className="text-red-600 mb-2">Failed to load cargo</div>
-            <button
-              onClick={() => refetchCargo()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Retry
-            </button>
-          </div>
-        ) : filteredAndSortedCargo.length === 0 ? (
-          <div className="p-12 text-center">
-            <FaBox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg mb-2">No cargo loads found</p>
-            <p className="text-gray-500 text-sm mb-4">
-              {searchTerm || statusFilter !== 'all' || cargoTypeFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Create your first cargo load to get started'}
-            </p>
-            {!searchTerm && statusFilter === 'all' && cargoTypeFilter === 'all' && (
-              <button
-                onClick={openCreateModal}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Create Cargo
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cargo Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Weight
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Value
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Urgency
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Owner
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredAndSortedCargo.map((cargo) => (
-                  <tr key={cargo.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{cargo.title}</div>
-                      {cargo.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {cargo.description}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {cargo.cargoType || 'GENERAL'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <FaWeight className="w-4 h-4 text-gray-400" />
-                        {typeof cargo.weight === 'number'
-                          ? `${cargo.weight} kg`
-                          : `${Number(cargo.weight) || 0} kg`}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <FaDollarSign className="w-4 h-4 text-gray-400" />
-                        {cargo.currencyCode || 'USD'}{' '}
-                        {typeof cargo.loadValue === 'number'
-                          ? cargo.loadValue.toFixed(2)
-                          : (Number(cargo.loadValue) || 0).toFixed(2)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          cargo.status,
-                        )}`}
-                      >
-                        {getStatusIcon(cargo.status)}
-                        {(cargo.status || 'DRAFT').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getUrgencyColor(
-                          cargo.urgencyLevel,
-                        )}`}
-                      >
-                        {(cargo.urgencyLevel || 'NORMAL').toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {cargo.cargoOwner?.profile?.companyName ||
-                        cargo.cargoOwner?.email ||
-                        'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openDetailsModal(cargo)}
-                          className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded transition-colors"
-                          title="View Details"
-                        >
-                          <FaEye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(cargo)}
-                          className="text-gray-600 hover:text-gray-900 p-2 hover:bg-gray-50 rounded transition-colors"
-                          title="Edit Cargo"
-                        >
-                          <FaEdit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cargo)}
-                          className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded transition-colors"
-                          title="Delete Cargo"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <StandardDataTable
+        title="Cargo Loads"
+        subtitle="Search, filter, and manage tenant cargo"
+        icon={<FaBox className="w-5 h-5" />}
+        headerColor="primary"
+        columns={columns}
+        data={cargoLoads}
+        loading={cargoLoading}
+        error={cargoError ? 'Failed to load cargo' : null}
+        onRetry={() => refetchCargo()}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search cargo..."
+        searchKeys={['title', 'description', 'cargoType', 'status']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'DRAFT', label: 'Draft' },
+              { value: 'PENDING', label: 'Pending' },
+              { value: 'ACTIVE', label: 'Active' },
+              { value: 'IN_TRANSIT', label: 'In Transit' },
+              { value: 'COMPLETED', label: 'Completed' },
+              { value: 'DELIVERED', label: 'Delivered' },
+              { value: 'CANCELLED', label: 'Cancelled' },
+            ],
+          },
+          {
+            key: 'cargoType',
+            label: 'Type',
+            options: [
+              { value: 'GENERAL', label: 'General' },
+              { value: 'FRAGILE', label: 'Fragile' },
+              { value: 'HAZARDOUS', label: 'Hazardous' },
+              { value: 'REFRIGERATED', label: 'Refrigerated' },
+              { value: 'OVERSIZED', label: 'Oversized' },
+            ],
+          },
+        ]}
+        defaultSortKey="createdAt"
+        defaultSortDirection="desc"
+        rowActions={rowActions}
+        onRefresh={() => refetchCargo()}
+        emptyMessage="No cargo loads match your current filters"
+        ariaLabel="Tenant cargo loads"
+      />
 
       {/* Enhanced Cargo Form Modal */}
       {showEnhancedForm && (

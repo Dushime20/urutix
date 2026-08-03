@@ -1030,6 +1030,28 @@ class DriverApiService {
     return response.data;
   }
 
+  async completeTruckPreTripInspection(
+    driverId: string,
+    loadId: string,
+    payload: {
+      checklist?: Array<{ id: string; label: string; verified: boolean; notes?: string }>;
+      notes?: string;
+      documents?: Array<{
+        id: string;
+        url: string;
+        type: 'photo' | 'document' | 'signature';
+        label?: string;
+        uploadedAt: string;
+      }>;
+    },
+  ): Promise<any> {
+    const response = await api.post(
+      `/drivers/${driverId}/loads/${loadId}/pre-trip-inspection/truck`,
+      payload,
+    );
+    return response.data;
+  }
+
   async submitPreTripInspection(
     driverId: string,
     loadId: string,

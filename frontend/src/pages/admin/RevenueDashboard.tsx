@@ -3,7 +3,7 @@
  * Route: /admin/revenue
  * Layout: AdminPageLayout (AdminLayout)
  */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, BarChart3, Calendar } from 'lucide-react';
 import { revenueApi } from '../../services/featuresApi';
@@ -11,6 +11,13 @@ import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import ModernLoader from '../../components/common/ModernLoader';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, type Column } from '../../components/EnliteUI/Tables';
+
+interface TenantRevenueRow {
+  tenantId: string;
+  gmv: number;
+  fees: number;
+}
 
 const RevenueDashboard: React.FC = () => {
   const [from, setFrom] = useState('');
@@ -23,7 +30,45 @@ const RevenueDashboard: React.FC = () => {
 
   const { format: fmt } = useCurrencyFormat();
 
-  // fmt now respects user's preferred currency and converts from USD
+  const tenantRows: TenantRevenueRow[] = Array.isArray(data?.byTenant) ? data.byTenant : [];
+
+  const columns: Column<TenantRevenueRow>[] = useMemo(() => [
+    {
+      key: 'tenantId',
+      label: 'Tenant ID',
+      alwaysVisible: true,
+      render: (_v, t) => (
+        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+          {t.tenantId?.slice(0, 16)}...
+        </span>
+      ),
+    },
+    {
+      key: 'gmv',
+      label: 'GMV',
+      sortable: true,
+      render: (_v, t) => (
+        <span className="font-black text-slate-900 dark:text-white text-xs">{fmt(t.gmv)}</span>
+      ),
+    },
+    {
+      key: 'fees',
+      label: 'Platform Fees',
+      sortable: true,
+      render: (_v, t) => (
+        <span className="font-black text-primary-600 dark:text-primary-400 text-xs">{fmt(t.fees)}</span>
+      ),
+    },
+    {
+      key: 'feeRate',
+      label: 'Fee Rate',
+      render: (_v, t) => (
+        <span className="bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-lg font-black text-xs">
+          {t.gmv > 0 ? `${((t.fees / t.gmv) * 100).toFixed(2)}%` : '—'}
+        </span>
+      ),
+    },
+  ], [fmt]);
 
   return (
     <AdminPageLayout
@@ -102,42 +147,22 @@ const RevenueDashboard: React.FC = () => {
           </div>
 
           {/* Per-Tenant Breakdown */}
-          {data?.byTenant?.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-                <Building2 size={16} className="text-primary-600 dark:text-primary-400" />
-                <h2 className="font-black text-slate-900 dark:text-white text-sm uppercase tracking-tight">
-                  <TranslatedText text="Revenue by Tenant" />
-                </h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800/50">
-                    <tr>
-                      {['Tenant ID', 'GMV', 'Platform Fees', 'Fee Rate'].map(h => (
-                        <th key={h} className="px-6 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          <TranslatedText text={h} />
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {data.byTenant.map((t: any) => (
-                      <tr key={t.tenantId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs text-slate-500 dark:text-slate-400">{t.tenantId.slice(0, 16)}...</td>
-                        <td className="px-6 py-4 font-black text-slate-900 dark:text-white text-xs">{fmt(t.gmv)}</td>
-                        <td className="px-6 py-4 font-black text-primary-600 dark:text-primary-400 text-xs">{fmt(t.fees)}</td>
-                        <td className="px-6 py-4 text-xs">
-                          <span className="bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-lg font-black">
-                            {t.gmv > 0 ? `${((t.fees / t.gmv) * 100).toFixed(2)}%` : '—'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          {tenantRows.length > 0 && (
+            <StandardDataTable
+              title={<TranslatedText text="Revenue by Tenant" />}
+              icon={<Building2 size={16} className="text-primary-600 dark:text-primary-400" />}
+              columns={columns}
+              data={tenantRows}
+              getRowId={(row) => row.tenantId}
+              searchable
+              searchPlaceholder="Search tenants..."
+              searchKeys={['tenantId']}
+              pagination
+              columnVisibility
+              stickyHeader
+              emptyMessage="No tenant revenue data"
+              ariaLabel="Revenue by tenant"
+            />
           )}
         </div>
       )}

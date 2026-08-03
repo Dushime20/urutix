@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { FaTruck, FaPlus, FaRoute, FaList, FaSpinner, FaEye, FaMapMarkerAlt, FaSync, FaSearch } from 'react-icons/fa';
@@ -13,6 +13,7 @@ import { getApiErrorMessage } from '../config/errorMessages';import { cn } from 
 import { formatLocation } from '../utils/formatLocation';
 import { DetailedErrorBoundary } from '../components/DetailedErrorBoundary';
 import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, type Column } from '../components/EnliteUI/Tables';
 
 const UnifiedFleetManagement: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
@@ -47,8 +48,6 @@ const UnifiedFleetManagement: React.FC = () => {
     setShowTruckForm(true);
     setActiveTab('add-truck');
   };
-
-
 
   const handleTruckFormClose = () => {
     setShowTruckForm(false);
@@ -101,6 +100,64 @@ const UnifiedFleetManagement: React.FC = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const filteredViewTrucks = useMemo(() => {
+    if (!viewTrucksSearch) return trucks;
+    const searchLower = viewTrucksSearch.toLowerCase();
+    return trucks.filter((truck) =>
+      truck.plateNumber?.toLowerCase().includes(searchLower) ||
+      truck.truckType?.toLowerCase().includes(searchLower) ||
+      truck.capacityWeight?.toString().includes(searchLower) ||
+      (typeof truck.currentLocation === 'string'
+        ? truck.currentLocation.toLowerCase().includes(searchLower)
+        : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
+    );
+  }, [trucks, viewTrucksSearch]);
+
+  const viewTruckColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'plateNumber',
+      label: 'Plate Number',
+      render: (_: unknown, truck: any) => (
+        <div className="flex items-center gap-2">
+          <FaTruck className="w-4 h-4 text-gray-400" />
+          <span className="font-medium text-gray-900">{truck.plateNumber || 'N/A'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'truckType',
+      label: 'Truck Type',
+      render: (_: unknown, truck: any) => (
+        <span className="text-gray-700">{truck.truckType ? truck.truckType.replace(/_/g, ' ') : 'N/A'}</span>
+      ),
+    },
+    {
+      key: 'capacityWeight',
+      label: 'Max Weight',
+      render: (_: unknown, truck: any) => (
+        <span className="text-gray-700">
+          {truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'currentLocation',
+      label: 'Current Location',
+      render: (_: unknown, truck: any) => (
+        <div className="flex items-center gap-2">
+          <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
+          <span className="text-gray-700">
+            {truck.currentLocation
+              ? (typeof truck.currentLocation === 'string'
+                ? truck.currentLocation
+                : truck.currentLocation.address || 'N/A')
+              : 'Not specified'}
+          </span>
+        </div>
+      ),
+    },
+  ], []);
 
   return (
     <div className="space-y-6">
@@ -208,88 +265,21 @@ const UnifiedFleetManagement: React.FC = () => {
               <p className="text-gray-600">You don't have any trucks in your fleet yet</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Plate Number</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Truck Type</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Max Weight</th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Current Location</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trucks
-                    .filter((truck) => {
-                      if (!viewTrucksSearch) return true;
-                      const searchLower = viewTrucksSearch.toLowerCase();
-                      return (
-                        truck.plateNumber?.toLowerCase().includes(searchLower) ||
-                        truck.truckType?.toLowerCase().includes(searchLower) ||
-                        truck.capacityWeight?.toString().includes(searchLower) ||
-                        (typeof truck.currentLocation === 'string'
-                          ? truck.currentLocation.toLowerCase().includes(searchLower)
-                          : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
-                      );
-                    })
-                    .map((truck) => (
-                      <tr
-                        key={truck.id}
-                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <FaTruck className="w-4 h-4 text-gray-400" />
-                            <span className="font-medium text-gray-900">{truck.plateNumber || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-700">
-                            {truck.truckType ? truck.truckType.replace(/_/g, ' ') : 'N/A'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-700">
-                            {truck.capacityWeight
-                              ? `${Number(truck.capacityWeight).toLocaleString()} kg`
-                              : 'N/A'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-700">
-                              {truck.currentLocation
-                                ? (typeof truck.currentLocation === 'string'
-                                  ? truck.currentLocation
-                                  : truck.currentLocation.address || 'N/A')
-                                : 'Not specified'}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  {trucks.filter((truck) => {
-                    if (!viewTrucksSearch) return true;
-                    const searchLower = viewTrucksSearch.toLowerCase();
-                    return (
-                      truck.plateNumber?.toLowerCase().includes(searchLower) ||
-                      truck.truckType?.toLowerCase().includes(searchLower) ||
-                      truck.capacityWeight?.toString().includes(searchLower) ||
-                      (typeof truck.currentLocation === 'string'
-                        ? truck.currentLocation.toLowerCase().includes(searchLower)
-                        : truck.currentLocation?.address?.toLowerCase().includes(searchLower))
-                    );
-                  }).length === 0 && viewTrucksSearch && (
-                      <tr>
-                        <td colSpan={4} className="py-8 text-center text-gray-500">
-                          No trucks found matching "{viewTrucksSearch}"
-                        </td>
-                      </tr>
-                    )}
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable
+              embedded
+              columns={viewTruckColumns}
+              data={filteredViewTrucks}
+              getRowId={(row) => row.id}
+              searchable={false}
+              pagination
+              pageSize={10}
+              columnVisibility={false}
+              stickyHeader
+              striped
+              hoverable
+              emptyMessage={viewTrucksSearch ? `No trucks found matching "${viewTrucksSearch}"` : 'No trucks found'}
+              ariaLabel="Fleet trucks"
+            />
           )}
         </div>
       )}

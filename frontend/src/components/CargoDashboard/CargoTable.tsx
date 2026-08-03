@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { FaEye, FaEdit, FaTrash, FaMapMarkerAlt, FaCalendar, FaBox, FaUserTie, FaUser, FaDollarSign, FaMinusCircle, FaSnowflake, FaExclamationTriangle, FaWineGlass, FaClock, FaHistory, FaStar, FaMapMarkedAlt } from 'react-icons/fa';
 import { TranslatedText } from '../translated-text';
+import {
+  StandardDataTable,
+  StatusBadge,
+  type Column,
+  type TableAction,
+} from '../EnliteUI/Tables';
 // import type { Cargo } from '../../types/cargo';
 
 // Temporary local interface to bypass module resolution issue
@@ -165,14 +171,6 @@ export const CargoTable: React.FC<CargoTableProps> = ({
   onSelectionChange,
   onBulkAction,
 }) => {
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) {
-      onSelectionChange?.(cargos.map(c => c.id));
-    } else {
-      onSelectionChange?.([]);
-    }
-  };
-
   const handleSelectOne = (e: React.MouseEvent | React.ChangeEvent, id: string) => {
     e.stopPropagation();
     if (selectedIds.includes(id)) {
@@ -307,6 +305,144 @@ export const CargoTable: React.FC<CargoTableProps> = ({
         return `${base} bg-gray-50 text-gray-600 border-gray-200`;
     }
   };
+
+  const listColumns: Column<Cargo>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'Cargo',
+      sortable: true,
+      alwaysVisible: true,
+      render: (_: any, cargo: Cargo) => (
+        <div className="min-w-0">
+          {cargo.title && (
+            <div className="font-semibold text-gray-900 dark:text-slate-100 truncate mb-0.5" title={cargo.title}>
+              {cargo.title}
+            </div>
+          )}
+          <div className="text-xs text-gray-500 truncate">#{cargo.id.slice(0, 8)}...</div>
+          <div className="flex items-center gap-1 mt-1 flex-wrap">
+            {cargo.urgencyLevel && cargo.urgencyLevel !== 'NORMAL' && (
+              <span
+                className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                  cargo.urgencyLevel === 'CRITICAL'
+                    ? 'bg-red-100 text-red-800 animate-pulse'
+                    : cargo.urgencyLevel === 'HIGH'
+                      ? 'bg-orange-100 text-orange-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                }`}
+                title={`Urgency: ${cargo.urgencyLevel}`}
+              >
+                {cargo.urgencyLevel === 'CRITICAL' ? '🔴' : cargo.urgencyLevel === 'HIGH' ? '🟠' : '🟡'}
+              </span>
+            )}
+            {cargo.isTimeCritical && <FaClock className="w-3 h-3 text-red-600" title="Time Critical" />}
+            {cargo.isFragile && <FaWineGlass className="w-3 h-3 text-yellow-600" title="Fragile" />}
+            {cargo.isHazardous && <FaExclamationTriangle className="w-3 h-3 text-red-600" title="Hazardous" />}
+            {cargo.requiresRefrigeration && <FaSnowflake className="w-3 h-3 text-cyan-600" title="Refrigerated" />}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'pickupLocation',
+      label: 'Route',
+      render: (_: any, cargo: Cargo) =>
+        cargo.pickupLocation || cargo.deliveryLocation ? (
+          <div className="flex items-start space-x-2 min-w-0">
+            <FaMapMarkerAlt className="text-gray-400 flex-shrink-0 mt-0.5" />
+            <span className="break-words line-clamp-2 min-w-0">
+              {getPickupLocation(cargo)} → {getDeliveryLocation(cargo)}
+            </span>
+          </div>
+        ) : (
+          <span className="text-gray-400"><TranslatedText text="No location specified" /></span>
+        ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (value: string) => (
+        <StatusBadge status={value} label={<TranslatedText text={value} />} />
+      ),
+    },
+    {
+      key: 'loadValue',
+      label: 'Price',
+      sortable: true,
+      render: (value: number) => (hasValue(value) ? `$${value}` : '-'),
+    },
+    {
+      key: 'pickupDate',
+      label: 'Created',
+      sortable: true,
+      defaultHidden: false,
+      render: (value: string) => (hasValue(value) ? new Date(value).toLocaleDateString() : '-'),
+    },
+    {
+      key: 'operator',
+      label: 'Operator',
+      render: (_: any, cargo: Cargo) => {
+        const op = getOperatorDetails(cargo);
+        if (!op) return <span className="text-gray-400 text-xs">-</span>;
+        const isTransporter = op.type === 'TRANSPORTER';
+        return (
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${isTransporter ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-purple-50 border-purple-200 text-purple-700'}`}>
+            <FaUserTie className={`w-3.5 h-3.5 ${isTransporter ? 'text-blue-600' : 'text-purple-600'}`} />
+            <span className="text-xs font-medium">{op.name}</span>
+          </div>
+        );
+      },
+    },
+  ], []);
+
+  const listActions: TableAction<Cargo>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <FaEye className="w-3.5 h-3.5" />,
+      onClick: (row) => onRowClick(row),
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <FaEdit className="w-3.5 h-3.5" />,
+      hidden: () => !onEditCargo,
+      onClick: (row) => onEditCargo?.(row),
+    },
+    {
+      key: 'publish',
+      label: 'Publish',
+      icon: <FaEye className="w-3.5 h-3.5" />,
+      variant: 'success',
+      hidden: (row) => !onPublishCargo || row.status?.toUpperCase() !== 'DRAFT',
+      onClick: (row) => onPublishCargo?.(row.id),
+    },
+    {
+      key: 'unpublish',
+      label: 'Unpublish',
+      icon: <FaMinusCircle className="w-3.5 h-3.5" />,
+      variant: 'warning',
+      hidden: (row) => !onUnpublishCargo || row.status?.toUpperCase() !== 'PUBLISHED',
+      onClick: (row) => onUnpublishCargo?.(row.id),
+    },
+    {
+      key: 'broker',
+      label: 'Assign broker',
+      icon: <FaUserTie className="w-3.5 h-3.5" />,
+      hidden: () => !onAssignBroker,
+      onClick: (row) => onAssignBroker?.(row),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <FaTrash className="w-3.5 h-3.5" />,
+      variant: 'danger',
+      divider: true,
+      hidden: (row) => !onDeleteCargo || row.status !== 'DRAFT',
+      onClick: (row) => onDeleteCargo?.(row.id),
+    },
+  ], [onRowClick, onEditCargo, onPublishCargo, onUnpublishCargo, onAssignBroker, onDeleteCargo]);
 
   if (view === 'grid') {
     return (
@@ -717,230 +853,29 @@ export const CargoTable: React.FC<CargoTableProps> = ({
           </div>
         </div>
       )}
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow dark:shadow-slate-950/50 overflow-hidden overflow-x-auto transition-colors duration-300">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
-          <thead className="bg-gray-50 dark:bg-slate-800/50">
-            <tr>
-              {onSelectionChange && (
-                <th className="px-3 sm:px-6 py-3 w-4">
-                  <input
-                    type="checkbox"
-                    checked={cargos.length > 0 && selectedIds.length === cargos.length}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 dark:bg-slate-700"
-                  />
-                </th>
-              )}
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                <TranslatedText text="Cargo" />
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                <TranslatedText text="Route" />
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                <TranslatedText text="Status" />
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                <TranslatedText text="Price" />
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden sm:table-cell">
-                <TranslatedText text="Created" />
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell">
-                <TranslatedText text="Operator" />
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                <TranslatedText text="Actions" />
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
-            {cargos.map((cargo, index) => (
-              <tr
-                key={cargo.id}
-                ref={index === cargos.length - 1 ? lastCargoRef : null}
-                className={`hover: bg - gray - 50 cursor - pointer ${selectedIds.includes(cargo.id) ? 'bg-primary-50' : ''} `}
-                onClick={() => onRowClick(cargo)}
-              >
-                {onSelectionChange && (
-                  <td className="px-3 sm:px-6 py-4 w-4" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(cargo.id)}
-                      onChange={(e) => handleSelectOne(e, cargo.id)}
-                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                    />
-                  </td>
-                )}
-                <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900 min-w-0">
-                  <div className="min-w-0">
-                    {/* Cargo Title */}
-                    {cargo.title && (
-                      <div className="font-semibold text-gray-900 truncate mb-0.5" title={cargo.title}>
-                        {cargo.title}
-                      </div>
-                    )}
-                    {/* Cargo ID */}
-                    <div className="text-xs text-gray-500 truncate">#{cargo.id.slice(0, 8)}...</div>
-
-                    {/* Urgency & Special Requirements - Compact Icons */}
-                    <div className="flex items-center gap-1 mt-1 flex-wrap">
-                      {cargo.urgencyLevel && cargo.urgencyLevel !== 'NORMAL' && (
-                        <span
-                          className={`inline - flex items - center px - 1.5 py - 0.5 rounded text - xs font - medium ${cargo.urgencyLevel === 'CRITICAL'
-                            ? 'bg-red-100 text-red-800 animate-pulse'
-                            : cargo.urgencyLevel === 'HIGH'
-                              ? 'bg-orange-100 text-orange-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                            } `}
-                          title={`Urgency: ${cargo.urgencyLevel} `}
-                        >
-                          {cargo.urgencyLevel === 'CRITICAL' ? '🔴' : cargo.urgencyLevel === 'HIGH' ? '🟠' : '🟡'}
-                        </span>
-                      )}
-                      {cargo.isTimeCritical && (
-                        <FaClock className="w-3 h-3 text-red-600" title="Time Critical" />
-                      )}
-                      {cargo.isFragile && (
-                        <FaWineGlass className="w-3 h-3 text-yellow-600" title="Fragile" />
-                      )}
-                      {cargo.isHazardous && (
-                        <FaExclamationTriangle className="w-3 h-3 text-red-600" title="Hazardous" />
-                      )}
-                      {cargo.requiresRefrigeration && (
-                        <FaSnowflake className="w-3 h-3 text-cyan-600" title="Refrigerated" />
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 min-w-0">
-                  {(cargo.pickupLocation || cargo.deliveryLocation) ? (
-                    <div className="flex items-start space-x-2 min-w-0">
-                      <FaMapMarkerAlt className="text-gray-400 flex-shrink-0 mt-0.5" />
-                      <span className="break-words line-clamp-2 min-w-0">
-                        {getPickupLocation(cargo)} → {getDeliveryLocation(cargo)}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">
-                      <TranslatedText text="No location specified" />
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${getStatusColor(cargo.status)} `}>
-                    <TranslatedText text={cargo.status} />
-                  </span>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {hasValue(cargo.loadValue) ? `$${cargo.loadValue} ` : '-'}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
-                  {hasValue(cargo.pickupDate) ? new Date(cargo.pickupDate).toLocaleDateString() : '-'}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                  {(() => {
-                    const op = getOperatorDetails(cargo);
-                    if (op) {
-                      const isTransporter = op.type === 'TRANSPORTER';
-                      return (
-                        <div className={`inline - flex items - center gap - 1.5 px - 2.5 py - 1 rounded - md border ${isTransporter ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-purple-50 border-purple-200 text-purple-700'} `}>
-                          <FaUserTie className={`w - 3.5 h - 3.5 ${isTransporter ? 'text-blue-600' : 'text-purple-600'} `} />
-                          <span className="text-xs font-medium">
-                            {op.name}
-                          </span>
-                        </div>
-                      );
-                    }
-                    return <span className="text-gray-400 text-xs">-</span>;
-                  })()}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRowClick(cargo);
-                      }}
-                      className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-blue-600 hover:text-blue-900 active:bg-blue-50 transition-colors touch-manipulation rounded"
-                      title="View"
-                      aria-label="View"
-                    >
-                      <FaEye className="w-4 h-4" />
-                    </button>
-                    {onEditCargo && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditCargo(cargo);
-                        }}
-                        className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-green-600 hover:text-green-900 active:bg-green-50 transition-colors touch-manipulation rounded"
-                        title="Edit"
-                        aria-label="Edit"
-                      >
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onDeleteCargo && cargo.status === 'DRAFT' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteCargo(cargo.id);
-                        }}
-                        className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-red-600 hover:text-red-900 active:bg-red-50 transition-colors touch-manipulation rounded"
-                        title="Delete"
-                        aria-label="Delete"
-                      >
-                        <FaTrash className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onPublishCargo && cargo.status?.toUpperCase() === 'DRAFT' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onPublishCargo(cargo.id);
-                        }}
-                        className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-purple-600 hover:text-purple-900 active:bg-purple-50 transition-colors touch-manipulation rounded"
-                        title="Publish"
-                        aria-label="Publish"
-                      >
-                        <FaEye className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onUnpublishCargo && cargo.status?.toUpperCase() === 'PUBLISHED' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onUnpublishCargo(cargo.id);
-                        }}
-                        className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-orange-600 hover:text-orange-900 active:bg-orange-50 transition-colors touch-manipulation rounded"
-                        title="Unpublish"
-                        aria-label="Unpublish"
-                      >
-                        <FaMinusCircle className="w-4 h-4" />
-                      </button>
-                    )}
-                    {onAssignBroker && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          console.log('Assign Broker clicked for cargo:', cargo.id);
-                          onAssignBroker(cargo);
-                        }}
-                        className="p-2 sm:p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 active:bg-indigo-100 px-2 py-1 rounded border border-indigo-200 transition-colors touch-manipulation"
-                        title="Assign Broker"
-                        aria-label="Assign Broker"
-                      >
-                        <FaUserTie className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <StandardDataTable<Cargo>
+        embedded
+        columns={listColumns}
+        data={cargos}
+        getRowId={(row) => row.id}
+        onRowClick={(row) => onRowClick(row)}
+        selectable={!!onSelectionChange}
+        selectedIds={selectedIds}
+        onSelectionChange={onSelectionChange}
+        searchable
+        searchPlaceholder="Search cargos…"
+        searchKeys={['title', 'status', 'cargoType']}
+        pagination={false}
+        columnVisibility
+        stickyHeader
+        striped
+        hoverable
+        emptyMessage="No cargos found"
+        rowActions={listActions}
+        ariaLabel="Cargo list"
+      />
+      {/* Infinite-scroll sentinel for parent lastCargoRef */}
+      <div ref={lastCargoRef} className="h-1 w-full" aria-hidden />
     </div>
   );
 };

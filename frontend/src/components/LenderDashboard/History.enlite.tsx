@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
     ArrowUpRight,
     ArrowDownLeft,
-    Search,
-    Filter,
     CreditCard,
     Clock,
     CheckCircle2,
@@ -11,8 +9,7 @@ import {
     AlertCircle,
     Eye,
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import LoanDetailModal from './LoanDetailModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -71,37 +68,11 @@ const formatTime = (iso: string | null): string => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
-    const [searchTerm, setSearchTerm]     = useState('');
-    const [typeFilter, setTypeFilter]     = useState('all');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [detailLoan, setDetailLoan]     = useState<any | null>(null);
+    const [detailLoan, setDetailLoan] = useState<any | null>(null);
     const { format: fmtCurrency } = useCurrencyFormat();
-    // Context-aware formatter — preserves sign for inflow/outflow display
-    const formatAmount = (amount: number | null): string => {
-        if (amount === null) return '—';
-        return fmtCurrency(Math.abs(amount));
-    };
-
-    // ── Derived stats — only from real data ───────────────────────────────────
 
     const disbursements = entries.filter(e => e.source === 'disbursement');
     const repayments    = entries.filter(e => e.source === 'repayment');
-
-    // ── Filtered data ─────────────────────────────────────────────────────────
-
-    const filtered = entries.filter(e => {
-        const q = searchTerm.toLowerCase();
-        const matchSearch =
-            (e.borrowerName ?? '').toLowerCase().includes(q) ||
-            (e.loanId ?? '').toLowerCase().includes(q) ||
-            e.id.toLowerCase().includes(q) ||
-            (e.reference ?? '').toLowerCase().includes(q);
-        const matchType   = typeFilter === 'all' || e.source === typeFilter;
-        const matchStatus = statusFilter === 'all' || e.status === statusFilter;
-        return matchSearch && matchType && matchStatus;
-    });
-
-    // ── Table columns ─────────────────────────────────────────────────────────
 
     const columns = [
         {
@@ -172,7 +143,6 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                             ? `${e.amount > 0 ? '+' : '−'}${fmtCurrency(Math.abs(e.amount))}`
                             : '—'}
                     </span>
-                    {/* Show interest/principal breakdown for repayments */}
                     {e.source === 'repayment' && (e.interestPaid != null || e.principalPaid != null) && (
                         <div className="flex gap-2 justify-end text-[9px] font-bold uppercase">
                             {e.principalPaid != null && e.principalPaid > 0 && (
@@ -227,18 +197,13 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
         },
     ];
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
 
-            {/* ── Main Layout ── */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
 
-                {/* Sidebar */}
                 <div className="lg:col-span-1 space-y-4">
 
-                    {/* Type breakdown */}
                     <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                             Transaction Types
@@ -263,7 +228,6 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                         </div>
                     </div>
 
-                    {/* Status breakdown */}
                     <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-2">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
                             Status Breakdown
@@ -285,7 +249,6 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                         )}
                     </div>
 
-                    {/* Policy note */}
                     <div className="bg-[#345E85] rounded-2xl p-5 text-white shadow-xl shadow-blue-100 relative overflow-hidden">
                         <div className="relative z-10">
                             <CreditCard className="mb-3 opacity-50" size={24} />
@@ -301,65 +264,52 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                     </div>
                 </div>
 
-                {/* Main table */}
                 <div className="lg:col-span-3">
-                    <DataCard
+                    <StandardDataTable
                         title="TRANSACTION LEDGER"
                         subtitle="Verified disbursements and repayments in chronological order"
-                    >
-                        <div className="space-y-6">
-                            {/* Filters */}
-                            <div className="flex flex-wrap items-center gap-3 py-2 mt-2">
-                                <div className="relative flex-1 min-w-[200px] max-w-md">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                                    <input
-                                        type="text"
-                                        placeholder="SEARCH BY BORROWER, LOAN ID..."
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black tracking-widest uppercase focus:ring-2 focus:ring-[#345E85] focus:outline-none transition-all"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Filter size={14} className="text-slate-400" />
-                                    <select
-                                        value={typeFilter}
-                                        onChange={e => setTypeFilter(e.target.value)}
-                                        className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black tracking-widest uppercase focus:outline-none"
-                                    >
-                                        <option value="all">ALL TYPES</option>
-                                        <option value="disbursement">DISBURSEMENTS</option>
-                                        <option value="repayment">REPAYMENTS</option>
-                                    </select>
-                                    <select
-                                        value={statusFilter}
-                                        onChange={e => setStatusFilter(e.target.value)}
-                                        className="px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black tracking-widest uppercase focus:outline-none"
-                                    >
-                                        <option value="all">ALL STATUS</option>
-                                        <option value="completed">COMPLETED</option>
-                                        <option value="disbursed">DISBURSED</option>
-                                        <option value="pending">PENDING</option>
-                                        <option value="failed">FAILED</option>
-                                        <option value="rejected">REJECTED</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <EnhancedTable
-                                columns={columns}
-                                data={filtered}
-                                loading={loading}
-                                striped
-                                hoverable
-                                emptyMessage="No transactions match the current filters"
-                            />
-                        </div>
-                    </DataCard>
+                        icon={<CreditCard className="w-5 h-5" />}
+                        headerColor="primary"
+                        columns={columns}
+                        data={entries}
+                        loading={loading}
+                        getRowId={(row) => row.id}
+                        searchable
+                        searchPlaceholder="Search by borrower, loan ID…"
+                        searchKeys={['borrowerName', 'loanId', 'id', 'reference', 'status', 'purpose']}
+                        filters={[
+                            {
+                                key: 'source',
+                                label: 'Type',
+                                options: [
+                                    { value: 'disbursement', label: 'Disbursements' },
+                                    { value: 'repayment', label: 'Repayments' },
+                                ],
+                            },
+                            {
+                                key: 'status',
+                                label: 'Status',
+                                options: [
+                                    { value: 'completed', label: 'Completed' },
+                                    { value: 'disbursed', label: 'Disbursed' },
+                                    { value: 'pending', label: 'Pending' },
+                                    { value: 'failed', label: 'Failed' },
+                                    { value: 'rejected', label: 'Rejected' },
+                                ],
+                            },
+                        ]}
+                        pagination
+                        pageSize={10}
+                        columnVisibility
+                        stickyHeader
+                        striped
+                        hoverable
+                        emptyMessage="No transactions match the current filters"
+                        ariaLabel="Transaction Ledger"
+                    />
                 </div>
             </div>
 
-            {/* Loan Detail Modal */}
             {detailLoan && (
                 <LoanDetailModal
                     loan={detailLoan}
@@ -371,5 +321,3 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
 };
 
 export default HistoryEnlite;
-
-

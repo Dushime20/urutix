@@ -145,3 +145,28 @@ export class ApprovePreTripInspectionDto {
   @IsString()
   approvalNotes?: string;
 }
+
+export class CompleteTruckInspectionDto {
+  @IsOptional()
+  @IsArray()
+  checklist?: Array<{
+    id: string;
+    label: string;
+    verified: boolean;
+    notes?: string;
+  }>;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsArray()
+  documents?: Array<{
+    id: string;
+    url: string;
+    type: 'photo' | 'document' | 'signature';
+    label?: string;
+    uploadedAt: string;
+  }>;
+}

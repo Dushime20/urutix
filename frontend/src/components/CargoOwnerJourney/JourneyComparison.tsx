@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Zap,
@@ -6,17 +6,33 @@ import {
   Clock,
   DollarSign,
   Target,
-  TrendingUp,
-  Shield,
   Star,
   CheckCircle,
-  XCircle,
   AlertCircle,
   BarChart3,
   Award,
   Sparkles,
   X
 } from 'lucide-react';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
+
+interface FeatureComparisonRow {
+  id: string;
+  feature: string;
+  smart: string;
+  bid: string;
+}
+
+const FEATURE_COMPARISON_ROWS: FeatureComparisonRow[] = [
+  { id: 'avg-time', feature: 'Average Time to Book', smart: '2-5 minutes', bid: '2-24 hours' },
+  { id: 'options', feature: 'Number of Options', smart: '1 curated', bid: 'Multiple bids' },
+  { id: 'savings', feature: 'Cost Savings Potential', smart: '0-5%', bid: '5-15%' },
+  { id: 'effort', feature: 'Effort Required', smart: 'Very Low', bid: 'Moderate' },
+  { id: 'success', feature: 'Success Rate', smart: '95%', bid: '85%' },
+  { id: 'negotiation', feature: 'Price Negotiation', smart: 'No', bid: 'Yes' },
+  { id: 'vetting', feature: 'Carrier Vetting', smart: 'Pre-vetted', bid: 'You evaluate' },
+  { id: 'urgent', feature: 'Best for Urgent Loads', smart: 'Yes', bid: 'No' },
+];
 
 interface JourneyOption {
   id: 'smart-matching' | 'publish-bid';
@@ -151,6 +167,29 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
   };
 
   const recommended = getRecommendation();
+
+  const featureColumns: Column<FeatureComparisonRow>[] = useMemo(
+    () => [
+      {
+        key: 'feature',
+        label: 'Feature',
+        render: (_value, row) => <span className="font-medium text-gray-900">{row.feature}</span>,
+      },
+      {
+        key: 'smart',
+        label: 'Smart Matching',
+        align: 'center',
+        render: (_value, row) => <span className="text-gray-700">{row.smart}</span>,
+      },
+      {
+        key: 'bid',
+        label: 'Publish for Bid',
+        align: 'center',
+        render: (_value, row) => <span className="text-gray-700">{row.bid}</span>,
+      },
+    ],
+    [],
+  );
 
   const renderSideBySide = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -293,35 +332,21 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-6 border-2 border-gray-200">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Feature Comparison</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-gray-200">
-                <th className="text-left p-3 font-semibold text-gray-700">Feature</th>
-                <th className="text-center p-3 font-semibold text-violet-600">Smart Matching</th>
-                <th className="text-center p-3 font-semibold text-emerald-600">Publish for Bid</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { feature: 'Average Time to Book', smart: '2-5 minutes', bid: '2-24 hours' },
-                { feature: 'Number of Options', smart: '1 curated', bid: 'Multiple bids' },
-                { feature: 'Cost Savings Potential', smart: '0-5%', bid: '5-15%' },
-                { feature: 'Effort Required', smart: 'Very Low', bid: 'Moderate' },
-                { feature: 'Success Rate', smart: '95%', bid: '85%' },
-                { feature: 'Price Negotiation', smart: 'No', bid: 'Yes' },
-                { feature: 'Carrier Vetting', smart: 'Pre-vetted', bid: 'You evaluate' },
-                { feature: 'Best for Urgent Loads', smart: 'Yes', bid: 'No' }
-              ].map((row, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="p-3 font-medium text-gray-900">{row.feature}</td>
-                  <td className="p-3 text-center text-gray-700">{row.smart}</td>
-                  <td className="p-3 text-center text-gray-700">{row.bid}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <StandardDataTable
+          embedded
+          columns={featureColumns}
+          data={FEATURE_COMPARISON_ROWS}
+          getRowId={(row) => row.id}
+          searchable={false}
+          pagination={false}
+          columnVisibility={false}
+          sortable={false}
+          stickyHeader
+          striped={false}
+          hoverable
+          emptyMessage="No comparison data available"
+          ariaLabel="Journey feature comparison"
+        />
       </div>
 
       {/* Process Comparison */}

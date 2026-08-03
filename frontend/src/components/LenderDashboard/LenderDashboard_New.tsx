@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 import { Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -45,6 +46,20 @@ interface ChartData {
     tension?: number;
   }[];
 }
+
+interface RecentLoanRequest {
+  id: string;
+  borrower: string;
+  amount: number;
+  purpose: string;
+  status: string;
+  date: string;
+}
+
+const RECENT_LOAN_REQUESTS: RecentLoanRequest[] = [
+  { id: '1', borrower: 'John Doe', amount: 15000000, purpose: 'Equipment Purchase', status: 'pending', date: '2024-01-15' },
+  { id: '2', borrower: 'Jane Smith', amount: 25000000, purpose: 'Working Capital', status: 'approved', date: '2024-01-14' },
+];
 
 const LenderDashboard: React.FC = () => {
   const { user, accessToken } = useAuth();
@@ -208,6 +223,18 @@ const LenderDashboard: React.FC = () => {
       },
     ],
   };
+
+  const recentLoanColumns: Column<RecentLoanRequest>[] = useMemo(() => [
+    { key: 'borrower', label: 'Borrower', render: (_v, row) => row.borrower },
+    { key: 'amount', label: 'Amount', render: (_v, row) => fmtCurrency(row.amount, 'RWF') },
+    { key: 'purpose', label: 'Purpose', render: (_v, row) => row.purpose },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, row) => <StatusBadge status={row.status} label={row.status} />,
+    },
+    { key: 'date', label: 'Date', render: (_v, row) => <span className="text-gray-500">{row.date}</span> },
+  ], [fmtCurrency]);
 
   const chartOptions = {
     responsive: true,
@@ -428,53 +455,17 @@ const LenderDashboard: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-800">Recent Loan Requests</h3>
                 <p className="text-sm text-gray-600 mt-1">Latest loan applications requiring your attention</p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Borrower
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Purpose
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">John Doe</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{fmtCurrency(15000000, 'RWF')}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Equipment Purchase</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2024-01-15</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Jane Smith</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{fmtCurrency(25000000, 'RWF')}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Working Capital</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          Approved
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2024-01-14</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <StandardDataTable
+                embedded
+                columns={recentLoanColumns}
+                data={RECENT_LOAN_REQUESTS}
+                getRowId={(row) => row.id}
+                searchable={false}
+                pagination={false}
+                columnVisibility={false}
+                emptyMessage="No recent loan requests"
+                ariaLabel="Recent loan requests"
+              />
             </div>
           </>
         )}

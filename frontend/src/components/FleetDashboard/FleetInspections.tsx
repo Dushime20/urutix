@@ -18,6 +18,7 @@ import { safetyApi } from '../../services/safetyApi';
 import { format } from 'date-fns';
 import { Package } from 'lucide-react';
 import { CargoInspectionReportModal } from './CargoInspectionReportModal';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 export const FleetInspections: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,15 +80,6 @@ export const FleetInspections: React.FC = () => {
       return matchesType && matchesStatus && matchesSearch;
     })
     .sort((a: any, b: any) => new Date(b.inspectionDate).getTime() - new Date(a.inspectionDate).getTime());
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'passed': return 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30';
-      case 'failed': return 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30';
-      case 'conditional': return 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30';
-      default: return 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-800';
-    }
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -152,119 +144,121 @@ export const FleetInspections: React.FC = () => {
       </div>
 
       {/* Inspections Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-50 dark:border-slate-800">
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Report Type</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vehicle & Driver</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Date & Time</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Inspector</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={6} className="px-8 py-6">
-                      <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full w-full" />
-                    </td>
-                  </tr>
-                ))
-              ) : filteredInspections.length > 0 ? (
-                filteredInspections.map((inspection: any) => (
-                  <tr key={inspection.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          inspection.type === 'pre_trip' ? 'bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400' : 
-                          inspection.type === 'cargo' ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400' :
-                          'bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400'
-                        }`}>
-                          {inspection.type === 'pre_trip' ? <ShieldCheck size={20} /> : 
-                           inspection.type === 'cargo' ? <Package size={20} /> : 
-                           <ShieldAlert size={20} />}
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
-                            {inspection.type === 'pre_trip' ? 'Pre-Trip Inspection' : 
-                             inspection.type === 'cargo' ? 'Cargo Loading Report' : 
-                             'Post-Trip Debrief'}
-                          </p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                            {inspection.isCargo ? `Load: ${inspection.cargoTitle?.substring(0, 15)}...` : `ID: ${inspection.id.split('-')[0]}`}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2 text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">
-                          <TruckIcon size={14} className="text-slate-400" />
-                          {inspection.truckPlate || 'N/A'}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                          <UserIcon size={12} className="text-slate-400" />
-                          {inspection.driverName || 'N/A'}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">
-                          <Calendar size={14} className="text-slate-400" />
-                          {format(new Date(inspection.inspectionDate), 'MMM dd, yyyy')}
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-slate-400 uppercase tracking-widest">
-                          <Clock size={12} className="text-slate-400" />
-                          {format(new Date(inspection.inspectionDate), 'HH:mm')}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(inspection.status)}`}>
-                        {getStatusIcon(inspection.status)}
-                        {inspection.status}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300 italic">
-                        {inspection.inspector || 'System'}
-                      </div>
-                      <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Digital Signature</div>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <button 
-                        onClick={() => handleActionClick(inspection)}
-                        className="p-2 text-slate-400 hover:text-primary-600 transition-colors"
-                      >
-                        <ExternalLink size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-8 py-16 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-16 h-16 rounded-3xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-200">
-                        <FileText size={32} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-slate-400 uppercase tracking-widest">No Inspection Reports Found</p>
-                        <p className="text-xs font-medium text-slate-500 mt-1">Reports submitted by drivers will appear here.</p>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StandardDataTable
+        title="Inspection Reports"
+        icon={<FileText className="w-5 h-5" />}
+        headerColor="primary"
+        columns={[
+          {
+            key: 'type',
+            label: 'Report Type',
+            sortable: true,
+            render: (type: string, inspection: any) => (
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  type === 'pre_trip' ? 'bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400' :
+                  type === 'cargo' ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400' :
+                  'bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400'
+                }`}>
+                  {type === 'pre_trip' ? <ShieldCheck size={20} /> :
+                   type === 'cargo' ? <Package size={20} /> :
+                   <ShieldAlert size={20} />}
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
+                    {type === 'pre_trip' ? 'Pre-Trip Inspection' :
+                     type === 'cargo' ? 'Cargo Loading Report' :
+                     'Post-Trip Debrief'}
+                  </p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                    {inspection.isCargo
+                      ? `Load: ${inspection.cargoTitle?.substring(0, 15)}...`
+                      : `ID: ${String(inspection.id).split('-')[0]}`}
+                  </p>
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'truckPlate',
+            label: 'Vehicle & Driver',
+            sortable: true,
+            render: (_: any, inspection: any) => (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2 text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">
+                  <TruckIcon size={14} className="text-slate-400" />
+                  {inspection.truckPlate || 'N/A'}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  <UserIcon size={12} className="text-slate-400" />
+                  {inspection.driverName || 'N/A'}
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'inspectionDate',
+            label: 'Date & Time',
+            sortable: true,
+            render: (date: string) => (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">
+                  <Calendar size={14} className="text-slate-400" />
+                  {format(new Date(date), 'MMM dd, yyyy')}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                  <Clock size={12} className="text-slate-400" />
+                  {format(new Date(date), 'HH:mm')}
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'status',
+            label: 'Status',
+            sortable: true,
+            render: (status: string) => (
+              <StatusBadge
+                label={status}
+                status={status === 'passed' ? 'completed' : status === 'failed' ? 'rejected' : 'pending'}
+                icon={getStatusIcon(status)}
+              />
+            ),
+          },
+          {
+            key: 'inspector',
+            label: 'Inspector',
+            render: (inspector: string) => (
+              <div>
+                <div className="text-xs font-bold text-slate-700 dark:text-slate-300 italic">
+                  {inspector || 'System'}
+                </div>
+                <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Digital Signature</div>
+              </div>
+            ),
+          },
+        ] as Column<any>[]}
+        data={filteredInspections}
+        loading={isLoading}
+        getRowId={(row) => row.id}
+        searchable={false}
+        pagination
+        pageSize={10}
+        columnVisibility
+        stickyHeader
+        striped
+        hoverable
+        emptyMessage="No inspection reports found — reports submitted by drivers will appear here"
+        rowActions={[
+          {
+            key: 'open',
+            label: 'Open Report',
+            icon: <ExternalLink size={14} />,
+            onClick: handleActionClick,
+          },
+        ] as TableAction<any>[]}
+        ariaLabel="Fleet inspections"
+      />
 
       <CargoInspectionReportModal
         isOpen={isModalOpen}

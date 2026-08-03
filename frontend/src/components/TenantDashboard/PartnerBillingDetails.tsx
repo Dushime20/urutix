@@ -22,6 +22,7 @@ import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { format } from 'date-fns';
 import { useTranslation } from '../../hooks/useTranslation';
 import { TranslatedText } from '../translated-text';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface PartnerBillingDetailsProps {
     tenantId: string;
@@ -430,63 +431,68 @@ export const PartnerBillingDetails: React.FC<PartnerBillingDetailsProps> = ({
                                 </div>
                             </div>
 
-                            {/* Table-style Layout */}
-                            <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 dark:border-slate-800 overflow-hidden">
-                                <table className="w-full text-left">
-                                    <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                                        <tr>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest italic"><TranslatedText text="Transaction" /></th>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest italic"><TranslatedText text="Type" /></th>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right italic"><TranslatedText text="Amount" /></th>
-                                            <th className="px-8 py-5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right italic"><TranslatedText text="Actions" /></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                                        {filteredHistory.length > 0 ? (
-                                            filteredHistory.map((tx: { id: string; amount: number; description: string; createdAt: string; type: string }) => (
-                                                <tr key={tx.id} className="group hover:bg-slate-50/50 transition-colors">
-                                                    <td className="px-8 py-5">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className={`p-2.5 rounded-lg ${tx.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                                                {tx.amount > 0 ? <Plus className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-bold text-slate-900 dark:text-white">{tx.description}</p>
-                                                                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-0.5">{format(new Date(tx.createdAt), 'MMM dd, yyyy · HH:mm')}</p>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-8 py-5">
-                                                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-[8px] text-[10px] font-black uppercase tracking-widest italic">
-                                                            {tSync(tx.type.replace(/_/g, ' '))}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-8 py-5 text-right">
-                                                        <p className={`text-base font-black tabular-nums ${tx.amount > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
-                                                        </p>
-                                                    </td>
-                                                    <td className="px-8 py-5 text-right">
-                                                        <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
-                                                            <Eye className="w-5 h-5" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={4} className="px-8 py-20 text-center">
-                                                    <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-dashed border-slate-100 dark:border-slate-700">
-                                                        <HistoryIcon className="w-8 h-8 text-slate-200 dark:text-slate-600" />
-                                                    </div>
-                                                    <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight italic"><TranslatedText text="No transactions found" /></h4>
-                                                    <p className="text-sm text-slate-400 dark:text-slate-500 font-medium mt-2 italic"><TranslatedText text="History items will appear here after the first transaction." /></p>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                            {/* History Table */}
+                            <StandardDataTable
+                                embedded
+                                columns={[
+                                    {
+                                        key: 'description',
+                                        label: tSync('Transaction'),
+                                        sortable: true,
+                                        render: (description: string, tx: any) => (
+                                            <div className="flex items-center gap-4">
+                                                <div className={`p-2.5 rounded-lg ${tx.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                    {tx.amount > 0 ? <Plus className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{description}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-0.5">
+                                                        {format(new Date(tx.createdAt), 'MMM dd, yyyy · HH:mm')}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ),
+                                    },
+                                    {
+                                        key: 'type',
+                                        label: tSync('Type'),
+                                        sortable: true,
+                                        render: (type: string) => (
+                                            <StatusBadge label={tSync(type.replace(/_/g, ' '))} status={type} />
+                                        ),
+                                    },
+                                    {
+                                        key: 'amount',
+                                        label: tSync('Amount'),
+                                        sortable: true,
+                                        align: 'right',
+                                        render: (amount: number) => (
+                                            <p className={`text-base font-black tabular-nums ${amount > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                {amount > 0 ? '+' : ''}{amount.toLocaleString()}
+                                            </p>
+                                        ),
+                                    },
+                                ] as Column<any>[]}
+                                data={filteredHistory}
+                                getRowId={(row) => row.id}
+                                searchable={false}
+                                pagination
+                                pageSize={10}
+                                columnVisibility
+                                stickyHeader
+                                striped
+                                hoverable
+                                emptyMessage={tSync('No transactions found')}
+                                rowActions={[
+                                    {
+                                        key: 'view',
+                                        label: tSync('View'),
+                                        icon: <Eye className="w-4 h-4" />,
+                                        onClick: () => undefined,
+                                    },
+                                ] as TableAction<any>[]}
+                                ariaLabel={tSync('Billing history')}
+                            />
                         </motion.div>
                     )}
                 </AnimatePresence>

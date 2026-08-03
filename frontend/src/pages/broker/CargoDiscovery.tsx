@@ -1,5 +1,5 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { brokerAPI } from '../../services/brokerApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
@@ -23,6 +23,7 @@ import {
   Filter,
   X
 } from 'lucide-react';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 interface Load {
   id: string;
@@ -111,6 +112,66 @@ const CargoDiscovery: React.FC = () => {
   const sortedLoads = getSortedLoads();
   const recommendedLoads = sortedLoads.slice(0, 3);
   const hasActiveFilters = filters.minValue || filters.maxValue || filters.cargoType || filters.equipmentType || filters.urgency || filters.route || searchTerm;
+
+  const loadColumns = useMemo<Column<Load>[]>(() => [
+    {
+      key: 'title',
+      label: 'Cargo Unit',
+      sortable: true,
+      render: (_v, load) => (
+        <div className="flex items-center gap-6">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 shadow-sm dark:bg-slate-900 dark:border-slate-800">
+            <Package size={22} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{load.title}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">{load.cargoType || 'General'}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'pickupLocation',
+      label: 'Route',
+      render: (_v, load) => (
+        <div className="flex items-center gap-4 text-xs font-bold text-slate-700 dark:text-slate-200">
+          <span>{load.pickupLocation?.name?.split(',')[0]}</span>
+          <ArrowRight size={14} className="text-slate-300" />
+          <span>{load.deliveryLocation?.name?.split(',')[0]}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'loadValue',
+      label: 'Value',
+      sortable: true,
+      align: 'center',
+      render: (_v, load) => (
+        <p className="text-xl font-bold text-primary-600">${load.loadValue.toLocaleString()}</p>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, load) => <StatusBadge status={load.status} label={load.status} />,
+    },
+  ], []);
+
+  const loadActions = useMemo<TableAction<Load>[]>(() => [
+    {
+      key: 'view',
+      label: 'Analyze',
+      icon: <Eye size={14} />,
+      onClick: (load) => navigate(`/dashboard/broker/loads/${load.id}`),
+    },
+    {
+      key: 'match',
+      label: 'Find Transporters',
+      icon: <Zap size={14} />,
+      onClick: (load) => handleFindTransporters(load.id),
+    },
+  ], [navigate]);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -279,49 +340,21 @@ const CargoDiscovery: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-             <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50/50">
-                    <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Cargo Unit</th>
-                    <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Route</th>
-                    <th className="px-10 py-8 text-center text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Value</th>
-                    <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Command</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {sortedLoads.map((load) => (
-                    <tr key={load.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)}>
-                      <td className="px-10 py-10">
-                        <div className="flex items-center gap-6">
-                           <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"><Package size={22} /></div>
-                           <div>
-                              <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{load.title}</p>
-                              <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">{load.cargoType || 'General'}</p>
-                           </div>
-                        </div>
-                      </td>
-                      <td className="px-10 py-10">
-                        <div className="flex items-center gap-4 text-xs font-bold text-slate-700 dark:text-slate-200">
-                           <span>{load.pickupLocation?.name?.split(',')[0]}</span>
-                           <ArrowRight size={14} className="text-slate-300" />
-                           <span>{load.deliveryLocation?.name?.split(',')[0]}</span>
-                        </div>
-                      </td>
-                      <td className="px-10 py-10 text-center">
-                        <p className="text-xl font-bold text-primary-600">${load.loadValue.toLocaleString()}</p>
-                      </td>
-                      <td className="px-10 py-10">
-                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
-                           <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"><Eye size={16} /></button>
-                           <button onClick={(e) => { e.stopPropagation(); handleFindTransporters(load.id); }} className="p-4 bg-primary-600 text-white rounded-xl shadow-lg shadow-primary-200 hover:scale-110 transition-all"><Zap size={16} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-             </table>
-          </div>
+          <StandardDataTable<Load>
+            embedded
+            className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm p-4 dark:bg-slate-900 dark:border-slate-800"
+            columns={loadColumns}
+            data={sortedLoads}
+            getRowId={(row) => row.id}
+            searchable={false}
+            rowActions={loadActions}
+            onRowClick={(load) => navigate(`/dashboard/broker/loads/${load.id}`)}
+            stickyHeader
+            columnVisibility
+            pagination
+            emptyMessage="No loads found"
+            ariaLabel="Cargo discovery"
+          />
         )}
       </div>
     </div>

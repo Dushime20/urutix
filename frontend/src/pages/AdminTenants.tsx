@@ -17,13 +17,11 @@ import {
   Building2,
   Edit,
   Plus,
-  Search,
   Download,
   Eye,
   Check,
   X,
   Trash2,
-  ChevronsUpDown,
   Globe,
   Users,
   TrendingUp,
@@ -36,8 +34,9 @@ import {
 } from 'lucide-react';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
-import ModernLoader from '../components/common/ModernLoader';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
+import ModernLoader from '../components/common/ModernLoader';
 
 interface Tenant {
   id: string;
@@ -85,16 +84,11 @@ const AdminTenants: React.FC = () => {
   const [contactEmail, setContactEmail] = useState('');
 
   // UI state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [planFilter, setPlanFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<string>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsTenantId, setSettingsTenantId] = useState<string | null>(null);
   const [showManageUsersModal, setShowManageUsersModal] = useState(false);
@@ -124,19 +118,11 @@ const AdminTenants: React.FC = () => {
 
   // Fetch tenants from API - use enriched data when enabled
   const { data: tenantsData, isLoading: isLoadingTenants, error: tenantsError } = useQuery({
-    queryKey: ['admin-tenants', useEnrichedData, statusFilter, searchTerm],
+    queryKey: ['admin-tenants', useEnrichedData],
     queryFn: async () => {
       try {
         if (useEnrichedData) {
-          // Use new enriched API
-          const filters: any = {};
-          if (statusFilter !== 'all') {
-            filters.status = [statusFilter.toUpperCase()];
-          }
-          if (searchTerm) {
-            filters.search = searchTerm;
-          }
-          const result = await fetchEnrichedTenants(filters);
+          const result = await fetchEnrichedTenants({});
           return result;
         } else {
           // Use legacy API
@@ -453,35 +439,90 @@ const AdminTenants: React.FC = () => {
     updateTenantMutation(payload);
   };
 
-  // Filter and sort tenants
-  const filteredTenants = tenants
-    .filter((tenant: Tenant) => {
-      const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tenant.subdomain.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tenant.contactEmail?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all'
-        ? tenant.status !== 'inactive' // Hide decommissioned by default in 'all' view
-        : tenant.status === statusFilter;
-      const matchesPlan = planFilter === 'all' || tenant.plan === planFilter;
-      return matchesSearch && matchesStatus && matchesPlan;
-    })
-    .sort((a: Tenant, b: Tenant) => {
-      const aValue = a[sortBy as keyof Tenant] || '';
-      const bValue = b[sortBy as keyof Tenant] || '';
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      }
-      return aValue < bValue ? 1 : -1;
-    });
+  const tenantColumns = useMemo<Column<Tenant>[]>(() => [
+    {
+      key: 'name',
+      label: 'Name',
+      sortable: true,
+      render: (_value, tenant) => (
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm overflow-hidden relative bg-[#2c5173]">
+            <Building2 className="relative z-10 text-white" size={18} />
+          </div>
+          <div>
+            <div className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{tenant.name}</div>
+            {tenant.location && (
+              <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-0.5">{tenant.location}</div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'contactEmail',
+      label: 'Email',
+      sortable: true,
+      render: (value) => (
+        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
+          {value}
+        </div>
+      ),
+    },
+    {
+      key: 'plan',
+      label: 'Plan',
+      sortable: true,
+      render: (value) => (
+        <StatusBadge label={value} variant="primary" />
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_value, tenant) => (
+        <StatusBadge
+          label={(tenant.status || '').replace('_', ' ')}
+          status={tenant.status}
+        />
+      ),
+    },
+  ], []);
 
-  const getPlanColor = (plan: string) => {
-    switch (plan) {
-      case 'starter': return 'bg-gray-100 text-gray-700';
-      case 'professional': return 'bg-gray-100 text-gray-700';
-      case 'enterprise': return 'bg-gray-100 text-gray-700';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  };
+  const tenantRowActions = useMemo<TableAction<Tenant>[]>(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye className="w-3.5 h-3.5" />,
+      onClick: (tenant) => {
+        setSelectedTenant(tenant);
+        setShowDetailsModal(true);
+      },
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <Edit className="w-3.5 h-3.5" />,
+      onClick: (tenant) => handleEditTenant(tenant),
+    },
+    {
+      key: 'settings',
+      label: 'Settings',
+      icon: <Settings className="w-3.5 h-3.5" />,
+      onClick: (tenant) => {
+        setSettingsTenantId(tenant.id);
+        setShowSettingsModal(true);
+      },
+    },
+    {
+      key: 'delete',
+      label: 'Delete Tenant',
+      icon: <Trash2 className="w-3.5 h-3.5" />,
+      variant: 'danger',
+      divider: true,
+      onClick: (tenant) => handleDeleteTenant(tenant),
+    },
+  ], []);
 
   const getKYCStatusColor = (status: string) => {
     switch (status) {
@@ -546,194 +587,66 @@ const AdminTenants: React.FC = () => {
       }
     >
 
-      {/* Filters and Search */}
-      <div className="p-6 bg-[#fafafa] rounded-xl border border-transparent mb-10 flex flex-col md:flex-row gap-6 items-center justify-between">
-        <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          <div className="relative group">
-            <input
-              type="text"
-              placeholder="SEARCH TENANTS..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full md:w-64 bg-white transition-all"
-            />
-            <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-primary-500 transition-colors w-3.5 h-3.5" />
-          </div>
-
-          <select
-            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white cursor-pointer hover:border-slate-300 transition-all font-black"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">ALL STATUS</option>
-            <option value="active">ACTIVE</option>
-            <option value="inactive">INACTIVE</option>
-            <option value="pending">PENDING</option>
-            <option value="suspended">SUSPENDED</option>
-          </select>
-
-          <select
-            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white cursor-pointer hover:border-slate-300 transition-all font-black"
-            value={planFilter}
-            onChange={(e) => setPlanFilter(e.target.value)}
-          >
-            <option value="all">ALL PLANS</option>
-            <option value="starter">STARTER</option>
-            <option value="professional">PROFESSIONAL</option>
-            <option value="enterprise">ENTERPRISE</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setUseEnrichedData(!useEnrichedData)}
-            className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all ${useEnrichedData
-              ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-500'
-              : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
-              }`}
-            title={useEnrichedData ? 'Showing enriched data with health scores' : 'Showing basic data'}
-          >
-            <Heart className="w-3 h-3" />
-            {useEnrichedData ? 'Enhanced View' : 'Basic View'}
-          </button>
-          <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all text-slate-600">
-            <Download className="w-3 h-3" /> Export
-          </button>
-          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-gray-100/50 px-4 py-2.5 rounded-xl border border-transparent">
-            {filteredTenants.length} TENANTS
-          </div>
-        </div>
-      </div>
-
       {/* Tenants Table */}
-      <div className="bg-white rounded-xl overflow-hidden border border-transparent">
-        {isLoadingTenants ? (
-          <ModernLoader isLoading={true} type="table" />
-        ) : tenantsError ? (
-          <div className="p-8 text-center">
-            <div className="text-red-600 mb-3">
-              <AlertTriangle className="text-3xl mx-auto mb-3" />
-              <p className="text-base font-semibold">Failed to load tenants</p>
-              {tenantsError instanceof Error && (
-                <p className="text-sm text-gray-600 mt-2">{tenantsError.message}</p>
-              )}
-            </div>
-          </div>
-        ) : filteredTenants.length === 0 ? (
-          <div className="p-12 text-center">
-            <Building2 className="text-5xl text-gray-300 mx-auto mb-4" />
-            <p className="text-base text-gray-600 font-medium">No tenants found</p>
-            {searchTerm || statusFilter !== 'all' || planFilter !== 'all' ? (
-              <p className="text-sm text-gray-500 mt-2">Try adjusting your filters</p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#fafafa] border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4">
-                    <button
-                      className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-gray-900 transition-colors"
-                      onClick={() => {
-                        setSortBy('name');
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                      }}
-                    >
-                      <span>Name</span>
-                      <ChevronsUpDown className="w-3 h-3 text-gray-400" />
-                    </button>
-                  </th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Email</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Plan</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Status</th>
-                  <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {filteredTenants.map((tenant: Tenant) => (
-                  <tr key={tenant.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm overflow-hidden relative bg-[#2c5173]">
-                          <Building2 className="relative z-10 text-white" size={18} />
-                        </div>
-                        <div>
-                          <div className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{tenant.name}</div>
-                          {tenant.location && (
-                            <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-0.5">{tenant.location}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">
-                        {tenant.contactEmail}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getPlanColor(tenant.plan).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('700', '600')} border-[#2c5173]/20 shadow-sm`}>
-                        {tenant.plan}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-2 h-2 rounded-full shadow-sm ${tenant.status === 'active' ? 'bg-emerald-500 shadow-emerald-200' : 'bg-rose-500 shadow-rose-200'}`}></div>
-                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{(tenant.status || '').replace('_', ' ')}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedTenant(tenant);
-                            setShowDetailsModal(true);
-                          }}
-                          className="p-2 text-[#2c5173] hover:bg-[#2c5173]/10 rounded-xl transition-all shadow-sm bg-white border border-[#2c5173]/20"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditTenant(tenant);
-                          }}
-                          className="p-2 text-slate-400 hover:text-[#2c5173] hover:bg-[#2c5173]/10 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSettingsTenantId(tenant.id);
-                            setShowSettingsModal(true);
-                          }}
-                          className="p-2 text-slate-400 hover:text-[#2c5173] hover:bg-[#2c5173]/10 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                          title="Settings"
-                        >
-                          <Settings className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteTenant(tenant);
-                          }}
-                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all shadow-sm bg-white border border-gray-100"
-                          title="Delete Tenant"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className="bg-white rounded-xl overflow-hidden border border-transparent p-4">
+        <StandardDataTable<Tenant>
+          embedded
+          columns={tenantColumns}
+          data={tenants}
+          loading={isLoadingTenants}
+          error={tenantsError instanceof Error ? tenantsError.message : tenantsError ? 'Failed to load tenants' : null}
+          onRetry={() => qc.invalidateQueries({ queryKey: ['admin-tenants'] })}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Search tenants…"
+          searchKeys={['name', 'subdomain', 'contactEmail']}
+          filters={[
+            {
+              key: 'status',
+              label: 'Status',
+              options: [
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'suspended', label: 'Suspended' },
+              ],
+            },
+            {
+              key: 'plan',
+              label: 'Plan',
+              options: [
+                { value: 'starter', label: 'Starter' },
+                { value: 'professional', label: 'Professional' },
+                { value: 'enterprise', label: 'Enterprise' },
+              ],
+            },
+          ]}
+          defaultSortKey="name"
+          defaultSortDirection="asc"
+          rowActions={tenantRowActions}
+          emptyMessage="No tenants found"
+          stickyHeader
+          columnVisibility
+          pagination
+          toolbarExtra={
+            <>
+              <button
+                onClick={() => setUseEnrichedData(!useEnrichedData)}
+                className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all ${useEnrichedData
+                  ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-500'
+                  : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                title={useEnrichedData ? 'Showing enriched data with health scores' : 'Showing basic data'}
+              >
+                <Heart className="w-3 h-3" />
+                {useEnrichedData ? 'Enhanced View' : 'Basic View'}
+              </button>
+              <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all text-slate-600">
+                <Download className="w-3 h-3" /> Export
+              </button>
+            </>
+          }
+          ariaLabel="Tenant management"
+        />
       </div>
 
       {/* Create Tenant Modal */}

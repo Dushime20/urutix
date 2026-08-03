@@ -14,26 +14,22 @@ import {
   Users,
   Edit,
   Plus,
-  Download,
   Eye,
   X,
   Ban,
   Unlock,
-  ChevronsUpDown,
-  User,
   Building2,
   ShieldCheck,
   Trash2,
   Mail,
   UserCheck,
   UserX,
-  Search
 } from 'lucide-react';
 import { UserPermissionEditor } from '../components/Admin/Permissions/UserPermissionEditor';
 import { RolePermissionsMatrix } from '../components/Admin/Permissions/RolePermissionsMatrix';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
-import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface User {
   id: string;
@@ -105,20 +101,12 @@ const AdminUsers: React.FC = () => {
   const [editStatus, setEditStatus] = useState<string>('');
 
   // UI state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [tenantFilter, setTenantFilter] = useState<string>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [permissionUser, setPermissionUser] = useState<User | null>(null);
-  const [sortBy, setSortBy] = useState<string>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
   const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
 
   // Get tenants for dropdown - only show ACTIVE tenants
@@ -160,37 +148,6 @@ const AdminUsers: React.FC = () => {
       profile: user.profile
     }));
   }, [usersData, tenantMap]);
-
-  // Filter and sort users
-  const filteredUsers = useMemo(() => {
-    return users
-      .filter((user: User) => {
-        const matchesSearch =
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.tenantName?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-        const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-        const matchesTenant = tenantFilter === 'all' || user.tenantId === tenantFilter;
-        return matchesSearch && matchesStatus && matchesRole && matchesTenant;
-      })
-      .sort((a: User, b: User) => {
-        const aValue = a[sortBy as keyof User] || '';
-        const bValue = b[sortBy as keyof User] || '';
-        if (sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        }
-        return aValue < bValue ? 1 : -1;
-      });
-  }, [users, searchTerm, statusFilter, roleFilter, tenantFilter, sortBy, sortOrder]);
-
-  const total = filteredUsers.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const startIdx = (currentPage - 1) * pageSize;
-  const endIdx = startIdx + pageSize;
-  const pagedUsers = filteredUsers.slice(startIdx, endIdx);
 
   // Mutations
   const { mutate: createUser, isPending: isCreating } = useMutation({
@@ -375,6 +332,127 @@ const AdminUsers: React.FC = () => {
     return role.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
   };
 
+  const columns: Column<User>[] = useMemo(() => [
+    {
+      key: 'email',
+      label: 'User Details',
+      alwaysVisible: true,
+      sortable: true,
+      render: (_v, user) => (
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm overflow-hidden relative ${getRoleColor(user.role).includes('blue') || getRoleColor(user.role).includes('indigo') ? 'bg-primary-600' : 'bg-slate-700'}`}>
+            <span className="relative z-10">{user.firstName ? user.firstName[0] : user.email[0].toUpperCase()}</span>
+          </div>
+          <div>
+            <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-tight">
+              {user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.email.split('@')[0]}
+            </div>
+            <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1 flex items-center gap-1.5 leading-none">
+              <Mail className="w-3 h-3 text-primary-400 dark:text-primary-500" />
+              {user.email}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortable: true,
+      render: (_v, user) => (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getRoleColor(user.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100`}>
+          {formatRole(user.role)}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, user) => (
+        <StatusBadge status={user.status} label={formatRole(user.status)} />
+      ),
+    },
+    {
+      key: 'tenantName',
+      label: 'Tenant',
+      sortable: true,
+      defaultHidden: false,
+      render: (_v, user) => (
+        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
+          <Building2 size={12} className="text-primary-400 dark:text-primary-500" />
+          <span>{user.tenantName || 'N/A'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'lastLoginAt',
+      label: 'Activity',
+      sortable: true,
+      defaultHidden: false,
+      render: (_v, user) => (
+        <div className="space-y-1">
+          <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest leading-none">
+            {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : <TranslatedText text="NEVER" />}
+          </p>
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
+            <TranslatedText text="LAST LOGIN" />
+          </p>
+        </div>
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<User>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye className="w-4 h-4" />,
+      onClick: (user) => {
+        setSelectedUser(user);
+        setShowDetailsModal(true);
+      },
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <Edit className="w-4 h-4" />,
+      onClick: (user) => handleEditUser(user),
+    },
+    {
+      key: 'permissions',
+      label: 'Manage Permissions',
+      icon: <ShieldCheck className="w-4 h-4" />,
+      onClick: (user) => setPermissionUser(user),
+    },
+    {
+      key: 'activate',
+      label: 'Activate',
+      icon: <Unlock className="w-4 h-4" />,
+      variant: 'success',
+      hidden: (user) => user.status !== 'SUSPENDED',
+      onClick: (user) => activateUserMutation(user.id),
+    },
+    {
+      key: 'suspend',
+      label: 'Suspend',
+      icon: <Ban className="w-4 h-4" />,
+      variant: 'warning',
+      hidden: (user) => user.status === 'SUSPENDED',
+      onClick: (user) => suspendUserMutation({ userId: user.id }),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <Trash2 className="w-4 h-4" />,
+      variant: 'danger',
+      divider: true,
+      onClick: (user) => handleDeleteUser(user.id),
+    },
+  ], [activateUserMutation, suspendUserMutation]);
+
   return (
     <AdminPageLayout
       title={<TranslatedText text="User Management" />}
@@ -413,253 +491,60 @@ const AdminUsers: React.FC = () => {
       </div>
 
       {activeTab === 'users' ? (
-        <>
-
-          {/* Users Content Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
-            {/* Filters Header */}
-            <div className="p-6 border-b border-gray-100 dark:border-slate-800 bg-[#fafafa] dark:bg-slate-900/50 flex flex-col md:flex-row gap-6 items-center justify-between">
-              <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                <div className="relative group">
-                  <input
-                    type="text"
-                    placeholder="SEARCH USERS..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full md:w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-white transition-all"
-                  />
-                  <Search className="absolute left-3.5 top-3 text-slate-400 dark:text-slate-500 group-hover:text-primary-500 transition-colors w-3.5 h-3.5" />
-                </div>
-                <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer transition-all font-black"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">ALL STATUS</option>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                  <option value="PENDING_VERIFICATION">PENDING VERIFICATION</option>
-                  <option value="SUSPENDED">SUSPENDED</option>
-                </select>
- 
-                <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer transition-all font-black"
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                >
-                  <option value="all">ALL ROLES</option>
-                  <option value="SUPER_ADMIN">SUPER ADMIN</option>
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="TENANT_ADMIN">TENANT ADMIN</option>
-                  <option value="CARGO_OWNER">CARGO OWNER</option>
-                  <option value="CARGO_RECEIVER">CARGO RECEIVER</option>
-                  <option value="TRUCK_OWNER">TRUCK OWNER</option>
-                  <option value="DRIVER">DRIVER</option>
-                  <option value="BROKER">BROKER</option>
-                  <option value="AGENT">AGENT</option>
-                  <option value="LENDER">LENDER</option>
-                  <option value="CUSTOMS_OFFICER">CUSTOMS OFFICER</option>
-                  <option value="FLEET_MANAGER">FLEET MANAGER</option>
-                  <option value="FLEET_DISPATCHER">FLEET DISPATCHER</option>
-                  <option value="FLEET_ACCOUNTANT">FLEET ACCOUNTANT</option>
-                  <option value="FLEET_SAFETY_OFFICER">FLEET SAFETY OFFICER</option>
-                </select>
- 
-                <select
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white cursor-pointer transition-all font-black"
-                  value={tenantFilter}
-                  onChange={(e) => setTenantFilter(e.target.value)}
-                >
-                  <option value="all">ALL TENANTS</option>
-                  {tenants.map((tenant) => (
-                    <option key={tenant.id} value={tenant.id}>{tenant.name.toUpperCase()}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-3">
-                <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 transition-all text-slate-600 dark:text-slate-400">
-                  <Download className="w-3 h-3" /> <TranslatedText text="Export" />
-                </button>
-                <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-gray-100/50 dark:bg-slate-800/50 px-4 py-2.5 rounded-xl">
-                  {total} <TranslatedText text="IDENTIFIED" />
-                </div>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-[#fafafa] dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
-                  <tr>
-                    <th className="px-6 py-4">
-                      <button
-                        className="flex items-center gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hover:text-gray-900 dark:hover:text-white transition-colors"
-                        onClick={() => {
-                          setSortBy('email');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                      >
-                        <TranslatedText text="User Details" />
-                        <ChevronsUpDown className="w-3 h-3 text-gray-400 dark:text-slate-600" />
-                      </button>
-                    </th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Role" /></th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Status" /></th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden md:table-cell"><TranslatedText text="Tenant" /></th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest hidden lg:table-cell"><TranslatedText text="Activity" /></th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Action" /></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                  {isLoadingUsers ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-0">
-                        <ModernLoader isLoading={true} type="table" rows={10} columns={6} />
-                      </td>
-                    </tr>
-                  ) : pagedUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="w-12 h-12 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-gray-400 dark:text-slate-500">
-                            <Users size={20} />
-                          </div>
-                          <span className="text-gray-900 dark:text-white font-medium"><TranslatedText text="No users found" /></span>
-                          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1"><TranslatedText text="Try adjusting your filters" /></p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    pagedUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm overflow-hidden relative group-hover:scale-105 transition-transform duration-300 ${getRoleColor(user.role).includes('blue') || getRoleColor(user.role).includes('indigo') ? 'bg-primary-600' : 'bg-slate-700'}`}>
-                              <span className="relative z-10">{user.firstName ? user.firstName[0] : user.email[0].toUpperCase()}</span>
-                              <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                            <div>
-                              <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-tight">
-                                {user.firstName && user.lastName
-                                  ? `${user.firstName} ${user.lastName}`
-                                  : user.email.split('@')[0]}
-                              </div>
-                              <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1 flex items-center gap-1.5 leading-none">
-                                <Mail className="w-3 h-3 text-primary-400 dark:text-primary-500" />
-                                {user.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all ${getRoleColor(user.role).replace('bg-', 'bg-').replace('text-', 'text-').replace('100', '50/50').replace('800', '700')} border-primary-100`}>
-                            {formatRole(user.role)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-2 h-2 rounded-full ${user.status === 'ACTIVE' ? 'bg-emerald-500' : user.status === 'SUSPENDED' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
-                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest leading-none"><TranslatedText text={(user.status || '').replace('_', ' ')} /></span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 hidden md:table-cell text-sm font-black text-gray-900 dark:text-white tracking-tight leading-none text-right">
-                          <div className="flex items-center justify-end gap-2 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-                            <Building2 size={12} className="text-primary-400 dark:text-primary-500" />
-                            <span>{user.tenantName || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 hidden lg:table-cell">
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest leading-none">{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : <TranslatedText text="NEVER" />}</p>
-                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none"><TranslatedText text="LAST LOGIN" /></p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowDetailsModal(true);
-                              }}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleEditUser(user)}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
-                              title="Edit"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setPermissionUser(user)}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
-                              title="Manage Permissions"
-                            >
-                              <ShieldCheck className="w-4 h-4" />
-                            </button>
-                             {user.status === 'SUSPENDED' ? (
-                              <button
-                                onClick={() => activateUserMutation(user.id)}
-                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
-                                title="Activate"
-                              >
-                                <Unlock className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => suspendUserMutation({ userId: user.id })}
-                                className="p-2 text-slate-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
-                                title="Suspend"
-                              >
-                                <Ban className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all bg-white dark:bg-slate-800 border border-transparent"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {pagedUsers.length > 0 && (
-              <div className="px-6 py-5 border-t border-gray-100 dark:border-slate-800 bg-[#fafafa] dark:bg-slate-900 flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                  <TranslatedText text="Showing" /> <span className="text-gray-900 dark:text-white">{startIdx + 1}-{Math.min(endIdx, total)}</span> <TranslatedText text="of" /> <span className="text-gray-900 dark:text-white">{total}</span> <TranslatedText text="identified" />
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-transparent text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all"
-                    onClick={() => setPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <TranslatedText text="Previous" />
-                  </button>
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mx-2"><TranslatedText text="Page" /> <span className="text-gray-900 dark:text-white font-black">{currentPage}</span> <TranslatedText text="of" /> <span className="text-gray-900 dark:text-white font-black">{totalPages}</span></span>
-                  <button
-                    className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-800 border border-transparent text-slate-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-750 disabled:opacity-50 transition-all"
-                    onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <TranslatedText text="Next" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
+        <StandardDataTable
+          columns={columns}
+          data={users}
+          loading={isLoadingUsers}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Search users..."
+          searchKeys={['email', 'firstName', 'lastName', 'companyName', 'tenantName']}
+          filters={[
+            {
+              key: 'status',
+              label: 'Status',
+              options: [
+                { value: 'ACTIVE', label: 'Active' },
+                { value: 'INACTIVE', label: 'Inactive' },
+                { value: 'PENDING_VERIFICATION', label: 'Pending Verification' },
+                { value: 'SUSPENDED', label: 'Suspended' },
+              ],
+            },
+            {
+              key: 'role',
+              label: 'Role',
+              options: [
+                { value: 'SUPER_ADMIN', label: 'Super Admin' },
+                { value: 'ADMIN', label: 'Admin' },
+                { value: 'TENANT_ADMIN', label: 'Tenant Admin' },
+                { value: 'CARGO_OWNER', label: 'Cargo Owner' },
+                { value: 'CARGO_RECEIVER', label: 'Cargo Receiver' },
+                { value: 'TRUCK_OWNER', label: 'Truck Owner' },
+                { value: 'DRIVER', label: 'Driver' },
+                { value: 'BROKER', label: 'Broker' },
+                { value: 'AGENT', label: 'Agent' },
+                { value: 'LENDER', label: 'Lender' },
+                { value: 'CUSTOMS_OFFICER', label: 'Customs Officer' },
+                { value: 'FLEET_MANAGER', label: 'Fleet Manager' },
+                { value: 'FLEET_DISPATCHER', label: 'Fleet Dispatcher' },
+                { value: 'FLEET_ACCOUNTANT', label: 'Fleet Accountant' },
+                { value: 'FLEET_SAFETY_OFFICER', label: 'Fleet Safety Officer' },
+              ],
+            },
+            {
+              key: 'tenantId',
+              label: 'Tenant',
+              options: tenants.map((tenant) => ({
+                value: tenant.id,
+                label: tenant.name,
+              })),
+            },
+          ]}
+          defaultSortKey="createdAt"
+          defaultSortDirection="desc"
+          rowActions={rowActions}
+          emptyMessage="No users found"
+          ariaLabel="Admin users"
+        />
       ) : (
         <RolePermissionsMatrix />
       )}

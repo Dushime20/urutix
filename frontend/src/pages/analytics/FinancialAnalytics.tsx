@@ -13,7 +13,7 @@ import {
 import {
   TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
-import { EnhancedTable, type Column } from '../../components/EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable, type Column } from '../../components/EnliteUI/Tables';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi, type CostFilters } from '../../services/analyticsApi';
 import { CostTrendsChart } from '../../components/Analytics/CostTrendsChart';
@@ -229,11 +229,16 @@ const FinancialAnalytics: React.FC = () => {
           subtitle={`Money spent by category (${CURRENCY_SYMBOL})`}
         >
           <div className="mt-4">
-            <EnhancedTable
+            <StandardDataTable
+              embedded
               data={financialSummary.topCategories}
               columns={categoryColumns}
               loading={summaryLoading}
               emptyMessage="No spending data available for this selection"
+              searchPlaceholder="Search categories..."
+              stickyHeader
+              columnVisibility
+              pagination
             />
           </div>
         </DataCard>

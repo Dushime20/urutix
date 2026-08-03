@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Truck,
   User,
   MapPin,
-  Phone,
-  Mail,
   Edit3,
   Trash2,
   CheckSquare,
@@ -13,17 +11,13 @@ import {
   Settings,
   Download,
   Shield,
-  MoreVertical,
-  ChevronRight,
   Zap,
-  Star,
-  Activity
+  Activity,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { FleetItem } from '../../types/fleet';
-import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
-import { toast } from 'react-hot-toast';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface FleetTableProps {
   fleetItems: FleetItem[];
@@ -51,35 +45,12 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
     setSelectedIds([]);
   }, [activeTab]);
 
-  const handleSelectAll = () => {
-    if (selectedIds.length === fleetItems.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(fleetItems.map(item => item.id));
-    }
-  };
-
   const handleSelectOne = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(itemId => itemId !== id));
     } else {
       setSelectedIds([...selectedIds, id]);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'AVAILABLE':
-        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'IN_TRANSIT':
-        return 'bg-blue-50 text-blue-600 border-blue-100';
-      case 'MAINTENANCE':
-        return 'bg-amber-50 text-amber-600 border-amber-100';
-      case 'OUT_OF_SERVICE':
-        return 'bg-rose-50 text-rose-600 border-rose-100';
-      default:
-        return 'bg-slate-50 text-slate-600 border-slate-100';
     }
   };
 
@@ -97,6 +68,76 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
         return tSync(status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()));
     }
   };
+
+  const listColumns: Column<FleetItem>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Identity Profile',
+      sortable: true,
+      render: (_: unknown, item: FleetItem) => (
+        <div className="flex items-center gap-4">
+          <div className="size-12 rounded-[18px] bg-primary-50 flex items-center justify-center text-primary-500 shadow-inner">
+            {activeTab === 'trucks' ? <Truck size={20} /> : <User size={20} />}
+          </div>
+          <div>
+            <h4 className="font-black text-slate-900 tracking-tight leading-none mb-1">{item.name}</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.id.substring(0, 8)}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Operational Status',
+      sortable: true,
+      render: (_: unknown, item: FleetItem) => (
+        <StatusBadge label={getStatusText(item.status)} status={item.status} />
+      ),
+    },
+    {
+      key: 'currentLocation.address',
+      label: 'Geospatial Vector',
+      render: (_: unknown, item: FleetItem) => (
+        <div className="flex items-center gap-2 max-w-[240px]">
+          <MapPin size={14} className="text-slate-300 flex-shrink-0" />
+          <span className="text-[11px] font-medium text-slate-500 italic truncate">
+            {item.currentLocation?.address || 'Awaiting Sync...'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'plateNumber',
+      label: 'Technical Matrix',
+      render: (_: unknown, item: FleetItem) => (
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1.5">
+            <Zap size={10} className="text-primary-500" />
+            {activeTab === 'trucks' ? item.plateNumber : item.licenseNumber || 'PROTOTYPE'}
+          </span>
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+            {activeTab === 'trucks' ? `${item.make} ${item.model}` : `${item.experience || 0} YR COMMAND`}
+          </span>
+        </div>
+      ),
+    },
+  ], [activeTab, tSync]);
+
+  const listRowActions: TableAction<FleetItem>[] = useMemo(() => [
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <Edit3 size={16} />,
+      onClick: (item) => onEditFleetItem(item),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <Trash2 size={16} />,
+      variant: 'danger',
+      onClick: (item) => onDeleteFleetItem(item.id),
+    },
+  ], [onEditFleetItem, onDeleteFleetItem]);
 
   const BulkActionsToolbar = () => (
     <motion.div
@@ -189,9 +230,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                   </AnimatePresence>
                 </div>
 
-                <div className={`px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(item.status)}`}>
-                  {getStatusText(item.status)}
-                </div>
+                <StatusBadge label={getStatusText(item.status)} status={item.status} />
               </div>
 
               <div className="px-6 pb-2 space-y-4 flex-1 relative z-10">
@@ -282,114 +321,28 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
 
   return (
     <div className="relative">
-      <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-slate-50">
-              <th className="px-8 py-6 text-left w-[60px]">
-                <div onClick={handleSelectAll} className="size-6 cursor-pointer relative">
-                  {selectedIds.length === fleetItems.length && fleetItems.length > 0 ? (
-                    <CheckSquare size={24} className="text-primary-600" />
-                  ) : selectedIds.length > 0 ? (
-                    <MinusSquare size={24} className="text-primary-600" />
-                  ) : (
-                    <Square size={24} className="text-slate-200 hover:text-primary-200 transition-colors" />
-                  )}
-                </div>
-              </th>
-              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
-                Identity Profile
-              </th>
-              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
-                Operational Status
-              </th>
-              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
-                Geospatial Vector
-              </th>
-              <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">
-                Technical Matrix
-              </th>
-              <th className="px-6 py-6 text-right" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {fleetItems.map((item, index) => (
-              <motion.tr
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.03 }}
-                key={item.id}
-                ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
-                className={`group hover:bg-slate-50/50 transition-all cursor-pointer ${selectedIds.includes(item.id) ? 'bg-primary-50/40' : ''}`}
-                onClick={() => onRowClick(item)}
-              >
-                <td className="px-8 py-6" onClick={(e) => handleSelectOne(item.id, e)}>
-                  {selectedIds.includes(item.id) ? (
-                    <CheckSquare size={22} className="text-primary-600" />
-                  ) : (
-                    <Square size={22} className="text-slate-100 group-hover:text-slate-200 transition-colors" />
-                  )}
-                </td>
-                <td className="px-6 py-6">
-                  <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-[18px] bg-primary-50 flex items-center justify-center text-primary-500 shadow-inner group-hover:bg-primary-500 group-hover:text-white transition-all">
-                      {activeTab === 'trucks' ? <Truck size={20} /> : <User size={20} />}
-                    </div>
-                    <div>
-                      <h4 className="font-black text-slate-900 tracking-tight leading-none mb-1">{item.name}</h4>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.id.substring(0, 8)}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-6">
-                  <div className={`inline-flex px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(item.status)}`}>
-                    {getStatusText(item.status)}
-                  </div>
-                </td>
-                <td className="px-6 py-6">
-                  <div className="flex items-center gap-2 max-w-[240px]">
-                    <MapPin size={14} className="text-slate-300 flex-shrink-0" />
-                    <span className="text-[11px] font-medium text-slate-500 italic truncate line-clamp-1">
-                      {item.currentLocation?.address || 'Awaiting Sync...'}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-6">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1.5">
-                      <Zap size={10} className="text-primary-500" />
-                      {activeTab === 'trucks' ? item.plateNumber : item.licenseNumber || 'PROTOTYPE'}
-                    </span>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                      {activeTab === 'trucks' ? `${item.make} ${item.model}` : `${item.experience || 0} YR COMMAND`}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-8 py-6 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onEditFleetItem(item); }}
-                      className="size-10 bg-white border border-slate-100 hover:bg-primary-500 hover:text-white rounded-xl shadow-sm flex items-center justify-center transition-all"
-                    >
-                      <Edit3 size={18} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDeleteFleetItem(item.id); }}
-                      className="size-10 bg-white border border-slate-100 hover:bg-rose-500 hover:text-white rounded-xl shadow-sm flex items-center justify-center transition-all"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                    <div className="w-px h-6 bg-slate-100 mx-1" />
-                    <div className="size-10 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center">
-                      <ChevronRight size={18} />
-                    </div>
-                  </div>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <StandardDataTable
+        embedded
+        className="bg-white rounded-[40px] border border-slate-100 shadow-xl overflow-hidden"
+        columns={listColumns}
+        data={fleetItems}
+        getRowId={(row) => row.id}
+        selectable
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+        rowActions={listRowActions}
+        onRowClick={onRowClick}
+        rowClassName={(row) => (selectedIds.includes(row.id) ? 'bg-primary-50/40' : '')}
+        pagination={false}
+        searchable={false}
+        columnVisibility={false}
+        stickyHeader
+        emptyMessage={tSync('No fleet assets found')}
+        ariaLabel={tSync('Fleet assets')}
+      />
+      {fleetItems.length > 0 && (
+        <div ref={lastFleetItemRef} className="h-px w-full" aria-hidden />
+      )}
       <AnimatePresence>
         {selectedIds.length > 0 && <BulkActionsToolbar />}
       </AnimatePresence>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Shield,
   AlertTriangle,
@@ -21,6 +21,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 
 interface SafetyMetricsProps {
   driverId: string;
@@ -176,6 +177,47 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
+
+  type InspectionRow = SafetyData['inspections'][number];
+
+  const inspectionColumns: Column<InspectionRow>[] = useMemo(() => [
+    {
+      key: 'type',
+      label: t('Type'),
+      render: (_: unknown, inspection: InspectionRow) => (
+        <span className="text-sm font-bold text-slate-700">{inspection.type}</span>
+      ),
+    },
+    {
+      key: 'date',
+      label: t('Date'),
+      render: (_: unknown, inspection: InspectionRow) => (
+        <span className="text-sm font-medium text-slate-500">{formatDate(inspection.date)}</span>
+      ),
+    },
+    {
+      key: 'result',
+      label: t('Result'),
+      render: (_: unknown, inspection: InspectionRow) => (
+        <StatusBadge
+          status={inspection.result}
+          label={inspection.result}
+          variant={
+            inspection.result === 'PASS' ? 'success'
+              : inspection.result === 'FAIL' ? 'error'
+                : 'warning'
+          }
+        />
+      ),
+    },
+    {
+      key: 'notes',
+      label: t('Notes'),
+      render: (_: unknown, inspection: InspectionRow) => (
+        <span className="text-sm text-slate-500 max-w-xs truncate block">{inspection.notes || '-'}</span>
+      ),
+    },
+  ], [t]);
 
   if (isLoading) {
     return (
@@ -491,35 +533,23 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           </div>
           <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Recent Inspections" /></h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-slate-50">
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Type" /></th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Date" /></th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Result" /></th>
-                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider"><TranslatedText text="Notes" /></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {data.inspections.map((inspection) => (
-                <tr key={inspection.id} className="group hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-bold text-slate-700">{inspection.type}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-slate-500">{formatDate(inspection.date)}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${inspection.result === 'PASS' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                      inspection.result === 'FAIL' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-                        'bg-amber-50 text-amber-600 border border-amber-100'
-                      }`}>
-                      {inspection.result}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">{inspection.notes || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <StandardDataTable<InspectionRow>
+          embedded
+          columns={inspectionColumns}
+          data={data.inspections}
+          getRowId={(row) => row.id}
+          searchable
+          searchPlaceholder="Search inspections…"
+          searchKeys={['type', 'result', 'notes']}
+          pagination
+          pageSize={10}
+          columnVisibility={false}
+          stickyHeader
+          striped
+          hoverable
+          emptyMessage="No inspection records found"
+          ariaLabel="Recent inspections"
+        />
       </div>
 
       {/* Safety Alerts */}

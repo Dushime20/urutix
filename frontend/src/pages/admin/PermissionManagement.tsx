@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { permissionApi, type PermissionItem, type UserPermissionDetail } from '../../services/permissionApi';
@@ -9,8 +9,9 @@ import {
   Search, User, Mail, Shield, AlertCircle, CheckCircle,
   Lock, ChevronLeft, ChevronDown, ChevronRight,
   Check, X, RefreshCw, Save, History, Filter,
-  ShieldCheck, ShieldAlert, Eye, EyeOff, Clock,
+  ShieldCheck, ShieldAlert, Eye, EyeOff,   Clock,
 } from 'lucide-react';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 // ── Module display config ────────────────────────────────────────────────────
 const MODULE_META: Record<string, { label: string; icon: string; color: string }> = {
@@ -508,6 +509,61 @@ const PermissionManagement: React.FC = () => {
 
   const roles = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CARGO_OWNER', 'TRUCK_OWNER', 'DRIVER', 'BROKER', 'LENDER', 'CUSTOMS_OFFICER'];
 
+  const userColumns: Column<any>[] = useMemo(() => [
+    {
+      key: 'email',
+      label: 'User',
+      sortable: true,
+      render: (_: unknown, u: any) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-[#2c5173]/10 rounded-xl flex items-center justify-center text-[#2c5173] font-black text-sm">
+            {(u.firstName || u.profile?.firstName || u.email || '?')[0].toUpperCase()}
+          </div>
+          <div>
+            <div className="text-sm font-bold text-gray-900">
+              {u.firstName || u.profile?.firstName || ''} {u.lastName || u.profile?.lastName || ''}
+              {!u.firstName && !u.profile?.firstName && <span className="text-gray-400">—</span>}
+            </div>
+            <div className="text-xs text-gray-500 flex items-center gap-1 font-medium">
+              <Mail className="w-3 h-3 text-gray-400" /> {u.email}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      sortable: true,
+      render: (_: unknown, u: any) => (
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${roleBadgeColor(u.role)}`}>
+          <Shield className="w-3 h-3" /> {u.role?.replace(/_/g, ' ')}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_: unknown, u: any) => (
+        <StatusBadge
+          label={u.status}
+          status={u.status}
+          icon={u.status === 'ACTIVE' ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+        />
+      ),
+    },
+  ], []);
+
+  const userRowActions: TableAction<any>[] = useMemo(() => [
+    {
+      key: 'manage',
+      label: 'Manage Permissions',
+      icon: <Lock className="w-3 h-3" />,
+      onClick: (u) => setSelectedUser(u),
+    },
+  ], []);
+
   if (selectedUser) {
     return (
       <AdminPageLayout
@@ -560,75 +616,21 @@ const PermissionManagement: React.FC = () => {
         </form>
 
         {/* Users table */}
-        {loading ? (
-          <ModernLoader isLoading type="table" rows={6} columns={4} />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Access Control</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {users.map(u => (
-                  <tr key={u.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-[#2c5173]/10 rounded-xl flex items-center justify-center text-[#2c5173] font-black text-sm">
-                          {(u.firstName || u.profile?.firstName || u.email || '?')[0].toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">
-                            {u.firstName || u.profile?.firstName || ''} {u.lastName || u.profile?.lastName || ''}
-                            {!u.firstName && !u.profile?.firstName && <span className="text-gray-400">—</span>}
-                          </div>
-                          <div className="text-xs text-gray-500 flex items-center gap-1 font-medium">
-                            <Mail className="w-3 h-3 text-gray-400" /> {u.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${roleBadgeColor(u.role)}`}>
-                        <Shield className="w-3 h-3" /> {u.role?.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${statusBadgeColor(u.status)}`}>
-                        {u.status === 'ACTIVE' ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                        {u.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setSelectedUser(u)}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 hover:border-[#2c5173] hover:bg-[#2c5173]/5 text-gray-600 hover:text-[#2c5173] rounded-xl transition-all text-xs font-bold"
-                      >
-                        <Lock className="w-3 h-3" /> Manage Permissions
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-gray-400">
-                      <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Search className="w-5 h-5 text-gray-300" />
-                      </div>
-                      <p className="text-sm font-medium">No users found</p>
-                      <p className="text-xs mt-1">Try adjusting your search or filter</p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <StandardDataTable
+          embedded
+          columns={userColumns}
+          data={users}
+          getRowId={(row) => row.id}
+          loading={loading}
+          searchable={false}
+          columnVisibility
+          stickyHeader
+          defaultSortKey="email"
+          rowActions={userRowActions}
+          onRefresh={() => fetchUsers(search, roleFilter)}
+          emptyMessage="No users found"
+          ariaLabel="Permission management users"
+        />
       </div>
       </div>
     </AdminPageLayout>

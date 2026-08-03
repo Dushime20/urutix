@@ -21,6 +21,7 @@ import {
     Info,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { toastActionSuccess, toastActionError, BID_ACCEPT_SUPPRESS_TYPES } from '../../utils/actionToast';
 import { cn } from '@/utils/cn';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import {
@@ -158,11 +159,14 @@ const MyAuctions: React.FC = () => {
         setAcceptingBid(bidId);
         try {
             await acceptBidMutation.mutateAsync(bidId);
-            toast.success('Bid accepted successfully!');
+            toastActionSuccess('Bid accepted successfully!', {
+                id: 'accept-bid',
+                suppressTypes: BID_ACCEPT_SUPPRESS_TYPES,
+            });
         } catch (error: any) {
             console.error('Failed to accept bid:', error);
             const errorMessage = error?.response?.data?.message || 'Failed to accept bid';
-            toast.error(errorMessage);
+            toastActionError(errorMessage, { id: 'accept-bid' });
         } finally {
             setAcceptingBid(null);
         }

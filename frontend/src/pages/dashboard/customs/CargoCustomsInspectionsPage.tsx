@@ -35,13 +35,14 @@ import { useAuth } from '../../../contexts/AuthContext';
 type TypeFilter = 'all' | 'pre' | 'post' | 'action';
 
 const PRE_TRIP_STATUS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: 'Pending', color: 'bg-gray-100 text-gray-600 border-gray-200', icon: <Clock className="w-3.5 h-3.5" /> },
-  IN_PROGRESS: { label: 'In Progress', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <Clock className="w-3.5 h-3.5" /> },
-  FAILED: { label: 'Failed', color: 'bg-red-100 text-red-700 border-red-200', icon: <XCircle className="w-3.5 h-3.5" /> },
-  AWAITING_RESOLUTION: { label: 'Awaiting Your Action', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+  PENDING: { label: 'Draft', color: 'bg-gray-100 text-gray-600 border-gray-200', icon: <Clock className="w-3.5 h-3.5" /> },
+  TRUCK_INSPECTION_COMPLETED: { label: 'Truck Inspection Completed', color: 'bg-sky-100 text-sky-800 border-sky-200', icon: <Truck className="w-3.5 h-3.5" /> },
+  IN_PROGRESS: { label: 'Cargo Inspection In Progress', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <Clock className="w-3.5 h-3.5" /> },
+  FAILED: { label: 'Issue Reported', color: 'bg-red-100 text-red-700 border-red-200', icon: <XCircle className="w-3.5 h-3.5" /> },
+  AWAITING_RESOLUTION: { label: 'Awaiting Resolution', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: <AlertTriangle className="w-3.5 h-3.5" /> },
   READY_FOR_RE_INSPECTION: { label: 'Ready for Re-Inspection', color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: <RefreshCw className="w-3.5 h-3.5" /> },
-  AWAITING_CARGO_OWNER_APPROVAL: { label: 'Awaiting Your Approval', color: 'bg-violet-100 text-violet-800 border-violet-200', icon: <Clock className="w-3.5 h-3.5" /> },
-  APPROVED: { label: 'Approved', color: 'bg-green-100 text-green-700 border-green-200', icon: <CheckCircle className="w-3.5 h-3.5" /> },
+  AWAITING_CARGO_OWNER_APPROVAL: { label: 'Waiting for Approval', color: 'bg-violet-100 text-violet-800 border-violet-200', icon: <Clock className="w-3.5 h-3.5" /> },
+  APPROVED: { label: 'Approved — Ready to Start Trip', color: 'bg-green-100 text-green-700 border-green-200', icon: <CheckCircle className="w-3.5 h-3.5" /> },
 };
 
 const POST_STATUS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {

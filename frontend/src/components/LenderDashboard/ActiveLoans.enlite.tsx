@@ -3,12 +3,10 @@ import {
     ShieldAlert,
     ExternalLink,
     Mail,
-    Download,
     LayoutGrid,
     List,
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -145,6 +143,23 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
         if (repaymentCount >= 1) return 'fair';
         return 'new';
     };
+
+    const viewModeToggle = (
+        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
+            <button
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-[#345E85]' : 'text-slate-400'}`}
+            >
+                <List size={14} />
+            </button>
+            <button
+                onClick={() => setViewMode('grouped')}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grouped' ? 'bg-white shadow-sm text-[#345E85]' : 'text-slate-400'}`}
+            >
+                <LayoutGrid size={14} />
+            </button>
+        </div>
+    );
 
     const columns = [
         {
@@ -286,78 +301,84 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
         return acc;
     }, {} as Record<string, ActiveLoan[]>);
 
+    const sharedTableProps = {
+        columns,
+        loading,
+        getRowId: (row: ActiveLoan) => row.id,
+        sortKey,
+        sortDirection,
+        onSort: (key: string) => onSort(key),
+        pagination: true as const,
+        pageSize: 10,
+        columnVisibility: true as const,
+        stickyHeader: true as const,
+        striped: true as const,
+        hoverable: true as const,
+        searchable: true as const,
+        searchPlaceholder: t('Search loans…'),
+        searchKeys: ['borrower.name', 'borrower.company', 'id', 'status', 'purpose'] as string[],
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Main Content Area */}
-            <DataCard
-                title={t("Portfolio Management Console")}
-                actions={
-                    <div className="flex items-center gap-3">
-                        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
-                            <button
-                                onClick={() => setViewMode('table')}
-                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-[#345E85]' : 'text-slate-400'}`}
-                            >
-                                <List size={14} />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('grouped')}
-                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grouped' ? 'bg-white shadow-sm text-[#345E85]' : 'text-slate-400'}`}
-                            >
-                                <LayoutGrid size={14} />
-                            </button>
-                        </div>
-                        <button
-                            onClick={handleExport}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
-                        >
-                            <Download size={14} /> <TranslatedText text="Export Portfolio" />
-                        </button>
+            {viewMode === 'table' ? (
+                <StandardDataTable
+                    title={t("Portfolio Management Console")}
+                    headerColor="primary"
+                    headerActions={viewModeToggle}
+                    columns={columns}
+                    data={loans}
+                    loading={loading}
+                    getRowId={(row) => row.id}
+                    searchable
+                    searchPlaceholder={t('Search loans…')}
+                    searchKeys={['borrower.name', 'borrower.company', 'id', 'status', 'purpose']}
+                    sortKey={sortKey}
+                    sortDirection={sortDirection}
+                    onSort={(key) => onSort(key)}
+                    pagination
+                    pageSize={10}
+                    columnVisibility
+                    stickyHeader
+                    striped
+                    hoverable
+                    emptyMessage={t('No active loans found')}
+                    onExport={handleExport}
+                    exportLabel={t('Export Portfolio')}
+                    ariaLabel={t('Portfolio Management Console')}
+                />
+            ) : (
+                <div className="space-y-8">
+                    <div className="flex items-center justify-end gap-3">
+                        {viewModeToggle}
                     </div>
-                }
-            >
-                <div className="space-y-6">
-                    {viewMode === 'table' ? (
-                        <EnhancedTable
-                            columns={columns}
-                            data={loans}
-                            loading={loading}
-                            onSort={onSort}
-                            sortKey={sortKey}
-                            sortDirection={sortDirection}
-                        />
-                    ) : (
-                        <div className="space-y-8">
-                            {Object.entries(groupedLoans).map(([status, statusLoans]) => (
-                                <div key={status} className="space-y-4">
-                                    <div className="flex items-center gap-4 px-2">
-                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-white bg-${getStatusColor(status)}-500 shadow-lg shadow-${getStatusColor(status)}-100`}>
-                                            <ShieldAlert size={16} />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-tighter">{status} <TranslatedText text="OPERATIONS" /></h3>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{statusLoans.length} <TranslatedText text="Active Assets Assigned" /></p>
-                                        </div>
-                                        <div className="flex-1 border-t border-slate-100 border-dashed mx-4"></div>
-                                        <div className="text-right">
-                                            <p className="text-xs font-black text-slate-900 uppercase">{cpt(statusLoans.reduce((sum, l) => sum + l.outstanding_balance, 0))}</p>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest"><TranslatedText text="Total Exposure" /></p>
-                                        </div>
-                                    </div>
-                                    <EnhancedTable
-                                        columns={columns}
-                                        data={statusLoans}
-                                        loading={loading}
-                                        onSort={onSort}
-                                        sortKey={sortKey}
-                                        sortDirection={sortDirection}
-                                    />
+                    {Object.entries(groupedLoans).map(([status, statusLoans]) => (
+                        <div key={status} className="space-y-4">
+                            <div className="flex items-center gap-4 px-2">
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-white bg-${getStatusColor(status)}-500 shadow-lg shadow-${getStatusColor(status)}-100`}>
+                                    <ShieldAlert size={16} />
                                 </div>
-                            ))}
+                                <div>
+                                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-tighter">{status} <TranslatedText text="OPERATIONS" /></h3>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{statusLoans.length} <TranslatedText text="Active Assets Assigned" /></p>
+                                </div>
+                                <div className="flex-1 border-t border-slate-100 border-dashed mx-4"></div>
+                                <div className="text-right">
+                                    <p className="text-xs font-black text-slate-900 uppercase">{cpt(statusLoans.reduce((sum, l) => sum + l.outstanding_balance, 0))}</p>
+                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest"><TranslatedText text="Total Exposure" /></p>
+                                </div>
+                            </div>
+                            <StandardDataTable
+                                {...sharedTableProps}
+                                embedded
+                                data={statusLoans}
+                                emptyMessage={t('No loans in this status')}
+                                onExport={status === Object.keys(groupedLoans)[0] ? handleExport : undefined}
+                            />
                         </div>
-                    )}
+                    ))}
                 </div>
-            </DataCard>
+            )}
         </div>
     );
 };

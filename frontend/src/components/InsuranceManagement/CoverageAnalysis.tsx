@@ -1,13 +1,51 @@
-import React, { useState } from 'react';
-import { FaShieldAlt, FaExclamationTriangle, FaCheckCircle, FaInfoCircle, FaChartBar, FaDownload, FaEye, FaEdit, FaPlus } from 'react-icons/fa';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import React, { useMemo, useState } from 'react';
+import {
+  FaShieldAlt, FaExclamationTriangle, FaCheckCircle,
+  FaChartBar, FaDownload, FaEye, FaEdit, FaPlus,
+} from 'react-icons/fa';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+} from 'recharts';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
+
+interface CoverageDetail {
+  covered: boolean;
+  limit: number;
+  recommended: number;
+  status: string;
+}
+
+interface TruckCoverage {
+  truckId: string;
+  truckPlate: string;
+  liability: CoverageDetail;
+  collision: CoverageDetail;
+  comprehensive: CoverageDetail;
+  cargo: CoverageDetail;
+  uninsuredMotorist: CoverageDetail;
+  roadside: CoverageDetail;
+  medical: CoverageDetail;
+}
+
+interface CoverageRow {
+  id: string;
+  truckId: string;
+  truckPlate: string;
+  coverageType: string;
+  coverageLabel: string;
+  description?: string;
+  covered: boolean;
+  limit: number;
+  recommended: number;
+  status: string;
+}
 
 const CoverageAnalysis: React.FC = () => {
   const [selectedTruck, setSelectedTruck] = useState('all');
   const [analysisType, setAnalysisType] = useState('overview');
 
-  // Mock data for coverage analysis
-  const coverageData = [
+  const coverageData: TruckCoverage[] = [
     {
       truckId: 'TRK-001',
       truckPlate: 'ABC-123',
@@ -61,59 +99,150 @@ const CoverageAnalysis: React.FC = () => {
     { factor: 'Geographic Risk', score: 60, weight: 10 },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'adequate':
-        return 'text-green-600 bg-green-100';
-      case 'insufficient':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'missing':
-        return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
-    }
+  const statusVariant = (status: string) => {
+    if (status === 'adequate') return 'success' as const;
+    if (status === 'insufficient') return 'warning' as const;
+    if (status === 'missing') return 'error' as const;
+    return 'neutral' as const;
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'adequate':
-        return FaCheckCircle;
-      case 'insufficient':
-        return FaExclamationTriangle;
-      case 'missing':
-        return FaExclamationTriangle;
-      default:
-        return FaInfoCircle;
-    }
-  };
-
-  const calculateCoverageScore = (truck: any) => {
-    const coverageItems = [truck.liability, truck.collision, truck.comprehensive, truck.cargo, truck.uninsuredMotorist, truck.roadside, truck.medical];
+  const calculateCoverageScore = (truck: TruckCoverage) => {
+    const coverageItems = [
+      truck.liability, truck.collision, truck.comprehensive, truck.cargo,
+      truck.uninsuredMotorist, truck.roadside, truck.medical,
+    ];
     const totalItems = coverageItems.length;
-    const coveredItems = coverageItems.filter(item => item.covered).length;
-    const adequateItems = coverageItems.filter(item => item.status === 'adequate').length;
-    
+    const coveredItems = coverageItems.filter((item) => item.covered).length;
+    const adequateItems = coverageItems.filter((item) => item.status === 'adequate').length;
+
     return {
       coveragePercentage: Math.round((coveredItems / totalItems) * 100),
       adequacyPercentage: Math.round((adequateItems / totalItems) * 100),
-      overallScore: Math.round(((coveredItems * 0.6) + (adequateItems * 0.4)) / totalItems * 100)
+      overallScore: Math.round(((coveredItems * 0.6) + (adequateItems * 0.4)) / totalItems * 100),
     };
   };
 
-  const selectedTruckData = selectedTruck === 'all' ? coverageData : coverageData.filter(t => t.truckId === selectedTruck);
-  const overallScore = selectedTruck === 'all' 
-    ? Math.round(coverageData.reduce((sum, t) => sum + calculateCoverageScore(t).overallScore, 0) / coverageData.length)
-    : calculateCoverageScore(selectedTruckData[0]).overallScore;
+  const selectedTruckData =
+    selectedTruck === 'all' ? coverageData : coverageData.filter((t) => t.truckId === selectedTruck);
+
+  const overallScore =
+    selectedTruck === 'all'
+      ? Math.round(
+          coverageData.reduce((sum, t) => sum + calculateCoverageScore(t).overallScore, 0) /
+            coverageData.length,
+        )
+      : calculateCoverageScore(selectedTruckData[0]).overallScore;
+
+  const detailedRows: CoverageRow[] = useMemo(() => {
+    const rows: CoverageRow[] = [];
+    selectedTruckData.forEach((truck) => {
+      (Object.entries(truck) as [string, any][])
+        .filter(([key]) => key !== 'truckId' && key !== 'truckPlate')
+        .forEach(([coverageType, details]) => {
+          const label = coverageType.replace(/([A-Z])/g, ' $1').trim();
+          rows.push({
+            id: `${truck.truckId}-${coverageType}`,
+            truckId: truck.truckId,
+            truckPlate: truck.truckPlate,
+            coverageType,
+            coverageLabel: label.charAt(0).toUpperCase() + label.slice(1),
+            description: coverageTypes.find(
+              (ct) => ct.name.toLowerCase() === coverageType.toLowerCase(),
+            )?.description,
+            covered: details.covered,
+            limit: details.limit,
+            recommended: details.recommended,
+            status: details.status,
+          });
+        });
+    });
+    return rows;
+  }, [selectedTruckData]);
+
+  const detailedColumns: Column<CoverageRow>[] = [
+    {
+      key: 'truckPlate',
+      label: 'Truck',
+      defaultHidden: selectedTruck !== 'all',
+      render: (_v, row) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900 dark:text-slate-100">{row.truckPlate}</div>
+          <div className="text-xs text-gray-500">{row.truckId}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'coverageLabel',
+      label: 'Coverage Type',
+      alwaysVisible: true,
+      render: (_v, row) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900 dark:text-slate-100 capitalize">
+            {row.coverageLabel}
+          </div>
+          {row.description && <div className="text-sm text-gray-500">{row.description}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, row) => (
+        <StatusBadge
+          status={row.status}
+          variant={statusVariant(row.status)}
+          label={row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+        />
+      ),
+    },
+    {
+      key: 'limit',
+      label: 'Current Limit',
+      render: (_v, row) => (
+        <span className="text-sm text-gray-900 dark:text-slate-100">
+          {row.covered ? `$${row.limit.toLocaleString()}` : 'Not Covered'}
+        </span>
+      ),
+    },
+    {
+      key: 'recommended',
+      label: 'Recommended',
+      render: (_v, row) => (
+        <span className="text-sm text-gray-500">${row.recommended.toLocaleString()}</span>
+      ),
+    },
+  ];
+
+  const detailedActions: TableAction<CoverageRow>[] = [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <FaEye className="w-3.5 h-3.5" />,
+      onClick: () => {},
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <FaEdit className="w-3.5 h-3.5" />,
+      onClick: () => {},
+    },
+    {
+      key: 'add',
+      label: 'Add Coverage',
+      icon: <FaPlus className="w-3.5 h-3.5" />,
+      hidden: (row) => row.covered,
+      onClick: () => {},
+    },
+  ];
 
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Coverage Analysis</h1>
           <p className="text-gray-600">Comprehensive insurance coverage assessment and recommendations</p>
         </div>
-        
+
         <div className="flex space-x-3">
           <select
             value={selectedTruck}
@@ -121,11 +250,11 @@ const CoverageAnalysis: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Trucks</option>
-            {coverageData.map(truck => (
+            {coverageData.map((truck) => (
               <option key={truck.truckId} value={truck.truckId}>{truck.truckPlate}</option>
             ))}
           </select>
-          
+
           <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
             <FaDownload className="mr-2" />
             Export Analysis
@@ -133,7 +262,6 @@ const CoverageAnalysis: React.FC = () => {
         </div>
       </div>
 
-      {/* Analysis Type Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8">
           {['overview', 'detailed', 'recommendations', 'risk'].map((type) => (
@@ -152,10 +280,8 @@ const CoverageAnalysis: React.FC = () => {
         </nav>
       </div>
 
-      {/* Overview Analysis */}
       {analysisType === 'overview' && (
         <div className="space-y-6">
-          {/* Overall Coverage Score */}
           <div className="bg-white rounded-lg border p-6">
             <div className="text-center">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Overall Coverage Score</h3>
@@ -178,7 +304,13 @@ const CoverageAnalysis: React.FC = () => {
                     strokeWidth="8"
                     fill="transparent"
                     strokeDasharray={`${(overallScore / 100) * 352} 352`}
-                    className={`text-${overallScore >= 80 ? 'green' : overallScore >= 60 ? 'yellow' : 'red'}-500`}
+                    className={`${
+                      overallScore >= 80
+                        ? 'text-green-500'
+                        : overallScore >= 60
+                          ? 'text-yellow-500'
+                          : 'text-red-500'
+                    }`}
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -186,12 +318,15 @@ const CoverageAnalysis: React.FC = () => {
                 </div>
               </div>
               <p className="text-sm text-gray-600 mt-2">
-                {overallScore >= 80 ? 'Excellent Coverage' : overallScore >= 60 ? 'Good Coverage' : 'Needs Improvement'}
+                {overallScore >= 80
+                  ? 'Excellent Coverage'
+                  : overallScore >= 60
+                    ? 'Good Coverage'
+                    : 'Needs Improvement'}
               </p>
             </div>
           </div>
 
-          {/* Coverage Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
@@ -200,15 +335,17 @@ const CoverageAnalysis: React.FC = () => {
                   <p className="text-sm font-medium text-gray-500">Coverage Gaps</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {selectedTruckData.reduce((sum, t) => {
-                      const gaps = [t.liability, t.collision, t.comprehensive, t.cargo, t.uninsuredMotorist, t.roadside, t.medical]
-                        .filter(item => item.status === 'missing').length;
+                      const gaps = [
+                        t.liability, t.collision, t.comprehensive, t.cargo,
+                        t.uninsuredMotorist, t.roadside, t.medical,
+                      ].filter((item) => item.status === 'missing').length;
                       return sum + gaps;
                     }, 0)}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
                 <FaExclamationTriangle className="h-8 w-8 text-yellow-600" />
@@ -216,15 +353,17 @@ const CoverageAnalysis: React.FC = () => {
                   <p className="text-sm font-medium text-gray-500">Insufficient Limits</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {selectedTruckData.reduce((sum, t) => {
-                      const insufficient = [t.liability, t.collision, t.comprehensive, t.cargo, t.uninsuredMotorist, t.roadside, t.medical]
-                        .filter(item => item.status === 'insufficient').length;
+                      const insufficient = [
+                        t.liability, t.collision, t.comprehensive, t.cargo,
+                        t.uninsuredMotorist, t.roadside, t.medical,
+                      ].filter((item) => item.status === 'insufficient').length;
                       return sum + insufficient;
                     }, 0)}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
                 <FaCheckCircle className="h-8 w-8 text-green-600" />
@@ -232,15 +371,17 @@ const CoverageAnalysis: React.FC = () => {
                   <p className="text-sm font-medium text-gray-500">Adequate Coverage</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {selectedTruckData.reduce((sum, t) => {
-                      const adequate = [t.liability, t.collision, t.comprehensive, t.cargo, t.uninsuredMotorist, t.roadside, t.medical]
-                        .filter(item => item.status === 'adequate').length;
+                      const adequate = [
+                        t.liability, t.collision, t.comprehensive, t.cargo,
+                        t.uninsuredMotorist, t.roadside, t.medical,
+                      ].filter((item) => item.status === 'adequate').length;
                       return sum + adequate;
                     }, 0)}
                   </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg border p-6">
               <div className="flex items-center">
                 <FaChartBar className="h-8 w-8 text-purple-600" />
@@ -254,7 +395,6 @@ const CoverageAnalysis: React.FC = () => {
             </div>
           </div>
 
-          {/* Coverage Distribution Chart */}
           <div className="bg-white rounded-lg border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Coverage Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -270,110 +410,70 @@ const CoverageAnalysis: React.FC = () => {
         </div>
       )}
 
-      {/* Detailed Analysis */}
       {analysisType === 'detailed' && (
-        <div className="space-y-6">
-          {selectedTruckData.map((truck) => (
-            <div key={truck.truckId} className="bg-white rounded-lg border overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {truck.truckPlate} - Detailed Coverage Analysis
-                </h3>
-                <p className="text-sm text-gray-600">Truck ID: {truck.truckId}</p>
-              </div>
-              
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coverage Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Limit</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recommended</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {Object.entries(truck).filter(([key]) => key !== 'truckId' && key !== 'truckPlate').map(([coverageType, details]: [string, any]) => (
-                      <tr key={coverageType} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 capitalize">
-                              {coverageType.replace(/([A-Z])/g, ' $1').trim()}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {coverageTypes.find(ct => ct.name.toLowerCase() === coverageType.toLowerCase())?.description}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            {React.createElement(getStatusIcon(details.status), { className: "h-4 w-4 mr-2" })}
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(details.status)}`}>
-                              {details.status.charAt(0).toUpperCase() + details.status.slice(1)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {details.covered ? `$${details.limit.toLocaleString()}` : 'Not Covered'}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          ${details.recommended.toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-900">
-                              <FaEye className="h-4 w-4" />
-                            </button>
-                            <button className="text-green-600 hover:text-green-900">
-                              <FaEdit className="h-4 w-4" />
-                            </button>
-                            {!details.covered && (
-                              <button className="text-blue-600 hover:text-blue-900">
-                                <FaPlus className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
+        <StandardDataTable
+          title="Detailed Coverage Analysis"
+          subtitle={
+            selectedTruck === 'all'
+              ? 'All trucks'
+              : `${selectedTruckData[0]?.truckPlate} (${selectedTruckData[0]?.truckId})`
+          }
+          icon={<FaShieldAlt className="w-5 h-5" />}
+          headerColor="info"
+          columns={detailedColumns}
+          data={detailedRows}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Search coverage..."
+          searchKeys={['coverageLabel', 'truckPlate', 'status', 'truckId']}
+          filters={[
+            {
+              key: 'status',
+              label: 'Status',
+              options: [
+                { value: 'adequate', label: 'Adequate' },
+                { value: 'insufficient', label: 'Insufficient' },
+                { value: 'missing', label: 'Missing' },
+              ],
+            },
+          ]}
+          rowActions={detailedActions}
+          emptyMessage="No coverage rows for the selected truck"
+          ariaLabel="Detailed coverage analysis"
+        />
       )}
 
-      {/* Recommendations */}
       {analysisType === 'recommendations' && (
         <div className="space-y-6">
           <div className="bg-white rounded-lg border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Coverage Recommendations</h3>
             <div className="space-y-4">
               {coverageTypes.map((coverage) => {
-                const missingTrucks = coverageData.filter(truck => {
-                  const coverageItem = truck[coverage.name.toLowerCase().replace(/\s+/g, '') as keyof typeof truck] as any;
+                const key = coverage.name.toLowerCase().replace(/\s+/g, '') as keyof TruckCoverage;
+                const missingTrucks = coverageData.filter((truck) => {
+                  const coverageItem = truck[key] as CoverageDetail | undefined;
                   return !coverageItem?.covered;
                 });
-                
+
                 if (missingTrucks.length === 0) return null;
-                
+
                 return (
                   <div key={coverage.name} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-gray-900">{coverage.name} Coverage</h4>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        coverage.importance === 'Critical' ? 'bg-red-100 text-red-800' :
-                        coverage.importance === 'High' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {coverage.importance} Priority
-                      </span>
+                      <StatusBadge
+                        variant={
+                          coverage.importance === 'Critical'
+                            ? 'error'
+                            : coverage.importance === 'High'
+                              ? 'warning'
+                              : 'info'
+                        }
+                        label={`${coverage.importance} Priority`}
+                      />
                     </div>
                     <p className="text-sm text-gray-600 mb-3">{coverage.description}</p>
                     <div className="text-sm text-gray-500">
-                      <strong>Missing from:</strong> {missingTrucks.map(t => t.truckPlate).join(', ')}
+                      <strong>Missing from:</strong> {missingTrucks.map((t) => t.truckPlate).join(', ')}
                     </div>
                     <div className="mt-3">
                       <button className="text-blue-600 hover:text-blue-900 text-sm font-medium">
@@ -388,7 +488,6 @@ const CoverageAnalysis: React.FC = () => {
         </div>
       )}
 
-      {/* Risk Assessment */}
       {analysisType === 'risk' && (
         <div className="space-y-6">
           <div className="bg-white rounded-lg border p-6">
@@ -413,8 +512,8 @@ const CoverageAnalysis: React.FC = () => {
                     <span className="text-sm text-gray-700">{factor.factor}</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${factor.score}%` }}
                         />
                       </div>

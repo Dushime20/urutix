@@ -7,6 +7,7 @@ import {
   FaEdit, FaBan, FaCheckCircle, FaTimesCircle, FaEye,
   FaEnvelope, FaPhone, FaBuilding, FaUserShield
 } from 'react-icons/fa';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from './EnliteUI/Tables';
 
 interface User {
   id: string;
@@ -77,17 +78,6 @@ const ManageUsersModal: React.FC<ManageUsersModalProps> = ({
       'SUPER_ADMIN': 'bg-gray-100 text-gray-800',
     };
     return roleMap[role] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStatusBadgeColor = (status?: string) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
-    const statusMap: Record<string, string> = {
-      'ACTIVE': 'bg-green-100 text-green-800',
-      'INACTIVE': 'bg-gray-100 text-gray-800',
-      'SUSPENDED': 'bg-red-100 text-red-800',
-      'PENDING': 'bg-yellow-100 text-yellow-800',
-    };
-    return statusMap[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getRoleIcon = (role: string) => {
@@ -178,148 +168,120 @@ const ManageUsersModal: React.FC<ManageUsersModalProps> = ({
 
           {/* Users Table */}
           <div className="p-6 max-h-[60vh] overflow-y-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-4 text-gray-600">Loading users...</span>
-              </div>
-            ) : error ? (
-              <div className="text-center py-12 text-red-600">
-                <FaTimesCircle className="w-12 h-12 mx-auto mb-4" />
-                <p>Failed to load users. Please try again.</p>
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-12">
-                <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600">No users found</p>
-                {searchTerm || roleFilter !== 'all' || statusFilter !== 'all' ? (
-                  <p className="text-sm text-gray-500 mt-2">Try adjusting your filters</p>
-                ) : (
-                  <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Add First User
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">User</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Contact</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Last Login</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                              {user.profile?.firstName?.[0] || user.email[0].toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">
-                                {user.profile?.firstName && user.profile?.lastName
-                                  ? `${user.profile.firstName} ${user.profile.lastName}`
-                                  : 'No Name'}
-                              </div>
-                              <div className="text-sm text-gray-500 flex items-center space-x-1">
-                                <FaEnvelope className="w-3 h-3" />
-                                <span>{user.email}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span
-                            className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(
-                              user.role,
-                            )}`}
-                          >
-                            {getRoleIcon(user.role)}
-                            <span>{user.role.replace('_', ' ')}</span>
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(
-                              user.status,
-                            )}`}
-                          >
-                            {user.status || 'ACTIVE'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
-                            {user.profile?.phone ? (
-                              <div className="flex items-center space-x-1">
-                                <FaPhone className="w-3 h-3 text-gray-400" />
-                                <span>{user.profile.phone}</span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">No phone</span>
-                            )}
-                          </div>
-                          {user.profile?.companyName && (
-                            <div className="text-xs text-gray-500 flex items-center space-x-1 mt-1">
-                              <FaBuilding className="w-3 h-3" />
-                              <span>{user.profile.companyName}</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">
-                            {user.lastLoginAt
-                              ? new Date(user.lastLoginAt).toLocaleDateString()
-                              : 'Never'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {user.createdAt
-                              ? `Joined ${new Date(user.createdAt).toLocaleDateString()}`
-                              : ''}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="View Details"
-                            >
-                              <FaEye />
-                            </button>
-                            <button
-                              className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                              title="Edit User"
-                            >
-                              <FaEdit />
-                            </button>
-                            {user.status === 'ACTIVE' ? (
-                              <button
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Suspend User"
-                              >
-                                <FaBan />
-                              </button>
-                            ) : (
-                              <button
-                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                title="Activate User"
-                              >
-                                <FaCheckCircle />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <StandardDataTable
+              embedded
+              columns={[
+                {
+                  key: 'email',
+                  label: 'User',
+                  sortable: true,
+                  render: (_: string, user: User) => (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        {user.profile?.firstName?.[0] || user.email[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white">
+                          {user.profile?.firstName && user.profile?.lastName
+                            ? `${user.profile.firstName} ${user.profile.lastName}`
+                            : 'No Name'}
+                        </div>
+                        <div className="text-sm text-gray-500 flex items-center space-x-1">
+                          <FaEnvelope className="w-3 h-3" />
+                          <span>{user.email}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'role',
+                  label: 'Role',
+                  sortable: true,
+                  render: (role: string) => (
+                    <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(role)}`}>
+                      {getRoleIcon(role)}
+                      <span>{role.replace('_', ' ')}</span>
+                    </span>
+                  ),
+                },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  sortable: true,
+                  render: (status?: string) => (
+                    <StatusBadge label={status || 'ACTIVE'} status={(status || 'ACTIVE').toLowerCase()} />
+                  ),
+                },
+                {
+                  key: 'profile',
+                  label: 'Contact',
+                  render: (_: any, user: User) => (
+                    <div className="text-sm text-gray-900 dark:text-slate-200">
+                      {user.profile?.phone ? (
+                        <div className="flex items-center space-x-1">
+                          <FaPhone className="w-3 h-3 text-gray-400" />
+                          <span>{user.profile.phone}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">No phone</span>
+                      )}
+                      {user.profile?.companyName && (
+                        <div className="text-xs text-gray-500 flex items-center space-x-1 mt-1">
+                          <FaBuilding className="w-3 h-3" />
+                          <span>{user.profile.companyName}</span>
+                        </div>
+                      )}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'lastLoginAt',
+                  label: 'Last Login',
+                  sortable: true,
+                  render: (lastLoginAt: string | undefined, user: User) => (
+                    <div>
+                      <div className="text-sm text-gray-900 dark:text-slate-200">
+                        {lastLoginAt ? new Date(lastLoginAt).toLocaleDateString() : 'Never'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {user.createdAt ? `Joined ${new Date(user.createdAt).toLocaleDateString()}` : ''}
+                      </div>
+                    </div>
+                  ),
+                },
+              ] as Column<User>[]}
+              data={filteredUsers}
+              loading={isLoading}
+              error={error ? 'Failed to load users. Please try again.' : null}
+              onRetry={() => refetch()}
+              getRowId={(row) => row.id}
+              searchable={false}
+              pagination
+              pageSize={10}
+              columnVisibility
+              stickyHeader
+              striped
+              hoverable
+              dense
+              emptyMessage={
+                searchTerm || roleFilter !== 'all' || statusFilter !== 'all'
+                  ? 'No users match your current filters'
+                  : 'No users found'
+              }
+              rowActions={[
+                { key: 'view', label: 'View Details', icon: <FaEye />, onClick: () => undefined },
+                { key: 'edit', label: 'Edit User', icon: <FaEdit />, onClick: () => undefined },
+                {
+                  key: 'toggle',
+                  label: 'Toggle Status',
+                  icon: <FaBan />,
+                  variant: 'danger',
+                  onClick: () => undefined,
+                },
+              ] as TableAction<User>[]}
+              ariaLabel="Tenant users"
+            />
           </div>
 
           {/* Footer */}

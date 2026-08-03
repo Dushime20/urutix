@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -11,7 +11,7 @@ import { disputesAPI } from '../../services/api';
 import {
   type Dispute,
   STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS,
-  getStatusColor, getPriorityColor, getPriorityDot,
+  getPriorityColor, getPriorityDot,
   getUserDisplayName, formatRelativeTime, getSlaStatus,
   asDisputeList,
 } from '../../types/dispute';
@@ -19,6 +19,7 @@ import SupportTicketDetailModal from './SupportTicketDetailModal';
 import CreateTicketModal from './CreateTicketModal';
 import SupportAnalyticsDashboard from './SupportAnalyticsDashboard';
 import { TranslatedText } from '../../components/translated-text';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 // ── Status tab config ─────────────────────────────────────────────────────────
 const STATUS_TABS = [
@@ -99,6 +100,87 @@ const TenantSupportCenter: React.FC = () => {
       qc.invalidateQueries({ queryKey: ['support-admin'] });
     },
   });
+
+  const ticketColumns = useMemo<Column<Dispute>[]>(() => [
+    {
+      key: 'ticketNumber',
+      label: 'Ticket',
+      sortable: true,
+      render: (_v, d) => (
+        <span className="font-mono text-xs font-bold text-[#2c5173] dark:text-blue-400">{d.ticketNumber ?? d.referenceNumber}</span>
+      ),
+    },
+    {
+      key: 'title',
+      label: 'Title',
+      sortable: true,
+      render: (v) => <p className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[160px]">{String(v)}</p>,
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      render: (_v, d) => (
+        <span className="text-[11px] text-gray-500 dark:text-slate-400 whitespace-nowrap">{CATEGORY_LABELS[d.category]}</span>
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      render: (_v, d) => (
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black border ${getPriorityColor(d.priority)}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${getPriorityDot(d.priority)}`} />
+          {PRIORITY_LABELS[d.priority]}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, d) => (
+        <StatusBadge status={d.status} label={STATUS_LABELS[d.status] || d.status} />
+      ),
+    },
+    {
+      key: 'complainant',
+      label: 'Reporter',
+      render: (_v, d) => (
+        <span className="text-xs text-gray-600 dark:text-slate-300 whitespace-nowrap">{getUserDisplayName(d.complainant)}</span>
+      ),
+    },
+    {
+      key: 'assignedTo',
+      label: 'Assigned',
+      render: (_v, d) => (
+        <span className="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
+          {d.assignedTo ? getUserDisplayName(d.assignedTo) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'sla',
+      label: 'SLA',
+      render: (_v, d) => <SlaBadge dispute={d} />,
+    },
+    {
+      key: 'createdAt',
+      label: 'Created',
+      sortable: true,
+      render: (_v, d) => (
+        <span className="text-[11px] text-gray-400 whitespace-nowrap">{formatRelativeTime(d.createdAt)}</span>
+      ),
+    },
+  ], []);
+
+  const ticketActions = useMemo<TableAction<Dispute>[]>(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <Eye className="w-3.5 h-3.5" />,
+      onClick: (d) => setSelectedId(d.id),
+    },
+  ], []);
 
   if (showAnalytics) {
     return <SupportAnalyticsDashboard onBack={() => setShowAnalytics(false)} />;
@@ -191,71 +273,26 @@ const TenantSupportCenter: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 overflow-hidden p-2">
         {isLoading ? (
           <div className="p-12 text-center">
             <div className="w-8 h-8 border-2 border-[#2c5173] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-xs text-gray-400">Loading tickets...</p>
           </div>
-        ) : disputes.length === 0 ? (
-          <div className="p-16 text-center">
-            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Headphones className="w-7 h-7 text-gray-300" />
-            </div>
-            <p className="text-sm font-bold text-gray-500 mb-1">No support tickets found</p>
-            <p className="text-xs text-gray-400">Try adjusting your filters or create a new ticket.</p>
-          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-100 dark:border-slate-600">
-                <tr>
-                  {['Ticket', 'Title', 'Category', 'Priority', 'Status', 'Reporter', 'Assigned', 'SLA', 'Created', ''].map(h => (
-                    <th key={h} className={`px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest ${h === '' ? 'text-right' : 'text-left'}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
-                {disputes.map(d => (
-                  <tr key={d.id} className="hover:bg-gray-50/60 dark:hover:bg-slate-700/50 transition-colors group">
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="font-mono text-xs font-bold text-[#2c5173] dark:text-blue-400">{d.ticketNumber ?? d.referenceNumber}</span>
-                    </td>
-                    <td className="px-4 py-3 max-w-[160px]">
-                      <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{d.title}</p>
-                    </td>
-                    <td className="px-4 py-3 text-[11px] text-gray-500 dark:text-slate-400 whitespace-nowrap">{CATEGORY_LABELS[d.category]}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black border ${getPriorityColor(d.priority)}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${getPriorityDot(d.priority)}`} />
-                        {PRIORITY_LABELS[d.priority]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black border ${getStatusColor(d.status)}`}>{STATUS_LABELS[d.status]}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-slate-300 whitespace-nowrap">{getUserDisplayName(d.complainant)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
-                      {d.assignedTo ? getUserDisplayName(d.assignedTo) : <span className="text-gray-300 dark:text-slate-600">—</span>}
-                    </td>
-                    <td className="px-4 py-3"><SlaBadge dispute={d} /></td>
-                    <td className="px-4 py-3 text-[11px] text-gray-400 whitespace-nowrap">{formatRelativeTime(d.createdAt)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => setSelectedId(d.id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-all">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="px-5 py-3 border-t border-gray-50 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-700/30">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Showing <span className="text-gray-700 dark:text-slate-300">{disputes.length}</span> tickets
-              </p>
-            </div>
-          </div>
+          <StandardDataTable<Dispute>
+            embedded
+            columns={ticketColumns}
+            data={disputes}
+            getRowId={(row) => row.id}
+            searchable={false}
+            rowActions={ticketActions}
+            stickyHeader
+            columnVisibility
+            pagination
+            emptyMessage="No support tickets found"
+            ariaLabel="Support tickets"
+          />
         )}
       </div>
 

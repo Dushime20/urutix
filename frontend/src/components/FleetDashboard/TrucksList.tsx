@@ -14,9 +14,6 @@ import {
   Edit2,
   Eye,
   Route,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   ChevronLeft,
   X,
   Loader2
@@ -33,6 +30,7 @@ import DocumentUploadModal from '../documents/DocumentUploadModal';
 import FleetFormStepper from './FleetFormStepper';
 import TruckDetailsModal from './TruckDetailsModal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface TrucksListProps {
   onAddTruck?: () => void;
@@ -145,13 +143,6 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
       key,
       direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
     }));
-  };
-
-  const getSortIcon = (key: string) => {
-    if (sortConfig.key !== key) return <ArrowUpDown size={12} className="text-slate-300" />;
-    return sortConfig.direction === 'asc'
-      ? <ArrowUp size={12} className="text-primary-500" />
-      : <ArrowDown size={12} className="text-primary-500" />;
   };
 
   // --- Filtering + Sorting + Pagination ---
@@ -429,127 +420,91 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
           </AnimatePresence>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 overflow-hidden transition-colors duration-300">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 cursor-pointer hover:text-primary-500" onClick={() => handleSort('plateNumber')}>
-                    <span className="flex items-center gap-2">Truck {getSortIcon('plateNumber')}</span>
-                  </th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 cursor-pointer hover:text-primary-500" onClick={() => handleSort('truckType')}>
-                    <span className="flex items-center gap-2">Type {getSortIcon('truckType')}</span>
-                  </th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 cursor-pointer hover:text-primary-500" onClick={() => handleSort('status')}>
-                    <span className="flex items-center gap-2">Status {getSortIcon('status')}</span>
-                  </th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Location</th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Routes</th>
-                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                {paginatedTrucks.map(truck => (
-                  <tr key={truck.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-primary-500 dark:group-hover:text-primary-400 transition-colors">
-                          <Truck size={20} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-slate-900 dark:text-white leading-none mb-1">{truck.plateNumber}</p>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{truck.make} {truck.model}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
-                          <Truck size={12} className="text-primary-400" />
-                          {truck.truckType || 'Standard'}
-                        </div>
-                        <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em]">Payload: {truck.capacityWeight?.toLocaleString() || 0} kg</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${getStatusColor(truck.status)}`}>
-                        {truck.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 max-w-[200px]">
-                        <MapPin size={12} className="text-primary-400 shrink-0" />
-                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
-                          {typeof truck.currentLocation === 'string'
-                            ? truck.currentLocation
-                            : truck.currentLocation?.address || 'Geolocation Offline'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {truck.assignedRoutes && truck.assignedRoutes.length > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest">
-                          <Route size={10} /> {truck.assignedRoutes.length}
-                        </span>
-                      ) : (
-                        <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">None</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => handleViewTruck(truck)}
-                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
-                          title="View Details"
-                        >
-                          <Eye size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleEditTruck(truck)}
-                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
-                          title="Edit"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleAssignDriver(truck)}
-                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
-                          title="Assign Driver"
-                        >
-                          <Users size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleAssignRoute(truck)}
-                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
-                          title="Assign Route"
-                        >
-                          <Route size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleAddDocument(truck)}
-                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
-                          title="Documents"
-                        >
-                          <FileText size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTruck(truck)}
-                          className="p-2 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-rose-600 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm rounded-lg transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <div className="size-8 flex items-center justify-center text-slate-200 dark:text-slate-700">
-                          <ChevronRight size={14} />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <StandardDataTable
+          embedded
+          data={paginatedTrucks}
+          getRowId={(t) => t.id}
+          searchable={false}
+          pagination={false}
+          emptyMessage="No trucks found"
+          columns={[
+            {
+              key: 'plateNumber',
+              label: 'Truck',
+              sortable: true,
+              render: (_: any, truck: any) => (
+                <div className="flex items-center gap-4">
+                  <div className="size-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500">
+                    <Truck size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900 dark:text-white leading-none mb-1">{truck.plateNumber}</p>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{truck.make} {truck.model}</p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'truckType',
+              label: 'Type',
+              sortable: true,
+              render: (_: any, truck: any) => (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
+                    <Truck size={12} className="text-primary-400" />
+                    {truck.truckType || 'Standard'}
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em]">Payload: {truck.capacityWeight?.toLocaleString() || 0} kg</p>
+                </div>
+              ),
+            },
+            {
+              key: 'status',
+              label: 'Status',
+              sortable: true,
+              render: (status: string) => (
+                <StatusBadge status={status} />
+              ),
+            },
+            {
+              key: 'currentLocation',
+              label: 'Location',
+              render: (_: any, truck: any) => (
+                <div className="flex items-center gap-2 max-w-[200px]">
+                  <MapPin size={12} className="text-primary-400 shrink-0" />
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">
+                    {typeof truck.currentLocation === 'string'
+                      ? truck.currentLocation
+                      : truck.currentLocation?.address || 'Geolocation Offline'}
+                  </span>
+                </div>
+              ),
+            },
+            {
+              key: 'assignedRoutes',
+              label: 'Routes',
+              render: (routes: any[]) =>
+                routes && routes.length > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-widest">
+                    <Route size={10} /> {routes.length}
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest">None</span>
+                ),
+            },
+          ] as Column[]}
+          rowActions={[
+            { label: 'View Details', icon: <Eye size={14} />, onClick: (truck) => handleViewTruck(truck) },
+            { label: 'Edit', icon: <Edit2 size={14} />, onClick: (truck) => handleEditTruck(truck) },
+            { label: 'Assign Driver', icon: <Users size={14} />, onClick: (truck) => handleAssignDriver(truck) },
+            { label: 'Assign Route', icon: <Route size={14} />, onClick: (truck) => handleAssignRoute(truck) },
+            { label: 'Documents', icon: <FileText size={14} />, onClick: (truck) => handleAddDocument(truck) },
+            { label: 'Delete', icon: <Trash2 size={14} />, onClick: (truck) => handleDeleteTruck(truck), variant: 'danger' },
+          ] as TableAction[]}
+          sortKey={sortConfig.key}
+          sortDirection={sortConfig.direction}
+          onSort={(key) => handleSort(key)}
+        />
       )}
 
       {/* Pagination */}

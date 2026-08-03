@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
@@ -9,7 +9,6 @@ import ModernLoader from '../../components/common/ModernLoader';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   FaCreditCard,
-  FaSearch,
   FaEye,
   FaBan,
   FaCheckCircle,
@@ -17,12 +16,12 @@ import {
   FaClock,
   FaPlus,
   FaGift,
-  FaSync,
   FaTimes,
   FaBuilding,
   FaChartLine,
   FaHistory
 } from 'react-icons/fa';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 interface TenantSubscription {
   id: string;
@@ -164,14 +163,6 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
 
   const subscriptions: TenantSubscription[] = subscriptionsData?.data || [];
 
-  // Filter subscriptions
-  const filteredSubscriptions = subscriptions.filter((sub) => {
-    const matchesSearch =
-      sub.tenantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sub.tenantId.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
-
   // Calculate stats
   const stats = [
     {
@@ -204,17 +195,6 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
     },
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'trial': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'expired': return 'bg-gray-100 text-gray-800';
-      case 'suspended': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active': return <FaCheckCircle className="text-green-500" />;
@@ -226,6 +206,156 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
     }
   };
 
+  const columns: Column<TenantSubscription>[] = useMemo(() => [
+    {
+      key: 'tenantName',
+      label: 'Tenant',
+      alwaysVisible: true,
+      render: (_v, subscription) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#2c5173]/10 rounded-lg flex items-center justify-center">
+            <FaBuilding className="text-[#2c5173]" />
+          </div>
+          <div>
+            <div className="font-medium text-slate-900">{subscription.tenantName}</div>
+            <div className="text-xs text-slate-500">{subscription.tenantId.slice(0, 8)}...</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'plan',
+      label: 'Plan',
+      render: (_v, subscription) => (
+        <div>
+          <div className="font-medium text-slate-900">{subscription.plan.name}</div>
+          <div className="text-xs text-slate-500">
+            {subscription.plan.totalCredits && subscription.plan.totalCredits > 0
+              ? `${subscription.plan.totalCredits.toLocaleString()} credits total`
+              : subscription.plan.includedCredits && subscription.plan.includedCredits > 0
+                ? `${subscription.plan.includedCredits.toLocaleString()} credits/mo`
+                : 'No credits'}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, subscription) => (
+        <StatusBadge
+          status={subscription.status}
+          label={subscription.status.toUpperCase()}
+          icon={getStatusIcon(subscription.status)}
+        />
+      ),
+    },
+    {
+      key: 'billingCycle',
+      label: 'Billing',
+      render: (_v, subscription) => (
+        <div>
+          <div className="font-medium text-slate-900 capitalize">{subscription.billingCycle}</div>
+          <div className="text-xs text-slate-500">
+            {subscription.plan.pricePerCredit && Number(subscription.plan.pricePerCredit) > 0
+              ? `${fmtFull(subscription.plan.pricePerCredit)}/credit`
+              : subscription.billingCycle === 'monthly' && subscription.plan.priceMonthly
+                ? `${fmtFull(subscription.plan.priceMonthly)}/mo`
+                : subscription.plan.priceYearly
+                  ? `${fmtFull(subscription.plan.priceYearly)}/yr`
+                  : 'N/A'}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'creditBalance',
+      label: 'Credits',
+      sortable: true,
+      render: (_v, subscription) => (
+        <div className="font-bold text-[#2c5173]">
+          {(subscription.creditBalance || 0).toLocaleString()}
+        </div>
+      ),
+    },
+    {
+      key: 'paidAmount',
+      label: 'Paid Amount',
+      sortable: true,
+      render: (_v, subscription) => (
+        <div className="font-medium text-green-600">
+          {fmtFull(subscription.paidAmount || 0)}
+        </div>
+      ),
+    },
+    {
+      key: 'totalAmount',
+      label: 'Total Amount',
+      sortable: true,
+      render: (_v, subscription) => (
+        <div className="font-medium text-blue-600">
+          {fmtFull(subscription.totalAmount || 0)}
+        </div>
+      ),
+    },
+    {
+      key: 'currentPeriodEnd',
+      label: 'Period End',
+      sortable: true,
+      render: (_v, subscription) => (
+        <div>
+          <div className="text-sm text-slate-900">
+            {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+          </div>
+          <div className="text-xs text-slate-500">
+            {Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
+          </div>
+        </div>
+      ),
+    },
+  ], [fmtFull]);
+
+  const rowActions: TableAction<TenantSubscription>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <FaEye className="w-3.5 h-3.5" />,
+      onClick: (subscription) => {
+        setSelectedSubscription(subscription);
+        setShowDetailsModal(true);
+      },
+    },
+    {
+      key: 'history',
+      label: 'Credit Usage History',
+      icon: <FaHistory className="w-3.5 h-3.5" />,
+      onClick: (subscription) => {
+        navigate(`${subscriptionsBase}?tab=credit-usage`, {
+          state: { tenantId: subscription.tenantId, tenantName: subscription.tenantName }
+        });
+      },
+    },
+    {
+      key: 'transactions',
+      label: 'View Transactions',
+      icon: <FaChartLine className="w-3.5 h-3.5" />,
+      onClick: (subscription) => {
+        setSelectedSubscription(subscription);
+        setShowTransactionsModal(true);
+      },
+    },
+    {
+      key: 'credits',
+      label: 'Sell / Grant Credits',
+      icon: <FaGift className="w-3.5 h-3.5" />,
+      variant: 'success',
+      onClick: (subscription) => {
+        setSelectedSubscription(subscription);
+        setShowAddCreditsModal(true);
+      },
+    },
+  ], [navigate, subscriptionsBase]);
+
   if (isLoading) {
     const loader = <ModernLoader isLoading={true} type="table" rows={8} columns={6} />;
     if (embedded) return loader;
@@ -234,236 +364,48 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
 
   const content = (
       <div className="safe-bottom space-y-6">
-        {/* Stats Grid */}
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg p-4 border border-slate-200">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search tenants..."
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <select
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="trial">Trial</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="expired">Expired</option>
-              <option value="suspended">Suspended</option>
-            </select>
-
-            <select
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              value={planFilter}
-              onChange={(e) => setPlanFilter(e.target.value)}
-            >
-              <option value="all">All Plans</option>
-              <option value="starter">Starter</option>
-              <option value="professional">Professional</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => refetch()}
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+        <StandardDataTable
+          title="Tenant Subscriptions"
+          subtitle="Manage subscription plans and credits"
+          icon={<FaCreditCard className="w-5 h-5" />}
+          columns={columns}
+          data={subscriptions}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Search tenants..."
+          searchKeys={['tenantName', 'tenantId', 'status']}
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          toolbarExtra={
+            <div className="flex flex-wrap gap-2">
+              <select
+                className="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-lg"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <FaSync className="text-sm" />
-                <TranslatedText text="Refresh" />
-              </button>
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('all');
-                  setPlanFilter('all');
-                }}
-                className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="trial">Trial</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="expired">Expired</option>
+                <option value="suspended">Suspended</option>
+              </select>
+              <select
+                className="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-lg"
+                value={planFilter}
+                onChange={(e) => setPlanFilter(e.target.value)}
               >
-                <FaTimes className="text-sm" />
-                Clear
-              </button>
+                <option value="all">All Plans</option>
+                <option value="starter">Starter</option>
+                <option value="professional">Professional</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
             </div>
-          </div>
-        </div>
-
-        {/* Subscriptions Table */}
-        <div className="bg-white rounded-lg overflow-hidden border border-slate-200">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Tenant
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Plan
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Billing
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Credits
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Paid Amount
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Total Amount
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Period End
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {filteredSubscriptions.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <FaCreditCard className="text-5xl text-slate-300 mb-4" />
-                        <p className="text-slate-600 font-medium">No subscriptions found</p>
-                        <p className="text-slate-500 text-sm mt-1">Try adjusting your filters</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSubscriptions.map((subscription) => (
-                    <tr key={subscription.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-[#2c5173]/10 rounded-lg flex items-center justify-center">
-                            <FaBuilding className="text-[#2c5173]" />
-                          </div>
-                          <div>
-                            <div className="font-medium text-slate-900">{subscription.tenantName}</div>
-                            <div className="text-xs text-slate-500">{subscription.tenantId.slice(0, 8)}...</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-900">{subscription.plan.name}</div>
-                        <div className="text-xs text-slate-500">
-                          {subscription.plan.totalCredits && subscription.plan.totalCredits > 0 
-                            ? `${subscription.plan.totalCredits.toLocaleString()} credits total`
-                            : subscription.plan.includedCredits && subscription.plan.includedCredits > 0
-                              ? `${subscription.plan.includedCredits.toLocaleString()} credits/mo`
-                              : 'No credits'
-                          }
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(subscription.status)}
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(subscription.status)}`}>
-                            {subscription.status.toUpperCase()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-900 capitalize">{subscription.billingCycle}</div>
-                        <div className="text-xs text-slate-500">
-                          {subscription.plan.pricePerCredit && Number(subscription.plan.pricePerCredit) > 0
-                            ? `${fmtFull(subscription.plan.pricePerCredit)}/credit`
-                            : subscription.billingCycle === 'monthly' && subscription.plan.priceMonthly
-                              ? `${fmtFull(subscription.plan.priceMonthly)}/mo`
-                              : subscription.plan.priceYearly
-                                ? `${fmtFull(subscription.plan.priceYearly)}/yr`
-                                : 'N/A'
-                          }
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-[#2c5173]">
-                          {(subscription.creditBalance || 0).toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-green-600">
-                          {fmtFull(subscription.paidAmount || 0)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-blue-600">
-                          {fmtFull(subscription.totalAmount || 0)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-slate-900">
-                          {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          {Math.ceil((new Date(subscription.currentPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedSubscription(subscription);
-                              setShowDetailsModal(true);
-                            }}
-                            className="p-2 text-[#2c5173] hover:bg-[#2c5173]/10 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <FaEye />
-                          </button>
-                          <button
-                            onClick={() => {
-                              navigate(`${subscriptionsBase}?tab=credit-usage`, {
-                                state: { tenantId: subscription.tenantId, tenantName: subscription.tenantName }
-                              });
-                            }}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                            title="View Credit Usage History"
-                          >
-                            <FaHistory />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedSubscription(subscription);
-                              setShowTransactionsModal(true);
-                            }}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View Transactions"
-                          >
-                            <FaChartLine />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedSubscription(subscription);
-                              setShowAddCreditsModal(true);
-                            }}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Sell / Grant Credits"
-                          >
-                            <FaGift />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          }
+          rowActions={rowActions}
+          onRefresh={() => refetch()}
+          emptyMessage="No subscriptions found"
+          ariaLabel="Tenant subscriptions"
+        />
 
         {/* Details Modal */}
         {showDetailsModal && selectedSubscription && (
@@ -505,9 +447,11 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                     </div>
                     <div>
                       <div className="text-sm text-slate-600">Status</div>
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(selectedSubscription.status)}`}>
-                        {selectedSubscription.status.toUpperCase()}
-                      </span>
+                      <StatusBadge
+                        status={selectedSubscription.status}
+                        label={selectedSubscription.status.toUpperCase()}
+                        icon={getStatusIcon(selectedSubscription.status)}
+                      />
                     </div>
                     <div>
                       <div className="text-sm text-slate-600">Billing Cycle</div>

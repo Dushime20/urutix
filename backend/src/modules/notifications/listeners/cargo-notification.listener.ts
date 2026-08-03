@@ -14,7 +14,6 @@ import {
   BidAcceptedEvent,
   DriverAssignedEvent,
   TripStartedEvent,
-  TripCompletedEvent,
   CargoReceiverAssignedEvent,
 } from '../events/cargo-events';
 import {
@@ -175,31 +174,7 @@ export class CargoNotificationListener {
     this.logger.log(`Handling bid.accepted event for bid ${event.bidId}`);
 
     try {
-      // Notify truck owner
-      await this.notificationService.createNotification({
-        tenantId: event.tenantId,
-        recipientId: event.truckOwnerId,
-        entityType: EntityType.CARGO,
-        entityId: event.cargoId,
-        notificationType: NotificationType.GENERAL,
-        category: NotificationCategory.CARGO,
-        priority: NotificationPriority.HIGH,
-        title: 'Your Bid Has Been Accepted!',
-        message: `Congratulations! Your bid of $${event.bidDetails.amount} for cargo "${event.bidDetails.cargoTitle}" has been accepted. Route: ${event.bidDetails.origin} → ${event.bidDetails.destination}. Prepare for delivery.`,
-        shortMessage: `Bid accepted: $${event.bidDetails.amount}`,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
-        requiresAction: true,
-        actionUrl: `/dashboard/cargos`,
-        actionText: 'View Cargo Details',
-        metadata: {
-          bidId: event.bidId,
-          cargoId: event.cargoId,
-          cargoOwnerId: event.cargoOwnerId,
-        },
-        tags: ['bid', 'accepted', 'delivery-preparation'],
-      });
-
-      // Notify driver if assigned
+      // Truck owner is already notified via auction.winner.selected — only notify driver here.
       if (event.driverId) {
         await this.notificationService.createNotification({
           tenantId: event.tenantId,
@@ -287,65 +262,6 @@ export class CargoNotificationListener {
       this.logger.log(`Successfully sent trip started notifications`);
     } catch (error) {
       this.logger.error(`Error handling trip.started event: ${error.message}`, error.stack);
-    }
-  }
-
-  @OnEvent('trip.completed')
-  async handleTripCompleted(event: TripCompletedEvent) {
-    this.logger.log(`Handling trip.completed event for trip ${event.tripId}`);
-
-    try {
-      // Notify cargo owner
-      await this.notificationService.createNotification({
-        tenantId: event.tenantId,
-        recipientId: event.cargoOwnerId,
-        entityType: EntityType.TRIP,
-        entityId: event.tripId,
-        notificationType: NotificationType.TRIP_COMPLETED,
-        category: NotificationCategory.TRIP,
-        priority: NotificationPriority.HIGH,
-        title: 'Trip Completed Successfully',
-        message: `Your cargo "${event.tripDetails.cargoTitle}" has been delivered successfully. Route: ${event.tripDetails.origin} → ${event.tripDetails.destination}. Completed at: ${event.tripDetails.completedAt.toLocaleString()}. ${event.tripDetails.distance ? `Distance: ${event.tripDetails.distance}km.` : ''} ${event.tripDetails.duration ? `Duration: ${Math.round(event.tripDetails.duration / 60)}h.` : ''}`,
-        shortMessage: `Trip completed: ${event.tripDetails.cargoTitle}`,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
-        requiresAction: true,
-        actionUrl: `/dashboard/trips`,
-        actionText: 'View Trip Summary',
-        metadata: {
-          tripId: event.tripId,
-          driverId: event.driverId,
-          truckOwnerId: event.truckOwnerId,
-        },
-        tags: ['trip', 'completed', 'success'],
-      });
-
-      // Notify truck owner
-      await this.notificationService.createNotification({
-        tenantId: event.tenantId,
-        recipientId: event.truckOwnerId,
-        entityType: EntityType.TRIP,
-        entityId: event.tripId,
-        notificationType: NotificationType.TRIP_COMPLETED,
-        category: NotificationCategory.TRIP,
-        priority: NotificationPriority.NORMAL,
-        title: 'Trip Completed',
-        message: `Trip for cargo "${event.tripDetails.cargoTitle}" has been completed. Route: ${event.tripDetails.origin} → ${event.tripDetails.destination}. Well done!`,
-        shortMessage: `Trip completed: ${event.tripDetails.cargoTitle}`,
-        channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
-        requiresAction: false,
-        actionUrl: `/dashboard/trips`,
-        actionText: 'View Trip',
-        metadata: {
-          tripId: event.tripId,
-          driverId: event.driverId,
-          cargoOwnerId: event.cargoOwnerId,
-        },
-        tags: ['trip', 'completed'],
-      });
-
-      this.logger.log(`Successfully sent trip completed notifications`);
-    } catch (error) {
-      this.logger.error(`Error handling trip.completed event: ${error.message}`, error.stack);
     }
   }
 

@@ -1,181 +1,143 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '../../services/api';
-import { AlertCircle, Inbox, Building, User } from 'lucide-react';
+import { Building, User } from 'lucide-react';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-
-const statusStyle: Record<string, string> = {
-  pending:    'bg-amber-100 text-amber-700',
-  processing: 'bg-blue-100 text-blue-700',
-  completed:  'bg-emerald-100 text-emerald-700',
-  escrow:     'bg-purple-100 text-purple-700',
-  failed:     'bg-rose-100 text-rose-700',
-  cancelled:  'bg-slate-100 text-slate-600',
-};
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 
 const ReceivedPaymentsPage = () => {
   const { compactIn } = useCurrencyFormat();
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [sourceFilter, setSourceFilter] = useState<'ALL' | 'cargo_owner' | 'lender'>('ALL');
-
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['truck-owner-received-payments'],
     queryFn: () => paymentsAPI.getAllReceivedPayments({}),
     refetchInterval: 30000,
   });
 
   const payments: any[] = data?.data?.data?.payments || [];
-
-  // Currency that the backend stores amounts in (from summary or first payment).
-  // All amounts from the /all endpoint are in the same currency.
   const payCurrency: string = data?.data?.data?.summary?.currency || payments[0]?.currency || 'RWF';
 
-  const filtered = useMemo(() => {
-    let list = [...payments];
-    if (statusFilter !== 'ALL') list = list.filter((p: any) => p.status === statusFilter.toLowerCase());
-    if (sourceFilter !== 'ALL') {
-      list = list.filter((p: any) =>
-        sourceFilter === 'lender' ? p.isLenderPayment : !p.isLenderPayment,
-      );
-    }
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter((p: any) =>
-        (p.referenceNumber || '').toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q) ||
-        String(p.amount).includes(q) ||
-        (p.trip?.tripNumber || '').toLowerCase().includes(q) ||
-        (p.lenderName || '').toLowerCase().includes(q),
-      );
-    }
-    return list;
-  }, [payments, statusFilter, sourceFilter, search]);
+  const tableData = useMemo(() =>
+    payments.map((p: any) => ({
+      ...p,
+      sourceKey: p.isLenderPayment ? 'lender' : 'cargo_owner',
+      tripNumber: p.trip?.tripNumber || '',
+      statusKey: (p.status || '').toLowerCase(),
+    })),
+  [payments]);
 
-  if (isLoading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]" />
-    </div>
-  );
-
-  if (isError) return (
-    <div className="flex flex-col items-center justify-center h-64 gap-3 text-slate-400">
-      <AlertCircle className="w-10 h-10" />
-      <p className="text-sm font-bold">Failed to load payments</p>
-    </div>
-  );
+  const columns: Column<any>[] = useMemo(() => [
+    {
+      key: 'processedAt',
+      label: 'Date',
+      sortable: true,
+      render: (_v, row) => (
+        <span className="text-sm font-medium text-slate-700 whitespace-nowrap">
+          {new Date(row.processedAt || row.dueDate || row.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      key: 'referenceNumber',
+      label: 'Reference',
+      render: (_v, row) => (
+        <span className="text-xs font-mono text-slate-500">
+          {row.referenceNumber || `PAY-${row.id.slice(0, 8)}`}
+        </span>
+      ),
+    },
+    {
+      key: 'tripNumber',
+      label: 'Trip',
+      render: (_v, row) =>
+        row.trip ? (
+          <div>
+            <p className="text-sm font-bold text-slate-800">{row.trip.tripNumber}</p>
+            {row.trip.load && (
+              <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[160px]">{row.trip.load.title}</p>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-slate-400">—</span>
+        ),
+    },
+    {
+      key: 'sourceKey',
+      label: 'Source',
+      render: (_v, row) =>
+        row.isLenderPayment ? (
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-100 text-violet-700">
+              <Building className="w-2.5 h-2.5" /> Lender
+            </span>
+            {row.lenderName && <span className="text-xs text-slate-500 truncate max-w-[80px]">{row.lenderName}</span>}
+          </div>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
+            <User className="w-2.5 h-2.5" /> Direct
+          </span>
+        ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      render: (_v, row) => {
+        const rowCurrency: string = row.currency || payCurrency;
+        return (
+          <span className="text-base font-black text-emerald-600 whitespace-nowrap">
+            {compactIn(row.amount, rowCurrency, rowCurrency)}{' '}
+            <span className="text-xs font-bold text-slate-400">{rowCurrency}</span>
+          </span>
+        );
+      },
+    },
+    {
+      key: 'statusKey',
+      label: 'Status',
+      sortable: true,
+      render: (_v, row) => (
+        <StatusBadge status={row.status} label={row.status} />
+      ),
+    },
+  ], [compactIn, payCurrency]);
 
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          placeholder="Search by reference, trip, lender, description..."
-          className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <select
-          className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
-          <option value="ALL">All Statuses</option>
-          <option value="PENDING">Pending</option>
-          <option value="PROCESSING">Processing</option>
-          <option value="COMPLETED">Completed</option>
-        </select>
-        <select
-          className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
-          value={sourceFilter}
-          onChange={e => setSourceFilter(e.target.value as any)}
-        >
-          <option value="ALL">All Sources</option>
-          <option value="cargo_owner">Direct (Cargo Owner)</option>
-          <option value="lender">Via Lender</option>
-        </select>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-slate-100">
-          <thead className="bg-slate-50">
-            <tr>
-              {['Date', 'Reference', 'Trip', 'Source', 'Amount', 'Status'].map(h => (
-                <th key={h} className="px-5 py-3.5 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-16 text-center">
-                  <Inbox className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-sm font-bold text-slate-400">No payments found</p>
-                </td>
-              </tr>
-            ) : filtered.map((p: any) => {
-              const rowCurrency: string = p.currency || payCurrency;
-              return (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-4 text-sm font-medium text-slate-700 whitespace-nowrap">
-                    {new Date(p.processedAt || p.dueDate || p.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-5 py-4 text-xs font-mono text-slate-500">
-                    {p.referenceNumber || `PAY-${p.id.slice(0, 8)}`}
-                  </td>
-                  <td className="px-5 py-4">
-                    {p.trip ? (
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">{p.trip.tripNumber}</p>
-                        {p.trip.load && (
-                          <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[160px]">{p.trip.load.title}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4">
-                    {p.isLenderPayment ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-violet-100 text-violet-700">
-                          <Building className="w-2.5 h-2.5" /> Lender
-                        </span>
-                        {p.lenderName && <span className="text-xs text-slate-500 truncate max-w-[80px]">{p.lenderName}</span>}
-                      </div>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700">
-                        <User className="w-2.5 h-2.5" /> Direct
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-4 text-base font-black text-emerald-600 whitespace-nowrap">
-                    {/*
-                      compactIn(amount, targetCurrency, fromCurrency):
-                      - targetCurrency = rowCurrency (show in the payment's original currency)
-                      - fromCurrency   = rowCurrency (amount is already in that currency, no conversion)
-                      This correctly displays 1950 RWF as "FRw1.95K RWF" instead of "FRw2.9M RWF".
-                      Currency conversion to the user's preferred currency is handled by the stat cards
-                      via compact(amount, fromCurrency).
-                    */}
-                    {compactIn(p.amount, rowCurrency, rowCurrency)}{' '}
-                    <span className="text-xs font-bold text-slate-400">{rowCurrency}</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide ${statusStyle[p.status] || 'bg-slate-100 text-slate-600'}`}>
-                      {p.status}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <StandardDataTable
+      columns={columns}
+      data={tableData}
+      loading={isLoading}
+      error={isError ? 'Failed to load payments' : null}
+      onRetry={() => refetch()}
+      getRowId={(row) => row.id}
+      searchPlaceholder="Search by reference, trip, lender, description..."
+      searchKeys={['referenceNumber', 'description', 'amount', 'tripNumber', 'lenderName']}
+      filters={[
+        {
+          key: 'statusKey',
+          label: 'Status',
+          options: [
+            { value: 'pending', label: 'Pending' },
+            { value: 'processing', label: 'Processing' },
+            { value: 'completed', label: 'Completed' },
+          ],
+        },
+        {
+          key: 'sourceKey',
+          label: 'Source',
+          options: [
+            { value: 'cargo_owner', label: 'Direct (Cargo Owner)' },
+            { value: 'lender', label: 'Via Lender' },
+          ],
+        },
+      ]}
+      defaultSortKey="processedAt"
+      defaultSortDirection="desc"
+      onRefresh={() => refetch()}
+      emptyMessage="No payments found"
+      ariaLabel="Received payments"
+      embedded
+    />
   );
 };
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
@@ -20,6 +20,7 @@ import EnhancedRepayButton from '../components/Lending/EnhancedRepayButton';
 import LoanTermsAcceptanceModal from '../components/Lending/LoanTermsAcceptanceModal';
 import LoanAppealModal from '../components/Lending/LoanAppealModal';
 import { buildLoanWorkflowView, workflowStageBadgeClass } from '../utils/loanWorkflow';
+import { StandardDataTable, type Column } from '../components/EnliteUI/Tables';
 
 interface Lender { id: string; name: string; type: string; email: string; phone: string; }
 interface LoanRequest {
@@ -957,6 +958,164 @@ const TruckOwnerLoanRequestsView: React.FC<{
     r.status.toLowerCase().includes(search.toLowerCase())
   );
 
+  const loanHistoryColumns: Column<LoanRequest>[] = useMemo(() => [
+    {
+      key: 'id',
+      label: 'Loan ID',
+      render: (_v, req) => (
+        <>
+          <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}…</p>
+          <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+            {req.trip_id ? `Trip: ${req.trip_id.slice(0, 8)}…` : '—'}
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'requested_amount',
+      label: 'Amount',
+      render: (_v, req) => (
+        <>
+          <p className="text-sm font-black text-slate-900">{fmtMoney(req.requested_amount)}</p>
+          {req.approved_amount != null && (
+            <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+              ✓ Approved: {fmtMoney(req.approved_amount)}
+            </p>
+          )}
+        </>
+      ),
+    },
+    {
+      key: 'purpose',
+      label: 'Purpose',
+      render: (_v, req) => (
+        <p className="text-sm font-semibold text-slate-700 capitalize">
+          {req.purpose || 'Fleet financing'}
+        </p>
+      ),
+    },
+    {
+      key: 'requested_split',
+      label: 'Fund Split',
+      render: (_v, req) =>
+        req.requested_split && req.requested_split.length > 0 ? (
+          <div className="space-y-1">
+            {req.requested_split.map((s, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
+                  {s.type}
+                </span>
+                <span className="text-xs font-bold text-slate-800">{fmtMoney(s.amount)}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-[10px] text-slate-300">—</span>
+        ),
+    },
+    {
+      key: 'lender',
+      label: 'Lender',
+      render: (_v, req) =>
+        req.lender?.name ? (
+          <p className="text-xs font-semibold text-slate-700">{req.lender.name}</p>
+        ) : (
+          <span className="text-[10px] text-slate-400 italic">Auto-assigned</span>
+        ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, req) => <StatusBadge loan={req} />,
+    },
+    {
+      key: 'due_date',
+      label: 'Due Date',
+      render: (_v, req) => (
+        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+          {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
+        </p>
+      ),
+    },
+    {
+      key: 'created_at',
+      label: 'Submitted',
+      render: (_v, req) => (
+        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+          {new Date(req.created_at).toLocaleDateString()}
+        </p>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      alwaysVisible: true,
+      hideable: false,
+      render: (_v, req) => (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSelectedLoan(req)}
+            title="View loan details & terms"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-[#345E85] hover:text-white text-slate-500 transition-all"
+          >
+            <FileText size={13} />
+          </button>
+          {(() => {
+            const wf = buildLoanWorkflowView(req);
+            if (wf.awaiting_borrower_response) {
+              return (
+                <button
+                  onClick={() => setAcceptLoanId(req.id)}
+                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all ${
+                    wf.is_partial_offer
+                      ? 'bg-orange-600 hover:bg-orange-700'
+                      : 'bg-[#345E85] hover:bg-[#2a4d6d]'
+                  }`}
+                >
+                  {wf.is_partial_offer ? 'Agree / Reject' : 'Review Terms'}
+                </button>
+              );
+            }
+            if (wf.can_appeal) {
+              return (
+                <button
+                  onClick={() => setAppealLoan(req)}
+                  className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white bg-violet-700 hover:bg-violet-800 transition-all"
+                  title={req.rejection_reason || 'Appeal rejection'}
+                >
+                  Appeal / Comment
+                </button>
+              );
+            }
+            if (wf.has_open_appeal) {
+              return (
+                <span className="text-[10px] font-black uppercase tracking-wider text-violet-700 bg-violet-50 px-2 py-1 rounded-lg">
+                  Appeal sent
+                </span>
+              );
+            }
+            return null;
+          })()}
+          {req.status === 'rejected' && req.rejection_reason && (
+            <span className="text-[10px] text-rose-500 font-semibold max-w-[120px] truncate" title={req.rejection_reason}>
+              {req.rejection_reason}
+            </span>
+          )}
+          {req.status === 'disbursed' && req.borrower_accepted_at && (
+            <EnhancedRepayButton
+              loanId={req.id}
+              amount={req.approved_amount ?? req.requested_amount}
+              interestAmount={req.interest_amount ?? 0}
+              interestRate={req.interest_rate}
+              currency={req.currency || 'USD'}
+              onRepaymentSuccess={onRefresh}
+            />
+          )}
+        </div>
+      ),
+    },
+  ], [fmtMoney, onRefresh]);
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -1026,159 +1185,16 @@ const TruckOwnerLoanRequestsView: React.FC<{
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-50">
-                  {['Loan ID', 'Amount', 'Purpose', 'Fund Split', 'Lender', 'Status', 'Due Date', 'Submitted', 'Actions'].map(h => (
-                    <th key={h} className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filtered.map(req => (
-                  <tr key={req.id} className="hover:bg-slate-50/50 transition-colors">
-
-                    {/* Loan ID */}
-                    <td className="px-6 py-4">
-                      <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}…</p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                        {req.trip_id ? `Trip: ${req.trip_id.slice(0, 8)}…` : '—'}
-                      </p>
-                    </td>
-
-                    {/* Amount */}
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-black text-slate-900">{fmtMoney(req.requested_amount)}</p>
-                      {req.approved_amount != null && (
-                        <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
-                          ✓ Approved: {fmtMoney(req.approved_amount)}
-                        </p>
-                      )}
-                    </td>
-
-                    {/* Purpose — from metadata.purpose */}
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-slate-700 capitalize">
-                        {req.purpose || 'Fleet financing'}
-                      </p>
-                    </td>
-
-                    {/* Fund Split — from requested_split array */}
-                    <td className="px-6 py-4">
-                      {req.requested_split && req.requested_split.length > 0 ? (
-                        <div className="space-y-1">
-                          {req.requested_split.map((s, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
-                                {s.type}
-                              </span>
-                              <span className="text-xs font-bold text-slate-800">{fmtMoney(s.amount)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-slate-300">—</span>
-                      )}
-                    </td>
-
-                    {/* Lender */}
-                    <td className="px-6 py-4">
-                      {req.lender?.name ? (
-                        <p className="text-xs font-semibold text-slate-700">{req.lender.name}</p>
-                      ) : (
-                        <span className="text-[10px] text-slate-400 italic">Auto-assigned</span>
-                      )}
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-6 py-4">
-                      <StatusBadge loan={req} />
-                    </td>
-
-                    {/* Due Date */}
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
-                        {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
-                      </p>
-                    </td>
-
-                    {/* Submitted */}
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
-                        {new Date(req.created_at).toLocaleDateString()}
-                      </p>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setSelectedLoan(req)}
-                          title="View loan details & terms"
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-[#345E85] hover:text-white text-slate-500 transition-all"
-                        >
-                          <FileText size={13} />
-                        </button>
-                        {(() => {
-                          const wf = buildLoanWorkflowView(req);
-                          if (wf.awaiting_borrower_response) {
-                            return (
-                              <button
-                                onClick={() => setAcceptLoanId(req.id)}
-                                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white transition-all ${
-                                  wf.is_partial_offer
-                                    ? 'bg-orange-600 hover:bg-orange-700'
-                                    : 'bg-[#345E85] hover:bg-[#2a4d6d]'
-                                }`}
-                              >
-                                {wf.is_partial_offer ? 'Agree / Reject' : 'Review Terms'}
-                              </button>
-                            );
-                          }
-                          if (wf.can_appeal) {
-                            return (
-                              <button
-                                onClick={() => setAppealLoan(req)}
-                                className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white bg-violet-700 hover:bg-violet-800 transition-all"
-                                title={req.rejection_reason || 'Appeal rejection'}
-                              >
-                                Appeal / Comment
-                              </button>
-                            );
-                          }
-                          if (wf.has_open_appeal) {
-                            return (
-                              <span className="text-[10px] font-black uppercase tracking-wider text-violet-700 bg-violet-50 px-2 py-1 rounded-lg">
-                                Appeal sent
-                              </span>
-                            );
-                          }
-                          return null;
-                        })()}
-                        {req.status === 'rejected' && req.rejection_reason && (
-                          <span className="text-[10px] text-rose-500 font-semibold max-w-[120px] truncate" title={req.rejection_reason}>
-                            {req.rejection_reason}
-                          </span>
-                        )}
-                        {req.status === 'disbursed' && req.borrower_accepted_at && (
-                          <EnhancedRepayButton
-                            loanId={req.id}
-                            amount={req.approved_amount ?? req.requested_amount}
-                            interestAmount={req.interest_amount ?? 0}
-                            interestRate={req.interest_rate}
-                            currency={req.currency || 'USD'}
-                            onRepaymentSuccess={onRefresh}
-                          />
-                        )}
-                      </div>
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <StandardDataTable<LoanRequest>
+            embedded
+            columns={loanHistoryColumns}
+            data={filtered}
+            getRowId={(row) => row.id}
+            searchable={false}
+            pagination={false}
+            hoverable
+            ariaLabel="Loan history"
+          />
         )}
       </div>
 

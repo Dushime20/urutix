@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import CurrencySelector from '../../components/common/CurrencySelector';
 import PaymentCurrencySelect from '../../components/common/PaymentCurrencySelect';
+import { StandardDataTable, type Column } from '../../components/EnliteUI/Tables';
 import {
   FaCheck,
   FaTimes,
@@ -61,6 +62,12 @@ interface SubscriptionPlan {
   limits: {
     storageGB?: number;
   };
+}
+
+interface FeatureComparisonRow {
+  id: string;
+  feature: string;
+  values: Record<string, React.ReactNode>;
 }
 
 const SubscriptionPlans: React.FC = () => {
@@ -205,6 +212,125 @@ const SubscriptionPlans: React.FC = () => {
   };
 
   const plans: SubscriptionPlan[] = plansData?.data || [];
+
+  const featureComparisonRows = useMemo((): FeatureComparisonRow[] => {
+    const boolIcon = (enabled?: boolean) =>
+      enabled ? (
+        <FaCheck className="text-green-500 mx-auto text-xl" />
+      ) : (
+        <FaTimes className="text-slate-300 mx-auto text-xl" />
+      );
+
+    const buildValues = (getter: (plan: SubscriptionPlan) => React.ReactNode) =>
+      Object.fromEntries(plans.map((plan) => [plan.id, getter(plan)]));
+
+    return [
+      {
+        id: 'pricePerCredit',
+        feature: 'Price per Credit',
+        values: buildValues((plan) => (
+          <span className="font-bold text-indigo-600">{fmtFull(Number(plan.pricePerCredit))}</span>
+        )),
+      },
+      {
+        id: 'totalCredits',
+        feature: 'Total Credits',
+        values: buildValues((plan) => (
+          <span className="font-bold text-indigo-600">
+            {plan.totalCredits === -1 ? 'Unlimited' : plan.totalCredits.toLocaleString()}
+          </span>
+        )),
+      },
+      {
+        id: 'creditsPerTonTenant',
+        feature: 'Credits/Ton (Tenant)',
+        values: buildValues((plan) => (
+          <span className="font-bold text-blue-600">{Number(plan.creditsPerTonTenant).toFixed(1)}</span>
+        )),
+      },
+      {
+        id: 'creditsPerTonTruckOwner',
+        feature: 'Credits/Ton (Truck Owner)',
+        values: buildValues((plan) => (
+          <span className="font-bold text-indigo-600">{Number(plan.creditsPerTonTruckOwner).toFixed(1)}</span>
+        )),
+      },
+      {
+        id: 'maxTrucks',
+        feature: 'Max Trucks',
+        values: buildValues((plan) => plan.features.maxTrucks || '∞'),
+      },
+      {
+        id: 'maxUsers',
+        feature: 'Max Users',
+        values: buildValues((plan) => plan.features.maxUsers || '∞'),
+      },
+      {
+        id: 'maxLoadsPerMonth',
+        feature: 'Loads per Month',
+        values: buildValues((plan) => plan.features.maxLoadsPerMonth || '∞'),
+      },
+      {
+        id: 'aiMatching',
+        feature: 'AI Matching',
+        values: buildValues((plan) => boolIcon(plan.features.aiMatching)),
+      },
+      {
+        id: 'advancedAnalytics',
+        feature: 'Advanced Analytics',
+        values: buildValues((plan) => boolIcon(plan.features.advancedAnalytics)),
+      },
+      {
+        id: 'brokerManagement',
+        feature: 'Broker Management',
+        values: buildValues((plan) => boolIcon(plan.features.brokerManagement)),
+      },
+      {
+        id: 'apiAccess',
+        feature: 'API Access',
+        values: buildValues((plan) => boolIcon(plan.features.apiAccess)),
+      },
+      {
+        id: 'storage',
+        feature: 'Storage',
+        values: buildValues((plan) => `${plan.limits.storageGB}GB`),
+      },
+      {
+        id: 'support',
+        feature: 'Support',
+        values: buildValues((plan) =>
+          plan.features.dedicatedSupport
+            ? '24/7 Dedicated'
+            : plan.features.prioritySupport
+              ? 'Priority'
+              : 'Email',
+        ),
+      },
+    ];
+  }, [plans, fmtFull]);
+
+  const featureComparisonColumns = useMemo((): Column<FeatureComparisonRow>[] => {
+    const featureCol: Column<FeatureComparisonRow> = {
+      key: 'feature',
+      label: 'Feature',
+      align: 'left',
+      sortable: false,
+      hideable: false,
+      alwaysVisible: true,
+      render: (_, row) => <span className="font-medium text-slate-700">{row.feature}</span>,
+    };
+
+    const planCols: Column<FeatureComparisonRow>[] = plans.map((plan) => ({
+      key: plan.id,
+      label: plan.name,
+      align: 'center',
+      sortable: false,
+      hideable: false,
+      render: (_value, row) => <div className="text-center">{row.values[plan.id]}</div>,
+    }));
+
+    return [featureCol, ...planCols];
+  }, [plans]);
 
   const getTotalAmount = (plan: SubscriptionPlan) => {
     if (plan.totalCredits === -1) {
@@ -633,143 +759,17 @@ const SubscriptionPlans: React.FC = () => {
             <h2 className="text-3xl font-bold text-slate-900 mb-6 text-center">
               Detailed Feature Comparison
             </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b-2 border-slate-200">
-                    <th className="text-left py-4 px-4 font-bold text-slate-900">Feature</th>
-                    {plans.map(plan => (
-                      <th key={plan.id} className="text-center py-4 px-4 font-bold text-slate-900">
-                        {plan.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Price per Credit</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4 font-bold text-indigo-600">
-                        {fmtFull(Number(plan.pricePerCredit))}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Total Credits</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4 font-bold text-indigo-600">
-                        {plan.totalCredits === -1 ? 'Unlimited' : plan.totalCredits.toLocaleString()}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Credits/Ton (Tenant)</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4 font-bold text-blue-600">
-                        {Number(plan.creditsPerTonTenant).toFixed(1)}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Credits/Ton (Truck Owner)</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4 font-bold text-indigo-600">
-                        {Number(plan.creditsPerTonTruckOwner).toFixed(1)}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Max Trucks</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.maxTrucks || '∞'}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Max Users</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.maxUsers || '∞'}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Loads per Month</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.maxLoadsPerMonth || '∞'}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">AI Matching</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.aiMatching ? (
-                          <FaCheck className="text-green-500 mx-auto text-xl" />
-                        ) : (
-                          <FaTimes className="text-slate-300 mx-auto text-xl" />
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Advanced Analytics</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.advancedAnalytics ? (
-                          <FaCheck className="text-green-500 mx-auto text-xl" />
-                        ) : (
-                          <FaTimes className="text-slate-300 mx-auto text-xl" />
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Broker Management</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.brokerManagement ? (
-                          <FaCheck className="text-green-500 mx-auto text-xl" />
-                        ) : (
-                          <FaTimes className="text-slate-300 mx-auto text-xl" />
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">API Access</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.apiAccess ? (
-                          <FaCheck className="text-green-500 mx-auto text-xl" />
-                        ) : (
-                          <FaTimes className="text-slate-300 mx-auto text-xl" />
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Storage</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.limits.storageGB}GB
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-4 px-4 font-medium text-slate-700">Support</td>
-                    {plans.map(plan => (
-                      <td key={plan.id} className="text-center py-4 px-4">
-                        {plan.features.dedicatedSupport ? '24/7 Dedicated' :
-                          plan.features.prioritySupport ? 'Priority' : 'Email'}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable<FeatureComparisonRow>
+              embedded
+              searchable={false}
+              pagination={false}
+              sortable={false}
+              columnVisibility={false}
+              columns={featureComparisonColumns}
+              data={featureComparisonRows}
+              getRowId={(row) => row.id}
+              ariaLabel="Detailed feature comparison"
+            />
           </div>
         )}
 
@@ -1040,79 +1040,95 @@ const SubscriptionPlans: React.FC = () => {
             </div>
 
             {(creditHistoryData?.data ?? []).length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50/50 border-b border-slate-100">
-                    <tr>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Details</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Balance After</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {[...(creditHistoryData?.data ?? [])]
-                      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                      .map((txn: any) => {
-                        const isCredit =
-                          txn.amount > 0 ||
-                          ['SUBSCRIPTION_GRANT', 'PURCHASE', 'BONUS', 'REFUND'].includes(txn.type);
-                        return (
-                          <tr key={txn.id} className="hover:bg-slate-50/50 transition-all">
-                            <td className="px-8 py-5">
-                              <p className="text-sm font-black text-slate-900">
-                                {txn.description || 'Transaction'}
-                              </p>
-                              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
-                                {String(txn.id).substring(0, 8)}
-                              </p>
-                            </td>
-                            <td className="px-8 py-5">
-                              <span
-                                className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                  isCredit
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                    : 'bg-rose-50 text-rose-700 border border-rose-100'
-                                }`}
-                              >
-                                {String(txn.type || 'UNKNOWN').replace(/_/g, ' ')}
-                              </span>
-                            </td>
-                            <td className="px-8 py-5">
-                              <span
-                                className={`text-sm font-black ${
-                                  isCredit ? 'text-emerald-600' : 'text-rose-600'
-                                }`}
-                              >
-                                {isCredit ? '+' : '-'}
-                                {Math.abs(txn.amount || 0).toLocaleString()} credits
-                              </span>
-                            </td>
-                            <td className="px-8 py-5 text-sm font-black text-slate-900">
-                              {(txn.balanceAfter ?? 0).toLocaleString()} credits
-                            </td>
-                            <td className="px-8 py-5 text-right">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                {new Date(txn.createdAt).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                })}
-                              </p>
-                              <p className="text-[9px] font-medium text-slate-300 mt-0.5">
-                                {new Date(txn.createdAt).toLocaleTimeString('en-US', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </p>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
+              <StandardDataTable
+                embedded
+                searchable={false}
+                pagination
+                pageSize={10}
+                data={[...(creditHistoryData?.data ?? [])].sort(
+                  (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+                )}
+                getRowId={(txn: any) => txn.id}
+                emptyMessage="No transactions yet"
+                columns={[
+                  {
+                    key: 'description',
+                    label: 'Details',
+                    render: (_: any, txn: any) => (
+                      <div>
+                        <p className="text-sm font-black text-slate-900">{txn.description || 'Transaction'}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">
+                          {String(txn.id).substring(0, 8)}
+                        </p>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'type',
+                    label: 'Type',
+                    render: (_: any, txn: any) => {
+                      const isCredit =
+                        txn.amount > 0 ||
+                        ['SUBSCRIPTION_GRANT', 'PURCHASE', 'BONUS', 'REFUND'].includes(txn.type);
+                      return (
+                        <span
+                          className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                            isCredit
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                              : 'bg-rose-50 text-rose-700 border border-rose-100'
+                          }`}
+                        >
+                          {String(txn.type || 'UNKNOWN').replace(/_/g, ' ')}
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: 'amount',
+                    label: 'Amount',
+                    render: (_: any, txn: any) => {
+                      const isCredit =
+                        txn.amount > 0 ||
+                        ['SUBSCRIPTION_GRANT', 'PURCHASE', 'BONUS', 'REFUND'].includes(txn.type);
+                      return (
+                        <span className={`text-sm font-black ${isCredit ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {isCredit ? '+' : '-'}
+                          {Math.abs(txn.amount || 0).toLocaleString()} credits
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: 'balanceAfter',
+                    label: 'Balance After',
+                    render: (v: number) => (
+                      <span className="text-sm font-black text-slate-900">{(v ?? 0).toLocaleString()} credits</span>
+                    ),
+                  },
+                  {
+                    key: 'createdAt',
+                    label: 'Date',
+                    align: 'right',
+                    render: (d: string) => (
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          {new Date(d).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </p>
+                        <p className="text-[9px] font-medium text-slate-300 mt-0.5">
+                          {new Date(d).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    ),
+                  },
+                ] as Column[]}
+              />
             ) : (
               <div className="py-20 text-center">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">

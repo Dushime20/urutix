@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   FileCheck,
@@ -13,10 +13,10 @@ import {
   Eye,
   DollarSign,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/api';
 import { EpodViewer } from '../trips/EpodViewer';
 import toast from 'react-hot-toast';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 
 interface EpodListItem {
   id: string;
@@ -88,6 +88,85 @@ const TruckOwnerEpodDashboard: React.FC = () => {
   const handleExport = () => {
     toast.success('Export functionality coming soon!');
   };
+
+  const epodColumns: Column<EpodListItem>[] = useMemo(() => [
+    {
+      key: 'tripNumber',
+      label: 'Trip',
+      sortable: true,
+      render: (_, epod) => <p className="text-sm font-semibold text-slate-900">{epod.tripNumber}</p>,
+    },
+    {
+      key: 'truckNumber',
+      label: 'Truck',
+      sortable: true,
+      render: (_, epod) => (
+        <div className="flex items-center gap-2">
+          <Truck size={14} className="text-slate-400" />
+          <p className="text-sm text-slate-600">{epod.truckNumber}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'driverName',
+      label: 'Driver',
+      sortable: true,
+      render: (_, epod) => (
+        <div className="flex items-center gap-2">
+          <User size={14} className="text-slate-400" />
+          <p className="text-sm text-slate-600">{epod.driverName}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'loadTitle',
+      label: 'Load',
+      sortable: true,
+      render: (_, epod) => <p className="text-sm text-slate-600 max-w-xs truncate">{epod.loadTitle}</p>,
+    },
+    {
+      key: 'recipientName',
+      label: 'Recipient',
+      sortable: true,
+      render: (_, epod) => <p className="text-sm text-slate-600">{epod.recipientName}</p>,
+    },
+    {
+      key: 'submittedAt',
+      label: 'Submitted',
+      sortable: true,
+      render: (_, epod) => (
+        <div className="flex items-center gap-2">
+          <Calendar size={14} className="text-slate-400" />
+          <p className="text-sm text-slate-600">{new Date(epod.submittedAt).toLocaleDateString()}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_, epod) => {
+        const StatusIcon = statusConfig[epod.status].icon;
+        const variant = epod.status === 'PENDING' ? 'warning' : epod.status === 'CONFIRMED' ? 'success' : 'error';
+        return (
+          <StatusBadge
+            label={statusConfig[epod.status].label}
+            variant={variant}
+            icon={<StatusIcon size={12} />}
+          />
+        );
+      },
+    },
+  ], []);
+
+  const epodRowActions: TableAction<EpodListItem>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <Eye size={14} />,
+      onClick: (epod) => setSelectedEpodId(epod.tripId),
+    },
+  ], []);
 
   if (selectedEpodId) {
     return (
@@ -213,132 +292,27 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       </div>
 
       {/* ePOD List */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <AlertTriangle size={48} className="text-red-400 mb-4" />
-            <p className="text-sm font-semibold text-slate-600">Failed to load ePODs</p>
-          </div>
-        ) : epods.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <FileCheck size={48} className="text-slate-300 mb-4" />
-            <p className="text-sm font-semibold text-slate-600">No ePODs found</p>
-            <p className="text-xs text-slate-400 mt-1">Try adjusting your filters</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-100">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Trip</th>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Truck</th>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Driver</th>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Load</th>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Recipient</th>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Submitted</th>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  <AnimatePresence>
-                    {epods.map((epod) => {
-                      const StatusIcon = statusConfig[epod.status].icon;
-                      return (
-                        <motion.tr
-                          key={epod.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="hover:bg-slate-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-sm font-semibold text-slate-900">{epod.tripNumber}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <Truck size={14} className="text-slate-400" />
-                              <p className="text-sm text-slate-600">{epod.truckNumber}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <User size={14} className="text-slate-400" />
-                              <p className="text-sm text-slate-600">{epod.driverName}</p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="text-sm text-slate-600 max-w-xs truncate">{epod.loadTitle}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-sm text-slate-600">{epod.recipientName}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <Calendar size={14} className="text-slate-400" />
-                              <p className="text-sm text-slate-600">
-                                {new Date(epod.submittedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${statusConfig[epod.status].color}`}>
-                              <StatusIcon size={12} />
-                              {statusConfig[epod.status].label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                              onClick={() => setSelectedEpodId(epod.tripId)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors"
-                            >
-                              <Eye size={14} />
-                              View
-                            </button>
-                          </td>
-                        </motion.tr>
-                      );
-                    })}
-                  </AnimatePresence>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100">
-                <p className="text-sm text-slate-600">
-                  Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total} results
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-sm font-semibold text-slate-600">
-                    Page {page} of {pagination.totalPages}
-                  </span>
-                  <button
-                    onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                    disabled={page === pagination.totalPages}
-                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      <StandardDataTable<EpodListItem>
+        embedded
+        searchable={false}
+        columnVisibility={false}
+        className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden px-4 py-4"
+        columns={epodColumns}
+        data={epods}
+        loading={isLoading}
+        error={error ? 'Failed to load ePODs' : null}
+        getRowId={(row) => row.id}
+        pagination={pagination.total > 0}
+        page={page}
+        pageSize={limit}
+        pageSizeOptions={[20]}
+        totalItems={pagination.total}
+        onPageChange={setPage}
+        rowActions={epodRowActions}
+        stickyHeader
+        emptyMessage="No ePODs found — try adjusting your filters"
+        ariaLabel="ePOD reports"
+      />
     </div>
   );
 };

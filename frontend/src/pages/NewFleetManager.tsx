@@ -12,6 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import logoUrutiX from '../assets/logo-urutix.svg';
 import { ProtectedAction } from '../components/common/ProtectedAction';
 import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
+import { usePermission } from '../contexts/PermissionContext';
 
 // Types
 interface Vehicle {
@@ -106,22 +108,6 @@ const NewFleetManager: React.FC = () => {
     // Bulk Actions State
     const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
 
-    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.checked) {
-            setSelectedVehicleIds(vehicles.map(v => v.id));
-        } else {
-            setSelectedVehicleIds([]);
-        }
-    };
-
-    const handleSelectVehicle = (id: string) => {
-        if (selectedVehicleIds.includes(id)) {
-            setSelectedVehicleIds(selectedVehicleIds.filter(vId => vId !== id));
-        } else {
-            setSelectedVehicleIds([...selectedVehicleIds, id]);
-        }
-    };
-
     const handleBulkAction = async (action: 'delete' | 'update', status?: string) => {
         if (selectedVehicleIds.length === 0) return;
 
@@ -158,6 +144,7 @@ const NewFleetManager: React.FC = () => {
 
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate(); // Initialize useNavigate
+    const { hasPermission } = usePermission();
 
     // Fetch Fleet Data
     const loadFleetData = async () => {
@@ -472,6 +459,235 @@ const NewFleetManager: React.FC = () => {
         }
     };
 
+    const vehicleColumns: Column<Vehicle>[] = useMemo(() => [
+        {
+            key: 'vinNumber',
+            label: 'VIN Number',
+            sortable: true,
+            render: (_: unknown, vehicle: Vehicle) => (
+                <div className="flex flex-col">
+                    <span className="text-slate-900 font-mono font-semibold text-[13px]">{vehicle.vinNumber}</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">Registered 2023</span>
+                </div>
+            ),
+        },
+        {
+            key: 'licensePlate',
+            label: 'License Plate',
+            sortable: true,
+            render: (_: unknown, vehicle: Vehicle) => (
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                    <span className="material-symbols-outlined text-[#135bec] text-sm">credit_card</span>
+                    <span className="text-slate-800 font-bold text-[13px] tracking-wide">{vehicle.licensePlate}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'assetCategory',
+            label: 'Asset Category',
+            sortable: true,
+            render: (_: unknown, vehicle: Vehicle) => (
+                <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${vehicle.assetCategory === 'Heavy Truck' ? 'from-blue-100 to-blue-50' :
+                        vehicle.assetCategory === 'Logistics Bus' ? 'from-orange-100 to-orange-50' :
+                            vehicle.assetCategory === 'Van Delivery' ? 'from-indigo-100 to-indigo-50' :
+                                'from-purple-100 to-purple-50'
+                        } flex items-center justify-center border border-slate-200 shadow-sm`}>
+                        <span className={`material-symbols-outlined ${vehicle.categoryColor} text-lg`}>
+                            {vehicle.categoryIcon}
+                        </span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-slate-800 font-medium">{vehicle.assetCategory}</span>
+                        <span className="text-[10px] text-slate-400">25 tons capacity</span>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'assignedDriver',
+            label: 'Assigned Driver',
+            sortable: true,
+            render: (_: unknown, vehicle: Vehicle) => (
+                vehicle.assignedDriver ? (
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <div
+                                className="w-9 h-9 rounded-full bg-slate-200 bg-cover bg-center ring-2 ring-white shadow-md"
+                                style={{ backgroundImage: `url('${vehicle.assignedDriver.avatar}')` }}
+                            />
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-slate-800 font-medium">{vehicle.assignedDriver.name}</span>
+                            <span className="text-[10px] text-slate-400">Active since 2022</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-slate-400 text-sm">person_add</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-orange-600 text-xs font-medium">Unassigned</span>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAssignDriver(vehicle);
+                                }}
+                                className="text-[10px] text-[#135bec] hover:underline text-left"
+                            >
+                                Assign driver
+                            </button>
+                        </div>
+                    </div>
+                )
+            ),
+        },
+        {
+            key: 'compliance',
+            label: 'Compliance',
+            sortable: true,
+            render: (_: unknown, vehicle: Vehicle) => (
+                <StatusBadge
+                    label={vehicle.compliance}
+                    variant={
+                        vehicle.compliance === 'ACTIVE' ? 'success'
+                            : vehicle.compliance === 'MAINTENANCE' ? 'info'
+                                : vehicle.compliance === 'EXPIRED' ? 'error'
+                                    : 'neutral'
+                    }
+                    icon={
+                        vehicle.compliance === 'ACTIVE' ? (
+                            <span className="material-symbols-outlined text-xs">verified</span>
+                        ) : vehicle.compliance === 'EXPIRED' ? (
+                            <span className="material-symbols-outlined text-xs">error</span>
+                        ) : undefined
+                    }
+                />
+            ),
+        },
+        {
+            key: 'lastInspection',
+            label: 'Last Inspection',
+            sortable: true,
+            render: (_: unknown, vehicle: Vehicle) => (
+                <div className="flex flex-col">
+                    <span className={`font-medium ${vehicle.inspectionExpired ? 'text-red-600' : 'text-slate-800'}`}>
+                        {vehicle.lastInspection}
+                    </span>
+                    <span className={`text-[10px] ${vehicle.inspectionExpired ? 'text-red-500' : 'text-slate-400'}`}>
+                        {vehicle.inspectionExpired ? 'Overdue by 396 days' : 'Next: Jan 15, 2024'}
+                    </span>
+                </div>
+            ),
+        },
+    ], []);
+
+    const vehicleRowActions: TableAction<Vehicle>[] = useMemo(() => [
+        {
+            key: 'view',
+            label: 'View Details',
+            icon: <span className="material-symbols-outlined text-lg">visibility</span>,
+            onClick: (vehicle) => {
+                setSelectedTruckForDetails({ id: vehicle.id });
+                setShowDetailsModal(true);
+            },
+        },
+        {
+            key: 'edit',
+            label: 'Edit Vehicle',
+            icon: <span className="material-symbols-outlined text-lg">edit</span>,
+            hidden: () => !hasPermission('truck:update'),
+            onClick: (vehicle) => handleEditTruck(vehicle.id),
+        },
+        {
+            key: 'inspect',
+            label: 'Schedule Inspection',
+            icon: <span className="material-symbols-outlined text-lg">event</span>,
+            onClick: (vehicle) => handleScheduleInspection(vehicle),
+        },
+        {
+            key: 'documents',
+            label: 'Manage Documents',
+            icon: <span className="material-symbols-outlined text-lg">description</span>,
+            onClick: (vehicle) => handleOpenDocuments(vehicle.id, vehicle.make, vehicle.model, vehicle.licensePlate),
+        },
+        {
+            key: 'delete',
+            label: 'Delete Vehicle',
+            icon: <span className="material-symbols-outlined text-lg">delete</span>,
+            variant: 'danger',
+            divider: true,
+            hidden: () => !hasPermission('truck:delete'),
+            onClick: (vehicle) => handleDeleteTruck(vehicle.id),
+        },
+    ], [hasPermission]);
+
+    const driverColumns: Column<Driver>[] = useMemo(() => [
+        {
+            key: 'firstName',
+            label: 'Name',
+            sortable: true,
+            render: (_: unknown, driver: Driver) => (
+                <div className="flex items-center gap-3">
+                    <img
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.firstName}${driver.lastName}`}
+                        alt={`${driver.firstName} ${driver.lastName}`}
+                        className="w-10 h-10 rounded-full bg-slate-200"
+                    />
+                    <div>
+                        <div className="font-bold text-slate-900">{driver.firstName} {driver.lastName}</div>
+                        <div className="text-xs text-slate-500">ID: {driver.id.substring(0, 8)}</div>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            sortable: true,
+            render: (_: unknown, driver: Driver) => (
+                <StatusBadge label={driver.status} status={driver.status} />
+            ),
+        },
+        {
+            key: 'licenseNumber',
+            label: 'License Number',
+            sortable: true,
+            render: (_: unknown, driver: Driver) => (
+                <span className="font-mono text-sm">{driver.licenseNumber}</span>
+            ),
+        },
+        {
+            key: 'phone',
+            label: 'Contact',
+            render: (_: unknown, driver: Driver) => (
+                <span className="text-sm text-slate-600">{driver.phone || 'N/A'}</span>
+            ),
+        },
+    ], []);
+
+    const driverRowActions: TableAction<Driver>[] = useMemo(() => [
+        {
+            key: 'documents',
+            label: 'Manage Documents',
+            icon: <span className="material-symbols-outlined text-[18px]">description</span>,
+            onClick: (driver) => handleOpenDriverDocuments(driver),
+        },
+        {
+            key: 'edit',
+            label: 'Edit Driver',
+            icon: <span className="material-symbols-outlined text-[18px]">edit</span>,
+            onClick: (driver) => {
+                setDriverFormMode('edit');
+                setEditingDriver(driver);
+                setShowDriverModal(true);
+            },
+        },
+    ], []);
+
 
     if (loading) {
         return <ModernLoader isLoading={true} type="page" />;
@@ -735,304 +951,35 @@ const NewFleetManager: React.FC = () => {
                     {/* Content Section - Based on Active Tab */}
                     <div className="overflow-x-auto bg-white">
                         {activeTab === 'vehicles' ? (
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50 sticky top-0 z-10">
-                                    <tr className="text-left text-[11px] uppercase tracking-widest font-bold text-slate-500 border-b border-slate-200">
-                                        <th className="px-4 py-4 w-12">
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 rounded border-slate-300 bg-white text-[#135bec] focus:ring-[#135bec] focus:ring-offset-0 cursor-pointer"
-                                                checked={selectedVehicleIds.length === vehicles.length && vehicles.length > 0}
-                                                onChange={handleSelectAll}
-                                            />
-                                        </th>
-                                        <th className="px-4 py-4 cursor-pointer hover:text-slate-700 transition-colors group">
-                                            <div className="flex items-center gap-1">
-                                                VIN Number
-                                                <span className="material-symbols-outlined text-xs opacity-0 group-hover:opacity-100 transition-opacity">unfold_more</span>
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-4 cursor-pointer hover:text-slate-700 transition-colors group">
-                                            <div className="flex items-center gap-1">
-                                                License Plate
-                                                <span className="material-symbols-outlined text-xs opacity-0 group-hover:opacity-100 transition-opacity">unfold_more</span>
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-4 cursor-pointer hover:text-slate-700 transition-colors group">
-                                            <div className="flex items-center gap-1">
-                                                Asset Category
-                                                <span className="material-symbols-outlined text-xs opacity-0 group-hover:opacity-100 transition-opacity">unfold_more</span>
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-4 cursor-pointer hover:text-slate-700 transition-colors group">
-                                            <div className="flex items-center gap-1">
-                                                Assigned Driver
-                                                <span className="material-symbols-outlined text-xs opacity-0 group-hover:opacity-100 transition-opacity">unfold_more</span>
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-4 cursor-pointer hover:text-slate-700 transition-colors group">
-                                            <div className="flex items-center gap-1">
-                                                Compliance
-                                                <span className="material-symbols-outlined text-xs opacity-0 group-hover:opacity-100 transition-opacity">unfold_more</span>
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-4 cursor-pointer hover:text-slate-700 transition-colors group">
-                                            <div className="flex items-center gap-1">
-                                                Last Inspection
-                                                <span className="material-symbols-outlined text-xs opacity-0 group-hover:opacity-100 transition-opacity">unfold_more</span>
-                                            </div>
-                                        </th>
-                                        <th className="px-4 py-4 text-center w-32">Quick Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-sm">
-                                    {paginatedVehicles.length > 0 ? paginatedVehicles.map((vehicle, index) => (
-                                        <tr
-                                            key={vehicle.id}
-                                            className={`
-                                                border-b border-slate-100
-                                                hover:bg-blue-50/50
-                                                transition-all duration-200 group cursor-pointer
-                                                ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}
-                                            `}
-                                        >
-                                            <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedVehicleIds.includes(vehicle.id)}
-                                                    onChange={() => handleSelectVehicle(vehicle.id)}
-                                                    className="w-4 h-4 rounded border-slate-300 bg-white text-[#135bec] focus:ring-[#135bec] focus:ring-offset-0 cursor-pointer"
-                                                />
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-slate-900 font-mono font-semibold text-[13px]">{vehicle.vinNumber}</span>
-                                                    <span className="text-[10px] text-slate-400 mt-0.5">Registered 2023</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-                                                    <span className="material-symbols-outlined text-[#135bec] text-sm">credit_card</span>
-                                                    <span className="text-slate-800 font-bold text-[13px] tracking-wide">{vehicle.licensePlate}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${vehicle.assetCategory === 'Heavy Truck' ? 'from-blue-100 to-blue-50' :
-                                                        vehicle.assetCategory === 'Logistics Bus' ? 'from-orange-100 to-orange-50' :
-                                                            vehicle.assetCategory === 'Van Delivery' ? 'from-indigo-100 to-indigo-50' :
-                                                                'from-purple-100 to-purple-50'
-                                                        } flex items-center justify-center border border-slate-200 shadow-sm`}>
-                                                        <span className={`material-symbols-outlined ${vehicle.categoryColor} text-lg`}>
-                                                            {vehicle.categoryIcon}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-slate-800 font-medium">{vehicle.assetCategory}</span>
-                                                        <span className="text-[10px] text-slate-400">25 tons capacity</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                {vehicle.assignedDriver ? (
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="relative">
-                                                            <div
-                                                                className="w-9 h-9 rounded-full bg-slate-200 bg-cover bg-center ring-2 ring-white shadow-md"
-                                                                style={{ backgroundImage: `url('${vehicle.assignedDriver.avatar}')` }}
-                                                            />
-                                                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-slate-800 font-medium">{vehicle.assignedDriver.name}</span>
-                                                            <span className="text-[10px] text-slate-400">Active since 2022</span>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-9 h-9 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center">
-                                                            <span className="material-symbols-outlined text-slate-400 text-sm">person_add</span>
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-orange-600 text-xs font-medium">Unassigned</span>
-                                                            <span className="text-orange-600 text-xs font-medium">Unassigned</span>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleAssignDriver(vehicle);
-                                                                }}
-                                                                className="text-[10px] text-[#135bec] hover:underline text-left"
-                                                            >
-                                                                Assign driver
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className={`
-                                                    inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-[11px] uppercase tracking-wide shadow-sm
-                                                    ${vehicle.compliance === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ''}
-                                                    ${vehicle.compliance === 'MAINTENANCE' ? 'bg-blue-50 text-blue-700 border border-blue-200' : ''}
-                                                    ${vehicle.compliance === 'EXPIRED' ? 'bg-red-50 text-red-700 border border-red-200' : ''}
-                                                `}>
-                                                    <span className={`w-2 h-2 rounded-full ${vehicle.compliance === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : vehicle.compliance === 'MAINTENANCE' ? 'bg-blue-500' : 'bg-red-500'}`} />
-                                                    {vehicle.compliance}
-                                                    {vehicle.compliance === 'ACTIVE' && (
-                                                        <span className="material-symbols-outlined text-xs text-emerald-600">verified</span>
-                                                    )}
-                                                    {vehicle.compliance === 'EXPIRED' && (
-                                                        <span className="material-symbols-outlined text-xs text-red-600">error</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className={`font-medium ${vehicle.inspectionExpired ? 'text-red-600' : 'text-slate-800'}`}>
-                                                        {vehicle.lastInspection}
-                                                    </span>
-                                                    <span className={`text-[10px] ${vehicle.inspectionExpired ? 'text-red-500' : 'text-slate-400'}`}>
-                                                        {vehicle.inspectionExpired ? 'Overdue by 396 days' : 'Next: Jan 15, 2024'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setSelectedTruckForDetails({ id: vehicle.id });
-                                                            setShowDetailsModal(true);
-                                                        }}
-                                                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
-                                                        title="View Details"
-                                                    >
-                                                        <span className="material-symbols-outlined text-lg">visibility</span>
-                                                    </button>
-                                                    <ProtectedAction permission="truck:update">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleEditTruck(vehicle.id);
-                                                            }}
-                                                            className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-[#135bec] transition-colors"
-                                                            title="Edit Vehicle"
-                                                        >
-                                                            <span className="material-symbols-outlined text-lg">edit</span>
-                                                        </button>
-                                                    </ProtectedAction>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleScheduleInspection(vehicle);
-                                                        }}
-                                                        className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
-                                                        title="Schedule Inspection"
-                                                    >
-                                                        <span className="material-symbols-outlined text-lg">event</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleOpenDocuments(vehicle.id, vehicle.make, vehicle.model, vehicle.licensePlate);
-                                                        }}
-                                                        className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"
-                                                        title="Manage Documents"
-                                                    >
-                                                        <span className="material-symbols-outlined text-lg">description</span>
-                                                    </button>
-                                                    <ProtectedAction permission="truck:delete">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDeleteTruck(vehicle.id);
-                                                            }}
-                                                            className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
-                                                            title="Delete Vehicle"
-                                                        >
-                                                            <span className="material-symbols-outlined text-lg">delete</span>
-                                                        </button>
-                                                    </ProtectedAction>
-                                                </div>
-                                                {/* Fallback for non-hover */}
-                                                <div className="flex items-center justify-center opacity-100 group-hover:opacity-0 group-hover:hidden transition-opacity">
-                                                    <button className="text-slate-400 hover:text-slate-600 p-1">
-                                                        <span className="material-symbols-outlined">more_horiz</span>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : (
-                                        <tr>
-                                            <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
-                                                No vehicles found matching your filters.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                            <StandardDataTable
+                                embedded
+                                searchable={false}
+                                columnVisibility={false}
+                                pagination={false}
+                                columns={vehicleColumns}
+                                data={paginatedVehicles}
+                                getRowId={(row) => row.id}
+                                selectable
+                                selectedIds={selectedVehicleIds}
+                                onSelectionChange={setSelectedVehicleIds}
+                                rowActions={vehicleRowActions}
+                                actionsLabel="Quick Actions"
+                                emptyMessage="No vehicles found matching your filters."
+                                ariaLabel="Fleet vehicles"
+                            />
                         ) : (
-                            // Drivers Tab Table
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-widest font-bold border-b border-slate-200">
-                                        <th className="px-4 py-4">Name</th>
-                                        <th className="px-4 py-4">Status</th>
-                                        <th className="px-4 py-4">License Number</th>
-                                        <th className="px-4 py-4">Contact</th>
-                                        <th className="px-4 py-4 text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredDrivers.length > 0 ? filteredDrivers.map((driver, index) => (
-                                        <tr key={driver.id} className={`border-b border-slate-100 hover:bg-slate-50 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                            <td className="px-4 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.firstName}${driver.lastName}`} alt={`${driver.firstName} ${driver.lastName}`} className="w-10 h-10 rounded-full bg-slate-200" />
-                                                    <div>
-                                                        <div className="font-bold text-slate-900">{driver.firstName} {driver.lastName}</div>
-                                                        <div className="text-xs text-slate-500">ID: {driver.id.substring(0, 8)}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${driver.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'
-                                                    }`}>
-                                                    {driver.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-4 font-mono text-sm">{driver.licenseNumber}</td>
-                                            <td className="px-4 py-4 text-sm text-slate-600">{driver.phone || 'N/A'}</td>
-                                            <td className="px-4 py-4 text-center flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleOpenDriverDocuments(driver)}
-                                                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-[#135bec] transition-colors"
-                                                    title="Manage Documents"
-                                                >
-                                                    <span className="material-symbols-outlined text-[18px]">description</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setDriverFormMode('edit');
-                                                        setEditingDriver(driver);
-                                                        setShowDriverModal(true);
-                                                    }}
-                                                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-[#135bec] transition-colors"
-                                                    title="Edit Driver"
-                                                >
-                                                    <span className="material-symbols-outlined text-[18px]">edit</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )) : (
-                                        <tr>
-                                            <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                                                No drivers found.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                            <StandardDataTable
+                                embedded
+                                searchable={false}
+                                columnVisibility={false}
+                                pagination={false}
+                                columns={driverColumns}
+                                data={filteredDrivers}
+                                getRowId={(row) => row.id}
+                                rowActions={driverRowActions}
+                                emptyMessage="No drivers found."
+                                ariaLabel="Fleet drivers"
+                            />
                         )}
                     </div>
 

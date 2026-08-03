@@ -9,6 +9,7 @@ import FilterSelect from '../../components/common/FilterSelect';
 import { cn } from '../../utils/cn';
 import { formatLocation } from '../../utils/formatLocation';
 import { useTranslation } from '../../hooks/useTranslation';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 interface Cargo {
   id: string;
@@ -469,102 +470,110 @@ const ReceiverCargosPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Payload</th>
-                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Routing</th>
-                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Timeline</th>
-                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">State</th>
-                    <th className="px-6 py-4 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Protocol</th>
-                    <th className="px-6 py-4 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Operations</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-50">
-                  {filteredCargos.map((cargo) => (
-                    <tr key={cargo.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center">
-                            <Package className="h-5 w-5 text-primary-500" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{cargo.title || 'NULL'}</div>
-                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{cargo.cargoType}</div>
-                            {cargo.cargoOwner?.profile && (
-                                <div className="text-[8px] text-slate-300 mt-1 flex items-center gap-1 font-bold">
-                                    <User className="w-2.5 h-2.5" />
-                                    {cargo.cargoOwner.profile.firstName} {cargo.cargoOwner.profile.lastName}
-                                </div>
-                            )}
-                          </div>
+          <StandardDataTable
+            embedded
+            columns={[
+              {
+                key: 'title',
+                label: 'Payload',
+                sortable: true,
+                render: (_: any, cargo: Cargo) => (
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10 bg-primary-50 rounded-xl flex items-center justify-center">
+                      <Package className="h-5 w-5 text-primary-500" />
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{cargo.title || 'NULL'}</div>
+                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{cargo.cargoType}</div>
+                      {cargo.cargoOwner?.profile && (
+                        <div className="text-[8px] text-slate-300 mt-1 flex items-center gap-1 font-bold">
+                          <User className="w-2.5 h-2.5" />
+                          {cargo.cargoOwner.profile.firstName} {cargo.cargoOwner.profile.lastName}
                         </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.pickupLocation, 'N/A')}</div>
-                        <div className="text-[10px] text-slate-200 my-0.5">↓</div>
-                        <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.deliveryLocation, 'N/A')}</div>
-                      </td>
-                       <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="text-[10px] text-slate-600 font-bold">
-                             <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">START:</span> {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString() : 'N/A'}
-                        </div>
-                        <div className="text-[10px] text-slate-600 mt-1.5 font-bold">
-                             <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">DEST:</span> {cargo.deliveryDate ? new Date(cargo.deliveryDate).toLocaleDateString() : 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <span className={cn(
-                          "px-3 py-1 inline-flex text-[8px] font-black uppercase tracking-widest rounded-lg border shadow-sm",
-                          getStatusColor(cargo.status)
-                        )}>
-                          {cargo.status?.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 whitespace-nowrap">
-                         {isInspectionDone(cargo) ? (
-                             <span className="inline-flex items-center gap-2 text-[9px] text-emerald-600 font-black uppercase tracking-widest">
-                                 <FaCheckCircle className="w-3 h-3" />
-                                 Verified
-                             </span>
-                         ) : (
-                             <span className="inline-flex items-center gap-2 text-[9px] text-amber-500 font-black uppercase tracking-widest">
-                                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></div>
-                                 Incubating
-                             </span>
-                         )}
-                      </td>
-                      <td className="px-6 py-5 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-3">
-                            <button
-                                onClick={() => navigate(`/dashboard/cargos/${cargo.id}/inspect`)}
-                                className={cn(
-                                    "p-2.5 rounded-xl transition-all active:scale-90 shadow-sm border",
-                                    isInspectionDone(cargo)
-                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100"
-                                        : "bg-primary-50 text-primary-600 border-primary-100 hover:bg-primary-100"
-                                )}
-                                title={isInspectionDone(cargo) ? "View Inspection History" : "Inspect Cargo"}
-                            >
-                                <FaClipboardCheck className="w-4 h-4" />
-                            </button>
-                           <button
-                             onClick={() => handleViewDetails(cargo)}
-                             className="p-2.5 bg-slate-50 text-slate-400 hover:text-primary-600 hover:bg-primary-50 border border-slate-100 hover:border-primary-100 rounded-xl transition-all active:scale-90 shadow-sm"
-                             title="Full Protocol Details"
-                           >
-                             <Eye className="w-4 h-4" />
-                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                      )}
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: 'pickupLocation',
+                label: 'Routing',
+                render: (_: any, cargo: Cargo) => (
+                  <div>
+                    <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.pickupLocation, 'N/A')}</div>
+                    <div className="text-[10px] text-slate-200 my-0.5">↓</div>
+                    <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.deliveryLocation, 'N/A')}</div>
+                  </div>
+                ),
+              },
+              {
+                key: 'pickupDate',
+                label: 'Timeline',
+                sortable: true,
+                render: (_: any, cargo: Cargo) => (
+                  <div>
+                    <div className="text-[10px] text-slate-600 font-bold">
+                      <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">START:</span>
+                      {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString() : 'N/A'}
+                    </div>
+                    <div className="text-[10px] text-slate-600 mt-1.5 font-bold">
+                      <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">DEST:</span>
+                      {cargo.deliveryDate ? new Date(cargo.deliveryDate).toLocaleDateString() : 'N/A'}
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: 'status',
+                label: 'State',
+                sortable: true,
+                render: (status: string) => (
+                  <StatusBadge label={status?.replace('_', ' ') || '—'} status={status} />
+                ),
+              },
+              {
+                key: 'inspectionStatus',
+                label: 'Protocol',
+                render: (_: any, cargo: Cargo) =>
+                  isInspectionDone(cargo) ? (
+                    <span className="inline-flex items-center gap-2 text-[9px] text-emerald-600 font-black uppercase tracking-widest">
+                      <FaCheckCircle className="w-3 h-3" />
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 text-[9px] text-amber-500 font-black uppercase tracking-widest">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      Incubating
+                    </span>
+                  ),
+              },
+            ] as Column<Cargo>[]}
+            data={filteredCargos}
+            getRowId={(row) => row.id}
+            searchable={false}
+            pagination
+            pageSize={10}
+            columnVisibility
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage="No cargos found"
+            rowActions={[
+              {
+                key: 'inspect',
+                label: 'Inspect / History',
+                icon: <FaClipboardCheck className="w-3.5 h-3.5" />,
+                onClick: (cargo) => navigate(`/dashboard/cargos/${cargo.id}/inspect`),
+              },
+              {
+                key: 'view',
+                label: 'View Details',
+                icon: <Eye className="w-3.5 h-3.5" />,
+                onClick: handleViewDetails,
+              },
+            ] as TableAction<Cargo>[]}
+            ariaLabel="Receiver cargos"
+          />
         )}
         </>
       )}

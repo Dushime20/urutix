@@ -7,7 +7,7 @@ import {
   Tab,
   CircularProgress,
 } from '@mui/material';
-import { EnhancedTable, type Column } from '../../components/EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable, type Column } from '../../components/EnliteUI/Tables';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsApi } from '../../services/analyticsApi';
 import DataCard from '../../components/EnliteUI/Cards/DataCard';
@@ -95,11 +95,16 @@ export const OperationalAnalytics: React.FC = () => {
           <TabPanel value={tabValue} index={0}>
             <div className="space-y-4">
               <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Route Performance Details</h5>
-              <EnhancedTable
+              <StandardDataTable
+                embedded
                 data={routeData || []}
                 columns={routeColumns}
                 loading={routeLoading}
                 emptyMessage="No route data available yet"
+                searchPlaceholder="Search routes..."
+                stickyHeader
+                columnVisibility
+                pagination
               />
             </div>
           </TabPanel>
@@ -108,11 +113,16 @@ export const OperationalAnalytics: React.FC = () => {
           <TabPanel value={tabValue} index={1}>
             <div className="space-y-4">
               <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Carrier Performance Details</h5>
-              <EnhancedTable
+              <StandardDataTable
+                embedded
                 data={carrierData || []}
                 columns={carrierColumns}
                 loading={carrierLoading}
                 emptyMessage="No carrier data available yet"
+                searchPlaceholder="Search carriers..."
+                stickyHeader
+                columnVisibility
+                pagination
               />
             </div>
           </TabPanel>

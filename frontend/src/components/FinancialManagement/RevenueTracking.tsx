@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FaDollarSign, FaChartLine, FaCreditCard, FaWallet, FaTruck, FaMapMarkerAlt,
   FaCalendar, FaClock, FaCheckCircle, FaTimesCircle, FaHourglassHalf, FaDownload,
@@ -7,6 +7,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
 interface Revenue {
   id: string;
   tripId: string;
@@ -222,6 +223,96 @@ const RevenueTracking: React.FC = () => {
   const formatDistance = (miles: number) => {
     return `${miles.toLocaleString()} mi`;
   };
+
+  const revenueColumns: Column<Revenue>[] = useMemo(() => [
+    {
+      key: 'tripNumber',
+      label: 'Trip Details',
+      sortable: true,
+      render: (_v, revenue) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10">
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <FaTruck className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">{revenue.tripNumber}</div>
+            <div className="text-sm text-gray-500">{revenue.customerName}</div>
+            <div className="text-xs text-gray-400">
+              <FaMapMarkerAlt className="inline w-3 h-3 mr-1" />
+              {revenue.origin} → {revenue.destination}
+            </div>
+            <div className="text-xs text-gray-400">
+              {formatDistance(revenue.distance)} • {formatDate(revenue.date)}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Revenue',
+      sortable: true,
+      render: (_v, revenue) => (
+        <div>
+          <div className="text-sm font-semibold text-gray-900">{formatCurrency(revenue.amount)}</div>
+          <div className="text-sm text-gray-500">Due: {formatDate(revenue.dueDate)}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'netProfit',
+      label: 'Profit',
+      sortable: true,
+      render: (_v, revenue) => (
+        <div>
+          <div className="text-sm font-semibold text-green-600">{formatCurrency(revenue.netProfit)}</div>
+          <div className="text-sm text-gray-500">{revenue.profitMargin.toFixed(1)}% margin</div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, revenue) => {
+        const StatusIcon = getStatusIcon(revenue.status);
+        return (
+          <div className="flex items-center gap-2">
+            <StatusIcon className="w-4 h-4" />
+            <StatusBadge status={revenue.status} label={revenue.status} />
+          </div>
+        );
+      },
+    },
+    {
+      key: 'paymentMethod',
+      label: 'Payment',
+      render: (_v, revenue) => {
+        const PaymentIcon = getPaymentMethodIcon(revenue.paymentMethod);
+        return (
+          <div>
+            <div className="flex items-center">
+              <PaymentIcon className="w-4 h-4 mr-2 text-gray-400" />
+              <span className="text-sm text-gray-900 capitalize">
+                {revenue.paymentMethod.replace(/_/g, ' ')}
+              </span>
+            </div>
+            {revenue.paidDate && (
+              <div className="text-xs text-gray-500">Paid: {formatDate(revenue.paidDate)}</div>
+            )}
+          </div>
+        );
+      },
+    },
+  ], [formatCurrency]);
+
+  const revenueActions: TableAction<Revenue>[] = useMemo(() => [
+    { key: 'view', label: 'View', icon: <FaEye className="w-4 h-4" />, onClick: () => {} },
+    { key: 'edit', label: 'Edit', icon: <FaEdit className="w-4 h-4" />, onClick: () => {} },
+    { key: 'delete', label: 'Delete', icon: <FaTrash className="w-4 h-4" />, variant: 'danger', onClick: () => {} },
+  ], []);
 
   const filteredRevenues = revenues.filter(revenue => {
     const matchesSearch = revenue.tripNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -486,118 +577,20 @@ const RevenueTracking: React.FC = () => {
         </div>
 
         {/* Revenue Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trip Details</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRevenues.map((revenue) => {
-                  const StatusIcon = getStatusIcon(revenue.status);
-                  const PaymentIcon = getPaymentMethodIcon(revenue.paymentMethod);
-                  
-                  return (
-                    <tr key={revenue.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                              <FaTruck className="w-5 h-5 text-blue-600" />
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{revenue.tripNumber}</div>
-                            <div className="text-sm text-gray-500">{revenue.customerName}</div>
-                            <div className="text-xs text-gray-400">
-                              <FaMapMarkerAlt className="inline w-3 h-3 mr-1" />
-                              {revenue.origin} → {revenue.destination}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              {formatDistance(revenue.distance)} • {formatDate(revenue.date)}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">{formatCurrency(revenue.amount)}</div>
-                        <div className="text-sm text-gray-500">Due: {formatDate(revenue.dueDate)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-green-600">{formatCurrency(revenue.netProfit)}</div>
-                        <div className="text-sm text-gray-500">{revenue.profitMargin.toFixed(1)}% margin</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <StatusIcon className="w-4 h-4 mr-2" />
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(revenue.status)}`}>
-                            {revenue.status}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <PaymentIcon className="w-4 h-4 mr-2 text-gray-400" />
-                          <span className="text-sm text-gray-900 capitalize">
-                            {revenue.paymentMethod.replace('_', ' ')}
-                          </span>
-                        </div>
-                        {revenue.paidDate && (
-                          <div className="text-xs text-gray-500">Paid: {formatDate(revenue.paidDate)}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button className="text-blue-600 hover:text-blue-900">
-                            <FaEye className="w-4 h-4" />
-                          </button>
-                          <button className="text-indigo-600 hover:text-indigo-900">
-                            <FaEdit className="w-4 h-4" />
-                          </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            <FaTrash className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Empty State */}
-        {filteredRevenues.length === 0 && (
-          <div className="text-center py-12">
-            <FaTruck className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No revenue found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || Object.values(filters).some(f => f) 
-                ? 'Try adjusting your search or filters.'
-                : 'Get started by adding your first revenue entry.'
-              }
-            </p>
-            {!searchTerm && !Object.values(filters).some(f => f) && (
-              <div className="mt-6">
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  <FaPlus className="-ml-1 mr-2 h-4 w-4" />
-                  Add Revenue
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        <StandardDataTable
+          columns={revenueColumns}
+          data={filteredRevenues}
+          getRowId={(row) => row.id}
+          searchable={false}
+          pagination
+          columnVisibility
+          stickyHeader
+          striped
+          hoverable
+          rowActions={revenueActions}
+          emptyMessage="No revenue found"
+          ariaLabel="Revenue details"
+        />
       </div>
 
       {/* Add/Edit/View Modals would go here */}

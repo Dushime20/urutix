@@ -7,11 +7,8 @@ import {
     Eye,
     Calendar,
     User,
-    Search,
-    Filter,
 } from 'lucide-react';
-import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import LoanDetailModal from './LoanDetailModal';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
@@ -60,19 +57,7 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
     const formatAmount = (amount: number | null, currency?: string | null): string =>
         amount === null ? '—' : fmtCurrency(amount, currency || 'RWF');
 
-    const [searchTerm, setSearchTerm]     = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [detailLoan, setDetailLoan]     = useState<any | null>(null);
-
-    const filtered = repayments.filter(r => {
-        const q = searchTerm.toLowerCase();
-        const matchSearch =
-            (r.borrowerName ?? '').toLowerCase().includes(q) ||
-            (r.loanId ?? '').toLowerCase().includes(q) ||
-            r.id.toLowerCase().includes(q);
-        const matchStatus = statusFilter === 'all' || r.status === statusFilter;
-        return matchSearch && matchStatus;
-    });
+    const [detailLoan, setDetailLoan] = useState<any | null>(null);
 
     const columns = [
         {
@@ -197,63 +182,41 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
 
     return (
         <div className="space-y-12">
-            <DataCard
+            <StandardDataTable
                 title="Repayment Records"
                 subtitle="Verified repayment transactions from loan repayment history"
                 icon={<DollarSign className="w-5 h-5" />}
                 headerColor="primary"
-                actions={
-                    <div className="flex items-center gap-2">
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" size={14} />
-                            <input
-                                type="text"
-                                placeholder="SEARCH REPAYMENTS..."
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                                className="w-48 lg:w-56 pl-9 pr-3 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
-                            />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Filter size={14} className="text-white/70" />
-                            <select
-                                value={statusFilter}
-                                onChange={e => setStatusFilter(e.target.value)}
-                                className="px-2.5 py-1.5 bg-white/15 border border-white/20 rounded-md text-[10px] font-bold tracking-widest uppercase text-white focus:outline-none"
-                            >
-                                <option value="all" className="text-slate-900">ALL STATUS</option>
-                                <option value="paid" className="text-slate-900">PAID</option>
-                                <option value="completed" className="text-slate-900">COMPLETED</option>
-                                <option value="pending" className="text-slate-900">PENDING</option>
-                                <option value="overdue" className="text-slate-900">OVERDUE</option>
-                                <option value="partial" className="text-slate-900">PARTIAL</option>
-                                <option value="failed" className="text-slate-900">FAILED</option>
-                            </select>
-                        </div>
-                    </div>
-                }
-            >
-                <div className="space-y-4">
-                    <div className="relative md:hidden">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Search repayments..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173]"
-                        />
-                    </div>
-                    <EnhancedTable
-                        columns={columns}
-                        data={filtered}
-                        loading={loading}
-                        striped
-                        hoverable
-                        emptyMessage="No repayment records found"
-                    />
-                </div>
-            </DataCard>
+                columns={columns}
+                data={repayments}
+                loading={loading}
+                getRowId={(row) => row.id}
+                searchable
+                searchPlaceholder="Search repayments…"
+                searchKeys={['borrowerName', 'borrowerEmail', 'loanId', 'id', 'status']}
+                filters={[
+                    {
+                        key: 'status',
+                        label: 'Status',
+                        options: [
+                            { value: 'paid', label: 'Paid' },
+                            { value: 'completed', label: 'Completed' },
+                            { value: 'pending', label: 'Pending' },
+                            { value: 'overdue', label: 'Overdue' },
+                            { value: 'partial', label: 'Partial' },
+                            { value: 'failed', label: 'Failed' },
+                        ],
+                    },
+                ]}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage="No repayment records found"
+                ariaLabel="Repayment Records"
+            />
 
             {detailLoan && (
                 <LoanDetailModal

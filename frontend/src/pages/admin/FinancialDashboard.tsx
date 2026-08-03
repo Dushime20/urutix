@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FaDollarSign, FaCreditCard, FaWallet, FaExchangeAlt,
-  FaSearch, FaFilter, FaDownload, FaEye, FaEdit, FaPlus,
+  FaDownload, FaEye, FaEdit, FaPlus,
   FaClock, FaCheckCircle, FaTimesCircle, FaHourglassHalf,
   FaReceipt, FaUniversity
 } from 'react-icons/fa';
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import ModernLoader from '../../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 interface Transaction {
   id: string;
@@ -213,6 +214,82 @@ const FinancialDashboard: React.FC = () => {
     );
   };
 
+  const transactionColumns = useMemo<Column<Transaction>[]>(() => [
+    {
+      key: 'transactionId',
+      label: 'Transaction',
+      sortable: true,
+      render: (_v, t) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900">{t.transactionId}</div>
+          <div className="text-sm text-gray-500">{t.description}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      sortable: true,
+      render: (_v, t) => (
+        <div className="flex items-center space-x-2">
+          {getTypeIcon(t.type)}
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTypeColor(t.type)}`}>
+            {t.type}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      render: (_v, t) => (
+        <div>
+          <div className="text-sm font-medium text-gray-900">${t.amount.toLocaleString()}</div>
+          <div className="text-sm text-gray-500">Fees: ${t.fees}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, t) => (
+        <StatusBadge status={t.status} label={t.status} icon={getStatusIcon(t.status)} />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Date',
+      sortable: true,
+      render: (_v, t) => (
+        <span className="text-sm text-gray-500">{formatDate(t.createdAt)}</span>
+      ),
+    },
+    {
+      key: 'id',
+      label: 'Update Status',
+      render: (_v, t) => (
+        <select
+          value={t.status}
+          onChange={(e) => handleTransactionStatusChange(t.id, e.target.value)}
+          className="text-xs border border-gray-300 rounded px-2 py-1"
+        >
+          <option value="pending">Pending</option>
+          <option value="processing">Processing</option>
+          <option value="completed">Completed</option>
+          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      ),
+    },
+  ], []);
+
+  const transactionActions = useMemo<TableAction<Transaction>[]>(() => [
+    { key: 'view', label: 'View', icon: <FaEye className="w-3.5 h-3.5" />, onClick: () => {} },
+    { key: 'edit', label: 'Edit', icon: <FaEdit className="w-3.5 h-3.5" />, onClick: () => {} },
+  ], []);
+
   if (loading) {
     return (
       <AdminPageLayout
@@ -281,122 +358,22 @@ const FinancialDashboard: React.FC = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-xl border border-transparent">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Transactions</h3>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search transactions..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850] transition-colors">
-                <FaFilter className="w-4 h-4" />
-                <span>Filter</span>
-              </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850] transition-colors">
-                <FaDownload className="w-4 h-4" />
-                <span>Export</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Transaction
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {transactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {transaction.transactionId}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {transaction.description}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getTypeIcon(transaction.type)}
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getTypeColor(transaction.type)}`}>
-                        {transaction.type}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      ${transaction.amount.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Fees: ${transaction.fees}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(transaction.status)}
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(transaction.status)}`}>
-                        {transaction.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(transaction.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
-                        <FaEye className="w-4 h-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-900">
-                        <FaEdit className="w-4 h-4" />
-                      </button>
-                      <select
-                        value={transaction.status}
-                        onChange={(e) => handleTransactionStatusChange(transaction.id, e.target.value)}
-                        className="text-xs border border-gray-300 rounded px-2 py-1"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="completed">Completed</option>
-                        <option value="failed">Failed</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StandardDataTable<Transaction>
+        embedded
+        className="bg-white rounded-xl border border-transparent p-2"
+        title="Recent Transactions"
+        columns={transactionColumns}
+        data={transactions}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search transactions…"
+        searchKeys={['transactionId', 'description', 'type', 'status']}
+        rowActions={transactionActions}
+        stickyHeader
+        columnVisibility
+        pagination
+        emptyMessage="No transactions"
+        ariaLabel="Financial transactions"
+      />
       </div>
     </AdminPageLayout>
   );

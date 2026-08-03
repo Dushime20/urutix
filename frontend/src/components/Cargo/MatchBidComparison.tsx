@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { X, CheckCircle2, Star, Truck, DollarSign, Clock, MapPin, TrendingUp, Award, AlertCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { X, Star, Truck, Clock, MapPin, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 
 interface MatchBidItem {
   id: string;
@@ -87,6 +88,134 @@ const MatchBidComparison: React.FC<MatchBidComparisonProps> = ({
     return 'bg-red-100';
   };
 
+  const comparisonColumns: Column<MatchBidItem>[] = useMemo(
+    () => [
+      {
+        key: 'transporterName',
+        label: 'Transporter',
+        render: (_value, item) => (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Truck className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div className="min-w-0">
+              <div className="font-semibold text-gray-900 text-sm truncate">{item.transporterName}</div>
+              {item.companyName && (
+                <div className="text-xs text-gray-500 truncate">{item.companyName}</div>
+              )}
+              {item.rating && (
+                <div className="flex items-center gap-1 mt-1">
+                  <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                  <span className="text-xs text-gray-600">{item.rating.toFixed(1)}</span>
+                  {item.totalTrips && (
+                    <span className="text-xs text-gray-400">({item.totalTrips} trips)</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'matchScore',
+        label: 'Score/Rating',
+        render: (_value, item) =>
+          item.matchScore !== undefined ? (
+            <div className="flex items-center gap-2">
+              <div className={`w-12 h-12 rounded-lg ${getScoreBg(item.matchScore)} flex items-center justify-center`}>
+                <span className={`text-sm font-bold ${getScoreColor(item.matchScore)}`}>
+                  {item.matchScore}%
+                </span>
+              </div>
+              {item.successProbability && (
+                <div className="text-xs text-gray-500">{item.successProbability}% success</div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+              <span className="text-sm font-semibold">{item.rating?.toFixed(1) || 'N/A'}</span>
+            </div>
+          ),
+      },
+      {
+        key: 'bidAmount',
+        label: 'Price',
+        render: (_value, item) => (
+          <>
+            <div className="font-semibold text-gray-900">
+              ${((item.bidAmount || item.estimatedCost || 0) / 1000).toFixed(1)}k
+            </div>
+            <div className="text-xs text-gray-500">
+              {item.type === 'bid' ? 'Bid Amount' : 'Est. Cost'}
+            </div>
+          </>
+        ),
+      },
+      {
+        key: 'estimatedTime',
+        label: 'Time',
+        render: (_value, item) => (
+          <div className="flex items-center gap-1 text-sm text-gray-700">
+            <Clock className="w-4 h-4 text-gray-400" />
+            {item.estimatedTime ? `${Math.round(item.estimatedTime / 24)} days` : 'N/A'}
+          </div>
+        ),
+      },
+      {
+        key: 'distance',
+        label: 'Distance',
+        render: (_value, item) => (
+          <div className="flex items-center gap-1 text-sm text-gray-700">
+            <MapPin className="w-4 h-4 text-gray-400" />
+            {item.distance ? `${item.distance} km` : 'N/A'}
+          </div>
+        ),
+      },
+      {
+        key: 'vehicleType',
+        label: 'Vehicle',
+        render: (_value, item) => (
+          <>
+            <div className="text-sm text-gray-700">{item.vehicleType || 'N/A'}</div>
+            {item.specializations && item.specializations.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {item.specializations.slice(0, 2).map((spec, idx) => (
+                  <span
+                    key={idx}
+                    className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                  >
+                    {spec}
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        ),
+      },
+      {
+        key: 'actions',
+        label: 'Actions',
+        alwaysVisible: true,
+        hideable: false,
+        align: 'right',
+        render: (_value, item) => (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(item);
+            }}
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors min-h-[32px]"
+          >
+            View Details
+          </button>
+        ),
+      },
+    ],
+    [onSelect],
+  );
+
   if (!isOpen) return null;
 
   return (
@@ -146,141 +275,26 @@ const MatchBidComparison: React.FC<MatchBidComparisonProps> = ({
           </div>
 
           {/* Comparison Table - Desktop */}
-          <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b-2 border-gray-200">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.size === sortedItems.length && sortedItems.length > 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedItems(new Set(sortedItems.map(item => item.id)));
-                        } else {
-                          setSelectedItems(new Set());
-                        }
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Transporter</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Score/Rating</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Price</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Time</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Distance</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Vehicle</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {sortedItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className={`hover:bg-gray-50 transition-colors ${
-                      selectedItems.has(item.id) ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <td className="px-4 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(item.id)}
-                        onChange={() => toggleSelection(item.id)}
-                        className="rounded border-gray-300"
-                      />
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Truck className="w-5 h-5 text-indigo-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-gray-900 text-sm truncate">{item.transporterName}</div>
-                          {item.companyName && (
-                            <div className="text-xs text-gray-500 truncate">{item.companyName}</div>
-                          )}
-                          {item.rating && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                              <span className="text-xs text-gray-600">{item.rating.toFixed(1)}</span>
-                              {item.totalTrips && (
-                                <span className="text-xs text-gray-400">({item.totalTrips} trips)</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      {item.matchScore !== undefined ? (
-                        <div className="flex items-center gap-2">
-                          <div className={`w-12 h-12 rounded-lg ${getScoreBg(item.matchScore)} flex items-center justify-center`}>
-                            <span className={`text-sm font-bold ${getScoreColor(item.matchScore)}`}>
-                              {item.matchScore}%
-                            </span>
-                          </div>
-                          {item.successProbability && (
-                            <div className="text-xs text-gray-500">
-                              {item.successProbability}% success
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                          <span className="text-sm font-semibold">{item.rating?.toFixed(1) || 'N/A'}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="font-semibold text-gray-900">
-                        ${((item.bidAmount || item.estimatedCost || 0) / 1000).toFixed(1)}k
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.type === 'bid' ? 'Bid Amount' : 'Est. Cost'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1 text-sm text-gray-700">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        {item.estimatedTime ? `${Math.round(item.estimatedTime / 24)} days` : 'N/A'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1 text-sm text-gray-700">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        {item.distance ? `${item.distance} km` : 'N/A'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="text-sm text-gray-700">{item.vehicleType || 'N/A'}</div>
-                      {item.specializations && item.specializations.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {item.specializations.slice(0, 2).map((spec, idx) => (
-                            <span
-                              key={idx}
-                              className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
-                            >
-                              {spec}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => onSelect(item)}
-                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors min-h-[32px]"
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="hidden lg:block">
+            <StandardDataTable
+              embedded
+              columns={comparisonColumns}
+              data={sortedItems}
+              getRowId={(row) => row.id}
+              selectable
+              selectedIds={Array.from(selectedItems)}
+              onSelectionChange={(ids) => setSelectedItems(new Set(ids))}
+              rowClassName={(row) => (selectedItems.has(row.id) ? 'bg-blue-50' : '')}
+              searchable={false}
+              pagination={false}
+              columnVisibility={false}
+              sortable={false}
+              stickyHeader
+              striped={false}
+              hoverable
+              emptyMessage="No matches or bids to compare"
+              ariaLabel={`Compare ${items[0]?.type === 'match' ? 'matches' : 'bids'}`}
+            />
           </div>
 
           {/* Comparison Cards - Mobile */}

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaTruck, FaStar, FaMapMarkerAlt, FaClock, FaWeightHanging, FaShieldAlt, FaThermometerHalf, FaRoute, FaCheck, FaTimes, FaChartLine, FaChartBar } from 'react-icons/fa';
 import { cargoOwnerAPI } from '../../services/cargoOwnerAPI';
 import type { MatchedTruck, MarketInsights } from '../../services/cargoOwnerAPI';
+import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 
 interface CargoDetails {
   id?: string;
@@ -287,57 +288,96 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
     </div>
   );
 
+  const truckTableColumns = useMemo<Column<MatchedTruck>[]>(() => [
+    {
+      key: 'owner',
+      label: 'Owner / Truck',
+      sortable: false,
+      render: (_, truck) => (
+        <>
+          <div className="font-medium text-gray-900">{truck.truckOwner.name}</div>
+          <div className="text-xs text-gray-500">{truck.truck.make} {truck.truck.model}</div>
+        </>
+      ),
+    },
+    {
+      key: 'score',
+      label: 'Match Score',
+      sortable: false,
+      render: (_, truck) => (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getScoreBgColor(truck.score)} ${getScoreColor(truck.score)}`}>
+          {truck.score}%
+        </span>
+      ),
+    },
+    {
+      key: 'estimatedCost',
+      label: 'Cost',
+      sortable: false,
+      render: (_, truck) => <span className="font-medium">${truck.estimatedCost.toLocaleString()}</span>,
+    },
+    {
+      key: 'distance',
+      label: 'Distance',
+      sortable: false,
+      render: (_, truck) => `${truck.distance} mi`,
+    },
+    {
+      key: 'estimatedTime',
+      label: 'Time',
+      sortable: false,
+      render: (_, truck) => `${truck.estimatedTime}h`,
+    },
+    {
+      key: 'rating',
+      label: 'Rating',
+      sortable: false,
+      render: (_, truck) => `${truck.driver.rating} ★`,
+    },
+    {
+      key: 'features',
+      label: 'Features',
+      sortable: false,
+      render: (_, truck) => (
+        <div className="flex gap-1">
+          {truck.truck.hasGpsTracking && <span className="text-xs bg-purple-100 text-purple-700 px-1 rounded">GPS</span>}
+          {truck.truck.hasRefrigeration && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">Fridge</span>}
+          {truck.truck.hasHazmatPermit && <span className="text-xs bg-orange-100 text-orange-700 px-1 rounded">Hazmat</span>}
+        </div>
+      ),
+    },
+    {
+      key: 'select',
+      label: 'Action',
+      sortable: false,
+      alwaysVisible: true,
+      hideable: false,
+      render: (_, truck) => (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); handleSelectTruck(truck); }}
+          className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+        >
+          Select
+        </button>
+      ),
+    },
+  ], []);
+
   const renderTableView = () => (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100 border-b">
-          <tr>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Owner / Truck</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Match Score</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Cost</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Distance</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Time</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Rating</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Features</th>
-            <th className="px-4 py-3 text-left font-medium text-gray-700">Action</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {filteredTrucks.map(truck => (
-            <tr key={truck.id} className={selectedTruck?.id === truck.id ? 'bg-blue-50' : 'hover:bg-gray-50'}>
-              <td className="px-4 py-3">
-                <div className="font-medium text-gray-900">{truck.truckOwner.name}</div>
-                <div className="text-xs text-gray-500">{truck.truck.make} {truck.truck.model}</div>
-              </td>
-              <td className="px-4 py-3">
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getScoreBgColor(truck.score)} ${getScoreColor(truck.score)}`}>
-                  {truck.score}%
-                </span>
-              </td>
-              <td className="px-4 py-3 font-medium">${truck.estimatedCost.toLocaleString()}</td>
-              <td className="px-4 py-3">{truck.distance} mi</td>
-              <td className="px-4 py-3">{truck.estimatedTime}h</td>
-              <td className="px-4 py-3">{truck.driver.rating} ★</td>
-              <td className="px-4 py-3">
-                <div className="flex gap-1">
-                  {truck.truck.hasGpsTracking && <span className="text-xs bg-purple-100 text-purple-700 px-1 rounded">GPS</span>}
-                  {truck.truck.hasRefrigeration && <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">Fridge</span>}
-                  {truck.truck.hasHazmatPermit && <span className="text-xs bg-orange-100 text-orange-700 px-1 rounded">Hazmat</span>}
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <button
-                  onClick={() => handleSelectTruck(truck)}
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                >
-                  Select
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <StandardDataTable<MatchedTruck>
+      embedded
+      searchable={false}
+      pagination={false}
+      sortable={false}
+      columnVisibility={false}
+      columns={truckTableColumns}
+      data={filteredTrucks}
+      getRowId={(row) => row.id}
+      rowClassName={(truck) => (selectedTruck?.id === truck.id ? 'bg-blue-50' : '')}
+      ariaLabel="Matched trucks"
+      emptyMessage="No trucks match your current filters"
+    />
   );
 
   const renderComparisonView = () => {
@@ -350,35 +390,66 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       );
     }
 
+    type CompRow = { key: string; label: string; render: (t: MatchedTruck) => React.ReactNode };
+    const compRows: CompRow[] = [
+      { key: 'score', label: 'Match Score', render: (t) => <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreBgColor(t.score)} ${getScoreColor(t.score)}`}>{t.score}%</span> },
+      { key: 'cost', label: 'Cost', render: (t) => <span className="font-semibold">${t.estimatedCost.toLocaleString()}</span> },
+      { key: 'distance', label: 'Distance', render: (t) => `${t.distance} miles` },
+      { key: 'time', label: 'Est. Time', render: (t) => `${t.estimatedTime} hrs` },
+      { key: 'rating', label: 'Driver Rating', render: (t) => `${t.driver.rating} ★` },
+      { key: 'experience', label: 'Experience', render: (t) => `${t.driver.experience} years` },
+      { key: 'gps', label: 'GPS Tracking', render: (t) => t.truck.hasGpsTracking ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" /> },
+      { key: 'fridge', label: 'Refrigeration', render: (t) => t.truck.hasRefrigeration ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" /> },
+      { key: 'hazmat', label: 'Hazmat', render: (t) => t.truck.hasHazmatPermit ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" /> },
+      { key: 'insurance', label: 'Insurance', render: (t) => `$${t.truck.insuranceCoverage.toLocaleString()}` },
+      {
+        key: 'select',
+        label: '',
+        render: (t) => (
+          <button
+            type="button"
+            onClick={() => handleSelectTruck(t)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+          >
+            Select
+          </button>
+        ),
+      },
+    ];
+    const comparisonData = compRows.map((r) => ({ key: r.key, label: r.label }));
+    const comparisonColumns: Column<{ key: string; label: string }>[] = [
+      {
+        key: 'label',
+        label: 'Criteria',
+        sortable: false,
+        width: '10rem',
+        render: (_, row) => <span className="font-medium">{row.label}</span>,
+      },
+      ...compareItems.map((item) => ({
+        key: item.id,
+        label: `${item.truckOwner.name} · ${item.truck.make} ${item.truck.model}`,
+        sortable: false,
+        align: 'center' as const,
+        render: (_: unknown, row: { key: string; label: string }) => {
+          const def = compRows.find((r) => r.key === row.key);
+          return def ? def.render(item) : null;
+        },
+      })),
+    ];
+
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium text-gray-700 w-40">Criteria</th>
-              {compareItems.map(truck => (
-                <th key={truck.id} className="px-4 py-3 text-center font-medium text-gray-700">
-                  <div>{truck.truckOwner.name}</div>
-                  <div className="text-xs text-gray-500 font-normal">{truck.truck.make} {truck.truck.model}</div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            <tr><td className="px-4 py-3 font-medium">Match Score</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center"><span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreBgColor(t.score)} ${getScoreColor(t.score)}`}>{t.score}%</span></td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Cost</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center font-semibold">${t.estimatedCost.toLocaleString()}</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Distance</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.distance} miles</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Est. Time</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.estimatedTime} hrs</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Driver Rating</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.driver.rating} ★</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Experience</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.driver.experience} years</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">GPS Tracking</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.truck.hasGpsTracking ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" />}</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Refrigeration</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.truck.hasRefrigeration ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" />}</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Hazmat</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">{t.truck.hasHazmatPermit ? <FaCheck className="inline text-green-500" /> : <FaTimes className="inline text-red-500" />}</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium">Insurance</td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center">${t.truck.insuranceCoverage.toLocaleString()}</td>)}</tr>
-            <tr><td className="px-4 py-3 font-medium"></td>{compareItems.map(t => <td key={t.id} className="px-4 py-3 text-center"><button onClick={() => handleSelectTruck(t)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">Select</button></td>)}</tr>
-          </tbody>
-        </table>
-      </div>
+      <StandardDataTable
+        embedded
+        searchable={false}
+        pagination={false}
+        sortable={false}
+        columnVisibility={false}
+        columns={comparisonColumns}
+        data={comparisonData}
+        getRowId={(row) => row.key}
+        ariaLabel="Truck comparison"
+        emptyMessage="No trucks selected for comparison"
+      />
     );
   };
 

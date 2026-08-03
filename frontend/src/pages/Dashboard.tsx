@@ -60,6 +60,7 @@ import PendingDeliveriesList from '../components/CargoReceiver/PendingDeliveries
 import CargoOwnerEpodDashboard from '../components/CargoOwner/CargoOwnerEpodDashboard';
 import { formatNumber } from '../utils/formatNumber';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { StandardDataTable, StatusBadge, type Column } from '../components/EnliteUI/Tables';
 
 const Dashboard = () => {
   const { compact: formatCurrency } = useCurrencyFormat();
@@ -487,6 +488,51 @@ const CargoOwnerDashboard = () => {
       });
   }, [cargos, user]);
 
+  type RecentActivityRow = (typeof recentCargoActivity)[number];
+
+  const recentActivityColumns: Column<RecentActivityRow>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Cargo',
+      render: (_: unknown, tx: RecentActivityRow) => (
+        <div className="flex items-center gap-3">
+          <div className="size-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0">
+            <span className="text-xs font-black">{tx.logo}</span>
+          </div>
+          <p className="text-sm font-black text-slate-900 dark:text-slate-100">{tx.name}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      render: (_: unknown, tx: RecentActivityRow) => (
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{tx.type}</span>
+      ),
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      render: (_: unknown, tx: RecentActivityRow) => (
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{tx.date}</span>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      render: (_: unknown, tx: RecentActivityRow) => (
+        <span className="text-sm font-black text-slate-900 dark:text-slate-100">{formatCurrency(tx.amount)}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_: unknown, tx: RecentActivityRow) => (
+        <StatusBadge status={tx.status} label={tx.status} />
+      ),
+    },
+  ], [formatCurrency]);
+
   // Cargo activity data for chart (dynamic period)
   const cargoActivityData = useMemo(() => {
     const days = Number(chartPeriod);
@@ -700,63 +746,22 @@ const CargoOwnerDashboard = () => {
             View All
           </button>
         </div>
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Cargo</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Type</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Date</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Amount</th>
-                <th className="px-7 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-              {recentCargoActivity.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-7 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="size-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center">
-                        <Package className="w-5 h-5 text-slate-300 dark:text-slate-600" />
-                      </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">No cargo activity yet</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                recentCargoActivity.map(tx => (
-                  <tr
-                    key={tx.id}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-                    onClick={() => handleCargoRowClick(tx.fullCargo)}
-                  >
-                    <td className="px-7 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="size-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors shrink-0">
-                          <span className="text-xs font-black">{tx.logo}</span>
-                        </div>
-                        <p className="text-sm font-black text-slate-900 dark:text-slate-100 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">{tx.name}</p>
-                      </div>
-                    </td>
-                    <td className="px-7 py-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">{tx.type}</span>
-                    </td>
-                    <td className="px-7 py-4">
-                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{tx.date}</span>
-                    </td>
-                    <td className="px-7 py-4">
-                      <span className="text-sm font-black text-slate-900 dark:text-slate-100">{formatCurrency(tx.amount)}</span>
-                    </td>
-                    <td className="px-7 py-4">
-                      <span className={`inline-flex px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${tx.statusColor}`}>
-                        {tx.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="hidden md:block px-2 pb-2">
+          <StandardDataTable<RecentActivityRow>
+            embedded
+            columns={recentActivityColumns}
+            data={recentCargoActivity}
+            getRowId={(row) => row.id}
+            onRowClick={(row) => handleCargoRowClick(row.fullCargo)}
+            searchable={false}
+            pagination={false}
+            columnVisibility={false}
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage="No cargo activity yet"
+            ariaLabel="Recent cargo activity"
+          />
         </div>
 
         {/* Mobile-only List View for Recent Activity */}

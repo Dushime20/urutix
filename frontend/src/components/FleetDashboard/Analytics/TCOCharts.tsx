@@ -1,6 +1,7 @@
 import React from 'react';
 import { type TCOAnalysis } from '../../../services/fleetApi';
 import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
+import { StandardDataTable, type Column } from '../../EnliteUI/Tables';
 
 interface TCOChartsProps {
     data: TCOAnalysis;
@@ -26,6 +27,45 @@ const TCOCharts: React.FC<TCOChartsProps> = ({ data }) => {
     const maintOffset = -fuelDash;
     const fixedOffset = -(fuelDash + maintDash);
     const laborOffset = -(fuelDash + maintDash + fixedDash);
+
+    const vehicleColumns: Column<(typeof data.vehicleBreakdown)[number]>[] = [
+        {
+            key: 'plateNumber',
+            label: 'Vehicle',
+            render: (plate) => (
+                <span className="text-xs font-black text-[#0f172a] dark:text-white uppercase tracking-tight">{plate}</span>
+            ),
+        },
+        {
+            key: 'cpm',
+            label: 'CPM',
+            align: 'right',
+            render: (cpm) => (
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{fmtMoney(cpm)}</span>
+            ),
+        },
+        {
+            key: 'totalCost',
+            label: 'Total',
+            align: 'right',
+            render: (cost) => (
+                <span className="text-xs font-black text-[#0f172a] dark:text-white">{fmtMoney(cost)}</span>
+            ),
+        },
+        {
+            key: 'topExpenseCategory',
+            label: 'Top Exp.',
+            align: 'center',
+            render: (cat: string) => (
+                <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border
+                    ${cat === 'Fuel' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
+                        cat === 'Maintenance' ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30' :
+                            'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700'}`}>
+                    {cat}
+                </span>
+            ),
+        },
+    ];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
@@ -92,35 +132,18 @@ const TCOCharts: React.FC<TCOChartsProps> = ({ data }) => {
                     <h4 className="text-lg font-black text-[#0f172a] dark:text-white uppercase tracking-tight">Vehicle Efficiency</h4>
                     <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Cost Per Mile (CPM) Analysis</p>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr>
-                                <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest">Vehicle</th>
-                                <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest text-right">CPM</th>
-                                <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest text-right">Total</th>
-                                <th className="pb-4 text-[9px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest text-center">Top Exp.</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                            {data.vehicleBreakdown.map(v => (
-                                <tr key={v.truckId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 group transition-colors">
-                                    <td className="py-3 text-xs font-black text-[#0f172a] dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors uppercase tracking-tight">{v.plateNumber}</td>
-                                    <td className="py-3 text-xs font-bold text-right text-slate-600 dark:text-slate-400">{fmtMoney(v.cpm)}</td>
-                                    <td className="py-3 text-xs font-black text-right text-[#0f172a] dark:text-white">{fmtMoney(v.totalCost)}</td>
-                                    <td className="py-3 text-center">
-                                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border
-                                            ${v.topExpenseCategory === 'Fuel' ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' :
-                                                v.topExpenseCategory === 'Maintenance' ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30' :
-                                                    'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700'}`}>
-                                            {v.topExpenseCategory}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <StandardDataTable
+                    embedded
+                    dense
+                    searchable={false}
+                    pagination={false}
+                    columnVisibility={false}
+                    data={data.vehicleBreakdown}
+                    getRowId={(v) => v.truckId}
+                    columns={vehicleColumns}
+                    emptyMessage="No vehicle cost data"
+                    ariaLabel="Vehicle efficiency"
+                />
             </div>
 
         </div>

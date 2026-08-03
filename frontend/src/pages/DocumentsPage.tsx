@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import DocumentPreviewModal from '../components/documents/DocumentPreviewModal';
 import DocumentUploadModal from '../components/documents/DocumentUploadModal';
 import { cn } from '../utils/cn';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface DocumentsPageProps {
   entityTypeOverride?: string;
@@ -136,12 +137,14 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     },
   });
 
-  const handleDocumentSelect = useCallback((documentId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedDocuments(prev => [...prev, documentId]);
-    } else {
-      setSelectedDocuments(prev => prev.filter(id => id !== documentId));
-    }
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1);
+  }, []);
+
+  const handleSearch = useCallback((searchTerm: string) => {
+    setFilters(prev => ({ ...prev, search: searchTerm }));
+    setCurrentPage(1);
   }, []);
 
   const handleBulkDelete = useCallback(async () => {
@@ -159,17 +162,110 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
     }
   }, [selectedDocuments, bulkDeleteMutation, confirm]);
 
-  const handleFilterChange = useCallback((key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
-  }, []);
+  const documentColumns = useMemo<Column<any>[]>(() => [
+    {
+      key: 'id',
+      label: 'ID',
+      render: (_v, document) => (
+        <span className="text-[10px] font-black text-[#345E85] bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap">
+          DOC-{document.id.slice(0, 6)}
+        </span>
+      ),
+    },
+    {
+      key: 'title',
+      label: 'Document',
+      sortable: true,
+      render: (_v, document) => (
+        <div className="flex items-center gap-4 text-left">
+          <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl shadow-sm">
+            {documentApi.getFileTypeIcon(document.mimeType)}
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-black text-slate-800 leading-tight truncate max-w-[200px]">
+              {document.title}
+            </div>
+            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+              {documentApi.formatFileSize(document.fileSize)} • ARCHIVED
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'documentType',
+      label: 'Type',
+      render: (_v, document) => (
+        <div className="text-left">
+          <div className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
+            {document.documentType.split('_').join(' ')}
+          </div>
+          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] mt-1 bg-slate-100 w-fit px-2 py-0.5 rounded">
+            {document.category}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, document) => <StatusBadge status={document.status} label={document.status} />,
+    },
+    {
+      key: 'expiryDate',
+      label: 'Expiry',
+      sortable: true,
+      render: (_v, document) => (
+        document.expiryDate ? (
+          <div className="space-y-1 text-left">
+            <div className="text-[10px] font-black text-slate-700 uppercase">
+              {new Date(document.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+            {document.isExpired && (
+              <StatusBadge status="expired" label="Expired" variant="error" />
+            )}
+            {document.requiresRenewal && !document.isExpired && (
+              <StatusBadge status="pending" label="Renewal Due" variant="warning" />
+            )}
+          </div>
+        ) : (
+          <span className="text-[10px] font-black text-slate-300 uppercase italic">No expiry</span>
+        )
+      ),
+    },
+  ], []);
 
-  const handleSearch = useCallback((searchTerm: string) => {
-    setFilters(prev => ({ ...prev, search: searchTerm }));
-    setCurrentPage(1);
-  }, []);
-
-  const allSelected = selectedDocuments.length > 0 && selectedDocuments.length === (safeDocumentsData.documents.length || 0);
+  const documentActions = useMemo<TableAction<any>[]>(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <Eye size={14} />,
+      onClick: (document) => setPreviewDoc({ id: document.id, title: document.title, fileName: document.fileName }),
+    },
+    {
+      key: 'download',
+      label: 'Download',
+      icon: <Download size={14} />,
+      onClick: (document) => documentApi.downloadDocument(document.id),
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <Trash2 size={14} />,
+      variant: 'danger',
+      onClick: async (document) => {
+        const confirmed = await confirm({
+          title: 'Delete Document',
+          message: `Are you sure you want to delete "${document.title}"? This action cannot be undone.`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          variant: 'danger',
+        });
+        if (confirmed) deleteMutation.mutate(document.id);
+      },
+    },
+  ], [confirm, deleteMutation]);
 
   if (error) {
     return (
@@ -362,206 +458,45 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ entityTypeOverride }) => 
       )}
 
       {/* Documents Table */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-50">
-            <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-8 py-6 text-left">
-                  <input
-                    type="checkbox"
-                    className="rounded-lg border-slate-200 text-[#345E85] focus:ring-[#345E85] w-5 h-5 cursor-pointer"
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedDocuments(safeDocumentsData.documents.map(d => d.id) || []);
-                      } else {
-                        setSelectedDocuments([]);
-                      }
-                    }}
-                    checked={allSelected}
-                  />
-                </th>
-                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">ID</th>
-                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Document</th>
-                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Type</th>
-                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Status</th>
-                <th className="px-4 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Expiry</th>
-                <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-50">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="px-8 py-24 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="w-12 h-12 border-4 border-slate-100 border-t-[#345E85] rounded-full animate-spin" />
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading documents...</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : safeDocumentsData.documents.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-8 py-24 text-center">
-                    <DocumentEmptyState
-                      entityType={entityType}
-                      hasFilters={!!(filters.search || filters.category || filters.status || (!entityType && filters.entityType))}
-                      onUpload={() => setShowUploadModal(true)}
-                      onClearFilters={() => {
-                        setFilters({
-                          entityType: entityType || '',
-                          category: entityType || '',
-                          status: '',
-                          priority: '',
-                          search: '',
-                        });
-                        setCurrentPage(1);
-                      }}
-                    />
-                  </td>
-                </tr>
-              ) : (
-                safeDocumentsData.documents.map((document) => (
-                  <tr key={document.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
-                      <input
-                        type="checkbox"
-                        className="rounded-lg border-slate-200 text-[#345E85] focus:ring-[#345E85] w-5 h-5 cursor-pointer"
-                        checked={selectedDocuments.includes(document.id)}
-                        onChange={(e) => handleDocumentSelect(document.id, e.target.checked)}
-                      />
-                    </td>
-                    <td className="px-4 py-6">
-                      <span className="text-[10px] font-black text-[#345E85] bg-slate-100 px-3 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap">
-                        DOC-{document.id.slice(0, 6)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-6">
-                      <div className="flex items-center gap-4 text-left">
-                        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl shadow-sm group-hover:bg-white group-hover:shadow-md transition-all">
-                          {documentApi.getFileTypeIcon(document.mimeType)}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-black text-slate-800 leading-tight group-hover:text-[#345E85] transition-colors truncate max-w-[200px]">
-                            {document.title}
-                          </div>
-                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                            {documentApi.formatFileSize(document.fileSize)} • ARCHIVED
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 text-left">
-                      <div className="text-[10px] font-black text-slate-700 uppercase tracking-wider">
-                        {document.documentType.split('_').join(' ')}
-                      </div>
-                      <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] mt-1 bg-slate-100 w-fit px-2 py-0.5 rounded">
-                        {document.category}
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 text-left">
-                      <div className={cn(
-                        "inline-flex items-center gap-2 px-4 py-1.5 rounded-full border shadow-sm text-[9px] font-black uppercase tracking-[0.1em]",
-                        document.status === 'VERIFIED' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                          document.status === 'PENDING' ? "bg-amber-50 text-amber-600 border-amber-100" :
-                            document.status === 'REJECTED' ? "bg-rose-50 text-rose-600 border-rose-100" :
-                              "bg-slate-50 text-slate-600 border-slate-100"
-                      )}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                        {document.status}
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 text-left">
-                      {document.expiryDate ? (
-                        <div className="space-y-1">
-                          <div className="text-[10px] font-black text-slate-700 uppercase">
-                            {new Date(document.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
-                          {document.isExpired && (
-                            <span className="text-[8px] font-black bg-rose-500 text-white px-2 py-0.5 rounded tracking-widest uppercase">Expired</span>
-                          )}
-                          {document.requiresRenewal && !document.isExpired && (
-                            <span className="text-[8px] font-black bg-amber-500 text-white px-2 py-0.5 rounded tracking-widest uppercase">Renewal Due</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-[10px] font-black text-slate-300 uppercase italic">No expiry</span>
-                      )}
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2 text-left">
-                        {[
-                          { icon: Eye, onClick: () => setPreviewDoc({ id: document.id, title: document.title, fileName: document.fileName }), label: 'View', color: 'blue' },
-                          { icon: Download, onClick: () => documentApi.downloadDocument(document.id), label: 'Download', color: 'emerald' },
-                          {
-                            icon: Trash2, onClick: async () => {
-                              const confirmed = await confirm({
-                                title: 'Delete Document',
-                                message: `Are you sure you want to delete "${document.title}"? This action cannot be undone.`,
-                                confirmText: 'Delete',
-                                cancelText: 'Cancel',
-                                variant: 'danger'
-                              });
-                              if (confirmed) deleteMutation.mutate(document.id);
-                            }, label: 'Delete', color: 'rose'
-                          }
-                        ].map((action, i) => (
-                          <button
-                            key={i}
-                            onClick={action.onClick}
-                            className={cn(
-                              "w-10 h-10 rounded-2xl flex items-center justify-center transition-all bg-white border border-slate-100 shadow-sm",
-                              action.color === 'blue' ? "text-blue-500 hover:bg-blue-50 hover:border-blue-100" :
-                                action.color === 'emerald' ? "text-emerald-500 hover:bg-emerald-50 hover:border-emerald-100" :
-                                  "text-rose-500 hover:bg-rose-50 hover:border-rose-100"
-                            )}
-                            title={action.label}
-                          >
-                            <action.icon size={16} />
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      {safeDocumentsData.totalPages > 1 && (
-        <div className="flex justify-center mt-12 pb-8">
-          <nav className="flex items-center gap-1.5 p-2 bg-slate-50 border border-slate-100 rounded-[1.5rem] shadow-inner">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="px-6 h-12 text-[10px] font-black uppercase tracking-widest text-[#345E85] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:shadow-md rounded-[1.2rem] transition-all"
-            >
-              PREV
-            </button>
-            {Array.from({ length: safeDocumentsData.totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={cn(
-                  "w-12 h-12 text-[10px] font-black flex items-center justify-center rounded-[1.2rem] transition-all",
-                  currentPage === page
-                    ? 'bg-white text-[#345E85] shadow-md border border-slate-200'
-                    : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'
-                )}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(safeDocumentsData.totalPages, prev + 1))}
-              disabled={currentPage === safeDocumentsData.totalPages}
-              className="px-6 h-12 text-[10px] font-black uppercase tracking-widest text-[#345E85] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white hover:shadow-md rounded-[1.2rem] transition-all"
-            >
-              NEXT
-            </button>
-          </nav>
+      <StandardDataTable<any>
+        embedded
+        className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-2"
+        columns={documentColumns}
+        data={safeDocumentsData.documents}
+        loading={isLoading}
+        getRowId={(row) => row.id}
+        searchable={false}
+        selectable
+        selectedIds={selectedDocuments}
+        onSelectionChange={setSelectedDocuments}
+        rowActions={documentActions}
+        stickyHeader
+        columnVisibility
+        pagination
+        page={currentPage}
+        totalItems={safeDocumentsData.total}
+        pageSize={20}
+        onPageChange={setCurrentPage}
+        emptyMessage="No documents found"
+        ariaLabel="Documents"
+      />
+      {!isLoading && safeDocumentsData.documents.length === 0 && (
+        <div className="mt-4">
+          <DocumentEmptyState
+            entityType={entityType}
+            hasFilters={!!(filters.search || filters.category || filters.status || (!entityType && filters.entityType))}
+            onUpload={() => setShowUploadModal(true)}
+            onClearFilters={() => {
+              setFilters({
+                entityType: entityType || '',
+                category: entityType || '',
+                status: '',
+                priority: '',
+                search: '',
+              });
+              setCurrentPage(1);
+            }}
+          />
         </div>
       )}
 

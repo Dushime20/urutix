@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FaTruck,
   FaMapMarkerAlt,
-  FaSearch,
   FaDownload,
   FaEye,
   FaEdit,
@@ -25,6 +24,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminTruck } from '../services/adminApi';
 import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 // ── Truck Detail Modal ────────────────────────────────────────────────────────
 
@@ -236,107 +236,35 @@ const AdminTrucks: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [trucks, setTrucks] = useState<AdminTruck[]>([]);
-  const [filteredTrucks, setFilteredTrucks] = useState<AdminTruck[]>([]);
   const [error, setError] = useState<string | null>(null);
-  
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [tenantFilter, setTenantFilter] = useState('all');
-  
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
 
   // Detail modal
   const [selectedTruck, setSelectedTruck] = useState<AdminTruck | null>(null);
 
-  // Fetch trucks data
-  useEffect(() => {
-    const fetchTrucks = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await adminAPI.getAllTrucks();
-        console.log('Trucks API Response:', response);
-        
-        // The response should now be { data: { trucks: [...] } }
-        const trucksData = response.data?.trucks || [];
-        
-        setTrucks(trucksData);
-        setFilteredTrucks(trucksData);
-      } catch (err: any) {
-        console.error('Error fetching trucks:', err);
-        setError(err.response?.data?.message || 'Failed to load trucks data');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchTrucks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    fetchTrucks();
+      const response = await adminAPI.getAllTrucks();
+      const trucksData = response.data?.trucks || [];
+      setTrucks(trucksData);
+    } catch (err: any) {
+      console.error('Error fetching trucks:', err);
+      setError(err.response?.data?.message || 'Failed to load trucks data');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Filter trucks based on search and filters
   useEffect(() => {
-    let filtered = trucks;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(truck =>
-        (truck.plateNumber || truck.licensePlate)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        truck.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        truck.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        truck.tenantName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        truck.ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        truck.currentDriverName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(truck => truck.status === statusFilter);
-    }
-
-    // Tenant filter
-    if (tenantFilter !== 'all') {
-      filtered = filtered.filter(truck => truck.tenantId === tenantFilter);
-    }
-
-    setFilteredTrucks(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [trucks, searchTerm, statusFilter, tenantFilter]);
-
-  // Get unique values for filters
-  const uniqueStatuses = [...new Set(trucks.map(truck => truck.status))];
-  const uniqueTenants = [...new Set(trucks.map(truck => ({ id: truck.tenantId, name: truck.tenantName })))];
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredTrucks.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentTrucks = filteredTrucks.slice(startIndex, endIndex);
-
-  // Status color helper
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case 'AVAILABLE':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'IN_TRANSIT':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'MAINTENANCE':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'OUT_OF_SERVICE':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+    fetchTrucks();
+  }, [fetchTrucks]);
 
   // Format status text
   const formatStatus = (status: string) => {
     if (!status) return 'Unknown';
-    
+
     switch (status.toUpperCase()) {
       case 'AVAILABLE':
         return 'Available';
@@ -350,6 +278,128 @@ const AdminTrucks: React.FC = () => {
         return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
   };
+
+  const statusFilterOptions = useMemo(() => {
+    const statuses = [...new Set(trucks.map((t) => t.status).filter(Boolean))];
+    return statuses.map((status) => ({
+      value: status,
+      label: formatStatus(status),
+    }));
+  }, [trucks]);
+
+  const tenantFilterOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    trucks.forEach((t) => {
+      if (t.tenantId) map.set(t.tenantId, t.tenantName || t.tenantId);
+    });
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [trucks]);
+
+  const truckColumns = useMemo<Column<AdminTruck>[]>(() => [
+    {
+      key: 'plateNumber',
+      label: 'Truck Details',
+      sortable: true,
+      render: (_value, truck) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-12 w-12">
+            <div className="h-12 w-12 rounded-lg bg-indigo-100 flex items-center justify-center">
+              <FaTruck className="text-indigo-600 text-xl" />
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">
+              {truck.plateNumber || truck.licensePlate || 'N/A'}
+            </div>
+            <div className="text-sm text-gray-500">
+              {truck.make && truck.model ? `${truck.make} ${truck.model}` : 'Unknown Make/Model'}
+              {truck.year && ` (${truck.year})`}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_value, truck) => (
+        <StatusBadge label={formatStatus(truck.status)} status={truck.status} />
+      ),
+    },
+    {
+      key: 'ownerName',
+      label: 'Owner',
+      sortable: true,
+      render: (_value, truck) => (
+        <div>
+          <div className="text-sm text-gray-900">{truck.ownerName || 'No Owner'}</div>
+          {truck.ownerEmail && (
+            <div className="text-sm text-gray-500">{truck.ownerEmail}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'currentDriverName',
+      label: 'Current Driver',
+      sortable: true,
+      render: (_value, truck) => (
+        <div>
+          <div className="text-sm text-gray-900">
+            {truck.currentDriverName || 'No Driver Assigned'}
+          </div>
+          {truck.assignedDrivers && truck.assignedDrivers.length > 0 && (
+            <div className="text-xs text-gray-500 mt-1">
+              {truck.assignedDrivers.length === 1
+                ? `Assigned: ${new Date(truck.assignedDrivers[0].assignmentDate).toLocaleDateString()}`
+                : `${truck.assignedDrivers.length} drivers assigned`}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'currentLocationString',
+      label: 'Location',
+      sortable: true,
+      render: (_value, truck) => (
+        <div className="flex items-center text-sm text-gray-500">
+          <FaMapMarkerAlt className="mr-1" />
+          {truck.currentLocationString || 'Unknown'}
+        </div>
+      ),
+    },
+    {
+      key: 'tenantName',
+      label: 'Tenant',
+      sortable: true,
+      render: (value) => <div className="text-sm text-gray-900">{value}</div>,
+    },
+  ], []);
+
+  const truckRowActions = useMemo<TableAction<AdminTruck>[]>(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <FaEye />,
+      onClick: (truck) => setSelectedTruck(truck),
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <FaEdit />,
+      onClick: () => { /* Handle edit */ },
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <FaTrash />,
+      variant: 'danger',
+      divider: true,
+      onClick: () => { /* Handle delete */ },
+    },
+  ], []);
 
   if (loading) {
     return (
@@ -382,7 +432,7 @@ const AdminTrucks: React.FC = () => {
           </div>
           <div className="mt-4">
             <button
-              onClick={() => window.location.reload()}
+              onClick={fetchTrucks}
               className="bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-md text-sm font-medium"
             >
               Retry
@@ -400,270 +450,40 @@ const AdminTrucks: React.FC = () => {
     >
       <div className="space-y-6">
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-xl p-6 border border-transparent">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
-              {/* Search */}
-              <div className="relative w-full md:w-64">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search trucks..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                {uniqueStatuses.map(status => (
-                  <option key={status} value={status}>{formatStatus(status)}</option>
-                ))}
-              </select>
-
-              {/* Tenant Filter */}
-              <select
-                value={tenantFilter}
-                onChange={(e) => setTenantFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="all">All Tenants</option>
-                {uniqueTenants.map(tenant => (
-                  <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
-                <FaDownload />
-                Export
-              </button>
-              <span className="px-4 py-2 bg-slate-100 text-slate-800 rounded-lg font-medium">
-                {filteredTrucks.length} trucks
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Trucks Table */}
-        <div className="bg-white rounded-xl overflow-hidden border border-transparent">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Truck Details
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Owner
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Current Driver
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tenant
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentTrucks.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center">
-                        <FaTruck className="text-4xl text-gray-400 mb-4" />
-                        <p className="text-gray-500 text-lg font-medium">No trucks found</p>
-                        <p className="text-gray-400 text-sm">Try adjusting your search or filters</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  currentTrucks.map((truck) => (
-                    <tr key={truck.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12">
-                            <div className="h-12 w-12 rounded-lg bg-indigo-100 flex items-center justify-center">
-                              <FaTruck className="text-indigo-600 text-xl" />
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {truck.plateNumber || truck.licensePlate || 'N/A'}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {truck.make && truck.model ? `${truck.make} ${truck.model}` : 'Unknown Make/Model'}
-                              {truck.year && ` (${truck.year})`}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(truck.status)}`}>
-                          {formatStatus(truck.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{truck.ownerName || 'No Owner'}</div>
-                        {truck.ownerEmail && (
-                          <div className="text-sm text-gray-500">{truck.ownerEmail}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {truck.currentDriverName || 'No Driver Assigned'}
-                        </div>
-                        {truck.assignedDrivers && truck.assignedDrivers.length > 0 && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {truck.assignedDrivers.length === 1 
-                              ? `Assigned: ${new Date(truck.assignedDrivers[0].assignmentDate).toLocaleDateString()}`
-                              : (
-                                <div className="group relative">
-                                  <span className="cursor-help border-b border-dotted border-gray-400">
-                                    {truck.assignedDrivers.length} drivers assigned
-                                  </span>
-                                  <div className="invisible group-hover:visible absolute z-10 w-64 p-2 mt-1 text-xs bg-gray-800 text-white rounded shadow-lg">
-                                    {truck.assignedDrivers.map((driver, idx) => (
-                                      <div key={idx} className="mb-1">
-                                        <strong>{driver.driverName}</strong> ({driver.status})
-                                        <br />
-                                        <span className="text-gray-300">
-                                          Since: {new Date(driver.assignmentDate).toLocaleDateString()}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )
-                            }
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FaMapMarkerAlt className="mr-1" />
-                          {truck.currentLocationString || 'Unknown'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{truck.tenantName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => setSelectedTruck(truck)}
-                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
-                            title="View Details"
-                          >
-                            <FaEye />
-                          </button>
-                          <button
-                            onClick={() => {/* Handle edit */}}
-                            className="text-green-600 hover:text-green-900 p-1 rounded"
-                            title="Edit"
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={() => {/* Handle delete */}}
-                            className="text-red-600 hover:text-red-900 p-1 rounded"
-                            title="Delete"
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {filteredTrucks.length > itemsPerPage && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                    <span className="font-medium">{Math.min(endIndex, filteredTrucks.length)}</span> of{' '}
-                    <span className="font-medium">{filteredTrucks.length}</span> results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md -space-x-px" aria-label="Pagination">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Previous
-                    </button>
-                    
-                    {/* Page numbers */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const pageNum = i + 1;
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === pageNum
-                              ? 'z-10 bg-slate-100 border-transparent text-primary-700 font-bold'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                    
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </nav>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+      <StandardDataTable<AdminTruck>
+        embedded
+        className="bg-white rounded-xl p-4 border border-transparent"
+        columns={truckColumns}
+        data={trucks}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search trucks…"
+        searchKeys={['plateNumber', 'licensePlate', 'make', 'model', 'tenantName', 'ownerName', 'currentDriverName']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: statusFilterOptions,
+          },
+          {
+            key: 'tenantId',
+            label: 'Tenant',
+            options: tenantFilterOptions,
+          },
+        ]}
+        rowActions={truckRowActions}
+        emptyMessage="No trucks found"
+        stickyHeader
+        columnVisibility
+        pagination
+        onRefresh={fetchTrucks}
+        toolbarExtra={
+          <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-xs font-semibold">
+            <FaDownload />
+            Export
+          </button>
+        }
+        ariaLabel="Truck management"
+      />
       </div>
 
       {/* Truck Detail Modal */}

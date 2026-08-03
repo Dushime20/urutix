@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -24,7 +24,6 @@ import {
   MapPin,
   Eye,
   X,
-  ChevronsUpDown,
   Clock,
   Milestone,
   Truck,
@@ -39,6 +38,7 @@ import { FaShieldAlt } from 'react-icons/fa';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../components/translated-text';
 import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface Route {
   id: string;
@@ -381,11 +381,6 @@ const AdminRoutes: React.FC = () => {
     });
 
   const total = filteredRoutes.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const startIdx = (currentPage - 1) * pageSize;
-  const endIdx = startIdx + pageSize;
-  const pagedRoutes = filteredRoutes.slice(startIdx, endIdx);
 
   // Use real analytics data with proper null checks
   const stats = [
@@ -423,6 +418,140 @@ const AdminRoutes: React.FC = () => {
       description: <TranslatedText text="Trucks using routes" />
     },
   ];
+
+  const routeColumns: Column<Route>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Route',
+      sortable: true,
+      render: (_v, route) => (
+        <div className="flex items-center gap-1.5">
+          <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <LucideMap className="text-white" size={14} />
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900 text-xs">{route.name}</div>
+            <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
+              <MapPin className="w-2.5 h-2.5" />
+              <span>{route.origin}</span>
+            </div>
+            <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
+              <MapPin className="w-2.5 h-2.5" />
+              <span>{route.destination}</span>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'tenantName',
+      label: 'Tenant',
+      render: (_v, route) => (
+        <div className="flex items-center gap-1">
+          <Building2 className="text-gray-400" size={12} />
+          <span className="text-xs text-gray-900">{route.tenantName}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'distance',
+      label: 'Distance & Time',
+      sortable: true,
+      render: (_v, route) => (
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-0.5">
+            <Milestone className="text-gray-400" size={10} />
+            <span className="text-xs font-medium">{(route.distance || 0).toLocaleString()} km</span>
+          </div>
+          <div className="flex items-center gap-0.5">
+            <Clock className="text-gray-400" size={10} />
+            <span className="text-[10px] text-gray-500">{route.estimatedTime}h</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_v, route) => (
+        canManageRoutes ? (
+          <select
+            className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium border-0 ${getStatusColor(route.status)} cursor-pointer`}
+            value={route.status}
+            onChange={(e) => handleStatusUpdate(route.id, e.target.value)}
+            disabled={isUpdatingStatus}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="under_construction">Under Construction</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        ) : (
+          <StatusBadge status={route.status} label={route.status.replace(/_/g, ' ')} />
+        )
+      ),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      sortable: true,
+      render: (_v, route) => (
+        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor((route.priority || 'medium') as string)}`}>
+          {((route.priority || 'medium') as string).charAt(0).toUpperCase() + ((route.priority || 'medium') as string).slice(1)}
+        </span>
+      ),
+    },
+    {
+      key: 'routeType',
+      label: 'Type',
+      render: (_v, route) => (
+        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRouteTypeColor((route.routeType || 'highway') as string)}`}>
+          {((route.routeType || 'highway') as string).charAt(0).toUpperCase() + ((route.routeType || 'highway') as string).slice(1)}
+        </span>
+      ),
+    },
+    {
+      key: 'trafficLevel',
+      label: 'Traffic',
+      render: (_v, route) => (
+        <div className="flex items-center gap-1">
+          {getTrafficIcon((route.trafficLevel || 'moderate') as string)}
+          <span className="text-[10px] text-gray-500 capitalize">{(route.trafficLevel || 'moderate') as string}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'assignedTrucks',
+      label: 'Performance',
+      render: (_v, route) => (
+        <div className="space-y-0.5">
+          <div className="text-xs font-medium text-gray-900">
+            {Array.isArray(route.assignedTrucks) ? route.assignedTrucks.length : (typeof route.assignedTrucks === 'number' ? route.assignedTrucks : 0)} trucks
+          </div>
+          <div className="text-[10px] text-gray-500">{route.completedTrips || 0} trips</div>
+        </div>
+      ),
+    },
+  ], [canManageRoutes, isUpdatingStatus]);
+
+  const routeActions: TableAction<Route>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye className="w-3 h-3" />,
+      onClick: (route) => {
+        setSelectedRoute(route);
+        setShowDetailsModal(true);
+      },
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <Edit className="w-3 h-3" />,
+      onClick: (route) => handleEditRoute(route),
+    },
+  ], []);
 
   // Loading state
   if (routesLoading || tenantsLoading) {
@@ -634,195 +763,26 @@ const AdminRoutes: React.FC = () => {
         </div>
       </div>
 
-      {/* Routes Table */}
-      <div className="bg-white rounded-xl overflow-hidden border border-transparent">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
-              <tr>
-                <th className="px-2 py-1.5 w-8">
-                  <input
-                    type="checkbox"
-                    checked={selectedRouteIds.length > 0 && selectedRouteIds.length === pagedRoutes.length}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedRouteIds(pagedRoutes.map((r: Route) => r.id));
-                      } else {
-                        setSelectedRouteIds([]);
-                      }
-                    }}
-                  />
-                </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs">
-                  <button
-                    className="flex items-center gap-1"
-                    onClick={() => {
-                      setSortBy('name');
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                  >
-                    <span><TranslatedText text="Route" /></span>
-                    <ChevronsUpDown className="w-3.5 h-3.5" />
-                  </button>
-                </th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Tenant" /></th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Distance & Time" /></th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Status" /></th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Priority" /></th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Type" /></th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Traffic" /></th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Performance" /></th>
-                <th className="px-2 py-1.5 text-left font-semibold text-gray-900 text-xs"><TranslatedText text="Actions" /></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {pagedRoutes.map((route: Route) => (
-                <tr key={route.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-2 py-1.5 w-8">
-                    <input
-                      type="checkbox"
-                      checked={selectedRouteIds.includes(route.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedRouteIds([...selectedRouteIds, route.id]);
-                        } else {
-                          setSelectedRouteIds(selectedRouteIds.filter(id => id !== route.id));
-                        }
-                      }}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                        <LucideMap className="text-white" size={14} />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-xs">{route.name}</div>
-                        <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
-                          <MapPin className="w-2.5 h-2.5" />
-                          <span>{route.origin}</span>
-                        </div>
-                        <div className="text-[10px] text-gray-500 flex items-center gap-0.5">
-                          <MapPin className="w-2.5 h-2.5" />
-                          <span>{route.destination}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <Building2 className="text-gray-400" size={12} />
-                      <span className="text-xs text-gray-900">{route.tenantName}</span>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-0.5">
-                        <Milestone className="text-gray-400" size={10} />
-                        <span className="text-xs font-medium">{(route.distance || 0).toLocaleString()} km</span>
-                      </div>
-                      <div className="flex items-center gap-0.5">
-                        <Clock className="text-gray-400" size={10} />
-                        <span className="text-[10px] text-gray-500">{route.estimatedTime}h</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px]">{getStatusIcon(route.status)}</span>
-                      {canManageRoutes ? (
-                        <select
-                          className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium border-0 ${getStatusColor(route.status)} cursor-pointer`}
-                          value={route.status}
-                          onChange={(e) => handleStatusUpdate(route.id, e.target.value)}
-                          disabled={isUpdatingStatus}
-                        >
-                          <option value="active"><TranslatedText text="Active" /></option>
-                          <option value="inactive"><TranslatedText text="Inactive" /></option>
-                          <option value="under_construction"><TranslatedText text="Under Construction" /></option>
-                          <option value="blocked"><TranslatedText text="Blocked" /></option>
-                        </select>
-                      ) : (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(route.status)}`}>
-                          {route.status.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor((route.priority || 'medium') as string)}`}>
-                      {((route.priority || 'medium') as string).charAt(0).toUpperCase() + ((route.priority || 'medium') as string).slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRouteTypeColor((route.routeType || 'highway') as string)}`}>
-                      {((route.routeType || 'highway') as string).charAt(0).toUpperCase() + ((route.routeType || 'highway') as string).slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      {getTrafficIcon((route.trafficLevel || 'moderate') as string)}
-                      <span className="text-[10px] text-gray-500 capitalize">{(route.trafficLevel || 'moderate') as string}</span>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-medium text-gray-900">
-                        {Array.isArray(route.assignedTrucks) ? route.assignedTrucks.length : (typeof route.assignedTrucks === 'number' ? route.assignedTrucks : 0)} trucks
-                      </div>
-                      <div className="text-[10px] text-gray-500">{route.completedTrips || 0} trips</div>
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => {
-                          setSelectedRoute(route);
-                          setShowDetailsModal(true);
-                        }}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="View Details"
-                      >
-                        <Eye className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => handleEditRoute(route)}
-                        className="p-1 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-                        title="Edit"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {/* Pagination */}
-        <div className="flex items-center justify-between p-2 border-t border-gray-200 bg-gray-50">
-          <div className="text-[10px] text-gray-600">
-            <TranslatedText text="Showing" /> {Math.min(endIdx, total)} <TranslatedText text="of" /> {total}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
-              onClick={() => setPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-            >
-              <TranslatedText text="Previous" />
-            </button>
-            <span className="text-[10px] text-gray-700"><TranslatedText text="Page" /> {currentPage} / {totalPages}</span>
-            <button
-              className="px-1.5 py-0.5 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-100"
-              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-            >
-              <TranslatedText text="Next" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <StandardDataTable
+        columns={routeColumns}
+        data={filteredRoutes}
+        getRowId={(row) => row.id}
+        searchable={false}
+        pagination
+        pageSize={pageSize}
+        onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+        columnVisibility
+        stickyHeader
+        striped
+        hoverable
+        selectable
+        selectedIds={selectedRouteIds}
+        onSelectionChange={setSelectedRouteIds}
+        rowActions={routeActions}
+        emptyMessage="No routes found"
+        ariaLabel="Admin routes"
+        dense
+      />
 
       {/* Create Route Modal */}
       {canCreateRoutes && showCreateModal && (
@@ -1474,48 +1434,59 @@ const AdminRoutes: React.FC = () => {
                 </div>
               </div>
 
-              <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
-                {trucksLoading ? (
-                  <div className="p-4 text-sm text-gray-500"><TranslatedText text="Loading trucks..." /></div>
-                ) : !trucksData || trucksData.length === 0 ? (
-                  <div className="p-4 text-sm text-gray-500"><TranslatedText text="No trucks found." /></div>
-                ) : (
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700"><TranslatedText text="Truck" /></th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700"><TranslatedText text="Capacity" /></th>
-                        <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700"><TranslatedText text="Status" /></th>
-                        <th className="px-4 py-2"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {(trucksData as FleetItem[]).map((truck) => (
-                        <tr key={truck.id}>
-                          <td className="px-4 py-2">
-                            <div className="font-medium text-gray-900">{truck.plateNumber}</div>
-                            <div className="text-xs text-gray-500">{truck.make} {truck.model} • {truck.year}</div>
-                          </td>
-                          <td className="px-4 py-2 text-sm text-gray-700">
-                            {truck.capacityWeight?.toLocaleString()} kg / {truck.capacityVolume?.toLocaleString()} m³
-                          </td>
-                          <td className="px-4 py-2">
-                            <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 capitalize">{truck.status}</span>
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            <button
-                              className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs hover:bg-blue-700 disabled:opacity-50"
-                              disabled={isAssigningRoute}
-                              onClick={() => doAssignRouteToTruck({ truckId: truck.id, routeId: routeForAssignment.id })}
-                            >
-                              {isAssigningRoute ? <TranslatedText text="Assigning..." /> : <TranslatedText text="Assign to route" />}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+              <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                <StandardDataTable
+                  columns={[
+                    {
+                      key: 'plateNumber',
+                      label: 'Truck',
+                      render: (_v: any, truck: FleetItem) => (
+                        <div>
+                          <div className="font-medium text-gray-900">{truck.plateNumber}</div>
+                          <div className="text-xs text-gray-500">{truck.make} {truck.model} • {truck.year}</div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'capacityWeight',
+                      label: 'Capacity',
+                      render: (_v: any, truck: FleetItem) => (
+                        <span className="text-sm text-gray-700">
+                          {truck.capacityWeight?.toLocaleString()} kg / {truck.capacityVolume?.toLocaleString()} m³
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'status',
+                      label: 'Status',
+                      render: (_v: any, truck: FleetItem) => (
+                        <StatusBadge status={truck.status} label={truck.status} />
+                      ),
+                    },
+                  ]}
+                  data={(trucksData as FleetItem[]) || []}
+                  loading={trucksLoading}
+                  getRowId={(row) => row.id}
+                  searchable={false}
+                  pagination={false}
+                  columnVisibility={false}
+                  stickyHeader
+                  striped
+                  hoverable
+                  dense
+                  embedded
+                  rowActions={[{
+                    key: 'assign',
+                    label: 'Assign to route',
+                    onClick: (truck: FleetItem) => {
+                      if (!isAssigningRoute && routeForAssignment) {
+                        doAssignRouteToTruck({ truckId: truck.id, routeId: routeForAssignment.id });
+                      }
+                    },
+                  }]}
+                  emptyMessage="No trucks found."
+                  ariaLabel="Assignable trucks"
+                />
               </div>
 
               <div className="mt-4 flex justify-end">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fuelApi } from '../../../services/fuelApi';
 import { DollarSign, Plus } from 'lucide-react';
 import { AddToWalletModal } from './AddToWalletModal';
+import { StandardDataTable, StatusBadge, type Column } from '../../EnliteUI/Tables';
 
 export const FuelWalletTab: React.FC = () => {
     const [wallet, setWallet] = useState<any>(null);
@@ -94,57 +95,76 @@ export const FuelWalletTab: React.FC = () => {
             </div>
 
             {/* Transaction History */}
-            <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors duration-200">
-                <div className="p-6 border-b border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Transaction History</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-slate-50/50 dark:bg-slate-950/50 border-b border-slate-50 dark:border-slate-800/50">
-                                <th className="p-4 px-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Date</th>
-                                <th className="p-4 px-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Type</th>
-                                <th className="p-4 px-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Amount</th>
-                                <th className="p-4 px-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Station</th>
-                                <th className="p-4 px-6 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Description</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50 transition-colors">
-                            {transactions.map(tx => (
-                                <tr key={tx.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30 transition-colors group">
-                                    <td className="p-4 px-6 text-xs font-black text-slate-600 dark:text-slate-400">{new Date(tx.createdAt).toLocaleDateString()}</td>
-                                    <td className="p-4 px-6">
-                                        <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${tx.type === 'CREDIT'
-                                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-transparent dark:border-emerald-800/30'
-                                            : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-transparent dark:border-rose-800/30'
-                                            }`}>
-                                            {tx.type}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 px-6 text-sm font-black text-slate-900 dark:text-white transition-colors">${Number(tx.amount).toFixed(2)}</td>
-                                    <td className="p-4 px-6 text-xs font-bold text-slate-500 dark:text-slate-300">
-                                        {tx.metadata?.petrolStation || '—'}
-                                    </td>
-                                    <td className="p-4 px-6 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{tx.description}</td>
-                                </tr>
-                            ))}
-                            {transactions.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="p-12 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="h-14 w-14 bg-slate-50 dark:bg-slate-950 rounded-2xl flex items-center justify-center text-slate-300 dark:text-slate-600 border border-transparent dark:border-slate-800 shadow-xl shadow-slate-900/5 transition-colors">
-                                                <DollarSign size={28} />
-                                            </div>
-                                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">No transactions</p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-500">Add credit to get started</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <StandardDataTable
+                title="Transaction History"
+                icon={<DollarSign className="w-5 h-5" />}
+                headerColor="primary"
+                columns={[
+                    {
+                        key: 'createdAt',
+                        label: 'Date',
+                        sortable: true,
+                        render: (v: string) => (
+                            <span className="text-xs font-black text-slate-600 dark:text-slate-400">
+                                {new Date(v).toLocaleDateString()}
+                            </span>
+                        ),
+                    },
+                    {
+                        key: 'type',
+                        label: 'Type',
+                        sortable: true,
+                        render: (type: string) => (
+                            <StatusBadge
+                                label={type}
+                                variant={type === 'CREDIT' ? 'success' : 'error'}
+                            />
+                        ),
+                    },
+                    {
+                        key: 'amount',
+                        label: 'Amount',
+                        sortable: true,
+                        render: (amount: number) => (
+                            <span className="text-sm font-black text-slate-900 dark:text-white">
+                                ${Number(amount).toFixed(2)}
+                            </span>
+                        ),
+                    },
+                    {
+                        key: 'metadata',
+                        label: 'Station',
+                        render: (metadata: any) => (
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-300">
+                                {metadata?.petrolStation || '—'}
+                            </span>
+                        ),
+                    },
+                    {
+                        key: 'description',
+                        label: 'Description',
+                        render: (desc: string) => (
+                            <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                {desc}
+                            </span>
+                        ),
+                    },
+                ] as Column<any>[]}
+                data={transactions}
+                getRowId={(row) => row.id}
+                searchable
+                searchPlaceholder="Search transactions…"
+                searchKeys={['type', 'description']}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                onRefresh={loadWalletData}
+                emptyMessage="No transactions — add credit to get started"
+                ariaLabel="Wallet transactions"
+            />
 
             {/* Add to Wallet Modal */}
             <AddToWalletModal

@@ -16,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { TranslatedText } from '../translated-text';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { useTranslation } from '../../hooks/useTranslation';
+import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 
 ChartJS.register(
   CategoryScale,
@@ -522,53 +523,33 @@ const LenderDashboard: React.FC = () => {
                   <TranslatedText text="Latest loan applications requiring your attention" />
                 </p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <TranslatedText text="Borrower" />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <TranslatedText text="Amount" />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <TranslatedText text="Purpose" />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <TranslatedText text="Status" />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <TranslatedText text="Date" />
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">John Doe</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{fmtCurrency(15000)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Equipment Purchase</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2024-01-15</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Jane Smith</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{fmtCurrency(25000)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">Working Capital</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          Approved
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2024-01-14</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <StandardDataTable
+                embedded
+                searchable={false}
+                pagination={false}
+                columnVisibility={false}
+                data={[
+                  { id: '1', borrower: 'John Doe', amount: 15000, purpose: 'Equipment Purchase', status: 'Pending', date: '2024-01-15' },
+                  { id: '2', borrower: 'Jane Smith', amount: 25000, purpose: 'Working Capital', status: 'Approved', date: '2024-01-14' },
+                ]}
+                getRowId={(row) => row.id}
+                columns={[
+                  { key: 'borrower', label: 'Borrower' },
+                  {
+                    key: 'amount',
+                    label: 'Amount',
+                    render: (amount: number) => fmtCurrency(amount),
+                  },
+                  { key: 'purpose', label: 'Purpose' },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    render: (status: string) => <StatusBadge status={status} />,
+                  },
+                  { key: 'date', label: 'Date' },
+                ] as Column[]}
+                emptyMessage="No recent loan requests"
+              />
             </div>
           </>
         )}

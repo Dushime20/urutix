@@ -38,6 +38,7 @@ import { loadStatusWebSocket } from "@/services/loadStatusWebSocket";
 import { BrokerAssignmentWizard } from "@/components/Cargo/BrokerAssignmentWizard";
 import { getStatusColor, getStatusDisplayName } from "./utils";
 import { useCurrencyFormat } from "@/hooks/useCurrencyFormat";
+import { StandardDataTable, type Column, type TableAction } from "@/components/EnliteUI/Tables";
 import { compactNumber } from "@/utils/formatNumber";
 import { brokerAPI } from "@/services/brokerApi";
 
@@ -1121,33 +1122,35 @@ const UnifiedCargoManagement = () => {
                           </div>
 
                           {/* Desktop View (Enhanced Table) */}
-                          <div className="hidden md:block overflow-x-auto">
-                            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
-                              <thead className="bg-slate-50/50 dark:bg-slate-800/50">
-                                <tr>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cargo</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Route</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Details</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
-                                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Value</th>
-                                  <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-50 dark:divide-slate-800">
-                                {filteredLoads.map((load: any) => (
-                                  <tr key={load.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors duration-300">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <div className="flex items-center">
-                                        <div className="flex-shrink-0 h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center">
-                                          <Package className="h-5 w-5 text-slate-400 dark:text-slate-500" />
-                                        </div>
-                                        <div className="ml-3">
-                                          <div className="text-sm font-black text-slate-800 dark:text-slate-100">{load.title || 'Untitled'}</div>
-                                          <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{load.cargoType}</div>
-                                        </div>
+                          <div className="hidden md:block">
+                            <StandardDataTable
+                              embedded
+                              data={filteredLoads}
+                              getRowId={(load: any) => load.id}
+                              searchable={false}
+                              pagination={false}
+                              emptyMessage="No cargos found"
+                              columns={[
+                                {
+                                  key: 'title',
+                                  label: 'Cargo',
+                                  render: (_: any, load: any) => (
+                                    <div className="flex items-center">
+                                      <div className="flex-shrink-0 h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center">
+                                        <Package className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                                       </div>
-                                    </td>
-                                    <td className="px-6 py-4">
+                                      <div className="ml-3">
+                                        <div className="text-sm font-black text-slate-800 dark:text-slate-100">{load.title || 'Untitled'}</div>
+                                        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">{load.cargoType}</div>
+                                      </div>
+                                    </div>
+                                  ),
+                                },
+                                {
+                                  key: 'route',
+                                  label: 'Route',
+                                  render: (_: any, load: any) => (
+                                    <div>
                                       <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                         {load.pickupLocation?.city || load.pickupLocation?.address || 'N/A'}
                                       </div>
@@ -1155,77 +1158,73 @@ const UnifiedCargoManagement = () => {
                                       <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                         {load.deliveryLocation?.city || load.deliveryLocation?.address || 'N/A'}
                                       </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    </div>
+                                  ),
+                                },
+                                {
+                                  key: 'weight',
+                                  label: 'Details',
+                                  render: (_: any, load: any) => (
+                                    <div>
                                       <div className="text-xs font-bold text-slate-700 dark:text-slate-300">{load.weight ? `${load.weight} kg` : 'N/A'}</div>
                                       <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">{load.volume ? `${load.volume} L` : ''}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span className={cn(
-                                        "px-3 py-1.5 inline-flex text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm font-semibold",
-                                        getStatusColor(load.status)
-                                      )}>
-                                        {getStatusDisplayName(load.status)}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-slate-700 dark:text-slate-300" title={load.offeredPrice ? formatCurrency(Number(load.offeredPrice)) : 'N/A'}>
-                                      {load.offeredPrice ? formatCompactCurrency(Number(load.offeredPrice)) : 'N/A'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                                      <div className="flex items-center justify-end gap-1">
-                                        <button
-                                          onClick={() => handleViewClick(load)}
-                                          className="p-2 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-lg transition-all"
-                                          title="View Details"
-                                        >
-                                          <Eye className="w-4 h-4" />
-                                        </button>
-                                        {activeTab === "broker-managed" && (
-                                          <button
-                                            onClick={() => handleViewContract(load)}
-                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                            title="View Signed Contract"
-                                          >
-                                            <FileText className="w-4 h-4" />
-                                          </button>
-                                        )}
-                                        {!isReceiver && !load.broker && (
-                                          <button
-                                            onClick={() => handleEditCargo(load)}
-                                            className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
-                                            title="Edit Cargo"
-                                          >
-                                            <Edit className="w-4 h-4" />
-                                          </button>
-                                        )}
-                                        {!isReceiver && !load.broker && (
-                                          <button
-                                            onClick={() => handleAssignBroker(load)}
-                                            className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
-                                            title="Assign Broker"
-                                          >
-                                            <Users className="w-4 h-4" />
-                                          </button>
-                                        )}
-                                        {!isReceiver && (
-                                        <button
-                                          onClick={() => !load.receiverId && handleAssignReceiver(load)}
-                                          className={cn(
-                                            "p-2 rounded-lg transition-all",
-                                            load.receiverId ? "text-slate-200 cursor-not-allowed" : "text-slate-400 hover:text-teal-600 hover:bg-teal-50"
-                                          )}
-                                          title={load.receiverId ? "Receiver assigned" : "Assign Receiver"}
-                                          disabled={!!load.receiverId}
-                                        >
-                                          <Users className="w-4 h-4" />
-                                        </button>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                                    </div>
+                                  ),
+                                },
+                                {
+                                  key: 'status',
+                                  label: 'Status',
+                                  render: (status: string) => (
+                                    <span className={cn(
+                                      "px-3 py-1.5 inline-flex text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm font-semibold",
+                                      getStatusColor(status)
+                                    )}>
+                                      {getStatusDisplayName(status)}
+                                    </span>
+                                  ),
+                                },
+                                {
+                                  key: 'offeredPrice',
+                                  label: 'Value',
+                                  render: (price: any) => (
+                                    <span className="text-sm font-black text-slate-700 dark:text-slate-300" title={price ? formatCurrency(Number(price)) : 'N/A'}>
+                                      {price ? formatCompactCurrency(Number(price)) : 'N/A'}
+                                    </span>
+                                  ),
+                                },
+                              ] as Column[]}
+                              rowActions={[
+                                {
+                                  label: 'View Details',
+                                  icon: <Eye className="w-4 h-4" />,
+                                  onClick: (load) => handleViewClick(load),
+                                },
+                                {
+                                  label: 'View Signed Contract',
+                                  icon: <FileText className="w-4 h-4" />,
+                                  onClick: (load) => handleViewContract(load),
+                                  hidden: () => activeTab !== 'broker-managed',
+                                },
+                                {
+                                  label: 'Edit Cargo',
+                                  icon: <Edit className="w-4 h-4" />,
+                                  onClick: (load) => handleEditCargo(load),
+                                  hidden: (load) => isReceiver || !!load.broker,
+                                },
+                                {
+                                  label: 'Assign Broker',
+                                  icon: <Users className="w-4 h-4" />,
+                                  onClick: (load) => handleAssignBroker(load),
+                                  hidden: (load) => isReceiver || !!load.broker,
+                                },
+                                {
+                                  label: 'Assign Receiver',
+                                  icon: <Users className="w-4 h-4" />,
+                                  onClick: (load) => handleAssignReceiver(load),
+                                  hidden: (load) => isReceiver || !!load.receiverId,
+                                },
+                              ] as TableAction[]}
+                            />
                           </div>
                         </div>
                       )}

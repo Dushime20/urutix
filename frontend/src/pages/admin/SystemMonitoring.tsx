@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { monitoringApi } from '../../services/monitoringApi';
 import { useSocket } from '../../contexts/SocketContext';
@@ -9,6 +9,7 @@ import {
 import { TranslatedText } from '../../components/translated-text';
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import ModernLoader from '../../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 
 const SystemMonitoring: React.FC = () => {
     const [auditPage, setAuditPage] = useState(1);
@@ -91,6 +92,56 @@ const SystemMonitoring: React.FC = () => {
             </AdminPageLayout>
         );
     }
+
+    const auditColumns = useMemo<Column<any>[]>(() => [
+        {
+            key: 'created_at',
+            label: 'Timestamp',
+            sortable: true,
+            render: (v) => (
+                <span className="text-slate-600 font-medium text-xs">{v ? new Date(String(v)).toLocaleString() : '—'}</span>
+            ),
+        },
+        {
+            key: 'admin_email',
+            label: 'Admin',
+            render: (_v, log) => (
+                <span className="text-slate-700 font-bold text-xs">{log.admin_email || 'System'}</span>
+            ),
+        },
+        {
+            key: 'user_email',
+            label: 'User',
+            render: (_v, log) => (
+                <span className="text-slate-600 text-xs">{log.user_email || log.user_id}</span>
+            ),
+        },
+        {
+            key: 'action',
+            label: 'Action',
+            sortable: true,
+            render: (_v, log) => (
+                <StatusBadge
+                    status={log.action === 'GRANT' ? 'completed' : log.action === 'REVOKE' ? 'cancelled' : 'pending'}
+                    label={log.action}
+                />
+            ),
+        },
+        {
+            key: 'permission',
+            label: 'Permission',
+            render: (v) => (
+                <span className="font-mono text-xs text-[#2c5173] bg-slate-100 rounded-lg px-2 py-1 inline-block">{String(v)}</span>
+            ),
+        },
+        {
+            key: 'reason',
+            label: 'Reason',
+            render: (v) => (
+                <span className="text-slate-600 max-w-xs truncate text-xs block">{String(v || '-')}</span>
+            ),
+        },
+    ], []);
 
     return (
         <AdminPageLayout
@@ -261,88 +312,25 @@ const SystemMonitoring: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-white border-b border-slate-100">
-                            <tr>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Timestamp</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Admin</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">User</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Permission</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {auditLoading ? (
-                                <tr>
-                                    <td colSpan={6} className="px-8 py-6">
-                                        <ModernLoader isLoading={true} type="table" rows={5} columns={6} />
-                                    </td>
-                                </tr>
-                            ) : auditLogs?.data?.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-8 py-12 text-center text-slate-500 font-medium">
-                                        No audit logs found matching your criteria.
-                                    </td>
-                                </tr>
-                            ) : (
-                                auditLogs?.data?.map((log: any) => (
-                                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="px-8 py-4 text-slate-600 font-medium text-xs">
-                                            {new Date(log.created_at).toLocaleString()}
-                                        </td>
-                                        <td className="px-8 py-4 text-slate-700 font-bold text-xs">
-                                            {log.admin_email || 'System'}
-                                        </td>
-                                        <td className="px-8 py-4 text-slate-600 text-xs">
-                                            {log.user_email || log.user_id}
-                                        </td>
-                                        <td className="px-8 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${log.action === 'GRANT' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                                                log.action === 'REVOKE' ? 'bg-red-50 text-red-700 border border-red-100' :
-                                                    'bg-amber-50 text-amber-700 border border-amber-100'
-                                                }`}>
-                                                {log.action}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-4 font-mono text-xs text-[#2c5173] bg-slate-100 rounded-lg px-2 py-1 inline-block">
-                                            {log.permission}
-                                        </td>
-                                        <td className="px-8 py-4 text-slate-600 max-w-xs truncate text-xs">
-                                            {log.reason || '-'}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                <div className="p-2">
+                    <StandardDataTable<any>
+                        embedded
+                        columns={auditColumns}
+                        data={auditLogs?.data || []}
+                        loading={auditLoading}
+                        getRowId={(row) => row.id}
+                        searchPlaceholder="Search audit logs…"
+                        searchKeys={['admin_email', 'user_email', 'user_id', 'permission', 'reason', 'action']}
+                        emptyMessage="No audit logs found matching your criteria."
+                        stickyHeader
+                        columnVisibility
+                        pagination
+                        page={auditPage}
+                        totalItems={auditLogs?.pagination?.total ?? auditLogs?.total}
+                        onPageChange={setAuditPage}
+                        ariaLabel="Audit logs"
+                    />
                 </div>
-
-                {/* Pagination */}
-                {auditLogs?.pagination && (
-                    <div className="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-between">
-                        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                            Page {auditLogs.pagination.page} of {auditLogs.pagination.totalPages} <span className="text-slate-300 mx-2">|</span> {auditLogs.pagination.total} Records
-                        </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setAuditPage(p => Math.max(1, p - 1))}
-                                disabled={auditPage === 1}
-                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider transition-colors"
-                            >
-                                Previous
-                            </button>
-                            <button
-                                onClick={() => setAuditPage(p => p + 1)}
-                                disabled={auditPage >= (auditLogs.pagination.totalPages || 1)}
-                                className="px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider transition-colors"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
             </div>
         </AdminPageLayout>

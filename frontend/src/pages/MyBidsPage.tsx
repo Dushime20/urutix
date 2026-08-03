@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { compactCurrency } from '../utils/formatNumber';
 import { FaSearch, FaSortAmountUp, FaSortAmountDown } from 'react-icons/fa';
@@ -6,6 +6,7 @@ import { Grid, Table } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { biddingAPI } from '../services/biddingApi';
 import ModernLoader from '../components/common/ModernLoader';
+import { StandardDataTable, StatusBadge, type Column } from '../components/EnliteUI/Tables';
 
 interface Bid {
   id: string;
@@ -299,50 +300,61 @@ const MyBidsPage: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auction</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Bid</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current High</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Placed</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {sortedBids.map((bid) => (
-                        <tr key={bid.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900 line-clamp-1 max-w-xs">{bid.auctionTitle}</div>
-                            {bid.auction && <div className="text-[10px] text-gray-400 mt-0.5">Auction: {bid.auction.status}</div>}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-blue-600">{formatCurrency(bid.amount, bid.currency)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {bid.auction?.currentHighestBid
-                                ? formatCurrency(bid.auction.currentHighestBid, bid.currency)
-                                : '---'}
-                            </div>
-                            <div className="text-[10px] text-gray-500">{bid.auction?.totalBids || 0} total bids</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-[10px] font-medium rounded-full ${getStatusColor(bid.status)}`}>
-                              {bid.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(bid.createdAt)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <StandardDataTable
+                embedded
+                data={sortedBids}
+                getRowId={(bid) => bid.id}
+                searchable={false}
+                pagination={false}
+                emptyMessage="No bids found"
+                columns={[
+                  {
+                    key: 'auctionTitle',
+                    label: 'Auction',
+                    render: (title: string, bid: Bid) => (
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 line-clamp-1 max-w-xs">{title}</div>
+                        {bid.auction && <div className="text-[10px] text-gray-400 mt-0.5">Auction: {bid.auction.status}</div>}
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'amount',
+                    label: 'Your Bid',
+                    render: (amount: number, bid: Bid) => (
+                      <div className="text-sm font-bold text-blue-600">{formatCurrency(amount, bid.currency)}</div>
+                    ),
+                  },
+                  {
+                    key: 'currentHigh',
+                    label: 'Current High',
+                    render: (_: any, bid: Bid) => (
+                      <div>
+                        <div className="text-sm text-gray-900">
+                          {bid.auction?.currentHighestBid
+                            ? formatCurrency(bid.auction.currentHighestBid, bid.currency)
+                            : '---'}
+                        </div>
+                        <div className="text-[10px] text-gray-500">{bid.auction?.totalBids || 0} total bids</div>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'status',
+                    label: 'Status',
+                    render: (status: string) => (
+                      <StatusBadge status={status} />
+                    ),
+                  },
+                  {
+                    key: 'createdAt',
+                    label: 'Date Placed',
+                    render: (date: string) => (
+                      <span className="text-sm text-gray-500">{formatDate(date)}</span>
+                    ),
+                  },
+                ] as Column<Bid>[]}
+              />
             )}
           </>
         )}

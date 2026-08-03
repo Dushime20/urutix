@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { FaSearch, FaFilter, FaTruck, FaBox, FaDollarSign, FaCheckCircle, FaFileInvoice, FaSpinner } from 'react-icons/fa';
 import { fleetApi, type FleetItem } from '../services/fleetApi';
@@ -6,6 +6,7 @@ import { ReceiptModal, type Receipt } from '../components/FleetDashboard/Receipt
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { formatLocation } from '../utils/formatLocation';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 interface InTransitTruck {
   id: string;
@@ -208,7 +209,99 @@ const FleetPaymentManagement: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const paymentColumns = useMemo<Column<InTransitTruck>[]>(() => [
+    {
+      key: 'plateNumber',
+      label: 'Vehicle',
+      sortable: true,
+      render: (_v, truck) => (
+        <div>
+          <div className="font-black text-[#0f172a] flex items-center gap-3 uppercase italic tracking-tight">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <FaTruck className="w-3 h-3" />
+            </div>
+            {truck.plateNumber}
+          </div>
+          <div className="text-[10px] font-bold text-slate-400 pl-11 mt-1 uppercase tracking-wider">
+            {truck.make} {truck.model}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'driver',
+      label: 'Driver',
+      render: (_v, truck) => (
+        <div className="flex flex-col">
+          <span className="font-bold text-[#0f172a] text-sm">{truck.driver.firstName} {truck.driver.lastName}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            {truck.driver.phone || 'NO PHONE'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'cargo',
+      label: 'Cargo',
+      render: (_v, truck) => (
+        <div className="flex flex-col">
+          <span className="font-bold text-[#0f172a] text-sm">{truck.cargo.title}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            <FaBox className="w-2.5 h-2.5" />
+            {truck.cargo.cargoOwner}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'startDate',
+      label: 'Route',
+      render: (_v, truck) => (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <span className="truncate max-w-[120px]" title={formatLocation(truck.cargo.origin)}>{formatLocation(truck.cargo.origin)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            <span className="truncate max-w-[120px]" title={formatLocation(truck.cargo.destination)}>{formatLocation(truck.cargo.destination)}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'price',
+      label: 'Price',
+      sortable: true,
+      render: (_v, truck) => (
+        <div className="font-black text-[#0f172a] text-base tracking-tight">
+          {formatCurrency(truck.price, truck.currency)}
+        </div>
+      ),
+    },
+    {
+      key: 'paymentStatus',
+      label: 'Status',
+      sortable: true,
+      render: (_v, truck) => (
+        <StatusBadge
+          status={truck.paymentStatus === 'paid' ? 'paid' : 'pending'}
+          label={truck.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
+          icon={truck.paymentStatus === 'paid' ? <FaCheckCircle className="w-3 h-3" /> : <FaDollarSign className="w-3 h-3" />}
+        />
+      ),
+    },
+  ], [formatCurrency]);
 
+  const paymentActions = useMemo<TableAction<InTransitTruck>[]>(() => [
+    {
+      key: 'receipt',
+      label: 'View Receipt',
+      icon: <FaFileInvoice className="w-3.5 h-3.5" />,
+      hidden: (truck) => truck.paymentStatus !== 'paid',
+      onClick: (truck) => handleViewReceipt(truck),
+    },
+  ], []);
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-[#f8fafc] text-[#0f172a] font-sans">
@@ -272,106 +365,21 @@ const FleetPaymentManagement: React.FC = () => {
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50/50 border-b border-slate-100">
-                    <tr>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Vehicle</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Driver</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cargo</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Route</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Price</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {filteredTrucks.map((truck) => (
-                      <tr key={truck.id} className="hover:bg-slate-50/80 transition-colors group">
-                        <td className="px-8 py-6">
-                          <div className="font-black text-[#0f172a] flex items-center gap-3 uppercase italic tracking-tight">
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                              <FaTruck className="w-3 h-3" />
-                            </div>
-                            {truck.plateNumber}
-                          </div>
-                          <div className="text-[10px] font-bold text-slate-400 pl-11 mt-1 uppercase tracking-wider">
-                            {truck.make} {truck.model}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-[#0f172a] text-sm">{truck.driver.firstName} {truck.driver.lastName}</span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                              {truck.driver.phone || 'NO PHONE'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-[#0f172a] text-sm">{truck.cargo.title}</span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                              <FaBox className="w-2.5 h-2.5" />
-                              {truck.cargo.cargoOwner}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              <span className="truncate max-w-[120px]" title={formatLocation(truck.cargo.origin)}>{formatLocation(truck.cargo.origin)}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                              <span className="truncate max-w-[120px]" title={formatLocation(truck.cargo.destination)}>{formatLocation(truck.cargo.destination)}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="font-black text-[#0f172a] text-base tracking-tight">
-                            {formatCurrency(truck.price, truck.currency)}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center">
-                            {truck.paymentStatus === 'paid' ? (
-                              <span className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1.5 uppercase tracking-wider">
-                                <FaCheckCircle className="w-3 h-3" /> Paid
-                              </span>
-                            ) : (
-                              <span className="px-3 py-1.5 rounded-xl text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1.5 uppercase tracking-wider">
-                                <FaDollarSign className="w-3 h-3" /> Pending
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                            {truck.paymentStatus === 'paid' ? (
-                              <button
-                                onClick={() => handleViewReceipt(truck)}
-                                className="text-slate-400 hover:text-blue-600 transition-colors p-2 rounded-xl hover:bg-blue-50 group border border-transparent hover:border-blue-100"
-                                title="View Receipt"
-                              >
-                                <FaFileInvoice className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <button
-                                className="text-slate-200 cursor-not-allowed p-2"
-                                title="Pending Settlement"
-                              >
-                                <FaFileInvoice className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="hidden md:block">
+              <StandardDataTable<InTransitTruck>
+                embedded
+                className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-2"
+                columns={paymentColumns}
+                data={filteredTrucks}
+                getRowId={(row) => row.id}
+                searchable={false}
+                rowActions={paymentActions}
+                stickyHeader
+                columnVisibility
+                pagination
+                emptyMessage="No active transit records found."
+                ariaLabel="Fleet payments"
+              />
             </div>
 
             {/* Mobile Card View */}

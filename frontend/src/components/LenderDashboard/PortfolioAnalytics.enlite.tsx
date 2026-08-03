@@ -10,7 +10,7 @@ import {
     ArrowDownLeft
 } from 'lucide-react';
 import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 export interface PortfolioData {
@@ -248,18 +248,28 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
             </div>
 
             {/* Detailed Asset Table */}
-            <DataCard
+            <StandardDataTable
                 title="Asset Class Distribution"
                 subtitle="Granular analysis of portfolio performance by cargo category"
                 icon={<PieChart size={18} />}
-            >
-                <EnhancedTable
-                    columns={riskColumns}
-                    data={cargoAnalysis}
-                    loading={loading}
-                    emptyMessage="No asset class data available for analysis"
-                />
-            </DataCard>
+                headerColor="primary"
+                columns={riskColumns}
+                data={cargoAnalysis}
+                loading={loading}
+                getRowId={(row, index) => row.id ?? row.cargoType ?? String(index)}
+                searchable
+                searchPlaceholder="Search asset classes…"
+                searchKeys={['cargoType', 'riskLevel']}
+                pagination
+                pageSize={10}
+                columnVisibility
+                stickyHeader
+                striped
+                hoverable
+                emptyMessage="No asset class data available for analysis"
+                onExport={onExport}
+                ariaLabel="Asset Class Distribution"
+            />
         </div>
     );
 };

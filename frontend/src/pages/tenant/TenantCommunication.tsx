@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 import {
   Send, Users, RefreshCw, Mail, MessageSquare, 
   Smartphone, Bell, ChevronDown, ChevronUp, CheckCircle, 
@@ -249,6 +250,67 @@ const TenantCommunication: React.FC = () => {
     { id: 'compose', label: 'Compose', icon: Zap },
     { id: 'logs', label: 'History', icon: BarChart2 },
   ];
+
+  const logColumns: Column<CampaignLog>[] = useMemo(() => [
+    {
+      key: 'subject',
+      label: 'Subject',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-medium text-slate-700 dark:text-slate-300 text-sm max-w-[180px] truncate block">{log.subject}</span>
+      ),
+    },
+    {
+      key: 'channels',
+      label: 'Channels',
+      sortable: false,
+      render: (_: unknown, log: CampaignLog) => {
+        const channels = (log.channels || ['email']).map((c: string) => c.toLowerCase()) as Channel[];
+        return (
+          <div className="flex flex-wrap gap-1">
+            {channels.map(ch => <ChannelPill key={ch} ch={ch} />)}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'sentBy',
+      label: 'Sent By',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="text-xs text-slate-500 dark:text-slate-400 max-w-[140px] truncate block">{log.sentBy || '—'}</span>
+      ),
+    },
+    {
+      key: 'recipientsCount',
+      label: 'Recipients',
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-400">{log.recipientsCount}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      align: 'center',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <StatusBadge label={log.status} status={log.status} />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Date',
+      align: 'right',
+      sortable: true,
+      render: (_: unknown, log: CampaignLog) => (
+        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums whitespace-nowrap">
+          {new Date(log.createdAt).toLocaleString()}
+        </span>
+      ),
+    },
+  ], []);
 
   return (
     <div className="space-y-6">
@@ -661,13 +723,7 @@ const TenantCommunication: React.FC = () => {
             </button>
           </div>
 
-          {logsLoading ? (
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
-              ))}
-            </div>
-          ) : logs.length === 0 ? (
+          {logs.length === 0 && !logsLoading ? (
             <div className="py-20 text-center">
               <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-4">
                 <Clock className="text-slate-300 dark:text-slate-600" size={32} />
@@ -676,47 +732,22 @@ const TenantCommunication: React.FC = () => {
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Start communicating with your partners using the compose tab.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800 transition-colors duration-200">
-              <table className="w-full">
-                <thead className="bg-slate-50 dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 shadow-sm transition-colors duration-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Subject</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Channels</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sent By</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Recipients</th>
-                    <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {logs.map(log => {
-                    const channels = (log.channels || ['email']).map((c: string) => c.toLowerCase()) as Channel[];
-                    return (
-                      <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300 text-sm max-w-[180px] truncate">{log.subject}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {channels.map(ch => <ChannelPill key={ch} ch={ch} />)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 max-w-[140px] truncate">{log.sentBy || '—'}</td>
-                        <td className="px-6 py-4 text-center font-mono text-xs font-bold text-slate-600 dark:text-slate-400">{log.recipientsCount}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                            log.status === 'sent' || log.status === 'sending' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
-                            : log.status === 'failed' ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                            : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
-                          }`}>{log.status}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right text-xs text-slate-400 dark:text-slate-500 font-medium tabular-nums whitespace-nowrap">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <StandardDataTable
+              embedded
+              searchable={false}
+              columnVisibility={false}
+              pagination={false}
+              loading={logsLoading}
+              columns={logColumns}
+              data={logs}
+              getRowId={(row) => row.id}
+              defaultSortKey="createdAt"
+              defaultSortDirection="desc"
+              stickyHeader
+              className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800 transition-colors duration-200"
+              emptyMessage="No communications yet"
+              ariaLabel="Communication history"
+            />
           )}
         </div>
       )}

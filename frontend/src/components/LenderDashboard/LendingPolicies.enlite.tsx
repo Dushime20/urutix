@@ -16,7 +16,7 @@ import {
     AlertTriangle
 } from 'lucide-react';
 import DataCard from '../EnliteUI/Cards/DataCard';
-import EnhancedTable from '../EnliteUI/Tables/EnhancedTable';
+import { StandardDataTable } from '../EnliteUI/Tables';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -172,11 +172,33 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
         }
     };
 
-    const currentTabInfo = tabs.find(t => t.id === activeTab);
+    const currentTabInfo = tabs.find(tab => tab.id === activeTab);
+
+    const addAction = (
+        <button
+            onClick={() => onAdd(currentTabInfo?.category || '')}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-md text-[10px] font-bold uppercase tracking-widest transition-all"
+        >
+            <Plus size={14} /> <TranslatedText text={`Add ${currentTabInfo?.label ?? 'New'}`} />
+        </button>
+    );
+
+    const tableDefaults = {
+        headerColor: 'primary' as const,
+        loading,
+        searchable: true,
+        pagination: true,
+        pageSize: 10,
+        columnVisibility: true,
+        stickyHeader: true,
+        striped: true,
+        hoverable: true,
+        getRowId: (row: { id: string }) => row.id,
+    };
 
     const renderTabContent = () => {
         switch (activeTab) {
-            case 'interest-rates':
+            case 'interest-rates': {
                 const irColumns = [
                     {
                         key: 'name',
@@ -279,14 +301,21 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     }
                 ];
                 return (
-                    <EnhancedTable
+                    <StandardDataTable
+                        {...tableDefaults}
+                        title={currentTabInfo?.label || 'Interest Rates'}
+                        subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                        icon={currentTabInfo?.icon ?? <Percent className="w-5 h-5" />}
+                        headerActions={addAction}
                         columns={irColumns}
                         data={policies.interestRates}
-                        loading={loading}
+                        searchKeys={['name', 'riskLevel']}
+                        emptyMessage={t('No interest rate policies configured')}
                     />
                 );
+            }
 
-            case 'loan-limits':
+            case 'loan-limits': {
                 const limitColumns = [
                     {
                         key: 'name',
@@ -348,58 +377,72 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     }
                 ];
                 return (
-                    <EnhancedTable
+                    <StandardDataTable
+                        {...tableDefaults}
+                        title={currentTabInfo?.label || 'Loan Limits'}
+                        subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                        icon={currentTabInfo?.icon ?? <DollarSign className="w-5 h-5" />}
+                        headerActions={addAction}
                         columns={limitColumns}
                         data={policies.loanLimits}
-                        loading={loading}
+                        searchKeys={['name', 'businessType']}
+                        emptyMessage={t('No loan limit policies configured')}
                     />
                 );
+            }
 
             case 'global-settings':
                 return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-4">
-                        <div className="space-y-6">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Automation & Thresholds</h4>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <div>
-                                        <p className="text-[11px] font-black text-slate-900 uppercase">Auto-Approval Limit</p>
-                                        <p className="text-[10px] text-slate-500 font-bold">Requests below this bypass manual check</p>
+                    <DataCard
+                        title={currentTabInfo?.label || 'System Config'}
+                        subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                        icon={currentTabInfo?.icon ?? <Settings className="w-5 h-5" />}
+                        headerColor="primary"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-4">
+                            <div className="space-y-6">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Automation & Thresholds</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div>
+                                            <p className="text-[11px] font-black text-slate-900 uppercase">Auto-Approval Limit</p>
+                                            <p className="text-[10px] text-slate-500 font-bold">Requests below this bypass manual check</p>
+                                        </div>
+                                        <p className="text-sm font-black text-[#345E85]">{cptRwf(policies.globalSettings.autoApprovalLimit)}</p>
                                     </div>
-                                    <p className="text-sm font-black text-[#345E85]">{cptRwf(policies.globalSettings.autoApprovalLimit)}</p>
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div>
+                                            <p className="text-[11px] font-black text-slate-900 uppercase">Manual Review Threshold</p>
+                                            <p className="text-[10px] text-slate-500 font-bold">Critical review for large amounts</p>
+                                        </div>
+                                        <p className="text-sm font-black text-rose-600">{cptRwf(policies.globalSettings.manualReviewThreshold)}</p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <div>
-                                        <p className="text-[11px] font-black text-slate-900 uppercase">Manual Review Threshold</p>
-                                        <p className="text-[10px] text-slate-500 font-bold">Critical review for large amounts</p>
+                            </div>
+                            <div className="space-y-6">
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Compliance & Security</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <Shield className="text-emerald-500" size={18} />
+                                            <p className="text-[11px] font-black text-slate-900 uppercase">Strict Compliance Mode</p>
+                                        </div>
+                                        <ToggleRight className="text-emerald-500" />
                                     </div>
-                                    <p className="text-sm font-black text-rose-600">{cptRwf(policies.globalSettings.manualReviewThreshold)}</p>
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <TrendingUp className="text-[#345E85]" size={18} />
+                                            <p className="text-[11px] font-black text-slate-900 uppercase">Real-time Audit Trail</p>
+                                        </div>
+                                        <ToggleRight className="text-[#345E85]" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="space-y-6">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Compliance & Security</h4>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <div className="flex items-center gap-3">
-                                        <Shield className="text-emerald-500" size={18} />
-                                        <p className="text-[11px] font-black text-slate-900 uppercase">Strict Compliance Mode</p>
-                                    </div>
-                                    <ToggleRight className="text-emerald-500" />
-                                </div>
-                                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                    <div className="flex items-center gap-3">
-                                        <TrendingUp className="text-[#345E85]" size={18} />
-                                        <p className="text-[11px] font-black text-slate-900 uppercase">Real-time Audit Trail</p>
-                                    </div>
-                                    <ToggleRight className="text-[#345E85]" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    </DataCard>
                 );
 
-            case 'eligibility':
+            case 'eligibility': {
                 const eligibilityColumns = [
                     {
                         key: 'name',
@@ -466,14 +509,21 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     }
                 ];
                 return (
-                    <EnhancedTable
+                    <StandardDataTable
+                        {...tableDefaults}
+                        title={currentTabInfo?.label || 'Eligibility'}
+                        subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                        icon={currentTabInfo?.icon ?? <Users className="w-5 h-5" />}
+                        headerActions={addAction}
                         columns={eligibilityColumns}
                         data={policies.eligibilityCriteria}
-                        loading={loading}
+                        searchKeys={['name', 'category', 'requirement']}
+                        emptyMessage={t('No eligibility criteria configured')}
                     />
                 );
+            }
 
-            case 'risk-assessment':
+            case 'risk-assessment': {
                 const riskColumns = [
                     {
                         key: 'factor',
@@ -537,14 +587,21 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     }
                 ];
                 return (
-                    <EnhancedTable
+                    <StandardDataTable
+                        {...tableDefaults}
+                        title={currentTabInfo?.label || 'Risk Rules'}
+                        subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                        icon={currentTabInfo?.icon ?? <Scale className="w-5 h-5" />}
+                        headerActions={addAction}
                         columns={riskColumns}
                         data={policies.riskAssessment}
-                        loading={loading}
+                        searchKeys={['factor']}
+                        emptyMessage={t('No risk assessment rules configured')}
                     />
                 );
+            }
 
-            case 'repayment':
+            case 'repayment': {
                 const repaymentColumns = [
                     {
                         key: 'name',
@@ -624,14 +681,21 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     }
                 ];
                 return (
-                    <EnhancedTable
+                    <StandardDataTable
+                        {...tableDefaults}
+                        title={currentTabInfo?.label || 'Repayment'}
+                        subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                        icon={currentTabInfo?.icon ?? <Calendar className="w-5 h-5" />}
+                        headerActions={addAction}
                         columns={repaymentColumns}
                         data={policies.repaymentPolicies}
-                        loading={loading}
+                        searchKeys={['name', 'frequency']}
+                        emptyMessage={t('No repayment policies configured')}
                     />
                 );
+            }
 
-            case 'cargo-types':
+            case 'cargo-types': {
                 const cargoColumns = [
                     {
                         key: 'cargoType',
@@ -711,12 +775,19 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                     }
                 ];
                 return (
-                    <EnhancedTable
+                    <StandardDataTable
+                        {...tableDefaults}
+                        title={currentTabInfo?.label || 'Cargo Policies'}
+                        subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
+                        icon={currentTabInfo?.icon ?? <Truck className="w-5 h-5" />}
+                        headerActions={addAction}
                         columns={cargoColumns}
                         data={policies.cargoTypePolicies}
-                        loading={loading}
+                        searchKeys={['cargoType', 'riskLevel']}
+                        emptyMessage={t('No cargo type policies configured')}
                     />
                 );
+            }
 
             default:
                 return (
@@ -747,24 +818,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                 ))}
             </div>
 
-            <DataCard
-                title={currentTabInfo?.label || 'Policy Engine'}
-                subtitle={`Manage your ${(currentTabInfo?.label || 'policy').toLowerCase()} configurations`}
-                icon={currentTabInfo?.icon ?? <Settings className="w-5 h-5" />}
-                headerColor="primary"
-                actions={
-                    activeTab !== 'global-settings' ? (
-                        <button
-                            onClick={() => onAdd(currentTabInfo?.category || '')}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-md text-[10px] font-bold uppercase tracking-widest transition-all"
-                        >
-                            <Plus size={14} /> <TranslatedText text={`Add ${currentTabInfo?.label ?? 'New'}`} />
-                        </button>
-                    ) : undefined
-                }
-            >
-                {renderTabContent()}
-            </DataCard>
+            {renderTabContent()}
         </div>
     );
 };

@@ -26,6 +26,22 @@ import { fleetApi } from '../../services/fleetApi';
 import { tenantApi } from '../../services/tenantApi';
 import AddTruckModal from './AddTruckModal';
 import toast from 'react-hot-toast';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
+
+type DisplayTruck = {
+  id: string;
+  plate: string;
+  status: string;
+  owner: string;
+  driver: string;
+  location: string;
+  utilization: number | null;
+  lastMaintenance: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  vin?: string;
+};
 
 interface FleetOverviewProps {
   tenantId?: string;
@@ -196,16 +212,6 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-      case 'maintenance': return 'text-amber-600 bg-amber-50 border-amber-100';
-      case 'out_of_service': return 'text-rose-600 bg-rose-50 border-rose-100';
-      case 'in_transit': return 'text-blue-600 bg-blue-50 border-blue-100';
-      default: return 'text-slate-500 bg-slate-50 border-slate-100';
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'available': return <Zap className="w-3 h-3" />;
@@ -225,6 +231,118 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       default: return tSync(status);
     }
   };
+
+  const truckColumns = useMemo<Column<DisplayTruck>[]>(() => [
+    {
+      key: 'plate',
+      label: tSync('Truck Details'),
+      render: (_: unknown, truck: DisplayTruck) => (
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all duration-500">
+            <Truck size={20} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">{truck.plate}</span>
+            <span className="text-[10px] font-black text-primary-500 dark:text-primary-400 uppercase tracking-widest leading-none mt-1">{truck.id}</span>
+            {truck.make && (
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-tight">{truck.make} {truck.model}</span>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'owner',
+      label: tSync('Owner'),
+      render: (_: unknown, truck: DisplayTruck) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-400">
+            {truck.owner.charAt(0)}
+          </div>
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{truck.owner}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'driver',
+      label: tSync('Driver'),
+      render: (_: unknown, truck: DisplayTruck) => (
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={14} className="text-emerald-500" />
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{truck.driver}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: tSync('Status'),
+      align: 'center',
+      render: (_: unknown, truck: DisplayTruck) => (
+        <StatusBadge
+          status={truck.status}
+          label={getStatusLabel(truck.status)}
+          icon={getStatusIcon(truck.status)}
+        />
+      ),
+    },
+    {
+      key: 'utilization',
+      label: tSync('Usage'),
+      render: (_: unknown, truck: DisplayTruck) => (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
+              <TranslatedText text="Usage" /> (%)
+            </span>
+            <span className="text-[10px] font-black text-slate-800 dark:text-white italic">
+              {truck.utilization != null ? `${truck.utilization}%` : '—'}
+            </span>
+          </div>
+          <div className="w-28 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${truck.utilization ?? 0}%` }}
+              transition={{ duration: 1 }}
+              className="bg-primary-600 dark:bg-primary-500 h-full rounded-full shadow-[0_0_8px_rgba(52,94,133,0.5)]"
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'lastMaintenance',
+      label: tSync('Maintenance'),
+      render: (_: unknown, truck: DisplayTruck) => (
+        <div className="flex flex-col">
+          <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 tracking-tight">{new Date(truck.lastMaintenance).toLocaleDateString()}</span>
+          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5"><TranslatedText text="Checked" /></span>
+        </div>
+      ),
+    },
+  ], [tSync]);
+
+  const truckRowActions = useMemo<TableAction<DisplayTruck>[]>(() => [
+    {
+      key: 'view',
+      label: tSync('View'),
+      icon: <Eye size={16} />,
+      onClick: () => {},
+    },
+    {
+      key: 'edit',
+      label: tSync('Edit'),
+      icon: <Edit size={16} />,
+      onClick: () => {},
+    },
+    {
+      key: 'delete',
+      label: tSync('Delete'),
+      icon: <Trash2 size={16} />,
+      variant: 'danger',
+      onClick: (truck) => handleDeleteTruck(truck.id),
+      disabled: () => deleteTruckMutation.isPending,
+    },
+  ], [tSync, deleteTruckMutation.isPending]);
 
   // Show loading state
   if (trucksLoading || driversLoading) {
@@ -497,132 +615,24 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
           </div>
         </div>
 
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="min-w-full divide-y divide-gray-50">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-slate-800/10">
-                <th className="pl-10 pr-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Truck Details" /></th>
-                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Owner" /></th>
-                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Driver" /></th>
-                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest text-center"><TranslatedText text="Status" /></th>
-                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Usage" /></th>
-                <th className="px-6 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Maintenance" /></th>
-                <th className="pl-6 pr-10 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Actions" /></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-50 dark:divide-slate-800/50">
-              {paginatedTrucks.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-10 py-24 text-center">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                    >
-                      <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 rounded-[32px] flex items-center justify-center mx-auto mb-6 border border-slate-100 dark:border-slate-700 rotate-12">
-                        <Truck className="w-12 h-12 text-slate-200 dark:text-slate-700 -rotate-12" />
-                      </div>
-                      <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2"><TranslatedText text="No Trucks Found" /></h3>
-                      <p className="text-sm text-slate-400 dark:text-slate-500 max-w-sm mx-auto mb-10 font-medium">
-                        <TranslatedText text="You haven't added any trucks to your fleet yet." />
-                      </p>
-                      <button 
-                        className="bg-primary-600 text-white px-8 py-4 rounded-[20px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-100 dark:shadow-slate-950/20 text-[11px] font-black uppercase tracking-[0.2em]"
-                        onClick={() => setIsAddTruckModalOpen(true)}
-                      >
-                        <TranslatedText text="Add First Truck" />
-                      </button>
-                    </motion.div>
-                  </td>
-                </tr>
-              ) : (
-                paginatedTrucks.map((truck: any, idx: number) => (
-                  <motion.tr 
-                    key={truck.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.03 }}
-                    className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/10 transition-all duration-300 border-b border-gray-50 dark:border-slate-800/50"
-                  >
-                    <td className="pl-10 pr-6 py-6 whitespace-nowrap">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-400 group-hover:bg-primary-600 group-hover:text-white transition-all duration-500">
-                          <Truck size={20} />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">{truck.plate}</span>
-                          <span className="text-[10px] font-black text-primary-500 dark:text-primary-400 uppercase tracking-widest leading-none mt-1">{truck.id}</span>
-                          {truck.make && (
-                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-tight">{truck.make} {truck.model}</span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-6 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-400">
-                           {truck.owner.charAt(0)}
-                         </div>
-                         <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{truck.owner}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-6 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck size={14} className="text-emerald-500" />
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{truck.driver}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-6 whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border shadow-sm ${getStatusColor(truck.status)} dark:bg-slate-900/50`}>
-                        {getStatusIcon(truck.status)}
-                        <span className="ml-2">{getStatusLabel(truck.status)}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-6 whitespace-nowrap">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-4">
-                           <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none"><TranslatedText text="Usage" /> (%)</span>
-                           <span className="text-[10px] font-black text-slate-800 dark:text-white italic">
-                             {truck.utilization != null ? `${truck.utilization}%` : '—'}
-                           </span>
-                        </div>
-                        <div className="w-28 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${truck.utilization ?? 0}%` }}
-                            transition={{ duration: 1 }}
-                            className="bg-primary-600 dark:bg-primary-500 h-full rounded-full shadow-[0_0_8px_rgba(52,94,133,0.5)]"
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-6 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 tracking-tight">{new Date(truck.lastMaintenance).toLocaleDateString()}</span>
-                        <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5"><TranslatedText text="Checked" /></span>
-                      </div>
-                    </td>
-                    <td className="pl-6 pr-10 py-6 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button className="p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg hover:shadow-primary-50 rounded-xl transition-all duration-300">
-                          <Eye size={16} />
-                        </button>
-                        <button className="p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg hover:shadow-amber-50 rounded-xl transition-all duration-300">
-                          <Edit size={16} />
-                        </button>
-                        <button 
-                          className="p-2.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg hover:shadow-red-50 rounded-xl transition-all duration-300"
-                          onClick={() => handleDeleteTruck(truck.id)}
-                          disabled={deleteTruckMutation.isPending}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="px-4 md:px-6 py-4 overflow-x-auto custom-scrollbar">
+          <StandardDataTable<DisplayTruck>
+            embedded
+            columns={truckColumns}
+            data={paginatedTrucks}
+            getRowId={(row) => row.id}
+            rowActions={truckRowActions}
+            actionsLabel={tSync('Actions')}
+            pagination={false}
+            searchable={false}
+            columnVisibility={false}
+            sortable={false}
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage={tSync('No Trucks Found')}
+            ariaLabel={tSync('Truck List')}
+          />
         </div>
 
         {/* Pagination — Enlite Prime Style */}

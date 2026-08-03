@@ -24,6 +24,7 @@ import { driverApi } from '../../services/driverApi';
 import toast from 'react-hot-toast';
 import {
   canProceedWithLoad,
+  getInspectionActionLabel,
   getInspectionStatusLabel,
   getInspectionStatusStyles,
   getPreTripStatusFromLoad,
@@ -220,6 +221,24 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
   };
 
   const handleInspectCargo = (cargo: CargoItem) => {
+    if (canProceedWithLoad(cargo.inspectionStatus || 'PENDING')) {
+      toast.success(t('Inspection already approved. You may load and start the trip.'));
+      return;
+    }
+    const status = cargo.inspectionStatus || 'PENDING';
+    if (
+      status === 'PENDING' ||
+      status === 'AWAITING_CARGO_OWNER_APPROVAL' ||
+      status === 'AWAITING_RESOLUTION' ||
+      status === 'FAILED'
+    ) {
+      if (status === 'PENDING') {
+        toast(t('Open Mission Hub → Inspection to complete truck then cargo inspection.'));
+      } else {
+        toast(t('Cargo inspection is waiting on the Cargo Owner or Broker. Re-inspect only after release.'));
+      }
+      return;
+    }
     setSelectedCargo(cargo);
     setViewMode('inspection');
   };
@@ -687,15 +706,23 @@ export const CargoManagement: React.FC<CargoManagementProps> = ({ driverId }) =>
                   </button>
 
                   {cargo.status === 'PENDING' && (<>
-                    <button onClick={() => handleInspectCargo(cargo)}
-                      className={`flex-1 min-w-[90px] px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border ${
-                        canProceedWithLoad(cargo.inspectionStatus || 'PENDING')
-                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'
-                          : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
-                      }`}>
-                      <Search className="w-3 h-3" />
-                      {cargo.inspectionStatus === 'READY_FOR_RE_INSPECTION' ? <TranslatedText text="Re-Inspect" /> : <TranslatedText text="Inspect" />}
-                    </button>
+                    {!canProceedWithLoad(cargo.inspectionStatus || 'PENDING') &&
+                      cargo.inspectionStatus !== 'AWAITING_CARGO_OWNER_APPROVAL' &&
+                      cargo.inspectionStatus !== 'AWAITING_RESOLUTION' &&
+                      cargo.inspectionStatus !== 'FAILED' && (
+                      <button onClick={() => handleInspectCargo(cargo)}
+                        className="flex-1 min-w-[90px] px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100">
+                        <Search className="w-3 h-3" />
+                        <TranslatedText text={getInspectionActionLabel(cargo.inspectionStatus || 'PENDING')} />
+                      </button>
+                    )}
+                    {(cargo.inspectionStatus === 'AWAITING_CARGO_OWNER_APPROVAL' ||
+                      cargo.inspectionStatus === 'AWAITING_RESOLUTION' ||
+                      cargo.inspectionStatus === 'FAILED') && (
+                      <span className={`flex-1 min-w-[90px] px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border ${getInspectionStatusStyles(cargo.inspectionStatus)}`}>
+                        <TranslatedText text={getInspectionStatusLabel(cargo.inspectionStatus)} />
+                      </span>
+                    )}
                     {canProceedWithLoad(cargo.inspectionStatus || 'PENDING') && (
                       <button onClick={() => { setSelectedCargo(cargo); handleAcceptCargo(cargo); }}
                         className="flex-1 min-w-[100px] px-3 py-2.5 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-900 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-900/20">

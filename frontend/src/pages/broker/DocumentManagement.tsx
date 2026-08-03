@@ -1,9 +1,10 @@
 import { DashboardSkeleton } from '../../components/common/LoadingSkeletons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { brokerAPI, type LoadDocument, type CreateDocumentData } from '../../services/brokerApi';
-import { FileText, Plus, Search, Filter, Upload, Download, CheckCircle2, Loader2, Eye, FileCheck, Receipt, Clock, Activity, Zap, ArrowRight, X } from 'lucide-react';
+import { FileText, Plus, Search, Upload, Download, CheckCircle2, Loader2, Eye, FileCheck, Receipt, Zap, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 
 const DocumentManagement: React.FC = () => {
   const { user } = useAuth();
@@ -89,6 +90,66 @@ const DocumentManagement: React.FC = () => {
     }
   };
 
+  const columns: Column<LoadDocument>[] = useMemo(() => [
+    {
+      key: 'documentType',
+      label: 'Record Class',
+      sortable: true,
+      render: (_v, doc) => (
+        <div className="flex items-center gap-6">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 dark:bg-slate-900 dark:border-slate-800">
+            {getDocumentTypeIcon(doc.documentType)}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{doc.documentType.replace(/_/g, ' ')}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase mt-0.5 max-w-[150px] truncate">{doc.fileName}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Auth Level',
+      sortable: true,
+      render: (_v, doc) => (
+        <StatusBadge status={doc.status} label={doc.status.replace(/_/g, ' ')} />
+      ),
+    },
+    {
+      key: 'fileSize',
+      label: 'Volume',
+      align: 'center',
+      render: (_v, doc) => (
+        <p className="text-xs font-bold text-slate-900 dark:text-white">{doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Log Date',
+      sortable: true,
+      align: 'center',
+      render: (_v, doc) => (
+        <p className="text-xs font-bold text-slate-900 dark:text-white">{new Date(doc.createdAt).toLocaleDateString()}</p>
+      ),
+    },
+  ], []);
+
+  const rowActions: TableAction<LoadDocument>[] = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View',
+      icon: <Eye size={16} />,
+      onClick: (doc) => setSelectedDocument(doc),
+    },
+    {
+      key: 'download',
+      label: 'Download',
+      icon: <Download size={16} />,
+      hidden: (doc) => !doc.fileUrl,
+      onClick: (doc) => { if (doc.fileUrl) window.open(doc.fileUrl); },
+    },
+  ], []);
+
   if (loading && selectedLoadId) {
     return <DashboardSkeleton />;
   }
@@ -149,22 +210,6 @@ const DocumentManagement: React.FC = () => {
               </div>
             )}
           </div>
-
-          {selectedLoadId && (
-            <div className="pt-8 border-t border-slate-50 flex gap-6 dark:border-slate-800/50">
-              <div className="flex-1 relative">
-                <Filter size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" />
-                <input type="text" placeholder="Filter files..." value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="w-full bg-slate-50/50 rounded-xl pl-14 py-4 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all dark:text-slate-300" />
-              </div>
-              <select value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })} className="bg-slate-50/50 rounded-xl px-8 py-4 text-sm font-bold uppercase text-slate-600 outline-none focus:bg-white border border-transparent focus:border-slate-100 transition-all cursor-pointer dark:text-slate-300">
-                <option value="">All Classes</option>
-                <option value="BILL_OF_LADING">BOL</option>
-                <option value="PROOF_OF_DELIVERY">POD</option>
-                <option value="INVOICE">Invoices</option>
-                <option value="CONTRACT">Legal</option>
-              </select>
-            </div>
-          )}
         </div>
       </div>
 
@@ -174,60 +219,38 @@ const DocumentManagement: React.FC = () => {
           <Zap className="w-16 h-16 text-slate-200 mx-auto" />
           <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">Awaiting load reference to sync archive.</p>
         </div>
-      ) : documents.length === 0 && !loading ? (
-        <div className="bg-white rounded-[4rem] p-32 text-center space-y-8 shadow-sm border border-slate-50 dark:bg-slate-900 dark:border-slate-800/50">
-          <X className="w-16 h-16 text-slate-200 mx-auto" />
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.3em]">No records found for this reference.</p>
-        </div>
-      ) : documents.length > 0 && (
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Record Class</th>
-                <th className="px-10 py-8 text-left text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Auth Level</th>
-                <th className="px-10 py-8 text-center text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Volume</th>
-                <th className="px-10 py-8 text-center text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Log Date</th>
-                <th className="px-10 py-8 text-right text-xs font-bold text-slate-400 uppercase border-b border-slate-50 dark:border-slate-800/50">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {documents.map((doc) => (
-                <tr key={doc.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => setSelectedDocument(doc)}>
-                  <td className="px-10 py-10">
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800">
-                        {getDocumentTypeIcon(doc.documentType)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{doc.documentType.replace('_', ' ')}</p>
-                        <p className="text-xs font-bold text-slate-400 uppercase mt-0.5 max-w-[150px] truncate">{doc.fileName}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-10 py-10">
-                    <span className={`px-4 py-1.5 rounded-xl text-xs font-bold uppercase flex items-center gap-2 w-fit ${doc.status === 'VERIFIED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full ${doc.status === 'VERIFIED' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                      {doc.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-10 py-10 text-center">
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">{doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : ' - '}</p>
-                  </td>
-                  <td className="px-10 py-10 text-center">
-                    <p className="text-xs font-bold text-slate-900 dark:text-white">{new Date(doc.createdAt).toLocaleDateString()}</p>
-                  </td>
-                  <td className="px-10 py-10">
-                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
-                      <button className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-slate-900 hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"><Eye size={16} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); if (doc.fileUrl) window.open(doc.fileUrl); }} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-xl hover:bg-primary-600 hover:text-white transition-all shadow-sm dark:bg-slate-900 dark:border-slate-800"><Download size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      ) : (
+        <StandardDataTable
+          columns={columns}
+          data={documents}
+          loading={loading}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Filter files..."
+          searchKeys={['documentType', 'fileName', 'status']}
+          searchValue={filters.search}
+          onSearchChange={(value) => setFilters({ ...filters, search: value })}
+          filters={[
+            {
+              key: 'documentType',
+              label: 'Class',
+              options: [
+                { value: 'BILL_OF_LADING', label: 'BOL' },
+                { value: 'PROOF_OF_DELIVERY', label: 'POD' },
+                { value: 'INVOICE', label: 'Invoices' },
+                { value: 'CONTRACT', label: 'Legal' },
+              ],
+            },
+          ]}
+          filterValues={{ documentType: filters.type || 'all' }}
+          onFilterChange={(key, value) => {
+            if (key === 'documentType') setFilters({ ...filters, type: value === 'all' ? '' : value });
+          }}
+          rowActions={rowActions}
+          onRowClick={(doc) => setSelectedDocument(doc)}
+          onRefresh={fetchDocuments}
+          emptyMessage="No records found for this reference."
+          ariaLabel="Load documents"
+        />
       )}
 
       {/* Upload/Import Modal */}

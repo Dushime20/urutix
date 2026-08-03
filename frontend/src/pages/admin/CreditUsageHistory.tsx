@@ -3,9 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import {
   FaHistory,
-  FaDownload,
   FaFilter,
-  FaSearch,
   FaArrowDown,
   FaArrowUp,
   FaCalendar,
@@ -15,8 +13,8 @@ import {
 import AdminPageLayout from '../../components/Admin/AdminPageLayout';
 import { TranslatedText } from '../../components/translated-text';
 import api from '../../services/api';
-import ModernLoader from '../../components/common/ModernLoader';
 import { format } from 'date-fns';
+import { StandardDataTable, StatusBadge, type Column } from '../../components/EnliteUI/Tables';
 
 interface CreditTransaction {
   id: string;
@@ -149,18 +147,7 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
     };
   }, [transactions, dateRange]);
 
-  // Filter transactions
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((t: CreditTransaction) => {
-      const matchesSearch = 
-        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.tenant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.id.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      return matchesSearch;
-    });
-  }, [transactions, searchTerm]);
-
+  // Search handled by StandardDataTable
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'CONSUMPTION': return <FaArrowDown className="text-red-500" />;
@@ -172,20 +159,20 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
     }
   };
 
-  const getTypeColor = (type: string) => {
+  const typeVariant = (type: string) => {
     switch (type) {
-      case 'CONSUMPTION': return 'text-red-600 bg-red-50';
-      case 'PURCHASE': return 'text-green-600 bg-green-50';
-      case 'BONUS': return 'text-yellow-600 bg-yellow-50';
-      case 'SUBSCRIPTION_GRANT': return 'text-blue-600 bg-blue-50';
-      case 'REFUND': return 'text-purple-600 bg-purple-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'CONSUMPTION': return 'error' as const;
+      case 'PURCHASE': return 'success' as const;
+      case 'BONUS': return 'warning' as const;
+      case 'SUBSCRIPTION_GRANT': return 'info' as const;
+      case 'REFUND': return 'purple' as const;
+      default: return 'neutral' as const;
     }
   };
 
   const exportToCSV = () => {
     const headers = ['Date', 'Tenant', 'Type', 'Amount', 'Description', 'Balance After'];
-    const rows = filteredTransactions.map((t: CreditTransaction) => [
+    const rows = transactions.map((t: CreditTransaction) => [
       t.createdAt ? format(new Date(t.createdAt), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
       t.creditAccount?.tenant?.name || t.tenant?.name || 'Unknown',
       t.type,
@@ -214,18 +201,80 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
     }
   };
 
+  const columns: Column<CreditTransaction>[] = useMemo(() => [
+    {
+      key: 'createdAt',
+      label: 'Date & Time',
+      alwaysVisible: true,
+      sortable: true,
+      render: (_v, t) => (
+        <span className="text-sm text-gray-900 whitespace-nowrap">{formatDate(t.createdAt)}</span>
+      ),
+    },
+    {
+      key: 'tenantId',
+      label: 'Tenant',
+      render: (_v, t) => (
+        <div>
+          <p className="text-sm font-medium text-gray-900">
+            {t.creditAccount?.tenant?.name || t.tenant?.name || 'Unknown'}
+          </p>
+          <p className="text-xs text-gray-500">
+            {t.tenantId ? `${t.tenantId.substring(0, 8)}...` : 'N/A'}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      label: 'Type',
+      render: (_v, t) => (
+        <StatusBadge
+          variant={typeVariant(t.type)}
+          label={t.type.replace('_', ' ')}
+          icon={getTypeIcon(t.type)}
+        />
+      ),
+    },
+    {
+      key: 'description',
+      label: 'Description',
+      render: (_v, t) => (
+        <span className="text-sm text-gray-900">
+          {t.description}
+          {t.referenceType && (
+            <span className="ml-2 text-xs text-gray-500">({t.referenceType})</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      render: (_v, t) => (
+        <span className={`text-sm font-semibold ${
+          t.type === 'CONSUMPTION' ? 'text-red-600' : 'text-green-600'
+        }`}>
+          {t.type === 'CONSUMPTION' ? '-' : '+'}
+          {Number(t.amount).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      key: 'balanceAfter',
+      label: 'Balance After',
+      sortable: true,
+      render: (_v, t) => (
+        <span className="text-sm font-medium text-gray-900">
+          {Number(t.balanceAfter).toLocaleString()}
+        </span>
+      ),
+    },
+  ], []);
+
   const content = (
       <div className="safe-bottom space-y-6">
-        <div className="flex justify-end">
-          <button
-            onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-[#2c5173] text-white rounded-lg hover:bg-[#1e3850]"
-          >
-            <FaDownload />
-            <TranslatedText text="Export CSV" />
-          </button>
-        </div>
-
       {/* Top Consumers */}
       {stats.topConsumers.length > 0 && (
         <div className="bg-white rounded-lg p-6 mb-6">
@@ -252,25 +301,9 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
         </div>
       )}
 
-      {/* Filters */}
+      {/* Server-side Filters */}
       <div className="bg-white rounded-lg p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <FaSearch className="inline mr-2" />
-              <TranslatedText text="Search" />
-            </label>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search transactions..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-[#2c5173]"
-            />
-          </div>
-
-          {/* Tenant Filter */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FaTruck className="inline mr-2" />
@@ -290,7 +323,6 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
             </select>
           </div>
 
-          {/* Type Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FaFilter className="inline mr-2" />
@@ -311,7 +343,6 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
             </select>
           </div>
 
-          {/* Date Range */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <FaCalendar className="inline mr-2" />
@@ -331,99 +362,25 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
         </div>
       </div>
 
-      {/* Transactions Table */}
-      <div className="bg-white rounded-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            <TranslatedText text="Transaction History" />
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            <TranslatedText text="Showing" /> {filteredTransactions.length} <TranslatedText text="of" /> {transactions.length} <TranslatedText text="transactions" />
-          </p>
-        </div>
-
-        {isLoading ? (
-          <div className="p-6">
-            <ModernLoader isLoading={true} type="table" rows={5} columns={6} />
-          </div>
-        ) : filteredTransactions.length === 0 ? (
-          <div className="p-12 text-center">
-            <FaHistory className="mx-auto text-4xl text-gray-400 mb-4" />
-            <p className="text-gray-600"><TranslatedText text="No transactions found" /></p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Date & Time" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Tenant" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Type" />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Description" />
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Amount" />
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <TranslatedText text="Balance After" />
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTransactions.map((transaction: CreditTransaction) => (
-                  <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(transaction.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {transaction.creditAccount?.tenant?.name || transaction.tenant?.name || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {transaction.tenantId ? `${transaction.tenantId.substring(0, 8)}...` : 'N/A'}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(transaction.type)}`}>
-                        {getTypeIcon(transaction.type)}
-                        {transaction.type.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {transaction.description}
-                      {transaction.referenceType && (
-                        <span className="ml-2 text-xs text-gray-500">
-                          ({transaction.referenceType})
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <span className={`text-sm font-semibold ${
-                        transaction.type === 'CONSUMPTION' ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                        {transaction.type === 'CONSUMPTION' ? '-' : '+'}
-                        {Number(transaction.amount).toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
-                      {Number(transaction.balanceAfter).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <StandardDataTable
+        title="Transaction History"
+        subtitle={`${transactions.length} transactions`}
+        icon={<FaHistory className="w-5 h-5" />}
+        columns={columns}
+        data={transactions}
+        loading={isLoading}
+        getRowId={(row) => row.id}
+        searchPlaceholder="Search transactions..."
+        searchKeys={['description', 'type', 'id']}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        defaultSortKey="createdAt"
+        defaultSortDirection="desc"
+        onExport={exportToCSV}
+        exportLabel="Export CSV"
+        emptyMessage="No transactions found"
+        ariaLabel="Credit usage history"
+      />
       </div>
   );
 

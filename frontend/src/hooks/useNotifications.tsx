@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
 import { notificationsAPI } from '../services/api';
-import toast from 'react-hot-toast';
 import { resolveNotificationRoute } from '../utils/resolveNotificationRoute';
 
 export interface UrutixNotification {
@@ -71,6 +70,9 @@ export const useNotifications = () => {
       transports: ['websocket', 'polling'],
     });
 
+    // Cache invalidation only — realtime toasts are owned by NotificationContext
+    // to avoid N toast copies when this hook is mounted in multiple components,
+    // and when the backend emits both `notification` and `notification:new`.
     const handleRealtimeNotification = (data: any) => {
       const notifType = ((data as any).notificationType || (data as any).type || '').toUpperCase();
       const creditBalanceRoles = ['TRUCK_OWNER', 'TENANT_ADMIN'];
@@ -101,31 +103,6 @@ export const useNotifications = () => {
         queryClient.invalidateQueries({ queryKey: ['driver-loads'] });
         queryClient.invalidateQueries({ queryKey: ['driver-trips'] });
       }
-
-      if (isPreTripApproved) {
-        toast.success(
-          data.message ||
-            'Pre-trip inspection approved. You may load cargo and start the trip.',
-          {
-            icon: '🟢',
-            duration: 8000,
-          },
-        );
-        return;
-      }
-
-      if (isPreTripReInspection) {
-        toast.success(data.message || 'Cargo owner resolved issues. You can re-inspect now.', {
-          icon: '✅',
-          duration: 8000,
-        });
-        return;
-      }
-
-      toast(data.title || 'New notification', {
-        icon: '🔔',
-        duration: 5000,
-      });
     };
 
     newSocket.on('connect', () => {
@@ -134,7 +111,7 @@ export const useNotifications = () => {
 
     newSocket.on('disconnect', () => setIsConnected(false));
 
-    newSocket.on('notification:new', handleRealtimeNotification);
+    // Listen once — backend also emits `notification:new` for the same payload
     newSocket.on('notification', handleRealtimeNotification);
 
     setSocket(newSocket);

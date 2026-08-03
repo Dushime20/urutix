@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   AlertCircle, 
   Clock, 
   DollarSign, 
-  Package,
   CreditCard,
   CheckCircle,
   XCircle,
@@ -20,6 +19,7 @@ import { cn } from '@/utils/cn';
 import toast from 'react-hot-toast';
 import PaymentModal from './PaymentModal';
 import PaymentDetailModal from './PaymentDetailModal';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../../components/EnliteUI/Tables';
 
 interface EnhancedPendingPaymentsSectionProps {
   onPayNow?: (paymentId: string) => void;
@@ -252,55 +252,72 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
     pending: 'Pending',
   };
 
-  const PaymentRow: React.FC<{ payment: PendingPayment }> = ({ payment }) => {
-    const urgencyType = getUrgencyType(payment);
-    const isProcessing = payment.status === 'PROCESSING';
-    const sourceLabel = getSourceLabel(payment);
-
-    return (
-      <tr className="border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-        <td className="px-4 py-3.5">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
-              {isCargoOwner
-                ? <CreditCard className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                : <DollarSign className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[220px]">
-                {payment.trip?.load?.title || 'Cargo Payment'}
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Trip #{payment.trip?.tripNumber || payment.tripId.slice(-8)}
-              </p>
-            </div>
+  const columns: Column<PendingPayment>[] = useMemo(() => [
+    {
+      key: 'tripId',
+      label: 'Cargo / Trip',
+      alwaysVisible: true,
+      render: (_v, payment) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-lg bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
+            {isCargoOwner
+              ? <CreditCard className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+              : <DollarSign className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
           </div>
-        </td>
-        <td className="px-4 py-3.5 hidden md:table-cell">
-          <div className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
-            <Package className="w-3.5 h-3.5 text-slate-400" />
-            <span>{payment.trip?.load?.cargoType || 'General'}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[220px]">
+              {payment.trip?.load?.title || 'Cargo Payment'}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Trip #{payment.trip?.tripNumber || payment.tripId.slice(-8)}
+            </p>
           </div>
-        </td>
-        <td className="px-4 py-3.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-            {urgencyLabel[urgencyType]}
-          </span>
-        </td>
-        <td className="px-4 py-3.5 hidden lg:table-cell">
-          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-800 whitespace-nowrap">
-            {sourceLabel}
-          </span>
-        </td>
-        <td className="px-4 py-3.5 hidden sm:table-cell">
-          <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
-            {formatDaysUntilDue(payment.dueDate)}
-          </div>
-          <div className="text-[11px] text-slate-400">
-            {new Date(payment.createdAt).toLocaleDateString()}
-          </div>
-        </td>
-        <td className="px-4 py-3.5 text-right">
+        </div>
+      ),
+    },
+    {
+      key: 'cargoType',
+      label: 'Type',
+      render: (_v, payment) => (
+        <span className="text-sm text-slate-600 dark:text-slate-400">{payment.trip?.load?.cargoType || 'General'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, payment) => (
+        <StatusBadge
+          variant={getUrgencyType(payment) === 'overdue' ? 'error' : getUrgencyType(payment) === 'dueSoon' ? 'warning' : 'neutral'}
+          label={urgencyLabel[getUrgencyType(payment)]}
+        />
+      ),
+    },
+    {
+      key: 'paymentSource',
+      label: 'Source',
+      render: (_v, payment) => (
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 border border-primary-100 dark:border-primary-800 whitespace-nowrap">
+          {getSourceLabel(payment)}
+        </span>
+      ),
+    },
+    {
+      key: 'dueDate',
+      label: 'Due',
+      sortable: true,
+      render: (_v, payment) => (
+        <div>
+          <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDaysUntilDue(payment.dueDate)}</div>
+          <div className="text-[11px] text-slate-400">{new Date(payment.createdAt).toLocaleDateString()}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Amount',
+      sortable: true,
+      render: (_v, payment) => (
+        <div className="text-right">
           <div className="text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
             {formatCurrency(payment.amount, payment.currency)}
           </div>
@@ -309,69 +326,28 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
               {payment.referenceNumber}
             </div>
           )}
-        </td>
-        <td className="px-4 py-3.5">
-          <div className="flex items-center justify-end gap-1.5">
-            {isCargoOwner && (
-              isProcessing ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                  Processing
-                </span>
-              ) : (
-                <button
-                  onClick={() => handlePayNow(payment.id)}
-                  disabled={processPaymentMutation.isPending}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 text-xs font-semibold"
-                  title="Pay Now"
-                >
-                  {processPaymentMutation.isPending ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <CreditCard className="w-3.5 h-3.5" />
-                  )}
-                  <span className="hidden xl:inline">Pay Now</span>
-                </button>
-              )
-            )}
-            <button
-              onClick={() => handleViewDetails(payment.id)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-medium"
-              title="View Details"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Details</span>
-            </button>
-          </div>
-        </td>
-      </tr>
-    );
-  };
+        </div>
+      ),
+    },
+  ], [isCargoOwner]);
 
-  const PaymentTable = ({ payments }: { payments: PendingPayment[] }) => (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px]">
-          <thead>
-            <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50">
-              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Cargo / Trip</th>
-              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 hidden md:table-cell">Type</th>
-              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400">Status</th>
-              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 hidden lg:table-cell">Source</th>
-              <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 hidden sm:table-cell">Due</th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Amount</th>
-              <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-slate-400">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((payment) => (
-              <PaymentRow key={payment.id} payment={payment} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const rowActions: TableAction<PendingPayment>[] = useMemo(() => [
+    {
+      key: 'pay',
+      label: 'Pay Now',
+      icon: <CreditCard className="w-3.5 h-3.5" />,
+      variant: 'success',
+      hidden: (payment) => !isCargoOwner || payment.status === 'PROCESSING',
+      disabled: () => processPaymentMutation.isPending,
+      onClick: (payment) => handlePayNow(payment.id),
+    },
+    {
+      key: 'details',
+      label: 'Details',
+      icon: <Eye className="w-3.5 h-3.5" />,
+      onClick: (payment) => handleViewDetails(payment.id),
+    },
+  ], [isCargoOwner, processPaymentMutation.isPending]);
 
   if (isLoading) {
     return (
@@ -531,7 +507,20 @@ const EnhancedPendingPaymentsSection: React.FC<EnhancedPendingPaymentsSectionPro
             </span>
           )}
         </div>
-        <PaymentTable payments={[...overdue, ...dueSoon, ...pending]} />
+        <StandardDataTable
+          embedded
+          columns={columns}
+          data={[...overdue, ...dueSoon, ...pending]}
+          getRowId={(row) => row.id}
+          searchPlaceholder="Search payments..."
+          searchKeys={['status', 'referenceNumber']}
+          rowActions={rowActions}
+          stickyHeader
+          columnVisibility
+          pagination
+          emptyMessage="No pending payments"
+          ariaLabel="Pending payments"
+        />
       </div>
 
       {/* Payment Modal */}

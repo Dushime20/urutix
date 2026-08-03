@@ -9,6 +9,11 @@ import {
 import { toast } from 'react-hot-toast';
 import { UserRole } from '@/types/permission.types';
 import type { Permission } from '@/types/permission.types';
+import { StandardDataTable, type Column } from '../../EnliteUI/Tables';
+
+type MatrixRow =
+    | { type: 'section'; id: string; resource: string; count: number }
+    | { type: 'permission'; id: string; permission: Permission & { name: string } };
 
 // ── Role colour palette ────────────────────────────────────────────────────
 const ROLE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string; darkBg: string; darkText: string; darkBorder: string }> = {
@@ -541,6 +546,155 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
         return resourceMatch || permMatch;
     }).sort();
 
+    const matrixRows = useMemo((): MatrixRow[] => {
+        const rows: MatrixRow[] = [];
+        filteredResources.forEach((resource) => {
+            const resourcePermissions = groupedPermissions[resource].filter((p: any) =>
+                !searchTerm ||
+                p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.action.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            if (resourcePermissions.length === 0) return;
+
+            rows.push({
+                type: 'section',
+                id: `section-${resource}`,
+                resource,
+                count: resourcePermissions.length,
+            });
+
+            resourcePermissions.forEach((p: any) => {
+                rows.push({
+                    type: 'permission',
+                    id: p.id || p.name,
+                    permission: {
+                        ...p,
+                        name: p.name ?? `${p.resource}:${p.action}`,
+                    },
+                });
+            });
+        });
+        return rows;
+    }, [filteredResources, groupedPermissions, searchTerm]);
+
+    const visiblePermissionNames = useMemo(
+        () => matrixRows
+            .filter((row): row is Extract<MatrixRow, { type: 'permission' }> => row.type === 'permission')
+            .map((row) => row.permission.name),
+        [matrixRows],
+    );
+
+    const matrixColumns = useMemo((): Column<MatrixRow>[] => {
+        const cols: Column<MatrixRow>[] = [];
+
+        if (bulkMode) {
+            cols.push({
+                key: '__bulk',
+                label: 'Select',
+                align: 'center',
+                width: '48px',
+                sortable: false,
+                hideable: false,
+                alwaysVisible: true,
+                render: (_, row) => {
+                    if (row.type === 'section') return null;
+                    return (
+                        <input
+                            type="checkbox"
+                            checked={selectedPermissions.has(row.permission.name)}
+                            onChange={(e) => {
+                                const next = new Set(selectedPermissions);
+                                if (e.target.checked) next.add(row.permission.name);
+                                else next.delete(row.permission.name);
+                                setSelectedPermissions(next);
+                            }}
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-800"
+                        />
+                    );
+                },
+            });
+        }
+
+        cols.push({
+            key: 'permission',
+            label: 'Resource / Permission',
+            align: 'left',
+            sortable: false,
+            hideable: false,
+            alwaysVisible: true,
+            width: '250px',
+            render: (_, row) => {
+                if (row.type === 'section') {
+                    return (
+                        <div className="flex items-center gap-2 text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                            <div className="w-1 h-4 bg-indigo-500 dark:bg-indigo-400 rounded-full" />
+                            {row.resource}
+                            <span className="ml-2 text-[10px] bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold border border-transparent dark:border-indigo-800/50">
+                                {row.count} permissions
+                            </span>
+                        </div>
+                    );
+                }
+
+                const p = row.permission;
+                return (
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950/50 dark:to-purple-950/50 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                {p.action.split(':')[1]?.charAt(0).toUpperCase() || 'P'}
+                            </span>
+                        </div>
+                        <div>
+                            <div className="font-semibold text-slate-700 dark:text-slate-200">{p.action}</div>
+                            <div className="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">{p.name}</div>
+                        </div>
+                    </div>
+                );
+            },
+        });
+
+        roles.forEach((role) => {
+            cols.push({
+                key: role,
+                label: role.replace('_', ' '),
+                align: 'center',
+                sortable: false,
+                hideable: false,
+                width: '110px',
+                render: (_, row) => {
+                    if (row.type === 'section') return null;
+
+                    const permissionId = row.permission.name || `${row.permission.resource}:${row.permission.action}`;
+                    const isGranted = hasPermission(role, permissionId);
+                    const isSuperAdmin = role === 'SUPER_ADMIN';
+
+                    return (
+                        <div className="flex justify-center">
+                            <button
+                                disabled={isSuperAdmin}
+                                onClick={() => handleToggle(role, permissionId, isGranted)}
+                                title={isSuperAdmin ? 'SUPER_ADMIN permissions are immutable' : `Click to ${isGranted ? 'revoke' : 'grant'}`}
+                                className={`
+                                    w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 font-bold
+                                    ${isGranted
+                                        ? 'bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-950/50 dark:to-emerald-900/50 text-emerald-700 dark:text-emerald-400 hover:from-emerald-200 hover:to-emerald-300 dark:hover:from-emerald-950/70 dark:hover:to-emerald-900/70 shadow-sm'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-500 dark:hover:text-slate-400'
+                                    }
+                                    ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110 active:scale-95'}
+                                `}
+                            >
+                                {isGranted ? <FaCheck size={14} /> : <FaTimes size={12} />}
+                            </button>
+                        </div>
+                    );
+                },
+            });
+        });
+
+        return cols;
+    }, [bulkMode, roles, selectedPermissions, hasPermission, handleToggle]);
+
     if (isLoadingPermissions || isLoadingMatrix) {
         return (
             <div className="flex h-96 items-center justify-center">
@@ -638,6 +792,22 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                             <span className="text-sm text-slate-600 dark:text-slate-400">
                                 {selectedPermissions.size} permission(s) selected
                             </span>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedPermissions(new Set(visiblePermissionNames))}
+                                disabled={visiblePermissionNames.length === 0}
+                                className="px-3 py-2 text-xs font-medium text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-slate-600 rounded-lg hover:bg-indigo-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                            >
+                                Select all visible
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedPermissions(new Set())}
+                                disabled={selectedPermissions.size === 0}
+                                className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                            >
+                                Clear selection
+                            </button>
                             <div className="flex gap-2 ml-auto">
                                 <button
                                     onClick={handleBulkGrant}
@@ -710,149 +880,51 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
 
             {/* Matrix Table */}
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800/80 border-b-2 border-indigo-200 dark:border-indigo-900/60">
-                            <tr>
-                                {bulkMode && (
-                                    <th className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-300 w-12 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700">
-                                        <input
-                                            type="checkbox"
-                                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-700"
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
-                                                    const allPerms = new Set(permissions.map((p: any) => p.name));
-                                                    setSelectedPermissions(allPerms);
-                                                } else {
-                                                    setSelectedPermissions(new Set());
-                                                }
-                                            }}
-                                        />
-                                    </th>
-                                )}
-                                <th className={`px-6 py-4 text-left font-bold text-slate-700 dark:text-slate-200 min-w-[250px] sticky ${bulkMode ? 'left-12' : 'left-0'} bg-slate-50 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-700`}>
-                                    <div className="flex items-center gap-2">
-                                        <FaFilter className="text-indigo-500 dark:text-indigo-400" />
-                                        Resource / Permission
-                                    </div>
-                                </th>
-                                {roles.map(role => (
-                                    <th key={role} className="px-4 py-4 text-center font-bold text-slate-700 dark:text-slate-200 min-w-[110px] group">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">Role</span>
-                                            <button
-                                                onClick={() => setActiveRoleModal(role)}
-                                                title={`View / edit ${role} permissions`}
-                                                className="text-sm hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
-                                            >
-                                                {role.replace('_', ' ')}
-                                            </button>
-                                            {role !== 'SUPER_ADMIN' && (
-                                                <button
-                                                    onClick={() => {
-                                                        const sourceRole = prompt('Copy permissions from role:', 'ADMIN');
-                                                        if (sourceRole && roles.includes(sourceRole as any)) {
-                                                            handleCopyRole(sourceRole, role);
-                                                        }
-                                                    }}
-                                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 mt-1"
-                                                >
-                                                    <FaCopy size={8} /> Copy
-                                                </button>
-                                            )}
-                                        </div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {filteredResources.map(resource => (
-                                <React.Fragment key={resource}>
-                                    {/* Resource Section Header */}
-                                    <tr className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20">
-                                        <td colSpan={roles.length + (bulkMode ? 2 : 1)} className="px-6 py-3 text-xs font-black text-indigo-700 dark:text-indigo-300 uppercase tracking-wider border-y border-indigo-100 dark:border-indigo-900/40">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1 h-4 bg-indigo-500 dark:bg-indigo-400 rounded-full" />
-                                                {resource}
-                                                <span className="ml-2 text-[10px] bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold border border-transparent dark:border-indigo-800/50">
-                                                    {groupedPermissions[resource].length} permissions
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {/* Permissions Rows */}
-                                    {groupedPermissions[resource]
-                                        .filter((p: any) => !searchTerm ||
-                                            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                            p.action.toLowerCase().includes(searchTerm.toLowerCase())
-                                        )
-                                        .map((p: any) => (
-                                            <tr key={p.id} className="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/10 transition-colors group">
-                                                {bulkMode && (
-                                                    <td className="px-4 py-3 text-center sticky left-0 bg-white dark:bg-slate-900 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-950/10 z-10 border-r border-slate-100 dark:border-slate-800">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedPermissions.has(p.name)}
-                                                            onChange={(e) => {
-                                                                const newSet = new Set(selectedPermissions);
-                                                                if (e.target.checked) {
-                                                                    newSet.add(p.name);
-                                                                } else {
-                                                                    newSet.delete(p.name);
-                                                                }
-                                                                setSelectedPermissions(newSet);
-                                                            }}
-                                                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-800"
-                                                        />
-                                                    </td>
-                                                )}
-                                                <td className={`px-6 py-3 border-r border-slate-100 dark:border-slate-800 sticky ${bulkMode ? 'left-12' : 'left-0'} bg-white dark:bg-slate-900 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-950/10 z-10`}>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950/50 dark:to-purple-950/50 flex items-center justify-center flex-shrink-0">
-                                                            <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                                                                {p.action.split(':')[1]?.charAt(0).toUpperCase() || 'P'}
-                                                            </span>
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-semibold text-slate-700 dark:text-slate-200">{p.action}</div>
-                                                            <div className="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">{p.name}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                {roles.map(role => {
-                                                    // Use resource:action format for permission identifier
-                                                    const permissionId = p.name || `${p.resource}:${p.action}`;
-                                                    const isGranted = hasPermission(role, permissionId);
-                                                    const isSuperAdmin = role === 'SUPER_ADMIN';
-                                                    return (
-                                                        <td key={`${role}-${permissionId}`} className="px-4 py-3 text-center">
-                                                            <div className="flex justify-center">
-                                                                <button
-                                                                    disabled={isSuperAdmin}
-                                                                    onClick={() => handleToggle(role, permissionId, isGranted)}
-                                                                    title={isSuperAdmin ? 'SUPER_ADMIN permissions are immutable' : `Click to ${isGranted ? 'revoke' : 'grant'}`}
-                                                                    className={`
-                                                                        w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 font-bold
-                                                                        ${isGranted
-                                                                            ? 'bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-950/50 dark:to-emerald-900/50 text-emerald-700 dark:text-emerald-400 hover:from-emerald-200 hover:to-emerald-300 dark:hover:from-emerald-950/70 dark:hover:to-emerald-900/70 shadow-sm'
-                                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-500 dark:hover:text-slate-400'
-                                                                        }
-                                                                        ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110 active:scale-95'}
-                                                                    `}
-                                                                >
-                                                                    {isGranted ? <FaCheck size={14} /> : <FaTimes size={12} />}
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        ))}
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 flex flex-wrap gap-2">
+                    {roles.map((role) => (
+                        <div key={role} className="group inline-flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setActiveRoleModal(role)}
+                                title={`View / edit ${role} permissions`}
+                                className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors px-2 py-1 rounded-lg hover:bg-white dark:hover:bg-slate-700"
+                            >
+                                {role.replace('_', ' ')}
+                            </button>
+                            {role !== 'SUPER_ADMIN' && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const sourceRole = prompt('Copy permissions from role:', 'ADMIN');
+                                        if (sourceRole && roles.includes(sourceRole as typeof roles[number])) {
+                                            handleCopyRole(sourceRole, role);
+                                        }
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 px-1"
+                                >
+                                    <FaCopy size={8} /> Copy
+                                </button>
+                            )}
+                        </div>
+                    ))}
                 </div>
+                <StandardDataTable<MatrixRow>
+                    embedded
+                    searchable={false}
+                    pagination={false}
+                    sortable={false}
+                    columnVisibility={false}
+                    columns={matrixColumns}
+                    data={matrixRows}
+                    getRowId={(row) => row.id}
+                    ariaLabel="Role permissions matrix"
+                    stickyHeader
+                    rowClassName={(row) =>
+                        row.type === 'section'
+                            ? 'bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20'
+                            : 'hover:bg-indigo-50/30 dark:hover:bg-indigo-950/10 transition-colors group'
+                    }
+                />
             </div>
 
             {/* Summary Footer */}
