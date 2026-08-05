@@ -3476,6 +3476,35 @@ export class LendingService {
     return loans.map((loan) => ({ ...loan, ...buildLoanWorkflowView(loan) }));
   }
 
+  /**
+   * Trip/cargo IDs that already have an active loan (pending|approved|disbursed).
+   * Used by New Loan Request UI to hide already-financed cargo — same rule as createLoanRequest RULE 1.
+   */
+  async getActiveFinancedIds(tenantId: string): Promise<{
+    tripIds: string[];
+    cargoIds: string[];
+  }> {
+    const loans = await this.loanRequestRepository.find({
+      where: {
+        tenant_id: tenantId,
+        status: In([
+          LoanRequestStatus.PENDING,
+          LoanRequestStatus.APPROVED,
+          LoanRequestStatus.DISBURSED,
+        ]),
+      },
+      select: ['trip_id', 'cargo_id'],
+    });
+
+    const tripIds = [
+      ...new Set(loans.map((l) => l.trip_id).filter(Boolean) as string[]),
+    ];
+    const cargoIds = [
+      ...new Set(loans.map((l) => l.cargo_id).filter(Boolean) as string[]),
+    ];
+    return { tripIds, cargoIds };
+  }
+
   async getLenderDashboard(lenderId: string, dateFrom?: Date, dateTo?: Date, tenantId?: string) {
     // Resolve user UUID → lender entity UUID (same as getLenderLoanRequests)
     let actualLenderId: string = lenderId;

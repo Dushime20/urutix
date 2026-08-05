@@ -182,6 +182,16 @@ export const lendingApi = {
     return response.data;
   },
 
+  /** Trip/cargo IDs with an active loan — for filtering New Loan Request cargo options */
+  getActiveFinancedIds: async (): Promise<{ tripIds: string[]; cargoIds: string[] }> => {
+    const response = await api.get('/lending/active-financed-ids');
+    const body = response.data?.data || response.data || {};
+    return {
+      tripIds: Array.isArray(body.tripIds) ? body.tripIds : [],
+      cargoIds: Array.isArray(body.cargoIds) ? body.cargoIds : [],
+    };
+  },
+
   processRepayment: async (
     loanId: string,
     finalPaymentAmount: number,

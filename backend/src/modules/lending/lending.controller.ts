@@ -570,6 +570,30 @@ export class LendingController {
     return this.lendingService.getMyLoanRequests(userId, tenantId);
   }
 
+  @Get('lending/active-financed-ids')
+  @Roles(UserRole.CARGO_OWNER)
+  @ApiOperation({
+    summary: 'Get trip/cargo IDs with an active loan',
+    description:
+      'Returns trip and cargo IDs that already have a pending, approved, or disbursed loan. Used by cargo owners to filter eligible cargo in New Loan Request.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Active financed trip and cargo IDs',
+    schema: {
+      type: 'object',
+      properties: {
+        tripIds: { type: 'array', items: { type: 'string', format: 'uuid' } },
+        cargoIds: { type: 'array', items: { type: 'string', format: 'uuid' } },
+      },
+    },
+  })
+  async getActiveFinancedIds(@Request() req: any) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) throw new BadRequestException('Tenant ID is required');
+    return this.lendingService.getActiveFinancedIds(tenantId);
+  }
+
   // ===== LOAN APPROVAL ENDPOINTS =====
 
   @Post('lending/loan-requests/:loanId/approve')
