@@ -3495,6 +3495,8 @@ export class LendingService {
 
     const queryBuilder = this.loanRequestRepository
       .createQueryBuilder('loan')
+      .leftJoinAndSelect('loan.repayments', 'repayments')
+      .leftJoinAndSelect('loan.disbursements', 'disbursements')
       .where('loan.lender_id = :lenderId', { lenderId: actualLenderId });
 
     // Tenant scope — only loans from the lender's tenant
@@ -3509,14 +3511,59 @@ export class LendingService {
       queryBuilder.andWhere('loan.created_at <= :dateTo', { dateTo });
     }
 
+    // Live DB query — all aggregates below come from these rows
     const loans = await queryBuilder.getMany();
 
-    const disbursedLoans = loans.filter(
+    const num = (v: unknown) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const isSuccessfulDisbursement = (status: string) =>
+      status === DisbursementStatus.DISBURSED ||
+      status === DisbursementStatus.SUCCESS;
+
+    const disbursedAmountForLoan = (loan: (typeof loans)[number]) => {
+      const fromLedger = (loan.disbursements || [])
+        .filter((d) => isSuccessfulDisbursement(d.status))
+        .reduce((sum, d) => {
+          // Prefer explicit disbursement.amount; otherwise sum beneficiary amounts
+          if (d.amount != null && num(d.amount) > 0) return sum + num(d.amount);
+          const fromBeneficiaries = (d.beneficiaries || []).reduce(
+            (bs: number, b: any) => bs + num(b?.amount),
+            0,
+          );
+          return sum + fromBeneficiaries;
+        }, 0);
+      if (fromLedger > 0) return fromLedger;
+
+      // Fallback: loan already marked disbursed/repaid/defaulted in DB
+      if (
+        [
+          LoanRequestStatus.DISBURSED,
+          LoanRequestStatus.REPAID,
+          LoanRequestStatus.DEFAULTED,
+        ].includes(loan.status)
+      ) {
+        return num(loan.approved_amount) || num(loan.requested_amount);
+      }
+      return 0;
+    };
+
+    const requestedLoans = loans.filter(
       (l) =>
-        l.status === LoanRequestStatus.DISBURSED ||
-        l.status === LoanRequestStatus.REPAID ||
-        l.status === LoanRequestStatus.DEFAULTED,
+        l.status !== LoanRequestStatus.REJECTED &&
+        l.status !== LoanRequestStatus.FAILED,
     );
+    const approvedLoans = loans.filter((l) =>
+      [
+        LoanRequestStatus.APPROVED,
+        LoanRequestStatus.DISBURSED,
+        LoanRequestStatus.REPAID,
+        LoanRequestStatus.DEFAULTED,
+      ].includes(l.status),
+    );
+    const fundedLoans = loans.filter((l) => disbursedAmountForLoan(l) > 0);
     const activeLoans = loans.filter(
       (l) => l.status === LoanRequestStatus.DISBURSED,
     );
@@ -3529,39 +3576,81 @@ export class LendingService {
     const pendingLoans = loans.filter(
       (l) => l.status === LoanRequestStatus.PENDING,
     );
-    const approvedLoans = loans.filter(
+    const awaitingDisbursement = loans.filter(
       (l) => l.status === LoanRequestStatus.APPROVED,
     );
 
-    const totalDisbursedAmount = disbursedLoans.reduce(
-      (sum, l) => sum + (l.approved_amount || 0),
+    // Amounts from loan_requests columns
+    const totalAmountRequested = requestedLoans.reduce(
+      (sum, l) => sum + num(l.requested_amount),
       0,
     );
-    const totalRepaidAmount = repaidLoans.reduce(
-      (sum, l) => sum + (l.approved_amount || 0),
+    const totalAmountApproved = approvedLoans.reduce(
+      (sum, l) => sum + (num(l.approved_amount) || num(l.requested_amount)),
       0,
     );
+
+    // Funds provided from disbursement ledger (with status fallback)
+    const totalAmountProvided = loans.reduce(
+      (sum, l) => sum + disbursedAmountForLoan(l),
+      0,
+    );
+
+    // Outstanding = still-active disbursed principal
     const totalOutstanding = activeLoans.reduce(
-      (sum, l) => sum + (l.approved_amount || 0),
+      (sum, l) => sum + (num(l.approved_amount) || disbursedAmountForLoan(l)),
       0,
     );
+
+    // Repayments from loan_repayments ledger
+    const repaymentPrincipal = loans.reduce(
+      (sum, l) =>
+        sum +
+        (l.repayments || []).reduce((rs, r) => rs + num(r.principal_paid), 0),
+      0,
+    );
+    const repaymentInterest = loans.reduce(
+      (sum, l) =>
+        sum +
+        (l.repayments || []).reduce((rs, r) => rs + num(r.interest_paid), 0),
+      0,
+    );
+    const repaymentTotal = loans.reduce(
+      (sum, l) =>
+        sum + (l.repayments || []).reduce((rs, r) => rs + num(r.amount), 0),
+      0,
+    );
+
+    // Fallback when loan is repaid in DB but repayment rows are missing
+    const fallbackPrincipal = repaidLoans.reduce(
+      (sum, l) => sum + (num(l.approved_amount) || num(l.requested_amount)),
+      0,
+    );
+    const fallbackInterest = repaidLoans.reduce(
+      (sum, l) => sum + num(l.interest_amount),
+      0,
+    );
+
+    const totalPrincipalRepaid =
+      repaymentPrincipal > 0 ? repaymentPrincipal : fallbackPrincipal;
+    const totalInterestRepaid =
+      repaymentInterest > 0 ? repaymentInterest : fallbackInterest;
+    const totalAmountRepaid =
+      repaymentTotal > 0
+        ? repaymentTotal
+        : totalPrincipalRepaid + totalInterestRepaid;
 
     const recoveryRate =
-      totalDisbursedAmount > 0
-        ? (totalRepaidAmount / totalDisbursedAmount) * 100
+      totalAmountProvided > 0
+        ? (totalPrincipalRepaid / totalAmountProvided) * 100
         : 0;
     const defaultRate =
-      disbursedLoans.length > 0
-        ? (defaultedLoans.length / disbursedLoans.length) * 100
+      fundedLoans.length > 0
+        ? (defaultedLoans.length / fundedLoans.length) * 100
         : 0;
-
-    const totalInterestCollected = repaidLoans.reduce(
-      (sum, l) => sum + (l.interest_amount || 0),
-      0,
-    );
     const roi =
-      totalDisbursedAmount > 0
-        ? (totalInterestCollected / totalDisbursedAmount) * 100
+      totalAmountProvided > 0
+        ? (totalInterestRepaid / totalAmountProvided) * 100
         : 0;
 
     const currency =
@@ -3569,24 +3658,44 @@ export class LendingService {
       resolvedLender?.metadata?.currency ||
       'RWF';
 
+    this.logger.log(
+      `getLenderDashboard lender=${actualLenderId} loans=${loans.length} ` +
+        `requested=${requestedLoans.length}/${totalAmountRequested} ` +
+        `approved=${approvedLoans.length}/${totalAmountApproved} ` +
+        `provided=${fundedLoans.length}/${totalAmountProvided} ` +
+        `repaid=${repaidLoans.length}/${totalAmountRepaid}`,
+    );
+
     return {
-      totalLoansIssued: disbursedLoans.length,
+      totalLoansRequested: requestedLoans.length,
+      totalAmountRequested,
+      totalLoansApproved: approvedLoans.length,
+      totalAmountApproved,
+      totalLoansProvided: fundedLoans.length,
+      totalAmountProvided,
+      totalLoansRepaid: repaidLoans.length,
+      totalAmountRepaid,
+      totalPrincipalRepaid,
+      totalInterestRepaid,
       totalOutstandingPrincipal: totalOutstanding,
       recoveryRate: parseFloat(recoveryRate.toFixed(2)),
       defaultRate: parseFloat(defaultRate.toFixed(2)),
       averageLoanSize:
-        disbursedLoans.length > 0
-          ? totalDisbursedAmount / disbursedLoans.length
+        fundedLoans.length > 0
+          ? totalAmountProvided / fundedLoans.length
           : 0,
       roi: parseFloat(roi.toFixed(2)),
-      totalInterestCollected,
       pendingCount: pendingLoans.length,
-      approvedCount: approvedLoans.length,
+      approvedAwaitingDisbursement: awaitingDisbursement.length,
       activeLoansCount: activeLoans.length,
       currency,
+      source: 'database',
+      computedAt: new Date().toISOString(),
       loans: loans.map((loan) => ({
         id: loan.id,
-        amount: loan.approved_amount,
+        amount: num(loan.approved_amount) || num(loan.requested_amount),
+        requested_amount: num(loan.requested_amount),
+        approved_amount: loan.approved_amount != null ? num(loan.approved_amount) : null,
         status: loan.status,
         created_at: loan.created_at,
         due_date: loan.due_date,

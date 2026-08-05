@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { lendingApi, type LenderDashboardData, type LenderAnalyticsData } from '../../services/lending/lendingApi';
+import { lendingApi, type LenderDashboardData } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import LoanApprovalModal from './LoanApprovalModal';
 import {
   DollarSign, Briefcase, AlertTriangle, Activity,
-  TrendingUp, Clock, X, Eye, Check,
+  TrendingUp, X, Eye, Check,
   RefreshCw, ChevronRight, Banknote, BarChart3,
-  ShieldCheck, Percent,
+  CheckCircle, HandCoins, CircleDollarSign,
 } from 'lucide-react';
 import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../translated-text';
@@ -36,7 +36,6 @@ const LenderDashboardEnlite: React.FC = () => {
   const { format: formatCurrency } = useCurrencyFormat();
 
   const [dashboardData, setDashboardData]   = useState<LenderDashboardData | null>(null);
-  const [analyticsData, setAnalyticsData]   = useState<LenderAnalyticsData | null>(null);
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState<string | null>(null);
@@ -66,18 +65,21 @@ const LenderDashboardEnlite: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [dash, analytics, requests] = await Promise.all([
+      const [dash, requests] = await Promise.all([
         lendingApi.getLenderDashboard(lenderId),
-        lendingApi.getLenderAnalytics(lenderId, 1).catch(() => null),
         lendingApi.getLenderLoanRequests(lenderId, undefined, 1, 10),
       ]);
 
+      if (!dash || typeof dash.totalLoansRequested !== 'number') {
+        throw new Error('Dashboard API returned invalid data');
+      }
+
       setDashboardData(dash);
-      setAnalyticsData(analytics);
 
       const raw = Array.isArray(requests) ? requests : (requests?.data || []);
       setRecentRequests(raw);
     } catch (err: any) {
+      setDashboardData(null);
       setError(err?.response?.data?.message || err?.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
@@ -97,14 +99,13 @@ const LenderDashboardEnlite: React.FC = () => {
     setRejectingId(loanId);
     try {
       await lendingApi.rejectLoanRequest(loanId, reason);
-      setRecentRequests(prev => prev.map(r => r.id === loanId ? { ...r, status: 'rejected' } : r));
+      await load(); // refresh stats + table from DB
     } catch (err: any) {
       alert('Failed to reject: ' + (err?.response?.data?.message || err?.message));
     } finally { setRejectingId(null); }
   };
 
-  const serverCurrency: string =
-    analyticsData?.currency || dashboardData?.currency || 'RWF';
+  const serverCurrency: string = dashboardData?.currency || 'RWF';
 
   const recentRequestColumns: Column<any>[] = useMemo(() => [
     {
@@ -244,25 +245,27 @@ const LenderDashboardEnlite: React.FC = () => {
     },
   ], [formatCurrency, serverCurrency, navigate, handleApprove, handleReject, rejectingId]);
 
-  // ── Derived stats ────────────────────────────────────────────────────────────
-  const totalIssued       = dashboardData?.totalLoansIssued ?? 0;
-  const outstanding       = dashboardData?.totalOutstandingPrincipal ?? 0;
-  const recoveryRate      = dashboardData?.recoveryRate ?? 0;
-  const defaultRate       = dashboardData?.defaultRate ?? 0;
-  const roi               = dashboardData?.roi ?? 0;
-  const interestCollected = dashboardData?.totalInterestCollected ?? 0;
-  const pendingCount      = dashboardData?.pendingCount ?? 0;
+  // ── Derived stats (only from live dashboard API — no local inventing) ────────
+  const hasStats = !!dashboardData;
+  const totalLoansRequested   = dashboardData?.totalLoansRequested;
+  const totalAmountRequested  = dashboardData?.totalAmountRequested;
+  const totalLoansApproved    = dashboardData?.totalLoansApproved;
+  const totalAmountApproved   = dashboardData?.totalAmountApproved;
+  const totalLoansProvided    = dashboardData?.totalLoansProvided;
+  const totalAmountProvided   = dashboardData?.totalAmountProvided;
+  const totalLoansRepaid      = dashboardData?.totalLoansRepaid;
+  const totalAmountRepaid     = dashboardData?.totalAmountRepaid;
+  const pendingCount          = dashboardData?.pendingCount ?? 0;
+  const awaitingDisbursement  = dashboardData?.approvedAwaitingDisbursement ?? 0;
+  const outstanding           = dashboardData?.totalOutstandingPrincipal;
+  const recoveryRate          = dashboardData?.recoveryRate;
 
-  const portfolio         = analyticsData?.portfolio;
-  const monthlyTrend      = analyticsData?.monthly_trends?.[0];
-  const periodLoanCount   = monthlyTrend?.loan_count ?? portfolio?.total_loans_issued ?? 0;
-  const periodAmount      = monthlyTrend?.disbursed ?? portfolio?.total_amount_disbursed ?? 0;
-  const periodSuccessRate = monthlyTrend && monthlyTrend.disbursed > 0
-    ? (monthlyTrend.collected / monthlyTrend.disbursed) * 100
-    : (analyticsData?.standards_summary?.collection_rate ?? portfolio?.recovery_rate ?? 0);
-  const periodAvgLoanSize = periodLoanCount > 0
-    ? periodAmount / periodLoanCount
-    : (portfolio?.average_loan_size ?? dashboardData?.averageLoanSize ?? 0);
+  const displayCount = (n: number | undefined) =>
+    loading || n == null ? '—' : n;
+  const displayMoney = (n: number | undefined) =>
+    loading || n == null ? '—' : formatCurrency(n, serverCurrency);
+  const displayPct = (n: number | undefined) =>
+    loading || n == null ? '—' : `${n.toFixed(1)}%`;
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -287,7 +290,16 @@ const LenderDashboardEnlite: React.FC = () => {
             <TranslatedText text={greeting()} />, {displayName}
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            {totalIssued} <TranslatedText text="loans issued" /> · {pendingCount} <TranslatedText text="pending approval" />
+            {hasStats ? (
+              <>
+                {totalLoansRequested} <TranslatedText text="loan requests" /> · {pendingCount} <TranslatedText text="pending approval" />
+                {awaitingDisbursement > 0 && (
+                  <> · {awaitingDisbursement} <TranslatedText text="awaiting disbursement" /></>
+                )}
+              </>
+            ) : (
+              <TranslatedText text="Loading live portfolio stats…" />
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -315,74 +327,73 @@ const LenderDashboardEnlite: React.FC = () => {
         </div>
       )}
 
-      {/* ── Stats grid ── */}
+      {/* ── Stats grid (live from GET /lending/dashboard/:lenderId) ── */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard
-          title="Loans Issued"
-          value={totalIssued}
+          title="Loans Requested"
+          value={displayCount(totalLoansRequested)}
           icon={<Briefcase size={18} className="text-[#345E85]" />}
-          color="bg-blue-50"
           loading={loading}
         />
         <StatCard
-          title="Outstanding"
-          value={formatCurrency(outstanding, serverCurrency)}
-          icon={<Banknote size={18} className="text-emerald-600" />}
-          color="bg-emerald-50"
-          sub="Active loan balance"
+          title="Amount Requested"
+          value={displayMoney(totalAmountRequested)}
+          icon={<Banknote size={18} className="text-blue-600" />}
           loading={loading}
         />
         <StatCard
-          title="Pending"
-          value={pendingCount}
-          icon={<Clock size={18} className="text-amber-600" />}
-          color="bg-amber-50"
-          sub="Awaiting your approval"
+          title="Loans Approved"
+          value={displayCount(totalLoansApproved)}
+          icon={<CheckCircle size={18} className="text-emerald-600" />}
+          sub={hasStats ? `${displayMoney(totalAmountApproved)} approved` : undefined}
           loading={loading}
         />
         <StatCard
-          title="Recovery Rate"
-          value={`${recoveryRate.toFixed(1)}%`}
-          icon={<ShieldCheck size={18} className="text-blue-600" />}
-          color="bg-blue-50"
+          title="Funds Provided"
+          value={displayCount(totalLoansProvided)}
+          icon={<HandCoins size={18} className="text-purple-600" />}
+          sub={hasStats ? `${displayMoney(totalAmountProvided)} disbursed` : undefined}
           loading={loading}
         />
         <StatCard
-          title="Default Rate"
-          value={`${defaultRate.toFixed(1)}%`}
-          icon={<AlertTriangle size={18} className="text-rose-500" />}
-          color="bg-rose-50"
+          title="Loans Repaid"
+          value={displayCount(totalLoansRepaid)}
+          icon={<CircleDollarSign size={18} className="text-teal-600" />}
+          sub="Fully repaid loans"
           loading={loading}
         />
         <StatCard
-          title="ROI"
-          value={`${roi.toFixed(1)}%`}
-          icon={<Percent size={18} className="text-purple-600" />}
-          color="bg-purple-50"
-          sub={formatCurrency(interestCollected, serverCurrency) + " interest"}
+          title="Amount Repaid"
+          value={displayMoney(totalAmountRepaid)}
+          icon={<DollarSign size={18} className="text-emerald-600" />}
+          sub={hasStats ? `${displayPct(recoveryRate)} recovery` : undefined}
           loading={loading}
         />
-
       </div>
 
-      {/* ── Analytics summary bar ── */}
-      {analyticsData && (
+      {/* ── Portfolio summary bar ── */}
+      {hasStats && (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="h-8 w-8 rounded-xl bg-[#345E85]/10 flex items-center justify-center">
               <BarChart3 size={14} className="text-[#345E85]" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="30-Day Analytics" /></p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest"><TranslatedText text="Performance overview" /></p>
+              <p className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Portfolio Overview" /></p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                <TranslatedText text="Live from database" />
+                {dashboardData.computedAt
+                  ? ` · ${new Date(dashboardData.computedAt).toLocaleString()}`
+                  : ''}
+              </p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: 'Total Requests', value: periodLoanCount },
-              { label: 'Total Amount', value: formatCurrency(periodAmount, serverCurrency) },
-              { label: 'Success Rate', value: `${periodSuccessRate.toFixed(1)}%` },
-              { label: 'Avg Loan Size', value: formatCurrency(periodAvgLoanSize, serverCurrency) },
+              { label: 'Outstanding Balance', value: displayMoney(outstanding) },
+              { label: 'Pending Approval', value: displayCount(pendingCount) },
+              { label: 'Awaiting Disbursement', value: displayCount(awaitingDisbursement) },
+              { label: 'Recovery Rate', value: displayPct(recoveryRate) },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-2xl font-black text-slate-900">{value}</p>
@@ -472,11 +483,9 @@ const LenderDashboardEnlite: React.FC = () => {
           loan={approvalLoan}
           onClose={() => setApprovalLoan(null)}
           onConfirm={async () => { /* handled internally by modal */ }}
-          onSuccess={(loanId) => {
+          onSuccess={() => {
             setApprovalLoan(null);
-            setRecentRequests(prev => prev.map(r =>
-              r.id === loanId ? { ...r, status: 'approved' } : r
-            ));
+            load(); // refresh stats + table from DB after approval
           }}
         />
       )}

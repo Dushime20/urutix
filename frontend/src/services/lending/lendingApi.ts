@@ -98,20 +98,32 @@ export interface CreateLoanRequestDto {
 }
 
 export interface LenderDashboardData {
-  totalLoansIssued: number;
+  totalLoansRequested: number;
+  totalAmountRequested: number;
+  totalLoansApproved: number;
+  totalAmountApproved: number;
+  totalLoansProvided: number;
+  totalAmountProvided: number;
+  totalLoansRepaid: number;
+  totalAmountRepaid: number;
+  totalPrincipalRepaid: number;
+  totalInterestRepaid: number;
   totalOutstandingPrincipal: number;
   recoveryRate: number;
   defaultRate: number;
   averageLoanSize: number;
   roi: number;
-  totalInterestCollected: number;
   pendingCount: number;
-  approvedCount: number;
+  approvedAwaitingDisbursement: number;
   activeLoansCount: number;
   currency?: string;
+  source?: string;
+  computedAt?: string;
   loans: Array<{
     id: string;
     amount: number;
+    requested_amount?: number;
+    approved_amount?: number | null;
     status: string;
     created_at: string;
     due_date?: string;
