@@ -327,7 +327,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     'grid-cols-1 sm:grid-cols-3';
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[200] p-3 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] p-3 overflow-y-auto">
       <div className="bg-white dark:bg-slate-800 rounded-[24px] w-full max-w-2xl my-6 border border-gray-100 dark:border-slate-700">
 
         {/* Header */}

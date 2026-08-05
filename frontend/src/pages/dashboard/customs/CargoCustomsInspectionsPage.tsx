@@ -8,20 +8,17 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Search,
-  Filter,
   ChevronRight,
   FileText,
   Truck,
-  Calendar,
   User,
-  Info,
   Send,
   RefreshCw,
   ArrowRight,
   PenLine,
   ShieldCheck,
   ListChecks,
+  Eye,
 } from 'lucide-react';
 import {
   cargoInspectionApi,
@@ -31,8 +28,51 @@ import {
 } from '../../../services/cargoInspectionApi';
 import { cn } from '@/utils/cn';
 import { useAuth } from '../../../contexts/AuthContext';
+import ModernLoader from '../../../components/common/ModernLoader';
+import {
+  StandardDataTable,
+  StatusBadge,
+  type Column,
+  type TableAction,
+  type StatusBadgeVariant,
+} from '../../../components/EnliteUI/Tables';
 
 type TypeFilter = 'all' | 'pre' | 'post' | 'action';
+
+function preTripBadgeVariant(status: string): StatusBadgeVariant {
+  switch (status) {
+    case 'APPROVED':
+      return 'success';
+    case 'FAILED':
+    case 'AWAITING_RESOLUTION':
+      return 'error';
+    case 'READY_FOR_RE_INSPECTION':
+      return 'info';
+    case 'AWAITING_CARGO_OWNER_APPROVAL':
+      return 'purple';
+    case 'IN_PROGRESS':
+    case 'TRUCK_INSPECTION_COMPLETED':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
+
+function postTripBadgeVariant(status: string): StatusBadgeVariant {
+  switch (status) {
+    case 'COMPLETED':
+    case 'APPROVED':
+      return 'success';
+    case 'DISPUTED':
+    case 'FAILED':
+      return 'error';
+    case 'IN_PROGRESS':
+    case 'PENDING':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
 
 const PRE_TRIP_STATUS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   PENDING: { label: 'Draft', color: 'bg-gray-100 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700', icon: <Clock className="w-3.5 h-3.5" /> },
@@ -281,15 +321,15 @@ function TimelineStep({
 
 export default function CargoCustomsInspectionsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const isBroker = user?.role === 'BROKER';
   const basePath = isBroker ? '/dashboard/broker' : '/dashboard';
   const { id: urlLoadId } = useParams<{ id: string }>();
-  const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [selectedShipment, setSelectedShipment] = useState<ShipmentInspectionOverview | null>(null);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['cargoOwnerInspectionOverview'],
     queryFn: async () => {
       const res = await cargoInspectionApi.getOverview();
@@ -307,171 +347,268 @@ export default function CargoCustomsInspectionsPage() {
 
   const filtered = useMemo(() => {
     return shipments.filter((s) => {
-      const matchesSearch =
-        !search ||
-        s.loadTitle?.toLowerCase().includes(search.toLowerCase()) ||
-        s.loadReference?.toLowerCase().includes(search.toLowerCase()) ||
-        s.driver?.name?.toLowerCase().includes(search.toLowerCase()) ||
-        s.receiver?.name?.toLowerCase().includes(search.toLowerCase());
-
-      let matchesType = true;
       if (typeFilter === 'pre') {
-        matchesType = s.preTrip.historyCount > 0 || s.preTrip.workflowStatus !== 'PENDING';
-      } else if (typeFilter === 'post') {
-        matchesType = s.postTrip.status !== 'NOT_STARTED';
-      } else if (typeFilter === 'action') {
-        matchesType = s.requiresAction;
+        return s.preTrip.historyCount > 0 || s.preTrip.workflowStatus !== 'PENDING';
       }
-
-      return matchesSearch && matchesType;
+      if (typeFilter === 'post') {
+        return s.postTrip.status !== 'NOT_STARTED';
+      }
+      if (typeFilter === 'action') {
+        return s.requiresAction;
+      }
+      return true;
     });
-  }, [shipments, search, typeFilter]);
+  }, [shipments, typeFilter]);
+
+  const handleExport = () => {
+    if (filtered.length === 0) return;
+
+    const headers = [
+      'Cargo',
+      'Reference',
+      'Load Status',
+      'Pre-Trip Status',
+      'Post-Delivery Status',
+      'Driver',
+      'Receiver',
+      'Action Required',
+      'Updated',
+    ];
+    const rows = filtered.map((s) => [
+      s.loadTitle || '',
+      s.loadReference || '',
+      s.loadStatus || '',
+      PRE_TRIP_STATUS[s.preTrip.workflowStatus]?.label ?? s.preTrip.workflowStatus,
+      POST_STATUS[s.postTrip.status]?.label ?? s.postTrip.status,
+      s.driver?.name || '',
+      s.receiver?.name || '',
+      s.requiresAction ? 'Yes' : 'No',
+      s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : '',
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cargo-inspections-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const openShipment = (shipment: ShipmentInspectionOverview) => {
+    setSelectedShipment(shipment);
+  };
+
+  const columns: Column<ShipmentInspectionOverview>[] = [
+    {
+      key: 'loadTitle',
+      label: 'CARGO IDENTITY',
+      sortable: true,
+      render: (_: unknown, shipment: ShipmentInspectionOverview) => {
+        const title = shipment.loadTitle || 'Unnamed Shipment';
+        const initial = (title[0] || 'C').toUpperCase();
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className={cn(
+                'w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-xs shrink-0',
+                shipment.requiresAction ? 'bg-amber-500' : 'bg-[#345E85]',
+              )}
+            >
+              {initial}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-[11px] truncate">
+                {title}
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">
+                {shipment.loadReference
+                  ? `Ref · ${shipment.loadReference}`
+                  : `Load · ${shipment.loadId.slice(0, 8)}`}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'preTrip.workflowStatus',
+      label: 'PRE-TRIP',
+      sortable: true,
+      render: (_: unknown, shipment: ShipmentInspectionOverview) => {
+        const status = shipment.preTrip.workflowStatus;
+        const label = PRE_TRIP_STATUS[status]?.label ?? status;
+        return (
+          <div className="flex flex-col gap-1.5">
+            {shipment.requiresAction && (
+              <StatusBadge
+                label="Action Required"
+                variant="warning"
+                icon={<AlertTriangle size={10} />}
+              />
+            )}
+            <StatusBadge label={label} variant={preTripBadgeVariant(status)} />
+          </div>
+        );
+      },
+    },
+    {
+      key: 'postTrip.status',
+      label: 'POST-DELIVERY',
+      sortable: true,
+      render: (_: unknown, shipment: ShipmentInspectionOverview) => {
+        const status = shipment.postTrip.status;
+        const label = POST_STATUS[status]?.label ?? status;
+        return <StatusBadge label={label} variant={postTripBadgeVariant(status)} />;
+      },
+    },
+    {
+      key: 'driver.name',
+      label: 'PARTIES',
+      sortable: true,
+      render: (_: unknown, shipment: ShipmentInspectionOverview) => (
+        <div className="flex flex-col gap-1">
+          {shipment.driver?.name ? (
+            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <Truck size={12} className="text-slate-400 shrink-0" />
+              <span className="text-[11px] font-bold truncate max-w-[180px]">{shipment.driver.name}</span>
+            </div>
+          ) : (
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No driver</span>
+          )}
+          {shipment.receiver?.name && (
+            <div className="flex items-center gap-2 text-slate-500">
+              <User size={12} className="text-slate-400 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest truncate max-w-[180px]">
+                {shipment.receiver.name}
+              </span>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'updatedAt',
+      label: 'UPDATED',
+      sortable: true,
+      render: (_: unknown, shipment: ShipmentInspectionOverview) => (
+        <div className="flex flex-col">
+          <span className="font-black text-slate-900 dark:text-white text-[11px]">
+            {shipment.updatedAt
+              ? new Date(shipment.updatedAt).toLocaleDateString(undefined, {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })
+              : 'N/A'}
+          </span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
+            <Clock size={10} />
+            {shipment.loadStatus?.replace(/_/g, ' ') || 'Status'}
+          </span>
+        </div>
+      ),
+    },
+  ];
+
+  const rowActions: TableAction<ShipmentInspectionOverview>[] = [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <Eye size={14} />,
+      onClick: (shipment) => openShipment(shipment),
+    },
+  ];
+
+  if (isLoading && shipments.length === 0) {
+    return <ModernLoader isLoading={true} text="Synchronizing_Inspections" />;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-5">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 bg-[#2c5173]/10 rounded-lg">
-            <ClipboardCheck className="w-5 h-5 text-[#2c5173]" />
+    <div className="max-w-[1600px] mx-auto p-4 sm:p-8 md:p-12 space-y-8 sm:space-y-12 overflow-x-hidden">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 flex items-center justify-center shadow-sm">
+              <ClipboardCheck className="w-5 h-5 sm:w-7 sm:h-7 text-[#345E85]" />
+            </div>
+            <h1 className="text-xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+              Cargo <span className="text-[#345E85]">Inspections</span>
+            </h1>
           </div>
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Cargo Inspections</h1>
-            <p className="text-sm text-gray-500 dark:text-slate-400">
-              {isBroker
-                ? 'Track pre-trip and post-delivery inspections on your brokered loads only'
-                : 'Track pre-trip and post-delivery inspections on your cargo only'}
-            </p>
-          </div>
+          <p className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest sm:tracking-[0.2em] max-w-xl">
+            {isBroker
+              ? 'Track pre-trip and post-delivery inspections on your brokered loads'
+              : 'Track pre-trip and post-delivery inspections on your cargo'}
+          </p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by cargo, reference, driver or receiver..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c5173] bg-white dark:bg-slate-900"
-            />
-          </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-              className="pl-9 pr-8 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c5173] bg-white dark:bg-slate-900 appearance-none min-w-[160px]"
+      <div className="space-y-8 animate-in fade-in duration-500">
+        {error ? (
+          <div className="text-center py-20 text-red-500 text-sm">
+            Failed to load inspections. Please try again.
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-3 block mx-auto text-[#345E85] font-bold uppercase tracking-widest text-[10px]"
             >
-              <option value="all">All Inspections</option>
-              <option value="pre">Pre-Trip (Driver)</option>
-              <option value="post">Post-Delivery (Receiver)</option>
-              <option value="action">Needs My Action</option>
-            </select>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#2c5173]" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-20 text-red-500 text-sm">Failed to load inspections. Please try again.</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <ClipboardCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-slate-400 font-medium">
-              {shipments.length === 0 ? 'No cargo inspections yet' : 'No shipments match your filters'}
-            </p>
-            <p className="text-sm text-gray-400 mt-1">
-              {shipments.length === 0
-                ? 'When drivers perform pre-trip inspections or receivers inspect deliveries, they will appear here.'
-                : 'Try adjusting your search or filter.'}
-            </p>
+              Retry
+            </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filtered.map((shipment) => {
-              const preCfg = PRE_TRIP_STATUS[shipment.preTrip.workflowStatus] ?? PRE_TRIP_STATUS.PENDING;
-              const postCfg = POST_STATUS[shipment.postTrip.status] ?? POST_STATUS.NOT_STARTED;
-
-              return (
-                <div
-                  key={shipment.loadId}
-                  className={cn(
-                    'bg-white dark:bg-slate-900 rounded-xl border shadow-sm hover:shadow-md transition-shadow cursor-pointer',
-                    shipment.requiresAction ? 'border-amber-200 ring-1 ring-amber-100' : 'border-gray-100 dark:border-slate-800',
-                  )}
-                  onClick={() => setSelectedShipment(shipment)}
-                >
-                  <div className="p-4 sm:p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          {shipment.requiresAction && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500 text-white">
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                              Action Required
-                            </span>
-                          )}
-                          <span className={cn('inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border', preCfg.color)}>
-                            Pre-Trip: {preCfg.label}
-                          </span>
-                          <span className={cn('inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border', postCfg.color)}>
-                            Post: {postCfg.label}
-                          </span>
-                        </div>
-
-                        <p className="font-semibold text-gray-900 dark:text-white truncate">{shipment.loadTitle || 'Unnamed Shipment'}</p>
-
-                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
-                          {shipment.loadReference && (
-                            <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
-                              <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                              Ref: {shipment.loadReference}
-                            </span>
-                          )}
-                          {shipment.driver?.name && (
-                            <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
-                              <Truck className="w-3.5 h-3.5 flex-shrink-0" />
-                              Driver: {shipment.driver.name}
-                            </span>
-                          )}
-                          {shipment.receiver?.name && (
-                            <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
-                              <User className="w-3.5 h-3.5 flex-shrink-0" />
-                              Receiver: {shipment.receiver.name}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
-                            <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                            Updated {new Date(shipment.updatedAt).toLocaleDateString(undefined, {
-                              day: 'numeric', month: 'short', year: 'numeric',
-                            })}
-                          </span>
-                        </div>
-
-                        {/* Mini timeline */}
-                        <div className="mt-3 flex items-center gap-2 text-[10px] text-gray-400">
-                          <span className={cn('font-bold', shipment.preTrip.workflowStatus === 'APPROVED' ? 'text-green-600' : '')}>
-                            1. Pre-Trip
-                          </span>
-                          <ArrowRight className="w-3 h-3" />
-                          <span className="font-bold text-gray-500 dark:text-slate-400">2. In Transit</span>
-                          <ArrowRight className="w-3 h-3" />
-                          <span className={cn('font-bold', shipment.postTrip.status === 'COMPLETED' ? 'text-green-600' : '')}>
-                            3. Post-Delivery
-                          </span>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <StandardDataTable
+            title="Inspection Management Console"
+            headerColor="primary"
+            columns={columns}
+            data={filtered}
+            loading={isLoading || isFetching}
+            getRowId={(row) => row.loadId}
+            searchable
+            searchPlaceholder="Search cargo, reference, driver or receiver…"
+            searchKeys={['loadTitle', 'loadReference', 'loadStatus', 'driver.name', 'receiver.name']}
+            toolbarExtra={
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+                className="h-9 px-3 text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+              >
+                <option value="all">All Inspections</option>
+                <option value="pre">Pre-Trip (Driver)</option>
+                <option value="post">Post-Delivery (Receiver)</option>
+                <option value="action">Needs My Action</option>
+              </select>
+            }
+            pagination
+            pageSize={10}
+            columnVisibility
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage={
+              shipments.length === 0
+                ? 'No cargo inspections yet. When drivers or receivers submit inspections, they will appear here.'
+                : 'No shipments match your filters.'
+            }
+            onExport={handleExport}
+            exportLabel="Export Inspections"
+            onRefresh={() => {
+              queryClient.invalidateQueries({ queryKey: ['cargoOwnerInspectionOverview'] });
+              refetch();
+            }}
+            onRowClick={(row) => openShipment(row)}
+            rowClassName={(row) =>
+              row.requiresAction ? 'bg-amber-50/40 dark:bg-amber-950/20' : ''
+            }
+            rowActions={rowActions}
+            ariaLabel="Inspection Management Console"
+          />
         )}
       </div>
 

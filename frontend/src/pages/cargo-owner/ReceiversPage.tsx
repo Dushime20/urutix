@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus,
-  Search,
   Mail,
   Phone,
   Package,
   Trash2,
-  UserPlus,
   Shield,
-  Clock,
   X,
-  ExternalLink,
-  Filter,
+  Clock,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import receiverService from '../../services/receiverService';
@@ -19,6 +15,12 @@ import type { Receiver, CreateReceiverDto } from '../../types/receiver';
 import { cn } from '@/utils/cn';
 import { useCargoOwnerLayout } from '../../contexts/CargoOwnerLayoutContext';
 import ModernLoader from '../../components/common/ModernLoader';
+import {
+  StandardDataTable,
+  StatusBadge,
+  type Column,
+  type TableAction,
+} from '../../components/EnliteUI/Tables';
 
 const ReceiversPage: React.FC = () => {
   const [receivers, setReceivers] = useState<Receiver[]>([]);
@@ -27,7 +29,6 @@ const ReceiversPage: React.FC = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedReceiver, setSelectedReceiver] = useState<Receiver | null>(null);
   const [cargos, setCargos] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState<CreateReceiverDto>({
     firstName: '',
     lastName: '',
@@ -38,12 +39,10 @@ const ReceiversPage: React.FC = () => {
   const layout = useCargoOwnerLayout();
   const setHideHeader = layout?.setHideHeader;
 
-  // Sync hideHeader with modal state
   useEffect(() => {
     if (setHideHeader) {
       setHideHeader(showCreateModal || showAssignModal);
     }
-    // Cleanup on unmount
     return () => {
       if (setHideHeader) setHideHeader(false);
     };
@@ -136,12 +135,145 @@ const ReceiversPage: React.FC = () => {
     }
   };
 
-  const filteredReceivers = receivers.filter(r =>
-    r.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    `${r.profile?.firstName} ${r.profile?.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getReceiverName = (receiver: Receiver) =>
+    receiver.profile
+      ? `${receiver.profile.firstName} ${receiver.profile.lastName}`
+      : 'Receiver';
 
-  if (loading) {
+  const handleExport = () => {
+    if (receivers.length === 0) return;
+
+    const headers = ['Name', 'Email', 'Phone', 'Status', 'Role', 'Added'];
+    const rows = receivers.map((r) => [
+      getReceiverName(r),
+      r.email,
+      r.phone || r.profile?.phone || '',
+      r.status,
+      r.role,
+      r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `receivers-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const columns: Column<Receiver>[] = [
+    {
+      key: 'profile.firstName',
+      label: 'RECEIVER IDENTITY',
+      sortable: true,
+      render: (_: unknown, receiver: Receiver) => {
+        const name = getReceiverName(receiver);
+        const initial = (receiver.profile?.firstName?.[0] || receiver.email[0] || 'R').toUpperCase();
+        return (
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                'w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-xs',
+                receiver.status === 'ACTIVE' ? 'bg-[#345E85]' : 'bg-amber-500'
+              )}
+            >
+              {initial}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-[11px]">
+                {name}
+              </span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                {receiver.role?.replace(/_/g, ' ') || 'Cargo Receiver'}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'email',
+      label: 'CONTACT CHANNEL',
+      sortable: true,
+      render: (_: unknown, receiver: Receiver) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+            <Mail size={12} className="text-slate-400 shrink-0" />
+            <span className="text-[11px] font-bold truncate max-w-[220px]">{receiver.email}</span>
+          </div>
+          {(receiver.phone || receiver.profile?.phone) && (
+            <div className="flex items-center gap-2 text-slate-500">
+              <Phone size={12} className="text-slate-400 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                {receiver.phone || receiver.profile?.phone}
+              </span>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'STATUS & RATING',
+      sortable: true,
+      render: (status: string) => (
+        <StatusBadge label={status || '—'} status={status} />
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'ONBOARDED',
+      sortable: true,
+      render: (_: unknown, receiver: Receiver) => (
+        <div className="flex flex-col">
+          <span className="font-black text-slate-900 dark:text-white text-[11px]">
+            {receiver.createdAt ? new Date(receiver.createdAt).toLocaleDateString() : 'N/A'}
+          </span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
+            <Clock size={10} />
+            Member since
+          </span>
+        </div>
+      ),
+    },
+  ];
+
+  const rowActions: TableAction<Receiver>[] = [
+    {
+      key: 'assign',
+      label: 'Assign Cargo',
+      icon: <Package size={14} />,
+      onClick: (receiver) => handleOpenAssignModal(receiver),
+    },
+    {
+      key: 'email',
+      label: 'Contact',
+      icon: <Mail size={14} />,
+      onClick: (receiver) => {
+        if (receiver.email) {
+          window.location.href = `mailto:${receiver.email}`;
+        }
+      },
+      disabled: (receiver) => !receiver.email,
+    },
+    {
+      key: 'delete',
+      label: 'Remove Receiver',
+      icon: <Trash2 size={14} />,
+      variant: 'danger',
+      divider: true,
+      onClick: (receiver) => handleDeleteReceiver(receiver.id),
+    },
+  ];
+
+  if (loading && receivers.length === 0) {
     return <ModernLoader isLoading={true} text="Synchronizing_Receivers" />;
   }
 
@@ -171,134 +303,31 @@ const ReceiversPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Content Area */}
-      <div className="space-y-6 sm:space-y-8">
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-          <div className="relative flex-1 w-full max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search receivers..."
-              className="w-full pl-12 pr-4 py-3 sm:py-4 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest focus:ring-2 focus:ring-blue-50 transition-all placeholder:text-slate-300 shadow-inner"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto px-2 pb-2 sm:p-0">
-            <button className="p-3 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all">
-              <Filter className="w-5 h-5" />
-            </button>
-            <div className="h-6 w-[1px] bg-slate-100 mx-2 hidden sm:block" />
-            <button
-              className="flex-1 sm:flex-none px-6 py-3 sm:py-3.5 bg-slate-50 dark:bg-slate-800/50 text-slate-500 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-800"
-              onClick={loadReceivers}
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
-
-        {/* Receivers Grid */}
-        {filteredReceivers.length === 0 ? (
-          <div className="text-center py-16 sm:py-24 bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm border-dashed animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-              <UserPlus className="w-8 h-8 sm:w-10 sm:h-10 text-slate-200" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">No Receivers Yet</h3>
-            <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-xs mx-auto leading-relaxed">
-              Add your first cargo receiver to start managing deliveries
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredReceivers.map((receiver) => (
-              <div
-                key={receiver.id}
-                className="group relative bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:shadow-blue-900/5 hover:border-[#345E85]/20 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4"
-              >
-                <div className="flex justify-between items-start mb-6 sm:mb-8">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-[1.5rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-lg sm:text-xl font-black text-[#345E85] group-hover:bg-[#345E85] group-hover:text-white transition-all shadow-sm">
-                    {receiver.profile?.firstName?.[0] || receiver.email[0].toUpperCase()}
-                  </div>
-                  <div className="flex gap-1.5 sm:gap-2">
-                    <button
-                      onClick={() => handleOpenAssignModal(receiver)}
-                      className="p-2 sm:p-2.5 text-slate-400 hover:text-[#345E85] hover:bg-blue-50 rounded-xl transition-all active:scale-90"
-                      title="Assign Cargo"
-                    >
-                      <Package className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteReceiver(receiver.id)}
-                      className="p-2 sm:p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90"
-                      title="Delete Receiver"
-                    >
-                      <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4 sm:space-y-5">
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-black text-[#0f172a] tracking-tight group-hover:text-[#345E85] transition-colors leading-tight">
-                      {receiver.profile ? `${receiver.profile.firstName} ${receiver.profile.lastName}` : 'Receiver'}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-3">
-                      <span className={cn(
-                        "text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest border shadow-sm",
-                        receiver.status === 'ACTIVE'
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          : "bg-amber-50 text-amber-600 border-amber-100"
-                      )}>
-                        {receiver.status}
-                      </span>
-                      <span className="text-slate-200">•</span>
-                      <span className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" />
-                        Added {new Date(receiver.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 sm:space-y-3 pt-5 border-t border-slate-50">
-                    <div className="flex items-center gap-3 text-slate-500 hover:text-[#345E85] transition-colors">
-                      <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center shadow-sm">
-                        <Mail className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-bold truncate uppercase tracking-widest">{receiver.email}</span>
-                    </div>
-                    {receiver.phone && (
-                      <div className="flex items-center gap-3 text-slate-500 hover:text-[#345E85] transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center shadow-sm">
-                          <Phone className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">{receiver.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
-                  <div className="flex -space-x-2.5">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-4 border-white bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-[8px] font-black text-slate-300 shadow-sm">
-                        LG
-                      </div>
-                    ))}
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-4 border-white bg-[#345E85] flex items-center justify-center text-[8px] font-black text-white shadow-lg">
-                      +2
-                    </div>
-                  </div>
-                  <button className="text-[9px] sm:text-[10px] font-black text-[#345E85] uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all active:scale-95 group/btn">
-                    View Details
-                    <ExternalLink className="w-3 h-3 group-hover/btn:rotate-12 transition-transform" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Table */}
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <StandardDataTable
+          title="Receiver Management Console"
+          headerColor="primary"
+          columns={columns}
+          data={receivers}
+          loading={loading}
+          getRowId={(row) => row.id}
+          searchable
+          searchPlaceholder="Search receivers…"
+          searchKeys={['email', 'phone', 'status', 'profile.firstName', 'profile.lastName']}
+          pagination
+          pageSize={10}
+          columnVisibility
+          stickyHeader
+          striped
+          hoverable
+          emptyMessage="No receivers found. Add your first cargo receiver to start managing deliveries."
+          onExport={handleExport}
+          exportLabel="Export Receivers"
+          onRefresh={loadReceivers}
+          rowActions={rowActions}
+          ariaLabel="Receiver Management Console"
+        />
       </div>
 
       {/* Modals Container */}
@@ -438,7 +467,7 @@ const ReceiversPage: React.FC = () => {
                           </div>
                           {cargo.receiver && (
                             <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1.5">
-                              <div className="w-1 h-1 rounded-full bg-indigo-200" />
+                              <span className="w-1 h-1 rounded-full bg-indigo-200" />
                               Assigned to: {cargo.receiver.profile?.firstName} {cargo.receiver.profile?.lastName}
                             </p>
                           )}
@@ -456,10 +485,10 @@ const ReceiversPage: React.FC = () => {
                               onClick={() => handleAssignCargo(cargo.id)}
                               disabled={!!cargo.receiverId && cargo.receiverId !== selectedReceiver.id}
                               className={cn(
-                                "px-5 sm:px-6 py-2.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95",
+                                'px-5 sm:px-6 py-2.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase tracking-widest transition-all border shadow-sm active:scale-95',
                                 cargo.receiverId
-                                  ? "bg-slate-100 text-slate-300 border-slate-100 dark:border-slate-800 cursor-not-allowed"
-                                  : "bg-white dark:bg-slate-900 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-indigo-900/10 whitespace-nowrap"
+                                  ? 'bg-slate-100 text-slate-300 border-slate-100 dark:border-slate-800 cursor-not-allowed'
+                                  : 'bg-white dark:bg-slate-900 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white hover:border-transparent hover:shadow-lg hover:shadow-indigo-900/10 whitespace-nowrap'
                               )}
                             >
                               {cargo.receiverId ? 'Assigned' : 'Assign Here'}
@@ -487,5 +516,3 @@ const ReceiversPage: React.FC = () => {
 };
 
 export default ReceiversPage;
-
-
