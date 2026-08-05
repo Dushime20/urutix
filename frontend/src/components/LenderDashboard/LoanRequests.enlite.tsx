@@ -53,7 +53,9 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onExport,
     autoDisburseLoanId,
 }) => {
-    const { format: formatAmount } = useCurrencyFormat();
+    const { formatIn } = useCurrencyFormat();
+    const formatLoanAmount = (amount: number, currency?: string) =>
+        formatIn(amount, currency || 'RWF', currency || 'RWF');
     const { tSync: t } = useTranslation();
     const [showExportModal, setShowExportModal] = useState(false);
     const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
@@ -114,21 +116,22 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                 const showOffered = offered != null && (
                     wf.awaiting_borrower_response || wf.ready_to_disburse || row.status === 'disbursed'
                 );
+                const loanCurrency = row.currency || 'RWF';
                 return (
                     <div className="space-y-1">
                         {showOffered ? (
                             <>
                                 <p className="font-bold text-slate-900 dark:text-white text-sm">
-                                    {formatAmount(offered)}
+                                    {formatLoanAmount(offered, loanCurrency)}
                                 </p>
                                 {wf.is_partial_offer && (
                                     <p className="text-[10px] text-orange-600 dark:text-orange-400 font-semibold">
-                                        of {formatAmount(amount)} requested
+                                        of {formatLoanAmount(amount, loanCurrency)} requested
                                     </p>
                                 )}
                             </>
                         ) : (
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">{formatAmount(amount)}</p>
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{formatLoanAmount(amount, loanCurrency)}</p>
                         )}
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold border border-blue-100 dark:border-blue-800/50 italic">

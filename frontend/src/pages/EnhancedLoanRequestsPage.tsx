@@ -958,7 +958,9 @@ const TruckOwnerLoanRequestsView: React.FC<{
   autoReviewLoanId?: string | null;
   autoAppealLoanId?: string | null;
 }> = ({ requests, loading, error, onNewRequest, onRefresh, search, onSearchChange, autoReviewLoanId, autoAppealLoanId }) => {
-  const { compact: fmtMoney } = useCurrencyFormat();
+  const { compactIn } = useCurrencyFormat();
+  const fmtLoan = (amount: number, currency?: string) =>
+    compactIn(amount, currency || 'RWF', currency || 'RWF');
   const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
   const [acceptLoanId, setAcceptLoanId] = useState<string | null>(null);
   const [appealLoan, setAppealLoan] = useState<any | null>(null);
@@ -1007,10 +1009,10 @@ const TruckOwnerLoanRequestsView: React.FC<{
       label: 'Amount',
       render: (_v, req) => (
         <>
-          <p className="text-sm font-black text-slate-900">{fmtMoney(req.requested_amount)}</p>
+          <p className="text-sm font-black text-slate-900">{fmtLoan(req.requested_amount, req.currency)}</p>
           {req.approved_amount != null && (
             <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
-              ✓ Approved: {fmtMoney(req.approved_amount)}
+              ✓ Approved: {fmtLoan(req.approved_amount, req.currency)}
             </p>
           )}
         </>
@@ -1036,7 +1038,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
                 <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
                   {s.type}
                 </span>
-                <span className="text-xs font-bold text-slate-800">{fmtMoney(s.amount)}</span>
+                <span className="text-xs font-bold text-slate-800">{fmtLoan(s.amount, req.currency)}</span>
               </div>
             ))}
           </div>
@@ -1138,14 +1140,14 @@ const TruckOwnerLoanRequestsView: React.FC<{
               amount={req.approved_amount ?? req.requested_amount}
               interestAmount={req.interest_amount ?? 0}
               interestRate={req.interest_rate}
-              currency={req.currency || 'USD'}
+              currency={req.currency || 'RWF'}
               onRepaymentSuccess={onRefresh}
             />
           )}
         </div>
       ),
     },
-  ], [fmtMoney, onRefresh]);
+  ], [fmtLoan, onRefresh]);
 
   return (
     <div className="space-y-8">
@@ -1257,7 +1259,6 @@ const TruckOwnerLoanRequestsView: React.FC<{
 };
 
 const EnhancedLoanRequestsPage: React.FC = () => {
-  const { compact: fmtMoney } = useCurrencyFormat();
   const { user, accessToken } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const isTruckOwner = user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER';
@@ -1388,7 +1389,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
             approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
             interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
-            currency: req.currency || 'USD',
+            currency: req.currency || 'RWF',
             status: req.status || 'pending',
             priority: 'medium' as const,
             created_at: req.created_at || req.createdAt || new Date().toISOString(),
@@ -1486,7 +1487,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             requested_amount: Number(req.requested_amount || req.requestedAmount) || 0,
             approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
             interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
-            currency: req.currency || 'USD',
+            currency: req.currency || 'RWF',
             status: req.status || 'pending',
             priority: 'medium' as const,
             created_at: req.created_at || req.createdAt || new Date().toISOString(),
@@ -1608,7 +1609,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               trip_id: req.trip_id || req.tripId, requested_amount: req.requested_amount || req.requestedAmount || 0,
               approved_amount: req.approved_amount || req.approvedAmount,
               interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
-              currency: req.currency || 'USD',
+              currency: req.currency || 'RWF',
               status: req.status || 'pending',
               priority: req.priority || 'medium', created_at: req.created_at || req.createdAt,
               due_date: req.due_date || req.dueDate,

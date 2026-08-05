@@ -9,12 +9,12 @@ interface LoanDetailModalProps {
 }
 
 const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
-  const { format: formatCurrency } = useCurrencyFormat();
+  const { formatIn } = useCurrencyFormat();
   if (!loan) return null;
 
-  // Amounts are stored in loan.currency (default RWF) — never assume USD
+  // Amounts are stored in loan.currency (default RWF) — display in that currency, no cross-rate conversion
   const loanCurrency = loan.currency || 'RWF';
-  const fmt = (amount: number) => formatCurrency(amount, loanCurrency);
+  const fmt = (amount: number) => formatIn(amount, loanCurrency, loanCurrency);
 
   const borrowerName =
     loan.borrower_name ||
