@@ -8,7 +8,7 @@ import {
   DollarSign, Briefcase, AlertTriangle, Activity,
   TrendingUp, X, Eye, Check,
   RefreshCw, ChevronRight, Banknote, BarChart3,
-  CheckCircle, HandCoins, CircleDollarSign,
+  CheckCircle, Coins, CircleDollarSign,
 } from 'lucide-react';
 import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../translated-text';
@@ -351,7 +351,7 @@ const LenderDashboardEnlite: React.FC = () => {
         <StatCard
           title="Funds Provided"
           value={displayCount(totalLoansProvided)}
-          icon={<HandCoins size={18} className="text-purple-600" />}
+          icon={<Coins size={18} className="text-purple-600" />}
           sub={hasStats ? `${displayMoney(totalAmountProvided)} disbursed` : undefined}
           loading={loading}
         />
