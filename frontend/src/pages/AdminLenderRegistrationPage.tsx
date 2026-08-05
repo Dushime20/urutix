@@ -18,9 +18,7 @@ import {
   Download,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   Eye,
-  Percent,
   X,
   ShieldCheck
 } from 'lucide-react';
@@ -43,17 +41,6 @@ interface Lender {
   maxLoanAmount?: number;
 }
 
-interface LenderAnalytics {
-  totalLenders: number;
-  activeLenders: number;
-  totalLoansIssued: number;
-  totalAmountDisbursed: number;
-  avgApprovalRate: number;
-  avgProcessingTime: number;
-  monthlyGrowth: number;
-  topPerformers: Lender[];
-}
-
 const AdminLenderRegistrationPage: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
   const [form, setForm] = useState({
@@ -66,7 +53,6 @@ const AdminLenderRegistrationPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [lenders, setLenders] = useState<Lender[]>([]);
-  const [analytics, setAnalytics] = useState<LenderAnalytics | null>(null);
   const [fetching, setFetching] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
@@ -75,7 +61,6 @@ const AdminLenderRegistrationPage: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive'>('all');
   const [riskFilter, setRiskFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
-  const [showAnalytics, setShowAnalytics] = useState(true);
   const [selectedLender, setSelectedLender] = useState<Lender | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -104,34 +89,11 @@ const AdminLenderRegistrationPage: React.FC = () => {
         }));
 
         setLenders(transformedLenders);
-        
-        // Compute analytics from real data
-        const activeLenders = transformedLenders.filter(l => l.status === 'active').length;
-        const totalLoans = transformedLenders.reduce((sum, l) => sum + (l.totalLoans || 0), 0);
-        const totalAmount = transformedLenders.reduce((sum, l) => sum + (l.totalAmount || 0), 0);
-        const avgApproval = transformedLenders.length > 0 
-          ? transformedLenders.reduce((sum, l) => sum + (l.approvalRate || 0), 0) / transformedLenders.length 
-          : 0;
-        const avgProcessing = transformedLenders.length > 0
-          ? transformedLenders.reduce((sum, l) => sum + (l.avgProcessingTime || 0), 0) / transformedLenders.length
-          : 0;
-
-        setAnalytics({
-          totalLenders: transformedLenders.length,
-          activeLenders,
-          totalLoansIssued: totalLoans,
-          totalAmountDisbursed: totalAmount,
-          avgApprovalRate: avgApproval,
-          avgProcessingTime: avgProcessing,
-          monthlyGrowth: 12.8, // TODO: compute from historical data
-          topPerformers: []
-        });
 
       } catch (err) {
         console.error('Error fetching lenders from API:', err);
         toast.error('Failed to load lenders');
         setLenders([]);
-        setAnalytics(null);
       } finally {
         setFetching(false);
       }
@@ -385,16 +347,6 @@ const AdminLenderRegistrationPage: React.FC = () => {
       actions={
         <div className="flex flex-wrap gap-3 md:gap-4">
           <button
-            onClick={() => setShowAnalytics(!showAnalytics)}
-            className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
-          >
-            <div className="absolute inset-0 bg-gray-50/50 dark:bg-slate-950 translate-y-full group-hover:translate-y-0 transition-transform"></div>
-            <TrendingUp size={14} className="relative z-10" />
-            <span className="text-[10px] font-black uppercase tracking-widest relative z-10">
-              {showAnalytics ? 'Hide' : 'Show'} Analytics
-            </span>
-          </button>
-          <button
             onClick={handleExport}
             className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
           >
@@ -412,49 +364,6 @@ const AdminLenderRegistrationPage: React.FC = () => {
         </div>
       }
     >
-
-      {/* Analytics Dashboard */}
-      {showAnalytics && analytics && (
-        <div className="space-y-6">
-
-          <div className="bg-[#fafafa] rounded-[32px] border border-transparent p-8">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <TrendingUp size={14} className="text-primary-600" /> Matrix Performance Insights
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-transparent flex items-center gap-4">
-                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300">
-                  <Percent size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Approval Rate</p>
-                  <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{analytics?.avgApprovalRate.toFixed(1)}%</p>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-transparent flex items-center gap-4">
-                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300">
-                  <Clock size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Processing Time</p>
-                  <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight">{analytics?.avgProcessingTime.toFixed(1)} Days</p>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-transparent flex items-center gap-4">
-                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300">
-                  <TrendingUp size={20} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Velocity</p>
-                  <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-transparent p-8">

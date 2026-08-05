@@ -68,6 +68,54 @@ interface Tenant {
   status: string;
 }
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'active': return 'bg-green-100 text-green-800';
+    case 'inactive': return 'bg-gray-100 text-gray-800';
+    case 'under_construction': return 'bg-yellow-100 text-yellow-800';
+    case 'blocked': return 'bg-red-100 text-red-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case 'high': return 'bg-red-100 text-red-800';
+    case 'medium': return 'bg-yellow-100 text-yellow-800';
+    case 'low': return 'bg-green-100 text-green-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getRouteTypeColor = (routeType: string) => {
+  switch (routeType) {
+    case 'highway': return 'bg-blue-100 text-blue-800';
+    case 'city': return 'bg-purple-100 text-purple-800';
+    case 'rural': return 'bg-green-100 text-green-800';
+    case 'mixed': return 'bg-orange-100 text-orange-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'active': return <Play size={12} className="text-green-500" />;
+    case 'inactive': return <Pause size={12} className="text-gray-500" />;
+    case 'under_construction': return <AlertTriangle size={12} className="text-yellow-500" />;
+    case 'blocked': return <Ban size={12} className="text-red-500" />;
+    default: return <Pause size={12} className="text-gray-500" />;
+  }
+};
+
+const getTrafficIcon = (trafficLevel: string) => {
+  switch (trafficLevel) {
+    case 'light': return <div className="w-2 h-2 bg-green-500 rounded-full"></div>;
+    case 'moderate': return <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>;
+    case 'heavy': return <div className="w-2 h-2 bg-red-500 rounded-full"></div>;
+    default: return <div className="w-2 h-2 bg-gray-500 rounded-full"></div>;
+  }
+};
+
 const AdminRoutes: React.FC = () => {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -578,54 +626,6 @@ const AdminRoutes: React.FC = () => {
       </div>
     );
   }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'under_construction': return 'bg-yellow-100 text-yellow-800';
-      case 'blocked': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRouteTypeColor = (routeType: string) => {
-    switch (routeType) {
-      case 'highway': return 'bg-blue-100 text-blue-800';
-      case 'city': return 'bg-purple-100 text-purple-800';
-      case 'rural': return 'bg-green-100 text-green-800';
-      case 'mixed': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <Play size={12} className="text-green-500" />;
-      case 'inactive': return <Pause size={12} className="text-gray-500" />;
-      case 'under_construction': return <AlertTriangle size={12} className="text-yellow-500" />;
-      case 'blocked': return <Ban size={12} className="text-red-500" />;
-      default: return <Pause size={12} className="text-gray-500" />;
-    }
-  };
-
-  const getTrafficIcon = (trafficLevel: string) => {
-    switch (trafficLevel) {
-      case 'light': return <div className="w-2 h-2 bg-green-500 rounded-full"></div>;
-      case 'moderate': return <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>;
-      case 'heavy': return <div className="w-2 h-2 bg-red-500 rounded-full"></div>;
-      default: return <div className="w-2 h-2 bg-gray-500 rounded-full"></div>;
-    }
-  };
 
   const handleCreateRoute = () => {
     if (!canCreateRoutes) return;

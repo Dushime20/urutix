@@ -359,7 +359,7 @@ const BiddingManagement: React.FC = () => {
         />
 
         {showDetailsModal && selectedBid && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
             <div className="bg-white dark:bg-slate-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
               <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white"><TranslatedText text="Bid Details" /></h3>

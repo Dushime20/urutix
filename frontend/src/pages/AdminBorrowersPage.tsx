@@ -23,11 +23,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Eye,
-  Percent,
   MapPin,
   CreditCard,
   History,
-  Star,
   Ban,
   Edit,
   X,
@@ -76,17 +74,6 @@ interface Borrower {
   };
 }
 
-interface BorrowerAnalytics {
-  totalBorrowers: number;
-  activeBorrowers: number;
-  totalLoansIssued: number;
-  totalAmountBorrowed: number;
-  totalRepaid: number;
-  defaultRate: number;
-  avgCreditScore: number;
-  monthlyGrowth: number;
-}
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'active': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
@@ -100,14 +87,12 @@ const getStatusColor = (status: string) => {
 const AdminBorrowersPage: React.FC = () => {
   const { compact: fmtMoney } = useCurrencyFormat();
   const [borrowers, setBorrowers] = useState<Borrower[]>([]);
-  const [analytics, setAnalytics] = useState<BorrowerAnalytics | null>(null);
   const [fetching, setFetching] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'inactive' | 'pending'>('all');
   const [riskFilter, setRiskFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [lenderFilter, setLenderFilter] = useState<'all' | string>('all');
   const [groupByLender, setGroupByLender] = useState(true);
-  const [showAnalytics, setShowAnalytics] = useState(true);
   const [selectedBorrower, setSelectedBorrower] = useState<Borrower | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
@@ -176,34 +161,11 @@ const AdminBorrowersPage: React.FC = () => {
           });
 
         setBorrowers(transformedBorrowers);
-        
-        // Compute analytics from real data
-        const activeBorrowers = transformedBorrowers.filter(b => b.status === 'active').length;
-        const totalLoans = transformedBorrowers.reduce((sum, b) => sum + b.totalLoans, 0);
-        const totalBorrowed = transformedBorrowers.reduce((sum, b) => sum + b.totalBorrowed, 0);
-        const totalRepaid = transformedBorrowers.reduce((sum, b) => sum + b.totalRepaid, 0);
-        const avgCreditScore = transformedBorrowers.length > 0
-          ? Math.round(transformedBorrowers.reduce((sum, b) => sum + b.creditScore, 0) / transformedBorrowers.length)
-          : 0;
-        const defaultedCount = transformedBorrowers.reduce((sum, b) => sum + b.defaultedLoans, 0);
-        const defaultRate = totalLoans > 0 ? (defaultedCount / totalLoans) * 100 : 0;
-
-        setAnalytics({
-          totalBorrowers: transformedBorrowers.length,
-          activeBorrowers,
-          totalLoansIssued: totalLoans,
-          totalAmountBorrowed: totalBorrowed,
-          totalRepaid,
-          defaultRate,
-          avgCreditScore,
-          monthlyGrowth: 18.5 // TODO: compute from historical data
-        });
 
       } catch (err) {
         console.error('Error fetching borrowers from API:', err);
         toast.error('Failed to load borrowers');
         setBorrowers([]);
-        setAnalytics(null);
       } finally {
         setFetching(false);
       }
@@ -426,16 +388,6 @@ const AdminBorrowersPage: React.FC = () => {
             </span>
           </button>
           <button
-            onClick={() => setShowAnalytics(!showAnalytics)}
-            className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
-          >
-            <div className="absolute inset-0 bg-gray-50/50 dark:bg-slate-950 translate-y-full group-hover:translate-y-0 transition-transform"></div>
-            <TrendingUp size={14} className="relative z-10" />
-            <span className="text-[10px] font-black uppercase tracking-widest relative z-10">
-              <TranslatedText text={showAnalytics ? 'Hide' : 'Show'} /> <TranslatedText text="Intelligence" />
-            </span>
-          </button>
-          <button
             onClick={handleExport}
             className="px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-black transition-all shadow-lg shadow-gray-200 flex items-center gap-2 group"
           >
@@ -445,66 +397,6 @@ const AdminBorrowersPage: React.FC = () => {
         </div>
       }
     >
-
-      {/* Analytics Dashboard */}
-      {showAnalytics && analytics && (
-        <div className="space-y-6">
-
-          {/* Performance Insights */}
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-transparent p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entity Intelligence</h3>
-                <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Performance Analytics</p>
-              </div>
-              <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center">
-                <TrendingUp className="text-slate-600 dark:text-slate-300" size={24} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="group">
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-transparent">
-                      <Star className="text-amber-500" size={20} />
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Credit Alpha</p>
-                  </div>
-                  <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">{analytics?.avgCreditScore}</p>
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">System-wide Average</p>
-                </div>
-              </div>
-
-              <div className="group">
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-transparent">
-                      <Percent className="text-emerald-500" size={20} />
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Repayment Matrix</p>
-                  </div>
-                  <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">{(100 - (analytics?.defaultRate || 0)).toFixed(1)}%</p>
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Protocol Success Rate</p>
-                </div>
-              </div>
-
-              <div className="group">
-                <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-transparent">
-                      <TrendingUp className="text-indigo-600" size={20} />
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Growth Vector</p>
-                  </div>
-                  <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
-                  <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">MoM Scalability</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-transparent p-8">
