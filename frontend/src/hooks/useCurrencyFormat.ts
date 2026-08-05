@@ -42,9 +42,14 @@ export const useCurrencyFormat = () => {
   const compact = useCallback(
     (amount: number, fromCurrency = 'USD'): string => {
       const converted = convert(amount, fromCurrency);
-      return formatCompact(converted, preferredCurrency, meta?.symbol);
+      const dec = meta?.decimals ?? 2;
+      // Full format for small decimal-currency values — compact would show $0.0 for e.g. 50 RWF → $0.03
+      if (dec > 0 && Math.abs(converted) < 1_000) {
+        return format(amount, fromCurrency);
+      }
+      return formatCompact(converted, preferredCurrency, meta?.symbol, dec);
     },
-    [convert, preferredCurrency, meta],
+    [convert, format, preferredCurrency, meta],
   );
 
   /**
@@ -104,6 +109,7 @@ function formatCompact(
   value: number,
   currency: string,
   metaSymbol?: string,
+  decimals = 0,
 ): string {
   if (isNaN(value)) return `${getSymbol(currency, metaSymbol)}0`;
   const abs  = Math.abs(value);
@@ -114,6 +120,9 @@ function formatCompact(
   if (abs >= 1_000_000)     return `${sign}${sym}${(abs / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000)         return `${sign}${sym}${(abs / 1_000).toFixed(1)}K`;
 
-  // below 1 K — still use compact (no cents noise on dashboards)
+  if (decimals > 0) {
+    return `${sign}${sym}${abs.toFixed(decimals)}`;
+  }
+
   return `${sign}${sym}${abs % 1 === 0 ? abs : abs.toFixed(1)}`;
 }

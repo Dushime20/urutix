@@ -958,9 +958,11 @@ const TruckOwnerLoanRequestsView: React.FC<{
   autoReviewLoanId?: string | null;
   autoAppealLoanId?: string | null;
 }> = ({ requests, loading, error, onNewRequest, onRefresh, search, onSearchChange, autoReviewLoanId, autoAppealLoanId }) => {
-  const { compactIn } = useCurrencyFormat();
-  const fmtLoan = (amount: number, currency?: string) =>
-    compactIn(amount, currency || 'RWF', currency || 'RWF');
+  const { compact, currency: preferredCurrency } = useCurrencyFormat();
+  const fmtLoan = useCallback(
+    (amount: number, currency?: string) => compact(amount, currency || 'RWF'),
+    [compact],
+  );
   const [selectedLoan, setSelectedLoan] = useState<any | null>(null);
   const [acceptLoanId, setAcceptLoanId] = useState<string | null>(null);
   const [appealLoan, setAppealLoan] = useState<any | null>(null);
@@ -1147,7 +1149,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
         </div>
       ),
     },
-  ], [fmtLoan, onRefresh]);
+  ], [fmtLoan, preferredCurrency, onRefresh]);
 
   return (
     <div className="space-y-8">

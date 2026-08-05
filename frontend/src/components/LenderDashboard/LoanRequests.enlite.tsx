@@ -53,9 +53,9 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
     onExport,
     autoDisburseLoanId,
 }) => {
-    const { formatIn } = useCurrencyFormat();
+    const { format } = useCurrencyFormat();
     const formatLoanAmount = (amount: number, currency?: string) =>
-        formatIn(amount, currency || 'RWF', currency || 'RWF');
+        format(amount, currency || 'RWF');
     const { tSync: t } = useTranslation();
     const [showExportModal, setShowExportModal] = useState(false);
     const [approvalLoan, setApprovalLoan] = useState<any | null>(null);
