@@ -8,6 +8,8 @@ export interface LoanRequest {
   lender_id?: string;
   requested_amount: number;
   approved_amount?: number;
+  /** ISO 4217 currency code (e.g. RWF, USD) */
+  currency?: string;
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'failed' | 'defaulted';
   terms_offered_at?: string | null;
   borrower_accepted_at?: string | null;
@@ -103,6 +105,10 @@ export interface LenderDashboardData {
   averageLoanSize: number;
   roi: number;
   totalInterestCollected: number;
+  pendingCount: number;
+  approvedCount: number;
+  activeLoansCount: number;
+  currency?: string;
   loans: Array<{
     id: string;
     amount: number;
@@ -110,6 +116,33 @@ export interface LenderDashboardData {
     created_at: string;
     due_date?: string;
   }>;
+}
+
+export interface LenderAnalyticsData {
+  portfolio: {
+    total_loans_issued: number;
+    total_amount_disbursed: number;
+    total_amount_repaid: number;
+    outstanding_balance: number;
+    recovery_rate: number;
+    average_loan_size: number;
+    portfolio_yield: number;
+    default_rate: number;
+  };
+  monthly_trends: Array<{
+    month: string;
+    disbursed: number;
+    collected: number;
+    defaults: number;
+    net_income: number;
+    loan_count: number;
+  }>;
+  currency: string;
+  standards_summary: {
+    collection_rate: number;
+    npl_ratio: number;
+  };
+  computed_at: string;
 }
 
 export const lendingApi = {
@@ -287,7 +320,7 @@ export const lendingApi = {
     if (dateTo) params.dateTo = dateTo;
     
     const response = await api.get(`/lending/dashboard/${lenderId}`, { params });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   // Loan management for lenders
@@ -368,11 +401,11 @@ export const lendingApi = {
   },
 
   // Analytics — full IFRS 9 / Basel II bundle
-  getLenderAnalytics: async (lenderId: string, months: number = 12) => {
+  getLenderAnalytics: async (lenderId: string, months: number = 12): Promise<LenderAnalyticsData> => {
     const response = await api.get(`/lending/lenders/${lenderId}/analytics`, {
       params: { months }
     });
-    return response.data;
+    return response.data?.data ?? response.data;
   },
 
   

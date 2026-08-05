@@ -21,6 +21,8 @@ import LoanTermsAcceptanceModal from '../components/Lending/LoanTermsAcceptanceM
 import LoanAppealModal from '../components/Lending/LoanAppealModal';
 import { buildLoanWorkflowView, workflowStageBadgeClass } from '../utils/loanWorkflow';
 import { StandardDataTable, type Column } from '../components/EnliteUI/Tables';
+import PaymentCurrencySelect from '../components/common/PaymentCurrencySelect';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface Lender { id: string; name: string; type: string; email: string; phone: string; }
 interface LoanRequest {
@@ -80,6 +82,10 @@ interface LoanRequestFormModalProps {
 // CARGO OWNER LOAN REQUEST MODAL
 // ══════════════════════════════════════════════════════════════════════════════
 const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClose, onSuccess, tenantId, userId }) => {
+  const { preferredCurrency } = useCurrency();
+  const [requestCurrency, setRequestCurrency] = useState<string>(
+    () => preferredCurrency || localStorage.getItem('preferredCurrency') || 'RWF'
+  );
   const [lenders, setLenders] = useState<any[]>([]);
   const [cargos, setCargos] = useState<any[]>([]);
   const [loadingLenders, setLoadingLenders] = useState(true);
@@ -297,7 +303,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
     setError(null);
     const amount = parseFloat(form.requested_amount);
     if (!amount || amount <= 0) { setError('Enter a valid loan amount.'); return; }
-    if (amount > 50000) { setError('Maximum loan amount is $50,000.'); return; }
+    if (amount > 50000) { setError(`Maximum loan amount is 50,000 ${requestCurrency}.`); return; }
     if (!form.cargo_id) { setError('Please select a cargo.'); return; }
     if (!form.trip_id) { setError('Please select a trip.'); return; }
     if (!form.beneficiary_id.trim()) { setError('Please enter a beneficiary.'); return; }
@@ -311,6 +317,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
       created_by: userId,
       requested_split: [{ type: form.beneficiary_type, id: form.beneficiary_id.trim(), amount }],
       lender_id: form.lender_id,
+      currency: requestCurrency,
       ...(form.due_date && { due_date: form.due_date }),
       metadata: { purpose: form.purpose || form.beneficiary_type },
     };
@@ -348,9 +355,16 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
         </div>
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-4 overflow-y-auto custom-scrollbar flex-1">
 
+          {/* Currency */}
+          <PaymentCurrencySelect
+            value={requestCurrency}
+            onChange={setRequestCurrency}
+            label="Loan Currency"
+          />
+
           {/* Amount */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Loan Amount (USD) <span className="text-rose-400">*</span></label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Loan Amount ({requestCurrency}) <span className="text-rose-400">*</span></label>
             <div className="relative">
               <CircleDollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input type="number" min="1" max="50000" step="0.01" value={form.requested_amount}
@@ -359,7 +373,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
                 required />
             </div>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Max $50,000 per request</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">Max 50,000 {requestCurrency} per request</p>
           </div>
 
           {/* Cargo */}
@@ -572,6 +586,10 @@ const selectCls = (hasIcon = false) =>
 
 const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, onSuccess, tenantId, userId }) => {
   const { user } = useAuth(); // Get user context to check role
+  const { preferredCurrency } = useCurrency();
+  const [requestCurrency, setRequestCurrency] = useState<string>(
+    () => preferredCurrency || localStorage.getItem('preferredCurrency') || 'RWF'
+  );
   const [lenders, setLenders]     = useState<any[]>([]);
   const [loads, setLoads]         = useState<any[]>([]);
   const [trips, setTrips]         = useState<any[]>([]);
@@ -720,7 +738,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
     setError(null);
     const amount = parseFloat(form.requested_amount);
     if (!amount || amount <= 0)      { setError('Enter a valid loan amount.'); return; }
-    if (amount > 50000)              { setError('Maximum loan amount is $50,000.'); return; }
+    if (amount > 50000)              { setError(`Maximum loan amount is 50,000 ${requestCurrency}.`); return; }
     if (!form.cargo_id)              { setError('Please select a cargo/load.'); return; }
     if (!form.trip_id)               { setError('Please select a trip.'); return; }
     if (!form.beneficiary_id.trim()) { setError('Please select or enter a beneficiary.'); return; }
@@ -731,6 +749,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
       requested_amount: amount,
       created_by: userId,
       requested_split: [{ type: form.beneficiary_type, id: form.beneficiary_id.trim(), amount }],
+      currency: requestCurrency,
       ...(form.lender_id && { lender_id: form.lender_id }),
       ...(form.due_date   && { due_date: form.due_date }),
       metadata: { purpose: form.purpose || form.beneficiary_type },
@@ -768,9 +787,16 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
         </div>
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-4 overflow-y-auto custom-scrollbar flex-1">
 
+          {/* Currency */}
+          <PaymentCurrencySelect
+            value={requestCurrency}
+            onChange={setRequestCurrency}
+            label="Loan Currency"
+          />
+
           {/* Amount */}
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Loan Amount (USD) <span className="text-rose-400">*</span></label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Loan Amount ({requestCurrency}) <span className="text-rose-400">*</span></label>
             <div className="relative">
               <CircleDollarSign size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input type="number" min="1" max="50000" step="0.01" value={form.requested_amount}
@@ -779,7 +805,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
                 required />
             </div>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Max $50,000 per request</p>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">Max 50,000 {requestCurrency} per request</p>
           </div>
 
           {/* Cargo */}

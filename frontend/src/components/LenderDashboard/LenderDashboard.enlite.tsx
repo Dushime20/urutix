@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { lendingApi } from '../../services/lending/lendingApi';
+import { lendingApi, type LenderDashboardData, type LenderAnalyticsData } from '../../services/lending/lendingApi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import LoanApprovalModal from './LoanApprovalModal';
@@ -35,15 +35,31 @@ const LenderDashboardEnlite: React.FC = () => {
   const navigate = useNavigate();
   const { format: formatCurrency } = useCurrencyFormat();
 
-  const [dashboardData, setDashboardData]   = useState<any>(null);
-  const [analyticsData, setAnalyticsData]   = useState<any>(null);
+  const [dashboardData, setDashboardData]   = useState<LenderDashboardData | null>(null);
+  const [analyticsData, setAnalyticsData]   = useState<LenderAnalyticsData | null>(null);
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState<string | null>(null);
   const [approvalLoan, setApprovalLoan]     = useState<any>(null);
   const [rejectingId, setRejectingId]       = useState<string | null>(null);
+  const [lenderId, setLenderId]             = useState<string | null>(null);
 
-  const lenderId = user?.role === 'LENDER' ? user.id : null;
+  useEffect(() => {
+    if (!user || user.role !== 'LENDER') {
+      setLenderId(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const resolved = await lendingApi.resolveLenderId();
+        if (!cancelled) setLenderId(resolved || user.id);
+      } catch {
+        if (!cancelled) setLenderId(user.id);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const load = useCallback(async () => {
     if (!lenderId || !accessToken) { setLoading(false); return; }
@@ -51,19 +67,18 @@ const LenderDashboardEnlite: React.FC = () => {
     setError(null);
     try {
       const [dash, analytics, requests] = await Promise.all([
-        lendingApi.getLenderDashboard(lenderId).catch(() => null),
+        lendingApi.getLenderDashboard(lenderId),
         lendingApi.getLenderAnalytics(lenderId, 1).catch(() => null),
-        lendingApi.getLenderLoanRequests(lenderId, undefined, 1, 10).catch(() => null),
+        lendingApi.getLenderLoanRequests(lenderId, undefined, 1, 10),
       ]);
 
       setDashboardData(dash);
       setAnalyticsData(analytics);
 
-      // Normalise requests — API returns { data: [...] } or array
       const raw = Array.isArray(requests) ? requests : (requests?.data || []);
       setRecentRequests(raw);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load dashboard data');
+      setError(err?.response?.data?.message || err?.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -230,16 +245,24 @@ const LenderDashboardEnlite: React.FC = () => {
   ], [formatCurrency, serverCurrency, navigate, handleApprove, handleReject, rejectingId]);
 
   // ── Derived stats ────────────────────────────────────────────────────────────
-  const totalIssued      = dashboardData?.totalLoansIssued ?? 0;
-  const outstanding      = dashboardData?.totalOutstandingPrincipal ?? 0;
-  const recoveryRate     = dashboardData?.recoveryRate ?? 0;
-  const defaultRate      = dashboardData?.defaultRate ?? 0;
-  const roi              = dashboardData?.roi ?? 0;
+  const totalIssued       = dashboardData?.totalLoansIssued ?? 0;
+  const outstanding       = dashboardData?.totalOutstandingPrincipal ?? 0;
+  const recoveryRate      = dashboardData?.recoveryRate ?? 0;
+  const defaultRate       = dashboardData?.defaultRate ?? 0;
+  const roi               = dashboardData?.roi ?? 0;
   const interestCollected = dashboardData?.totalInterestCollected ?? 0;
+  const pendingCount      = dashboardData?.pendingCount ?? 0;
 
-  const totalRequests    = analyticsData?.totalLoans ?? recentRequests.length;
-  const pendingCount     = recentRequests.filter(r => r.status === 'pending').length;
-  const approvedCount    = recentRequests.filter(r => r.status === 'approved').length;
+  const portfolio         = analyticsData?.portfolio;
+  const monthlyTrend      = analyticsData?.monthly_trends?.[0];
+  const periodLoanCount   = monthlyTrend?.loan_count ?? portfolio?.total_loans_issued ?? 0;
+  const periodAmount      = monthlyTrend?.disbursed ?? portfolio?.total_amount_disbursed ?? 0;
+  const periodSuccessRate = monthlyTrend && monthlyTrend.disbursed > 0
+    ? (monthlyTrend.collected / monthlyTrend.disbursed) * 100
+    : (analyticsData?.standards_summary?.collection_rate ?? portfolio?.recovery_rate ?? 0);
+  const periodAvgLoanSize = periodLoanCount > 0
+    ? periodAmount / periodLoanCount
+    : (portfolio?.average_loan_size ?? dashboardData?.averageLoanSize ?? 0);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -306,7 +329,7 @@ const LenderDashboardEnlite: React.FC = () => {
           value={formatCurrency(outstanding, serverCurrency)}
           icon={<Banknote size={18} className="text-emerald-600" />}
           color="bg-emerald-50"
-          sub="Total disbursed capital"
+          sub="Active loan balance"
           loading={loading}
         />
         <StatCard
@@ -356,10 +379,10 @@ const LenderDashboardEnlite: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: 'Total Requests', value: analyticsData.totalLoans ?? 0 },
-              { label: 'Total Amount', value: formatCurrency(analyticsData.totalAmount ?? 0, serverCurrency) },
-              { label: 'Success Rate', value: `${(analyticsData.successRate ?? 0).toFixed(1)}%` },
-              { label: 'Avg Loan Size', value: formatCurrency(analyticsData.averageLoanSize ?? 0, serverCurrency) },
+              { label: 'Total Requests', value: periodLoanCount },
+              { label: 'Total Amount', value: formatCurrency(periodAmount, serverCurrency) },
+              { label: 'Success Rate', value: `${periodSuccessRate.toFixed(1)}%` },
+              { label: 'Avg Loan Size', value: formatCurrency(periodAvgLoanSize, serverCurrency) },
             ].map(({ label, value }) => (
               <div key={label} className="text-center">
                 <p className="text-2xl font-black text-slate-900">{value}</p>

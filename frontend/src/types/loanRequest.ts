@@ -7,6 +7,7 @@ export interface LoanRequest {
   lender_id?: string;
   requested_amount: number;
   approved_amount?: number;
+  currency?: string;
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'failed' | 'defaulted';
   idempotency_key: string;
   interest_amount?: number;
@@ -31,6 +32,7 @@ export interface CreateLoanRequestDto {
   cargo_id: string;
   trip_id: string;
   requested_amount: number;
+  currency?: string;
   due_date?: string;
   requested_split?: any[];
   metadata?: any;

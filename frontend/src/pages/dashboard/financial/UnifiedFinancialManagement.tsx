@@ -5,7 +5,6 @@ import {
   DollarSign,
   Activity,
   Calculator,
-  Plus,
   Wallet,
   AlertCircle,
   History,
@@ -197,7 +196,7 @@ const UnifiedFinancialManagement = () => {
       />
       <div className="max-w-[1600px] mx-auto p-4 sm:p-8 md:p-12 relative z-10">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8 mb-8 sm:mb-12">
+        <div className="flex flex-col md:flex-row md:items-end gap-6 sm:gap-8 mb-8 sm:mb-12">
           <div className="space-y-2 sm:space-y-3">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#2c5173]/10 text-[#2c5173] flex items-center justify-center shadow-sm">
@@ -210,12 +209,6 @@ const UnifiedFinancialManagement = () => {
             <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest sm:tracking-[0.2em] max-w-xl">
               Precision capital management & transaction lifecycle auditing
             </p>
-          </div>
-
-          <div className="flex items-center justify-between md:justify-end gap-3 bg-white dark:bg-slate-900/50 p-1.5 sm:p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full md:w-auto">
-            <button className="p-3 sm:p-4 bg-[#2c5173] text-white rounded-xl hover:bg-[#1e3850] transition-all shadow-lg shadow-[#2c5173]/20 flex-shrink-0">
-              <Plus className="w-5 h-5" />
-            </button>
           </div>
         </div>
 

@@ -3479,14 +3479,17 @@ export class LendingService {
   async getLenderDashboard(lenderId: string, dateFrom?: Date, dateTo?: Date, tenantId?: string) {
     // Resolve user UUID → lender entity UUID (same as getLenderLoanRequests)
     let actualLenderId: string = lenderId;
-    const lenderEntity = await this.lenderRepository.findOne({ where: { id: lenderId } });
-    if (lenderEntity) {
-      actualLenderId = lenderEntity.id;
+    let resolvedLender = await this.lenderRepository.findOne({ where: { id: lenderId } });
+    if (resolvedLender) {
+      actualLenderId = resolvedLender.id;
     } else {
       const user = await this.userRepository.findOne({ where: { id: lenderId, role: UserRole.LENDER } });
       if (user) {
         const lenderByEmail = await this.lenderRepository.findOne({ where: { contact_email: user.email } });
-        if (lenderByEmail) actualLenderId = lenderByEmail.id;
+        if (lenderByEmail) {
+          actualLenderId = lenderByEmail.id;
+          resolvedLender = lenderByEmail;
+        }
       }
     }
 
@@ -3508,44 +3511,79 @@ export class LendingService {
 
     const loans = await queryBuilder.getMany();
 
-    const totalIssued = loans.filter(
+    const disbursedLoans = loans.filter(
+      (l) =>
+        l.status === LoanRequestStatus.DISBURSED ||
+        l.status === LoanRequestStatus.REPAID ||
+        l.status === LoanRequestStatus.DEFAULTED,
+    );
+    const activeLoans = loans.filter(
       (l) => l.status === LoanRequestStatus.DISBURSED,
-    ).length;
-    const totalOutstanding = loans
-      .filter((l) => l.status === LoanRequestStatus.DISBURSED)
-      .reduce((sum, l) => sum + (l.approved_amount || 0), 0);
-
+    );
     const repaidLoans = loans.filter(
       (l) => l.status === LoanRequestStatus.REPAID,
     );
-    const recoveryRate =
-      totalIssued > 0 ? (repaidLoans.length / totalIssued) * 100 : 0;
-
     const defaultedLoans = loans.filter(
       (l) => l.status === LoanRequestStatus.DEFAULTED,
     );
+    const pendingLoans = loans.filter(
+      (l) => l.status === LoanRequestStatus.PENDING,
+    );
+    const approvedLoans = loans.filter(
+      (l) => l.status === LoanRequestStatus.APPROVED,
+    );
+
+    const totalDisbursedAmount = disbursedLoans.reduce(
+      (sum, l) => sum + (l.approved_amount || 0),
+      0,
+    );
+    const totalRepaidAmount = repaidLoans.reduce(
+      (sum, l) => sum + (l.approved_amount || 0),
+      0,
+    );
+    const totalOutstanding = activeLoans.reduce(
+      (sum, l) => sum + (l.approved_amount || 0),
+      0,
+    );
+
+    const recoveryRate =
+      totalDisbursedAmount > 0
+        ? (totalRepaidAmount / totalDisbursedAmount) * 100
+        : 0;
     const defaultRate =
-      totalIssued > 0 ? (defaultedLoans.length / totalIssued) * 100 : 0;
+      disbursedLoans.length > 0
+        ? (defaultedLoans.length / disbursedLoans.length) * 100
+        : 0;
 
     const totalInterestCollected = repaidLoans.reduce(
       (sum, l) => sum + (l.interest_amount || 0),
       0,
     );
-    const totalPrincipal = repaidLoans.reduce(
-      (sum, l) => sum + (l.approved_amount || 0),
-      0,
-    );
     const roi =
-      totalPrincipal > 0 ? (totalInterestCollected / totalPrincipal) * 100 : 0;
+      totalDisbursedAmount > 0
+        ? (totalInterestCollected / totalDisbursedAmount) * 100
+        : 0;
+
+    const currency =
+      loans.find((l) => l.currency)?.currency ||
+      resolvedLender?.metadata?.currency ||
+      'RWF';
 
     return {
-      totalLoansIssued: totalIssued,
+      totalLoansIssued: disbursedLoans.length,
       totalOutstandingPrincipal: totalOutstanding,
       recoveryRate: parseFloat(recoveryRate.toFixed(2)),
       defaultRate: parseFloat(defaultRate.toFixed(2)),
-      averageLoanSize: totalIssued > 0 ? totalOutstanding / totalIssued : 0,
+      averageLoanSize:
+        disbursedLoans.length > 0
+          ? totalDisbursedAmount / disbursedLoans.length
+          : 0,
       roi: parseFloat(roi.toFixed(2)),
       totalInterestCollected,
+      pendingCount: pendingLoans.length,
+      approvedCount: approvedLoans.length,
+      activeLoansCount: activeLoans.length,
+      currency,
       loans: loans.map((loan) => ({
         id: loan.id,
         amount: loan.approved_amount,
