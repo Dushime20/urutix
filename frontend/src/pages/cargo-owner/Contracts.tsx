@@ -68,7 +68,7 @@ const Contracts = () => {
   });
 
   return (
-    <div className="p-4 sm:p-8 md:p-12 bg-slate-50/30 min-h-screen relative overflow-hidden">
+    <div className="p-4 sm:p-8 md:p-12 bg-slate-50/30 dark:bg-slate-950 min-h-screen relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-100/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-100/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -89,7 +89,7 @@ const Contracts = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-6 mb-8 sm:mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 sm:p-6 mb-8 sm:mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Search */}
             <div className="relative col-span-1 lg:col-span-2">
@@ -99,7 +99,7 @@ const Contracts = () => {
                 placeholder={tSync('Search agreements, carriers or cargoes...')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 sm:py-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#345E85]/10 transition-all text-xs sm:text-sm font-bold placeholder:text-slate-300 shadow-inner"
+                className="w-full pl-11 pr-4 py-3.5 sm:py-4 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#345E85]/10 transition-all text-xs sm:text-sm font-bold placeholder:text-slate-300 shadow-inner"
               />
             </div>
 
@@ -109,7 +109,7 @@ const Contracts = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full pl-11 pr-4 py-3.5 sm:py-4 bg-slate-50 border-none rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#345E85]/10 transition-all text-xs sm:text-sm font-bold appearance-none shadow-inner"
+                className="w-full pl-11 pr-4 py-3.5 sm:py-4 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-[#345E85]/10 transition-all text-xs sm:text-sm font-bold appearance-none shadow-inner"
               >
                 <option value="all">{tSync('All Status')}</option>
                 <option value="active">{tSync('Active')}</option>
@@ -124,11 +124,11 @@ const Contracts = () => {
         {/* Contracts List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filteredContracts.length === 0 ? (
-            <div className="col-span-full bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-12 sm:p-20 text-center animate-in fade-in zoom-in-95 duration-700">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner text-slate-300">
+            <div className="col-span-full bg-white dark:bg-slate-900 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-700 p-12 sm:p-20 text-center animate-in fade-in zoom-in-95 duration-700">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-slate-800/50 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner text-slate-300">
                 <FileText className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-3 tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">
                 <TranslatedText text="Archive is Empty" />
               </h3>
               <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest max-w-xs mx-auto leading-relaxed">
@@ -139,7 +139,7 @@ const Contracts = () => {
             </div>
           ) : (
             filteredContracts.map((contract) => (
-              <div key={contract.id} className="group bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 p-6 sm:p-8 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500 flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <div key={contract.id} className="group bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-6 sm:p-8 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500 flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="flex items-center justify-between mb-6 sm:mb-8">
                   <div className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${getStatusColor(contract.status)} shadow-sm`}>
                     <TranslatedText text={contract.status} />
@@ -154,14 +154,14 @@ const Contracts = () => {
                     {contract.cargoDescription}
                   </h3>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] sm:text-[12px] font-black text-[#345E85] shadow-sm">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[10px] sm:text-[12px] font-black text-[#345E85] shadow-sm">
                       {contract.truckOwner.charAt(0)}
                     </div>
                     <span className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest">{contract.truckOwner}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6 sm:mb-8 p-5 sm:p-6 bg-slate-50 rounded-3xl flex-grow shadow-inner border border-slate-100/50">
+                <div className="grid grid-cols-2 gap-4 mb-6 sm:mb-8 p-5 sm:p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl flex-grow shadow-inner border border-slate-100 dark:border-slate-800/50">
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 text-slate-400">
                       <Calendar className="w-3 h-3" />
@@ -189,7 +189,7 @@ const Contracts = () => {
                     <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     <TranslatedText text="Insights" />
                   </button>
-                  <button className="p-3.5 sm:p-4 bg-white border border-slate-100 text-slate-400 rounded-2xl sm:rounded-3xl hover:bg-slate-50 hover:text-[#345E85] transition-all shadow-sm active:scale-95" title="Download Archive">
+                  <button className="p-3.5 sm:p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 rounded-2xl sm:rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#345E85] transition-all shadow-sm active:scale-95" title="Download Archive">
                     <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>

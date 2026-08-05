@@ -174,7 +174,7 @@ const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-white transition-all"
+              className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-slate-300 dark:hover:text-white transition-all"
             >
               <X className="w-4 h-4" />
             </button>

@@ -33,7 +33,7 @@ export const TripChecklist: React.FC<TripChecklistProps> = ({ isOpen, onClose, o
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden"
       >
         <div className="bg-[#345E85] p-8 text-white relative">
           <div className="flex items-center gap-4 mb-2">
@@ -59,10 +59,10 @@ export const TripChecklist: React.FC<TripChecklistProps> = ({ isOpen, onClose, o
           <VehiclePreTripChecklist checkedItems={checkedItems} onToggle={toggle} />
         </div>
 
-        <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4">
+        <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 flex gap-4">
           <button
             onClick={onClose}
-            className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white hover:text-slate-600 transition-all"
+            className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white dark:bg-slate-900 hover:text-slate-600 dark:hover:text-slate-300 transition-all"
           >
             <TranslatedText text="Cancel" />
           </button>

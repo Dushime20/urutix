@@ -238,7 +238,7 @@ function TruckHealthTable({ trucks }: { trucks: any[] }) {
               : false;
 
             return (
-              <div key={truck.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <div key={truck.id} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/50 transition-colors">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${statusDot[status] || 'bg-slate-300'}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">

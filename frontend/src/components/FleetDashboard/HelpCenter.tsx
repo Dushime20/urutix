@@ -105,7 +105,7 @@ export const HelpCenter: React.FC<HelpCenterProps> = ({ onClose, onRestartTour }
 
             <button
               onClick={onClose}
-              className="h-12 w-12 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+              className="h-12 w-12 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white dark:hover:text-white transition-all border border-transparent hover:border-slate-100 dark:border-slate-800 dark:hover:border-slate-700"
             >
               <X size={24} />
             </button>

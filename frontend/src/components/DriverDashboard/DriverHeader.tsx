@@ -183,7 +183,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
               <button
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 transition-all ${isRefreshing ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-600'
+                className={`p-2.5 rounded-full border border-gray-100 dark:border-slate-800 transition-all ${isRefreshing ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300'
                   }`}
               >
                 <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -364,7 +364,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                 <img src={logoUrutiX} alt="UrutiX" className="h-8 w-auto" />
                 <button 
                    onClick={() => setIsMobileMenuOpen(false)}
-                   className="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                   className="p-2 -mr-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 dark:hover:text-white"
                 >
                   <X size={24} />
                 </button>
@@ -394,7 +394,7 @@ export const DriverHeader: React.FC<DriverHeaderProps> = ({
                             className={`w-full flex items-center justify-between px-4 py-3.5 text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all
                               ${isTabActive
                                 ? 'bg-primary-600 text-white shadow-lg shadow-primary-200/50 scale-[1.02]'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800'}
                             `}
                           >
                             <div className="flex items-center gap-3">

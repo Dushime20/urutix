@@ -58,7 +58,7 @@ const UserManagementWidget: React.FC = () => {
                             { label: 'Active', value: stats.active, color: 'text-emerald-600', bg: 'bg-emerald-50' },
                             { label: 'Growth', value: `+${stats.newThisWeek}`, color: 'text-primary-600', bg: 'bg-primary-50' }
                         ].map((stat, i) => (
-                            <div key={i} className={`text-center p-3 ${stat.bg} rounded-2xl border border-transparent hover:border-slate-200 transition-all`}>
+                            <div key={i} className={`text-center p-3 ${stat.bg} rounded-2xl border border-transparent hover:border-slate-200 dark:border-slate-700 transition-all`}>
                                 <div className={`text-2xl font-black ${stat.color} leading-none mb-1`}>{stat.value}</div>
                                 <div className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{stat.label}</div>
                             </div>
@@ -74,14 +74,14 @@ const UserManagementWidget: React.FC = () => {
                             {recentUsers.map((user: any, idx: number) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100 group"
+                                    className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all border border-transparent hover:border-slate-100 dark:border-slate-800 group"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center text-white text-[10px] font-black group-hover:scale-105 transition-transform">
                                             {user.firstName?.[0]}{user.lastName?.[0]}
                                         </div>
                                         <div>
-                                            <div className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                                            <div className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
                                                 {user.firstName} {user.lastName}
                                             </div>
                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{user.role}</div>

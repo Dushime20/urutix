@@ -83,7 +83,7 @@ const InspectionModal: React.FC<InspectionModalProps> = ({ isOpen, onClose, truc
                             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">For {truckName}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-all">
+                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-gray-800 p-2 rounded-lg transition-all">
                         <FaTimes className="w-5 h-5" />
                     </button>
                 </div>

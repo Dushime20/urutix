@@ -10,11 +10,11 @@ const TenantFleetManagement: React.FC = () => {
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Page Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Fleet Management</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Fleet Management</h1>
+            <p className="text-gray-600 dark:text-slate-300 mt-1">
               Manage your fleet operations, vehicles, and maintenance schedules
             </p>
           </div>
@@ -26,7 +26,7 @@ const TenantFleetManagement: React.FC = () => {
               <Users className="w-4 h-4" />
               Owner Credits
             </button>
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+            <button className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800">
               Export Report
             </button>
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">

@@ -290,7 +290,7 @@ const SubscriptionPlansMgmt: React.FC<{ embedded?: boolean }> = ({ embedded = fa
               </h2>
               <button 
                 onClick={handleCloseModal}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
               >
                 <XCircle className="w-5 h-5" />
               </button>

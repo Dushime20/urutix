@@ -61,7 +61,7 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
       ) : (
         <FaTimes className="w-3 h-3 text-red-500" />
       )}
-      <span className="text-xs text-gray-600">{label}</span>
+      <span className="text-xs text-gray-600 dark:text-slate-300">{label}</span>
     </div>
   );
 
@@ -96,10 +96,10 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-          <span className="ml-2 text-gray-600">Loading recommendations...</span>
+          <span className="ml-2 text-gray-600 dark:text-slate-300">Loading recommendations...</span>
         </div>
       </div>
     );
@@ -107,7 +107,7 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div className="text-center text-red-600">
           <FaTimes className="w-8 h-8 mx-auto mb-2" />
           <p>{error}</p>
@@ -124,7 +124,7 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
 
   if (recommendations.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div className="text-center text-gray-500">
           <FaTruck className="w-8 h-8 mx-auto mb-2" />
           <p>No truck recommendations available</p>
@@ -137,7 +137,7 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <FaStar className="w-5 h-5 text-yellow-500" />
-        <h3 className="text-lg font-medium text-gray-900">Truck Recommendations</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Truck Recommendations</h3>
         <span className="text-sm text-gray-500">({recommendations.length} matches found)</span>
       </div>
 
@@ -145,7 +145,7 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
         {recommendations.map((recommendation, index) => (
           <div
             key={recommendation.truckId}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+            className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => onTruckSelect?.(recommendation.truckId)}
           >
             <div className="flex items-start justify-between mb-3">
@@ -154,8 +154,8 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
                   <span className="text-sm font-medium text-primary-600">{index + 1}</span>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Truck {recommendation.truckId}</h4>
-                  <p className="text-sm text-gray-600">{recommendation.score.matchReason}</p>
+                  <h4 className="font-medium text-gray-900 dark:text-white">Truck {recommendation.truckId}</h4>
+                  <p className="text-sm text-gray-600 dark:text-slate-300">{recommendation.score.matchReason}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -168,14 +168,14 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Score Breakdown */}
-              <div className="bg-gray-50 rounded p-3">
-                <h5 className="text-sm font-medium text-gray-900 mb-2">Score Breakdown</h5>
+              <div className="bg-gray-50 dark:bg-slate-800/50 rounded p-3">
+                <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Score Breakdown</h5>
                 {renderScoreBreakdown(recommendation.score)}
               </div>
 
               {/* Compatibility */}
-              <div className="bg-gray-50 rounded p-3">
-                <h5 className="text-sm font-medium text-gray-900 mb-2">Compatibility</h5>
+              <div className="bg-gray-50 dark:bg-slate-800/50 rounded p-3">
+                <h5 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Compatibility</h5>
                 <div className="space-y-1">
                   {renderCompatibilityIndicator(recommendation.compatibility.cargoTypes, 'Cargo Types')}
                   {renderCompatibilityIndicator(recommendation.compatibility.temperature, 'Temperature')}
@@ -195,7 +195,7 @@ export const TruckRecommendations: React.FC<TruckRecommendationsProps> = ({
               >
                 Select Truck
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
+              <button className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-slate-300 rounded hover:bg-gray-50 dark:hover:bg-slate-800 text-sm">
                 View Details
               </button>
             </div>

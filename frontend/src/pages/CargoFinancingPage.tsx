@@ -75,26 +75,26 @@ const CargoFinancingPage = () => {
     const totalRepayment = monthlyPayment * calcMonths;
 
     return (
-        <div className="min-h-screen bg-gray-50/50">
+        <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950">
             <DashboardHeader />
 
             <main className="max-w-[1536px] mx-auto px-4 md:px-8 lg:px-12 xl:px-20 py-8">
                 {/* Breadcrumb */}
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-                    <span className="hover:text-gray-900 cursor-pointer" onClick={() => navigate('/dashboard')}>Dashboard</span>
+                    <span className="hover:text-gray-900 dark:hover:text-white cursor-pointer" onClick={() => navigate('/dashboard')}>Dashboard</span>
                     <ChevronRight className="w-4 h-4" />
-                    <span className="text-gray-900 font-medium">Financing</span>
+                    <span className="text-gray-900 dark:text-white font-medium">Financing</span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Cargo Financing</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Cargo Financing</h1>
                         <p className="text-gray-500 mt-1">Manage your cargo loans and financing requests</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
                         <button
                             onClick={() => setShowCalculator(!showCalculator)}
-                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 ${showCalculator ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-inner' : 'bg-white text-gray-700 border-gray-200 shadow-sm'} border rounded-lg hover:bg-gray-50 transition-all font-medium text-sm whitespace-nowrap`}
+                            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 ${showCalculator ? 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-inner' : 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 shadow-sm'} border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-all font-medium text-sm whitespace-nowrap`}
                         >
                             <Calculator className="w-4 h-4" />
                             <span className="hidden xs:inline">{showCalculator ? 'Hide Calculator' : 'Loan Calculator'}</span>
@@ -102,12 +102,12 @@ const CargoFinancingPage = () => {
                         </button>
                         <button
                             onClick={() => fetchLoans()}
-                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+                            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200 dark:border-slate-700"
                             title="Refresh data"
                         >
                             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm shadow-sm hidden md:flex">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium text-sm shadow-sm hidden md:flex">
                             <Download className="w-4 h-4" />
                             Export Report
                         </button>
@@ -171,21 +171,21 @@ const CargoFinancingPage = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-2xl p-6 md:p-8 text-gray-800 shadow-lg">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 text-gray-800 shadow-lg">
                                 <div className="space-y-6">
-                                    <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+                                    <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-slate-800">
                                         <div className="flex items-center gap-2">
                                             <div className="p-2 bg-indigo-50 rounded-lg">
                                                 <Percent className="w-4 h-4 text-indigo-600" />
                                             </div>
                                             <span className="text-sm font-medium text-gray-500">Interest Rate</span>
                                         </div>
-                                        <span className="font-bold text-lg text-gray-900">2.0% <span className="text-sm text-gray-400 font-normal">/ mo</span></span>
+                                        <span className="font-bold text-lg text-gray-900 dark:text-white">2.0% <span className="text-sm text-gray-400 font-normal">/ mo</span></span>
                                     </div>
 
-                                    <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+                                    <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-slate-800">
                                         <span className="text-sm font-medium text-gray-500">Total Interest</span>
-                                        <span className="font-bold text-lg text-gray-900">{fmtMoney(totalRepayment - calcAmount)}</span>
+                                        <span className="font-bold text-lg text-gray-900 dark:text-white">{fmtMoney(totalRepayment - calcAmount)}</span>
                                     </div>
 
                                     <div className="pt-2">
@@ -204,7 +204,7 @@ const CargoFinancingPage = () => {
                 </div>
 
                 {/* Credit Health Banner */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
                     <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-50 -mr-16 -mt-16 pointer-events-none"></div>
 
@@ -215,25 +215,25 @@ const CargoFinancingPage = () => {
                                 <circle cx="40" cy="40" r="36" stroke="#10b981" strokeWidth="6" fill="none" strokeDasharray="226" strokeDashoffset="56" className="transition-all duration-1000 ease-out" />
                             </svg>
                             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                                <span className="text-xl font-bold text-gray-900 block">75%</span>
+                                <span className="text-xl font-bold text-gray-900 dark:text-white block">75%</span>
                                 <span className="text-[10px] text-gray-400 font-medium uppercase">Score</span>
                             </div>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-bold text-lg text-gray-900">Strong Credit Profile</h3>
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">Strong Credit Profile</h3>
                                 <ShieldCheck className="w-5 h-5 text-emerald-500" />
                             </div>
                             <p className="text-sm text-gray-500 max-w-lg mb-3">Your consistent repayment history makes you eligible for lower interest rates on your next request.</p>
                             <div className="flex flex-wrap gap-2 text-xs font-medium">
                                 <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-100">Low Risk Borrower</span>
                                 <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">Gold Tier</span>
-                                <span className="px-2.5 py-1 bg-gray-50 text-gray-600 rounded-md border border-gray-100">98% On-time Repayment</span>
+                                <span className="px-2.5 py-1 bg-gray-50 dark:bg-slate-800/50 text-gray-600 dark:text-slate-300 rounded-md border border-gray-100 dark:border-slate-800">98% On-time Repayment</span>
                             </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-3 z-10 w-full md:w-auto">
-                        <button className="flex-1 md:flex-none px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all font-medium text-sm shadow-sm">
+                        <button className="flex-1 md:flex-none px-5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-gray-300 transition-all font-medium text-sm shadow-sm">
                             View Report
                         </button>
                         <button className="flex-1 md:flex-none px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all font-medium text-sm shadow-md">
@@ -245,7 +245,7 @@ const CargoFinancingPage = () => {
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {/* Total Borrowed Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
 
                         <div className="flex items-center justify-between mb-4 relative z-10">
@@ -258,7 +258,7 @@ const CargoFinancingPage = () => {
                         </div>
                         <div className="relative z-10">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Borrowed</p>
-                            <p className="text-3xl font-black text-gray-900 tracking-tight">${stats.totalBorrowed.toLocaleString()}</p>
+                            <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">${stats.totalBorrowed.toLocaleString()}</p>
                             <div className="mt-4 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                 <div className="h-full bg-emerald-500 w-[65%] rounded-full group-hover:w-[70%] transition-all duration-1000 ease-out"></div>
                             </div>
@@ -267,7 +267,7 @@ const CargoFinancingPage = () => {
                     </div>
 
                     {/* Active Loans Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
 
                         <div className="flex items-center justify-between mb-4 relative z-10">
@@ -280,7 +280,7 @@ const CargoFinancingPage = () => {
                         </div>
                         <div className="relative z-10">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Active Loans</p>
-                            <p className="text-3xl font-black text-gray-900 tracking-tight">{stats.activeLoans}</p>
+                            <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{stats.activeLoans}</p>
                             <div className="mt-4 flex items-center gap-1">
                                 <div className="h-1.5 flex-1 bg-blue-500 rounded-full"></div>
                                 <div className="h-1.5 flex-1 bg-blue-500 rounded-full"></div>
@@ -291,7 +291,7 @@ const CargoFinancingPage = () => {
                     </div>
 
                     {/* Pending Requests Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
 
                         <div className="flex items-center justify-between mb-4 relative z-10">
@@ -303,14 +303,14 @@ const CargoFinancingPage = () => {
                                     Action Needed
                                 </span>
                             ) : (
-                                <span className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                                <span className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-50 dark:bg-slate-800/50 px-2.5 py-1 rounded-full border border-gray-100 dark:border-slate-800">
                                     All Clear
                                 </span>
                             )}
                         </div>
                         <div className="relative z-10">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Pending Requests</p>
-                            <p className="text-3xl font-black text-gray-900 tracking-tight">{stats.pendingRequests}</p>
+                            <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">{stats.pendingRequests}</p>
                             <div className="mt-4 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                 <div className={`h-full bg-amber-500 rounded-full transition-all duration-1000 ease-out`} style={{ width: `${Math.min(stats.pendingRequests * 33, 100)}%` }}></div>
                             </div>
@@ -320,33 +320,33 @@ const CargoFinancingPage = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <h3 className="font-semibold text-gray-900">Loan Requests History</h3>
+                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Loan Requests History</h3>
 
                         {/* Tabs */}
                         <div className="flex p-1 bg-gray-100/80 rounded-lg self-start sm:self-auto">
                             <button
                                 onClick={() => setActiveTab('all')}
-                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'all' ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'}`}
                             >
                                 All
                             </button>
                             <button
                                 onClick={() => setActiveTab('active')}
-                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'active' ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'}`}
                             >
                                 Active
                             </button>
                             <button
                                 onClick={() => setActiveTab('pending')}
-                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'pending' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'pending' ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'}`}
                             >
                                 Pending
                             </button>
                             <button
                                 onClick={() => setActiveTab('completed')}
-                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'completed' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${activeTab === 'completed' ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'}`}
                             >
                                 Completed
                             </button>
@@ -371,10 +371,10 @@ const CargoFinancingPage = () => {
                         </div>
                     ) : filteredLoans.length === 0 ? (
                         <div className="p-16 text-center">
-                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+                            <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-slate-800">
                                 <FileText className="w-8 h-8 text-gray-400" />
                             </div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-1">No loans found</h3>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">No loans found</h3>
                             <p className="text-gray-500 max-w-sm mx-auto mb-6">There are no loan requests matching the selected filter.</p>
                             {activeTab === 'all' && (
                                 <button className="px-4 py-2 bg-[#358c9c] text-white rounded-lg hover:bg-[#2c7380] transition-colors font-medium text-sm shadow-sm inline-flex items-center gap-2">
@@ -399,17 +399,17 @@ const CargoFinancingPage = () => {
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 group-hover:text-emerald-700 transition-colors">
-                                                <h4 className="font-semibold text-gray-900">{loan.purpose || 'Cargo Financing'}</h4>
+                                                <h4 className="font-semibold text-gray-900 dark:text-white">{loan.purpose || 'Cargo Financing'}</h4>
                                                 {/* ID Chip */}
-                                                <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 font-mono">
+                                                <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700 font-mono">
                                                     #{loan.id.substring(0, 8)}
                                                 </span>
                                             </div>
 
-                                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm text-gray-600">
+                                            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm text-gray-600 dark:text-slate-300">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-gray-400">Requested:</span>
-                                                    <span className="font-medium text-gray-900">${loan.requested_amount.toLocaleString()}</span>
+                                                    <span className="font-medium text-gray-900 dark:text-white">${loan.requested_amount.toLocaleString()}</span>
                                                 </div>
                                                 {loan.approved_amount && (
                                                     <div className="flex items-center gap-2">
@@ -420,14 +420,14 @@ const CargoFinancingPage = () => {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-4 lg:gap-8 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-100">
+                                        <div className="flex items-center gap-4 lg:gap-8 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-100 dark:border-slate-800">
                                             <div className="text-right">
                                                 <p className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-0.5">Interest</p>
-                                                <p className="font-semibold text-gray-900">{loan.interest_rate || '2'}% <span className="text-gray-400 text-xs font-normal">/mo</span></p>
+                                                <p className="font-semibold text-gray-900 dark:text-white">{loan.interest_rate || '2'}% <span className="text-gray-400 text-xs font-normal">/mo</span></p>
                                             </div>
-                                            <div className="text-right pl-4 lg:pl-8 border-l border-gray-200">
+                                            <div className="text-right pl-4 lg:pl-8 border-l border-gray-200 dark:border-slate-700">
                                                 <p className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-0.5">Term</p>
-                                                <p className="font-semibold text-gray-900">{loan.loan_term_months ? Math.round(loan.loan_term_months * 30) : 30} days</p>
+                                                <p className="font-semibold text-gray-900 dark:text-white">{loan.loan_term_months ? Math.round(loan.loan_term_months * 30) : 30} days</p>
                                             </div>
                                             <div className="pl-2">
                                                 <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-emerald-500 transition-colors" />

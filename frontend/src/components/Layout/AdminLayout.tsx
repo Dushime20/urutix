@@ -61,7 +61,7 @@ const AdminLayoutContent: React.FC = () => {
   return (
     // Admin layout is now fully handled by individual pages using AdminPageLayout
     // We just provide the router context here
-    <div className="min-h-screen bg-gray-50 flex flex-col pb-20 lg:pb-0 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col pb-20 lg:pb-0 relative">
       <main className="flex-1 relative z-0">
         <Outlet />
       </main>

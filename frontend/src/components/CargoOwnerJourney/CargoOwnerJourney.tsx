@@ -328,15 +328,15 @@ const CargoOwnerJourney: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
             <FaTruck className="text-blue-500 mr-3" size={24} />
-            <h1 className="text-3xl font-bold text-gray-900">Cargo Owner Journey</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Cargo Owner Journey</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-300">
             Complete your shipment from start to finish with our streamlined process
           </p>
         </div>
@@ -345,7 +345,7 @@ const CargoOwnerJourney: React.FC = () => {
         {renderStepIndicator()}
 
         {/* Current Step Content */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
           {renderCurrentStep()}
         </div>
 

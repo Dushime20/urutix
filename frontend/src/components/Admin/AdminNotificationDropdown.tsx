@@ -73,7 +73,7 @@ const AdminNotificationDropdown: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden"
             >
               {/* Modal Header */}
               <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
@@ -110,12 +110,12 @@ const AdminNotificationDropdown: React.FC = () => {
                   </div>
                 </div>
 
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4 uppercase">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-4 uppercase">
                   {selectedNotification.title}
                 </h2>
 
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 mb-6">
-                  <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 mb-6">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
                     {selectedNotification.message}
                   </p>
                 </div>
@@ -131,10 +131,10 @@ const AdminNotificationDropdown: React.FC = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-4">
+              <div className="px-8 py-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex gap-4">
                 <button
                   onClick={() => setSelectedNotification(null)}
-                  className="flex-1 py-4 bg-white border border-slate-200 rounded-2xl text-[11px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-[0.98]"
+                  className="flex-1 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-[11px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-[0.98]"
                 >
                   Dismiss View
                 </button>
@@ -166,7 +166,7 @@ const AdminNotificationDropdown: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`relative p-2 rounded-xl transition-all ${
-          isOpen ? 'bg-primary-50 text-primary-600' : 'text-slate-400 hover:text-primary-600 hover:bg-slate-50'
+          isOpen ? 'bg-primary-50 text-primary-600' : 'text-slate-400 hover:text-primary-600 hover:bg-slate-50 dark:hover:bg-slate-800'
         }`}
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
       >
@@ -191,7 +191,7 @@ const AdminNotificationDropdown: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-3 w-[380px] bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden z-[100]"
+            className="absolute right-0 mt-3 w-[380px] bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100]"
           >
             {/* Header */}
             <div className="px-6 py-5 bg-slate-900 text-white flex items-center justify-between">
@@ -241,7 +241,7 @@ const AdminNotificationDropdown: React.FC = () => {
             <div className="max-h-[420px] overflow-y-auto scrollbar-hide py-2">
               {filteredNotifications.length === 0 ? (
                 <div className="py-16 text-center">
-                  <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 border border-dashed border-slate-200">
+                  <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-3 border border-dashed border-slate-200 dark:border-slate-700">
                     <Bell className="text-slate-300" size={22} />
                   </div>
                   <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
@@ -253,7 +253,7 @@ const AdminNotificationDropdown: React.FC = () => {
                   <div
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    className={`group px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer relative ${
+                    className={`group px-6 py-4 border-b border-slate-50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer relative ${
                       !n.isRead ? 'bg-primary-50/20' : ''
                     }`}
                   >
@@ -263,13 +263,13 @@ const AdminNotificationDropdown: React.FC = () => {
                     )}
 
                     <div className="flex gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm flex-shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center shadow-sm flex-shrink-0">
                         {getIcon(n.type)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-1">
                           <h4 className={`text-xs font-black uppercase tracking-tight truncate ${
-                            !n.isRead ? 'text-slate-900' : 'text-slate-500'
+                            !n.isRead ? 'text-slate-900 dark:text-white' : 'text-slate-500'
                           }`}>
                             {n.title}
                           </h4>
@@ -301,7 +301,7 @@ const AdminNotificationDropdown: React.FC = () => {
                       {!n.isRead && (
                         <button
                           onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}
-                          className="p-1 rounded bg-white border border-slate-200 text-slate-400 hover:text-primary-600 transition-colors shadow-sm"
+                          className="p-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary-600 transition-colors shadow-sm"
                           title="Mark as read"
                         >
                           <Check size={10} />
@@ -309,7 +309,7 @@ const AdminNotificationDropdown: React.FC = () => {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
-                        className="p-1 rounded bg-white border border-slate-200 text-slate-400 hover:text-red-500 transition-colors shadow-sm"
+                        className="p-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-red-500 transition-colors shadow-sm"
                         title="Dismiss"
                       >
                         <X size={10} />
@@ -321,9 +321,9 @@ const AdminNotificationDropdown: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
               <button
-                className="w-full py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all shadow-sm active:scale-[0.98]"
+                className="w-full py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all shadow-sm active:scale-[0.98]"
                 onClick={() => { navigate(getNotificationsHubPath(user?.role)); setIsOpen(false); }}
               >
                 VIEW ALL SYSTEM ALERTS

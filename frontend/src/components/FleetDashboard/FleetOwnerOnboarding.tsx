@@ -188,7 +188,7 @@ const FleetOwnerOnboarding: React.FC<FleetOwnerOnboardingProps> = ({ onComplete,
           </div>
           <button
             onClick={onSkip}
-            className="h-10 w-10 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all"
+            className="h-10 w-10 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-gray-400 hover:text-gray-900 dark:hover:text-white dark:hover:text-white transition-all"
             title="Skip Tour"
           >
             <X className="w-5 h-5" />

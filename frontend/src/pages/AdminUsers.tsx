@@ -467,7 +467,7 @@ const AdminUsers: React.FC = () => {
       }
     >
 
-      <div className="flex items-center gap-6 mb-8 border-b border-gray-100">
+      <div className="flex items-center gap-6 mb-8 border-b border-gray-100 dark:border-slate-800">
         <button
           onClick={() => setActiveTab('users')}
           className={`pb-4 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all relative ${activeTab === 'users'
@@ -562,7 +562,7 @@ const AdminUsers: React.FC = () => {
                       setShowCreateModal(false);
                       resetForm();
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:text-slate-300 rounded transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -720,7 +720,7 @@ const AdminUsers: React.FC = () => {
                       setShowEditModal(false);
                       setEditingUserId(null);
                     }}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:text-slate-300 rounded transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -911,7 +911,7 @@ const AdminUsers: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="p-3 text-slate-400 hover:text-gray-600 dark:hover:text-slate-350 rounded-2xl bg-gray-50 dark:bg-slate-800 transition-all border border-transparent"
+                    className="p-3 text-slate-400 hover:text-gray-600 dark:text-slate-300 dark:hover:text-slate-350 rounded-2xl bg-gray-50 dark:bg-slate-800 transition-all border border-transparent"
                   >
                     <X className="w-5 h-5" />
                   </button>

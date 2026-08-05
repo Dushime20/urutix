@@ -68,7 +68,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
   };
 
   if (loading) {
-    return <div className="bg-white rounded-[2rem] border border-slate-100 p-8 animate-pulse h-64" />;
+    return <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-8 animate-pulse h-64" />;
   }
 
   const fullName = `${driver?.firstName || ''} ${driver?.lastName || ''}`.trim() || 'Driver';
@@ -83,7 +83,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
           </div>
           <div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Driver Profile" /></p>
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">{fullName}</h2>
+            <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{fullName}</h2>
           </div>
         </div>
         <button
@@ -106,19 +106,19 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
         <div className="space-y-4">
 
           {/* Avatar card */}
-          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
             <div className="flex flex-col items-center text-center">
               <div className="relative mb-4">
-                <div className="w-24 h-24 rounded-[1.5rem] bg-slate-50 border-4 border-white shadow-md flex items-center justify-center">
+                <div className="w-24 h-24 rounded-[1.5rem] bg-slate-50 dark:bg-slate-800/50 border-4 border-white shadow-md flex items-center justify-center">
                   <User className="w-12 h-12 text-slate-200" />
                 </div>
                 {isEditing && (
-                  <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-white border border-slate-200 text-[#345E85] rounded-xl shadow flex items-center justify-center hover:bg-slate-50 transition-colors">
+                  <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[#345E85] rounded-xl shadow flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                     <Camera size={14} />
                   </button>
                 )}
               </div>
-              <h3 className="text-base font-black text-slate-900 tracking-tight mb-0.5">{fullName}</h3>
+              <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight mb-0.5">{fullName}</h3>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
                 {driver?.licenseNumber || 'LIC-000000'}
               </p>
@@ -127,7 +127,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                   'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border',
                   driver?.status === 'ACTIVE'
                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                    : 'bg-slate-50 text-slate-500 border-slate-200'
+                    : 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-slate-200 dark:border-slate-700'
                 )}>
                   {driver?.status === 'ACTIVE' ? <TranslatedText text="Active" /> : <TranslatedText text={driver?.status || 'Active'} />}
                 </span>
@@ -145,12 +145,12 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                 { label: 'Address', value: safeStr(driver?.address, '—'), Icon: MapPin },
               ].map(({ label, value, Icon }) => (
                 <div key={label} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-[#345E85] shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[#345E85] shrink-0 mt-0.5">
                     <Icon size={14} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={label} /></p>
-                    <p className="text-xs font-bold text-slate-800 truncate">{value}</p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{value}</p>
                   </div>
                 </div>
               ))}
@@ -183,12 +183,12 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
         <div className="lg:col-span-2 space-y-4">
 
           {/* Personal Info */}
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-50 flex items-center gap-3 bg-slate-50/40">
-              <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-[#345E85]">
+              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[#345E85]">
                 <Target size={14} />
               </div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest"><TranslatedText text="Personal Information" /></h3>
+              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest"><TranslatedText text="Personal Information" /></h3>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
@@ -204,10 +204,10 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                       type="text"
                       value={formData[key as keyof typeof formData]}
                       onChange={e => setFormData({ ...formData, [key]: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-[#345E85] focus:ring-1 focus:ring-[#345E85]/20 transition-all"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#345E85] focus:ring-1 focus:ring-[#345E85]/20 transition-all"
                     />
                   ) : (
-                    <p className="text-sm font-bold text-slate-800 truncate">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
                       {formData[key as keyof typeof formData] || '—'}
                     </p>
                   )}
@@ -217,13 +217,13 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
               {/* License */}
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="License Number" /></label>
-                <p className="text-sm font-bold text-slate-800">{driver?.licenseNumber || '—'}</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{driver?.licenseNumber || '—'}</p>
               </div>
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="License Expiry" /></label>
                 <div className="flex items-center gap-2">
                   <CalendarIcon size={13} className="text-slate-400" />
-                  <p className="text-sm font-bold text-slate-800">
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                     {driver?.licenseExpiry ? new Date(driver.licenseExpiry).toLocaleDateString() : '—'}
                   </p>
                 </div>
@@ -232,12 +232,12 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
               {/* Vehicle */}
               <div className="sm:col-span-2">
                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2"><TranslatedText text="Assigned Truck" /></label>
-                <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-[#345E85] shrink-0">
+                <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[#345E85] shrink-0">
                     <Truck size={18} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-slate-900 truncate">
+                    <p className="text-sm font-black text-slate-900 dark:text-white truncate">
                       {driver?.currentTruck?.plateNumber || driver?.vehiclePlate || t('Not assigned')}
                     </p>
                     <p className="text-[10px] text-slate-400 font-medium truncate">
@@ -255,12 +255,12 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
           </div>
 
           {/* Emergency Contact */}
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-50 flex items-center gap-3 bg-slate-50/40">
-              <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-rose-500">
+              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-rose-500">
                 <Activity size={14} />
               </div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest"><TranslatedText text="Emergency Contact" /></h3>
+              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest"><TranslatedText text="Emergency Contact" /></h3>
             </div>
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
@@ -275,10 +275,10 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                       value={formData[key as keyof typeof formData]}
                       onChange={e => setFormData({ ...formData, [key]: e.target.value })}
                       placeholder={t(placeholder)}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-100 transition-all"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-100 transition-all"
                     />
                   ) : (
-                    <p className="text-sm font-bold text-slate-800">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
                       {formData[key as keyof typeof formData] || t('Not configured')}
                     </p>
                   )}
@@ -288,12 +288,12 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
           </div>
 
           {/* Certifications */}
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-50 flex items-center gap-3 bg-slate-50/40">
-              <div className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-indigo-500">
+              <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-indigo-500">
                 <FileText size={14} />
               </div>
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest"><TranslatedText text="Certifications & Compliance" /></h3>
+              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest"><TranslatedText text="Certifications & Compliance" /></h3>
             </div>
             <div className="p-6 space-y-3">
               {/* Real compliance dates from driver */}
@@ -327,13 +327,13 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                 const status = !expiryDate ? 'N/A' : isExpired ? 'Expired' : isExpiringSoon ? 'Expiring Soon' : 'Valid';
 
                 return (
-                  <div key={name} className="flex items-center justify-between p-4 bg-slate-50/60 border border-slate-100 rounded-2xl hover:bg-white hover:shadow-sm transition-all">
+                  <div key={name} className="flex items-center justify-between p-4 bg-slate-50/60 border border-slate-100 dark:border-slate-800 rounded-2xl hover:bg-white dark:bg-slate-900 hover:shadow-sm transition-all">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 shrink-0">
                         <Icon size={16} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-black text-slate-900 truncate"><TranslatedText text={name} /></p>
+                        <p className="text-xs font-black text-slate-900 dark:text-white truncate"><TranslatedText text={name} /></p>
                         <p className="text-[10px] text-slate-400">
                           {expiryDate ? expiryDate.toLocaleDateString() : '—'}
                         </p>
@@ -344,7 +344,7 @@ export const DriverProfile: React.FC<DriverProfileProps> = ({ driver, loading })
                       status === 'Valid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                       status === 'Expiring Soon' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                       status === 'Expired' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                      'bg-slate-50 text-slate-400 border-slate-200'
+                      'bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-200 dark:border-slate-700'
                     )}>
                       {status === 'N/A' ? t('N/A') : <TranslatedText text={status} />}
                     </span>

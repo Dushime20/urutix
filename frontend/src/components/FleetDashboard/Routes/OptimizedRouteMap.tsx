@@ -29,7 +29,7 @@ const OptimizedRouteMap: React.FC<OptimizedRouteMapProps> = ({ route }) => {
                     />
                 </MapContainer>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-slate-200">
+                    <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
                         <p className="text-slate-500 font-medium text-sm">Select a route to view path</p>
                     </div>
                 </div>
@@ -45,7 +45,7 @@ const OptimizedRouteMap: React.FC<OptimizedRouteMapProps> = ({ route }) => {
     ];
 
     return (
-        <div className="w-full h-full bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+        <div className="w-full h-full bg-slate-100 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
             <MapContainer center={[route.origin.lat, route.origin.lng]} zoom={6} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"

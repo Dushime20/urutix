@@ -127,14 +127,14 @@ const EnrichedCargoExample: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800/50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Enriched Cargo Locations Demo</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Enriched Cargo Locations Demo</h1>
+              <p className="text-gray-600 dark:text-slate-300 mt-2">
                 See how geo coordinates are transformed into meaningful location intelligence
               </p>
             </div>
@@ -150,7 +150,7 @@ const EnrichedCargoExample: React.FC = () => {
 
           {/* Cargo Selector */}
           <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">Select Cargo:</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Select Cargo:</label>
             <select
               value={selectedCargoId}
               onChange={(e) => handleCargoSelect(e.target.value)}
@@ -174,14 +174,14 @@ const EnrichedCargoExample: React.FC = () => {
         {!loading && selectedCargoId && enrichedData && (
           <>
             {/* Tab Navigation */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
               <div className="flex space-x-4">
                 <button
                   onClick={() => setActiveTab('locations')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                     activeTab === 'locations' 
                       ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-600 hover:text-gray-800'
+                      : 'text-gray-600 dark:text-slate-300 hover:text-gray-800'
                   }`}
                 >
                   <FaMapMarkerAlt className="w-4 h-4" />
@@ -192,7 +192,7 @@ const EnrichedCargoExample: React.FC = () => {
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                     activeTab === 'analysis' 
                       ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-600 hover:text-gray-800'
+                      : 'text-gray-600 dark:text-slate-300 hover:text-gray-800'
                   }`}
                 >
                   <FaRoute className="w-4 h-4" />
@@ -203,7 +203,7 @@ const EnrichedCargoExample: React.FC = () => {
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                     activeTab === 'compatibility' 
                       ? 'bg-blue-100 text-blue-700' 
-                      : 'text-gray-600 hover:text-gray-800'
+                      : 'text-gray-600 dark:text-slate-300 hover:text-gray-800'
                   }`}
                 >
                   <FaTruck className="w-4 h-4" />
@@ -216,24 +216,24 @@ const EnrichedCargoExample: React.FC = () => {
             <div className="space-y-6">
               {activeTab === 'locations' && (
                 <div>
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-4">Cargo Details</h2>
+                  <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Cargo Details</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm font-medium text-gray-500">Title</p>
-                        <p className="text-gray-900">{enrichedData.cargo.title}</p>
+                        <p className="text-gray-900 dark:text-white">{enrichedData.cargo.title}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Status</p>
-                        <p className="text-gray-900">{enrichedData.cargo.status}</p>
+                        <p className="text-gray-900 dark:text-white">{enrichedData.cargo.status}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Cargo Type</p>
-                        <p className="text-gray-900">{enrichedData.cargo.cargoType}</p>
+                        <p className="text-gray-900 dark:text-white">{enrichedData.cargo.cargoType}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Weight</p>
-                        <p className="text-gray-900">{enrichedData.cargo.weight} tons</p>
+                        <p className="text-gray-900 dark:text-white">{enrichedData.cargo.weight} tons</p>
                       </div>
                     </div>
                   </div>
@@ -245,8 +245,8 @@ const EnrichedCargoExample: React.FC = () => {
               )}
 
               {activeTab === 'analysis' && routeAnalysis && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Route Analysis</h2>
+                <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Route Analysis</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div className="bg-blue-50 rounded-lg p-4">
@@ -282,22 +282,22 @@ const EnrichedCargoExample: React.FC = () => {
 
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Optimal Schedule</h3>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Optimal Schedule</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3">
                           <p className="text-sm font-medium text-gray-500">Pickup Time</p>
-                          <p className="text-gray-900">{routeAnalysis.routeAnalysis.optimalSchedule.pickupTime}</p>
+                          <p className="text-gray-900 dark:text-white">{routeAnalysis.routeAnalysis.optimalSchedule.pickupTime}</p>
                         </div>
-                        <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3">
                           <p className="text-sm font-medium text-gray-500">Delivery Time</p>
-                          <p className="text-gray-900">{routeAnalysis.routeAnalysis.optimalSchedule.deliveryTime}</p>
+                          <p className="text-gray-900 dark:text-white">{routeAnalysis.routeAnalysis.optimalSchedule.deliveryTime}</p>
                         </div>
                       </div>
                     </div>
 
                     {routeAnalysis.routeAnalysis.restrictions.length > 0 && (
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Route Restrictions</h3>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Route Restrictions</h3>
                         <div className="bg-red-50 rounded-lg p-4">
                           <ul className="space-y-1">
                             {routeAnalysis.routeAnalysis.restrictions.map((restriction: string, index: number) => (
@@ -315,8 +315,8 @@ const EnrichedCargoExample: React.FC = () => {
               )}
 
               {activeTab === 'compatibility' && compatibilityData && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Truck Compatibility Analysis</h2>
+                <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Truck Compatibility Analysis</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div className={`rounded-lg p-4 ${
@@ -352,7 +352,7 @@ const EnrichedCargoExample: React.FC = () => {
 
                   {compatibilityData.issues.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Compatibility Issues</h3>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Compatibility Issues</h3>
                       <div className="bg-red-50 rounded-lg p-4">
                         <ul className="space-y-2">
                           {compatibilityData.issues.map((issue: string, index: number) => (
@@ -367,14 +367,14 @@ const EnrichedCargoExample: React.FC = () => {
                   )}
 
                   <div className="mt-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Location-Specific Compatibility</h3>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Location-Specific Compatibility</h3>
                     <div className="space-y-3">
                       {compatibilityData.locationCompatibility.map((location: any) => (
                         <div key={location.locationId} className={`border rounded-lg p-3 ${
                           location.isCompatible ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
                         }`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium text-gray-900">{location.locationName}</span>
+                            <span className="font-medium text-gray-900 dark:text-white">{location.locationName}</span>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               location.isCompatible 
                                 ? 'bg-green-100 text-green-800' 
@@ -403,9 +403,9 @@ const EnrichedCargoExample: React.FC = () => {
         )}
 
         {!loading && allCargos.length === 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-8 text-center">
             <FaMapMarkerAlt className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Cargos Found</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Cargos Found</h3>
             <p className="text-gray-500 mb-4">
               Create a test cargo to see the enriched location intelligence in action.
             </p>

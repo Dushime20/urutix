@@ -115,10 +115,10 @@ const FleetManagement: React.FC = () => {
   return (
     <div className="safe-bottom space-y-6">
       {/* Custom Header for Tenant Admin */}
-      <div className="bg-white rounded-xl p-8 border border-transparent">
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-8 border border-transparent">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight"><TranslatedText text="Fleet Management" /></h1>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="Fleet Management" /></h1>
             <p className="text-slate-500 font-medium mt-1">
               <TranslatedText text="Monitor and manage your truck fleet operations" />
             </p>
@@ -133,7 +133,7 @@ const FleetManagement: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl p-6 border border-transparent">
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-transparent">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -159,7 +159,7 @@ const FleetManagement: React.FC = () => {
             <FaFilter />
             <span><TranslatedText text="More Filters" /></span>
           </button>
-          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:text-slate-300 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
             <FaDownload />
             <span><TranslatedText text="Export" /></span>
           </button>
@@ -169,7 +169,7 @@ const FleetManagement: React.FC = () => {
       {/* Truck Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredTrucks.map((truck) => (
-          <div key={truck.id} className="bg-white rounded-xl overflow-hidden border border-transparent transition-all">
+          <div key={truck.id} className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-transparent transition-all">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -177,7 +177,7 @@ const FleetManagement: React.FC = () => {
                     <FaTruck className="text-lg" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-gray-900 tracking-tight leading-none mb-1">{truck.plateNumber}</h3>
+                    <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none mb-1">{truck.plateNumber}</h3>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{truck.make} {truck.model}</p>
                   </div>
                 </div>
@@ -191,19 +191,19 @@ const FleetManagement: React.FC = () => {
 
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Capacity:</span>
+                  <span className="text-gray-600 dark:text-slate-300">Capacity:</span>
                   <span className="font-medium">{truck.capacity.toLocaleString()} kg</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Year:</span>
+                  <span className="text-gray-600 dark:text-slate-300">Year:</span>
                   <span className="font-medium">{truck.year}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Mileage:</span>
+                  <span className="text-gray-600 dark:text-slate-300">Mileage:</span>
                   <span className="font-medium">{truck.mileage.toLocaleString()} km</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Fuel Level:</span>
+                  <span className="text-gray-600 dark:text-slate-300">Fuel Level:</span>
                   <div className="flex items-center space-x-2">
                     <div className="w-16 h-2 bg-gray-200 rounded-full">
                       <div
@@ -215,10 +215,10 @@ const FleetManagement: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Driver:</span>
+                  <span className="text-gray-600 dark:text-slate-300">Driver:</span>
                   <span className="font-medium">{truck.driver}</span>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
+                <div className="flex items-center text-sm text-gray-600 dark:text-slate-300">
                   <FaMapMarkerAlt className="mr-1" />
                   <span>{truck.location}</span>
                 </div>
@@ -229,7 +229,7 @@ const FleetManagement: React.FC = () => {
                   <FaEye />
                   <span>View</span>
                 </button>
-                <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm transition-colors flex items-center justify-center space-x-1">
+                <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:text-slate-300 py-2 px-4 rounded-lg text-sm transition-colors flex items-center justify-center space-x-1">
                   <FaEdit />
                   <span>Edit</span>
                 </button>

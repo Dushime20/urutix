@@ -70,7 +70,7 @@ const TripMap: React.FC<TripMapProps> = ({ trips, onSelectTrip, selectedTripId }
     };
 
     return (
-        <div className="w-full h-[600px] rounded-[32px] overflow-hidden border border-slate-100 shadow-xl relative group">
+        <div className="w-full h-[600px] rounded-[32px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-xl relative group">
             <MapContainer
                 center={defaultCenter}
                 zoom={6}
@@ -106,7 +106,7 @@ const TripMap: React.FC<TripMapProps> = ({ trips, onSelectTrip, selectedTripId }
                                                 ACTIVE
                                             </span>
                                         </div>
-                                        <h3 className="font-bold text-slate-800 mb-1">{trip.truckNumber || 'Unknown Truck'}</h3>
+                                        <h3 className="font-bold text-slate-800 dark:text-slate-100 mb-1">{trip.truckNumber || 'Unknown Truck'}</h3>
                                         <p className="text-sm text-slate-500 flex items-center gap-1 mb-3">
                                             <Clock className="w-3 h-3" />
                                             ETA: {trip.estimatedArrival ? new Date(trip.estimatedArrival).toLocaleTimeString() : 'Calculating...'}
@@ -139,7 +139,7 @@ const TripMap: React.FC<TripMapProps> = ({ trips, onSelectTrip, selectedTripId }
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fleet Status</p>
-                            <p className="text-sm font-bold text-slate-800">{activeTripsWithCoords.length} Assets Online</p>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{activeTripsWithCoords.length} Assets Online</p>
                         </div>
                     </div>
                 </motion.div>

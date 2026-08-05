@@ -117,11 +117,11 @@ const CargoManagement: React.FC = () => {
       alwaysVisible: true,
       render: (_v, cargo) => (
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-slate-50 border border-slate-150 rounded-full flex items-center justify-center text-slate-700 font-semibold">
+          <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-150 rounded-full flex items-center justify-center text-slate-700 dark:text-slate-300 font-semibold">
             {getTypeIcon(cargo.type, cargo)}
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">{cargo.title}</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{cargo.title}</div>
             <div className="text-sm text-gray-500">ID: {cargo.id}</div>
             <div className="text-sm text-gray-500">Owner: {cargo.owner}</div>
           </div>
@@ -132,7 +132,7 @@ const CargoManagement: React.FC = () => {
       key: 'pickupLocation',
       label: 'Route',
       render: (_v, cargo) => (
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-gray-900 dark:text-white">
           <div className="flex items-center mb-1">
             <FaMapMarkerAlt className="text-green-500 mr-2" />
             {cargo.pickupLocation}
@@ -148,7 +148,7 @@ const CargoManagement: React.FC = () => {
       key: 'weight',
       label: 'Details',
       render: (_v, cargo) => (
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-gray-900 dark:text-white">
           <div className="flex items-center mb-1">
             <FaWeight className="text-gray-400 mr-2" />
             {cargo.weight} kg
@@ -178,7 +178,7 @@ const CargoManagement: React.FC = () => {
       key: 'pickupDate',
       label: 'Timeline',
       render: (_v, cargo) => (
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-gray-900 dark:text-white">
           <div className="flex items-center mb-1">
             <FaCalendar className="text-gray-400 mr-2" />
             Pickup: {new Date(cargo.pickupDate).toLocaleDateString()}
@@ -220,10 +220,10 @@ const CargoManagement: React.FC = () => {
 
   return (
     <div className="safe-bottom space-y-6">
-      <div className="bg-white rounded-[24px] p-8 border border-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] p-8 border border-slate-100 dark:border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight"><TranslatedText text="Cargo Management" /></h1>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="Cargo Management" /></h1>
             <p className="text-slate-500 font-medium mt-1">
               <TranslatedText text="Monitor and manage all cargo shipments and logistics" />
             </p>

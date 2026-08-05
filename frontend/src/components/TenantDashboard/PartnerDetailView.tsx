@@ -194,7 +194,7 @@ const PartnerDetailView: React.FC<PartnerDetailViewProps> = ({ partner, tenantId
                                                             }}
                                                             className={`p-4 rounded-[20px] border transition-all flex flex-col items-start gap-1 group/status ${
                                                                 partner.status === s.id 
-                                                                    ? 'bg-white text-primary-600 border-white shadow-xl scale-[1.02]' 
+                                                                    ? 'bg-white dark:bg-slate-900 text-primary-600 border-white shadow-xl scale-[1.02]' 
                                                                     : 'bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20'
                                                             }`}
                                                         >

@@ -193,18 +193,18 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex-none flex items-center justify-between p-5 border-b border-gray-200 bg-gradient-to-r from-primary-50 to-primary-100">
+        <div className="flex-none flex items-center justify-between p-5 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-primary-50 to-primary-100">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary-50 rounded-lg">
               <MapPin className="w-5 h-5 text-primary-500" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Set Truck Location</h2>
-              <p className="text-sm text-gray-600">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Set Truck Location</h2>
+              <p className="text-sm text-gray-600 dark:text-slate-300">
                 {truck?.name} {truck?.plateNumber ? `(${truck.plateNumber})` : ''}
               </p>
             </div>
@@ -216,7 +216,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
               e.stopPropagation();
               onClose();
             }}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer relative z-50"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer relative z-50"
             aria-label="Close"
           >
             <X className="w-6 h-6" />
@@ -226,8 +226,8 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Instructions & Current Location Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-slate-300">
               <span className="font-medium">Click on the map</span> to select the truck's current location <span className="text-primary-500 font-normal">(Used in matching)</span>,
               or use your device's GPS.
             </p>
@@ -296,7 +296,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
           <button
             type="button"
             onClick={(e) => {
@@ -304,7 +304,7 @@ const TruckLocationModal: React.FC<TruckLocationModalProps> = ({
               e.stopPropagation();
               onClose();
             }}
-            className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            className="px-5 py-2.5 text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium"
           >
             Cancel
           </button>

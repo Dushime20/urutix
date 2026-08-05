@@ -10,16 +10,16 @@ const TenantCargoOperations: React.FC = () => {
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       {/* Page Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Cargo Operations</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Cargo Operations</h1>
+            <p className="text-gray-600 dark:text-slate-300 mt-1">
               Monitor and manage cargo shipments, routes, and delivery schedules
             </p>
           </div>
           <div className="flex space-x-3">
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center">
+            <button className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center">
               <FaDownload className="w-4 h-4 mr-2" />
               Export Data
             </button>

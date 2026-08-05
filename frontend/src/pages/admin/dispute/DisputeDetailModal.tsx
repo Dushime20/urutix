@@ -125,7 +125,7 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
 
   if (isLoading || !dispute) return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-8 flex items-center gap-3">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 flex items-center gap-3">
         <div className="w-5 h-5 border-2 border-[#2c5173] border-t-transparent rounded-full animate-spin" />
         <span className="text-sm font-medium">Loading dispute…</span>
       </div>
@@ -134,16 +134,16 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-[24px] w-full max-w-4xl my-8 border border-gray-100 flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] w-full max-w-4xl my-8 border border-gray-100 dark:border-slate-800 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
               <Gavel className="w-5 h-5 text-red-500" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-black text-gray-900">{dispute.title}</h2>
+                <h2 className="text-base font-black text-gray-900 dark:text-white">{dispute.title}</h2>
                 <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${getStatusColor(dispute.status)}`}>{STATUS_LABELS[dispute.status]}</span>
                 <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${getPriorityColor(dispute.priority)}`}>{PRIORITY_LABELS[dispute.priority]}</span>
               </div>
@@ -155,7 +155,7 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
 
         {/* Admin action bar — only TENANT_ADMIN and SUPER_ADMIN can resolve/close/reopen */}
         {isAdmin && (
-          <div className="px-6 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-2">
+          <div className="px-6 py-3 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50 flex flex-wrap gap-2">
             {isResolver && !isClosed && (
               <button onClick={() => setShowResolve(true)} className="px-3 py-1.5 bg-green-600 text-white rounded-xl text-xs font-bold hover:bg-green-700 flex items-center gap-1.5">
                 <CheckCircle size={12} /> Resolve
@@ -185,11 +185,11 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
         )}
 
         {/* Tabs */}
-        <div className="px-6 border-b border-gray-100 flex gap-1 overflow-x-auto">
+        <div className="px-6 border-b border-gray-100 dark:border-slate-800 flex gap-1 overflow-x-auto">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap
-                ${tab === t.id ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+                ${tab === t.id ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-gray-400 hover:text-gray-600 dark:text-slate-300'}`}>
               {t.icon} {t.label}
             </button>
           ))}
@@ -208,15 +208,15 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
                   { label: 'Created',     value: formatRelativeTime(dispute.createdAt) },
                   { label: 'Updated',     value: formatRelativeTime(dispute.updatedAt) },
                 ].map(({ label, value }) => (
-                  <div key={label} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <div key={label} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3 border border-gray-100 dark:border-slate-800">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{label}</p>
-                    <p className="text-sm font-bold text-gray-900 truncate">{value}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{value}</p>
                   </div>
                 ))}
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 border border-gray-100 dark:border-slate-800">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Description</p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{dispute.description}</p>
+                <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{dispute.description}</p>
               </div>
             </div>
           )}
@@ -226,26 +226,26 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
               {comments.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No messages yet.</p>}
               {comments.map(msg => (
                 <div key={msg.id} className={`flex gap-3 ${msg.isInternal ? 'opacity-80' : ''}`}>
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 flex-shrink-0">
                     {getUserDisplayName(msg.sender).charAt(0).toUpperCase()}
                   </div>
-                  <div className={`flex-1 rounded-xl p-3 border ${msg.isInternal ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-100'}`}>
+                  <div className={`flex-1 rounded-xl p-3 border ${msg.isInternal ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 dark:bg-slate-800/50 border-gray-100 dark:border-slate-800'}`}>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-gray-900">{getUserDisplayName(msg.sender)}</span>
+                      <span className="text-xs font-bold text-gray-900 dark:text-white">{getUserDisplayName(msg.sender)}</span>
                       {msg.isInternal && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-bold">Internal</span>}
                       <span className="text-[10px] text-gray-400 ml-auto">{formatRelativeTime(msg.createdAt)}</span>
                     </div>
-                    <p className="text-sm text-gray-700">{msg.message}</p>
+                    <p className="text-sm text-gray-700 dark:text-slate-300">{msg.message}</p>
                   </div>
                 </div>
               ))}
               {!isClosed && (
-                <div className="border-t border-gray-100 pt-4 mt-4">
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-4 mt-4">
                   <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3} placeholder="Write a comment…"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173] focus:border-transparent" />
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173] focus:border-transparent" />
                   <div className="flex items-center justify-between mt-2">
                     {isAdmin && (
-                      <label className="flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer">
+                      <label className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-slate-300 cursor-pointer">
                         <input type="checkbox" checked={isInternal} onChange={e => setIsInternal(e.target.checked)} className="w-4 h-4 accent-amber-500" />
                         Internal note (admin only)
                       </label>
@@ -263,7 +263,7 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
           {tab === 'attachments' && (
             <div className="space-y-3">
               {!isClosed && (
-                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+                <div className="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl p-6 text-center">
                   <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm text-gray-500 mb-3">Upload evidence files (images, PDFs, documents)</p>
                   <input ref={fileRef} type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadMut.mutate(e.target.files[0]); }} />
@@ -274,17 +274,17 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
               )}
               {attachments.length === 0 && <p className="text-sm text-gray-400 text-center py-6">No attachments yet.</p>}
               {attachments.map(att => (
-                <div key={att.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <div key={att.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
                   <FileText className="w-8 h-8 text-gray-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{att.fileName}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{att.fileName}</p>
                     <p className="text-[10px] text-gray-400">{getUserDisplayName(att.uploader)} · {formatRelativeTime(att.createdAt)}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => openAttachment(att.id)}
                     disabled={openingAttachmentId === att.id}
-                    className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-50 flex items-center gap-1 disabled:opacity-50">
+                    className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-1 disabled:opacity-50">
                     {openingAttachmentId === att.id
                       ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
                       : <Eye size={12} />}
@@ -303,14 +303,14 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${entry.type === 'audit' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
                     {entry.type === 'audit' ? <Hash size={14} /> : <MessageSquare size={14} />}
                   </div>
-                  <div className="flex-1 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <div className="flex-1 bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3 border border-gray-100 dark:border-slate-800">
                     {entry.type === 'audit' ? (
                       <>
-                        <p className="text-xs font-bold text-gray-900">{entry.data.action?.replace(/_/g, ' ')}</p>
-                        {entry.data.notes && <p className="text-xs text-gray-600 mt-0.5">{entry.data.notes}</p>}
+                        <p className="text-xs font-bold text-gray-900 dark:text-white">{entry.data.action?.replace(/_/g, ' ')}</p>
+                        {entry.data.notes && <p className="text-xs text-gray-600 dark:text-slate-300 mt-0.5">{entry.data.notes}</p>}
                       </>
                     ) : (
-                      <p className="text-xs text-gray-700">{entry.data.message}</p>
+                      <p className="text-xs text-gray-700 dark:text-slate-300">{entry.data.message}</p>
                     )}
                     <p className="text-[10px] text-gray-400 mt-1">{formatRelativeTime(entry.timestamp)}</p>
                   </div>
@@ -342,9 +342,9 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
       {/* Resolve Modal */}
       {showResolve && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md border border-gray-100">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="text-base font-black text-gray-900">Resolve Dispute</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md border border-gray-100 dark:border-slate-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
+              <h3 className="text-base font-black text-gray-900 dark:text-white">Resolve Dispute</h3>
               <button onClick={() => setShowResolve(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"><X size={16} /></button>
             </div>
             <div className="p-6 space-y-4">
@@ -352,7 +352,7 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1.5">Decision</label>
                 <div className="relative">
                   <select value={resolveDecision} onChange={e => setResolveDecision(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium appearance-none focus:ring-2 focus:ring-[#2c5173]">
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium appearance-none focus:ring-2 focus:ring-[#2c5173]">
                     <option value="FAVOR_COMPLAINANT">Favor Complainant</option>
                     <option value="FAVOR_RESPONDENT">Favor Respondent</option>
                     <option value="MUTUAL_SETTLEMENT">Mutual Settlement</option>
@@ -363,16 +363,16 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1.5">Resolution Summary <span className="text-red-400">*</span></label>
                 <textarea value={resolveSummary} onChange={e => setResolveSummary(e.target.value)} rows={3} placeholder="Describe the resolution…"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173]" />
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173]" />
               </div>
               <div>
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1.5">Admin Notes (optional)</label>
                 <textarea value={resolveNotes} onChange={e => setResolveNotes(e.target.value)} rows={2} placeholder="Internal notes…"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173]" />
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173]" />
               </div>
             </div>
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
-              <button onClick={() => setShowResolve(false)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+            <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-3">
+              <button onClick={() => setShowResolve(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-600 dark:text-slate-300 hover:bg-gray-100">Cancel</button>
               <button onClick={() => resolveMut.mutate()} disabled={!resolveSummary.trim() || resolveMut.isPending}
                 className="flex-1 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 disabled:opacity-50">
                 {resolveMut.isPending ? 'Saving…' : 'Confirm Resolution'}
@@ -385,25 +385,25 @@ const DisputeDetailModal: React.FC<Props> = ({ disputeId, onClose }) => {
       {/* Status Change Modal */}
       {showStatusChange && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm border border-gray-100">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="text-base font-black text-gray-900">Change Status</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm border border-gray-100 dark:border-slate-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
+              <h3 className="text-base font-black text-gray-900 dark:text-white">Change Status</h3>
               <button onClick={() => setShowStatusChange(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"><X size={16} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="relative">
                 <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium appearance-none focus:ring-2 focus:ring-[#2c5173]">
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium appearance-none focus:ring-2 focus:ring-[#2c5173]">
                   <option value="">Select status…</option>
                   {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
               <textarea value={statusReason} onChange={e => setStatusReason(e.target.value)} rows={2} placeholder="Reason (optional)…"
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173]" />
+                className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm resize-none focus:ring-2 focus:ring-[#2c5173]" />
             </div>
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
-              <button onClick={() => setShowStatusChange(false)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100">Cancel</button>
+            <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-3">
+              <button onClick={() => setShowStatusChange(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-600 dark:text-slate-300 hover:bg-gray-100">Cancel</button>
               <button onClick={() => statusMut.mutate()} disabled={!newStatus || statusMut.isPending}
                 className="flex-1 py-2.5 bg-[#2c5173] text-white rounded-xl text-sm font-bold hover:bg-[#1e3a54] disabled:opacity-50">
                 {statusMut.isPending ? 'Saving…' : 'Update'}

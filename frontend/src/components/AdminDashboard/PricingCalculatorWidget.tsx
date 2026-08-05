@@ -90,7 +90,7 @@ const PricingCalculatorWidget: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded shadow p-4">
+    <div className="bg-white dark:bg-slate-900 rounded shadow p-4">
       <div className="font-bold mb-2 flex items-center gap-2">
         <FaBalanceScale /> Pricing Calculator
       </div>
@@ -137,7 +137,7 @@ const PricingCalculatorWidget: React.FC = () => {
       </div>
       <button className="bg-green-600 text-white px-4 py-2 rounded mb-4" onClick={calculatePrice} disabled={loading}>{loading ? 'Estimating...' : 'Estimate Price'}</button>
       {price !== null && (
-        <div className="mb-4 p-2 bg-gray-50 rounded flex flex-col gap-2">
+        <div className="mb-4 p-2 bg-gray-50 dark:bg-slate-800/50 rounded flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <FaChartLine className="text-blue-600" />
             <span className="font-semibold">Estimated Price:</span> {fmt(price)}

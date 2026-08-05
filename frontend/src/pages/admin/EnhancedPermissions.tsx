@@ -109,16 +109,16 @@ const RolePermissionsModal: React.FC<{
 
     return (
         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-[24px] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="bg-white dark:bg-slate-900 rounded-[24px] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
 
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={`p-2.5 rounded-xl ${role.isSystem ? 'bg-[#2c5173]/10 text-[#2c5173]' : 'bg-slate-100 text-slate-600'}`}>
+                        <div className={`p-2.5 rounded-xl ${role.isSystem ? 'bg-[#2c5173]/10 text-[#2c5173]' : 'bg-slate-100 text-slate-600 dark:text-slate-300'}`}>
                             {role.isSystem ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
                         </div>
                         <div>
-                            <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                            <h2 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                 {role.name}
                                 {role.isSystem && (
                                     <span className="text-[9px] bg-[#2c5173]/10 text-[#2c5173] px-1.5 py-0.5 rounded font-black uppercase tracking-wider">System</span>
@@ -131,7 +131,7 @@ const RolePermissionsModal: React.FC<{
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
+                        className="p-2 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl transition-all"
                     >
                         <X size={18} />
                     </button>
@@ -154,7 +154,7 @@ const RolePermissionsModal: React.FC<{
                             placeholder="Search permissions..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all"
+                            className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all"
                         />
                     </div>
                 </div>
@@ -171,7 +171,7 @@ const RolePermissionsModal: React.FC<{
                             const collapsed = collapsedGroups.has(resource);
 
                             return (
-                                <div key={resource} className="border border-slate-100 rounded-2xl overflow-hidden">
+                                <div key={resource} className="border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
                                     {/* Group header */}
                                     <div
                                         className="flex items-center justify-between px-4 py-3 bg-slate-50/80 cursor-pointer hover:bg-slate-100 transition-colors select-none"
@@ -179,8 +179,8 @@ const RolePermissionsModal: React.FC<{
                                     >
                                         <div className="flex items-center gap-3">
                                             {collapsed ? <ChevronRight size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
-                                            <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{resource}</span>
-                                            <span className="text-[9px] bg-white border border-slate-200 text-slate-500 px-1.5 py-0.5 rounded font-bold">
+                                            <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">{resource}</span>
+                                            <span className="text-[9px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 px-1.5 py-0.5 rounded font-bold">
                                                 {grantedCount}/{perms.length}
                                             </span>
                                         </div>
@@ -207,7 +207,7 @@ const RolePermissionsModal: React.FC<{
                                                     <div
                                                         key={p.id}
                                                         className={`flex items-center justify-between px-4 py-3 transition-colors ${
-                                                            role.isSystem ? '' : 'cursor-pointer hover:bg-slate-50'
+                                                            role.isSystem ? '' : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800'
                                                         } ${granted ? 'bg-emerald-50/30' : ''}`}
                                                         onClick={() => !role.isSystem && togglePerm(p.id)}
                                                     >
@@ -215,12 +215,12 @@ const RolePermissionsModal: React.FC<{
                                                             <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 border-2 transition-all ${
                                                                 granted
                                                                     ? 'bg-emerald-500 border-emerald-500'
-                                                                    : 'bg-white border-slate-300'
+                                                                    : 'bg-white dark:bg-slate-900 border-slate-300'
                                                             } ${role.isSystem ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                                                 {granted && <Check size={11} className="text-white" strokeWidth={3} />}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <span className="text-xs font-bold text-slate-700 font-mono">{p.resource}.{p.action}</span>
+                                                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">{p.resource}.{p.action}</span>
                                                                 {p.description && (
                                                                     <p className="text-[10px] text-slate-400 truncate mt-0.5">{p.description}</p>
                                                                 )}
@@ -229,7 +229,7 @@ const RolePermissionsModal: React.FC<{
                                                         <div className={`flex-shrink-0 ml-3 w-10 h-5 rounded-full transition-all duration-200 ${
                                                             granted ? 'bg-emerald-500' : 'bg-slate-200'
                                                         } ${role.isSystem ? 'opacity-50' : ''}`}>
-                                                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm mt-0.5 transition-all duration-200 ${
+                                                            <div className={`w-4 h-4 rounded-full bg-white dark:bg-slate-900 shadow-sm mt-0.5 transition-all duration-200 ${
                                                                 granted ? 'translate-x-5' : 'translate-x-0.5'
                                                             }`} />
                                                         </div>
@@ -245,7 +245,7 @@ const RolePermissionsModal: React.FC<{
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-4">
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
                     {role.isSystem ? (
                         <p className="text-xs text-[#2c5173] font-semibold flex items-center gap-1.5">
                             <Lock size={12} /> System roles are read-only
@@ -262,7 +262,7 @@ const RolePermissionsModal: React.FC<{
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
-                            className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors"
+                            className="px-5 py-2.5 bg-slate-100 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors"
                         >
                             {role.isSystem ? 'Close' : 'Cancel'}
                         </button>
@@ -442,7 +442,7 @@ const EnhancedPermissions: React.FC = () => {
                 alwaysVisible: true,
                 render: (_, permission) => (
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-700 text-xs mb-0.5 group-hover:text-[#2c5173] transition-colors">
+                        <span className="font-bold text-slate-700 dark:text-slate-300 text-xs mb-0.5 group-hover:text-[#2c5173] transition-colors">
                             {permission.resource}.{permission.action}
                         </span>
                         <span className="text-[10px] text-slate-400 font-medium">{permission.description}</span>
@@ -465,7 +465,7 @@ const EnhancedPermissions: React.FC = () => {
                             title={role.isSystem ? 'System role — cannot modify' : hasPermission ? 'Revoke permission' : 'Grant permission'}
                             className={`w-8 h-8 rounded-lg inline-flex items-center justify-center transition-all duration-200 ${hasPermission
                                 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100'
-                                : 'bg-slate-50 text-slate-300 hover:bg-slate-100 hover:text-slate-400'
+                                : 'bg-slate-50 dark:bg-slate-800/50 text-slate-300 hover:bg-slate-100 hover:text-slate-400'
                                 } ${role.isSystem ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-110 active:scale-95'}`}
                         >
                             {hasPermission ? <Check size={14} strokeWidth={3} /> : <X size={14} />}
@@ -504,14 +504,14 @@ const EnhancedPermissions: React.FC = () => {
             }
         >
             {/* Tabs */}
-            <div className="bg-white rounded-[24px] border border-slate-100 mb-6 overflow-hidden">
-                <div className="border-b border-slate-100 bg-slate-50/50">
+            <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 mb-6 overflow-hidden">
+                <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950">
                     <nav className="flex gap-1 px-6">
                         <button
                             onClick={() => setActiveTab('matrix')}
                             className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors ${activeTab === 'matrix'
                                 ? 'border-[#2c5173] text-[#2c5173]'
-                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                 }`}
                         >
                             <TranslatedText text="Permission Matrix" />
@@ -520,7 +520,7 @@ const EnhancedPermissions: React.FC = () => {
                             onClick={() => setActiveTab('roles')}
                             className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors ${activeTab === 'roles'
                                 ? 'border-[#2c5173] text-[#2c5173]'
-                                : 'border-transparent text-slate-400 hover:text-slate-600'
+                                : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                                 }`}
                         >
                             <TranslatedText text="Roles" /> ({rolesData?.length || 0})
@@ -545,7 +545,7 @@ const EnhancedPermissions: React.FC = () => {
                         ) : (
                             <>
                                 {/* Info Banner */}
-                                <div className="mb-8 p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-start gap-4">
+                                <div className="mb-8 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl flex items-start gap-4">
                                     <div className="flex-shrink-0 p-2 bg-slate-100 rounded-lg">
                                         <AlertCircle className="w-5 h-5 text-[#2c5173]" />
                                     </div>
@@ -570,7 +570,7 @@ const EnhancedPermissions: React.FC = () => {
                                     getRowId={(row) => row.id}
                                     loading={matrixLoading}
                                     ariaLabel="Permission matrix"
-                                    className="rounded-xl border border-slate-100 overflow-hidden"
+                                    className="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden"
                                     rowClassName={() => 'group'}
                                 />
                             </>
@@ -589,11 +589,11 @@ const EnhancedPermissions: React.FC = () => {
                             </div>
                         ) : rolesData && rolesData.length === 0 ? (
                             // Empty state
-                            <div className="text-center py-24 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-                                <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-6">
+                            <div className="text-center py-24 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 border-dashed">
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-white dark:bg-slate-900 rounded-full mb-6">
                                     <ShieldAlert className="text-[#2c5173] w-8 h-8" />
                                 </div>
-                                <h3 className="text-lg font-black text-slate-800 mb-2">No Roles Defined</h3>
+                                <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-2">No Roles Defined</h3>
                                 <p className="text-slate-500 mb-8 max-w-md mx-auto text-sm">
                                     Create custom roles to assign specific permissions to your team members and control access levels.
                                 </p>
@@ -609,7 +609,7 @@ const EnhancedPermissions: React.FC = () => {
                                 {/* Header with additional Create button */}
                                 <div className="flex items-center justify-between mb-6">
                                     <div>
-                                        <h3 className="text-lg font-black text-slate-800">Available Roles</h3>
+                                        <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">Available Roles</h3>
                                         <p className="text-sm text-slate-500 font-medium">
                                             {rolesData?.filter((r: Role) => !r.isSystem).length || 0} Custom roles • {rolesData?.filter((r: Role) => r.isSystem).length || 0} System roles
                                         </p>
@@ -627,16 +627,16 @@ const EnhancedPermissions: React.FC = () => {
                                     {rolesData?.map((role: Role) => (
                                         <div
                                             key={role.id}
-                                            className="p-6 bg-white border border-slate-100 rounded-[24px] hover:border-[#2c5173]/30 hover:shadow-md transition-all group cursor-pointer"
+                                            className="p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] hover:border-[#2c5173]/30 hover:shadow-md transition-all group cursor-pointer"
                                             onClick={() => setPermModalRole(role)}
                                         >
                                             <div className="flex items-start justify-between mb-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`p-2 rounded-xl ${role.isSystem ? 'bg-slate-100 text-[#2c5173]' : 'bg-slate-50 text-slate-600 group-hover:bg-[#2c5173]/10 group-hover:text-[#2c5173]'} transition-colors`}>
+                                                    <div className={`p-2 rounded-xl ${role.isSystem ? 'bg-slate-100 text-[#2c5173]' : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 group-hover:bg-[#2c5173]/10 group-hover:text-[#2c5173]'} transition-colors`}>
                                                         {role.isSystem ? <ShieldCheck size={20} /> : <ShieldAlert size={20} />}
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-bold text-slate-800 group-hover:text-[#2c5173] transition-colors">{role.name}</h3>
+                                                        <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-[#2c5173] transition-colors">{role.name}</h3>
                                                         {role.isSystem && <span className="text-[10px] text-[#2c5173] font-black uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded">System</span>}
                                                     </div>
                                                 </div>
@@ -670,7 +670,7 @@ const EnhancedPermissions: React.FC = () => {
                                             <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
                                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Permissions</span>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold text-slate-700 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 px-2 py-1 rounded-lg border border-slate-100 dark:border-slate-800">
                                                         {role.permissions?.length || 0}
                                                     </span>
                                                     <span className="text-[10px] text-[#2c5173] font-black group-hover:underline">Edit →</span>
@@ -687,8 +687,8 @@ const EnhancedPermissions: React.FC = () => {
 
             {/* Create Role Modal */}
             {showCreateRole && (                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-[24px] p-8 max-w-lg w-full animate-in fade-in zoom-in duration-200">
-                        <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3">
+                    <div className="bg-white dark:bg-slate-900 rounded-[24px] p-8 max-w-lg w-full animate-in fade-in zoom-in duration-200">
+                        <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
                             <div className="p-2 bg-slate-100 rounded-xl">
                                 <ShieldCheck className="text-[#2c5173] w-6 h-6" />
                             </div>
@@ -701,7 +701,7 @@ const EnhancedPermissions: React.FC = () => {
                                     type="text"
                                     value={newRole.name}
                                     onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium"
+                                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium"
                                     placeholder="e.g., Content Manager"
                                 />
                             </div>
@@ -710,13 +710,13 @@ const EnhancedPermissions: React.FC = () => {
                                 <textarea
                                     value={newRole.description}
                                     onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium resize-none"
+                                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium resize-none"
                                     rows={3}
                                     placeholder="Describe the purpose and access level of this role..."
                                 />
                             </div>
 
-                            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
                                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Quick Start Templates</h3>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
@@ -725,9 +725,9 @@ const EnhancedPermissions: React.FC = () => {
                                             description: 'Read-only access to most resources.',
                                             permissionIds: []
                                         })}
-                                        className="text-left p-3 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all group"
+                                        className="text-left p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-300 transition-all group"
                                     >
-                                        <div className="font-bold text-slate-700 text-sm group-hover:text-[#2c5173]">Viewer</div>
+                                        <div className="font-bold text-slate-700 dark:text-slate-300 text-sm group-hover:text-[#2c5173]">Viewer</div>
                                         <div className="text-xs text-slate-400 mt-1">Read-only access</div>
                                     </button>
                                     <button
@@ -736,9 +736,9 @@ const EnhancedPermissions: React.FC = () => {
                                             description: 'Can manage daily operations (users, loads) but not system settings.',
                                             permissionIds: []
                                         })}
-                                        className="text-left p-3 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all group"
+                                        className="text-left p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-slate-300 transition-all group"
                                     >
-                                        <div className="font-bold text-slate-700 text-sm group-hover:text-[#2c5173]">Manager</div>
+                                        <div className="font-bold text-slate-700 dark:text-slate-300 text-sm group-hover:text-[#2c5173]">Manager</div>
                                         <div className="text-xs text-slate-400 mt-1">Daily operations</div>
                                     </button>
                                 </div>
@@ -750,7 +750,7 @@ const EnhancedPermissions: React.FC = () => {
                                         setShowCreateRole(false);
                                         setNewRole({ name: '', description: '', permissionIds: [] });
                                     }}
-                                    className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-colors"
+                                    className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                 >
                                     Cancel
                                 </button>

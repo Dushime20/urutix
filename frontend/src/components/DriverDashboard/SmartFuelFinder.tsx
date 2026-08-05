@@ -122,7 +122,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
   });
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl p-8 overflow-hidden h-full flex flex-col">
+    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl p-8 overflow-hidden h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
@@ -150,7 +150,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
         <input
           type="text"
           placeholder={t('Search stations or brands...')}
-          className="w-full h-12 pl-12 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all"
+          className="w-full h-12 pl-12 pr-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -203,7 +203,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="group bg-slate-50/50 border border-slate-100 rounded-[2rem] p-6 hover:bg-white hover:shadow-xl hover:shadow-slate-200/40 hover:border-blue-100 transition-all duration-300"
+            className="group bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 hover:bg-white dark:bg-slate-900 hover:shadow-xl hover:shadow-slate-200/40 hover:border-blue-100 transition-all duration-300"
           >
             <div className="flex justify-between items-start mb-4">
               <div>
@@ -238,7 +238,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
                   <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest"><TranslatedText text="Distance" /></span>
                   <span className="text-xs font-black text-[#0f172a] uppercase">{station.distanceKm} KM</span>
                 </div>
-                <div className="flex flex-col border-l border-slate-200 pl-4">
+                <div className="flex flex-col border-l border-slate-200 dark:border-slate-700 pl-4">
                   <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest"><TranslatedText text="Type" /></span>
                   <span className="text-xs font-black text-blue-500 uppercase">{station.fuelType}</span>
                 </div>
@@ -246,7 +246,7 @@ export const SmartFuelFinder: React.FC<SmartFuelFinderProps> = ({ driverLocation
 
               <button
                 onClick={() => handleNavigate(station)}
-                className="px-6 py-2.5 bg-white border border-slate-200 text-[#0f172a] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 group-hover:bg-[#345E85] group-hover:text-white group-hover:border-[#345E85] transition-all shadow-sm"
+                className="px-6 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[#0f172a] rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 group-hover:bg-[#345E85] group-hover:text-white group-hover:border-[#345E85] transition-all shadow-sm"
               >
                 <TranslatedText text="Navigate" />
                 <Navigation size={12} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />

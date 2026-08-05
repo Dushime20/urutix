@@ -235,7 +235,7 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks, analytic
                 Live Monitoring
               </span>
             </div>
-            <button className="h-14 px-8 bg-white text-blue-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl active:scale-95 flex items-center gap-3">
+            <button className="h-14 px-8 bg-white dark:bg-slate-900 text-blue-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-50 transition-all shadow-xl active:scale-95 flex items-center gap-3">
               <Cpu size={16} />
               Recompute Matrix
             </button>
@@ -399,7 +399,7 @@ export const TruckAnalytics: React.FC<TruckAnalyticsProps> = ({ trucks, analytic
               ) : (
                 <div className="text-center space-y-4">
                   <div className="size-24 rounded-full border-4 border-dashed border-slate-800 mx-auto flex items-center justify-center">
-                    <DollarSign className="text-slate-700" size={32} />
+                    <DollarSign className="text-slate-700 dark:text-slate-300" size={32} />
                   </div>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">No cost distribution data available</p>
                 </div>

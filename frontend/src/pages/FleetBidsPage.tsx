@@ -376,7 +376,7 @@ const FleetBidsPage: React.FC = () => {
             <Package size={14} />
           </div>
           <div className="max-w-[180px]">
-            <p className="text-sm font-bold text-slate-900 truncate">{bid.title}</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{bid.title}</p>
             <p className="text-[10px] font-medium text-slate-400">{bid.cargoOwnerCompany}</p>
           </div>
         </div>
@@ -389,11 +389,11 @@ const FleetBidsPage: React.FC = () => {
         <div className="flex flex-col gap-1 max-w-[200px]">
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            <span className="text-xs font-medium text-slate-600 truncate">{bid.pickupLocation?.address}</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">{bid.pickupLocation?.address}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-            <span className="text-xs font-medium text-slate-600 truncate">{bid.deliveryLocation?.address}</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">{bid.deliveryLocation?.address}</span>
           </div>
         </div>
       ),
@@ -402,7 +402,7 @@ const FleetBidsPage: React.FC = () => {
       key: 'weight',
       label: 'Details',
       render: (_v, bid) => (
-        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded-lg w-fit">
+        <span className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 px-2 py-1 rounded-lg w-fit">
           <Scale size={12} className="text-slate-400" />
           {bid.weight?.toLocaleString()} kg
         </span>
@@ -449,7 +449,7 @@ const FleetBidsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col font-sans selection:bg-blue-500/30">
       <FleetHeader />
 
       <img
@@ -470,12 +470,12 @@ const FleetBidsPage: React.FC = () => {
           </div>
           <div className="flex justify-between items-end">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bids</h1>
-              <p className="text-slate-500 font-medium mt-1">Review and place bids.</p>
+              <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Bids</h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Review and place bids.</p>
             </div>
             <button
               onClick={loadBids}
-              className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-[#345E85] hover:border-[#345E85] transition-all text-sm font-bold active:scale-95"
+              className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-[#345E85] hover:border-[#345E85] transition-all text-sm font-bold active:scale-95"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
               Refresh
@@ -484,7 +484,7 @@ const FleetBidsPage: React.FC = () => {
         </div>
 
         {/* Filters and Controls */}
-        <div className="bg-white rounded-[24px] border border-slate-100 shadow-sm p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 shadow-sm p-4">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -493,7 +493,7 @@ const FleetBidsPage: React.FC = () => {
                 placeholder="Search by title, location, or company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none transition-all"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none transition-all"
               />
             </div>
 
@@ -505,7 +505,7 @@ const FleetBidsPage: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="pl-9 pr-8 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
+                  className="pl-9 pr-8 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
@@ -517,7 +517,7 @@ const FleetBidsPage: React.FC = () => {
               <select
                 value={cargoTypeFilter}
                 onChange={(e) => setCargoTypeFilter(e.target.value)}
-                className="px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
+                className="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-100 focus:border-[#345E85] outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
               >
                 <option value="all">All Cargo Types</option>
                 <option value="ELECTRONICS">Electronics</option>
@@ -526,12 +526,12 @@ const FleetBidsPage: React.FC = () => {
                 <option value="FOOD_BEVERAGES">Food & Beverages</option>
               </select>
 
-              <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100">
+              <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
                 <button
                   onClick={() => setViewMode('card')}
                   className={cn(
                     "p-2 rounded-lg transition-all",
-                    viewMode === 'card' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    viewMode === 'card' ? "bg-white dark:bg-slate-900 text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   )}
                 >
                   <LayoutGrid size={18} />
@@ -540,7 +540,7 @@ const FleetBidsPage: React.FC = () => {
                   onClick={() => setViewMode('table')}
                   className={cn(
                     "p-2 rounded-lg transition-all",
-                    viewMode === 'table' ? "bg-white text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    viewMode === 'table' ? "bg-white dark:bg-slate-900 text-[#345E85] shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   )}
                 >
                   <List size={18} />
@@ -552,12 +552,12 @@ const FleetBidsPage: React.FC = () => {
 
         {/* Results */}
         {filteredBids.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-[32px] border border-slate-100 shadow-sm">
-            <div className="h-20 w-20 bg-slate-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-slate-300">
+          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm">
+            <div className="h-20 w-20 bg-slate-50 dark:bg-slate-800/50 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-slate-300">
               <Package size={40} />
             </div>
-            <h3 className="text-lg font-black text-slate-900 mb-2">No bids found</h3>
-            <p className="text-slate-500 font-medium max-w-xs mx-auto">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">No bids found</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xs mx-auto">
               Try adjusting your filters or search terms.
             </p>
           </div>
@@ -568,7 +568,7 @@ const FleetBidsPage: React.FC = () => {
                 {filteredBids.map((bid) => (
                   <div
                     key={bid.id}
-                    className="bg-white rounded-[24px] border border-slate-100 p-6 hover:shadow-xl transition-all group relative overflow-hidden flex flex-col h-full"
+                    className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-6 hover:shadow-xl transition-all group relative overflow-hidden flex flex-col h-full"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -576,7 +576,7 @@ const FleetBidsPage: React.FC = () => {
                           <Package size={24} />
                         </div>
                         <div>
-                          <h3 className="text-base font-black text-slate-900 tracking-tight line-clamp-1" title={bid.title}>{bid.title}</h3>
+                          <h3 className="text-base font-black text-slate-900 dark:text-white tracking-tight line-clamp-1" title={bid.title}>{bid.title}</h3>
                           <p className="text-xs font-medium text-slate-400">{bid.cargoType?.replace('_', ' ')}</p>
                         </div>
                       </div>
@@ -592,14 +592,14 @@ const FleetBidsPage: React.FC = () => {
                     <div className="space-y-4 mb-6 flex-1">
                       <div className="relative pl-6 space-y-4 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
                         <div className="relative">
-                          <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-emerald-500 rounded-full" />
+                          <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-emerald-500 rounded-full" />
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-0.5">Origin</p>
-                          <p className="text-xs font-bold text-slate-900 line-clamp-1">{bid.pickupLocation?.address}</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{bid.pickupLocation?.address}</p>
                         </div>
                         <div className="relative">
-                          <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white border-2 border-rose-500 rounded-full" />
+                          <div className="absolute -left-6 top-1 h-3.5 w-3.5 bg-white dark:bg-slate-900 border-2 border-rose-500 rounded-full" />
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-70 mb-0.5">Destination</p>
-                          <p className="text-xs font-bold text-slate-900 line-clamp-1">{bid.deliveryLocation?.address}</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{bid.deliveryLocation?.address}</p>
                         </div>
                       </div>
 
@@ -614,7 +614,7 @@ const FleetBidsPage: React.FC = () => {
                             <Snowflake size={10} /> Cold Chain
                           </span>
                         )}
-                        <span className="px-2 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-100 flex items-center gap-1">
+                        <span className="px-2 py-1 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-100 dark:border-slate-800 flex items-center gap-1">
                           <Scale size={10} /> {bid.weight?.toLocaleString()} kg
                         </span>
                       </div>
@@ -673,14 +673,14 @@ const FleetBidsPage: React.FC = () => {
 
         {/* Details Modal */}
         <Dialog open={!!selectedBid} onOpenChange={(open) => !open && setSelectedBid(null)}>
-          <DialogContent className="max-w-4xl bg-white rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl h-[85vh] flex flex-col">
+          <DialogContent className="max-w-4xl bg-white dark:bg-slate-900 rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl h-[85vh] flex flex-col">
             <DialogHeader className="p-8 pb-4 border-b border-slate-50 shrink-0">
               <DialogTitle className="flex items-center gap-3">
                 <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#345E85]">
                   <Gavel size={24} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Bid Details</h2>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Bid Details</h2>
                   <p className="text-sm font-medium text-slate-400">Ref: {selectedBid?.bidId}</p>
                 </div>
               </DialogTitle>
@@ -696,7 +696,7 @@ const FleetBidsPage: React.FC = () => {
                   )}>
                     <div className="flex items-center gap-4">
                       <span className={cn(
-                        "h-12 w-12 rounded-full flex items-center justify-center bg-white shadow-sm",
+                        "h-12 w-12 rounded-full flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm",
                         getStatusColor(selectedBid.bidStatus).split(' ')[1]
                       )}>
                         {getStatusIcon(selectedBid.bidStatus)}
@@ -732,26 +732,26 @@ const FleetBidsPage: React.FC = () => {
                     {/* Left Column: Route & Cargo */}
                     <div className="space-y-8">
                       <section>
-                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-2">
                           <MapPin size={14} /> Route Information
                         </h3>
                         <div className="relative pl-6 space-y-8 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
                           <div className="relative">
-                            <div className="absolute -left-[27px] top-1 h-4 w-4 bg-white border-[3px] border-emerald-500 rounded-full" />
-                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <div className="absolute -left-[27px] top-1 h-4 w-4 bg-white dark:bg-slate-900 border-[3px] border-emerald-500 rounded-full" />
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Pickup</p>
-                              <p className="text-sm font-bold text-slate-900 mb-2">{selectedBid.pickupLocation?.address}</p>
-                              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <p className="text-sm font-bold text-slate-900 dark:text-white mb-2">{selectedBid.pickupLocation?.address}</p>
+                              <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
                                 <Calendar size={12} /> {formatDate(selectedBid.pickupDate)}
                               </div>
                             </div>
                           </div>
                           <div className="relative">
-                            <div className="absolute -left-[27px] top-1 h-4 w-4 bg-white border-[3px] border-rose-500 rounded-full" />
-                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <div className="absolute -left-[27px] top-1 h-4 w-4 bg-white dark:bg-slate-900 border-[3px] border-rose-500 rounded-full" />
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-800">
                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Delivery</p>
-                              <p className="text-sm font-bold text-slate-900 mb-2">{selectedBid.deliveryLocation?.address}</p>
-                              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <p className="text-sm font-bold text-slate-900 dark:text-white mb-2">{selectedBid.deliveryLocation?.address}</p>
+                              <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
                                 <Calendar size={12} /> {formatDate(selectedBid.deliveryDate)}
                               </div>
                             </div>
@@ -760,23 +760,23 @@ const FleetBidsPage: React.FC = () => {
                       </section>
 
                       <section>
-                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-2">
                           <Package size={14} /> Cargo Specs
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Total Weight</p>
-                            <p className="text-lg font-black text-slate-900">{selectedBid.weight?.toLocaleString()} <span className="text-sm text-slate-500 font-medium">kg</span></p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">{selectedBid.weight?.toLocaleString()} <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">kg</span></p>
                           </div>
-                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Volume</p>
-                            <p className="text-lg font-black text-slate-900">{selectedBid.volume} <span className="text-sm text-slate-500 font-medium">m³</span></p>
+                            <p className="text-lg font-black text-slate-900 dark:text-white">{selectedBid.volume} <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">m³</span></p>
                           </div>
                           {selectedBid.length && (
-                            <div className="col-span-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                            <div className="col-span-2 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                               <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Dimensions</p>
-                                <p className="text-sm font-bold text-slate-900">{selectedBid.length}x{selectedBid.width}x{selectedBid.height}m</p>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">{selectedBid.length}x{selectedBid.width}x{selectedBid.height}m</p>
                               </div>
                               <Ruler size={24} className="text-slate-300" />
                             </div>
@@ -788,24 +788,24 @@ const FleetBidsPage: React.FC = () => {
                     {/* Right Column: Owner & Requirements & Actions */}
                     <div className="space-y-8 flex flex-col h-full">
                       <section>
-                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-2">
                           <Building2 size={14} /> Cargo Owner
                         </h3>
-                        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
                           <div className="flex items-center gap-4">
                             <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
                               <Building2 size={24} />
                             </div>
                             <div>
-                              <p className="text-sm font-extrabold text-slate-900">{selectedBid.cargoOwnerCompany}</p>
-                              <p className="text-xs font-medium text-slate-500">{selectedBid.cargoOwnerName}</p>
+                              <p className="text-sm font-extrabold text-slate-900 dark:text-white">{selectedBid.cargoOwnerCompany}</p>
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{selectedBid.cargoOwnerName}</p>
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
-                            <a href={`tel:${selectedBid.cargoOwnerPhone}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-xs font-medium text-slate-600">
+                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <a href={`tel:${selectedBid.cargoOwnerPhone}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-medium text-slate-600 dark:text-slate-300">
                               <Phone size={14} /> {selectedBid.cargoOwnerPhone}
                             </a>
-                            <a href={`mailto:${selectedBid.cargoOwnerEmail}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 transition-colors text-xs font-medium text-slate-600">
+                            <a href={`mailto:${selectedBid.cargoOwnerEmail}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-xs font-medium text-slate-600 dark:text-slate-300">
                               <Mail size={14} /> Email
                             </a>
                           </div>
@@ -813,7 +813,7 @@ const FleetBidsPage: React.FC = () => {
                       </section>
 
                       <section className="flex-1">
-                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                        <h3 className="text-xs font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center gap-2">
                           <AlertTriangle size={14} /> Requirements
                         </h3>
                         <div className="flex flex-wrap gap-2">
@@ -827,7 +827,7 @@ const FleetBidsPage: React.FC = () => {
                               <Snowflake size={14} /> Cold Chain
                             </span>
                           )}
-                          <span className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold border border-slate-100 flex items-center gap-2">
+                          <span className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold border border-slate-100 dark:border-slate-800 flex items-center gap-2">
                             <Truck size={14} /> {selectedBid.packagingType?.replace('_', ' ') || 'Standard'}
                           </span>
                         </div>
@@ -835,7 +835,7 @@ const FleetBidsPage: React.FC = () => {
 
                       {/* Action Buttons */}
                       {selectedBid.bidStatus === 'pending' && (
-                        <div className="pt-6 border-t border-slate-100 grid grid-cols-2 gap-4 mt-auto">
+                        <div className="pt-6 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-4 mt-auto">
                           <button
                             onClick={() => handleAcceptBid(selectedBid)}
                             disabled={processingAction === selectedBid.id}
@@ -847,7 +847,7 @@ const FleetBidsPage: React.FC = () => {
                           <button
                             onClick={() => handleRejectBid(selectedBid)}
                             disabled={processingAction === selectedBid.id}
-                            className="py-4 bg-white text-rose-600 border border-rose-100 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-rose-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            className="py-4 bg-white dark:bg-slate-900 text-rose-600 border border-rose-100 rounded-xl text-sm font-black uppercase tracking-widest hover:bg-rose-50 active:scale-95 transition-all flex items-center justify-center gap-2"
                           >
                             {processingAction === selectedBid.id ? <Loader2 className="animate-spin" /> : <XCircle />}
                             Reject
@@ -859,10 +859,10 @@ const FleetBidsPage: React.FC = () => {
                 </div>
               </div>
             )}
-            <div className="p-6 border-t border-slate-50 bg-slate-50/50 flex justify-end shrink-0">
+            <div className="p-6 border-t border-slate-50 bg-slate-50/50 dark:bg-slate-950 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedBid(null)}
-                className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors"
+                className="px-6 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 Close Details
               </button>

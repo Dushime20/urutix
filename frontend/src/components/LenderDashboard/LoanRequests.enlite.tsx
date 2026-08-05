@@ -223,7 +223,7 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                             {score}%
                         </span>
                     </div>
-                    <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-black">Score Index</span>
+                    <span className="text-[9px] text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase font-black">Score Index</span>
                 </div>
             )
         },

@@ -157,16 +157,16 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
       completed: 'text-green-600 bg-green-100',
       overdue: 'text-red-600 bg-red-100'
     };
-    return colors[status] || 'text-gray-600 bg-gray-100';
+    return colors[status] || 'text-gray-600 dark:text-slate-300 bg-gray-100';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Financial Dashboard</h1>
-          <p className="text-gray-600 mt-2">Track your trucking business finances, expenses, and profitability</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Financial Dashboard</h1>
+          <p className="text-gray-600 dark:text-slate-300 mt-2">Track your trucking business finances, expenses, and profitability</p>
         </div>
 
         {/* Period and Filter Controls */}
@@ -215,8 +215,8 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Revenue Trend */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={metrics.monthlyRevenue.map((value, index) => ({ month: `Month ${index + 1}`, revenue: value }))}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -229,8 +229,8 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
           </div>
 
           {/* Expense Breakdown */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Expense Breakdown</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Expense Breakdown</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -256,23 +256,23 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
         {/* Recent Expenses and Revenue */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Recent Expenses */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Expenses</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Expenses</h3>
             </div>
             <div className="p-6">
               <div className="space-y-4">
                 {expenses.slice(0, 5).map((expense) => {
                   const IconComponent = getExpenseIcon(expense.type);
                   return (
-                    <div key={expense.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={expense.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 bg-blue-100 rounded-full">
                           <IconComponent className="w-4 h-4 text-blue-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{expense.description}</p>
-                          <p className="text-sm text-gray-500">{expense.category} • {expense.date}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{expense.description}</p>
+                          <p className="text-sm text-gray-500 dark:text-slate-400">{expense.category} • {expense.date}</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -289,21 +289,21 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
           </div>
 
           {/* Recent Revenue */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Revenue</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Revenue</h3>
             </div>
             <div className="p-6">
               <div className="space-y-4">
                 {revenues.slice(0, 5).map((revenue) => (
-                  <div key={revenue.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={revenue.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded-full">
                         <FaTruck className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{revenue.tripNumber}</p>
-                        <p className="text-sm text-gray-500">{revenue.customerName} • {revenue.date}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{revenue.tripNumber}</p>
+                        <p className="text-sm text-gray-500 dark:text-slate-400">{revenue.customerName} • {revenue.date}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -320,30 +320,30 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors">
               <div className="text-center">
                 <FaDownload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Export Report</p>
-                <p className="text-xs text-gray-500">Download financial data</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Export Report</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">Download financial data</p>
               </div>
             </button>
             
             <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-colors">
               <div className="text-center">
                 <FaChartLine className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Generate Report</p>
-                <p className="text-xs text-gray-500">Create custom analysis</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Generate Report</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">Create custom analysis</p>
               </div>
             </button>
             
             <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-colors">
               <div className="text-center">
                 <FaUniversity className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900">Tax Summary</p>
-                <p className="text-xs text-gray-500">View tax-deductible items</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Tax Summary</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">View tax-deductible items</p>
               </div>
             </button>
           </div>

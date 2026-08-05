@@ -35,7 +35,7 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+          <div key={i} className="bg-white dark:bg-slate-900 rounded-lg shadow p-6 animate-pulse">
             <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
             <div className="h-8 bg-gray-200 rounded w-1/2"></div>
           </div>
@@ -157,7 +157,7 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900"><TranslatedText text="Performance Overview" /></h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white"><TranslatedText text="Performance Overview" /></h2>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
           <Calendar className="w-4 h-4" />
           <span><TranslatedText text="This Month" /></span>
@@ -170,7 +170,7 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
           const colors = getColorClasses(stat.color, stat.changeType);
           
           return (
-            <div key={index} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+            <div key={index} className="bg-white dark:bg-slate-900 rounded-lg shadow p-6 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-2 rounded-lg ${colors.bg}`}>
                   <Icon className="w-5 h-5" />
@@ -183,8 +183,8 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
               </div>
               
               <div className="mb-2">
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm font-medium text-gray-600"><TranslatedText text={stat.title} /></p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-slate-300"><TranslatedText text={stat.title} /></p>
               </div>
               
               <p className="text-xs text-gray-500"><TranslatedText text={stat.description} /></p>
@@ -195,12 +195,12 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
 
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4"><TranslatedText text="Weekly Progress" /></h3>
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4"><TranslatedText text="Weekly Progress" /></h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600"><TranslatedText text="Hours Target" /></span>
-              <span className="text-sm font-medium text-gray-900">40h / 40h</span>
+              <span className="text-sm text-gray-600 dark:text-slate-300"><TranslatedText text="Hours Target" /></span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">40h / 40h</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
@@ -216,8 +216,8 @@ export const DriverStats: React.FC<DriverStatsProps> = ({ stats, loading }) => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4"><TranslatedText text="Safety Alerts" /></h3>
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4"><TranslatedText text="Safety Alerts" /></h3>
           <div className="space-y-3">
             {currentStats.consecutiveDrivingHours > 8 && (
               <div className="flex items-center space-x-2 text-yellow-600">

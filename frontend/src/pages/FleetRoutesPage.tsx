@@ -42,7 +42,7 @@ const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => 
     };
 
     return (
-        <div className={isEmbedded ? "w-full" : "min-h-screen bg-slate-50 font-sans flex flex-col pt-12"}>
+        <div className={isEmbedded ? "w-full" : "min-h-screen bg-slate-50 dark:bg-slate-950 font-sans flex flex-col pt-12"}>
             {/* Route Builder Modal */}
             {showBuilder && (
                 <RouteBuilder
@@ -112,10 +112,10 @@ const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => 
                                 <div
                                     key={route.id}
                                     onClick={() => setSelectedRoute(route)}
-                                    className={`bg-white rounded-xl shadow-sm border p-4 cursor-pointer transition-all ${selectedRoute?.id === route.id ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200 hover:border-blue-300'}`}
+                                    className={`bg-white dark:bg-slate-900 rounded-xl shadow-sm border p-4 cursor-pointer transition-all ${selectedRoute?.id === route.id ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'}`}
                                 >
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-slate-800 truncate">{route.name}</h3>
+                                        <h3 className="font-bold text-slate-800 dark:text-slate-100 truncate">{route.name}</h3>
                                         <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${route.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{route.status}</span>
                                     </div>
                                     <div className="flex justify-between text-xs text-slate-500">
@@ -126,7 +126,7 @@ const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => 
                             ))}
                         </div>
                         {/* Map Area */}
-                        <div className="md:col-span-2 h-full rounded-xl overflow-hidden shadow-lg border border-slate-200">
+                        <div className="md:col-span-2 h-full rounded-xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-700">
                             <OptimizedRouteMap route={selectedRoute || (routes.length > 0 ? routes[0] : null)} />
                         </div>
                     </div>
@@ -139,26 +139,26 @@ const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => 
                     ) : (
                         <div className="grid grid-cols-1 gap-6">
                             {routes.length === 0 ? (
-                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+                                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center">
                                     <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <MapIcon className="w-8 h-8 text-slate-400" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-slate-900 mb-2">No Routes</h3>
-                                    <p className="text-slate-600 mb-6">Start by creating your first optimized route.</p>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">No Routes</h3>
+                                    <p className="text-slate-600 dark:text-slate-300 mb-6">Start by creating your first optimized route.</p>
                                     <button className="text-blue-600 font-bold hover:underline" onClick={() => setShowBuilder(true)}>Add Route</button>
                                 </div>
                             ) : (
                                 routes.map(route => (
-                                    <div key={route.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all group">
+                                    <div key={route.id} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition-all group">
                                         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
                                             <div>
                                                 <div className="flex items-center gap-3 mb-1">
                                                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide 
                           ${route.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
-                                                            route.status === 'completed' ? 'bg-slate-100 text-slate-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                            route.status === 'completed' ? 'bg-slate-100 text-slate-700 dark:text-slate-300' : 'bg-blue-100 text-blue-700'}`}>
                                                         {route.status}
                                                     </span>
-                                                    <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{route.name}</h3>
+                                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{route.name}</h3>
                                                 </div>
                                                 <p className="text-sm text-slate-500 flex items-center gap-2">
                                                     <Clock className="w-3.5 h-3.5" /> Created {new Date(route.createdAt).toLocaleDateString()}
@@ -167,11 +167,11 @@ const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => 
                                             <div className="flex items-center gap-6 text-sm">
                                                 <div className="text-right">
                                                     <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-0.5">Distance</p>
-                                                    <p className="font-bold text-slate-900">{route.totalDistance} km</p>
+                                                    <p className="font-bold text-slate-900 dark:text-white">{route.totalDistance} km</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-0.5">Time</p>
-                                                    <p className="font-bold text-slate-900">{Math.round(route.totalDuration / 60)} hrs</p>
+                                                    <p className="font-bold text-slate-900 dark:text-white">{Math.round(route.totalDuration / 60)} hrs</p>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <button
@@ -179,11 +179,11 @@ const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => 
                                                             setSelectedRoute(route);
                                                             setViewMode('map');
                                                         }}
-                                                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg transition-colors font-semibold text-xs flex items-center gap-1"
+                                                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-lg transition-colors font-semibold text-xs flex items-center gap-1"
                                                     >
                                                         <MapIcon className="w-3 h-3" /> View Map
                                                     </button>
-                                                    <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-lg transition-colors">
+                                                    <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 p-2 rounded-lg transition-colors">
                                                         <ChevronRight className="w-5 h-5" />
                                                     </button>
                                                 </div>
@@ -191,29 +191,29 @@ const FleetRoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => 
                                         </div>
 
                                         {/* Route Visualizer (Simple Line) */}
-                                        <div className="relative pt-6 pb-2 px-4 border-t border-slate-100">
+                                        <div className="relative pt-6 pb-2 px-4 border-t border-slate-100 dark:border-slate-800">
                                             <div className="absolute top-0 left-0 w-full h-full flex items-center px-8" aria-hidden="true">
                                                 <div className="w-full h-0.5 bg-slate-200 relative">
                                                     <div className="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3 bg-slate-900 rounded-full ring-4 ring-white"></div>
                                                     <div className="absolute top-1/2 right-0 -translate-y-1/2 w-3 h-3 bg-slate-900 rounded-full ring-4 ring-white"></div>
                                                 </div>
                                             </div>
-                                            <div className="relative flex justify-between text-sm font-medium text-slate-700">
+                                            <div className="relative flex justify-between text-sm font-medium text-slate-700 dark:text-slate-300">
                                                 <div className="flex flex-col items-start gap-1">
-                                                    <span className="bg-white px-2 py-1 rounded border border-slate-200 relative z-10 shadow-sm">{route.origin.name}</span>
+                                                    <span className="bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 relative z-10 shadow-sm">{route.origin.name}</span>
                                                 </div>
 
                                                 {route.stops.length > 0 && (
                                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                                                         <div className="w-2 h-2 bg-blue-500 rounded-full ring-4 ring-white mb-2"></div>
-                                                        <span className="text-xs text-slate-500 bg-white px-1.5 py-0.5 rounded shadow-sm border border-slate-100 whitespace-nowrap">
+                                                        <span className="text-xs text-slate-500 bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded shadow-sm border border-slate-100 dark:border-slate-800 whitespace-nowrap">
                                                             {route.stops.length} stop{route.stops.length !== 1 ? 's' : ''}
                                                         </span>
                                                     </div>
                                                 )}
 
                                                 <div className="flex flex-col items-end gap-1">
-                                                    <span className="bg-white px-2 py-1 rounded border border-slate-200 relative z-10 shadow-sm">{route.destination.name}</span>
+                                                    <span className="bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 relative z-10 shadow-sm">{route.destination.name}</span>
                                                 </div>
                                             </div>
                                         </div>

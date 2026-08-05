@@ -3,12 +3,12 @@ import { FaFileContract, FaHandshake } from 'react-icons/fa';
 
 const ContractNegotiation: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-8 max-w-2xl w-full">
         <div className="text-center">
           <FaFileContract className="text-blue-500 text-4xl mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Contract Negotiation</h1>
-          <p className="text-gray-600 mb-6">Negotiate terms and conditions</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Contract Negotiation</h1>
+          <p className="text-gray-600 dark:text-slate-300 mb-6">Negotiate terms and conditions</p>
           
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-lg">

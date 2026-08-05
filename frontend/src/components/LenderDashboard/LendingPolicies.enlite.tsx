@@ -168,7 +168,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
             case 'medium': return 'bg-amber-50 text-amber-700 border-amber-200';
             case 'high': return 'bg-rose-50 text-rose-700 border-rose-200';
             case 'critical': return 'bg-slate-900 text-white border-slate-700';
-            default: return 'bg-slate-50 text-slate-700 border-slate-200';
+            default: return 'bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
         }
     };
 
@@ -205,7 +205,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'POLICY NAME',
                         render: (_: any, p: InterestRatePolicy) => (
                             <div className="flex flex-col">
-                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.name}</span>
+                                <span className="font-black text-slate-900 dark:text-white uppercase text-[11px]">{p.name}</span>
                                 <span className={`mt-1 px-1.5 py-0.5 rounded text-[8px] font-black border w-fit uppercase ${getRiskColor(p.riskLevel)}`}>
                                     {p.riskLevel} RISK
                                 </span>
@@ -223,7 +223,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-slate-400 uppercase">Range</p>
-                                    <p className="text-[11px] font-bold text-slate-600">{p.minRate}% - {p.maxRate}%</p>
+                                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{p.minRate}% - {p.maxRate}%</p>
                                 </div>
                             </div>
                         )
@@ -241,25 +241,25 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                                     {rates.individual != null && (
                                         <div title="Individual">
                                             <p className="text-[8px] font-black text-slate-400 uppercase">Indiv.</p>
-                                            <p className="text-[10px] font-bold text-slate-700">{rates.individual}%</p>
+                                            <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">{rates.individual}%</p>
                                         </div>
                                     )}
                                     {rates.sme != null && (
                                         <div title="SME">
                                             <p className="text-[8px] font-black text-slate-400 uppercase">SME</p>
-                                            <p className="text-[10px] font-bold text-slate-700">{rates.sme}%</p>
+                                            <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">{rates.sme}%</p>
                                         </div>
                                     )}
                                     {rates.corporation != null && (
                                         <div title="Corporation">
                                             <p className="text-[8px] font-black text-slate-400 uppercase">Corp.</p>
-                                            <p className="text-[10px] font-bold text-slate-700">{rates.corporation}%</p>
+                                            <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">{rates.corporation}%</p>
                                         </div>
                                     )}
                                     {rates.cooperative != null && (
                                         <div title="Cooperative">
                                             <p className="text-[8px] font-black text-slate-400 uppercase">Coop.</p>
-                                            <p className="text-[10px] font-bold text-slate-700">{rates.cooperative}%</p>
+                                            <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">{rates.cooperative}%</p>
                                         </div>
                                     )}
                                 </div>
@@ -292,7 +292,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => onEdit(p.id)}
-                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition-all"
                                 >
                                     <Edit size={14} />
                                 </button>
@@ -322,7 +322,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'POLICY',
                         render: (_: any, p: LoanLimitPolicy) => (
                             <div className="flex flex-col">
-                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.name}</span>
+                                <span className="font-black text-slate-900 dark:text-white uppercase text-[11px]">{p.name}</span>
                                 <span className="text-[9px] font-bold text-[#345E85] uppercase">{p.businessType}</span>
                             </div>
                         )
@@ -403,17 +403,17 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="space-y-6">
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Automation & Thresholds</h4>
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <div>
-                                            <p className="text-[11px] font-black text-slate-900 uppercase">Auto-Approval Limit</p>
-                                            <p className="text-[10px] text-slate-500 font-bold">Requests below this bypass manual check</p>
+                                            <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase">Auto-Approval Limit</p>
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Requests below this bypass manual check</p>
                                         </div>
                                         <p className="text-sm font-black text-[#345E85]">{cptRwf(policies.globalSettings.autoApprovalLimit)}</p>
                                     </div>
-                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <div>
-                                            <p className="text-[11px] font-black text-slate-900 uppercase">Manual Review Threshold</p>
-                                            <p className="text-[10px] text-slate-500 font-bold">Critical review for large amounts</p>
+                                            <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase">Manual Review Threshold</p>
+                                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Critical review for large amounts</p>
                                         </div>
                                         <p className="text-sm font-black text-rose-600">{cptRwf(policies.globalSettings.manualReviewThreshold)}</p>
                                     </div>
@@ -422,17 +422,17 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="space-y-6">
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">Compliance & Security</h4>
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <div className="flex items-center gap-3">
                                             <Shield className="text-emerald-500" size={18} />
-                                            <p className="text-[11px] font-black text-slate-900 uppercase">Strict Compliance Mode</p>
+                                            <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase">Strict Compliance Mode</p>
                                         </div>
                                         <ToggleRight className="text-emerald-500" />
                                     </div>
-                                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                                         <div className="flex items-center gap-3">
                                             <TrendingUp className="text-[#345E85]" size={18} />
-                                            <p className="text-[11px] font-black text-slate-900 uppercase">Real-time Audit Trail</p>
+                                            <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase">Real-time Audit Trail</p>
                                         </div>
                                         <ToggleRight className="text-[#345E85]" />
                                     </div>
@@ -449,7 +449,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'CRITERIA NAME',
                         render: (_: any, p: EligibilityCriteria) => (
                             <div className="flex flex-col">
-                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.name}</span>
+                                <span className="font-black text-slate-900 dark:text-white uppercase text-[11px]">{p.name}</span>
                                 <span className="text-[9px] font-bold text-[#345E85] uppercase">{p.category.replace(/_/g, ' ')}</span>
                             </div>
                         )
@@ -459,9 +459,9 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'REQUIREMENT',
                         render: (_: any, p: EligibilityCriteria) => (
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-slate-900">{p.requirement}</span>
+                                <span className="text-[10px] font-bold text-slate-900 dark:text-white">{p.requirement}</span>
                                 {p.minimumValue && (
-                                    <span className="text-[8px] text-slate-500">Min: {p.minimumValue}</span>
+                                    <span className="text-[8px] text-slate-500 dark:text-slate-400">Min: {p.minimumValue}</span>
                                 )}
                             </div>
                         )
@@ -471,7 +471,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'REQUIRED',
                         render: (_: any, p: EligibilityCriteria) => (
                             <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${
-                                p.required ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-600'
+                                p.required ? 'bg-red-50 text-red-700' : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300'
                             }`}>
                                 {p.required ? 'Mandatory' : 'Optional'}
                             </span>
@@ -500,7 +500,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => onEdit(p.id)}
-                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition-all"
                                 >
                                     <Edit size={14} />
                                 </button>
@@ -530,7 +530,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'RISK FACTOR',
                         render: (_: any, p: RiskAssessmentRule) => (
                             <div className="flex flex-col">
-                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.factor.replace(/_/g, ' ')}</span>
+                                <span className="font-black text-slate-900 dark:text-white uppercase text-[11px]">{p.factor.replace(/_/g, ' ')}</span>
                                 <span className="text-[9px] font-bold text-[#345E85]">Weight: {p.weight}%</span>
                             </div>
                         )
@@ -578,7 +578,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => onEdit(p.id)}
-                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition-all"
                                 >
                                     <Edit size={14} />
                                 </button>
@@ -608,7 +608,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'POLICY NAME',
                         render: (_: any, p: RepaymentPolicy) => (
                             <div className="flex flex-col">
-                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.name}</span>
+                                <span className="font-black text-slate-900 dark:text-white uppercase text-[11px]">{p.name}</span>
                                 <span className="text-[9px] font-bold text-[#345E85] uppercase">{p.frequency}</span>
                             </div>
                         )
@@ -672,7 +672,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => onEdit(p.id)}
-                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition-all"
                                 >
                                     <Edit size={14} />
                                 </button>
@@ -702,7 +702,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         label: 'CARGO TYPE',
                         render: (_: any, p: CargoTypePolicy) => (
                             <div className="flex flex-col">
-                                <span className="font-black text-slate-900 uppercase text-[11px]">{p.cargoType}</span>
+                                <span className="font-black text-slate-900 dark:text-white uppercase text-[11px]">{p.cargoType}</span>
                                 <span className={`mt-1 px-1.5 py-0.5 rounded text-[8px] font-black border w-fit uppercase ${getRiskColor(p.riskLevel)}`}>
                                     {p.riskLevel} RISK
                                 </span>
@@ -766,7 +766,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => onEdit(p.id)}
-                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 rounded-lg transition-all"
+                                    className="p-1.5 text-slate-400 hover:text-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 rounded-lg transition-all"
                                 >
                                     <Edit size={14} />
                                 </button>
@@ -809,7 +809,7 @@ const LendingPoliciesEnlite: React.FC<LendingPoliciesEnliteProps> = ({
                         className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                             activeTab === tab.id
                                 ? 'bg-[#2c5173] text-white shadow-lg shadow-[#2c5173]/20'
-                                : 'bg-white text-slate-500 border border-slate-100 hover:bg-slate-50'
+                                : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
                         }`}
                     >
                         {tab.icon}

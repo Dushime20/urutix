@@ -130,15 +130,15 @@ const GovernanceDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <FaShieldAlt className="text-blue-600 text-2xl" />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Governance & Abuse Control</h1>
-              <p className="text-sm text-gray-600">Monitor and manage platform integrity</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Governance & Abuse Control</h1>
+              <p className="text-sm text-gray-600 dark:text-slate-300">Monitor and manage platform integrity</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -154,7 +154,7 @@ const GovernanceDashboard: React.FC = () => {
             </select>
             <button
               onClick={handleRefresh}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="p-2 text-gray-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="Refresh"
             >
               <FaSync className="text-lg" />
@@ -165,8 +165,8 @@ const GovernanceDashboard: React.FC = () => {
 
       <div className="p-6">
         {/* Tabs */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+          <div className="border-b border-gray-200 dark:border-slate-700">
             <nav className="flex space-x-8 px-6" aria-label="Tabs">
               {[
                 { label: 'Flagged Users', icon: FaFlag },
@@ -183,7 +183,7 @@ const GovernanceDashboard: React.FC = () => {
                       py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center space-x-2
                       ${tabValue === index
                         ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
                       }
                     `}
                   >
@@ -203,24 +203,24 @@ const GovernanceDashboard: React.FC = () => {
           <TabPanel value={tabValue} index={1}>
             <div className="text-center py-12">
               <FaClock className="text-gray-400 text-5xl mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Pending Appeals</h3>
-              <p className="text-gray-600">Appeals management interface coming soon</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Pending Appeals</h3>
+              <p className="text-gray-600 dark:text-slate-300">Appeals management interface coming soon</p>
             </div>
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
             <div className="text-center py-12">
               <FaGavel className="text-gray-400 text-5xl mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Recent Actions</h3>
-              <p className="text-gray-600">Action history interface coming soon</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Recent Actions</h3>
+              <p className="text-gray-600 dark:text-slate-300">Action history interface coming soon</p>
             </div>
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>
             <div className="text-center py-12">
               <FaChartLine className="text-gray-400 text-5xl mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics</h3>
-              <p className="text-gray-600">Analytics dashboard coming soon</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Analytics</h3>
+              <p className="text-gray-600 dark:text-slate-300">Analytics dashboard coming soon</p>
             </div>
           </TabPanel>
         </div>

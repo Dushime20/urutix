@@ -74,11 +74,11 @@ const RoleBasedLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 relative">
+    <div className="flex h-screen bg-gray-50 dark:bg-slate-950 relative">
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 sticky top-0 z-[300] shrink-0">
+        <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 sticky top-0 z-[300] shrink-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
               
@@ -88,7 +88,7 @@ const RoleBasedLayout: React.FC = () => {
                 <input
                   type="text"
                   placeholder={getSearchPlaceholder()}
-                  className="w-full pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -97,7 +97,7 @@ const RoleBasedLayout: React.FC = () => {
             <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               {/* Notifications - Hidden on mobile as it's in the bottom nav */}
               <button className="hidden lg:block p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
-                <FaBell className="w-5 h-5 text-gray-600" />
+                <FaBell className="w-5 h-5 text-gray-600 dark:text-slate-300" />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   3
                 </span>
@@ -113,7 +113,7 @@ const RoleBasedLayout: React.FC = () => {
                   <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <FaUser className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 hidden sm:inline">
+                  <span className="text-sm font-medium text-gray-700 dark:text-slate-300 hidden sm:inline">
                     {(user.firstName || user.lastName) 
                       ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
                       : ''}
@@ -122,17 +122,17 @@ const RoleBasedLayout: React.FC = () => {
 
                 {/* Dropdown Menu */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-2 z-50">
                     <button
                       onClick={() => navigate('/dashboard/profile')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 flex items-center space-x-2"
                     >
                       <FaUser className="w-4 h-4" />
                       <span>Profile</span>
                     </button>
                     <button
                       onClick={() => navigate('/dashboard/settings')}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 flex items-center space-x-2"
                     >
                       <FaCog className="w-4 h-4" />
                       <span>Settings</span>
@@ -176,7 +176,7 @@ const RoleBasedLayout: React.FC = () => {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 pb-20 lg:pb-0">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-slate-950 pb-20 lg:pb-0">
           <div className="container mx-auto px-6 py-8">
             <Outlet />
           </div>

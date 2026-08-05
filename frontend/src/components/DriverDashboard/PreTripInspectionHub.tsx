@@ -198,7 +198,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
 
       <div className="grid gap-3">
         {loads.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-2xl border border-slate-100">
+          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
             <ShieldCheck className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-500 font-medium">
               <TranslatedText text="No assigned cargo requiring inspection." />
@@ -220,7 +220,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.04 }}
-                className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm"
+                className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -262,7 +262,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => openHistory(load.id)}
-                      className="px-3 py-2.5 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-100 transition-all flex items-center gap-1.5"
+                      className="px-3 py-2.5 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-100 transition-all flex items-center gap-1.5"
                     >
                       <History className="w-3 h-3" /> <TranslatedText text="History" />
                     </button>
@@ -310,8 +310,8 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setView({ mode: 'list' })}
           />
-          <div className="relative w-full sm:max-w-lg bg-white rounded-t-[2rem] sm:rounded-2xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <div className="relative w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-[2rem] sm:rounded-2xl p-6 max-h-[80vh] overflow-y-auto shadow-2xl">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2">
               <History className="w-4 h-4" /> <TranslatedText text="Inspection Timeline" />
             </h3>
             {history.length === 0 ? (
@@ -321,7 +321,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
             ) : (
               <div className="space-y-3">
                 {history.map((record) => (
-                  <div key={record.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div key={record.id} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                         <TranslatedText text="Attempt #" />
@@ -337,7 +337,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
                         <TranslatedText text={record.decision || record.status} />
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
                       {record.overallNotes || <TranslatedText text="No notes recorded" />}
                     </p>
                     <p className="text-[10px] text-slate-400 mt-2">
@@ -351,7 +351,7 @@ export const PreTripInspectionHub: React.FC<PreTripInspectionHubProps> = ({ driv
             )}
             <button
               onClick={() => setView({ mode: 'list' })}
-              className="mt-4 w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider"
+              className="mt-4 w-full py-3 bg-slate-100 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider"
             >
               <TranslatedText text="Close" />
             </button>

@@ -35,7 +35,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 type TypeFilter = 'all' | 'pre' | 'post' | 'action';
 
 const PRE_TRIP_STATUS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: 'Draft', color: 'bg-gray-100 text-gray-600 border-gray-200', icon: <Clock className="w-3.5 h-3.5" /> },
+  PENDING: { label: 'Draft', color: 'bg-gray-100 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-700', icon: <Clock className="w-3.5 h-3.5" /> },
   TRUCK_INSPECTION_COMPLETED: { label: 'Truck Inspection Completed', color: 'bg-sky-100 text-sky-800 border-sky-200', icon: <Truck className="w-3.5 h-3.5" /> },
   IN_PROGRESS: { label: 'Cargo Inspection In Progress', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <Clock className="w-3.5 h-3.5" /> },
   FAILED: { label: 'Issue Reported', color: 'bg-red-100 text-red-700 border-red-200', icon: <XCircle className="w-3.5 h-3.5" /> },
@@ -46,7 +46,7 @@ const PRE_TRIP_STATUS: Record<string, { label: string; color: string; icon: Reac
 };
 
 const POST_STATUS: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  NOT_STARTED: { label: 'Not Started', color: 'bg-gray-100 text-gray-500 border-gray-200', icon: <Clock className="w-3.5 h-3.5" /> },
+  NOT_STARTED: { label: 'Not Started', color: 'bg-gray-100 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-700', icon: <Clock className="w-3.5 h-3.5" /> },
   PENDING: { label: 'Pending', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: <Clock className="w-3.5 h-3.5" /> },
   IN_PROGRESS: { label: 'In Progress', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <ClipboardCheck className="w-3.5 h-3.5" /> },
   COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-700 border-green-200', icon: <CheckCircle className="w-3.5 h-3.5" /> },
@@ -125,8 +125,8 @@ function IssueResolutionPanel({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        <div className="px-4 py-4 space-y-4 bg-white">
-          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 sticky top-0 bg-white pb-2 z-10">
+        <div className="px-4 py-4 space-y-4 bg-white dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 sticky top-0 bg-white dark:bg-slate-900 pb-2 z-10">
           <span className={cn('flex items-center gap-1', issues.length > 0 && allAcknowledged ? 'text-amber-700' : '')}>
             <ListChecks className="w-3.5 h-3.5" /> 1. Acknowledge Issues
           </span>
@@ -145,7 +145,7 @@ function IssueResolutionPanel({
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
               Reported Issues ({issues.length})
             </p>
-            <div className="max-h-72 overflow-y-auto overscroll-contain space-y-3 pr-1 rounded-xl border border-gray-100 bg-gray-50/50 p-2">
+            <div className="max-h-72 overflow-y-auto overscroll-contain space-y-3 pr-1 rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-950 p-2">
               {issues.map((issue) => {
               const acknowledged = acknowledgedIssues.has(issue.id);
               return (
@@ -175,9 +175,9 @@ function IssueResolutionPanel({
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-700 mt-1">{issue.description}</p>
+                      <p className="text-sm text-gray-700 dark:text-slate-300 mt-1">{issue.description}</p>
                       {issue.actionRequired && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                           <span className="font-semibold">Required action: </span>
                           {issue.actionRequired}
                         </p>
@@ -195,7 +195,7 @@ function IssueResolutionPanel({
                         value={correctiveActions[issue.id] ?? ''}
                         onChange={(e) => onCorrectiveActionChange(issue.id, e.target.value)}
                         placeholder="e.g. Replaced damaged straps, updated manifest weight..."
-                        className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="mt-1 w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
                       />
                     </div>
                   )}
@@ -215,7 +215,7 @@ function IssueResolutionPanel({
             value={resolutionNotes}
             onChange={(e) => onResolutionNotesChange(e.target.value)}
             placeholder="Summarize all corrective actions taken. This is recorded in the inspection audit trail and shared with the driver."
-            className="mt-1.5 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+            className="mt-1.5 w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
           />
           <p className="text-[11px] text-gray-400 mt-1">
             Minimum 10 characters. Include what was corrected and any supporting documentation references.
@@ -261,15 +261,15 @@ function TimelineStep({
       <div className="flex flex-col items-center">
         <div className={cn(
           'w-8 h-8 rounded-full flex items-center justify-center border-2',
-          active ? 'border-[#2c5173] bg-[#2c5173]/10' : 'border-gray-200 bg-white',
+          active ? 'border-[#2c5173] bg-[#2c5173]/10' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900',
         )}>
           {cfg.icon}
         </div>
         {!isLast && <div className="w-0.5 flex-1 bg-gray-200 mt-1 min-h-[24px]" />}
       </div>
       <div className="flex-1 pt-0.5">
-        <p className="text-sm font-semibold text-gray-900">{label}</p>
-        {sublabel && <p className="text-xs text-gray-500 mt-0.5">{sublabel}</p>}
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">{label}</p>
+        {sublabel && <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{sublabel}</p>}
         <span className={cn('inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border', cfg.color)}>
           {cfg.icon}
           {cfg.label}
@@ -328,15 +328,15 @@ export default function CargoCustomsInspectionsPage() {
   }, [shipments, search, typeFilter]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 px-6 py-5">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-5">
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 bg-[#2c5173]/10 rounded-lg">
             <ClipboardCheck className="w-5 h-5 text-[#2c5173]" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Cargo Inspections</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Cargo Inspections</h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400">
               {isBroker
                 ? 'Track pre-trip and post-delivery inspections on your brokered loads only'
                 : 'Track pre-trip and post-delivery inspections on your cargo only'}
@@ -354,7 +354,7 @@ export default function CargoCustomsInspectionsPage() {
               placeholder="Search by cargo, reference, driver or receiver..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c5173] bg-white"
+              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c5173] bg-white dark:bg-slate-900"
             />
           </div>
           <div className="relative">
@@ -362,7 +362,7 @@ export default function CargoCustomsInspectionsPage() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-              className="pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c5173] bg-white appearance-none min-w-[160px]"
+              className="pl-9 pr-8 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2c5173] bg-white dark:bg-slate-900 appearance-none min-w-[160px]"
             >
               <option value="all">All Inspections</option>
               <option value="pre">Pre-Trip (Driver)</option>
@@ -381,7 +381,7 @@ export default function CargoCustomsInspectionsPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <ClipboardCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">
+            <p className="text-gray-500 dark:text-slate-400 font-medium">
               {shipments.length === 0 ? 'No cargo inspections yet' : 'No shipments match your filters'}
             </p>
             <p className="text-sm text-gray-400 mt-1">
@@ -400,8 +400,8 @@ export default function CargoCustomsInspectionsPage() {
                 <div
                   key={shipment.loadId}
                   className={cn(
-                    'bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow cursor-pointer',
-                    shipment.requiresAction ? 'border-amber-200 ring-1 ring-amber-100' : 'border-gray-100',
+                    'bg-white dark:bg-slate-900 rounded-xl border shadow-sm hover:shadow-md transition-shadow cursor-pointer',
+                    shipment.requiresAction ? 'border-amber-200 ring-1 ring-amber-100' : 'border-gray-100 dark:border-slate-800',
                   )}
                   onClick={() => setSelectedShipment(shipment)}
                 >
@@ -423,28 +423,28 @@ export default function CargoCustomsInspectionsPage() {
                           </span>
                         </div>
 
-                        <p className="font-semibold text-gray-900 truncate">{shipment.loadTitle || 'Unnamed Shipment'}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white truncate">{shipment.loadTitle || 'Unnamed Shipment'}</p>
 
                         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
                           {shipment.loadReference && (
-                            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
                               <FileText className="w-3.5 h-3.5 flex-shrink-0" />
                               Ref: {shipment.loadReference}
                             </span>
                           )}
                           {shipment.driver?.name && (
-                            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
                               <Truck className="w-3.5 h-3.5 flex-shrink-0" />
                               Driver: {shipment.driver.name}
                             </span>
                           )}
                           {shipment.receiver?.name && (
-                            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
                               <User className="w-3.5 h-3.5 flex-shrink-0" />
                               Receiver: {shipment.receiver.name}
                             </span>
                           )}
-                          <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
                             <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                             Updated {new Date(shipment.updatedAt).toLocaleDateString(undefined, {
                               day: 'numeric', month: 'short', year: 'numeric',
@@ -458,7 +458,7 @@ export default function CargoCustomsInspectionsPage() {
                             1. Pre-Trip
                           </span>
                           <ArrowRight className="w-3 h-3" />
-                          <span className="font-bold text-gray-500">2. In Transit</span>
+                          <span className="font-bold text-gray-500 dark:text-slate-400">2. In Transit</span>
                           <ArrowRight className="w-3 h-3" />
                           <span className={cn('font-bold', shipment.postTrip.status === 'COMPLETED' ? 'text-green-600' : '')}>
                             3. Post-Delivery
@@ -597,17 +597,17 @@ function ShipmentDetailModal({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 p-4">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800 shrink-0">
           <div>
-            <h2 className="font-semibold text-gray-900">{shipment.loadTitle}</h2>
-            <p className="text-xs text-gray-500">
+            <h2 className="font-semibold text-gray-900 dark:text-white">{shipment.loadTitle}</h2>
+            <p className="text-xs text-gray-500 dark:text-slate-400">
               {shipment.loadReference ? `Ref: ${shipment.loadReference}` : `Load ID: ${shipment.loadId.slice(0, 8)}`}
               {' · '}
               Status: {shipment.loadStatus}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600 dark:text-slate-300 dark:hover:text-slate-300">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
@@ -670,8 +670,8 @@ function ShipmentDetailModal({
               </button>
             </div>
             {showApprovalForm && (
-              <div className="px-4 py-3 space-y-3 bg-white">
-                <p className="text-xs text-gray-500">
+              <div className="px-4 py-3 space-y-3 bg-white dark:bg-slate-900">
+                <p className="text-xs text-gray-500 dark:text-slate-400">
                   Review the driver&apos;s pre-trip inspection in the Pre-Trip tab. Once satisfied, give the green light so the driver can load cargo and start the trip.
                 </p>
                 <textarea
@@ -679,7 +679,7 @@ function ShipmentDetailModal({
                   value={approvalNotes}
                   onChange={(e) => setApprovalNotes(e.target.value)}
                   placeholder="Optional notes for the driver (e.g. Proceed with loading at Gate 3...)"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
                 />
                 <button
                   onClick={handleApprove}
@@ -697,7 +697,7 @@ function ShipmentDetailModal({
         )}
 
         {/* Tabs */}
-        <div className="px-6 pt-4 flex gap-2 border-b border-gray-100">
+        <div className="px-6 pt-4 flex gap-2 border-b border-gray-100 dark:border-slate-800">
           {(['timeline', 'pre', 'post'] as const).map((tab) => (
             <button
               key={tab}
@@ -706,7 +706,7 @@ function ShipmentDetailModal({
                 'px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-t-lg transition-colors',
                 activeTab === tab
                   ? 'bg-[#2c5173] text-white'
-                  : 'text-gray-500 hover:bg-gray-100',
+                  : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100',
               )}
             >
               {tab === 'timeline' ? 'Process Timeline' : tab === 'pre' ? 'Pre-Trip (Driver)' : 'Post-Delivery (Receiver)'}
@@ -777,8 +777,8 @@ function ShipmentDetailModal({
         </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0 bg-white rounded-b-2xl">
-          <div className="text-xs text-gray-500">
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0 bg-white dark:bg-slate-900 rounded-b-2xl">
+          <div className="text-xs text-gray-500 dark:text-slate-400">
             {canResolve && 'Complete corrective actions above to release the driver for re-inspection.'}
             {canApprove && 'Review the inspection and approve when ready to start shipping.'}
           </div>
@@ -795,7 +795,7 @@ function ShipmentDetailModal({
                 }
               </button>
             )}
-            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors">
               Close
             </button>
           </div>
@@ -826,7 +826,7 @@ function InspectionHistoryPanel({
     return (
       <div className="text-center py-12">
         <ClipboardCheck className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-        <p className="text-sm text-gray-500">{emptyMessage}</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">{emptyMessage}</p>
       </div>
     );
   }
@@ -834,14 +834,14 @@ function InspectionHistoryPanel({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-500">{subtitle}</p>
+        <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <p className="text-xs text-gray-500 dark:text-slate-400">{subtitle}</p>
       </div>
 
       {showReceiver && receiver && (
-        <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+        <div className="p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Receiver</p>
-          <div className="flex flex-wrap gap-3 text-sm text-gray-700">
+          <div className="flex flex-wrap gap-3 text-sm text-gray-700 dark:text-slate-300">
             {receiver.name && <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{receiver.name}</span>}
             {receiver.email && <span>{receiver.email}</span>}
             {receiver.phone && <span>{receiver.phone}</span>}
@@ -856,9 +856,9 @@ function InspectionHistoryPanel({
           : POST_STATUS[record.status] ?? POST_STATUS.PENDING;
 
         return (
-          <div key={record.id} className="border border-gray-100 rounded-xl overflow-hidden">
+          <div key={record.id} className="border border-gray-100 dark:border-slate-800 rounded-xl overflow-hidden">
             <button
-              className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-left"
               onClick={() => setExpandedId(isExpanded ? null : record.id)}
             >
               <div>
@@ -870,7 +870,7 @@ function InspectionHistoryPanel({
                     <span className="text-[10px] text-gray-400 uppercase">{record.decision}</span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                   {new Date(record.completedAt || record.createdAt).toLocaleString()}
                 </p>
               </div>
@@ -882,7 +882,7 @@ function InspectionHistoryPanel({
                 {record.overallNotes && (
                   <div className="pt-3">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Notes</p>
-                    <p className="text-sm text-gray-700 bg-amber-50 rounded-lg p-3 border border-amber-100">{record.overallNotes}</p>
+                    <p className="text-sm text-gray-700 dark:text-slate-300 bg-amber-50 rounded-lg p-3 border border-amber-100">{record.overallNotes}</p>
                   </div>
                 )}
 
@@ -950,13 +950,13 @@ function InspectionHistoryPanel({
                           key={item.id}
                           className={cn(
                             'flex items-start gap-2 p-2.5 rounded-lg border text-xs',
-                            item.verified ? 'bg-green-50/50 border-green-100' : item.discrepancy ? 'bg-rose-50/50 border-rose-100' : 'bg-gray-50 border-gray-100',
+                            item.verified ? 'bg-green-50/50 border-green-100' : item.discrepancy ? 'bg-rose-50/50 border-rose-100' : 'bg-gray-50 dark:bg-slate-800/50 border-gray-100 dark:border-slate-800',
                           )}
                         >
                           {item.verified ? <CheckCircle className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" /> : item.discrepancy ? <XCircle className="w-3.5 h-3.5 text-rose-500 mt-0.5 shrink-0" /> : <Clock className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />}
                           <div>
-                            <p className="font-bold text-gray-700">{item.label}</p>
-                            {item.notes && <p className="text-gray-500 italic mt-0.5">"{item.notes}"</p>}
+                            <p className="font-bold text-gray-700 dark:text-slate-300">{item.label}</p>
+                            {item.notes && <p className="text-gray-500 dark:text-slate-400 italic mt-0.5">"{item.notes}"</p>}
                           </div>
                         </div>
                       ))}
@@ -985,17 +985,17 @@ function InspectionHistoryPanel({
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {record.documents.map((doc, i) => (
                         <a key={doc.id || i} href={getDocUrl(doc.url)} target="_blank" rel="noreferrer" className="group">
-                          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-[#2c5173] transition-all">
+                          <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden hover:border-[#2c5173] transition-all">
                             {doc.type === 'photo' ? (
                               <div className="h-20 overflow-hidden">
                                 <img src={getDocUrl(doc.url)} alt={doc.label || 'Photo'} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                               </div>
                             ) : doc.type === 'signature' ? (
-                              <div className="h-20 bg-gray-50 flex items-center justify-center"><PenLine className="w-5 h-5 text-gray-400" /></div>
+                              <div className="h-20 bg-gray-50 dark:bg-slate-800/50 flex items-center justify-center"><PenLine className="w-5 h-5 text-gray-400" /></div>
                             ) : (
-                              <div className="h-20 bg-gray-50 flex items-center justify-center"><FileText className="w-5 h-5 text-gray-400" /></div>
+                              <div className="h-20 bg-gray-50 dark:bg-slate-800/50 flex items-center justify-center"><FileText className="w-5 h-5 text-gray-400" /></div>
                             )}
-                            <p className="text-[9px] font-bold text-gray-600 p-1.5 truncate">{doc.label || doc.type}</p>
+                            <p className="text-[9px] font-bold text-gray-600 dark:text-slate-300 p-1.5 truncate">{doc.label || doc.type}</p>
                           </div>
                         </a>
                       ))}

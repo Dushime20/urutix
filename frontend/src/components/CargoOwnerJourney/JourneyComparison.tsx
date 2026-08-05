@@ -173,19 +173,19 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
       {
         key: 'feature',
         label: 'Feature',
-        render: (_value, row) => <span className="font-medium text-gray-900">{row.feature}</span>,
+        render: (_value, row) => <span className="font-medium text-gray-900 dark:text-white">{row.feature}</span>,
       },
       {
         key: 'smart',
         label: 'Smart Matching',
         align: 'center',
-        render: (_value, row) => <span className="text-gray-700">{row.smart}</span>,
+        render: (_value, row) => <span className="text-gray-700 dark:text-slate-300">{row.smart}</span>,
       },
       {
         key: 'bid',
         label: 'Publish for Bid',
         align: 'center',
-        render: (_value, row) => <span className="text-gray-700">{row.bid}</span>,
+        render: (_value, row) => <span className="text-gray-700 dark:text-slate-300">{row.bid}</span>,
       },
     ],
     [],
@@ -206,7 +206,7 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
                 ? 'border-' + journey.color + '-600 shadow-xl scale-105'
                 : isRecommended
                 ? 'border-' + journey.color + '-400 shadow-lg'
-                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 hover:shadow-md'
             }`}
           >
             {isRecommended && (
@@ -232,26 +232,26 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50">
+            <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 dark:bg-slate-800/50">
               <div className="text-center">
-                <Clock className="w-5 h-5 text-gray-600 mx-auto mb-1" />
-                <p className="text-xs text-gray-600">Avg Time</p>
-                <p className="text-sm font-bold text-gray-900">{journey.metrics.avgTime}</p>
+                <Clock className="w-5 h-5 text-gray-600 dark:text-slate-300 mx-auto mb-1" />
+                <p className="text-xs text-gray-600 dark:text-slate-300">Avg Time</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">{journey.metrics.avgTime}</p>
               </div>
               <div className="text-center">
                 <DollarSign className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
-                <p className="text-xs text-gray-600">Savings</p>
-                <p className="text-sm font-bold text-gray-900">{journey.metrics.costSavings}</p>
+                <p className="text-xs text-gray-600 dark:text-slate-300">Savings</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">{journey.metrics.costSavings}</p>
               </div>
               <div className="text-center">
                 <Target className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                <p className="text-xs text-gray-600">Success</p>
-                <p className="text-sm font-bold text-gray-900">{journey.metrics.successRate}</p>
+                <p className="text-xs text-gray-600 dark:text-slate-300">Success</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">{journey.metrics.successRate}</p>
               </div>
               <div className="text-center">
                 <BarChart3 className="w-5 h-5 text-violet-600 mx-auto mb-1" />
-                <p className="text-xs text-gray-600">Effort</p>
-                <p className="text-sm font-bold text-gray-900">{journey.metrics.effort}</p>
+                <p className="text-xs text-gray-600 dark:text-slate-300">Effort</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">{journey.metrics.effort}</p>
               </div>
             </div>
 
@@ -259,13 +259,13 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
             <div className="p-6 space-y-4">
               {/* Pros */}
               <div>
-                <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-emerald-600" />
                   Advantages
                 </h4>
                 <ul className="space-y-1.5">
                   {journey.pros.slice(0, 4).map((pro, index) => (
-                    <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                    <li key={index} className="text-sm text-gray-700 dark:text-slate-300 flex items-start gap-2">
                       <span className="text-emerald-600 mt-0.5">✓</span>
                       <span>{pro}</span>
                     </li>
@@ -275,13 +275,13 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
 
               {/* Cons */}
               <div>
-                <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-600" />
                   Considerations
                 </h4>
                 <ul className="space-y-1.5">
                   {journey.cons.slice(0, 3).map((con, index) => (
-                    <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
+                    <li key={index} className="text-sm text-gray-600 dark:text-slate-300 flex items-start gap-2">
                       <span className="text-amber-600 mt-0.5">!</span>
                       <span>{con}</span>
                     </li>
@@ -291,13 +291,13 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
 
               {/* Best For */}
               <div>
-                <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h4 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                   <Star className="w-4 h-4 text-blue-600" />
                   Best For
                 </h4>
                 <ul className="space-y-1.5">
                   {journey.bestFor.slice(0, 3).map((item, index) => (
-                    <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                    <li key={index} className="text-sm text-gray-700 dark:text-slate-300 flex items-start gap-2">
                       <span className="text-blue-600 mt-0.5">★</span>
                       <span>{item}</span>
                     </li>
@@ -330,8 +330,8 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
 
   const renderDetailed = () => (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-6 border-2 border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Feature Comparison</h3>
+      <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-6 border-2 border-gray-200 dark:border-slate-700">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Feature Comparison</h3>
         <StandardDataTable
           embedded
           columns={featureColumns}
@@ -354,12 +354,12 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
         {journeys.map((journey) => {
           const Icon = journey.icon;
           return (
-            <div key={journey.id} className="bg-white rounded-2xl p-6 border-2 border-gray-200">
+            <div key={journey.id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 border-gray-200 dark:border-slate-700">
               <div className="flex items-center gap-3 mb-4">
                 <div className={`bg-gradient-to-r ${journey.gradient} rounded-xl p-2`}>
                   <Icon className="w-5 h-5 text-white" />
                 </div>
-                <h4 className="font-bold text-gray-900">{journey.name} Process</h4>
+                <h4 className="font-bold text-gray-900 dark:text-white">{journey.name} Process</h4>
               </div>
               <ol className="space-y-3">
                 {journey.process.map((step, index) => (
@@ -367,7 +367,7 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
                     <div className={`w-6 h-6 rounded-full bg-gradient-to-r ${journey.gradient} text-white flex items-center justify-center text-xs font-bold flex-shrink-0`}>
                       {index + 1}
                     </div>
-                    <span className="text-sm text-gray-700">{step}</span>
+                    <span className="text-sm text-gray-700 dark:text-slate-300">{step}</span>
                   </li>
                 ))}
               </ol>
@@ -380,17 +380,17 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full my-8">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-6xl w-full my-8">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Compare Your Options</h2>
-              <p className="text-gray-600 mt-1">Choose the journey that best fits your needs</p>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Compare Your Options</h2>
+              <p className="text-gray-600 dark:text-slate-300 mt-1">Choose the journey that best fits your needs</p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -403,7 +403,7 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 compareMode === 'side-by-side'
                   ? 'bg-violet-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-700 dark:text-slate-300 hover:bg-gray-200'
               }`}
             >
               Side-by-Side
@@ -413,7 +413,7 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 compareMode === 'detailed'
                   ? 'bg-violet-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-700 dark:text-slate-300 hover:bg-gray-200'
               }`}
             >
               Detailed Comparison
@@ -427,14 +427,14 @@ export const JourneyComparison: React.FC<JourneyComparisonProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+        <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl">
           <div className="flex items-center gap-3">
             <div className="bg-blue-100 rounded-xl p-3">
               <Award className="w-6 h-6 text-blue-600" />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">Not sure which to choose?</p>
-              <p className="text-sm text-gray-600">Try our Decision Helper for a personalized recommendation</p>
+              <p className="font-semibold text-gray-900 dark:text-white">Not sure which to choose?</p>
+              <p className="text-sm text-gray-600 dark:text-slate-300">Try our Decision Helper for a personalized recommendation</p>
             </div>
             <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 font-semibold transition-all shadow-lg">
               Get Recommendation

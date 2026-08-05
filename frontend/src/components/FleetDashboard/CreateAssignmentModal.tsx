@@ -105,7 +105,7 @@ const CreateAssignmentModal = ({
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create Fleet Assignment</h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all"
+            className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-gray-800 rounded-lg transition-all"
           >
             <X className="w-5 h-5" />
           </button>

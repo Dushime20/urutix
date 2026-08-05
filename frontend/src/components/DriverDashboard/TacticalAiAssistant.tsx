@@ -144,7 +144,7 @@ export const TacticalAiAssistant: React.FC<TacticalAiAssistantProps> = ({
             initial={{ opacity: 0, scale: 0.9, y: 50, filter: 'blur(10px)' }}
             animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, scale: 0.9, y: 50, filter: 'blur(10px)' }}
-            className="fixed bottom-0 lg:bottom-8 right-0 lg:right-8 z-[300] w-full lg:w-[400px] h-full lg:h-[600px] bg-white rounded-none lg:rounded-[3rem] shadow-[0_20px_80px_rgba(15,23,42,0.3)] border border-slate-100 overflow-hidden flex flex-col"
+            className="fixed bottom-0 lg:bottom-8 right-0 lg:right-8 z-[300] w-full lg:w-[400px] h-full lg:h-[600px] bg-white dark:bg-slate-900 rounded-none lg:rounded-[3rem] shadow-[0_20px_80px_rgba(15,23,42,0.3)] border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col"
           >
 
             {/* Terminal Header */}
@@ -207,7 +207,7 @@ export const TacticalAiAssistant: React.FC<TacticalAiAssistantProps> = ({
                     "px-5 py-3.5 rounded-2xl text-[11px] font-medium leading-relaxed shadow-sm",
                     msg.role === 'user' 
                       ? "bg-blue-600 text-white rounded-tr-none" 
-                      : "bg-white border border-slate-100 text-slate-700 rounded-tl-none italic"
+                      : "bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-tl-none italic"
                   )}>
                     {msg.content}
                     <div className={cn(
@@ -226,7 +226,7 @@ export const TacticalAiAssistant: React.FC<TacticalAiAssistantProps> = ({
               ))}
 
               {isTyping && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl w-fit">
+                <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl w-fit">
                    <div className="flex gap-1">
                       <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.6, repeat: Infinity }} className="w-1 h-1 bg-blue-400 rounded-full" />
                       <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.6, delay: 0.2, repeat: Infinity }} className="w-1 h-1 bg-blue-400 rounded-full" />
@@ -239,12 +239,12 @@ export const TacticalAiAssistant: React.FC<TacticalAiAssistantProps> = ({
             </div>
 
             {/* Quick Gestures */}
-            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-50 flex items-center gap-3 overflow-x-auto no-scrollbar">
+            <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950 border-t border-slate-50 flex items-center gap-3 overflow-x-auto no-scrollbar">
               {quickGestures.map((gesture, idx) => (
                 <button 
                   key={idx}
                   onClick={() => handleSend(gesture.label)}
-                  className="whitespace-nowrap flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-blue-600 uppercase tracking-widest shadow-sm hover:border-blue-300 hover:text-blue-700 transition-all active:scale-95"
+                  className="whitespace-nowrap flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-[9px] font-black text-blue-600 uppercase tracking-widest shadow-sm hover:border-blue-300 hover:text-blue-700 transition-all active:scale-95"
                 >
                   <gesture.icon size={10} />
                   <TranslatedText text={gesture.label} />
@@ -253,13 +253,13 @@ export const TacticalAiAssistant: React.FC<TacticalAiAssistantProps> = ({
             </div>
 
             {/* Terminal Input */}
-            <div className="p-6 bg-white border-t border-slate-100">
+            <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                <div className="relative group">
                   <Terminal size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                   <input 
                     type="text" 
                     placeholder={t("Enter command or query...")}
-                    className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-13 pr-16 text-xs font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-mono"
+                    className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-13 pr-16 text-xs font-bold text-slate-700 dark:text-slate-300 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-mono"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}

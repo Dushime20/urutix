@@ -470,7 +470,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
               onChange={(e) => handleInputChange(field.key, e.target.checked, field.group)}
               className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
             />
-            <span className="text-sm text-slate-600">Yes</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">Yes</span>
           </div>
         );
       default:
@@ -506,7 +506,7 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
         seenGroups.add(field.group);
         rendered.push(
           <div key={`section-${field.group}`} className="md:col-span-2 mt-2">
-            <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 pb-1">
+            <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 pb-1">
               {groupLabels[field.group] ?? field.group}
             </p>
           </div>
@@ -538,21 +538,21 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden border border-slate-100 flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden border border-slate-100 dark:border-slate-800 flex flex-col">
 
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#345E85] rounded-lg text-white shadow-lg shadow-blue-100">
               {config.icon}
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">{config.title}</h2>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">{config.title}</h2>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fill in the required fields to create this policy</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-lg transition-colors group">
-            <X size={20} className="text-slate-400 group-hover:text-slate-900" />
+            <X size={20} className="text-slate-400 group-hover:text-slate-900 dark:text-white" />
           </button>
         </div>
 
@@ -564,10 +564,10 @@ const PolicyConfigurationModal: React.FC<PolicyConfigurationModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50/30">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+            className="px-6 py-2.5 text-slate-500 hover:text-slate-900 dark:text-white hover:bg-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
           >
             Cancel
           </button>

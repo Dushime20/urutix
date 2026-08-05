@@ -202,9 +202,9 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
 
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm border border-red-200 p-6 ${className}`}>
+      <div className={`bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-red-200 p-6 ${className}`}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
           <button
             onClick={handleRefresh}
             className="text-sm text-red-600 hover:text-red-800 font-medium"
@@ -224,11 +224,11 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 ${className}`}>
       {/* Header with title and controls */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
           {trendInfo && (
             <div className="flex items-center mt-1">
               <span className={`text-sm font-medium ${
@@ -249,7 +249,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
               chartType === 'area'
                 ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-600 dark:text-slate-300 hover:bg-gray-200'
             }`}
           >
             {chartType === 'area' ? 'Area' : 'Line'}
@@ -258,7 +258,7 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
           <button
             onClick={handleRefresh}
             disabled={isLoading}
-            className="p-1.5 text-gray-400 hover:text-gray-600 disabled:opacity-50 transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-300 disabled:opacity-50 transition-colors"
             title="Refresh data"
           >
             <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,23 +284,23 @@ const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
 
       {/* Summary Stats */}
       {!isLoading && chartData.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
+        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Current</p>
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
                 {chartData[chartData.length - 1].value}k
               </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Average</p>
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
                 {Math.round(chartData.reduce((sum, d) => sum + d.value, 0) / chartData.length)}k
               </p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Peak</p>
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">
                 {Math.max(...chartData.map(d => d.value))}k
               </p>
             </div>

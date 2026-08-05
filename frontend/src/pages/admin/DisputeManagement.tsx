@@ -78,10 +78,10 @@ const ResolveModal: React.FC<ResolveModalProps> = ({ dispute, onClose, onConfirm
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md border border-gray-100">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md border border-gray-100 dark:border-slate-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800">
           <div>
-            <h3 className="text-base font-black text-gray-900">Update Dispute</h3>
+            <h3 className="text-base font-black text-gray-900 dark:text-white">Update Dispute</h3>
             <p className="text-[10px] text-gray-400 font-mono mt-0.5">{dispute.id.slice(0, 20)}...</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors">
@@ -95,7 +95,7 @@ const ResolveModal: React.FC<ResolveModalProps> = ({ dispute, onClose, onConfirm
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent appearance-none"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#2c5173] focus:border-transparent appearance-none"
               >
                 <option value="RESOLVED">Resolved</option>
                 <option value="ESCALATED">Escalated</option>
@@ -114,15 +114,15 @@ const ResolveModal: React.FC<ResolveModalProps> = ({ dispute, onClose, onConfirm
               onChange={e => setResolution(e.target.value)}
               rows={3}
               placeholder="Describe the resolution or reason for status change..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-transparent resize-none"
             />
           </div>
         </div>
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-3">
           <button
             onClick={onClose}
             disabled={loading}
-            className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="flex-1 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-600 dark:text-slate-300 hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -155,16 +155,16 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-gray-100">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-gray-100 dark:border-slate-800">
 
         {/* Header */}
-        <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 px-6 py-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center">
-              <Gavel className="w-5 h-5 text-gray-600" />
+            <div className="w-10 h-10 bg-gray-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-center">
+              <Gavel className="w-5 h-5 text-gray-600 dark:text-slate-300" />
             </div>
             <div>
-              <h3 className="text-base font-black text-gray-900">Dispute Details</h3>
+              <h3 className="text-base font-black text-gray-900 dark:text-white">Dispute Details</h3>
               <p className="text-[10px] text-gray-400 font-mono">{dispute.id.slice(0, 20)}...</p>
             </div>
           </div>
@@ -176,20 +176,20 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
         <div className="p-6 space-y-5">
           {/* Quick info */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Status</div>
               <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${cfg.color}`}>
                 {cfg.icon} {cfg.label}
               </span>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Raised By</div>
-              <div className="text-sm font-bold text-gray-900 truncate">{raisedByName}</div>
+              <div className="text-sm font-bold text-gray-900 dark:text-white truncate">{raisedByName}</div>
               {dispute.raisedBy?.role && (
                 <div className="text-[10px] text-gray-400 capitalize mt-0.5">{dispute.raisedBy.role.replace(/_/g, ' ')}</div>
               )}
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Trip</div>
               <div className="text-xs font-bold text-[#2c5173] bg-slate-100 px-2 py-0.5 rounded inline-block truncate max-w-full">
                 {dispute.trip?.tripNumber || (dispute.tripId ? dispute.tripId.slice(0, 12) + '...' : 'N/A')}
@@ -198,25 +198,25 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
           </div>
 
           {/* Reason */}
-          <div className="bg-white p-4 rounded-xl border border-gray-100">
-            <div className="text-xs font-black text-gray-900 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+            <div className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2 flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-400" /> Reason / Description
             </div>
-            <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">
+            <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed bg-gray-50 dark:bg-slate-800/50 p-3 rounded-lg border border-gray-100 dark:border-slate-800">
               {dispute.reason || 'No description provided.'}
             </p>
           </div>
 
           {/* Timeline */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Created</div>
-              <div className="text-xs font-bold text-gray-900">{formatDate(dispute.createdAt)}</div>
+              <div className="text-xs font-bold text-gray-900 dark:text-white">{formatDate(dispute.createdAt)}</div>
               <div className="text-[10px] text-gray-400">{getTimeAgo(dispute.createdAt)}</div>
             </div>
-            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <div className="bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Last Updated</div>
-              <div className="text-xs font-bold text-gray-900">{formatDate(dispute.updatedAt)}</div>
+              <div className="text-xs font-bold text-gray-900 dark:text-white">{formatDate(dispute.updatedAt)}</div>
               <div className="text-[10px] text-gray-400">{getTimeAgo(dispute.updatedAt)}</div>
             </div>
           </div>
@@ -232,7 +232,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
           )}
 
           {/* Actions */}
-          <div className="pt-2 border-t border-gray-100 flex gap-3">
+          <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex gap-3">
             {dispute.status !== 'RESOLVED' && dispute.status !== 'REJECTED' ? (
               <button
                 onClick={() => onUpdate(dispute)}
@@ -247,7 +247,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ dispute, onClose, onUpdate })
             )}
             <button
               onClick={onClose}
-              className="px-5 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm"
+              className="px-5 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-bold text-sm"
             >
               Close
             </button>
@@ -333,7 +333,7 @@ const DisputeManagement: React.FC = () => {
             <Gavel className="w-4 h-4 text-red-500" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-gray-900 line-clamp-2 max-w-[220px]">
+            <p className="text-sm font-bold text-gray-900 dark:text-white line-clamp-2 max-w-[220px]">
               {dispute.reason?.slice(0, 70) || 'No reason provided'}
               {(dispute.reason?.length || 0) > 70 ? '...' : ''}
             </p>
@@ -353,7 +353,7 @@ const DisputeManagement: React.FC = () => {
               {raisedByName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-900">{raisedByName}</p>
+              <p className="text-xs font-bold text-gray-900 dark:text-white">{raisedByName}</p>
               {dispute.raisedBy?.role && (
                 <p className="text-[10px] text-gray-400 capitalize">{dispute.raisedBy.role.replace(/_/g, ' ')}</p>
               )}

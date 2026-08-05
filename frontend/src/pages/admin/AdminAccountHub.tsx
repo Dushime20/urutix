@@ -318,7 +318,7 @@ const AdminAccountHub: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => setEditing(true)}
-                    className="px-5 py-3 rounded-xl bg-white text-slate-900 text-xs font-black uppercase tracking-widest flex items-center gap-2"
+                    className="px-5 py-3 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-black uppercase tracking-widest flex items-center gap-2"
                   >
                     <Edit size={14} /> Edit Profile
                   </button>
@@ -343,7 +343,7 @@ const AdminAccountHub: React.FC = () => {
                       'w-full flex items-start gap-3 px-4 py-3.5 rounded-2xl text-left transition-all',
                       active
                         ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300'
-                        : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60',
+                        : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800/60',
                     )}
                   >
                     <Icon size={18} className="mt-0.5 shrink-0" />
@@ -729,7 +729,7 @@ const AdminAccountHub: React.FC = () => {
                 </h3>
                 <button
                   onClick={() => setShowPasswordModal(false)}
-                  className="p-2 rounded-lg text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="p-2 rounded-lg text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800"
                 >
                   <X size={16} />
                 </button>

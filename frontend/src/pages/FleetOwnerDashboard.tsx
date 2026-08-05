@@ -462,7 +462,7 @@ const FleetOwnerDashboard: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-6 md:pt-8 border-t border-white/5 flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
           <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest text-center md:text-left">
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest text-center md:text-left">
               © 2026 UrutiX Technologies Inc. All Rights Reserved.
             </p>
             <div className="flex items-center gap-4 md:gap-6">
@@ -518,8 +518,8 @@ const FleetOwnerDashboard: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gray-100 rounded-lg text-gray-400"><FaTruck /></div>
           <div>
-            <p className="text-sm font-bold text-gray-900">{trip.truck?.plateNumber || trip.truckId || 'Unassigned'}</p>
-            <p className="text-xs text-gray-500">{trip.driver?.name || trip.driverId || 'No Driver'}</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white">{trip.truck?.plateNumber || trip.truckId || 'Unassigned'}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">{trip.driver?.name || trip.driverId || 'No Driver'}</p>
           </div>
         </div>
       ),
@@ -528,7 +528,7 @@ const FleetOwnerDashboard: React.FC = () => {
       key: 'destination',
       label: 'Destination',
       render: (_: unknown, trip: any) => (
-        <span className="text-sm text-gray-600">{trip.route?.destination || trip.destination || 'N/A'}</span>
+        <span className="text-sm text-gray-600 dark:text-slate-300">{trip.route?.destination || trip.destination || 'N/A'}</span>
       ),
     },
     {
@@ -543,7 +543,7 @@ const FleetOwnerDashboard: React.FC = () => {
       label: 'Rating',
       align: 'right',
       render: (_: unknown, trip: any) => (
-        <div className="flex items-center justify-end gap-1 text-sm font-medium text-gray-900">
+        <div className="flex items-center justify-end gap-1 text-sm font-medium text-gray-900 dark:text-white">
           {['completed', 'delivered'].includes(trip.status?.toLowerCase()) ? (
             <><FaStar className="text-yellow-400" /> 5.0</>
           ) : (
@@ -555,7 +555,7 @@ const FleetOwnerDashboard: React.FC = () => {
   ], []);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-500/30 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-white font-sans selection:bg-blue-500/30 flex flex-col">
       {/* Dark Header */}
       <Header />
 
@@ -613,31 +613,31 @@ const FleetOwnerDashboard: React.FC = () => {
         {/* Metric Cards - Light Theme */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {/* Live Status */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-blue-300 hover:shadow-lg transition-all shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 relative overflow-hidden group hover:border-blue-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <FaTruck className="w-16 h-16 text-blue-500" />
             </div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fleet Status</p>
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Fleet Status</p>
             <div className="flex items-end gap-3 mb-2">
-              <span className="text-4xl font-black text-gray-900">{stats.totalTrucks}</span>
+              <span className="text-4xl font-black text-gray-900 dark:text-white">{stats.totalTrucks}</span>
               <span className="text-sm font-medium text-emerald-600 mb-1.5 flex items-center gap-1"><FaCheckCircle /> All Systems</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden flex">
               <div style={{ width: `${stats.utilizationRate}%` }} className="bg-blue-500 h-full"></div>
               <div style={{ width: `${100 - stats.utilizationRate}%` }} className="bg-emerald-500 h-full"></div>
             </div>
-            <div className="flex justify-between text-[10px] mt-2 font-medium text-gray-500">
+            <div className="flex justify-between text-[10px] mt-2 font-medium text-gray-500 dark:text-slate-400">
               <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> In Transit ({stats.trucksInTransit})</span>
               <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Available ({stats.trucksAvailable})</span>
             </div>
           </div>
 
           {/* Fuel Costs */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-orange-300 hover:shadow-lg transition-all shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 relative overflow-hidden group hover:border-orange-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-4 right-4 text-orange-500"><Fuel className="w-6 h-6" /></div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fuel Costs</p>
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Fuel Costs</p>
             <div className="flex items-end gap-3 mb-4">
-              <span className="text-3xl font-black text-gray-900">
+              <span className="text-3xl font-black text-gray-900 dark:text-white">
                 {fuelStats?.totalCost ? fmtMoney(fuelStats.totalCost) : '0'}
               </span>
             </div>
@@ -647,11 +647,11 @@ const FleetOwnerDashboard: React.FC = () => {
           </div>
 
           {/* Reputation */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-yellow-300 hover:shadow-lg transition-all shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 relative overflow-hidden group hover:border-yellow-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-4 right-4 text-yellow-500"><FaStar className="w-5 h-5" /></div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Reputation</p>
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Reputation</p>
             <div className="flex items-end gap-3 mb-4">
-              <span className="text-4xl font-black text-gray-900">4.82<span className="text-lg text-gray-400">/5</span></span>
+              <span className="text-4xl font-black text-gray-900 dark:text-white">4.82<span className="text-lg text-gray-400">/5</span></span>
             </div>
             <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
               <FaChartLine /> <strong>+0.2</strong> Rating
@@ -659,11 +659,11 @@ const FleetOwnerDashboard: React.FC = () => {
           </div>
 
           {/* Utilization */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-300 hover:shadow-lg transition-all shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-4 right-4 text-emerald-500"><FaUser className="w-5 h-5" /></div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Driver Utilization</p>
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Driver Utilization</p>
             <div className="flex items-end gap-3 mb-4">
-              <span className="text-4xl font-black text-gray-900">{stats.utilizationRate}%</span>
+              <span className="text-4xl font-black text-gray-900 dark:text-white">{stats.utilizationRate}%</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
               <FaBolt /> <strong>+2%</strong> efficiency
@@ -671,11 +671,11 @@ const FleetOwnerDashboard: React.FC = () => {
           </div>
 
           {/* Revenue */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 relative overflow-hidden group hover:border-amber-300 hover:shadow-lg transition-all shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-5 relative overflow-hidden group hover:border-amber-300 hover:shadow-lg transition-all shadow-sm">
             <div className="absolute top-4 right-4 text-amber-500"><FaDollarSign className="w-5 h-5" /></div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Revenue (MTD)</p>
+            <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-1">Revenue (MTD)</p>
             <div className="flex items-end gap-3 mb-4">
-              <span className="text-3xl font-black text-gray-900">{fmtMoney(2400000)}</span>
+              <span className="text-3xl font-black text-gray-900 dark:text-white">{fmtMoney(2400000)}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded border border-emerald-200">
               <FaChartLine /> <strong>+12%</strong> monthly growth
@@ -687,12 +687,12 @@ const FleetOwnerDashboard: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
           {/* Interactive Map */}
-          <div className="xl:col-span-2 bg-white border border-gray-200 rounded-2xl p-1 overflow-hidden flex flex-col h-[500px] shadow-sm">
+          <div className="xl:col-span-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl p-1 overflow-hidden flex flex-col h-[500px] shadow-sm">
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600"><FaRoute /></div>
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Dispatch Map</h3>
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">Dispatch Map</h3>
                   <span className="text-xs text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded ml-2">3 PENDING REQUESTS</span>
                 </div>
               </div>
@@ -700,7 +700,7 @@ const FleetOwnerDashboard: React.FC = () => {
                 <FaBolt /> Quick Assign Nearest
               </button>
             </div>
-            <div className="flex-1 rounded-xl overflow-hidden relative border border-gray-200 mx-4 mb-4">
+            <div className="flex-1 rounded-xl overflow-hidden relative border border-gray-200 dark:border-slate-700 mx-4 mb-4">
               <MapContainer
                 center={[0.0236, 37.9062]} // Kenya Center
                 zoom={6}
@@ -717,7 +717,7 @@ const FleetOwnerDashboard: React.FC = () => {
                     return (
                       <Marker key={truck.id} position={[coords[1], coords[0]]} icon={fleetIcon}>
                         <Popup className="custom-popup">
-                          <div className="text-slate-900">
+                          <div className="text-slate-900 dark:text-white">
                             <strong>{truck.plateNumber}</strong><br />
                             {truck.status}
                           </div>
@@ -731,20 +731,20 @@ const FleetOwnerDashboard: React.FC = () => {
 
               {/* Map Controls Overlay (Visual Only) */}
               <div className="absolute bottom-4 right-4 z-[400] flex flex-col gap-2">
-                <button className="w-8 h-8 bg-white border border-gray-300 text-gray-700 rounded flex items-center justify-center hover:bg-gray-50 font-bold text-lg shadow-sm">+</button>
-                <button className="w-8 h-8 bg-white border border-gray-300 text-gray-700 rounded flex items-center justify-center hover:bg-gray-50 font-bold text-lg shadow-sm">-</button>
+                <button className="w-8 h-8 bg-white dark:bg-slate-900 border border-gray-300 text-gray-700 dark:text-slate-300 rounded flex items-center justify-center hover:bg-gray-50 dark:hover:bg-slate-800 font-bold text-lg shadow-sm">+</button>
+                <button className="w-8 h-8 bg-white dark:bg-slate-900 border border-gray-300 text-gray-700 dark:text-slate-300 rounded flex items-center justify-center hover:bg-gray-50 dark:hover:bg-slate-800 font-bold text-lg shadow-sm">-</button>
               </div>
             </div>
           </div>
 
           {/* Top Driver & Perf Panel - Light Theme */}
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden flex flex-col shadow-sm">
             {/* Featured Driver */}
-            <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-200 relative overflow-hidden">
+            <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-gray-200 dark:border-slate-700 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/30 rounded-full blur-3xl -mr-10 -mt-10"></div>
               <div className="flex items-center gap-2 mb-4">
                 <FaStar className="text-yellow-500" />
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Top Driver</span>
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Top Driver</span>
               </div>
               <div className="flex items-center gap-4 relative z-10">
                 <div className="w-16 h-16 rounded-full border-2 border-yellow-500 p-0.5">
@@ -753,36 +753,36 @@ const FleetOwnerDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Samuel Karanja</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Samuel Karanja</h3>
                   <span className="text-[10px] font-bold bg-yellow-500 text-black px-1.5 py-0.5 rounded">GOLD STAR</span>
-                  <div className="flex items-center gap-3 mt-1 text-sm text-gray-600">
+                  <div className="flex items-center gap-3 mt-1 text-sm text-gray-600 dark:text-slate-300">
                     <span className="flex items-center gap-1"><FaStar className="text-yellow-500 w-3 h-3" /> 4.96/5.0</span>
                     <span className="text-gray-400">(242 Trips)</span>
                   </div>
                 </div>
               </div>
-              <button className="w-full mt-6 py-2 bg-white hover:bg-gray-50 border border-gray-300 rounded-lg text-sm text-blue-600 font-medium transition-all shadow-sm">
+              <button className="w-full mt-6 py-2 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 border border-gray-300 rounded-lg text-sm text-blue-600 font-medium transition-all shadow-sm">
                 View Performance Profile
               </button>
             </div>
 
             {/* Driver List */}
-            <div className="p-4 flex-1 bg-gray-50">
+            <div className="p-4 flex-1 bg-gray-50 dark:bg-slate-800/50">
               <div className="flex justify-between items-center mb-4">
-                <h4 className="text-sm font-bold text-gray-900">Driver Performance</h4>
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white">Driver Performance</h4>
                 <button className="text-xs text-blue-600 hover:text-blue-700">View All</button>
               </div>
               <div className="space-y-3">
                 {topDrivers.length > 0 ? topDrivers.map((driver, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-white hover:bg-blue-50 rounded-xl transition-colors cursor-pointer group border border-gray-200 shadow-sm">
+                  <div key={i} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer group border border-gray-200 dark:border-slate-700 shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 group-hover:border-blue-300">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 dark:border-slate-700 group-hover:border-blue-300">
                         {/* Fallback avatar logic */}
-                        <span className="font-bold text-xs text-gray-500">{(driver.name || driver.firstName || 'D').charAt(0)}</span>
+                        <span className="font-bold text-xs text-gray-500 dark:text-slate-400">{(driver.name || driver.firstName || 'D').charAt(0)}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{driver.name || `${driver.firstName} ${driver.lastName}`}</p>
-                        <p className="text-xs text-gray-500 flex items-center gap-1"><FaStar className="text-yellow-500 w-3 h-3" /> {driver.rating?.toFixed(1) || '4.5'}/5</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{driver.name || `${driver.firstName} ${driver.lastName}`}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 flex items-center gap-1"><FaStar className="text-yellow-500 w-3 h-3" /> {driver.rating?.toFixed(1) || '4.5'}/5</p>
                       </div>
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-1 rounded border ${driver.performanceStatus === 'On Time' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-blue-50 border-blue-200 text-blue-600'}`}>
@@ -790,7 +790,7 @@ const FleetOwnerDashboard: React.FC = () => {
                     </span>
                   </div>
                 )) : (
-                  <div className="text-center py-4 text-gray-500 text-sm">No driver data available</div>
+                  <div className="text-center py-4 text-gray-500 dark:text-slate-400 text-sm">No driver data available</div>
                 )}
               </div>
             </div>
@@ -801,10 +801,10 @@ const FleetOwnerDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Trip History */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-2 mb-6">
               <Clock className="w-5 h-5 text-gray-400" />
-              <h3 className="text-lg font-bold text-gray-900">Recent Trips</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Trips</h3>
             </div>
 
             <StandardDataTable
@@ -824,15 +824,15 @@ const FleetOwnerDashboard: React.FC = () => {
           </div>
 
           {/* Maintenance Alerts */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-2 mb-6">
               <AlertTriangle className="w-5 h-5 text-orange-500" />
-              <h3 className="text-lg font-bold text-gray-900">Maintenance Alerts</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Maintenance Alerts</h3>
             </div>
 
             {maintenanceAlerts.length > 0 ? maintenanceAlerts.map((alert, i) => (
               <div key={i} className={`rounded-xl p-4 flex items-start gap-4 mb-4 ${alert.type === 'Critical' ? 'bg-red-50 border border-red-200' : 'bg-orange-50 border border-orange-200'}`}>
-                <div className={`p-2 bg-white rounded-full shadow-sm ${alert.type === 'Critical' ? 'text-red-500' : 'text-orange-500'}`}>
+                <div className={`p-2 bg-white dark:bg-slate-900 rounded-full shadow-sm ${alert.type === 'Critical' ? 'text-red-500' : 'text-orange-500'}`}>
                   {alert.type === 'Critical' ? <AlertTriangle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                 </div>
                 <div>
@@ -846,34 +846,34 @@ const FleetOwnerDashboard: React.FC = () => {
                 </div>
               </div>
             )) : (
-              <div className="text-center py-6 text-gray-500 text-sm">
+              <div className="text-center py-6 text-gray-500 dark:text-slate-400 text-sm">
                 <CheckCircle className="w-8 h-8 mx-auto text-emerald-500 mb-2" />
                 No maintenance alerts. Fleet is healthy!
               </div>
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mt-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-slate-700 mt-6">
             <div className="flex items-center gap-2 mb-6">
               <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
                 <FaClipboardCheck className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Recent Inspections</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Inspections</h3>
             </div>
 
             {recentInspections.length > 0 ? (
               <div className="space-y-4">
                 {recentInspections.map((inspection, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
                     <div className="flex items-center gap-3">
                       <div className={`w-2 h-10 rounded-full ${inspection.status === 'PASSED' ? 'bg-emerald-500' :
                         inspection.status === 'FAILED' ? 'bg-red-500' : 'bg-amber-500'
                         }`}></div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900">
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">
                           {inspection.truckPlate || inspection.truck?.plateNumber || inspection.truckId}
                         </p>
-                        <p className="text-xs text-gray-500">{inspection.inspector || inspection.inspectorName || 'Unknown Inspector'}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">{inspection.inspector || inspection.inspectorName || 'Unknown Inspector'}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -890,7 +890,7 @@ const FleetOwnerDashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6 text-gray-500 text-sm">
+              <div className="text-center py-6 text-gray-500 dark:text-slate-400 text-sm">
                 <FaClipboardCheck className="w-8 h-8 mx-auto text-gray-300 mb-2" />
                 No recent inspections found.
               </div>

@@ -408,21 +408,21 @@ const CargoInspectionPage: React.FC = () => {
     return (
       <div className="text-center py-8">
         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <p className="text-gray-600">Cargo not found</p>
+        <p className="text-gray-600 dark:text-slate-300">Cargo not found</p>
         <button onClick={onCancel} className="mt-4 text-primary-600 hover:underline">Go Back</button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-20 animate-in fade-in duration-700">
       {/* Premium Header */}
-      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-4 py-4 sm:px-8 sm:py-6">
+      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 px-4 py-4 sm:px-8 sm:py-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button 
               onClick={onCancel} 
-              className="group p-2.5 sm:p-3 bg-slate-50 hover:bg-primary-50 text-slate-400 hover:text-primary-600 rounded-2xl transition-all active:scale-95 shadow-sm border border-slate-100 hover:border-primary-100"
+              className="group p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary-50 text-slate-400 hover:text-primary-600 rounded-2xl transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-800 hover:border-primary-100"
             >
               <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
             </button>
@@ -453,7 +453,7 @@ const CargoInspectionPage: React.FC = () => {
       </div>
 
       {/* Responsive Progress Protocol */}
-      <div className="bg-white border-b border-slate-100 overflow-x-auto no-scrollbar">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 flex items-center justify-between min-w-[600px] sm:min-w-0">
           {[
             { id: 'overview', label: 'Overview', icon: Eye },
@@ -471,7 +471,7 @@ const CargoInspectionPage: React.FC = () => {
                   <div className={cn(
                     "w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-sm border-2",
                     isActive ? "bg-primary-600 text-white border-primary-100 -translate-y-1 shadow-lg shadow-primary-900/20" : 
-                    isCompleted ? "bg-emerald-500 text-white border-emerald-100" : "bg-slate-50 text-slate-300 border-slate-100"
+                    isCompleted ? "bg-emerald-500 text-white border-emerald-100" : "bg-slate-50 dark:bg-slate-800/50 text-slate-300 border-slate-100 dark:border-slate-800"
                   )}>
                     {isCompleted ? <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" /> : <Icon className="w-5 h-5 sm:w-6 sm:h-6" />}
                   </div>
@@ -483,7 +483,7 @@ const CargoInspectionPage: React.FC = () => {
                   </span>
                 </div>
                 {index < 3 && (
-                  <div className="mx-4 sm:mx-8 flex-1 w-12 sm:w-24 h-[2px] mb-4 overflow-hidden rounded-full bg-slate-50">
+                  <div className="mx-4 sm:mx-8 flex-1 w-12 sm:w-24 h-[2px] mb-4 overflow-hidden rounded-full bg-slate-50 dark:bg-slate-800/50">
                     <div className={cn(
                       "h-full transition-all duration-700 ease-in-out",
                       isCompleted ? "w-full bg-emerald-400" : isActive ? "w-1/2 bg-primary-300" : "w-0 bg-slate-100"
@@ -503,7 +503,7 @@ const CargoInspectionPage: React.FC = () => {
             {/* Left: Metadata Scan */}
             <div className="lg:col-span-12 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border border-slate-100 shadow-sm shadow-slate-200/50">
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 sm:p-10 border border-slate-100 dark:border-slate-800 shadow-sm shadow-slate-200/50">
                   <div className="flex items-center gap-4 mb-8">
                     <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 shadow-inner">
                       <Eye className="w-6 h-6" />
@@ -523,13 +523,13 @@ const CargoInspectionPage: React.FC = () => {
                     ].map((item: any, i: number) => (
                       <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 py-2 border-b border-slate-50 last:border-0">
                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{item.label}</span>
-                        <span className="text-sm font-bold text-slate-700">{item.value}</span>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border border-slate-100 shadow-sm shadow-slate-200/50">
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 sm:p-10 border border-slate-100 dark:border-slate-800 shadow-sm shadow-slate-200/50">
                   <div className="flex items-center gap-4 mb-8">
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-inner">
                       <Shield className="w-6 h-6" />
@@ -538,7 +538,7 @@ const CargoInspectionPage: React.FC = () => {
                   </div>
                   
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-3">
                         <Shield className="w-5 h-5 text-primary-400" />
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fragility_Level</span>
@@ -549,12 +549,12 @@ const CargoInspectionPage: React.FC = () => {
                       )}>{cargo.fragility}</span>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-3">
                         <Thermometer className="w-5 h-5 text-orange-400" />
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thermal_Window</span>
                       </div>
-                      <span className="text-[10px] font-black text-slate-700">
+                      <span className="text-[10px] font-black text-slate-700 dark:text-slate-300">
                          {cargo.temperature.min !== null ? `${cargo.temperature.min}°${cargo.temperature.unit} - ${cargo.temperature.max}°${cargo.temperature.unit}` : 'AUTO_REG'}
                       </span>
                     </div>
@@ -574,7 +574,7 @@ const CargoInspectionPage: React.FC = () => {
                       <div className="flex flex-wrap gap-2">
                         {cargo.specialRequirements.length > 0 ? (
                           cargo.specialRequirements.map((req: string, index: number) => (
-                            <span key={index} className="px-3 py-1.5 bg-white border border-slate-100 text-slate-600 text-[9px] font-black uppercase tracking-widest rounded-xl shadow-sm">
+                            <span key={index} className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-widest rounded-xl shadow-sm">
                               {req}
                             </span>
                           ))
@@ -590,7 +590,7 @@ const CargoInspectionPage: React.FC = () => {
               <div className="flex flex-col sm:flex-row justify-end items-center gap-4 pt-8">
                 <button
                   onClick={onCancel}
-                  className="w-full sm:w-auto px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all active:scale-95"
+                  className="w-full sm:w-auto px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all active:scale-95"
                 >
                   Terminate_Session
                 </button>
@@ -627,10 +627,10 @@ const CargoInspectionPage: React.FC = () => {
                   <div 
                     key={item.id} 
                     className={cn(
-                      "group relative bg-white rounded-[2.5rem] p-8 border transition-all duration-500 hover:shadow-2xl hover:shadow-slate-200/50",
+                      "group relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border transition-all duration-500 hover:shadow-2xl hover:shadow-slate-200/50",
                       status === 'passed' ? 'border-emerald-100 bg-emerald-50/10' :
                       status === 'failed' ? 'border-red-100 bg-red-50/10' :
-                      'border-slate-100 hover:border-primary-100'
+                      'border-slate-100 dark:border-slate-800 hover:border-primary-100'
                     )}
                   >
                     <div className="flex flex-col h-full gap-6">
@@ -658,7 +658,7 @@ const CargoInspectionPage: React.FC = () => {
                             "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm border",
                             status === 'passed' 
                               ? "bg-emerald-500 text-white border-emerald-400" 
-                              : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100"
+                              : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-100 dark:border-slate-800 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100"
                           )}
                         >
                           Pass
@@ -669,7 +669,7 @@ const CargoInspectionPage: React.FC = () => {
                             "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm border",
                             status === 'failed' 
                               ? "bg-red-500 text-white border-red-400" 
-                              : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
+                              : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-100 dark:border-slate-800 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
                           )}
                         >
                           Fail
@@ -682,7 +682,7 @@ const CargoInspectionPage: React.FC = () => {
             </div>
 
             {/* Photo Documentation */}
-            <div className="bg-white rounded-[3rem] p-8 sm:p-12 border border-slate-100 shadow-sm shadow-slate-200/50">
+            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 sm:p-12 border border-slate-100 dark:border-slate-800 shadow-sm shadow-slate-200/50">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner">
@@ -701,7 +701,7 @@ const CargoInspectionPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                <label className="group relative flex flex-col items-center justify-center aspect-square border-2 border-dashed border-slate-100 rounded-[2rem] hover:border-primary-400 hover:bg-primary-50/50 cursor-pointer transition-all duration-300 shadow-sm">
+                <label className="group relative flex flex-col items-center justify-center aspect-square border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-[2rem] hover:border-primary-400 hover:bg-primary-50/50 cursor-pointer transition-all duration-300 shadow-sm">
                   <input
                     type="file"
                     accept="image/*"
@@ -716,7 +716,7 @@ const CargoInspectionPage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center group-hover:scale-110 transition-transform">
-                      <div className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center mb-3 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors shadow-inner">
+                      <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center justify-center mb-3 group-hover:bg-primary-100 group-hover:text-primary-600 transition-colors shadow-inner">
                          <Camera className="w-5 h-5 text-slate-300" />
                       </div>
                       <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Add_Node</span>
@@ -724,7 +724,7 @@ const CargoInspectionPage: React.FC = () => {
                   )}
                 </label>
                 {uploadedPhotos.map((photo: any) => (
-                  <div key={photo.id} className="group relative aspect-square bg-slate-50 rounded-[2rem] overflow-hidden border border-slate-100 hover:border-primary-200 shadow-sm transition-all duration-500">
+                  <div key={photo.id} className="group relative aspect-square bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-800 hover:border-primary-200 shadow-sm transition-all duration-500">
                     <img 
                       src={photo.url} 
                       alt={`Inspection scan`} 
@@ -744,10 +744,10 @@ const CargoInspectionPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => setInspectionStep('overview')}
-                className="w-full sm:w-auto px-10 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all active:scale-95"
+                className="w-full sm:w-auto px-10 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all active:scale-95"
               >
                 Prev_Module
               </button>
@@ -778,10 +778,10 @@ const CargoInspectionPage: React.FC = () => {
                     <div 
                       key={index} 
                       className={cn(
-                        "group relative bg-white rounded-[2.5rem] p-8 border transition-all duration-500",
+                        "group relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border transition-all duration-500",
                         status === 'verified' ? 'border-emerald-100 bg-emerald-50/10' :
                         status === 'missing' ? 'border-red-100 bg-red-50/10' :
-                        'border-slate-100 hover:border-primary-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50'
+                        'border-slate-100 dark:border-slate-800 hover:border-primary-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50'
                       )}
                     >
                       <div className="flex flex-col gap-6">
@@ -812,7 +812,7 @@ const CargoInspectionPage: React.FC = () => {
                               "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm border",
                               status === 'verified' 
                                 ? "bg-emerald-500 text-white border-emerald-400" 
-                                : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100"
+                                : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-100 dark:border-slate-800 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100"
                             )}
                           >
                             Verify
@@ -833,7 +833,7 @@ const CargoInspectionPage: React.FC = () => {
                               "flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm border",
                               status === 'missing' 
                                 ? "bg-red-500 text-white border-red-400" 
-                                : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
+                                : "bg-slate-50 dark:bg-slate-800/50 text-slate-400 border-slate-100 dark:border-slate-800 hover:bg-red-50 hover:text-red-600 hover:border-red-100"
                             )}
                           >
                             Missing
@@ -844,7 +844,7 @@ const CargoInspectionPage: React.FC = () => {
                   );
                 })
               ) : (
-                <div className="col-span-full py-12 text-center bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200">
+                <div className="col-span-full py-12 text-center bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-700">
                     <FileText className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No mandatory documents specified in manifest.</p>
                 </div>
@@ -853,7 +853,7 @@ const CargoInspectionPage: React.FC = () => {
 
             {/* Issues Found */}
             {inspectionResult.issues && inspectionResult.issues.length > 0 && (
-              <div className="bg-white rounded-[3rem] p-8 sm:p-12 border border-slate-100 shadow-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 sm:p-12 border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 shadow-inner">
                     <AlertTriangle className="w-6 h-6" />
@@ -863,7 +863,7 @@ const CargoInspectionPage: React.FC = () => {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {inspectionResult.issues.map((issue) => (
-                    <div key={issue.id} className="relative bg-slate-50 rounded-[2rem] p-6 border border-slate-100 group hover:border-red-100 transition-all">
+                    <div key={issue.id} className="relative bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 group hover:border-red-100 transition-all">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex flex-col gap-1">
                           <span className={cn(
@@ -880,7 +880,7 @@ const CargoInspectionPage: React.FC = () => {
                            onClick={() => updateIssue(issue.id, { resolved: !issue.resolved })}
                            className={cn(
                              "w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90",
-                             issue.resolved ? "bg-emerald-500 text-white" : "bg-white text-slate-300 hover:text-red-500 border border-slate-100 shadow-sm"
+                             issue.resolved ? "bg-emerald-500 text-white" : "bg-white dark:bg-slate-900 text-slate-300 hover:text-red-500 border border-slate-100 dark:border-slate-800 shadow-sm"
                            )}
                         >
                            <CheckCircle className="w-4 h-4" />
@@ -888,10 +888,10 @@ const CargoInspectionPage: React.FC = () => {
                       </div>
                       <p className="text-sm font-black text-[#0f172a] mb-2 leading-tight">{issue.description}</p>
                       <div className="flex flex-wrap gap-2 mb-4">
-                         <div className="px-3 py-1 bg-white rounded-lg border border-slate-100 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                         <div className="px-3 py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800 text-[8px] font-black text-slate-400 uppercase tracking-widest">
                             LOC: {issue.location}
                          </div>
-                         <div className="px-3 py-1 bg-white rounded-lg border border-slate-100 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                         <div className="px-3 py-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800 text-[8px] font-black text-slate-400 uppercase tracking-widest">
                             ACT: {issue.actionRequired}
                          </div>
                       </div>
@@ -900,7 +900,7 @@ const CargoInspectionPage: React.FC = () => {
                         <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
                           <textarea
                             placeholder="Authorization notes..."
-                            className="w-full bg-white p-4 border border-slate-100 rounded-2xl text-[10px] font-bold text-slate-600 focus:ring-4 focus:ring-emerald-50 transition-all shadow-inner"
+                            className="w-full bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-bold text-slate-600 dark:text-slate-300 focus:ring-4 focus:ring-emerald-50 transition-all shadow-inner"
                             rows={2}
                             value={issue.resolutionNotes || ''}
                             onChange={(e) => updateIssue(issue.id, { resolutionNotes: e.target.value })}
@@ -914,7 +914,7 @@ const CargoInspectionPage: React.FC = () => {
             )}
 
             {/* Notes Section */}
-            <div className="bg-white rounded-[3rem] p-8 sm:p-12 border border-slate-100 shadow-sm shadow-slate-200/50">
+            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 sm:p-12 border border-slate-100 dark:border-slate-800 shadow-sm shadow-slate-200/50">
               <div className="flex items-center gap-4 mb-8">
                   <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600 shadow-inner">
                     <Edit3 className="w-6 h-6" />
@@ -923,16 +923,16 @@ const CargoInspectionPage: React.FC = () => {
               </div>
               <textarea
                 placeholder="Enter final executive summary for terminal intake..."
-                className="w-full bg-slate-50 p-6 border-none rounded-[2rem] text-sm font-bold text-slate-600 focus:ring-8 focus:ring-primary-50 transition-all shadow-inner placeholder:text-slate-300 min-h-[150px]"
+                className="w-full bg-slate-50 dark:bg-slate-800/50 p-6 border-none rounded-[2rem] text-sm font-bold text-slate-600 dark:text-slate-300 focus:ring-8 focus:ring-primary-50 transition-all shadow-inner placeholder:text-slate-300 min-h-[150px]"
                 value={inspectionResult.notes || ''}
                 onChange={(e) => setInspectionResult(prev => ({ ...prev, notes: e.target.value }))}
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={() => setInspectionStep('physical')}
-                className="w-full sm:w-auto px-10 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all active:scale-95"
+                className="w-full sm:w-auto px-10 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all active:scale-95"
               >
                 Prev_Module
               </button>
@@ -955,7 +955,7 @@ const CargoInspectionPage: React.FC = () => {
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Execute binary intake decision and sign protocol manifest.</p>
             </div>
             
-            <div className="bg-white rounded-[3rem] border border-slate-100 p-8 sm:p-12 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 p-8 sm:p-12 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8">
                  <div className={cn(
                   "px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg",
@@ -976,7 +976,7 @@ const CargoInspectionPage: React.FC = () => {
                   <ul className="space-y-4">
                     {Object.entries(checklistStatus).map(([key, status]) => (
                       <li key={key} className="flex items-center justify-between group">
-                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{key.replace(/([A-Z])/g, ' $1')}</span>
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{key.replace(/([A-Z])/g, ' $1')}</span>
                         {status === 'passed' ? (
                           <span className="text-emerald-500 flex items-center text-[10px] font-black uppercase tracking-widest"><CheckCircle className="w-3 h-3 mr-1.5 shadow-emerald-500/10" /> Authorized</span>
                         ) : status === 'failed' ? (
@@ -1000,7 +1000,7 @@ const CargoInspectionPage: React.FC = () => {
                       const status = documentStatus[docKey];
                       return (
                         <li key={index} className="flex items-center justify-between group">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest truncate max-w-[150px]">{doc}</span>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate max-w-[150px]">{doc}</span>
                           {status === 'verified' ? (
                             <span className="text-emerald-500 flex items-center text-[10px] font-black uppercase tracking-widest flex-shrink-0"><CheckCircle className="w-3 h-3 mr-1.5 shadow-emerald-500/10" /> Valid</span>
                           ) : status === 'missing' ? (
@@ -1054,7 +1054,7 @@ const CargoInspectionPage: React.FC = () => {
                   </div>
                   <button
                     onClick={onCancel}
-                    className="w-full sm:w-auto px-12 py-4 bg-white text-slate-900 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 shadow-xl"
+                    className="w-full sm:w-auto px-12 py-4 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 shadow-xl"
                   >
                     Return_To_Manifest
                   </button>
@@ -1075,7 +1075,7 @@ const CargoInspectionPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                   <button
                     onClick={() => setInspectionStep('documentation')}
-                    className="w-full sm:w-auto px-10 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all active:scale-95"
+                    className="w-full sm:w-auto px-10 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all active:scale-95"
                   >
                     Prev_Module
                   </button>
@@ -1096,7 +1096,7 @@ const CargoInspectionPage: React.FC = () => {
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-500">
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-500">
             <div className="p-8 sm:p-12 text-center">
               <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto mb-8 shadow-inner">
                 <AlertTriangle className="w-10 h-10" />
@@ -1108,10 +1108,10 @@ const CargoInspectionPage: React.FC = () => {
               </p>
             </div>
             
-            <div className="bg-slate-50 p-6 flex flex-col sm:flex-row items-center gap-4">
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 flex flex-col sm:flex-row items-center gap-4">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="w-full sm:flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600"
+                className="w-full sm:flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 Abort_Protocol
               </button>

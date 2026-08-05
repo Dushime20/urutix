@@ -21,7 +21,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
   const showViewToggle = (activeTab === 'trucks' || activeTab === 'drivers') && viewMode && setViewMode;
 
   return (
-    <div className="bg-white rounded-[40px] border border-slate-100 p-2 shadow-sm mb-8 flex flex-col md:flex-row gap-2">
+    <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 p-2 shadow-sm mb-8 flex flex-col md:flex-row gap-2">
       {/* Search Input Vector */}
       <div className="flex-1 relative group">
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 size-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
@@ -30,7 +30,7 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
           placeholder={activeTab === 'trucks' ? 'Search assets...' : activeTab === 'drivers' ? 'Search personnel...' : `Search ${activeTab} records...`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-50 rounded-[32px] text-[11px] font-black uppercase tracking-widest text-slate-900 focus:bg-white focus:ring-8 focus:ring-indigo-500/10 focus:border-indigo-600 outline-none transition-all"
+          className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-50 rounded-[32px] text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white focus:bg-white dark:bg-slate-900 focus:ring-8 focus:ring-indigo-500/10 focus:border-indigo-600 outline-none transition-all"
         />
         {search && (
           <button
@@ -44,12 +44,12 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
 
       {/* View Matrix Toggle */}
       {showViewToggle && (
-        <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-[32px]">
+        <div className="flex items-center gap-1 p-1 bg-slate-50 dark:bg-slate-800/50 rounded-[32px]">
           <button
             onClick={() => setViewMode('grid')}
             className={`px-6 py-3 rounded-[28px] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${viewMode === 'grid'
-                ? 'bg-white shadow-xl shadow-slate-200 text-indigo-600'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'bg-white dark:bg-slate-900 shadow-xl shadow-slate-200 text-indigo-600'
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
               }`}
           >
             <LayoutGrid size={14} />
@@ -58,8 +58,8 @@ const FleetFiltersComp: React.FC<FleetFiltersProps> = ({
           <button
             onClick={() => setViewMode('list')}
             className={`px-6 py-3 rounded-[28px] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${viewMode === 'list'
-                ? 'bg-white shadow-xl shadow-slate-200 text-indigo-600'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'bg-white dark:bg-slate-900 shadow-xl shadow-slate-200 text-indigo-600'
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
               }`}
           >
             <List size={14} />

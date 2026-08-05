@@ -179,7 +179,7 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
           <button 
             onClick={onClose} 
             disabled={loading}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-all disabled:opacity-50"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 dark:hover:text-white transition-all disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -293,7 +293,7 @@ const AddDriverDocumentModal: React.FC<AddDriverDocumentModalProps> = ({ onClose
               <button 
                 type="button" 
                 onClick={onClose} 
-                className="px-6 py-2.5 text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
+                className="px-6 py-2.5 text-gray-400 hover:text-gray-900 dark:hover:text-white dark:hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all"
               >
                 Cancel
               </button>

@@ -69,7 +69,7 @@ const TenantAdminLayoutContent: React.FC = () => {
     <>
       {isDashboardIndex ? (
         // Dashboard index route has its own layout with welcome section (includes header/footer)
-        <div className="min-h-screen bg-gray-50 flex flex-col pb-20 lg:pb-0">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col pb-20 lg:pb-0">
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>

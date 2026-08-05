@@ -284,31 +284,31 @@ const LenderNotificationsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <FaBell className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-                <p className="text-gray-600 mt-1">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+                <p className="text-gray-600 dark:text-slate-300 mt-1">
                   Stay updated with your lending activities and important alerts
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Unread:</span>
+                <span className="text-sm text-gray-600 dark:text-slate-300">Unread:</span>
                 <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
                   {unreadCount}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Action Required:</span>
+                <span className="text-sm text-gray-600 dark:text-slate-300">Action Required:</span>
                 <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
                   {actionRequiredCount}
                 </span>
@@ -318,7 +318,7 @@ const LenderNotificationsPage: React.FC = () => {
         </div>
 
         {/* Filters and Controls */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
@@ -329,7 +329,7 @@ const LenderNotificationsPage: React.FC = () => {
                   placeholder="Search notifications..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -341,7 +341,7 @@ const LenderNotificationsPage: React.FC = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium ${
                   filter === 'all' 
                     ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 dark:text-slate-300 hover:bg-gray-200'
                 }`}
               >
                 All ({notifications.length})
@@ -351,7 +351,7 @@ const LenderNotificationsPage: React.FC = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium ${
                   filter === 'unread' 
                     ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 dark:text-slate-300 hover:bg-gray-200'
                 }`}
               >
                 Unread ({unreadCount})
@@ -361,7 +361,7 @@ const LenderNotificationsPage: React.FC = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium ${
                   filter === 'action-required' 
                     ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 dark:text-slate-300 hover:bg-gray-200'
                 }`}
               >
                 Action Required ({actionRequiredCount})
@@ -371,7 +371,7 @@ const LenderNotificationsPage: React.FC = () => {
             {/* Advanced Filters Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
             >
               <FaFilter className="h-4 w-4" />
               Filters
@@ -409,14 +409,14 @@ const LenderNotificationsPage: React.FC = () => {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Type</label>
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     {notificationTypes.map(type => (
                       <option key={type.value} value={type.value}>
@@ -426,11 +426,11 @@ const LenderNotificationsPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Priority</label>
                   <select
                     value={priorityFilter}
                     onChange={(e) => setPriorityFilter(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="all">All Priorities</option>
                     <option value="urgent">Urgent</option>
@@ -447,10 +447,10 @@ const LenderNotificationsPage: React.FC = () => {
         {/* Notifications List */}
         <div className="space-y-4">
           {filteredNotifications.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-12 text-center">
               <FaBell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications found</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No notifications found</h3>
+              <p className="text-gray-600 dark:text-slate-300">
                 {searchTerm ? 'Try adjusting your search terms or filters.' : 'You\'re all caught up!'}
               </p>
             </div>
@@ -458,7 +458,7 @@ const LenderNotificationsPage: React.FC = () => {
             filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow ${
+                className={`bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow ${
                   !notification.isRead ? 'border-l-4 border-l-blue-500' : ''
                 }`}
               >
@@ -474,7 +474,7 @@ const LenderNotificationsPage: React.FC = () => {
                         setSelectedNotifications(prev => prev.filter(id => id !== notification.id));
                       }
                     }}
-                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded"
                   />
 
                   {/* Notification Icon */}
@@ -487,7 +487,7 @@ const LenderNotificationsPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className={`text-lg font-semibold ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
+                          <h3 className={`text-lg font-semibold ${!notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-slate-300'}`}>
                             {notification.title}
                           </h3>
                           {getPriorityBadge(notification.priority)}
@@ -501,13 +501,13 @@ const LenderNotificationsPage: React.FC = () => {
                           )}
                         </div>
                         
-                        <p className={`text-sm mb-3 ${!notification.isRead ? 'text-gray-900' : 'text-gray-600'}`}>
+                        <p className={`text-sm mb-3 ${!notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-slate-300'}`}>
                           {notification.message}
                         </p>
 
                         {/* Metadata */}
                         {notification.metadata && (
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-slate-300 mb-3">
                             {notification.metadata.borrowerName && (
                               <span className="flex items-center gap-1">
                                 <FaUserCheck className="h-3 w-3" />
@@ -536,7 +536,7 @@ const LenderNotificationsPage: React.FC = () => {
                         )}
 
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-500 flex items-center gap-1">
+                          <span className="text-sm text-gray-500 dark:text-slate-400 flex items-center gap-1">
                             <FaClock className="h-3 w-3" />
                             {formatTimeAgo(notification.timestamp)}
                           </span>
@@ -546,7 +546,7 @@ const LenderNotificationsPage: React.FC = () => {
                               <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
                                 Take Action
                               </button>
-                              <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50">
+                              <button className="px-3 py-1 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded text-sm hover:bg-gray-50 dark:hover:bg-slate-800">
                                 View Details
                               </button>
                             </div>
@@ -572,7 +572,7 @@ const LenderNotificationsPage: React.FC = () => {
                         >
                           <FaTrash className="h-4 w-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded">
+                        <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 rounded">
                           <FaEllipsisV className="h-4 w-4" />
                         </button>
                       </div>
@@ -587,7 +587,7 @@ const LenderNotificationsPage: React.FC = () => {
         {/* Load More */}
         {filteredNotifications.length > 0 && (
           <div className="text-center mt-8">
-            <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+            <button className="px-6 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800">
               Load More Notifications
             </button>
           </div>

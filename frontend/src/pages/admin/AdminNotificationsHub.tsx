@@ -67,14 +67,14 @@ const DetailModal: React.FC<{ n: Notification; onClose: () => void }> = ({ n, on
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-[24px] w-full max-w-lg border border-gray-100 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] w-full max-w-lg border border-gray-100 dark:border-slate-800 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-[#2c5173]/10 rounded-xl flex items-center justify-center">
               <Bell className="w-4 h-4 text-[#2c5173]" />
             </div>
             <div>
-              <p className="text-sm font-black text-gray-900">{n.title}</p>
+              <p className="text-sm font-black text-gray-900 dark:text-white">{n.title}</p>
               <p className="text-[10px] text-gray-400 font-mono">{n.id.slice(0, 20)}…</p>
             </div>
           </div>
@@ -92,7 +92,7 @@ const DetailModal: React.FC<{ n: Notification; onClose: () => void }> = ({ n, on
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black border ${priorityCfg.cls}`}>
               {priorityCfg.label}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black border border-gray-200 bg-gray-50 text-gray-600">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-600 dark:text-slate-300">
               <span className={`w-1.5 h-1.5 rounded-full ${catCfg.dot}`} />
               {catCfg.label}
             </span>
@@ -104,9 +104,9 @@ const DetailModal: React.FC<{ n: Notification; onClose: () => void }> = ({ n, on
           </div>
 
           {/* message */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+          <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 border border-gray-100 dark:border-slate-800">
             <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Message</p>
-            <p className="text-sm text-gray-700 leading-relaxed">{n.message}</p>
+            <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">{n.message}</p>
           </div>
 
           {/* metadata grid */}
@@ -119,7 +119,7 @@ const DetailModal: React.FC<{ n: Notification; onClose: () => void }> = ({ n, on
               { label: 'Read',      value: n.readAt      ? fmtTime(n.readAt)      : 'Not read' },
               { label: 'Created',   value: fmtTime(n.createdAt) },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+              <div key={label} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3 border border-gray-100 dark:border-slate-800">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">{label}</p>
                 <p className="text-xs font-bold text-gray-800 truncate">{value}</p>
               </div>
@@ -215,7 +215,7 @@ const AdminNotificationsHub: React.FC = () => {
         <div className="flex gap-2">
           {hasFilter && (
             <button onClick={clearFilter}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50">
+              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-gray-50 dark:hover:bg-slate-800">
               <X size={13} /> Clear Filters
             </button>
           )}
@@ -229,14 +229,14 @@ const AdminNotificationsHub: React.FC = () => {
       <div className="safe-bottom space-y-5">
 
         {/* ── Filters ──────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-4">
           <div className="flex flex-wrap gap-3">
             {/* search */}
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
               <input type="text" placeholder="Search by title, message…"
                 value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#2c5173]" />
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-[#2c5173]" />
             </div>
             {/* selects */}
             {[
@@ -247,7 +247,7 @@ const AdminNotificationsHub: React.FC = () => {
             ].map(({ label, value, setter, options }) => (
               <div key={label} className="relative">
                 <select value={value} onChange={e => { (setter as any)(e.target.value); setPage(1); }}
-                  className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-[#2c5173]">
+                  className="pl-3 pr-8 py-2 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-[#2c5173]">
                   <option value="">{label}</option>
                   {(options as [string, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
@@ -269,7 +269,7 @@ const AdminNotificationsHub: React.FC = () => {
               <CheckCircle size={11} /> Mark all read
             </button>
             <button onClick={() => setSelected([])}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-50">
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-gray-50 dark:hover:bg-slate-800">
               <X size={11} /> Clear
             </button>
           </div>
@@ -301,7 +301,7 @@ const AdminNotificationsHub: React.FC = () => {
                   <div className="flex items-start gap-2.5 max-w-[260px]">
                     {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
                     <div className="min-w-0">
-                      <p className={`text-xs truncate ${isUnread ? 'font-black text-gray-900' : 'font-medium text-gray-700'}`}>{n.title}</p>
+                      <p className={`text-xs truncate ${isUnread ? 'font-black text-gray-900 dark:text-white' : 'font-medium text-gray-700 dark:text-slate-300'}`}>{n.title}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[220px]">
                         {n.shortMessage || n.message}
                       </p>
@@ -321,7 +321,7 @@ const AdminNotificationsHub: React.FC = () => {
               render: (cat: string) => {
                 const catCfg = CATEGORY_CFG[cat] ?? { label: cat, icon: <Bell size={11} />, dot: 'bg-gray-400' };
                 return (
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-600">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-600 dark:text-slate-300">
                     <span className={`w-1.5 h-1.5 rounded-full ${catCfg.dot}`} />
                     {catCfg.label}
                   </span>

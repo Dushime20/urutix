@@ -80,7 +80,7 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 animate-pulse h-[400px]" />
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-10 animate-pulse h-[400px]" />
     );
   }
 
@@ -88,12 +88,12 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 relative overflow-hidden"
+      className="bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl shadow-slate-200/40 relative overflow-hidden"
     >
 
-      <div className="px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-50 bg-slate-50/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-50 bg-slate-50/30 dark:bg-slate-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-[#345E85] shadow-sm">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[#345E85] shadow-sm">
             <Calendar size={18} />
           </div>
           <div>
@@ -103,7 +103,7 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
         </div>
         <button
           onClick={() => setShowAll(!showAll)}
-          className="w-full sm:w-auto px-6 py-2.5 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm"
+          className="w-full sm:w-auto px-6 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
         >
           {showAll ? <TranslatedText text="Collapse" /> : `${t('View All')} (${currentTrips.length})`}
         </button>
@@ -119,7 +119,7 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="p-6 sm:p-10 hover:bg-slate-50/50 transition-all group"
+              className="p-6 sm:p-10 hover:bg-slate-50/50 dark:bg-slate-950 transition-all group"
             >
 
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
@@ -169,7 +169,7 @@ export const UpcomingTrips: React.FC<UpcomingTripsProps> = ({ trips, loading }) 
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <button className="h-16 px-10 bg-white border border-slate-100 text-[#345E85] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
+                  <button className="h-16 px-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[#345E85] rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm active:scale-95">
                     <TranslatedText text="View Details" />
                   </button>
                   <button className="h-16 w-16 bg-[#345E85] text-white rounded-2xl flex items-center justify-center hover:bg-slate-800 transition-all shadow-lg active:scale-95 group/btn">

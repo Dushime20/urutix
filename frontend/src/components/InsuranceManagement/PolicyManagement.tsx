@@ -221,46 +221,46 @@ const PolicyManagement: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaShieldAlt className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Policies</p>
-              <p className="text-2xl font-bold text-gray-900">{policies.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{policies.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaDollarSign className="h-8 w-8 text-green-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Premium</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 ${policies.reduce((sum, p) => sum + p.premium, 0).toLocaleString()}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaTruck className="h-8 w-8 text-purple-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Insured Trucks</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {new Set(policies.map((p) => p.truckId)).size}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaCalendarAlt className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Expiring Soon</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {policies.filter((p) => p.status === 'active').length}
               </p>
             </div>
@@ -270,9 +270,9 @@ const PolicyManagement: React.FC = () => {
 
       {showAddModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-900">
             <div className="mt-3 text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Policy</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Add New Policy</h3>
               <p className="text-sm text-gray-500 mb-4">Policy creation form would go here</p>
               <button
                 onClick={() => setShowAddModal(false)}

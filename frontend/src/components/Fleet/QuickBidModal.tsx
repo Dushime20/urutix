@@ -132,12 +132,12 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300">
         {/* Header */}
-        <div className="px-10 py-8 border-b border-gray-100 relative">
+        <div className="px-10 py-8 border-b border-gray-100 dark:border-slate-800 relative">
           <h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Quick Bid</h2>
           <div className="mt-2 space-y-1">
-            <p className="text-lg font-medium text-gray-600">{cargo?.title}</p>
+            <p className="text-lg font-medium text-gray-600 dark:text-slate-300">{cargo?.title}</p>
             <p className="text-sm text-gray-400 font-medium italic">
               Cargo Owner: {cargo?.cargoOwnerName || 'Unknown'} {cargo?.cargoOwnerCompany ? `(${cargo?.cargoOwnerCompany})` : ''}
             </p>
@@ -145,7 +145,7 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
           <button
             onClick={handleClose}
             disabled={isSubmitting}
-            className="absolute top-8 right-10 w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-colors text-slate-400 disabled:opacity-50"
+            className="absolute top-8 right-10 w-10 h-10 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -157,14 +157,14 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
           <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
             {/* Bid Amount Input */}
             <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-700">Bid Amount ({cargo?.currencyCode || 'USD'}) *</label>
+              <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Bid Amount ({cargo?.currencyCode || 'USD'}) *</label>
               <div className="relative group">
                 <input
                   type="number"
                   value={bidAmount}
                   onChange={(e) => setBidAmount(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full h-16 px-6 bg-white border-2 border-gray-200 rounded-2xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all disabled:opacity-50"
+                  className="w-full h-16 px-6 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-2xl text-xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all disabled:opacity-50"
                   placeholder="0.00"
                 />
               </div>
@@ -191,18 +191,18 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-base font-bold text-gray-700">Require advance payment before trip</span>
+                <span className="text-base font-bold text-gray-700 dark:text-slate-300">Require advance payment before trip</span>
               </label>
 
               {requireAdvancePayment && (
                 <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
-                  <label className="block text-base font-bold text-gray-700">Advance Payment % (Optional)</label>
+                  <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Advance Payment % (Optional)</label>
                   <input
                     type="number"
                     value={advancePaymentPercentage}
                     onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
                     disabled={isSubmitting}
-                    className="w-full h-14 px-6 bg-white border-2 border-gray-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500 transition-all disabled:opacity-50"
+                    className="w-full h-14 px-6 bg-white dark:bg-slate-900 border-2 border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all disabled:opacity-50"
                     placeholder="e.g., 70"
                   />
                   <p className="text-sm text-gray-400 leading-relaxed font-medium">
@@ -215,7 +215,7 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
             {/* Schedule Delivery Box */}
             <div className="bg-[#f0f9ff]/80 p-8 rounded-[1.5rem] border border-blue-100 space-y-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
+                <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
                   <Clock size={18} />
                 </div>
                 <h4 className="text-lg font-extrabold text-[#0369a1]">Delivery Schedule</h4>
@@ -223,23 +223,23 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Pickup Date *</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Pickup Date *</label>
                   <input
                     type="datetime-local"
                     value={proposedPickupDate}
                     onChange={(e) => setProposedPickupDate(e.target.value)}
                     disabled={isSubmitting}
-                    className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all disabled:opacity-50"
+                    className="w-full h-14 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-all disabled:opacity-50"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Delivery Date *</label>
+                  <label className="text-sm font-bold text-gray-700 dark:text-slate-300">Delivery Date *</label>
                   <input
                     type="datetime-local"
                     value={proposedDeliveryDate}
                     onChange={(e) => setProposedDeliveryDate(e.target.value)}
                     disabled={isSubmitting}
-                    className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all disabled:opacity-50"
+                    className="w-full h-14 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -247,12 +247,12 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
 
             {/* Additional Notes Box */}
             <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-700">Additional Notes (Optional)</label>
+              <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Additional Notes (Optional)</label>
               <textarea
                 value={bidNotes}
                 onChange={(e) => setBidNotes(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full p-5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#345E85] transition-all min-h-[120px] resize-none disabled:opacity-50"
+                className="w-full p-5 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:border-[#345E85] transition-all min-h-[120px] resize-none disabled:opacity-50"
                 placeholder="Add any additional notes about your bid..."
               />
             </div>
@@ -265,7 +265,7 @@ const QuickBidModal: React.FC<QuickBidModalProps> = ({
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
+                className="px-10 py-4 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95 disabled:opacity-50"
               >
                 Cancel
               </button>

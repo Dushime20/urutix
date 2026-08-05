@@ -126,7 +126,7 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         <div className="bg-[#0F172A] p-10 text-white relative shrink-0">
           <button
@@ -161,13 +161,13 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
           </div>
         </div>
 
-        <div className="p-8 space-y-6 bg-slate-50/30 overflow-y-auto">
+        <div className="p-8 space-y-6 bg-slate-50/30 dark:bg-slate-950 overflow-y-auto">
           {specs.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {specs.map((spec) => (
                 <div
                   key={spec.label}
-                  className="p-4 rounded-2xl border border-slate-100 bg-white shadow-sm"
+                  className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <spec.icon size={14} className="text-[#2b5271]" />
@@ -245,7 +245,7 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
                         ? 'bg-rose-50 text-rose-700 border-rose-100'
                         : flag === 'Refrigerated' || flag === 'Humidity control'
                           ? 'bg-sky-50 text-sky-700 border-sky-100'
-                          : 'bg-white text-slate-600 border-slate-200'
+                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                     )}
                   >
                     <TranslatedText text={flag} />
@@ -276,21 +276,21 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
                 </div>
               )}
               {cargo.loadingInstructions && (
-                <div className="p-4 bg-white border border-slate-100 rounded-2xl">
+                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
                     <TranslatedText text="Loading" />
                   </p>
-                  <p className="text-xs font-medium text-slate-700 leading-relaxed">
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
                     {cargo.loadingInstructions}
                   </p>
                 </div>
               )}
               {cargo.unloadingInstructions && (
-                <div className="p-4 bg-white border border-slate-100 rounded-2xl">
+                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">
                     <TranslatedText text="Unloading" />
                   </p>
-                  <p className="text-xs font-medium text-slate-700 leading-relaxed">
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-relaxed">
                     {cargo.unloadingInstructions}
                   </p>
                 </div>
@@ -299,7 +299,7 @@ export const CargoHealthModal: React.FC<CargoHealthModalProps> = ({
           )}
         </div>
 
-        <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
+        <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
             <Info size={14} className="text-[#2b5271]" />
             <TranslatedText text="From load assignment" />

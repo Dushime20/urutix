@@ -178,7 +178,7 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-xl shadow-slate-200/50 flex flex-col">
+                <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 shadow-xl shadow-slate-200/50 flex flex-col">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100 shrink-0">
                             <AlertTriangle size={16} />
@@ -213,7 +213,7 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                         placeholder={t('Search documents...')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-12 pl-11 pr-4 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                        className="w-full h-12 pl-11 pr-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
                     />
                 </div>
 
@@ -222,7 +222,7 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                         <select
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
-                            className="w-full h-12 pl-4 pr-10 bg-white border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
+                            className="w-full h-12 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
                         >
                             <option value="ALL">{t('All Types')}</option>
                             <option value="DRIVER_LICENSE">{t('License')}</option>
@@ -247,11 +247,11 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
 
             {/* Documents Grid */}
             {filteredDocuments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-slate-100 border-dashed">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 border-dashed">
+                    <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
                         <FileText className="w-8 h-8 text-slate-300" />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900"><TranslatedText text="No documents found" /></h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white"><TranslatedText text="No documents found" /></h3>
                     <p className="text-slate-500 text-sm mt-1"><TranslatedText text="Upload your first document to get started" /></p>
                     <button
                         onClick={() => setShowUploadModal(true)}
@@ -270,7 +270,7 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 layout
-                                className="group bg-white rounded-[2rem] border border-slate-100 p-6 hover:shadow-lg hover:border-blue-100 transition-all duration-300 relative overflow-hidden"
+                                className="group bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 hover:shadow-lg hover:border-blue-100 transition-all duration-300 relative overflow-hidden"
                             >
                                 {/* Status Badge */}
                                 <div className={`absolute top-6 right-6 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5 ${getStatusColor(doc.status)}`}>
@@ -286,7 +286,7 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                                 {/* Content */}
                                 <div className="space-y-4">
                                     <div>
-                                        <h3 className="text-lg font-black text-slate-800 line-clamp-1" title={doc.title}>
+                                        <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 line-clamp-1" title={doc.title}>
                                             {doc.title}
                                         </h3>
                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
@@ -297,7 +297,7 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                                     <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-slate-50">
                                         <div>
                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1"><TranslatedText text="Uploaded" /></span>
-                                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
                                                 <Calendar className="w-3 h-3 text-slate-400" />
                                                 {formatDate(doc.createdAt)}
                                             </div>
@@ -305,7 +305,7 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                                         {doc.expiryDate && (
                                             <div>
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1"><TranslatedText text="Expires" /></span>
-                                                <div className={`flex items-center gap-1.5 text-xs font-bold ${new Date(doc.expiryDate) < new Date() ? 'text-rose-600' : 'text-slate-600'
+                                                <div className={`flex items-center gap-1.5 text-xs font-bold ${new Date(doc.expiryDate) < new Date() ? 'text-rose-600' : 'text-slate-600 dark:text-slate-300'
                                                     }`}>
                                                     <Clock className={`w-3 h-3 ${new Date(doc.expiryDate) < new Date() ? 'text-rose-500' : 'text-slate-400'}`} />
                                                     {formatDate(doc.expiryDate)}
@@ -318,14 +318,14 @@ export const DriverDocuments: React.FC<DriverDocumentsProps> = ({ driverId }) =>
                                     <div className="flex items-center gap-2 pt-2">
                                         <button
                                             onClick={() => documentApi.downloadDocument(doc.id)}
-                                            className="flex-1 h-10 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-2 group/btn"
+                                            className="flex-1 h-10 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-2 group/btn"
                                         >
                                             <Download className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                                             <TranslatedText text="Download" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(doc.id, doc.title)}
-                                            className="w-10 h-10 bg-white border border-slate-100 hover:bg-rose-50 hover:border-rose-100 text-slate-400 hover:text-rose-500 rounded-xl flex items-center justify-center transition-all"
+                                            className="w-10 h-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:bg-rose-50 hover:border-rose-100 text-slate-400 hover:text-rose-500 rounded-xl flex items-center justify-center transition-all"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>

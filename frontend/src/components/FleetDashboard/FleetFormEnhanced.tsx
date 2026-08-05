@@ -363,7 +363,7 @@ w - 12 h - 12 rounded - xl flex items - center justify - center transition - all
         label: string; field: string; type?: string; required?: boolean; placeholder?: string; maxLength?: number; min?: number; max?: number; step?: number; helpText?: string;
     }) => (
         <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
             {helpText && <p className="text-xs text-slate-400 mb-2">{helpText}</p>}
@@ -371,7 +371,7 @@ w - 12 h - 12 rounded - xl flex items - center justify - center transition - all
                 type={type}
                 value={formData[field] || ''}
                 onChange={(e) => handleInputChange(field, type === 'number' ? (parseFloat(e.target.value) || '') : e.target.value)}
-                className={`w - full px - 4 py - 3 border - 2 rounded - xl focus: outline - none focus: ring - 2 focus: ring - blue - 500 / 20 focus: border - blue - 500 transition - all ${errors[field] ? 'border-red-300 bg-red-50' : 'border-slate-200 hover:border-slate-300'
+                className={`w - full px - 4 py - 3 border - 2 rounded - xl focus: outline - none focus: ring - 2 focus: ring - blue - 500 / 20 focus: border - blue - 500 transition - all ${errors[field] ? 'border-red-300 bg-red-50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                     } `}
                 placeholder={placeholder}
                 maxLength={maxLength}
@@ -391,13 +391,13 @@ w - 12 h - 12 rounded - xl flex items - center justify - center transition - all
         label: string; field: string; options: { value: string; label: string }[]; required?: boolean;
     }) => (
         <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
             <select
                 value={formData[field] || ''}
                 onChange={(e) => handleInputChange(field, e.target.value)}
-                className={`w - full px - 4 py - 3 border - 2 rounded - xl focus: outline - none focus: ring - 2 focus: ring - blue - 500 / 20 focus: border - blue - 500 transition - all appearance - none bg - white ${errors[field] ? 'border-red-300 bg-red-50' : 'border-slate-200 hover:border-slate-300'
+                className={`w - full px - 4 py - 3 border - 2 rounded - xl focus: outline - none focus: ring - 2 focus: ring - blue - 500 / 20 focus: border - blue - 500 transition - all appearance - none bg - white ${errors[field] ? 'border-red-300 bg-red-50' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                     } `}
             >
                 <option value="">Select {label.toLowerCase()}</option>
@@ -420,7 +420,7 @@ w - 12 h - 12 rounded - xl flex items - center justify - center transition - all
       flex items - center gap - 4 p - 4 rounded - xl border - 2 cursor - pointer transition - all
       ${formData[field]
                 ? 'border-blue-500 bg-blue-50/50'
-                : 'border-slate-200 hover:border-slate-300 bg-white'
+                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-900'
             }
 `}>
             <div className={`
@@ -430,7 +430,7 @@ w - 10 h - 10 rounded - lg flex items - center justify - center
                 {Icon ? <Icon className="w-5 h-5" /> : <FaTools className="w-5 h-5" />}
             </div>
             <div className="flex-1">
-                <p className="font-semibold text-slate-800">{label}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100">{label}</p>
                 {description && <p className="text-xs text-slate-500">{description}</p>}
             </div>
             <div className={`
@@ -459,7 +459,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                     <Truck className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-slate-900">Vehicle Identity</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Vehicle Identity</h3>
                     <p className="text-sm text-slate-500">Basic information about your truck</p>
                 </div>
             </div>
@@ -483,7 +483,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                     helpText="The registration plate number displayed on your truck"
                 />
                 <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                         VIN <span className="text-red-500">*</span>
                     </label>
                     <p className="text-xs text-slate-400 mb-2">17-character code on your dashboard or driver's door sticker</p>
@@ -498,7 +498,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                                 ? 'border-emerald-400 bg-emerald-50'
                                 : errors.vin
                                     ? 'border-red-300 bg-red-50'
-                                    : 'border-slate-200 hover:border-slate-300'
+                                    : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                             } `}
                         placeholder="e.g., 1HGBH41JXMN109186"
                         maxLength={17}
@@ -560,7 +560,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                     <Settings className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-slate-900">Capacity & Type</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Capacity & Type</h3>
                     <p className="text-sm text-slate-500">Specifications and cargo capacity</p>
                 </div>
             </div>
@@ -647,8 +647,8 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                 />
             </div>
 
-            <div className="pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-bold text-slate-700 mb-2">Dimensions (Optional)</h4>
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Dimensions (Optional)</h4>
                 <p className="text-xs text-slate-400 mb-4">Internal cargo area dimensions - helps match cargo size to your truck</p>
                 <div className="grid grid-cols-3 gap-4">
                     <InputField
@@ -688,7 +688,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                     <FileText className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-slate-900">Compliance & Equipment</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Compliance & Equipment</h3>
                     <p className="text-sm text-slate-500">Registration, insurance and features</p>
                 </div>
             </div>
@@ -703,8 +703,8 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
             </div>
 
             {/* Compliance Section */}
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-5">
-                <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-5">
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                     <FileText className="w-4 h-4" /> Documents & Compliance
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -740,12 +740,12 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                     />
 
                     {/* File Uploads */}
-                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
+                    <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                                 Registration Document <span className="text-slate-400 font-normal">(Optional)</span>
                             </label>
-                            <div className="border border-slate-300 rounded-xl p-3 bg-white hover:border-blue-400 transition-colors">
+                            <div className="border border-slate-300 rounded-xl p-3 bg-white dark:bg-slate-900 hover:border-blue-400 transition-colors">
                                 <input
                                     type="file"
                                     onChange={(e) => setRegistrationFile(e.target.files?.[0] || null)}
@@ -757,10 +757,10 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-1">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
                                 Insurance Document <span className="text-slate-400 font-normal">(Optional)</span>
                             </label>
-                            <div className="border border-slate-300 rounded-xl p-3 bg-white hover:border-blue-400 transition-colors">
+                            <div className="border border-slate-300 rounded-xl p-3 bg-white dark:bg-slate-900 hover:border-blue-400 transition-colors">
                                 <input
                                     type="file"
                                     onChange={(e) => setInsuranceFile(e.target.files?.[0] || null)}
@@ -783,7 +783,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
             {/* Equipment Section */}
             <div className="space-y-4">
                 <div>
-                    <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                         <Wrench className="w-4 h-4" /> Equipment & Features
                     </h4>
                     <p className="text-xs text-slate-400 mt-1">Toggle ON the features your truck has - this helps match you with suitable cargo</p>
@@ -814,7 +814,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                     <CheckCircle className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-slate-900">Review Your Truck</h3>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Review Your Truck</h3>
                     <p className="text-sm text-slate-500">Confirm all details before submitting</p>
                 </div>
             </div>
@@ -822,9 +822,9 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
             {/* Summary Cards */}
             <div className="space-y-4">
                 {/* Basic Info Summary */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-bold text-slate-700 flex items-center gap-2">
+                        <h4 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                             <Truck className="w-4 h-4" /> Basic Information
                         </h4>
                         <button
@@ -836,19 +836,19 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                         </button>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div><span className="text-slate-400">Plate:</span> <span className="font-semibold text-slate-700">{formData.plateNumber || '-'}</span></div>
-                        <div><span className="text-slate-400">VIN:</span> <span className="font-semibold text-slate-700 font-mono text-xs">{formData.vin || '-'}</span></div>
-                        <div><span className="text-slate-400">Make:</span> <span className="font-semibold text-slate-700">{formData.make || '-'}</span></div>
-                        <div><span className="text-slate-400">Model:</span> <span className="font-semibold text-slate-700">{formData.model || '-'}</span></div>
-                        <div><span className="text-slate-400">Year:</span> <span className="font-semibold text-slate-700">{formData.year || '-'}</span></div>
-                        <div><span className="text-slate-400">Color:</span> <span className="font-semibold text-slate-700">{formData.color || '-'}</span></div>
+                        <div><span className="text-slate-400">Plate:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.plateNumber || '-'}</span></div>
+                        <div><span className="text-slate-400">VIN:</span> <span className="font-semibold text-slate-700 dark:text-slate-300 font-mono text-xs">{formData.vin || '-'}</span></div>
+                        <div><span className="text-slate-400">Make:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.make || '-'}</span></div>
+                        <div><span className="text-slate-400">Model:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.model || '-'}</span></div>
+                        <div><span className="text-slate-400">Year:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.year || '-'}</span></div>
+                        <div><span className="text-slate-400">Color:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.color || '-'}</span></div>
                     </div>
                 </div>
 
                 {/* Specifications Summary */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-bold text-slate-700 flex items-center gap-2">
+                        <h4 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                             <Settings className="w-4 h-4" /> Specifications
                         </h4>
                         <button
@@ -860,19 +860,19 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                         </button>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div><span className="text-slate-400">Type:</span> <span className="font-semibold text-slate-700">{formData.truckType?.replace('_', ' ') || '-'}</span></div>
-                        <div><span className="text-slate-400">Fuel:</span> <span className="font-semibold text-slate-700">{formData.fuelType || '-'}</span></div>
-                        <div><span className="text-slate-400">Capacity:</span> <span className="font-semibold text-slate-700">{formData.capacityWeight ? `${formData.capacityWeight} kg` : '-'}</span></div>
-                        <div><span className="text-slate-400">Volume:</span> <span className="font-semibold text-slate-700">{formData.capacityVolume ? `${formData.capacityVolume} m³` : '-'}</span></div>
-                        <div><span className="text-slate-400">Trailer:</span> <span className="font-semibold text-slate-700">{formData.trailerType?.replace('_', ' ') || 'None'}</span></div>
-                        <div><span className="text-slate-400">Mileage:</span> <span className="font-semibold text-slate-700">{formData.mileage ? `${formData.mileage} km` : '-'}</span></div>
+                        <div><span className="text-slate-400">Type:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.truckType?.replace('_', ' ') || '-'}</span></div>
+                        <div><span className="text-slate-400">Fuel:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.fuelType || '-'}</span></div>
+                        <div><span className="text-slate-400">Capacity:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.capacityWeight ? `${formData.capacityWeight} kg` : '-'}</span></div>
+                        <div><span className="text-slate-400">Volume:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.capacityVolume ? `${formData.capacityVolume} m³` : '-'}</span></div>
+                        <div><span className="text-slate-400">Trailer:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.trailerType?.replace('_', ' ') || 'None'}</span></div>
+                        <div><span className="text-slate-400">Mileage:</span> <span className="font-semibold text-slate-700 dark:text-slate-300">{formData.mileage ? `${formData.mileage} km` : '-'}</span></div>
                     </div>
                 </div>
 
                 {/* Equipment Summary */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-bold text-slate-700 flex items-center gap-2">
+                        <h4 className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                             <Wrench className="w-4 h-4" /> Equipment
                         </h4>
                         <button
@@ -891,7 +891,7 @@ w - 5 h - 5 rounded - full bg - white shadow - sm transition - all
                         {formData.hasForklift && <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">Forklift</span>}
                         {formData.hasCrane && <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">Crane</span>}
                         {formData.hasTailLift && <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Tail Lift</span>}
-                        {formData.hasSideRails && <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Side Rails</span>}
+                        {formData.hasSideRails && <span className="px-3 py-1 bg-slate-100 text-slate-700 dark:text-slate-300 rounded-full text-xs font-semibold">Side Rails</span>}
                         {!formData.hasGPS && !formData.hasRefrigeration && !formData.hasLiftGate && !formData.hasHazmatPermit &&
                             !formData.hasForklift && !formData.hasCrane && !formData.hasTailLift && !formData.hasSideRails && (
                                 <span className="text-sm text-slate-400">No equipment selected</span>

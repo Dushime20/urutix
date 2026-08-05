@@ -212,13 +212,13 @@ const LenderPolicySettingsPage: React.FC = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8 space-y-8">
 
       {/* Header */}
-      <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <p className="text-[10px] font-black text-[#345E85] uppercase tracking-[0.2em] mb-1">Configuration</p>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Lending Policy</h1>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Lending Policy</h1>
           <p className="text-slate-400 text-sm mt-1">
             Define the terms under which you lend to truck owners
           </p>
@@ -226,7 +226,7 @@ const LenderPolicySettingsPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={fetchPolicy}
-            className="h-11 w-11 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm"
+            className="h-11 w-11 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
@@ -251,10 +251,10 @@ const LenderPolicySettingsPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="bg-white rounded-3xl border border-slate-100 p-6 animate-pulse">
+            <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-6 animate-pulse">
               <div className="h-10 w-10 rounded-2xl bg-slate-100 mb-4" />
               <div className="h-7 w-24 bg-slate-100 rounded-xl mb-2" />
-              <div className="h-3 w-32 bg-slate-50 rounded-lg" />
+              <div className="h-3 w-32 bg-slate-50 dark:bg-slate-800/50 rounded-lg" />
             </div>
           ))}
         </div>
@@ -299,11 +299,11 @@ const LenderPolicySettingsPage: React.FC = () => {
                 bg: 'bg-amber-50',
               },
             ].map(({ label, value, sub, icon, bg }) => (
-              <div key={label} className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div key={label} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-shadow">
                 <div className={`h-11 w-11 rounded-2xl ${bg} flex items-center justify-center mb-4`}>
                   {icon}
                 </div>
-                <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{value}</p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{label}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{sub}</p>
               </div>
@@ -311,21 +311,21 @@ const LenderPolicySettingsPage: React.FC = () => {
           </div>
 
           {/* Meta */}
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm flex items-center gap-3">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex items-center gap-3">
             <Info size={14} className="text-slate-400 flex-shrink-0" />
-            <p className="text-xs text-slate-500">
-              Policy last updated: <span className="font-semibold text-slate-700">{new Date(policy.updated_at).toLocaleString()}</span>
-              &nbsp;·&nbsp; ID: <span className="font-mono text-slate-500">{policy.id.slice(0, 8)}…</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Policy last updated: <span className="font-semibold text-slate-700 dark:text-slate-300">{new Date(policy.updated_at).toLocaleString()}</span>
+              &nbsp;·&nbsp; ID: <span className="font-mono text-slate-500 dark:text-slate-400">{policy.id.slice(0, 8)}…</span>
             </p>
           </div>
         </>
       ) : (
         /* No policy yet */
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center justify-center py-20 text-center">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center py-20 text-center">
           <div className="h-16 w-16 rounded-full bg-amber-50 flex items-center justify-center mb-4">
             <ShieldCheck size={28} className="text-amber-500" />
           </div>
-          <p className="text-slate-900 font-black text-lg mb-2">No Policy Configured</p>
+          <p className="text-slate-900 dark:text-white font-black text-lg mb-2">No Policy Configured</p>
           <p className="text-slate-400 text-sm max-w-sm mb-6">
             You need to set a lending policy before loan requests can be automatically assigned to you.
           </p>
@@ -341,7 +341,7 @@ const LenderPolicySettingsPage: React.FC = () => {
       {/* ── Form Modal ── */}
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden my-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg border border-slate-100 dark:border-slate-800 overflow-hidden my-auto">
 
             {/* Modal header */}
             <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
@@ -389,7 +389,7 @@ const LenderPolicySettingsPage: React.FC = () => {
                       onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                       placeholder={f.placeholder}
                       required={f.required}
-                      className={`w-full py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all
+                      className={`w-full py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all
                         ${f.prefix ? 'pl-14 pr-12' : 'pl-10 pr-12'}`}
                     />
                     {/* Suffix (% / days) */}
@@ -420,7 +420,7 @@ const LenderPolicySettingsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                  className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                 >
                   Cancel
                 </button>

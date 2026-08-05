@@ -248,7 +248,7 @@ const SystemSettings: React.FC = () => {
             type="text"
             value={settings.general.siteName}
             onChange={(e) => handleInputChange('general', 'siteName', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
         </div>
         <div>
@@ -257,7 +257,7 @@ const SystemSettings: React.FC = () => {
             type="email"
             value={settings.general.contactEmail}
             onChange={(e) => handleInputChange('general', 'contactEmail', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
         </div>
       </div>
@@ -268,7 +268,7 @@ const SystemSettings: React.FC = () => {
           value={settings.general.siteDescription}
           onChange={(e) => handleInputChange('general', 'siteDescription', e.target.value)}
           rows={3}
-          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
         />
       </div>
 
@@ -278,7 +278,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.general.timezone}
             onChange={(e) => handleInputChange('general', 'timezone', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 pointer-cursor"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300 pointer-cursor"
           >
             <option value="Africa/Kigali">Africa/Kigali</option>
             <option value="UTC">UTC</option>
@@ -292,7 +292,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.general.language}
             onChange={(e) => handleInputChange('general', 'language', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           >
             <option value="English">English</option>
             <option value="Kinyarwanda">Kinyarwanda</option>
@@ -305,7 +305,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.general.currency}
             onChange={(e) => handleInputChange('general', 'currency', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           >
             <option value="RWF">Rwandan Franc (RWF)</option>
             <option value="USD">US Dollar (USD)</option>
@@ -335,9 +335,9 @@ const SystemSettings: React.FC = () => {
             { key: 'sslRequired', label: 'SSL Required', desc: 'Force HTTPS connections' },
             { key: 'accountLockout', label: 'Account Lockout', desc: 'Lock accounts after failed attempts' }
           ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
               <div>
-                <h4 className="font-bold text-slate-800 text-sm">{item.label}</h4>
+                <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">{item.label}</h4>
                 <p className="text-xs text-slate-500">{item.desc}</p>
               </div>
               <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
@@ -345,7 +345,7 @@ const SystemSettings: React.FC = () => {
                   type="checkbox"
                   checked={settings.security[item.key as keyof typeof settings.security] as boolean}
                   onChange={(e) => handleInputChange('security', item.key, e.target.checked)}
-                  className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"
+                  className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white dark:bg-slate-900 border-4 appearance-none cursor-pointer"
                   style={{ right: settings.security[item.key as keyof typeof settings.security] ? '0' : 'auto', left: settings.security[item.key as keyof typeof settings.security] ? 'auto' : '0' }}
                 />
                 {/*  checkbox styling would ideally use a proper Switch component if available, sticking to simple input for now but styled containers */}
@@ -374,7 +374,7 @@ const SystemSettings: React.FC = () => {
                 type="number"
                 value={settings.security[item.key as keyof typeof settings.security] as number}
                 onChange={(e) => handleInputChange('security', item.key, parseInt(e.target.value))}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
               />
             </div>
           ))}
@@ -390,9 +390,9 @@ const SystemSettings: React.FC = () => {
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">System Notifications</h3>
 
           {Object.entries(settings.notifications).map(([key, value]) => (
-            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div key={key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
               <div>
-                <h4 className="font-bold text-slate-800 text-sm capitalize">
+                <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm capitalize">
                   {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                 </h4>
                 <p className="text-xs text-slate-500">
@@ -426,9 +426,9 @@ const SystemSettings: React.FC = () => {
               { label: 'Shipment Updates', desc: 'Cargo status notifications' },
               { label: 'Payment Confirmations', desc: 'Payment success notifications' }
             ].map((item, idx) => (
-              <button key={idx} className="w-full text-left p-4 bg-white border border-gray-200 rounded-xl hover:border-primary-300 transition-all group">
+              <button key={idx} className="w-full text-left p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl hover:border-primary-300 transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800 group-hover:text-[#2c5173] transition-colors">{item.label}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-[#2c5173] transition-colors">{item.label}</span>
                   <Edit2 className="text-gray-400 w-4 h-4 group-hover:text-[#2c5173]" />
                 </div>
                 <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
@@ -451,7 +451,7 @@ const SystemSettings: React.FC = () => {
                 type={showApiKey ? "text" : "password"}
                 value={settings.api.apiKey}
                 onChange={(e) => handleInputChange('api', 'apiKey', e.target.value)}
-                className="w-full pl-4 pr-12 py-2.5 bg-gray-50 border border-gray-200 rounded-l-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-mono text-sm text-slate-700"
+                className="w-full pl-4 pr-12 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-l-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-mono text-sm text-slate-700 dark:text-slate-300"
                 readOnly
               />
               <button
@@ -483,7 +483,7 @@ const SystemSettings: React.FC = () => {
             type="number"
             value={settings.api.requestsPerMinute}
             onChange={(e) => handleInputChange('api', 'requestsPerMinute', parseInt(e.target.value))}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
         </div>
       </div>
@@ -494,9 +494,9 @@ const SystemSettings: React.FC = () => {
           { key: 'corsEnabled', label: 'CORS', desc: 'Cross-origin requests' },
           { key: 'webhooksEnabled', label: 'Webhooks', desc: 'Event notifications' }
         ].map((item) => (
-          <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800">
             <div>
-              <h4 className="font-bold text-slate-800 text-sm">{item.label}</h4>
+              <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">{item.label}</h4>
               <p className="text-xs text-slate-500">{item.desc}</p>
             </div>
             <input
@@ -516,7 +516,7 @@ const SystemSettings: React.FC = () => {
             type="text"
             value={settings.api.apiVersion}
             onChange={(e) => handleInputChange('api', 'apiVersion', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
         </div>
         <div>
@@ -524,7 +524,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.api.maxPayloadSize}
             onChange={(e) => handleInputChange('api', 'maxPayloadSize', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           >
             <option value="1MB">1MB</option>
             <option value="5MB">5MB</option>
@@ -557,7 +557,7 @@ const SystemSettings: React.FC = () => {
           <select
             value={settings.database.backupFrequency}
             onChange={(e) => handleInputChange('database', 'backupFrequency', e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           >
             <option value="hourly">Hourly</option>
             <option value="daily">Daily</option>
@@ -571,7 +571,7 @@ const SystemSettings: React.FC = () => {
             type="number"
             value={settings.database.backupRetention}
             onChange={(e) => handleInputChange('database', 'backupRetention', parseInt(e.target.value))}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
         </div>
         <div>
@@ -580,20 +580,20 @@ const SystemSettings: React.FC = () => {
             type="number"
             value={settings.database.connectionPool}
             onChange={(e) => handleInputChange('database', 'connectionPool', parseInt(e.target.value))}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <h4 className="font-bold text-slate-800 text-sm">Backup History</h4>
+      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-slate-700">
+          <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Backup History</h4>
         </div>
         <div className="divide-y divide-gray-100">
           {backupHistory.map((backup) => (
-            <div key={backup.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+            <div key={backup.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
               <div>
-                <p className="font-medium text-slate-800 text-sm">{backup.filename}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">{backup.filename}</p>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {backup.timestamp} • {backup.size} • {backup.type}
                 </p>
@@ -647,7 +647,7 @@ const SystemSettings: React.FC = () => {
               setUnsavedChanges(true);
             }}
             placeholder="+250788309463"
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
           <p className="text-xs text-slate-500 mt-2">
             <TranslatedText text="This phone number will be clickable on mobile devices (tel: link)" />
@@ -667,7 +667,7 @@ const SystemSettings: React.FC = () => {
               setUnsavedChanges(true);
             }}
             placeholder="hello@urutix.com"
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
           <p className="text-xs text-slate-500 mt-2">
             <TranslatedText text="Primary contact email displayed on the website" />
@@ -687,7 +687,7 @@ const SystemSettings: React.FC = () => {
               setUnsavedChanges(true);
             }}
             placeholder="Kigali, Rwanda · Nairobi, Kenya"
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700"
+            className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none transition-all font-medium text-slate-700 dark:text-slate-300"
           />
           <p className="text-xs text-slate-500 mt-2">
             <TranslatedText text="Business locations displayed in the footer" />
@@ -695,11 +695,11 @@ const SystemSettings: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+      <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
         <button
           onClick={fetchContactSettings}
           disabled={isSavingContact}
-          className="px-6 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+          className="px-6 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${isSavingContact ? 'animate-spin' : ''}`} />
           <TranslatedText text="Reset" />
@@ -735,7 +735,7 @@ const SystemSettings: React.FC = () => {
         return (
           <div className="text-center py-12">
             <Settings className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-slate-800">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
               <TranslatedText text="Settings Section" />
             </h3>
             <p className="text-slate-500 mt-2">
@@ -766,7 +766,7 @@ const SystemSettings: React.FC = () => {
           <div className="flex gap-3">
             <button
               onClick={handleReset}
-              className="bg-white border border-gray-200 text-slate-700 hover:bg-gray-50 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold text-xs uppercase tracking-wider"
+              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all font-bold text-xs uppercase tracking-wider"
             >
               <RotateCcw size={14} />
               <span><TranslatedText text="Reset" /></span>
@@ -787,7 +787,7 @@ const SystemSettings: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
-        <div className="lg:w-72 bg-white rounded-[24px] border border-slate-100 p-4 h-fit">
+        <div className="lg:w-72 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-4 h-fit">
           <nav className="space-y-1">
             {settingSections.map((section) => {
               const Icon = section.icon;
@@ -798,11 +798,11 @@ const SystemSettings: React.FC = () => {
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full flex items-center px-4 py-3.5 rounded-xl transition-all ${isActive
                     ? 'bg-slate-100 text-[#2c5173]'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:text-slate-100'
                     }`}
                 >
                   <Icon className={`mr-3 w-5 h-5 ${isActive ? 'text-[#2c5173]' : 'text-slate-400'}`} />
-                  <span className={`font-bold text-sm ${isActive ? 'text-[#2c5173]' : 'text-slate-600'}`}>
+                  <span className={`font-bold text-sm ${isActive ? 'text-[#2c5173]' : 'text-slate-600 dark:text-slate-300'}`}>
                     <TranslatedText text={section.label} />
                   </span>
                 </button>
@@ -812,9 +812,9 @@ const SystemSettings: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-white rounded-[24px] border border-slate-100 p-8 min-h-[600px]">
-          <div className="mb-8 pb-4 border-b border-slate-100">
-            <h3 className="text-xl font-black text-slate-800">
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-8 min-h-[600px]">
+          <div className="mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">
               <TranslatedText text={settingSections.find(s => s.id === activeSection)?.label || ''} />
             </h3>
             <p className="text-slate-500 text-sm mt-1">Manage your {activeSection} preferences</p>

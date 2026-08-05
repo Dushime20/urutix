@@ -102,7 +102,7 @@ const TenantSwitcher: React.FC<TenantSwitcherProps> = ({
   if (error) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <span className="font-semibold text-gray-700">Tenant:</span>
+        <span className="font-semibold text-gray-700 dark:text-slate-300">Tenant:</span>
         <div className="flex items-center gap-2">
           <span className="text-red-600 text-sm">Failed to load tenants</span>
           <button
@@ -122,7 +122,7 @@ const TenantSwitcher: React.FC<TenantSwitcherProps> = ({
   return (
     <div className={`relative ${className}`}>
       <div className="flex items-center gap-2">
-        <span className="font-semibold text-gray-700">Tenant:</span>
+        <span className="font-semibold text-gray-700 dark:text-slate-300">Tenant:</span>
         
         <div className="relative">
           <button
@@ -130,11 +130,11 @@ const TenantSwitcher: React.FC<TenantSwitcherProps> = ({
             onClick={() => setIsOpen(!isOpen)}
             disabled={disabled || isLoading}
             className={`
-              relative w-64 px-3 py-2 text-left bg-white border border-gray-300 rounded-md shadow-sm
+              relative w-64 px-3 py-2 text-left bg-white dark:bg-slate-900 border border-gray-300 rounded-md shadow-sm
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
               disabled:opacity-50 disabled:cursor-not-allowed
               hover:border-gray-400 transition-colors
-              ${selectedTenant ? 'text-gray-900' : 'text-gray-500'}
+              ${selectedTenant ? 'text-gray-900 dark:text-white' : 'text-gray-500'}
             `}
           >
             {isLoading ? (
@@ -169,10 +169,10 @@ const TenantSwitcher: React.FC<TenantSwitcherProps> = ({
 
           {/* Dropdown */}
           {isOpen && (
-            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-gray-300 rounded-md shadow-lg">
               {/* Search Input */}
               {showSearch && (
-                <div className="p-3 border-b border-gray-200">
+                <div className="p-3 border-b border-gray-200 dark:border-slate-700">
                   <div className="relative">
                     <input
                       type="text"
@@ -202,8 +202,8 @@ const TenantSwitcher: React.FC<TenantSwitcherProps> = ({
                       type="button"
                       onClick={() => handleTenantChange(tenant.id)}
                       className={`
-                        w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none
-                        ${selected === tenant.id ? 'bg-blue-50 text-blue-900' : 'text-gray-900'}
+                        w-full px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-slate-800 focus:bg-gray-50 dark:bg-slate-800/50 focus:outline-none
+                        ${selected === tenant.id ? 'bg-blue-50 text-blue-900' : 'text-gray-900 dark:text-white'}
                       `}
                     >
                       <div className="flex items-center justify-between">
@@ -233,7 +233,7 @@ const TenantSwitcher: React.FC<TenantSwitcherProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="p-3 border-t border-gray-200 bg-gray-50">
+              <div className="p-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{filteredTenants.length} tenant{filteredTenants.length !== 1 ? 's' : ''}</span>
                   <button

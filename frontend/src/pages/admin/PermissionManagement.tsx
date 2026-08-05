@@ -162,7 +162,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[24px] border border-gray-100 p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 p-8">
         <ModernLoader isLoading type="page" showStats={false} />
       </div>
     );
@@ -182,12 +182,12 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
   return (
     <div className="space-y-6">
       {/* Header card */}
-      <div className="bg-white rounded-[24px] border border-gray-100 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 transition-colors"
+              className="p-2 rounded-xl bg-gray-50 dark:bg-slate-800/50 hover:bg-gray-100 text-gray-500 transition-colors"
             >
               <ChevronLeft size={20} />
             </button>
@@ -195,7 +195,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
               {(user.firstName || user.email || '?')[0].toUpperCase()}
             </div>
             <div>
-              <h2 className="text-lg font-black text-gray-900">
+              <h2 className="text-lg font-black text-gray-900 dark:text-white">
                 {user.firstName} {user.lastName}
               </h2>
               <div className="flex items-center gap-2 mt-1">
@@ -218,12 +218,12 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
                     value={reason}
                     onChange={e => setReason(e.target.value)}
                     placeholder="Reason for change..."
-                    className="w-64 px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-[#2c5173]"
+                    className="w-64 px-3 py-1.5 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none focus:border-[#2c5173]"
                   />
                 </div>
                 <button
                   onClick={resetChanges}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors"
                 >
                   <X size={14} /> Reset
                 </button>
@@ -241,13 +241,13 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-6 bg-gray-50 p-1 rounded-xl w-fit">
+        <div className="flex gap-1 mt-6 bg-gray-50 dark:bg-slate-800/50 p-1 rounded-xl w-fit">
           {(['permissions', 'audit'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${
-                activeTab === tab ? 'bg-white text-[#2c5173] shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                activeTab === tab ? 'bg-white dark:bg-slate-900 text-[#2c5173] shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:text-slate-300'
               }`}
             >
               {tab === 'permissions' ? 'Permissions' : 'Audit Log'}
@@ -259,7 +259,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
       {activeTab === 'permissions' ? (
         <>
           {/* Filter bar */}
-          <div className="bg-white rounded-[24px] border border-gray-100 p-4 flex items-center gap-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 p-4 flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -267,16 +267,16 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
                 placeholder="Search permissions..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#2c5173]"
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:border-[#2c5173]"
               />
             </div>
-            <div className="flex gap-1 bg-gray-50 p-1 rounded-xl">
+            <div className="flex gap-1 bg-gray-50 dark:bg-slate-800/50 p-1 rounded-xl">
               {(['all', 'granted', 'denied'] as const).map(mode => (
                 <button
                   key={mode}
                   onClick={() => setFilterMode(mode)}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors ${
-                    filterMode === mode ? 'bg-white text-[#2c5173] shadow-sm' : 'text-gray-400'
+                    filterMode === mode ? 'bg-white dark:bg-slate-900 text-[#2c5173] shadow-sm' : 'text-gray-400'
                   }`}
                 >
                   {mode}
@@ -309,10 +309,10 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
               const pendingCount = filtered.filter(p => isPending(p.code)).length;
 
               return (
-                <div key={category} className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
+                <div key={category} className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 overflow-hidden">
                   {/* Module header */}
                   <div
-                    className="flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                     onClick={() => toggleModule(category)}
                   >
                     <div className="flex items-center gap-3">
@@ -351,7 +351,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
                           <div
                             key={perm.id}
                             className={`flex items-center justify-between px-5 py-3.5 transition-colors ${
-                              effective ? 'bg-emerald-50/30' : 'bg-white hover:bg-gray-50'
+                              effective ? 'bg-emerald-50/30' : 'bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800'
                             } ${pending ? 'ring-1 ring-inset ring-amber-200' : ''}`}
                           >
                             <div className="flex items-center gap-3">
@@ -371,7 +371,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
                                     <span className="text-[9px] bg-rose-50 text-rose-600 border border-rose-200 px-1.5 py-0.5 rounded font-bold">override: denied</span>
                                   )}
                                   {!pending && perm.source === 'role' && (
-                                    <span className="text-[9px] bg-gray-100 text-gray-500 border border-gray-200 px-1.5 py-0.5 rounded font-bold">from role</span>
+                                    <span className="text-[9px] bg-gray-100 text-gray-500 border border-gray-200 dark:border-slate-700 px-1.5 py-0.5 rounded font-bold">from role</span>
                                   )}
                                 </div>
                                 <p className="text-[11px] text-gray-400 mt-0.5">{perm.description}</p>
@@ -383,7 +383,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
                                 effective ? 'bg-emerald-500 justify-end' : 'bg-gray-200 justify-start'
                               }`}
                             >
-                              <span className="w-5 h-5 bg-white rounded-full shadow-sm" />
+                              <span className="w-5 h-5 bg-white dark:bg-slate-900 rounded-full shadow-sm" />
                             </button>
                           </div>
                         );
@@ -398,14 +398,14 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
           {/* Save button at bottom if changes pending */}
           {totalChanges > 0 && (
             <div className="sticky bottom-4 flex justify-end">
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-xl p-4 flex items-center gap-4">
-                <span className="text-sm font-bold text-gray-700">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-xl p-4 flex items-center gap-4">
+                <span className="text-sm font-bold text-gray-700 dark:text-slate-300">
                   {pendingGrants.size > 0 && <span className="text-emerald-600">+{pendingGrants.size} grant{pendingGrants.size !== 1 ? 's' : ''} </span>}
                   {pendingRevokes.size > 0 && <span className="text-rose-600">-{pendingRevokes.size} revoke{pendingRevokes.size !== 1 ? 's' : ''}</span>}
                 </span>
                 <button
                   onClick={resetChanges}
-                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold transition-colors hover:bg-gray-200"
+                  className="px-4 py-2 bg-gray-100 text-gray-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors hover:bg-gray-200"
                 >
                   Discard
                 </button>
@@ -422,8 +422,8 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
         </>
       ) : (
         /* Audit Log Tab */
-        <div className="bg-white rounded-[24px] border border-gray-100 p-6">
-          <h3 className="text-sm font-black text-gray-700 uppercase tracking-widest mb-6 flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 p-6">
+          <h3 className="text-sm font-black text-gray-700 dark:text-slate-300 uppercase tracking-widest mb-6 flex items-center gap-2">
             <History size={16} /> Permission Audit Trail
           </h3>
           {auditLog.length === 0 ? (
@@ -434,7 +434,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
           ) : (
             <div className="space-y-3">
               {auditLog.map((log: any, i: number) => (
-                <div key={i} className="flex items-start gap-4 p-4 bg-gray-50 rounded-2xl">
+                <div key={i} className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-2xl">
                   <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
                     log.action?.includes('grant') ? 'bg-emerald-500' : 'bg-rose-500'
                   }`} />
@@ -447,7 +447,7 @@ const UserPermissionEditor: React.FC<EditorProps> = ({ user, onClose, onSaved })
                     </div>
                     {log.changes && (
                       <div className="mt-1 text-[11px] text-gray-500 font-mono">
-                        {log.changes.permission && <span className="bg-white px-1.5 py-0.5 rounded border border-gray-200">{log.changes.permission}</span>}
+                        {log.changes.permission && <span className="bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-gray-200 dark:border-slate-700">{log.changes.permission}</span>}
                         {log.changes.reason && <span className="ml-2">— {log.changes.reason}</span>}
                       </div>
                     )}
@@ -520,7 +520,7 @@ const PermissionManagement: React.FC = () => {
             {(u.firstName || u.profile?.firstName || u.email || '?')[0].toUpperCase()}
           </div>
           <div>
-            <div className="text-sm font-bold text-gray-900">
+            <div className="text-sm font-bold text-gray-900 dark:text-white">
               {u.firstName || u.profile?.firstName || ''} {u.lastName || u.profile?.lastName || ''}
               {!u.firstName && !u.profile?.firstName && <span className="text-gray-400">—</span>}
             </div>
@@ -585,7 +585,7 @@ const PermissionManagement: React.FC = () => {
       description={<TranslatedText text="Manage user-specific permissions and access control" />}
     >
       <div className="safe-bottom">
-      <div className="bg-white rounded-[24px] border border-gray-100 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 p-6">
         {/* Search & filter */}
         <form onSubmit={handleSearch} className="flex flex-wrap gap-3 mb-6">
           <div className="relative flex-1 min-w-[200px]">
@@ -593,7 +593,7 @@ const PermissionManagement: React.FC = () => {
             <input
               type="text"
               placeholder="Search by name or email..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173] transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#2c5173]/20 focus:border-[#2c5173] transition-all"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -601,7 +601,7 @@ const PermissionManagement: React.FC = () => {
           <select
             value={roleFilter}
             onChange={e => { setRoleFilter(e.target.value); fetchUsers(search, e.target.value); }}
-            className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#2c5173]/20"
+            className="px-4 py-2.5 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#2c5173]/20"
           >
             <option value="">All Roles</option>
             {roles.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}

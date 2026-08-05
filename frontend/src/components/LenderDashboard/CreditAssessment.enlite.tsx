@@ -82,11 +82,11 @@ const CreditAssessmentEnlite: React.FC<CreditAssessmentEnliteProps> = ({
             label: 'Applicant',
             render: (_: any, app: CreditApplication) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs ring-2 ring-white shadow-sm border border-slate-200 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-xs ring-2 ring-white shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0">
                         <User size={14} className="text-[#2c5173]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm truncate">
+                        <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
                             {app.applicantName ?? (
                                 <span className="text-slate-400 italic font-medium">No name on record</span>
                             )}
@@ -104,7 +104,7 @@ const CreditAssessmentEnlite: React.FC<CreditAssessmentEnliteProps> = ({
             key: 'amount',
             label: 'Requested',
             render: (_: any, app: CreditApplication) => (
-                <span className="text-sm font-bold text-slate-900">{formatAmount(app.requestedAmount)}</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">{formatAmount(app.requestedAmount)}</span>
             ),
         },
         {
@@ -141,7 +141,7 @@ const CreditAssessmentEnlite: React.FC<CreditAssessmentEnliteProps> = ({
             key: 'date',
             label: 'Submitted',
             render: (_: any, app: CreditApplication) => (
-                <span className="text-sm font-medium text-slate-600 whitespace-nowrap">
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
                     {formatDate(app.applicationDate)}
                 </span>
             ),

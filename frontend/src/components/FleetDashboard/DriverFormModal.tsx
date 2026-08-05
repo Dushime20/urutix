@@ -101,7 +101,7 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-lg transition-all"
+                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-gray-800 p-2 rounded-lg transition-all"
                     >
                         <FaTimes size={18} />
                     </button>

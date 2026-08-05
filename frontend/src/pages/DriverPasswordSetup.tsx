@@ -125,7 +125,7 @@ const DriverPasswordSetup = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800/50 relative overflow-hidden">
         {/* Full Page Background Logo */}
         <img
           src={logoUrutiXBackground}
@@ -134,7 +134,7 @@ const DriverPasswordSetup = () => {
           style={{ objectPosition: 'center' }}
         />
         <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-gray-100 dark:border-slate-800 overflow-hidden">
             <div className="px-6 pt-8 pb-4 text-center">
               <div className="flex justify-center mb-6">
                 <img src={logoUrutiXNew} alt="UrutiX Logistics" className="h-20 w-auto object-contain" />
@@ -144,10 +144,10 @@ const DriverPasswordSetup = () => {
                   <FaCheckCircle className="text-green-600 text-3xl" />
                 </div>
               </div>
-              <h2 className="text-2xl font-black text-slate-900 mb-1 font-manrope tracking-tight">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-1 font-manrope tracking-tight">
                 Password Set Successfully!
               </h2>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-gray-600 dark:text-slate-300 mb-6">
                 Your driver account has been activated. You can now log in to access your dashboard.
               </p>
               <button
@@ -165,7 +165,7 @@ const DriverPasswordSetup = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 relative overflow-hidden antialiased">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800/50 relative overflow-hidden antialiased">
       {/* Full Page Background Logo */}
       <img
         src={logoUrutiXBackground}
@@ -180,7 +180,7 @@ const DriverPasswordSetup = () => {
         </div>
 
         {/* Form Container */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
           {/* Form Header */}
           <div className="px-8 pt-8 pb-4">
             <div className="flex justify-center mb-4">
@@ -188,7 +188,7 @@ const DriverPasswordSetup = () => {
                 <Truck className="text-emerald-600 text-2xl" />
               </div>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 mb-1 text-center font-manrope tracking-tight">
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-1 text-center font-manrope tracking-tight">
               Set Up Your Password
             </h2>
             <p className="text-sm font-medium text-slate-500 text-center">
@@ -213,13 +213,13 @@ const DriverPasswordSetup = () => {
                     {...register('password')}
                     type={showPassword ? 'text' : 'password'}
                     id="password"
-                    className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
+                    className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
                     placeholder="Enter your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
                   >
                     {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                   </button>
@@ -231,7 +231,7 @@ const DriverPasswordSetup = () => {
                 {/* Password Criteria */}
                 {passwordValue && (
                   <div className="mt-3 space-y-1.5">
-                    <p className="text-xs font-medium text-gray-700 mb-2">
+                    <p className="text-xs font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Password must contain:
                     </p>
                     <div className="space-y-1 text-xs">
@@ -328,13 +328,13 @@ const DriverPasswordSetup = () => {
                     {...register('confirmPassword')}
                     type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
-                    className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
+                    className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-10 placeholder:text-slate-400 placeholder:font-normal"
                     placeholder="Confirm your password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
                   >
                     {showConfirmPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                   </button>

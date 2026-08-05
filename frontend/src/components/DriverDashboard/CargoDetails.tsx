@@ -389,7 +389,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
     return (
       <div className="text-center py-20">
         <AlertTriangle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-        <h3 className="text-xl font-black text-slate-700"><TranslatedText text="Cargo Not Found" /></h3>
+        <h3 className="text-xl font-black text-slate-700 dark:text-slate-300"><TranslatedText text="Cargo Not Found" /></h3>
         <p className="text-slate-400"><TranslatedText text="The requested cargo details could not be retrieved." /></p>
       </div>
     );
@@ -442,16 +442,16 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 overflow-hidden">
         <div className="p-8 pb-0">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <button
                   onClick={onBack}
-                  className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors"
+                  className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center hover:bg-slate-100 transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4 text-slate-600" />
+                  <ArrowLeft className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                 </button>
                 <span className="px-3 py-1 bg-blue-50 text-[#345E85] text-[10px] font-black uppercase tracking-[0.2em] rounded-lg">
                   <TranslatedText text="Consignment Details" />
@@ -469,13 +469,13 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setShowRejectModal(true)}
-                className="px-5 py-2.5 text-rose-600 border border-slate-200 rounded-xl hover:bg-rose-50 hover:border-rose-200 transition-all text-xs font-black uppercase tracking-wider"
+                className="px-5 py-2.5 text-rose-600 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-rose-50 hover:border-rose-200 transition-all text-xs font-black uppercase tracking-wider"
               >
                 <TranslatedText text="Reject Cargo" />
               </button>
               <button
                 onClick={onInspect}
-                className="px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:border-[#345E85] hover:bg-blue-50 transition-all text-xs font-black uppercase tracking-wider flex items-center gap-2"
+                className="px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[#345E85] rounded-xl hover:border-[#345E85] hover:bg-blue-50 transition-all text-xs font-black uppercase tracking-wider flex items-center gap-2"
               >
                 <Shield className="w-4 h-4" />
                 <TranslatedText text="Inspect" />
@@ -500,7 +500,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             </div>
           </div>
 
-          <div className="flex overflow-x-auto gap-8 border-b border-slate-100 no-scrollbar">
+          <div className="flex overflow-x-auto gap-8 border-b border-slate-100 dark:border-slate-800 no-scrollbar">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -508,7 +508,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`pb-4 px-2 flex items-center gap-2 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all relative ${isActive ? 'text-[#345E85]' : 'text-slate-400 hover:text-slate-600'
+                  className={`pb-4 px-2 flex items-center gap-2 text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all relative ${isActive ? 'text-[#345E85]' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                     }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-[#345E85]' : 'text-slate-400'}`} />
@@ -539,36 +539,36 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Info Card */}
-              <div className="lg:col-span-2 bg-white rounded-[1.5rem] border border-slate-100 shadow-lg shadow-slate-200/50 p-6 md:p-8 space-y-8">
+              <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/50 p-6 md:p-8 space-y-8">
                 <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6 flex items-center gap-2">
                     <Info className="w-4 h-4 text-slate-400" />
                     <TranslatedText text="Cargo Specifications" />
                   </h3>
                   <div className="grid grid-cols-2 gap-y-6 gap-x-8">
                     <div className="space-y-1">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Quantity" /></span>
-                      <p className="text-base font-bold text-slate-700">{cargo.quantity > 0 ? `${cargo.quantity} ${cargo.unit}` : t('N/A')}</p>
+                      <p className="text-base font-bold text-slate-700 dark:text-slate-300">{cargo.quantity > 0 ? `${cargo.quantity} ${cargo.unit}` : t('N/A')}</p>
                     </div>
                     <div className="space-y-1">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Weight" /></span>
-                      <p className="text-base font-bold text-slate-700">{cargo.weight > 0 ? `${cargo.weight} kg` : t('N/A')}</p>
+                      <p className="text-base font-bold text-slate-700 dark:text-slate-300">{cargo.weight > 0 ? `${cargo.weight} kg` : t('N/A')}</p>
                     </div>
                     <div className="space-y-1">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Dimensions" /></span>
-                      <p className="text-base font-bold text-slate-700">
+                      <p className="text-base font-bold text-slate-700 dark:text-slate-300">
                         {cargo.dimensions.length > 0 ? `${cargo.dimensions.length}×${cargo.dimensions.width}×${cargo.dimensions.height} cm` : t('N/A')}
                       </p>
                     </div>
                     <div className="space-y-1">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]"><TranslatedText text="Category" /></span>
-                      <p className="text-base font-bold text-slate-700">{formatDisplay(cargo.category)}</p>
+                      <p className="text-base font-bold text-slate-700 dark:text-slate-300">{formatDisplay(cargo.category)}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-6 border-t border-slate-50">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6 flex items-center gap-2">
                     <User className="w-4 h-4 text-slate-400" />
                     <TranslatedText text="Shipper Information" />
                   </h3>
@@ -579,7 +579,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                           {cargo.shipper.name.charAt(0)}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900">{cargo.shipper.name}</p>
+                          <p className="font-bold text-slate-900 dark:text-white">{cargo.shipper.name}</p>
                           <p className="text-xs text-slate-500 font-medium">{formatDisplay(cargo.shipper.contact)}</p>
                         </div>
                       </div>
@@ -587,7 +587,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                         <button onClick={onContactShipper} className="flex-1 px-3 py-2 bg-blue-50 text-[#345E85] rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-blue-100 transition-colors">
                           <TranslatedText text="Message" />
                         </button>
-                        <button className="px-3 py-2 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                        <button className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 transition-colors">
                           <Phone className="w-4 h-4" />
                         </button>
                       </div>
@@ -595,11 +595,11 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                     <div className="space-y-3 pl-4 border-l border-slate-50">
                       <div className="flex items-start gap-3">
                         <MapPin className="w-4 h-4 text-slate-400 mt-1" />
-                        <p className="text-sm text-slate-600 font-medium leading-relaxed">{formatDisplay(cargo.shipper.address)}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">{formatDisplay(cargo.shipper.address)}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <MessageSquare className="w-4 h-4 text-slate-400" />
-                        <p className="text-sm text-slate-600 font-medium">{formatDisplay(cargo.shipper.email)}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 font-medium">{formatDisplay(cargo.shipper.email)}</p>
                       </div>
                     </div>
                   </div>
@@ -627,24 +627,24 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                 </div>
 
                 {/* Requirements Card */}
-                <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-lg shadow-slate-200/50 p-6">
+                <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/50 p-6">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6"><TranslatedText text="Requirements" /></h4>
                   <div className="space-y-3">
-                    <div className={`flex items-center justify-between p-3 rounded-xl border ${cargo.hazardous ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
-                      <span className="text-xs font-bold text-slate-700"><TranslatedText text="Hazardous" /></span>
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${cargo.hazardous ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-600'}`}>
+                    <div className={`flex items-center justify-between p-3 rounded-xl border ${cargo.hazardous ? 'bg-red-50 border-red-100' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'}`}>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300"><TranslatedText text="Hazardous" /></span>
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${cargo.hazardous ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-600 dark:text-slate-300'}`}>
                         {cargo.hazardous ? <TranslatedText text="YES" /> : <TranslatedText text="NO" />}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-xl border bg-slate-50 border-slate-100">
-                      <span className="text-xs font-bold text-slate-700"><TranslatedText text="Fragility" /></span>
+                    <div className="flex items-center justify-between p-3 rounded-xl border bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300"><TranslatedText text="Fragility" /></span>
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border ${getFragilityColor(cargo.fragility)}`}>
                         <TranslatedText text={cargo.fragility} />
                       </span>
                     </div>
                     {cargo.temperature.min !== null && (
                       <div className="flex items-center justify-between p-3 rounded-xl border bg-cyan-50 border-cyan-100">
-                        <span className="text-xs font-bold text-slate-700"><TranslatedText text="Temp Control" /></span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300"><TranslatedText text="Temp Control" /></span>
                         <div className="flex items-center gap-1 text-cyan-700 font-bold text-xs">
                           {getTemperatureIcon()}
                           {cargo.temperature.min}° - {cargo.temperature.max}°{cargo.temperature.unit}
@@ -680,7 +680,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
 
           {/* Route Tab */}
           {activeTab === 'route' && (
-            <div className="bg-white rounded-[1.5rem] border border-slate-100 shadow-lg shadow-slate-200/50 p-6 md:p-8">
+            <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/50 p-6 md:p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative">
                 {/* Connecting Line */}
                 <div className="hidden md:block absolute left-1/2 top-10 bottom-10 w-px bg-slate-100 -translate-x-1/2"></div>
@@ -694,20 +694,20 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                     <TranslatedText text="Pickup Location" />
                   </h4>
                   <div className="pl-4 border-l-2 border-blue-100 space-y-4">
-                    <p className="text-lg font-bold text-slate-800">{formatDisplay(cargo.route.pickup.address)}</p>
+                    <p className="text-lg font-bold text-slate-800 dark:text-slate-100">{formatDisplay(cargo.route.pickup.address)}</p>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 p-3 rounded-xl">
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Time Window" /></span>
-                        <p className="font-mono text-xs font-bold text-slate-700">{formatDisplay(cargo.route.pickup.timeWindow)}</p>
+                        <p className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">{formatDisplay(cargo.route.pickup.timeWindow)}</p>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-xl">
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Contact" /></span>
-                        <p className="text-xs font-bold text-slate-700">{formatDisplay(cargo.route.pickup.contact)}</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{formatDisplay(cargo.route.pickup.contact)}</p>
                       </div>
                     </div>
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2"><TranslatedText text="Instructions" /></span>
-                      <p className="text-sm font-medium text-slate-600 italic bg-blue-50/50 p-3 rounded-xl border border-blue-50">
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300 italic bg-blue-50/50 p-3 rounded-xl border border-blue-50">
                         "{formatDisplay(cargo.route.pickup.instructions, t('None'))}"
                       </p>
                     </div>
@@ -723,20 +723,20 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                     <TranslatedText text="Delivery Location" />
                   </h4>
                   <div className="pl-4 border-l-2 border-emerald-100 space-y-4">
-                    <p className="text-lg font-bold text-slate-800">{formatDisplay(cargo.route.delivery.address)}</p>
+                    <p className="text-lg font-bold text-slate-800 dark:text-slate-100">{formatDisplay(cargo.route.delivery.address)}</p>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 p-3 rounded-xl">
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Time Window" /></span>
-                        <p className="font-mono text-xs font-bold text-slate-700">{formatDisplay(cargo.route.delivery.timeWindow)}</p>
+                        <p className="font-mono text-xs font-bold text-slate-700 dark:text-slate-300">{formatDisplay(cargo.route.delivery.timeWindow)}</p>
                       </div>
-                      <div className="bg-slate-50 p-3 rounded-xl">
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1"><TranslatedText text="Contact" /></span>
-                        <p className="text-xs font-bold text-slate-700">{formatDisplay(cargo.route.delivery.contact)}</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{formatDisplay(cargo.route.delivery.contact)}</p>
                       </div>
                     </div>
                     <div>
                       <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2"><TranslatedText text="Instructions" /></span>
-                      <p className="text-sm font-medium text-slate-600 italic bg-emerald-50/50 p-3 rounded-xl border border-emerald-50">
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300 italic bg-emerald-50/50 p-3 rounded-xl border border-emerald-50">
                         "{formatDisplay(cargo.route.delivery.instructions, t('None'))}"
                       </p>
                     </div>
@@ -749,17 +749,17 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
           {/* Handling Tab */}
           {activeTab === 'handling' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-lg shadow-slate-200/50">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/50">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6 flex items-center gap-2">
                   <Truck className="w-4 h-4 text-slate-400" />
                   <TranslatedText text="Equipment Required" />
                 </h3>
                 <div className="space-y-3">
                   {cargo.handling.loadingEquipment.length > 0 ? (
                     cargo.handling.loadingEquipment.map((eq, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                         <div className="w-2 h-2 rounded-full bg-[#345E85]" />
-                        <span className="font-bold text-slate-700 text-sm"><TranslatedText text={eq} /></span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300 text-sm"><TranslatedText text={eq} /></span>
                       </div>
                     ))
                   ) : (
@@ -768,17 +768,17 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-lg shadow-slate-200/50">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+              <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/50">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6 flex items-center gap-2">
                   <Shield className="w-4 h-4 text-slate-400" />
                   <TranslatedText text="Safety Gear" />
                 </h3>
                 <div className="space-y-3">
                   {cargo.handling.safetyGear.length > 0 ? (
                     cargo.handling.safetyGear.map((gear, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="font-bold text-slate-700 text-sm"><TranslatedText text={gear} /></span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300 text-sm"><TranslatedText text={gear} /></span>
                       </div>
                     ))
                   ) : (
@@ -791,8 +791,8 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
 
           {/* Compliance Tab */}
           {activeTab === 'compliance' && (
-            <div className="bg-white rounded-[1.5rem] p-8 border border-slate-100 shadow-lg shadow-slate-200/50">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-8 border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/50">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-slate-400" />
                 <TranslatedText text="Compliance Checklist" />
               </h3>
@@ -803,7 +803,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                     {cargo.compliance.certifications.length > 0 ? cargo.compliance.certifications.map((c, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5" />
-                        <span className="text-sm font-medium text-slate-700"><TranslatedText text={c} /></span>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300"><TranslatedText text={c} /></span>
                       </li>
                     )) : <li className="text-slate-400 text-sm italic"><TranslatedText text="None required" /></li>}
                   </ul>
@@ -815,7 +815,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                       cargo.compliance.permits.concat(cargo.compliance.regulations).map((c, i) => (
                         <li key={i} className="flex items-start gap-3">
                           <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5" />
-                          <span className="text-sm font-medium text-slate-700"><TranslatedText text={c} /></span>
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300"><TranslatedText text={c} /></span>
                         </li>
                       )) : <li className="text-slate-400 text-sm italic"><TranslatedText text="Standard regulations adhere" /></li>}
                   </ul>
@@ -826,8 +826,8 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
 
           {/* Documents Tab */}
           {activeTab === 'documents' && (
-            <div className="bg-white rounded-[1.5rem] p-8 border border-slate-100 shadow-lg shadow-slate-200/50">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-8 border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/50">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-slate-400" />
                 <TranslatedText text="Attached Documents" />
               </h3>
@@ -839,7 +839,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
               ) : documents.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {documents.map((doc) => (
-                    <div key={doc.id} className="group p-4 rounded-xl border border-slate-100 hover:border-blue-100 hover:bg-slate-50 transition-all">
+                    <div key={doc.id} className="group p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-100 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
                       <div className="flex items-start justify-between mb-3">
                         <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                           <FileText className="w-5 h-5 text-[#345E85]" />
@@ -848,13 +848,13 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
                           <Download className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="font-bold text-slate-900 text-sm truncate">{doc.fileName}</p>
+                      <p className="font-bold text-slate-900 dark:text-white text-sm truncate">{doc.fileName}</p>
                       <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">{doc.documentType}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 border-2 border-dashed border-slate-100 rounded-xl">
+                <div className="text-center py-12 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-xl">
                   <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                   <p className="text-slate-500 font-medium"><TranslatedText text="No documents available" /></p>
                 </div>
@@ -870,7 +870,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-[2rem] max-w-md w-full p-6 shadow-2xl"
+            className="bg-white dark:bg-slate-900 rounded-[2rem] max-w-md w-full p-6 shadow-2xl"
           >
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Reject Cargo" /></h3>
@@ -887,7 +887,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             </p>
 
             <textarea
-              className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 resize-none transition-all"
+              className="w-full h-32 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 resize-none transition-all"
               placeholder={t('Enter rejection reason...')}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
@@ -896,7 +896,7 @@ export const CargoDetails: React.FC<CargoDetailsProps> = ({
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors"
+                className="flex-1 py-3 bg-slate-100 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors"
               >
                 <TranslatedText text="Cancel" />
               </button>

@@ -244,7 +244,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
         ].map((stat) => (
           <div
             key={stat.label}
-            className="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-2 shadow-sm"
+            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 flex items-center gap-2 shadow-sm"
           >
             <div
               className={cn(
@@ -266,7 +266,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
       </div>
 
       {/* ── Map ──────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
         <MapContainer
           center={defaultCenter}
           zoom={hasPosition ? 14 : 4}
@@ -322,7 +322,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
               <Popup>
                 <div className="text-xs space-y-0.5 min-w-[140px]">
                   <p className="font-black text-emerald-600 uppercase tracking-widest"><TranslatedText text="Start / Pickup" /></p>
-                  <p className="font-semibold text-slate-700">{trip.origin.address}</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">{trip.origin.address}</p>
                   {trip.origin.city && <p className="text-slate-500">{trip.origin.city}</p>}
                 </div>
               </Popup>
@@ -338,7 +338,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
               <Popup>
                 <div className="text-xs space-y-0.5 min-w-[140px]">
                   <p className="font-black text-red-600 uppercase tracking-widest"><TranslatedText text="End / Delivery" /></p>
-                  <p className="font-semibold text-slate-700">{trip.destination.address}</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">{trip.destination.address}</p>
                   {trip.destination.city && <p className="text-slate-500">{trip.destination.city}</p>}
                   {trip.estimatedArrival && <p className="text-slate-400 text-[10px]"><TranslatedText text="ETA:" /> {new Date(trip.estimatedArrival).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>}
                 </div>
@@ -348,17 +348,17 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
         </MapContainer>
 
         {/* Map legend */}
-        <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 px-3 py-2 border-t border-slate-50 bg-white">
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 px-3 py-2 border-t border-slate-50 bg-white dark:bg-slate-900">
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Legend:" /></span>
-          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">
             <span className="inline-flex w-5 h-5 rounded-full bg-emerald-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">A</span>
             <TranslatedText text="Start" />
           </span>
-          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">
             <span className="inline-flex w-5 h-5 rounded-full bg-red-500 items-center justify-center text-white font-black text-[9px] flex-shrink-0">B</span>
             <TranslatedText text="Destination" />
           </span>
-          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600">
+          <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-600 dark:text-slate-300">
             <span className="inline-block w-5 h-1 rounded-full bg-[#345E85]" /> <TranslatedText text="Your Route" />
           </span>
           <span className={cn('ml-auto flex items-center gap-1.5 text-[9px] font-black uppercase', isTracking ? 'text-emerald-600' : 'text-slate-400')}>
@@ -375,7 +375,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
             <div className="w-2 h-2 rounded-full bg-[#345E85]" />
             <span className="text-[9px] font-black uppercase tracking-widest"><TranslatedText text="Origin" /></span>
           </div>
-          <p className="text-xs font-bold text-slate-700 truncate">{trip.origin.address}</p>
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{trip.origin.address}</p>
           <p className="text-[10px] text-slate-500">{trip.origin.city}</p>
         </div>
         <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 sm:p-4">
@@ -383,7 +383,7 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
             <MapPin className="w-3 h-3" />
             <span className="text-[9px] font-black uppercase tracking-widest"><TranslatedText text="Destination" /></span>
           </div>
-          <p className="text-xs font-bold text-slate-700 truncate">{trip.destination.address}</p>
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{trip.destination.address}</p>
           <p className="text-[10px] text-slate-500">{trip.destination.city}</p>
           {trip.estimatedArrival && (
             <p className="text-[9px] font-black text-emerald-600 mt-1">

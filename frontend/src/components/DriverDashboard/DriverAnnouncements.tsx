@@ -57,7 +57,7 @@ export const DriverAnnouncements: React.FC<DriverAnnouncementsProps> = ({ announ
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[1.5rem] p-8 border border-slate-100 shadow-sm min-h-[300px] flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[300px] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#345E85] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -66,7 +66,7 @@ export const DriverAnnouncements: React.FC<DriverAnnouncementsProps> = ({ announ
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between px-2">
-        <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-3">
+        <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-3">
           <Megaphone className="w-5 h-5 text-primary-600" />
           <TranslatedText text="Latest Announcements" />
         </h3>
@@ -82,7 +82,7 @@ export const DriverAnnouncements: React.FC<DriverAnnouncementsProps> = ({ announ
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`group p-6 bg-white rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-100/50 transition-all duration-300 relative overflow-hidden ${!announcement.read ? 'bg-blue-50/20' : ''}`}
+            className={`group p-6 bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-100/50 transition-all duration-300 relative overflow-hidden ${!announcement.read ? 'bg-blue-50/20' : ''}`}
           >
             {!announcement.read && (
               <div className="absolute top-0 left-0 w-1 h-full bg-primary-600" />
@@ -101,7 +101,7 @@ export const DriverAnnouncements: React.FC<DriverAnnouncementsProps> = ({ announ
               </div>
               
               <div>
-                <h4 className="text-base font-bold text-slate-900 mb-2 group-hover:text-primary-700 transition-colors">
+                <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary-700 transition-colors">
                   {announcement.title}
                 </h4>
                 <p className="text-sm font-medium text-slate-500 leading-relaxed">

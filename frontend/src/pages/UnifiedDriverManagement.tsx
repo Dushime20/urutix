@@ -147,7 +147,7 @@ const UnifiedDriverManagement: React.FC = () => {
       {/* Premium Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Driver Management</h1>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Driver Management</h1>
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
             <Layout size={12} className="text-primary-500" />
             <span>Overview</span>
@@ -167,7 +167,7 @@ const UnifiedDriverManagement: React.FC = () => {
       </div>
 
       {/* Navigation Sub-Surface */}
-      <div className="bg-white rounded-[32px] border border-slate-100 p-2 flex flex-wrap items-center gap-1 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-2 flex flex-wrap items-center gap-1 shadow-sm">
         {[
           { id: 'my-drivers', icon: List, label: 'My Drivers' },
           { id: 'assignments', icon: UserCheck, label: 'Assignments' },
@@ -184,7 +184,7 @@ const UnifiedDriverManagement: React.FC = () => {
             }}
             className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id
               ? 'bg-primary-500 text-white shadow-xl shadow-primary-500/20'
-              : 'text-slate-400 hover:text-primary-500 hover:bg-white'
+              : 'text-slate-400 hover:text-primary-500 hover:bg-white dark:bg-slate-900'
               }`}
           >
             <tab.icon size={14} />
@@ -204,11 +204,11 @@ const UnifiedDriverManagement: React.FC = () => {
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'add-driver' && (
-              <div className="bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-200 p-16 text-center flex flex-col items-center">
-                <div className="size-24 bg-white rounded-[32px] flex items-center justify-center text-slate-200 mb-8 border border-slate-100 shadow-sm">
+              <div className="bg-slate-50/50 dark:bg-slate-950 rounded-[32px] border-2 border-dashed border-slate-200 dark:border-slate-700 p-16 text-center flex flex-col items-center">
+                <div className="size-24 bg-white dark:bg-slate-900 rounded-[32px] flex items-center justify-center text-slate-200 mb-8 border border-slate-100 dark:border-slate-800 shadow-sm">
                   <User size={48} />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-2">No Drivers Added Yet</h3>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">No Drivers Added Yet</h3>
                 <p className="text-sm font-medium text-slate-400 mb-10 max-w-sm">Start by adding a new driver to your fleet to begin managing assignments and tracking performance.</p>
                 <button
                   onClick={() => {
@@ -243,25 +243,25 @@ const UnifiedDriverManagement: React.FC = () => {
             )}
 
             {activeTab === 'assignments' && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
                 <DriverAssignments />
               </div>
             )}
 
             {activeTab === 'ratings' && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                 <UserRatings />
               </div>
             )}
 
             {activeTab === 'rewards' && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                 <UserRewards />
               </div>
             )}
 
             {activeTab === 'scoring' && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm">
                 <UserScoring />
               </div>
             )}

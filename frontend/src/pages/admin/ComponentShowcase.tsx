@@ -35,7 +35,7 @@ const ComponentShowcase: React.FC = () => {
           <div className="space-y-6">
             {/* Primary Variants */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="Color Variants" /></h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3"><TranslatedText text="Color Variants" /></h4>
               <div className="flex flex-wrap gap-3">
                 <Button variant="primary"><TranslatedText text="Primary" /></Button>
                 <Button variant="secondary"><TranslatedText text="Secondary" /></Button>
@@ -50,7 +50,7 @@ const ComponentShowcase: React.FC = () => {
 
             {/* Sizes */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="Sizes" /></h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3"><TranslatedText text="Sizes" /></h4>
               <div className="flex flex-wrap items-center gap-3">
                 <Button size="sm" variant="primary"><TranslatedText text="Small" /></Button>
                 <Button size="md" variant="primary"><TranslatedText text="Medium" /></Button>
@@ -60,7 +60,7 @@ const ComponentShowcase: React.FC = () => {
 
             {/* With Icons */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="With Icons" /></h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3"><TranslatedText text="With Icons" /></h4>
               <div className="flex flex-wrap gap-3">
                 <Button variant="success" icon={<FaSave />}>
                   <TranslatedText text="Save" />
@@ -76,7 +76,7 @@ const ComponentShowcase: React.FC = () => {
 
             {/* States */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-3"><TranslatedText text="States" /></h4>
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3"><TranslatedText text="States" /></h4>
               <div className="flex flex-wrap gap-3">
                 <Button variant="primary" loading>
                   <TranslatedText text="Loading..." />
@@ -204,7 +204,7 @@ const ComponentShowcase: React.FC = () => {
         }
       >
         <div className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-300">
             This is a default modal with a header, content area, and footer.
           </p>
           
@@ -246,7 +246,7 @@ const ComponentShowcase: React.FC = () => {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <FaCheck className="text-3xl text-green-600" />
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-300">
             Your action was completed successfully!
           </p>
         </div>

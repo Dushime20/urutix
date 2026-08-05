@@ -61,9 +61,9 @@ const riskColour = (score: number | null) => {
 const Field: React.FC<{ label: string; value: React.ReactNode; sub?: string; accent?: boolean }> = ({
   label, value, sub, accent,
 }) => (
-  <div className="bg-white rounded-2xl border border-slate-100 px-5 py-4">
+  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 px-5 py-4">
     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-    <p className={`text-base font-black ${accent ? 'text-[#345E85]' : 'text-slate-900'}`}>{value}</p>
+    <p className={`text-base font-black ${accent ? 'text-[#345E85]' : 'text-slate-900 dark:text-white'}`}>{value}</p>
     {sub && <p className="text-[9px] text-slate-400 mt-0.5">{sub}</p>}
   </div>
 );
@@ -204,7 +204,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
 
   return createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-6 overflow-y-auto">
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl border border-slate-100 flex flex-col max-h-[95vh] overflow-hidden my-4">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl border border-slate-100 dark:border-slate-800 flex flex-col max-h-[95vh] overflow-hidden my-4">
 
 
         {/* ━━━━━━━━━━━━━━━━━━━━━ PROCESSING ━━━━━━━━━━━━━━━━━━━━━ */}
@@ -216,20 +216,20 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               </div>
               <div className="absolute inset-0 rounded-full border-4 border-[#345E85]/20 border-t-[#345E85] animate-spin" style={{ animationDuration: '1.5s' }} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
               {isCounterOffer ? 'Sending Counter-Offer' : 'Sending Offer to Borrower'}
             </h3>
-            <p className="text-sm text-slate-500 text-center max-w-xs">
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center max-w-xs">
               {isCounterOffer ? (
                 <>
-                  Offering <span className="font-bold text-slate-700">{fmt(approvedAmount)}</span> instead of
-                  requested <span className="font-bold text-slate-700">{fmt(loan.requested_amount)}</span>.
+                  Offering <span className="font-bold text-slate-700 dark:text-slate-300">{fmt(approvedAmount)}</span> instead of
+                  requested <span className="font-bold text-slate-700 dark:text-slate-300">{fmt(loan.requested_amount)}</span>.
                   Cargo owner will agree or reject.
                 </>
               ) : (
                 <>
                   Submitting formal terms of{' '}
-                  <span className="font-bold text-slate-700">{fmt(approvedAmount)}</span> for borrower review…
+                  <span className="font-bold text-slate-700 dark:text-slate-300">{fmt(approvedAmount)}</span> for borrower review…
                 </>
               )}
             </p>
@@ -243,7 +243,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
             <div className="w-24 h-24 rounded-full bg-rose-100 flex items-center justify-center mb-8">
               <AlertCircle className="w-12 h-12 text-rose-600" />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">
               Approval Failed
             </h3>
             <p className="text-sm text-rose-600 text-center max-w-sm mb-8">{errorMsg}</p>
@@ -253,7 +253,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                 Try Again
               </button>
               <button onClick={onClose}
-                className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
+                className="px-8 py-4 bg-slate-100 text-slate-600 dark:text-slate-300 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
                 Cancel
               </button>
             </div>
@@ -268,21 +268,21 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
         {step === 'terms' && (
           <>
             {/* Header */}
-            <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-[#345E85]/5 to-indigo-50 shrink-0 flex items-center justify-between">
+            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-[#345E85]/5 to-indigo-50 shrink-0 flex items-center justify-between">
               <div>
                 <p className="text-[9px] font-black text-[#345E85] uppercase tracking-widest mb-1">
                   Step 1 of 2 — Set Offer Terms
                 </p>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                   {isCounterOffer ? 'Prepare Counter-Offer' : 'Confirm Loan Offer'}
                 </h2>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  <span className="font-bold text-slate-700">{loan.borrower_name || 'Borrower'}</span>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                  <span className="font-bold text-slate-700 dark:text-slate-300">{loan.borrower_name || 'Borrower'}</span>
                   {loan.borrower_company && <span className="text-slate-400"> · {loan.borrower_company}</span>}
                 </p>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/60 rounded-full transition-colors shrink-0">
-                <X className="w-5 h-5 text-slate-500" />
+                <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               </button>
             </div>
 
@@ -291,18 +291,18 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
 
               {/* Borrower risk snapshot */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-center">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 px-5 py-4 text-center">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Requested</p>
-                  <p className="text-base font-black text-slate-900">{fmt(loan.requested_amount)}</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white">{fmt(loan.requested_amount)}</p>
                 </div>
-                <div className="bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-center">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 px-5 py-4 text-center">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Risk Score</p>
                   <p className={`text-base font-black ${riskColour(riskScore)}`}>
                     {riskScore != null ? `${riskScore}%` : '—'}
                   </p>
                   {riskLevel && <p className="text-[9px] text-slate-400 mt-0.5 capitalize">{riskLevel}</p>}
                 </div>
-                <div className="bg-slate-50 rounded-2xl border border-slate-100 px-5 py-4 text-center">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 px-5 py-4 text-center">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Policy Rate</p>
                   <p className="text-base font-black text-[#345E85]">
                     {nominalRate != null ? `${nominalRate}% p.a.` : 'Pending'}
@@ -330,7 +330,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Offer Amount */}
                   <div className="col-span-2">
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <DollarSign className="w-3.5 h-3.5 text-slate-400" />
                       {isCounterOffer ? 'Counter-Offer Amount' : 'Offer Amount'}
                     </label>
@@ -339,7 +339,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                       <input type="number" min={1} max={loan.requested_amount} step={0.01}
                         value={approvedAmount}
                         onChange={e => setApprovedAmount(parseFloat(e.target.value) || 0)}
-                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-black text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
                     </div>
                     {isCounterOffer && (
                       <div className="mt-2 flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2">
@@ -354,11 +354,11 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
 
                   {/* Loan Term */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-slate-400" /> Loan Term
                     </label>
                     <select value={loanTermMonths} onChange={e => setLoanTermMonths(parseInt(e.target.value))}
-                      className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none">
+                      className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-black text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none">
                       {[1, 2, 3, 6, 9, 12, 18, 24, 36].map(m => (
                         <option key={m} value={m}>{m} month{m > 1 ? 's' : ''}</option>
                       ))}
@@ -367,13 +367,13 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
 
                   {/* Due Date */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <CalendarDays className="w-3.5 h-3.5 text-slate-400" /> Repayment Due Date
                     </label>
                     <input type="date" value={dueDate}
                       min={minDate}
                       onChange={e => setDueDate(e.target.value)}
-                      className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+                      className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-black text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
                     <p className="text-[9px] text-slate-400 mt-1">Auto-set from term above — you can adjust</p>
                   </div>
                 </div>
@@ -398,7 +398,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
             </div>
 
             {/* Footer */}
-            <div className="px-8 py-5 border-t-2 border-slate-100 bg-slate-50 flex items-center justify-between gap-4 shrink-0">
+            <div className="px-8 py-5 border-t-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between gap-4 shrink-0">
               <button onClick={onClose}
                 className="px-6 py-3.5 text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-200 rounded-2xl transition-all">
                 Cancel
@@ -417,20 +417,20 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
         {step === 'preview' && (
           <>
             {/* Header */}
-            <div className="p-6 border-b border-slate-100 bg-slate-50 shrink-0">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 shrink-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                     {isCounterOffer ? 'Review Counter-Offer' : 'Review Offer Before Sending'}
                   </h2>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {isCounterOffer
                       ? 'Cargo owner must agree or reject the reduced amount before you can pay.'
                       : 'Borrower will receive full disclosure and must accept before you can disburse.'}
                   </p>
                 </div>
                 <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors shrink-0">
-                  <X className="w-5 h-5 text-slate-500" />
+                  <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                 </button>
               </div>
             </div>
@@ -544,7 +544,7 @@ const LoanApprovalModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t-2 border-slate-100 bg-slate-50 flex justify-between items-center gap-4 shrink-0">
+            <div className="p-6 border-t-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center gap-4 shrink-0">
               <button onClick={() => setStep('terms')}
                 className="flex items-center gap-2 px-8 py-4 text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-200 rounded-xl transition-all">
                 <ChevronLeft className="w-4 h-4" /> Back

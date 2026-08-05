@@ -412,8 +412,8 @@ const TruckBidsPage: React.FC = () => {
 						{watchedIds.has(a.id) ? <FaStar /> : <FaRegStar />}
 					</button>
 					<div>
-						<div className="font-bold text-gray-900">{a?.load?.title || 'Untitled Load'}</div>
-						<div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+						<div className="font-bold text-gray-900 dark:text-white">{a?.load?.title || 'Untitled Load'}</div>
+						<div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
 							<FaUser size={10} /> {getCargoOwnerName(a?.load) || 'Unknown Owner'}
 						</div>
 					</div>
@@ -424,7 +424,7 @@ const TruckBidsPage: React.FC = () => {
 			key: 'route',
 			label: 'Route',
 			render: (_v, a) => (
-				<div className="flex items-center gap-2 text-sm text-gray-900 font-medium">
+				<div className="flex items-center gap-2 text-sm text-gray-900 dark:text-white font-medium">
 					<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'PICKUP')}>{getLocationName(a?.load, 'PICKUP')}</span>
 					<FaArrowRight className="text-gray-300 text-xs flex-shrink-0" />
 					<span className="max-w-[100px] truncate" title={getLocationName(a?.load, 'DELIVERY')}>{getLocationName(a?.load, 'DELIVERY')}</span>
@@ -443,8 +443,8 @@ const TruckBidsPage: React.FC = () => {
 			sortable: true,
 			render: (_v, a) => (
 				<div>
-					<div className="font-bold text-gray-900">{a.currentHighestBid ?? a.currentBid ? fmtBid(a.currentHighestBid ?? a.currentBid) : '—'}</div>
-					<div className="text-xs text-gray-500">Current Bid</div>
+					<div className="font-bold text-gray-900 dark:text-white">{a.currentHighestBid ?? a.currentBid ? fmtBid(a.currentHighestBid ?? a.currentBid) : '—'}</div>
+					<div className="text-xs text-gray-500 dark:text-slate-400">Current Bid</div>
 				</div>
 			),
 		},
@@ -452,7 +452,7 @@ const TruckBidsPage: React.FC = () => {
 			key: 'auctionEnd',
 			label: 'Time Remaining',
 			render: (_v, a) => (
-				<div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+				<div className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
 					<Clock className="text-gray-400" size={14} />
 					{a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '—'}
 				</div>
@@ -469,7 +469,7 @@ const TruckBidsPage: React.FC = () => {
 	], []);
 
 	return (
-		<div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-blue-500/30 flex flex-col">
+		<div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-white font-sans selection:bg-blue-500/30 flex flex-col">
 
 			<main className="flex-1 px-4 md:px-8 lg:px-12 xl:px-20 py-8 max-w-[1920px] mx-auto w-full relative z-0">
 
@@ -477,8 +477,8 @@ const TruckBidsPage: React.FC = () => {
 				<div className="mb-6">
 					<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 						<div>
-							<h1 className="mb-2 text-2xl sm:text-3xl font-bold text-gray-900">Cargo Bids</h1>
-							<p className="text-sm text-gray-600">Real-time marketplace for active shipments</p>
+							<h1 className="mb-2 text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Cargo Bids</h1>
+							<p className="text-sm text-gray-600 dark:text-slate-300">Real-time marketplace for active shipments</p>
 						</div>
 						<button
 							onClick={() => { void refetchAuctions(); }}
@@ -492,7 +492,7 @@ const TruckBidsPage: React.FC = () => {
 				</div>
 
 				{/* Filters */}
-				<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 mb-6">
+				<div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-3 sm:p-4 mb-6">
 					<div className="flex flex-col gap-3">
 						<div className="w-full">
 							<div className="relative">
@@ -513,7 +513,7 @@ const TruckBidsPage: React.FC = () => {
 								<select
 									value={status}
 									onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-									className="flex-1 md:w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
+									className="flex-1 md:w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-900"
 								>
 									<option value="all">All Statuses</option>
 									<option value="ACTIVE">Active Auctions</option>
@@ -525,24 +525,24 @@ const TruckBidsPage: React.FC = () => {
 								onClick={() => setShowWatchedOnly(!showWatchedOnly)}
 								className={`w-full md:w-auto px-4 py-2 border rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors ${showWatchedOnly
 									? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-									: 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+									: 'bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 border-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'
 									}`}
 							>
 								{showWatchedOnly ? <FaStar className="text-yellow-500" /> : <FaRegStar className="text-gray-400" />}
 								<span>Watchlist</span>
 							</button>
 
-							<div className="hidden md:flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 ml-auto">
+							<div className="hidden md:flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 dark:border-slate-700 ml-auto">
 								<button
 									onClick={() => setView('cards')}
-									className={`p-1.5 rounded-md transition-all ${view === 'cards' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+									className={`p-1.5 rounded-md transition-all ${view === 'cards' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:text-slate-300 dark:hover:text-slate-300'}`}
 									title="Grid View"
 								>
 									<Grid size={16} />
 								</button>
 								<button
 									onClick={() => setView('table')}
-									className={`p-1.5 rounded-md transition-all ${view === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+									className={`p-1.5 rounded-md transition-all ${view === 'table' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:text-slate-300 dark:hover:text-slate-300'}`}
 									title="Table View"
 								>
 									<Table size={16} />
@@ -557,11 +557,11 @@ const TruckBidsPage: React.FC = () => {
 						{loading ? (
 							<ModernLoader isLoading={true} type="cards" items={6} columns={3} />
 						) : filtered.length === 0 ? (
-							<div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-500 bg-white border-2 border-dashed border-gray-200 rounded-2xl">
-								<div className="size-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+							<div className="col-span-full flex flex-col items-center justify-center py-20 text-gray-500 dark:text-slate-400 bg-white dark:bg-slate-900 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl">
+								<div className="size-16 bg-gray-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
 									<Filter className="text-gray-400" size={32} />
 								</div>
-								<h3 className="text-lg font-bold text-gray-900">No loads found</h3>
+								<h3 className="text-lg font-bold text-gray-900 dark:text-white">No loads found</h3>
 								<p className="text-sm">Try adjusting your filters or search criteria.</p>
 								<button onClick={() => { setSearch(''); setStatus('all'); }} className="mt-4 text-blue-600 font-bold text-sm hover:underline">Clear all filters</button>
 							</div>
@@ -573,7 +573,7 @@ const TruckBidsPage: React.FC = () => {
 								const timeLeft = a.auctionEnd ? biddingHelpers.getTimeRemaining(a.auctionEnd) : '00:00:00';
 
 								return (
-									<div key={a.id} className="relative group bg-white rounded-[3rem] p-1 border border-gray-100 shadow-sm hover:shadow-2xl hover:border-blue-100 transition-all duration-500 overflow-hidden flex flex-col">
+									<div key={a.id} className="relative group bg-white dark:bg-slate-900 rounded-[3rem] p-1 border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:border-blue-100 transition-all duration-500 overflow-hidden flex flex-col">
 										<div className="p-8 pb-4 flex-1">
 											<div className="flex justify-between items-start mb-6">
 												<div className="flex flex-wrap gap-2">
@@ -587,7 +587,7 @@ const TruckBidsPage: React.FC = () => {
 												</div>
 												<button
 													onClick={(e) => { e.stopPropagation(); toggleWatch(a); }}
-													className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${watchedIds.has(a.id) ? 'bg-amber-50 text-amber-500 border border-amber-100' : 'bg-slate-50 border border-slate-100 text-slate-300 hover:text-amber-500 hover:border-amber-100'}`}
+													className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm ${watchedIds.has(a.id) ? 'bg-amber-50 text-amber-500 border border-amber-100' : 'bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-slate-300 hover:text-amber-500 hover:border-amber-100'}`}
 												>
 													<FaStar size={20} className={watchedIds.has(a.id) ? 'fill-current' : ''} />
 												</button>
@@ -595,10 +595,10 @@ const TruckBidsPage: React.FC = () => {
 
 											<div className="space-y-4">
 												<div>
-													<h3 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+													<h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors line-clamp-1">
 														{a.load?.title || 'Unknown Cargo'}
 													</h3>
-													<p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2 bg-slate-50 w-fit px-2 py-1 rounded">LOG ID: {a.id?.slice(0, 8) || 'N/A'}</p>
+													<p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2 bg-slate-50 dark:bg-slate-800/50 w-fit px-2 py-1 rounded">LOG ID: {a.id?.slice(0, 8) || 'N/A'}</p>
 												</div>
 
 												<div className="py-6 border-y border-gray-50 space-y-4">
@@ -611,7 +611,7 @@ const TruckBidsPage: React.FC = () => {
 														</div>
 														<div className="text-right">
 															<span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Weight</span>
-															<span className="text-sm font-black text-slate-900">{a.load?.weight?.toLocaleString() || '0'} KG</span>
+															<span className="text-sm font-black text-slate-900 dark:text-white">{a.load?.weight?.toLocaleString() || '0'} KG</span>
 														</div>
 													</div>
 
@@ -619,11 +619,11 @@ const TruckBidsPage: React.FC = () => {
 														<div className="flex-1 min-w-0">
 															<p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Route</p>
 															<div className="flex items-center gap-3">
-																<span className="text-[11px] font-black text-slate-900 truncate uppercase">
+																<span className="text-[11px] font-black text-slate-900 dark:text-white truncate uppercase">
 																	{pickupLocation.split(',')[0]}
 																</span>
 																<FaArrowRight size={10} className="text-slate-300 shrink-0" />
-																<span className="text-[11px] font-black text-slate-900 truncate uppercase">
+																<span className="text-[11px] font-black text-slate-900 dark:text-white truncate uppercase">
 																	{deliveryLocation.split(',')[0]}
 																</span>
 															</div>
@@ -633,21 +633,21 @@ const TruckBidsPage: React.FC = () => {
 											</div>
 										</div>
 
-										<div className="px-8 pb-8 pt-4 bg-slate-50/30">
+										<div className="px-8 pb-8 pt-4 bg-slate-50/30 dark:bg-slate-950">
 											<div className="flex items-center justify-between mb-6">
 												<div className="flex items-center gap-2 text-slate-400">
 													<FaClock size={12} />
 													<span className="text-[10px] font-black uppercase tracking-widest">{timeLeft} REMAINING</span>
 												</div>
 												<div className="text-right">
-													<span className="text-[10px] font-black text-slate-900 tracking-tighter">0 ACTIVE OFFERS</span>
+													<span className="text-[10px] font-black text-slate-900 dark:text-white tracking-tighter">0 ACTIVE OFFERS</span>
 												</div>
 											</div>
 
 											<button
 											onClick={() => openBidModal(a)}
 											disabled={a.status !== 'ACTIVE'}
-											className="w-full py-5 bg-white border-2 border-slate-50 text-[#8b919d] rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+											className="w-full py-5 bg-white dark:bg-slate-900 border-2 border-slate-50 text-[#8b919d] rounded-2xl text-xs font-black uppercase tracking-[0.2em] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-900"
 										>
 											CUSTOM BID
 										</button>
@@ -681,12 +681,12 @@ const TruckBidsPage: React.FC = () => {
 			{/* Quick Bid Modal */}
 			{showQuickBidModal && selectedAuction && createPortal(
 				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-					<div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-gray-100">
+					<div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-slate-800">
 						{/* Header */}
-						<div className="px-10 py-8 border-b border-gray-100">
+						<div className="px-10 py-8 border-b border-gray-100 dark:border-slate-800">
 							<h2 className="text-3xl font-extrabold text-[#111827] tracking-tight">Quick Bid</h2>
 							<div className="mt-2 space-y-1">
-								<p className="text-lg font-medium text-gray-600">{selectedAuction?.load?.title || 'Untitled Load'}</p>
+								<p className="text-lg font-medium text-gray-600 dark:text-slate-300">{selectedAuction?.load?.title || 'Untitled Load'}</p>
 								<p className="text-sm text-gray-400 font-medium">
 									Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
 								</p>
@@ -697,13 +697,13 @@ const TruckBidsPage: React.FC = () => {
 						<div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
 							{/* Bid Amount Input */}
 							<div className="space-y-3">
-								<label className="block text-base font-bold text-gray-700">Bid Amount (USD) *</label>
+								<label className="block text-base font-bold text-gray-700 dark:text-slate-300">Bid Amount (USD) *</label>
 								<div className="relative group">
 									<input
 										type="number"
 										value={quickBidAmount}
 										onChange={(e) => setQuickBidAmount(e.target.value)}
-										className="w-full h-16 px-6 bg-white border-2 border-gray-200 rounded-2xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all"
+										className="w-full h-16 px-6 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-2xl text-xl font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] transition-all"
 										placeholder="0.00"
 									/>
 								</div>
@@ -734,17 +734,17 @@ const TruckBidsPage: React.FC = () => {
 											<path d="M5 13l4 4L19 7" />
 										</svg>
 									</div>
-									<span className="text-base font-bold text-gray-700">Require advance payment before trip starts</span>
+									<span className="text-base font-bold text-gray-700 dark:text-slate-300">Require advance payment before trip starts</span>
 								</label>
 
 								{quickRequireAdvancePayment && (
 									<div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
-										<label className="block text-base font-bold text-gray-700">Advance Payment Percentage (Optional)</label>
+										<label className="block text-base font-bold text-gray-700 dark:text-slate-300">Advance Payment Percentage (Optional)</label>
 										<input
 											type="number"
 											value={quickAdvancePaymentPercentage}
 											onChange={(e) => setQuickAdvancePaymentPercentage(e.target.value)}
-											className="w-full h-14 px-6 bg-white border-2 border-gray-100 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
+											className="w-full h-14 px-6 bg-white dark:bg-slate-900 border-2 border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all"
 											placeholder="e.g., 70 (for 70% advance payment)"
 										/>
 										<p className="text-sm text-gray-400 leading-relaxed font-medium">
@@ -757,7 +757,7 @@ const TruckBidsPage: React.FC = () => {
 							{/* Schedule Delivery Box */}
 							<div className="bg-[#f0f9ff]/80 p-8 rounded-[1.5rem] border border-blue-100 space-y-6">
 								<div className="flex items-center gap-3">
-									<div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
+									<div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl shadow-sm flex items-center justify-center text-[#0369a1]">
 										<FaClock size={18} />
 									</div>
 									<h4 className="text-lg font-extrabold text-[#0369a1]">Schedule Delivery</h4>
@@ -765,21 +765,21 @@ const TruckBidsPage: React.FC = () => {
 
 								<div className="grid grid-cols-2 gap-6">
 									<div className="space-y-2">
-										<label className="text-sm font-bold text-gray-700">Pickup Date & Time *</label>
+										<label className="text-sm font-bold text-gray-700 dark:text-slate-300">Pickup Date & Time *</label>
 										<input
 											type="datetime-local"
 											value={proposedPickupDate}
 											onChange={(e) => setProposedPickupDate(e.target.value)}
-											className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+											className="w-full h-14 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-all"
 										/>
 									</div>
 									<div className="space-y-2">
-										<label className="text-sm font-bold text-gray-700">Delivery Date & Time *</label>
+										<label className="text-sm font-bold text-gray-700 dark:text-slate-300">Delivery Date & Time *</label>
 										<input
 											type="datetime-local"
 											value={proposedDeliveryDate}
 											onChange={(e) => setProposedDeliveryDate(e.target.value)}
-											className="w-full h-14 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-400 transition-all"
+											className="w-full h-14 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-all"
 										/>
 									</div>
 								</div>
@@ -793,7 +793,7 @@ const TruckBidsPage: React.FC = () => {
 									setShowQuickBidModal(false);
 									setSelectedAuction(null);
 								}}
-								className="px-10 py-4 bg-gray-100 text-gray-700 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
+								className="px-10 py-4 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-xl text-base font-bold hover:bg-gray-200 transition-all active:scale-95"
 							>
 								Cancel
 							</button>
@@ -812,12 +812,12 @@ const TruckBidsPage: React.FC = () => {
 
 			{showBidModal && selectedAuction && createPortal(
 				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-					<div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden border border-gray-100 flex flex-col">
+					<div className="bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-hidden border border-gray-100 dark:border-slate-800 flex flex-col">
 						{/* Header */}
-						<div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+						<div className="px-8 py-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between shrink-0">
 							<div>
-								<h2 className="text-xl font-bold text-gray-900 tracking-tight">Custom Bid</h2>
-								<p className="text-sm text-gray-500 mt-0.5">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
+								<h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Custom Bid</h2>
+								<p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
 							</div>
 							<button
 								onClick={() => setShowBidModal(false)}
@@ -831,14 +831,14 @@ const TruckBidsPage: React.FC = () => {
 						<div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
 							{/* Bid Amount */}
 							<div className="space-y-3">
-								<label className="block text-sm font-bold text-gray-700">Bid Amount (USD) *</label>
+								<label className="block text-sm font-bold text-gray-700 dark:text-slate-300">Bid Amount (USD) *</label>
 								<div className="relative">
 									<span className="absolute left-5 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400">$</span>
 									<input
 										value={bidAmount}
 										onChange={(e) => setBidAmount(e.target.value)}
 										type="number"
-										className="w-full h-14 pl-12 pr-6 bg-white border-2 border-gray-200 rounded-xl text-lg font-bold text-gray-900 focus:outline-none focus:border-[#345E85] transition-all"
+										className="w-full h-14 pl-12 pr-6 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-lg font-bold text-gray-900 dark:text-white focus:outline-none focus:border-[#345E85] transition-all"
 										placeholder="0.00"
 									/>
 								</div>
@@ -862,11 +862,11 @@ const TruckBidsPage: React.FC = () => {
 							{/* Truck & Driver */}
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 								<div className="space-y-2">
-									<label className="block text-sm font-bold text-gray-700">Select Truck *</label>
+									<label className="block text-sm font-bold text-gray-700 dark:text-slate-300">Select Truck *</label>
 									<select
 										value={selectedTruckId}
 										onChange={(e) => handleTruckSelection(e.target.value)}
-										className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer"
+										className="w-full h-12 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer"
 									>
 										<option value="">Select Unit</option>
 										{trucks.map((t) => (
@@ -875,12 +875,12 @@ const TruckBidsPage: React.FC = () => {
 									</select>
 								</div>
 								<div className="space-y-2">
-									<label className="block text-sm font-bold text-gray-700">Select Driver</label>
+									<label className="block text-sm font-bold text-gray-700 dark:text-slate-300">Select Driver</label>
 									<select
 										value={selectedDriverId}
 										onChange={(e) => setSelectedDriverId(e.target.value)}
 										disabled={!selectedTruckId || loadingDrivers}
-										className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer disabled:bg-gray-50 disabled:text-gray-400"
+										className="w-full h-12 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-[#345E85] transition-all cursor-pointer disabled:bg-gray-50 dark:bg-slate-800/50 disabled:text-gray-400"
 									>
 										<option value="">{loadingDrivers ? 'Loading...' : 'Select Driver'}</option>
 										{availableDrivers.map((d) => (
@@ -893,28 +893,28 @@ const TruckBidsPage: React.FC = () => {
 							{/* Schedule */}
 							<div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-5">
 								<div className="flex items-center gap-2.5">
-									<div className="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center text-[#0369a1]">
+									<div className="w-8 h-8 bg-white dark:bg-slate-900 rounded-lg shadow-sm flex items-center justify-center text-[#0369a1]">
 										<FaClock size={14} />
 									</div>
 									<h4 className="text-sm font-bold text-[#0369a1]">Schedule</h4>
 								</div>
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 									<div className="space-y-1.5">
-										<label className="text-xs font-bold text-gray-600 px-1">Pickup Date *</label>
+										<label className="text-xs font-bold text-gray-600 dark:text-slate-300 px-1">Pickup Date *</label>
 										<input
 											type="datetime-local"
 											value={proposedPickupDate}
 											onChange={(e) => setProposedPickupDate(e.target.value)}
-											className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
+											className="w-full h-12 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
 										/>
 									</div>
 									<div className="space-y-1.5">
-										<label className="text-xs font-bold text-gray-600 px-1">Delivery Date *</label>
+										<label className="text-xs font-bold text-gray-600 dark:text-slate-300 px-1">Delivery Date *</label>
 										<input
 											type="datetime-local"
 											value={proposedDeliveryDate}
 											onChange={(e) => setProposedDeliveryDate(e.target.value)}
-											className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
+											className="w-full h-12 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-400"
 										/>
 									</div>
 								</div>
@@ -932,18 +932,18 @@ const TruckBidsPage: React.FC = () => {
 										}}
 										className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 									/>
-									<span className="text-sm font-bold text-gray-700">Require advance payment before trip</span>
+									<span className="text-sm font-bold text-gray-700 dark:text-slate-300">Require advance payment before trip</span>
 								</label>
 
 								{requireAdvancePayment && (
 									<div className="animate-in slide-in-from-top-2 duration-300 space-y-2 pl-8">
-										<label className="block text-xs font-bold text-gray-600">Percentage (0-100)</label>
+										<label className="block text-xs font-bold text-gray-600 dark:text-slate-300">Percentage (0-100)</label>
 										<div className="relative max-w-[200px]">
 											<input
 												type="number"
 												value={advancePaymentPercentage}
 												onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
-												className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500"
+												className="w-full h-12 px-4 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-500"
 												placeholder="70"
 											/>
 											<span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">%</span>
@@ -954,21 +954,21 @@ const TruckBidsPage: React.FC = () => {
 
 							{/* Notes */}
 							<div className="space-y-2">
-								<label className="block text-sm font-bold text-gray-700">Additional Notes</label>
+								<label className="block text-sm font-bold text-gray-700 dark:text-slate-300">Additional Notes</label>
 								<textarea
 									value={bidNotes}
 									onChange={(e) => setBidNotes(e.target.value)}
-									className="w-full p-5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#345E85] transition-all min-h-[120px] resize-none"
+									className="w-full p-5 bg-white dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:border-[#345E85] transition-all min-h-[120px] resize-none"
 									placeholder="Add any additional notes..."
 								/>
 							</div>
 						</div>
 
 						{/* Footer */}
-						<div className="px-8 py-6 border-t bg-gray-50 flex items-center justify-end gap-3 shrink-0">
+						<div className="px-8 py-6 border-t bg-gray-50 dark:bg-slate-800/50 flex items-center justify-end gap-3 shrink-0">
 							<button
 								onClick={() => setShowBidModal(false)}
-								className="px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all active:scale-95"
+								className="px-6 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-95"
 							>
 								Cancel
 							</button>

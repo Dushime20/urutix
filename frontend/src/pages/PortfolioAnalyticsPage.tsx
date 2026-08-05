@@ -85,11 +85,11 @@ const PortfolioAnalyticsPage: React.FC = () => {
   if (loading) return <ModernLoader isLoading type="dashboard" showStats />;
 
   if (error) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
       <div className="text-center">
         <AlertTriangle className="w-14 h-14 text-rose-500 mx-auto mb-4" />
-        <h2 className="text-lg font-black text-slate-900 mb-2 uppercase tracking-tight">Error Loading Analytics</h2>
-        <p className="text-slate-500 text-sm mb-5">{error}</p>
+        <h2 className="text-lg font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Error Loading Analytics</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-5">{error}</p>
         <button onClick={() => lenderId && load(lenderId, months)}
           className="px-6 py-3 bg-[#345E85] text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-[#2a4d6d] transition-all">
           Retry
@@ -112,13 +112,13 @@ const PortfolioAnalyticsPage: React.FC = () => {
   const maxDisbursed = Math.max(...trends.map((t: any) => t.disbursed ?? 0), 1);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8 transition-colors duration-200">
       <div className="max-w-[1536px] mx-auto space-y-10">
 
         {/* ── Header ── */}
-        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Portfolio Analytics</h1>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Portfolio Analytics</h1>
             <p className="text-slate-400 mt-1 uppercase text-[10px] font-black tracking-widest">
               IFRS 9 · Basel II · Real-time · {currency}
             </p>
@@ -129,20 +129,20 @@ const PortfolioAnalyticsPage: React.FC = () => {
               <button key={m} onClick={() => setMonths(m)}
                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border
                   ${months === m
-                    ? 'bg-[#345E85] text-white border-[#345E85] shadow-lg shadow-blue-100'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                    ? 'bg-[#345E85] text-white border-[#345E85] shadow-lg shadow-blue-100 dark:shadow-none'
+                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                 {m}M
               </button>
             ))}
             <button onClick={() => lenderId && load(lenderId, months)}
-              className="p-2 bg-white border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+              className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
               <RotateCcw className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* ── IFRS 9 + Basel II Standards Summary ── */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
           <SectionHeader icon={<Shield className="w-4 h-4" />}
             title="IFRS 9 / Basel II Standards Summary"
             sub={`Computed at ${analytics.computed_at ? new Date(analytics.computed_at).toLocaleString() : '—'}`} />
@@ -154,9 +154,9 @@ const PortfolioAnalyticsPage: React.FC = () => {
               { label: 'Collection Rate', value: fmtPct(std.collection_rate) },
               { label: 'NPL Ratio', value: fmtPct(std.npl_ratio) },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-slate-50 rounded-2xl px-4 py-4 border border-slate-100">
+              <div key={label} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl px-4 py-4 border border-slate-100 dark:border-slate-700">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-                <p className="text-lg font-black text-slate-900">{value}</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white">{value}</p>
               </div>
             ))}
           </div>
@@ -198,7 +198,7 @@ const PortfolioAnalyticsPage: React.FC = () => {
         </div>
 
         {/* ── Monthly Trends Chart ── */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
           <SectionHeader icon={<BarChart2 className="w-4 h-4" />}
             title="Monthly Cash Flow Trends"
             sub={`Last ${months} months · ${currency}`} />
@@ -243,7 +243,7 @@ const PortfolioAnalyticsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Risk Distribution */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
             <SectionHeader icon={<PieChart className="w-4 h-4" />}
               title="Risk Distribution"
               sub="Active loan exposure by risk tier" />
@@ -263,22 +263,22 @@ const PortfolioAnalyticsPage: React.FC = () => {
                           <span>{r.label} · {r.count} loans</span>
                           <span>{fmtRWF(r.amount)} · {pct.toFixed(1)}%</span>
                         </div>
-                        <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                           <div className={`h-full ${r.cls} rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
                   })}
-                  <div className="pt-3 border-t border-slate-100 flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
                     <span>Total Exposure</span>
-                    <span className="text-slate-900">{fmtRWF(risk.total_exposure)}</span>
+                    <span className="text-slate-900 dark:text-white">{fmtRWF(risk.total_exposure)}</span>
                   </div>
                 </div>
               )}
           </div>
 
           {/* Cargo Type Breakdown */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
             <SectionHeader icon={<Activity className="w-4 h-4" />}
               title="Cargo Type Breakdown"
               sub="Loan exposure & default rate by cargo" />
@@ -287,16 +287,16 @@ const PortfolioAnalyticsPage: React.FC = () => {
               : (
                 <div className="space-y-2">
                   {cargo.slice(0, 7).map((c: any) => (
-                    <div key={c.cargo_type} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                    <div key={c.cargo_type} className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-slate-800 last:border-0">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className={`text-[9px] font-black px-2 py-1 rounded-lg border uppercase tracking-wider ${riskColour(c.risk_level)}`}>
                           {c.risk_level}
                         </span>
-                        <span className="text-xs font-black text-slate-700 truncate">{c.cargo_type}</span>
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-300 truncate">{c.cargo_type}</span>
                       </div>
                       <div className="flex items-center gap-4 shrink-0 text-right">
                         <div>
-                          <p className="text-[10px] font-black text-slate-900">{fmtRWF(c.total_value)}</p>
+                          <p className="text-[10px] font-black text-slate-900 dark:text-white">{fmtRWF(c.total_value)}</p>
                           <p className="text-[9px] text-slate-400 font-bold">{c.loan_count} loans</p>
                         </div>
                         <div className="w-16">
@@ -312,7 +312,7 @@ const PortfolioAnalyticsPage: React.FC = () => {
         </div>
 
         {/* ── Portfolio Composition ── */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6">
           <SectionHeader icon={<TrendingUp className="w-4 h-4" />}
             title="Portfolio Composition"
             sub="Loan lifecycle breakdown" />
@@ -323,7 +323,7 @@ const PortfolioAnalyticsPage: React.FC = () => {
               { label: 'Portfolio Yield',    value: fmtPct(p.portfolio_yield),              sub: 'Interest / Disbursed',       cls: 'text-amber-600' },
               { label: 'Capital Adequacy',   value: fmtPct(p.capital_adequacy_ratio),       sub: 'Basel II proxy (Tier 1/RWA)', cls: 'text-purple-600' },
             ].map(({ label, value, sub, cls }) => (
-              <div key={label} className="bg-slate-50 rounded-2xl px-5 py-4 border border-slate-100">
+              <div key={label} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl px-5 py-4 border border-slate-100 dark:border-slate-700">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
                 <p className={`text-xl font-black ${cls}`}>{value}</p>
                 <p className="text-[9px] text-slate-400 font-bold mt-0.5">{sub}</p>

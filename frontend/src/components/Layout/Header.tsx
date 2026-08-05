@@ -13,7 +13,7 @@ const Header = ({ onLogout }: HeaderProps) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-700">
       <div className="flex items-center justify-between h-16 px-6">
         {/* Search */}
         <div className="flex-1 max-w-lg">
@@ -23,7 +23,7 @@ const Header = ({ onLogout }: HeaderProps) => {
               type="text"
               placeholder="Search..."
               title="Search"
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -34,7 +34,7 @@ const Header = ({ onLogout }: HeaderProps) => {
           <LanguageSwitcher />
           
           {/* Notifications */}
-          <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+          <button className="relative p-2 text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 rounded-lg transition-colors">
             <Bell className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 bg-error-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
               3
@@ -51,34 +51,34 @@ const Header = ({ onLogout }: HeaderProps) => {
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs text-gray-500">{user?.email}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">{user?.email}</p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
 
             {/* Profile dropdown */}
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                <div className="px-4 py-2 border-b border-gray-200">
-                  <p className="text-sm font-medium text-gray-900">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-2 z-50">
+                <div className="px-4 py-2 border-b border-gray-200 dark:border-slate-700">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{user?.email}</p>
                 </div>
                 <div className="py-1">
-                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100">
                     <TranslatedText text="Profile Settings" />
                   </button>
-                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100">
                     <TranslatedText text="Account Settings" />
                   </button>
                   <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100" onClick={onLogout}>
                     <TranslatedText text="Logout" />
                   </button>
-                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100">
                     <TranslatedText text="Help & Support" />
                   </button>
                 </div>

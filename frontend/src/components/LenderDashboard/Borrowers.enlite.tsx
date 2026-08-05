@@ -46,7 +46,7 @@ interface BorrowersEnliteProps {
 
 const statusStyle: Record<string, string> = {
     active:    'bg-emerald-50 text-emerald-700 border-emerald-100',
-    inactive:  'bg-slate-50 text-slate-600 border-slate-100',
+    inactive:  'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-100 dark:border-slate-800',
     suspended: 'bg-rose-50 text-rose-700 border-rose-100',
     pending:   'bg-amber-50 text-amber-700 border-amber-100',
 };
@@ -83,17 +83,17 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
             label: 'Borrower',
             render: (_: any, b: BorrowerEntry) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm flex-shrink-0">
                         <User size={14} className="text-[#2c5173]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm truncate">
+                        <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
                             {b.companyName ?? b.contactName ?? (
                                 <span className="text-slate-400 italic font-medium">No name on record</span>
                             )}
                         </p>
                         {b.businessType && (
-                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium flex items-center gap-1">
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium flex items-center gap-1">
                                 <Briefcase size={8} /> {b.businessType}
                             </p>
                         )}
@@ -107,12 +107,12 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
             render: (_: any, b: BorrowerEntry) => (
                 <div className="flex flex-col gap-0.5">
                     {b.email && (
-                        <div className="flex items-center gap-1.5 text-sm font-medium text-slate-600">
+                        <div className="flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300">
                             <Mail size={10} className="text-slate-400" /> {b.email}
                         </div>
                     )}
                     {b.phone && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
                             <Phone size={10} className="text-slate-400" /> {b.phone}
                         </div>
                     )}
@@ -145,7 +145,7 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
             label: 'Loan Activity',
             render: (_: any, b: BorrowerEntry) => (
                 <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm">
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
                         {b.loanCount} loan{b.loanCount !== 1 ? 's' : ''}
                     </p>
                     <div className="flex gap-2 text-[10px] font-medium uppercase tracking-wider">
@@ -162,10 +162,10 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
             label: 'Exposure',
             render: (_: any, b: BorrowerEntry) => (
                 <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm">
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
                         {formatAmount(b.outstanding > 0 ? b.outstanding : null)}
                     </p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-medium">
                         {formatAmount(b.totalApproved > 0 ? b.totalApproved : null)} approved
                     </p>
                 </div>
@@ -177,7 +177,7 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
             render: (_: any, b: BorrowerEntry) => (
                 <div className="flex items-center gap-1.5">
                     <Clock size={11} className="text-slate-400 flex-shrink-0" />
-                    <span className="text-sm font-medium text-slate-600 whitespace-nowrap">
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
                         {formatDate(b.lastLoanDate)}
                     </span>
                 </div>
@@ -189,10 +189,10 @@ const BorrowersEnlite: React.FC<BorrowersEnliteProps> = ({
             render: () => (
                 <div className="flex justify-end">
                     <button
-                        className="p-2 hover:bg-slate-50 rounded-xl transition-all group"
+                        className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 rounded-xl transition-all group"
                         title="View borrower details"
                     >
-                        <ChevronRight size={16} className="text-slate-300 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-slate-900 dark:text-white dark:hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </button>
                 </div>
             ),

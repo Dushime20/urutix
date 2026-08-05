@@ -158,7 +158,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
       case 'ACTIVE': return <CheckCircle className="w-4 h-4 text-emerald-600" />;
       case 'EXPIRING_SOON': return <AlertTriangle className="w-4 h-4 text-amber-600" />;
       case 'EXPIRED': return <AlertTriangle className="w-4 h-4 text-rose-600" />;
-      default: return <Clock className="w-4 h-4 text-slate-600" />;
+      default: return <Clock className="w-4 h-4 text-slate-600 dark:text-slate-300" />;
     }
   };
 
@@ -185,7 +185,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
       key: 'type',
       label: t('Type'),
       render: (_: unknown, inspection: InspectionRow) => (
-        <span className="text-sm font-bold text-slate-700">{inspection.type}</span>
+        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{inspection.type}</span>
       ),
     },
     {
@@ -237,7 +237,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="h-10 pl-4 pr-10 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
+              className="h-10 pl-4 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-[#345E85] appearance-none cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
             >
               <option value="week">{t('This Week')}</option>
               <option value="month">{t('This Month')}</option>
@@ -255,7 +255,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
       </div>
 
       {/* HOS (Hours of Service) Tracker - Compact & Bright */}
-      <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/40 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50/50 via-transparent to-transparent pointer-events-none" />
         
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
@@ -274,7 +274,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-4 lg:gap-6">
-            <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-center min-w-[120px]">
+            <div className="bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 text-center min-w-[120px]">
               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Driving Today" /></p>
               <p className="text-xl font-black text-[#0f172a]">4.5<span className="text-[10px] text-slate-400 ml-0.5 uppercase tracking-tighter">h</span></p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
@@ -282,7 +282,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
               </div>
             </div>
 
-            <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-center min-w-[120px]">
+            <div className="bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 text-center min-w-[120px]">
               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Consecutive" /></p>
               <p className="text-xl font-black text-[#0f172a]">2.8<span className="text-[10px] text-slate-400 ml-0.5 uppercase tracking-tighter">h</span></p>
               <p className="text-[8px] font-black text-amber-600 uppercase mt-2 tracking-widest"><TranslatedText text="Break in 1.2h" /></p>
@@ -312,7 +312,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
                     toast.error(t('Failed to end break'));
                   }
                }}
-                className="h-9 px-6 bg-white hover:bg-slate-50 text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 active:scale-95 border border-slate-100"
+                className="h-9 px-6 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 active:scale-95 border border-slate-100 dark:border-slate-800"
               >
                 <TranslatedText text="End Break" />
               </button>
@@ -328,7 +328,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+          className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
         >
           <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
             <Shield className="w-6 h-6" strokeWidth={1.5} />
@@ -350,7 +350,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+          className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
         >
           <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
             <Navigation className="w-6 h-6" strokeWidth={1.5} />
@@ -372,7 +372,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+          className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
         >
           <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
             <FileText className="w-6 h-6" strokeWidth={1.5} />
@@ -394,7 +394,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
+          className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-5 group hover:shadow-lg hover:border-blue-100 transition-all cursor-default"
         >
           <div className="w-14 h-14 rounded-full border-[1.5px] border-blue-100 flex items-center justify-center flex-shrink-0 bg-blue-50 group-hover:bg-[#345E85] group-hover:text-white transition-colors text-[#345E85]">
             <Truck className="w-6 h-6" strokeWidth={1.5} />
@@ -413,16 +413,16 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
       </div>
 
       {/* Safety Trends */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-slate-50 rounded-xl">
+          <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
             <TrendingUp className="w-5 h-5 text-slate-500" />
           </div>
-          <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Performance Trends" /></h3>
+          <h3 className="text-lg font-black text-slate-800 dark:text-slate-100"><TranslatedText text="Performance Trends" /></h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {data.trends.map((trend, index) => (
-            <div key={index} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-blue-100 transition-colors">
+            <div key={index} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 group hover:border-blue-100 transition-colors">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">{trend.period}</span>
               <div className={`text-3xl font-black mb-1 ${getScoreColor(trend.score)}`}>{trend.score}</div>
               <div className={`flex items-center gap-1 text-xs font-bold ${trend.change >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -437,15 +437,15 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
       {/* Violations and Certifications */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Violations */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-rose-500" />
               <TranslatedText text="Recent Violations" />
             </h3>
             <button
               onClick={() => setShowViolations(!showViolations)}
-              className="px-3 py-1 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors"
+              className="px-3 py-1 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors"
             >
               {showViolations ? t('Hide') : t('View All')}
             </button>
@@ -456,7 +456,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
               <div className="text-center py-8 text-slate-400"><TranslatedText text="No recent violations" /></div>
             ) : (
               data.violations.slice(0, showViolations ? undefined : 2).map((violation) => (
-                <div key={violation.id} className="p-4 rounded-2xl border border-slate-100 hover:border-rose-100 hover:bg-rose-50/30 transition-all cursor-default group">
+                <div key={violation.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-rose-100 hover:bg-rose-50/30 transition-all cursor-default group">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -465,13 +465,13 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
                         </span>
                         <span className="text-xs font-bold text-slate-400">{formatDate(violation.date)}</span>
                       </div>
-                      <p className="font-bold text-slate-800">{violation.type}</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{violation.type}</p>
                     </div>
                     <span className="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">
                       {violation.points} pts
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 pl-1 border-l-2 border-slate-200">{violation.description}</p>
+                  <p className="text-xs text-slate-500 pl-1 border-l-2 border-slate-200 dark:border-slate-700">{violation.description}</p>
                 </div>
               ))
             )}
@@ -479,15 +479,15 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
         </div>
 
         {/* Certifications */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <Award className="w-5 h-5 text-[#345E85]" />
               <TranslatedText text="Certifications" />
             </h3>
             <button
               onClick={() => setShowCertifications(!showCertifications)}
-              className="px-3 py-1 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 transition-colors"
+              className="px-3 py-1 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors"
             >
               {showCertifications ? t('Hide') : t('View All')}
             </button>
@@ -498,7 +498,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
               <div className="text-center py-8 text-slate-400"><TranslatedText text="No certifications found" /></div>
             ) : (
               data.certifications.slice(0, showCertifications ? undefined : 2).map((cert) => (
-                <div key={cert.id} className="p-4 rounded-2xl border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all cursor-default group">
+                <div key={cert.id} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-100 hover:bg-blue-50/30 transition-all cursor-default group">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -506,7 +506,7 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
                           {cert.status.replace('_', ' ')}
                         </span>
                       </div>
-                      <p className="font-bold text-slate-800">{cert.name}</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{cert.name}</p>
                     </div>
                     {getCertificationStatusIcon(cert.status)}
                   </div>
@@ -526,12 +526,12 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
       </div>
 
       {/* Recent Inspections */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8">
         <div className="flex items-center gap-3 mb-8">
           <div className="p-2 bg-blue-50 rounded-xl">
             <FileText className="w-5 h-5 text-[#345E85]" />
           </div>
-          <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Recent Inspections" /></h3>
+          <h3 className="text-lg font-black text-slate-800 dark:text-slate-100"><TranslatedText text="Recent Inspections" /></h3>
         </div>
         <StandardDataTable<InspectionRow>
           embedded
@@ -560,13 +560,13 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8"
+              className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-amber-50 rounded-xl">
                   <AlertTriangle className="w-5 h-5 text-amber-500" />
                 </div>
-                <h3 className="text-lg font-black text-slate-800"><TranslatedText text="Safety Alerts" /></h3>
+                <h3 className="text-lg font-black text-slate-800 dark:text-slate-100"><TranslatedText text="Safety Alerts" /></h3>
               </div>
               <div className="space-y-4">
                 {data.certifications.some(cert => cert.status === 'EXPIRING_SOON') && (
@@ -595,14 +595,14 @@ export const SafetyMetrics: React.FC<SafetyMetricsProps> = ({
       </AnimatePresence>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
-        <h3 className="text-lg font-black text-slate-800 mb-6"><TranslatedText text="Quick Actions" /></h3>
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8">
+        <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-6"><TranslatedText text="Quick Actions" /></h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
+          <button className="py-4 bg-white dark:bg-slate-900 hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 dark:border-slate-800 hover:border-blue-100 shadow-sm">
             <Eye className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span><TranslatedText text="View Full Report" /></span>
           </button>
-          <button className="py-4 bg-white hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 hover:border-blue-100 shadow-sm">
+          <button className="py-4 bg-white dark:bg-slate-900 hover:bg-blue-50 text-[#345E85] rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 group border border-slate-100 dark:border-slate-800 hover:border-blue-100 shadow-sm">
             <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
             <span><TranslatedText text="Download Docs" /></span>
           </button>

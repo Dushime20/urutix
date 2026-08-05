@@ -519,7 +519,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       VIN *
                     </label>
                     <input
@@ -558,7 +558,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Make *
                     </label>
                     <input
@@ -571,7 +571,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Model *
                     </label>
                     <input
@@ -584,7 +584,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Year *
                     </label>
                     <input
@@ -610,7 +610,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Color
                     </label>
                     <input
@@ -622,7 +622,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Fuel Type *
                     </label>
                     <select
@@ -641,7 +641,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Capacity Weight (kg) *
                     </label>
                     <input
@@ -655,7 +655,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Capacity Volume (cubic ft) *
                     </label>
                     <input
@@ -669,7 +669,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Registration Number *
                     </label>
                     <input
@@ -682,7 +682,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Registration Expiry *
                     </label>
                     <input
@@ -694,7 +694,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Insurance Policy *
                     </label>
                     <input
@@ -707,7 +707,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Insurance Expiry *
                     </label>
                     <input
@@ -719,7 +719,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Roadworthy Cert Expiry
                     </label>
                     <input
@@ -730,7 +730,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Mileage
                     </label>
                     <input
@@ -745,10 +745,10 @@ const FleetForm: React.FC<FleetFormProps> = ({
 
                   {/* Truck Type and Cargo Capabilities */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Truck Type & Cargo Capabilities</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Truck Type & Cargo Capabilities</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                           Truck Type *
                         </label>
                         <select
@@ -779,7 +779,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                           Trailer Type
                         </label>
                         <select
@@ -812,7 +812,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
 
                   {/* Essential Cargo Equipment */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Essential Cargo Equipment</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Essential Cargo Equipment</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex items-center">
                         <input
@@ -822,7 +822,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasSideRails', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasSideRails" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasSideRails" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Side Rails
                         </label>
                       </div>
@@ -834,7 +834,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasTarps', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasTarps" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasTarps" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Tarps
                         </label>
                       </div>
@@ -846,7 +846,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasStraps', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasStraps" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasStraps" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Straps
                         </label>
                       </div>
@@ -858,7 +858,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasChains', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasChains" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasChains" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Chains
                         </label>
                       </div>
@@ -870,7 +870,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasWinch', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasWinch" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasWinch" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Winch
                         </label>
                       </div>
@@ -882,7 +882,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasRam', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasRam" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasRam" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Loading Ram
                         </label>
                       </div>
@@ -894,7 +894,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasTailLift', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasTailLift" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasTailLift" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Tail Lift
                         </label>
                       </div>
@@ -906,7 +906,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasSideLift', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasSideLift" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasSideLift" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Side Lift
                         </label>
                       </div>
@@ -918,7 +918,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasRollerBed', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasRollerBed" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasRollerBed" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Roller Bed
                         </label>
                       </div>
@@ -927,7 +927,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
 
                   {/* Loading Equipment */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Loading Equipment</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Loading Equipment</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex items-center">
                         <input
@@ -941,7 +941,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           }}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasForklift" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                        <label htmlFor="hasForklift" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300 cursor-pointer">
                           Forklift
                         </label>
                       </div>
@@ -957,7 +957,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           }}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasCrane" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                        <label htmlFor="hasCrane" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300 cursor-pointer">
                           Crane
                         </label>
                       </div>
@@ -973,14 +973,14 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           }}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasLoadingDock" className="ml-2 text-sm font-medium text-gray-700 cursor-pointer">
+                        <label htmlFor="hasLoadingDock" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300 cursor-pointer">
                           Loading Dock
                         </label>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                           Max Loading Time (minutes)
                         </label>
                         <input
@@ -993,7 +993,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                           Max Unloading Time (minutes)
                         </label>
                         <input
@@ -1010,7 +1010,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
 
                   {/* Cargo Type Capabilities */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Cargo Type Capabilities</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cargo Type Capabilities</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex items-center">
                         <input
@@ -1020,7 +1020,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasTanker', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasTanker" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasTanker" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Tanker (Liquids)
                         </label>
                       </div>
@@ -1032,7 +1032,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasBulk', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasBulk" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasBulk" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Bulk Cargo
                         </label>
                       </div>
@@ -1044,7 +1044,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasRefrigerated', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasRefrigerated" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasRefrigerated" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Refrigerated
                         </label>
                       </div>
@@ -1056,7 +1056,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasCarCarrier', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasCarCarrier" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasCarCarrier" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Car Carrier
                         </label>
                       </div>
@@ -1068,7 +1068,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasHeavyHaul', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasHeavyHaul" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasHeavyHaul" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Heavy Haul
                         </label>
                       </div>
@@ -1080,7 +1080,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasOversized', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasOversized" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasOversized" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Oversized
                         </label>
                       </div>
@@ -1092,7 +1092,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasHazmat', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasHazmat" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasHazmat" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Hazmat
                         </label>
                       </div>
@@ -1104,7 +1104,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasFoodGrade', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasFoodGrade" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasFoodGrade" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Food Grade
                         </label>
                       </div>
@@ -1116,7 +1116,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasPharmaceutical', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasPharmaceutical" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasPharmaceutical" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Pharmaceutical
                         </label>
                       </div>
@@ -1125,7 +1125,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
 
                   {/* Technology & Safety Features */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Technology & Safety Features</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Technology & Safety Features</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="flex items-center">
                         <input
@@ -1135,7 +1135,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasGPS', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasGPS" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasGPS" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           GPS Tracking
                         </label>
                       </div>
@@ -1147,7 +1147,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasRealTimeTracking', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasRealTimeTracking" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasRealTimeTracking" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Real-time Tracking
                         </label>
                       </div>
@@ -1159,7 +1159,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasTemperatureMonitoring', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasTemperatureMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasTemperatureMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Temperature Monitoring
                         </label>
                       </div>
@@ -1171,7 +1171,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasCollisionAvoidance', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasCollisionAvoidance" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasCollisionAvoidance" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Collision Avoidance
                         </label>
                       </div>
@@ -1183,7 +1183,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasDashCam', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasDashCam" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasDashCam" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Dash Cam
                         </label>
                       </div>
@@ -1195,7 +1195,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                           onChange={(e) => handleInputChange('hasSafetyCameras', e.target.checked)}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <label htmlFor="hasSafetyCameras" className="ml-2 text-sm font-medium text-gray-700">
+                        <label htmlFor="hasSafetyCameras" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                           Safety Cameras
                         </label>
                       </div>
@@ -1204,9 +1204,9 @@ const FleetForm: React.FC<FleetFormProps> = ({
 
                   {/* Equipment List */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Additional Equipment</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Additional Equipment</h3>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                         Equipment List (comma-separated)
                       </label>
                       <textarea
@@ -1222,7 +1222,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       First Name
                     </label>
                     <input
@@ -1234,7 +1234,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Last Name
                     </label>
                     <input
@@ -1246,7 +1246,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       License Number
                     </label>
                     <input
@@ -1258,7 +1258,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       License Type
                     </label>
                     <select
@@ -1274,7 +1274,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Experience (years)
                     </label>
                     <input
@@ -1290,10 +1290,10 @@ const FleetForm: React.FC<FleetFormProps> = ({
 
             {/* Contact Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Phone Number
                   </label>
                   <input
@@ -1304,7 +1304,7 @@ const FleetForm: React.FC<FleetFormProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Email Address
                   </label>
                   <input
@@ -1318,11 +1318,11 @@ const FleetForm: React.FC<FleetFormProps> = ({
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-600 dark:text-slate-300 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Cancel
               </button>

@@ -159,7 +159,7 @@ export const TruckOwnerRecentActivities: React.FC<TruckOwnerRecentActivitiesProp
           displayedActivities.map((activity) => (
             <div
               key={activity.id}
-              className={`p-6 px-8 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all cursor-pointer group relative`}
+              className={`p-6 px-8 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-gray-800 transition-all cursor-pointer group relative`}
             >
               <div className="flex items-start gap-6">
                 {/* Visual Anchor */}

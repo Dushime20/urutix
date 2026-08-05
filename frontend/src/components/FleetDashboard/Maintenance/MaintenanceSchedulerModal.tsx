@@ -111,7 +111,7 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
 
             {/* Modal Panel */}
             <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div className="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-gray-100">
+                <div className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-slate-900 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-gray-100 dark:border-slate-800">
 
                     {/* Header */}
                     <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-5 flex justify-between items-center border-b border-slate-700/50">
@@ -133,21 +133,21 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                     </div>
 
                     <form onSubmit={handleSubmit}>
-                        <div className="px-6 py-6 space-y-6 bg-slate-50/50">
+                        <div className="px-6 py-6 space-y-6 bg-slate-50/50 dark:bg-slate-950">
 
                             {/* Section 1: Vehicle Context */}
-                            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <FaTruck className="text-slate-300" /> Vehicle Information
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Select Vehicle *</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Select Vehicle *</label>
                                         <div className="relative">
                                             <select
                                                 value={selectedTruckId}
                                                 onChange={(e) => setSelectedTruckId(e.target.value)}
-                                                className="block w-full rounded-lg border-slate-300 bg-slate-50 py-2.5 pl-3 pr-10 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                                className="block w-full rounded-lg border-slate-300 bg-slate-50 dark:bg-slate-800/50 py-2.5 pl-3 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                                                 required
                                                 disabled={!!preselectedTruckId || loading}
                                             >
@@ -161,11 +161,11 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Service Type</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Service Type</label>
                                         <select
                                             value={serviceType}
                                             onChange={(e) => setServiceType(e.target.value)}
-                                            className="block w-full rounded-lg border-slate-300 bg-slate-50 py-2.5 pl-3 pr-10 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                            className="block w-full rounded-lg border-slate-300 bg-slate-50 dark:bg-slate-800/50 py-2.5 pl-3 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                                         >
                                             {SERVICE_TYPES.map(type => (
                                                 <option key={type} value={type}>{type}</option>
@@ -176,29 +176,29 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                             </div>
 
                             {/* Section 2: Service Details */}
-                            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <FaClipboardList className="text-slate-300" /> Service Details
                                 </h4>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Title / Summary *</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Title / Summary *</label>
                                         <input
                                             type="text"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
                                             placeholder="e.g. 50,000km Preventive Maintenance"
-                                            className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm transition-all"
+                                            className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm transition-all"
                                             required
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description & Notes</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Description & Notes</label>
                                         <textarea
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
                                             rows={3}
-                                            className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm transition-all resize-none"
+                                            className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm transition-all resize-none"
                                             placeholder="Enter any specific instructions or reported issues..."
                                         />
                                     </div>
@@ -206,25 +206,25 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                             </div>
 
                             {/* Section 3: Logistics */}
-                            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <FaCalendarAlt className="text-slate-300" /> Schedule & Cost
                                 </h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Date *</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Date *</label>
                                         <div className="relative">
                                             <input
                                                 type="date"
                                                 value={date}
                                                 onChange={(e) => setDate(e.target.value)}
-                                                className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                                className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                                                 required
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Est. Cost ($)</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Est. Cost ($)</label>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <FaMoneyBillWave className="text-slate-400" />
@@ -234,12 +234,12 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                                                 value={cost}
                                                 onChange={(e) => setCost(e.target.value ? Number(e.target.value) : '')}
                                                 placeholder="0.00"
-                                                className="block w-full rounded-lg border-slate-300 py-2.5 pl-10 pr-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                                className="block w-full rounded-lg border-slate-300 py-2.5 pl-10 pr-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Service Provider</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Service Provider</label>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <FaStore className="text-slate-400" />
@@ -249,17 +249,17 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                                                 value={vendor}
                                                 onChange={(e) => setVendor(e.target.value)}
                                                 placeholder="e.g. Official Dealer"
-                                                className="block w-full rounded-lg border-slate-300 py-2.5 pl-10 pr-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                                className="block w-full rounded-lg border-slate-300 py-2.5 pl-10 pr-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1.5">Next Due (Optional)</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Next Due (Optional)</label>
                                         <input
                                             type="date"
                                             value={nextDueDate}
                                             onChange={(e) => setNextDueDate(e.target.value)}
-                                            className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
+                                            className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm"
                                         />
                                     </div>
                                 </div>
@@ -267,7 +267,7 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                         </div>
 
                         {/* Footer */}
-                        <div className="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-3 rounded-b-2xl border-t border-gray-200">
+                        <div className="bg-gray-50 dark:bg-slate-800/50 px-6 py-4 flex flex-row-reverse gap-3 rounded-b-2xl border-t border-gray-200 dark:border-slate-700">
                             <button
                                 type="submit"
                                 disabled={submitting}
@@ -278,7 +278,7 @@ const MaintenanceSchedulerModal: React.FC<MaintenanceSchedulerModalProps> = ({ i
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="inline-flex justify-center rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
+                                className="inline-flex justify-center rounded-lg border border-gray-300 bg-white dark:bg-slate-900 px-6 py-2.5 text-sm font-bold text-slate-700 dark:text-slate-300 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
                             >
                                 Cancel
                             </button>

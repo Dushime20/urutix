@@ -35,7 +35,7 @@ const ServiceRow: React.FC<{ label: string; status: string; detail?: string }> =
     <div className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
       <div className="flex items-center gap-2.5">
         <span className={`w-2 h-2 rounded-full ${c.dot}`} />
-        <span className="text-sm font-medium text-gray-700">{label}</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</span>
       </div>
       <div className="flex items-center gap-2">
         {detail && <span className="text-xs text-gray-400">{detail}</span>}
@@ -54,8 +54,8 @@ const ProgressBar: React.FC<{ label: string; value: number; max?: number; color?
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <span className="text-xs font-medium text-gray-600">{label}</span>
-        <span className="text-xs font-bold text-gray-900">{pct}%</span>
+        <span className="text-xs font-medium text-gray-600 dark:text-slate-300">{label}</span>
+        <span className="text-xs font-bold text-gray-900 dark:text-white">{pct}%</span>
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
@@ -150,7 +150,7 @@ const MonitoringDashboard: React.FC = () => {
       key: 'user_email',
       label: 'User',
       render: (_v, log) => (
-        <span className="text-xs text-gray-700 whitespace-nowrap">
+        <span className="text-xs text-gray-700 dark:text-slate-300 whitespace-nowrap">
           {log.user_email ?? log.admin_email ?? log.user_id?.slice(0, 12) ?? 'System'}
         </span>
       ),
@@ -197,7 +197,7 @@ const MonitoringDashboard: React.FC = () => {
           <button
             onClick={() => setAutoRefresh(v => !v)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${
-              autoRefresh ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
+              autoRefresh ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600 dark:text-slate-300'
             }`}
           >
             <RefreshCw size={13} className={autoRefresh ? 'animate-spin' : ''} />
@@ -226,11 +226,11 @@ const MonitoringDashboard: React.FC = () => {
               System {overallStatus}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
-              Uptime: <span className="font-bold text-gray-700">
+              Uptime: <span className="font-bold text-gray-700 dark:text-slate-300">
                 {health?.uptime?.formatted ?? fmtUptime(Math.round(vitals?.system?.uptime ?? 0))}
               </span>
               {health?.services?.database?.responseTime && (
-                <> &nbsp;·&nbsp; DB response: <span className="font-bold text-gray-700">{health.services.database.responseTime}</span></>
+                <> &nbsp;·&nbsp; DB response: <span className="font-bold text-gray-700 dark:text-slate-300">{health.services.database.responseTime}</span></>
               )}
               {health?.platform?.nodeVersion && (
                 <> &nbsp;·&nbsp; Node {health.platform.nodeVersion}</>
@@ -245,7 +245,7 @@ const MonitoringDashboard: React.FC = () => {
         {/* ── Services + Resources row ──────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Services */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
               <Server size={13} /> Services
             </h3>
@@ -272,7 +272,7 @@ const MonitoringDashboard: React.FC = () => {
           </div>
 
           {/* Memory & CPU */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 space-y-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
               <Cpu size={13} /> Resources
             </h3>
@@ -281,7 +281,7 @@ const MonitoringDashboard: React.FC = () => {
             {health?.resources?.memory?.system && (
               <div className="grid grid-cols-3 gap-2 pt-1">
                 {(['total', 'used', 'free'] as const).map(k => (
-                  <div key={k} className="text-center bg-gray-50 rounded-xl p-2 border border-gray-100">
+                  <div key={k} className="text-center bg-gray-50 dark:bg-slate-800/50 rounded-xl p-2 border border-gray-100 dark:border-slate-800">
                     <p className="text-sm font-black text-gray-800">{health.resources.memory.system[k]} GB</p>
                     <p className="text-[10px] text-slate-400 capitalize">{k}</p>
                   </div>
@@ -290,14 +290,14 @@ const MonitoringDashboard: React.FC = () => {
             )}
             {health?.resources?.cpu && (
               <div className="text-xs text-gray-500">
-                <span className="font-bold text-gray-700">{health.resources.cpu.cores}</span> cores
-                &nbsp;·&nbsp; Load: <span className="font-bold text-gray-700">{health.resources.cpu.loadAverage?.[0]}</span>
+                <span className="font-bold text-gray-700 dark:text-slate-300">{health.resources.cpu.cores}</span> cores
+                &nbsp;·&nbsp; Load: <span className="font-bold text-gray-700 dark:text-slate-300">{health.resources.cpu.loadAverage?.[0]}</span>
               </div>
             )}
           </div>
 
           {/* Database stats */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5 space-y-3">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
               <Database size={13} /> Database
             </h3>
@@ -309,7 +309,7 @@ const MonitoringDashboard: React.FC = () => {
                     { label: 'Active', value: db.connections?.active ?? '—' },
                     { label: 'Idle', value: db.connections?.idle ?? '—' },
                   ].map(item => (
-                    <div key={item.label} className="text-center bg-gray-50 rounded-xl p-2 border border-gray-100">
+                    <div key={item.label} className="text-center bg-gray-50 dark:bg-slate-800/50 rounded-xl p-2 border border-gray-100 dark:border-slate-800">
                       <p className="text-sm font-black text-gray-800">{item.value}</p>
                       <p className="text-[10px] text-slate-400">{item.label}</p>
                     </div>
@@ -318,7 +318,7 @@ const MonitoringDashboard: React.FC = () => {
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {(db.tables ?? []).slice(0, 8).map((t: any) => (
                     <div key={t.table} className="flex justify-between text-xs py-0.5">
-                      <span className="text-gray-600 font-mono truncate max-w-[140px]">{t.table}</span>
+                      <span className="text-gray-600 dark:text-slate-300 font-mono truncate max-w-[140px]">{t.table}</span>
                       <span className="text-gray-400 flex-shrink-0">{t.size}</span>
                     </div>
                   ))}
@@ -334,7 +334,7 @@ const MonitoringDashboard: React.FC = () => {
         {activity && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Users by role */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
                 <Users size={13} /> Users by Role
               </h3>
@@ -348,24 +348,24 @@ const MonitoringDashboard: React.FC = () => {
                         style={{ width: `${Math.min((r.count / (activity.usersByRole[0]?.count || 1)) * 100, 100)}%` }}
                       />
                     </div>
-                    <span className="text-xs font-bold text-gray-700 w-8 text-right">{r.count}</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-slate-300 w-8 text-right">{r.count}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Users by status + new signups */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5">
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
                 <Activity size={13} /> User Status &amp; Growth
               </h3>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-                  <p className="text-xl font-black text-gray-900">{fmtNum(activity.activeUsers?.last7d)}</p>
+                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3 border border-gray-100 dark:border-slate-800 text-center">
+                  <p className="text-xl font-black text-gray-900 dark:text-white">{fmtNum(activity.activeUsers?.last7d)}</p>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest">Active 7d</p>
                 </div>
-                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 text-center">
-                  <p className="text-xl font-black text-gray-900">{fmtNum(activity.newUsers?.last30d)}</p>
+                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-3 border border-gray-100 dark:border-slate-800 text-center">
+                  <p className="text-xl font-black text-gray-900 dark:text-white">{fmtNum(activity.newUsers?.last30d)}</p>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest">New 30d</p>
                 </div>
               </div>
@@ -376,7 +376,7 @@ const MonitoringDashboard: React.FC = () => {
                     <div key={s.status} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${col.dot}`} />
-                        <span className="text-xs text-gray-600">{s.status}</span>
+                        <span className="text-xs text-gray-600 dark:text-slate-300">{s.status}</span>
                       </div>
                       <span className="text-xs font-bold text-gray-800">{fmtNum(s.count)}</span>
                     </div>

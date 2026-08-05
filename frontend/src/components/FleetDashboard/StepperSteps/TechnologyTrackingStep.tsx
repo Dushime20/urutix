@@ -13,14 +13,14 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3 mb-6">
-        <FaMapMarkedAlt className="w-5 h-5 text-gray-600" />
-        <h3 className="text-lg font-semibold text-gray-900">Technology & Tracking</h3>
+        <FaMapMarkedAlt className="w-5 h-5 text-gray-600 dark:text-slate-300" />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Technology & Tracking</h3>
       </div>
 
       {/* GPS & Tracking */}
       <div className="space-y-4">
         <h4 className="text-base font-medium text-gray-800 flex items-center mb-4">
-          <FaSatellite className="w-5 h-5 mr-2 text-gray-600" />
+          <FaSatellite className="w-5 h-5 mr-2 text-gray-600 dark:text-slate-300" />
           GPS & Tracking Systems
         </h4>
         
@@ -31,9 +31,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasGPS"
               checked={formData.hasGPS || false}
               onChange={(e) => handleInputChange('hasGPS', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasGPS" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasGPS" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               GPS Tracking
             </label>
           </div>
@@ -44,9 +44,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasTracking"
               checked={formData.hasTracking || false}
               onChange={(e) => handleInputChange('hasTracking', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasTracking" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasTracking" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Real-time Tracking
             </label>
           </div>
@@ -57,9 +57,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasTelematics"
               checked={formData.hasTelematics || false}
               onChange={(e) => handleInputChange('hasTelematics', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasTelematics" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasTelematics" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Telematics
             </label>
           </div>
@@ -70,9 +70,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasELD"
               checked={formData.hasELD || false}
               onChange={(e) => handleInputChange('hasELD', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasELD" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasELD" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               ELD (Electronic Logging)
             </label>
           </div>
@@ -83,9 +83,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasRouteOptimization"
               checked={formData.hasRouteOptimization || false}
               onChange={(e) => handleInputChange('hasRouteOptimization', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasRouteOptimization" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasRouteOptimization" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Route Optimization
             </label>
           </div>
@@ -96,9 +96,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasRealTimeTracking"
               checked={formData.hasRealTimeTracking || false}
               onChange={(e) => handleInputChange('hasRealTimeTracking', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasRealTimeTracking" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasRealTimeTracking" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Real-time Tracking
             </label>
           </div>
@@ -109,9 +109,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasGeofencing"
               checked={formData.hasGeofencing || false}
               onChange={(e) => handleInputChange('hasGeofencing', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasGeofencing" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasGeofencing" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Geofencing
             </label>
           </div>
@@ -121,7 +121,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
       {/* Safety Cameras & Monitoring */}
       <div className="space-y-4">
         <h4 className="text-base font-medium text-gray-800 flex items-center mb-4">
-          <FaEye className="w-5 h-5 mr-2 text-gray-600" />
+          <FaEye className="w-5 h-5 mr-2 text-gray-600 dark:text-slate-300" />
           Safety Cameras & Monitoring
         </h4>
         
@@ -132,9 +132,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasDashCam"
               checked={formData.hasDashCam || false}
               onChange={(e) => handleInputChange('hasDashCam', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasDashCam" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasDashCam" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Dash Cam
             </label>
           </div>
@@ -145,9 +145,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasSafetyCameras"
               checked={formData.hasSafetyCameras || false}
               onChange={(e) => handleInputChange('hasSafetyCameras', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasSafetyCameras" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasSafetyCameras" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Safety Cameras
             </label>
           </div>
@@ -158,9 +158,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasBackupCamera"
               checked={formData.hasBackupCamera || false}
               onChange={(e) => handleInputChange('hasBackupCamera', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasBackupCamera" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasBackupCamera" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Backup Camera
             </label>
           </div>
@@ -170,7 +170,7 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
       {/* Advanced Safety Systems */}
       <div className="space-y-4">
         <h4 className="text-base font-medium text-gray-800 flex items-center mb-4">
-          <FaShieldAlt className="w-5 h-5 mr-2 text-gray-600" />
+          <FaShieldAlt className="w-5 h-5 mr-2 text-gray-600 dark:text-slate-300" />
           Advanced Safety Systems
         </h4>
         
@@ -181,9 +181,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasCollisionAvoidance"
               checked={formData.hasCollisionAvoidance || false}
               onChange={(e) => handleInputChange('hasCollisionAvoidance', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasCollisionAvoidance" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasCollisionAvoidance" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Collision Avoidance
             </label>
           </div>
@@ -194,9 +194,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasLaneDeparture"
               checked={formData.hasLaneDeparture || false}
               onChange={(e) => handleInputChange('hasLaneDeparture', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasLaneDeparture" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasLaneDeparture" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Lane Departure Warning
             </label>
           </div>
@@ -207,9 +207,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasAdaptiveCruise"
               checked={formData.hasAdaptiveCruise || false}
               onChange={(e) => handleInputChange('hasAdaptiveCruise', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasAdaptiveCruise" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasAdaptiveCruise" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Adaptive Cruise Control
             </label>
           </div>
@@ -220,9 +220,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasBlindSpot"
               checked={formData.hasBlindSpot || false}
               onChange={(e) => handleInputChange('hasBlindSpot', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasBlindSpot" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasBlindSpot" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Blind Spot Detection
             </label>
           </div>
@@ -240,9 +240,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasTirePressureMonitoring"
               checked={formData.hasTirePressureMonitoring || false}
               onChange={(e) => handleInputChange('hasTirePressureMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasTirePressureMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasTirePressureMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Tire Pressure Monitoring
             </label>
           </div>
@@ -253,9 +253,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasEngineMonitoring"
               checked={formData.hasEngineMonitoring || false}
               onChange={(e) => handleInputChange('hasEngineMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasEngineMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasEngineMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Engine Monitoring
             </label>
           </div>
@@ -266,9 +266,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasFuelMonitoring"
               checked={formData.hasFuelMonitoring || false}
               onChange={(e) => handleInputChange('hasFuelMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasFuelMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasFuelMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Fuel Monitoring
             </label>
           </div>
@@ -279,9 +279,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasMaintenanceAlerts"
               checked={formData.hasMaintenanceAlerts || false}
               onChange={(e) => handleInputChange('hasMaintenanceAlerts', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasMaintenanceAlerts" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasMaintenanceAlerts" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Maintenance Alerts
             </label>
           </div>
@@ -299,9 +299,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasDriverMonitoring"
               checked={formData.hasDriverMonitoring || false}
               onChange={(e) => handleInputChange('hasDriverMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasDriverMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasDriverMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Driver Monitoring
             </label>
           </div>
@@ -312,9 +312,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasFatigueMonitoring"
               checked={formData.hasFatigueMonitoring || false}
               onChange={(e) => handleInputChange('hasFatigueMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasFatigueMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasFatigueMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Fatigue Monitoring
             </label>
           </div>
@@ -325,9 +325,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasSpeedMonitoring"
               checked={formData.hasSpeedMonitoring || false}
               onChange={(e) => handleInputChange('hasSpeedMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasSpeedMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasSpeedMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Speed Monitoring
             </label>
           </div>
@@ -338,9 +338,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasIdleMonitoring"
               checked={formData.hasIdleMonitoring || false}
               onChange={(e) => handleInputChange('hasIdleMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasIdleMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasIdleMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Idle Monitoring
             </label>
           </div>
@@ -358,9 +358,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasTemperatureMonitoring"
               checked={formData.hasTemperatureMonitoring || false}
               onChange={(e) => handleInputChange('hasTemperatureMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasTemperatureMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasTemperatureMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Temperature Monitoring
             </label>
           </div>
@@ -371,9 +371,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasHumidityMonitoring"
               checked={formData.hasHumidityMonitoring || false}
               onChange={(e) => handleInputChange('hasHumidityMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasHumidityMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasHumidityMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Humidity Monitoring
             </label>
           </div>
@@ -384,9 +384,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasShockMonitoring"
               checked={formData.hasShockMonitoring || false}
               onChange={(e) => handleInputChange('hasShockMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasShockMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasShockMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Shock Monitoring
             </label>
           </div>
@@ -397,9 +397,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasCargoMonitoring"
               checked={formData.hasCargoMonitoring || false}
               onChange={(e) => handleInputChange('hasCargoMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasCargoMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasCargoMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Cargo Monitoring
             </label>
           </div>
@@ -410,9 +410,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasWeightMonitoring"
               checked={formData.hasWeightMonitoring || false}
               onChange={(e) => handleInputChange('hasWeightMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasWeightMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasWeightMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Weight Monitoring
             </label>
           </div>
@@ -423,9 +423,9 @@ const TechnologyTrackingStep: React.FC<TechnologyTrackingStepProps> = ({
               id="hasVolumeMonitoring"
               checked={formData.hasVolumeMonitoring || false}
               onChange={(e) => handleInputChange('hasVolumeMonitoring', e.target.checked)}
-              className="w-4 h-4 text-gray-600 border-gray-300 rounded focus:ring-primary-500"
+              className="w-4 h-4 text-gray-600 dark:text-slate-300 border-gray-300 rounded focus:ring-primary-500"
             />
-            <label htmlFor="hasVolumeMonitoring" className="ml-2 text-sm font-medium text-gray-700">
+            <label htmlFor="hasVolumeMonitoring" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
               Volume Monitoring
             </label>
           </div>

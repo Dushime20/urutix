@@ -810,7 +810,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 </div>
 
                 {/* Footer Controls Card */}
-                <div className="flex-shrink-0 p-4 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/30">
+                <div className="flex-shrink-0 p-4 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-900/50">
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-2 shadow-sm mb-3">
                     <div className="grid gap-1 grid-cols-1">
                       <div className="flex items-center gap-2 p-1.5">

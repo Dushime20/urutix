@@ -175,7 +175,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4 group hover:shadow-lg transition-all"
+            className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 group hover:shadow-lg transition-all"
           >
             <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
               <Clock size={22} />
@@ -191,7 +191,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm flex items-center gap-4 group hover:shadow-lg transition-all"
+            className="bg-white dark:bg-slate-900 rounded-[1.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4 group hover:shadow-lg transition-all"
           >
             <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#345E85] shrink-0">
               <TrendingUp size={22} />
@@ -220,7 +220,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-xl bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]"
+              className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]"
             >
               <div className="bg-[#345E85] p-6 md:p-10 text-white shrink-0">
                 <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight"><TranslatedText text="Request Cash Advance" /></h3>
@@ -235,7 +235,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                       <div className="relative">
                         <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
                         <select
-                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-6 pr-12 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all appearance-none"
+                          className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-6 pr-12 font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all appearance-none"
                           value={tripId}
                           onChange={(e) => setTripId(e.target.value)}
                         >
@@ -256,7 +256,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                         <input 
                           type="number" 
                           required
-                          className="w-full h-16 md:h-20 bg-slate-50 border border-slate-100 rounded-[1.5rem] md:rounded-[2rem] pl-14 pr-6 text-2xl md:text-3xl font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          className="w-full h-16 md:h-20 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[1.5rem] md:rounded-[2rem] pl-14 pr-6 text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
                           placeholder={t('0.00')}
                           value={advanceAmount || ''}
                           onChange={(e) => setAdvanceAmount(parseFloat(e.target.value))}
@@ -268,7 +268,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1"><TranslatedText text="Justification / Notes" /></label>
                       <textarea 
-                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 md:p-6 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all min-h-[100px]"
+                        className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 md:p-6 font-medium text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all min-h-[100px]"
                         placeholder={t('Why do you need this advance?')}
                         value={advanceNotes}
                         onChange={(e) => setAdvanceNotes(e.target.value)}
@@ -276,11 +276,11 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
                     <button 
                       type="button" 
                       onClick={() => setShowAdvanceForm(false)}
-                      className="order-2 sm:order-1 flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all font-black"
+                      className="order-2 sm:order-1 flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-all font-black"
                     >
                       <TranslatedText text="Cancel" />
                     </button>
@@ -312,14 +312,14 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
 
         {advancesLoading ? (
           <div className="space-y-4">
-            {[1, 2].map(i => <div key={i} className="h-24 bg-slate-50 rounded-[2rem] animate-pulse" />)}
+            {[1, 2].map(i => <div key={i} className="h-24 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] animate-pulse" />)}
           </div>
         ) : advances && advances.length > 0 ? (
           <div className="grid gap-4">
             {advances.map((advance: any) => (
               <div 
                 key={advance.id} 
-                className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-blue-100 transition-all duration-300 group"
+                className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-blue-100 transition-all duration-300 group"
               >
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                   <div className="flex items-center gap-6">
@@ -365,7 +365,7 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                                 setSelectedAdvance(advance);
                                 setShowDetailsModal(true);
                               }}
-                              className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:bg-white hover:border-[#345E85]/30 transition-all shadow-sm"
+                              className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-[#345E85] hover:bg-white dark:bg-slate-900 hover:border-[#345E85]/30 transition-all shadow-sm"
                               title={t('View Details')}
                             >
                               <Eye size={14} />
@@ -379,11 +379,11 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-[2rem] border border-dashed border-slate-200 p-20 text-center">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 p-20 text-center">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
               <CreditCard className="text-slate-300" size={32} />
             </div>
-            <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="No Transactions" /></h4>
+            <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="No Transactions" /></h4>
             <p className="text-sm font-medium text-slate-400 mt-1"><TranslatedText text="Your wallet activity and advances will be visible here" /></p>
           </div>
         )}
@@ -404,16 +404,16 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
             >
-              <div className="bg-slate-50 p-6 md:p-10 flex items-center justify-between border-b border-slate-100 shrink-0">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-6 md:p-10 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 shrink-0">
                 <div>
                   <h3 className="text-xl md:text-2xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Request Details" /></h3>
                   <p className="text-slate-400 text-xs font-black uppercase tracking-widest mt-1"><TranslatedText text="Ref" />: {selectedAdvance.id}</p>
                 </div>
                 <button 
                   onClick={() => setShowDetailsModal(false)}
-                  className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-rose-600 transition-all hover:shadow-lg"
+                  className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-600 transition-all hover:shadow-lg"
                 >
                   <X size={20} />
                 </button>
@@ -437,10 +437,10 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-dashed border-slate-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-dashed border-slate-100 dark:border-slate-800">
                    <div className="space-y-1">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Date & Time" /></p>
-                      <p className="text-xs font-bold text-slate-700">
+                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
                         {new Date(selectedAdvance.createdAt).toLocaleDateString()} <TranslatedText text="at" /> {new Date(selectedAdvance.createdAt).toLocaleTimeString()}
                       </p>
                    </div>
@@ -452,14 +452,14 @@ export const WalletAdvances: React.FC<WalletAdvancesProps> = ({ driverId }) => {
                    )}
                 </div>
 
-                <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-3"><TranslatedText text="Amount Requested" /></p>
                    <p className="text-3xl font-black text-[#0f172a] tracking-tight">{formatCurrency(selectedAdvance.amount || selectedAdvance.advanceAmount)}</p>
                 </div>
 
                 <div className="space-y-3">
                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text="Reasoning / Justification" /></p>
-                   <div className="p-5 bg-white border border-slate-100 rounded-2xl text-xs font-medium text-slate-600 italic leading-relaxed">
+                   <div className="p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-xs font-medium text-slate-600 dark:text-slate-300 italic leading-relaxed">
                       &ldquo;{selectedAdvance.notes || t('No justification provided.')}&rdquo;
                    </div>
                 </div>

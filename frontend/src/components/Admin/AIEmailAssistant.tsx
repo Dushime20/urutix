@@ -214,13 +214,13 @@ const AIEmailAssistant: React.FC<AIEmailAssistantProps> = ({
       >
         <div className="space-y-6">
           {/* Feature Tabs */}
-          <div className="flex gap-2 border-b border-gray-200">
+          <div className="flex gap-2 border-b border-gray-200 dark:border-slate-700">
             <button
               onClick={() => setActiveFeature('generate')}
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeFeature === 'generate'
                   ? 'text-purple-600 border-b-2 border-purple-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <FaMagic className="inline mr-2" />
@@ -231,7 +231,7 @@ const AIEmailAssistant: React.FC<AIEmailAssistantProps> = ({
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeFeature === 'improve'
                   ? 'text-purple-600 border-b-2 border-purple-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <FaLightbulb className="inline mr-2" />
@@ -242,7 +242,7 @@ const AIEmailAssistant: React.FC<AIEmailAssistantProps> = ({
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeFeature === 'subjects'
                   ? 'text-purple-600 border-b-2 border-purple-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <FaEnvelope className="inline mr-2" />
@@ -253,7 +253,7 @@ const AIEmailAssistant: React.FC<AIEmailAssistantProps> = ({
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeFeature === 'analyze'
                   ? 'text-purple-600 border-b-2 border-purple-600'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <FaChartLine className="inline mr-2" />
@@ -357,7 +357,7 @@ const AIEmailAssistant: React.FC<AIEmailAssistantProps> = ({
 
               {subjectLines.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-gray-900">Generated Subject Lines:</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Generated Subject Lines:</h4>
                   {subjectLines.map((line, index) => (
                     <div
                       key={index}
@@ -433,20 +433,20 @@ const AIEmailAssistant: React.FC<AIEmailAssistantProps> = ({
           {/* Generated Results */}
           {(generatedSubject || generatedBody) && activeFeature !== 'subjects' && activeFeature !== 'analyze' && (
             <div className="border-t pt-4 space-y-4">
-              <h4 className="font-semibold text-gray-900">AI Suggestion:</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-white">AI Suggestion:</h4>
               
               {generatedSubject && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Subject:</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Subject:</label>
                   <p className="p-3 bg-purple-50 rounded-lg text-purple-900">{generatedSubject}</p>
                 </div>
               )}
 
               {generatedBody && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Body Preview:</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Body Preview:</label>
                   <div 
-                    className="p-4 bg-white border border-gray-200 rounded-lg max-h-64 overflow-y-auto"
+                    className="p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg max-h-64 overflow-y-auto"
                     dangerouslySetInnerHTML={{ __html: generatedBody }}
                   />
                 </div>

@@ -25,7 +25,7 @@ const AdminGeographicMap: React.FC = () => {
     const center: [number, number] = [-1.2921, 36.8219];
 
     return (
-        <div className="w-full h-[400px] bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shadow-inner relative group">
+        <div className="w-full h-[400px] bg-slate-100 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner relative group">
             <MapContainer
                 center={center}
                 zoom={5}
@@ -51,7 +51,7 @@ const AdminGeographicMap: React.FC = () => {
                     >
                         <Popup className="custom-popup">
                             <div className="p-1">
-                                <h4 className="text-sm font-bold text-slate-800">{point.label}</h4>
+                                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">{point.label}</h4>
                                 <p className="text-xs text-indigo-600 font-medium mt-0.5">{point.value}</p>
                                 <div className="mt-2 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                     <div
@@ -66,20 +66,20 @@ const AdminGeographicMap: React.FC = () => {
             </MapContainer>
 
             {/* Map Legend Overlay */}
-            <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-slate-200 shadow-lg z-[1000] pointer-events-none transition-opacity duration-300 group-hover:opacity-100 opacity-0 md:opacity-100">
+            <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-lg z-[1000] pointer-events-none transition-opacity duration-300 group-hover:opacity-100 opacity-0 md:opacity-100">
                 <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Activity Density</h5>
                 <div className="space-y-2">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
-                        <span className="text-[10px] font-bold text-slate-700">High Intensity</span>
+                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">High Intensity</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-indigo-400"></div>
-                        <span className="text-[10px] font-bold text-slate-700">Moderate</span>
+                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Moderate</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-indigo-200"></div>
-                        <span className="text-[10px] font-bold text-slate-700">Low Activity</span>
+                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">Low Activity</span>
                     </div>
                 </div>
             </div>

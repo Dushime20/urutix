@@ -146,8 +146,8 @@ const FuelManagement: React.FC = () => {
             sortable: true,
             render: (_v, log) => (
                 <div>
-                    <div className="text-sm text-gray-900">{new Date(log.fuelDate).toLocaleDateString()}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-sm text-gray-900 dark:text-white">{new Date(log.fuelDate).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">
                         {new Date(log.fuelDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
@@ -159,9 +159,9 @@ const FuelManagement: React.FC = () => {
             render: (_v, log) => (
                 <div className="flex items-center gap-2">
                     <div className="bg-gray-100 rounded p-1.5">
-                        <FaTruck className="w-3 h-3 text-gray-600" />
+                        <FaTruck className="w-3 h-3 text-gray-600 dark:text-slate-300" />
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{log.truck?.plateNumber || 'N/A'}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{log.truck?.plateNumber || 'N/A'}</span>
                 </div>
             ),
         },
@@ -169,7 +169,7 @@ const FuelManagement: React.FC = () => {
             key: 'driver',
             label: 'Driver',
             render: (_v, log) => (
-                <div className="text-sm text-gray-900">
+                <div className="text-sm text-gray-900 dark:text-white">
                     {log.driver ? `${log.driver.firstName} ${log.driver.lastName}` : 'N/A'}
                 </div>
             ),
@@ -178,14 +178,14 @@ const FuelManagement: React.FC = () => {
             key: 'location',
             label: 'Location',
             sortable: true,
-            render: (v) => <div className="text-sm text-gray-900 max-w-xs truncate">{String(v ?? '')}</div>,
+            render: (v) => <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate">{String(v ?? '')}</div>,
         },
         {
             key: 'gallons',
             label: 'Gallons',
             sortable: true,
             align: 'right',
-            render: (v) => <span className="text-sm font-medium text-gray-900">{Number(v).toFixed(1)}</span>,
+            render: (v) => <span className="text-sm font-medium text-gray-900 dark:text-white">{Number(v).toFixed(1)}</span>,
         },
         {
             key: 'totalCost',
@@ -194,23 +194,23 @@ const FuelManagement: React.FC = () => {
             align: 'right',
             render: (_v, log) => (
                 <div>
-                    <div className="text-sm font-semibold text-gray-900">${Number(log.totalCost).toFixed(2)}</div>
-                    <div className="text-xs text-gray-500">${Number(log.pricePerGallon).toFixed(2)} / gal</div>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">${Number(log.totalCost).toFixed(2)}</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">${Number(log.pricePerGallon).toFixed(2)} / gal</div>
                 </div>
             ),
         },
     ], []);
 
     return (
-        <div className="min-h-screen bg-gray-50 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
             <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                     <div>
-                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                             Fuel Management
                         </h1>
-                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-300 mt-1">
                             Monitor consumption, costs, and detect anomalies
                         </p>
                     </div>
@@ -227,7 +227,7 @@ const FuelManagement: React.FC = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="border-b border-gray-200">
+                <div className="border-b border-gray-200 dark:border-slate-700">
                     <nav className="-mb-px flex space-x-4 sm:space-x-8" aria-label="Tabs">
                         <button
                             onClick={() => setActiveTab('all')}
@@ -235,7 +235,7 @@ const FuelManagement: React.FC = () => {
                                 'whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors',
                                 activeTab === 'all'
                                     ? 'border-primary-500 text-primary-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
                             )}
                         >
                             All Logs
@@ -246,7 +246,7 @@ const FuelManagement: React.FC = () => {
                                 'whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors flex items-center gap-2',
                                 activeTab === 'flagged'
                                     ? 'border-primary-500 text-primary-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
                             )}
                         >
                             <FaExclamationTriangle className="w-3 h-3" />
@@ -263,7 +263,7 @@ const FuelManagement: React.FC = () => {
                 ) : (
                     <StandardDataTable<FuelLog>
                         embedded
-                        className="bg-white rounded-lg border border-gray-200 p-2"
+                        className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 p-2"
                         columns={fuelColumns}
                         data={filteredLogs}
                         getRowId={(row) => row.id}
@@ -294,7 +294,7 @@ const FuelManagement: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Truck Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Truck <span className="text-red-500">*</span>
                                 </label>
                                 <select
@@ -315,7 +315,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Driver Selection */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Driver (Optional)
                                 </label>
                                 <select
@@ -335,7 +335,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Fuel Date */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Date <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -351,7 +351,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Gallons */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Gallons <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -368,7 +368,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Price Per Gallon */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Price per Gallon <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -385,17 +385,17 @@ const FuelManagement: React.FC = () => {
 
                             {/* Total Cost (Calculated) */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Total Cost
                                 </label>
-                                <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-900 font-semibold">
+                                <div className="w-full px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800/50 text-gray-900 dark:text-white font-semibold">
                                     ${totalCost}
                                 </div>
                             </div>
 
                             {/* Location */}
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Location <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -411,7 +411,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Odometer */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Odometer Reading (Optional)
                                 </label>
                                 <input
@@ -427,7 +427,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Receipt Number */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Receipt Number (Optional)
                                 </label>
                                 <input
@@ -442,7 +442,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Payment Method */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Payment Method
                                 </label>
                                 <select
@@ -462,7 +462,7 @@ const FuelManagement: React.FC = () => {
 
                             {/* Notes */}
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                                     Notes (Optional)
                                 </label>
                                 <textarea
@@ -477,14 +477,14 @@ const FuelManagement: React.FC = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+                        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setShowAddForm(false);
                                     resetForm();
                                 }}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300"
                             >
                                 Cancel
                             </button>

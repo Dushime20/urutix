@@ -87,11 +87,11 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
             label: 'Borrower',
             render: (_: any, l: InterestLoan) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs ring-2 ring-white shadow-sm border border-slate-200 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-xs ring-2 ring-white shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0">
                         <User size={14} className="text-[#2c5173]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm truncate">
+                        <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
                             {l.borrowerName ?? (
                                 <span className="text-slate-400 italic font-medium">No name on record</span>
                             )}
@@ -108,7 +108,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
             label: 'Principal',
             render: (_: any, l: InterestLoan) => (
                 <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm">
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
                         {formatAmount(l.approvedAmount ?? l.requestedAmount)}
                     </p>
                     <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium truncate max-w-[140px]">
@@ -155,7 +155,7 @@ const InterestTrackingEnlite: React.FC<InterestTrackingEnliteProps> = ({
             label: 'Repayments',
             render: (_: any, l: InterestLoan) => (
                 <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm">
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
                         {l.repaymentCount} payment{l.repaymentCount !== 1 ? 's' : ''}
                     </p>
                     <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">

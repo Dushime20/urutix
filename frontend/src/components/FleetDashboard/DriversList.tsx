@@ -656,7 +656,7 @@ export const DriversList: React.FC<DriversListProps> = ({ onAddDriver, onEditDri
 								<h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Edit Document</h3>
 								<p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 truncate max-w-[240px]">{editingDoc.originalFileName}</p>
 							</div>
-							<button onClick={() => setEditingDoc(null)} className="size-9 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
+							<button onClick={() => setEditingDoc(null)} className="size-9 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white transition-colors">
 								<X size={16} />
 							</button>
 						</div>

@@ -117,20 +117,20 @@ const InvoiceViewer: React.FC = () => {
     {
       key: 'description',
       label: 'Description',
-      render: (_value, row) => <span className="text-gray-900">{row.description}</span>,
+      render: (_value, row) => <span className="text-gray-900 dark:text-white">{row.description}</span>,
     },
     {
       key: 'quantity',
       label: 'Quantity',
       align: 'right',
-      render: (_value, row) => <span className="text-gray-600">{row.quantity}</span>,
+      render: (_value, row) => <span className="text-gray-600 dark:text-slate-300">{row.quantity}</span>,
     },
     {
       key: 'unitPrice',
       label: 'Unit Price',
       align: 'right',
       render: (_value, row) => (
-        <span className="text-gray-600">
+        <span className="text-gray-600 dark:text-slate-300">
           {selectedInvoice ? formatCurrency(row.unitPrice, selectedInvoice.currency) : row.unitPrice}
         </span>
       ),
@@ -140,7 +140,7 @@ const InvoiceViewer: React.FC = () => {
       label: 'Total',
       align: 'right',
       render: (_value, row) => (
-        <span className="font-semibold text-gray-900">
+        <span className="font-semibold text-gray-900 dark:text-white">
           {selectedInvoice ? formatCurrency(row.totalPrice, selectedInvoice.currency) : row.totalPrice}
         </span>
       ),
@@ -158,14 +158,14 @@ const InvoiceViewer: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200/60 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700/60 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <FaFileInvoice className="w-8 h-8 text-primary-600" />
               Invoices
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">
               View and manage your payment invoices
             </p>
           </div>
@@ -173,12 +173,12 @@ const InvoiceViewer: React.FC = () => {
       </div>
 
       {/* Invoices List */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200/60 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700/60 overflow-hidden">
         {!invoices || invoices.length === 0 ? (
           <div className="p-12 text-center">
             <FaFileInvoice className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Invoices Found</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Invoices Found</h3>
+            <p className="text-sm text-gray-600 dark:text-slate-300">
               You don't have any invoices yet. Invoices will appear here when lenders make payments for your cargo.
             </p>
           </div>
@@ -187,35 +187,35 @@ const InvoiceViewer: React.FC = () => {
             {invoices.map((invoice: Invoice) => (
               <div
                 key={invoice.id}
-                className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                className="p-6 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 onClick={() => setSelectedInvoice(invoice)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                         {invoice.invoiceNumber}
                       </h3>
                       {getStatusBadge(invoice.status)}
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-slate-300">
                         <FaCalendarAlt className="w-4 h-4" />
                         <span>Issued: {formatDate(invoice.issueDate)}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-slate-300">
                         <FaDollarSign className="w-4 h-4" />
-                        <span className="font-semibold text-gray-900">
+                        <span className="font-semibold text-gray-900 dark:text-white">
                           {formatCurrency(invoice.totalAmount, invoice.currency)}
                         </span>
                       </div>
                       {invoice.paymentMethod && (
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-slate-300">
                           <span>Method: {invoice.paymentMethod}</span>
                         </div>
                       )}
                       {invoice.paidDate && (
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-slate-300">
                           <FaCheckCircle className="w-4 h-4 text-green-600" />
                           <span>Paid: {formatDate(invoice.paidDate)}</span>
                         </div>
@@ -239,7 +239,7 @@ const InvoiceViewer: React.FC = () => {
                         e.stopPropagation();
                         handleDownload(invoice);
                       }}
-                      className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 text-gray-600 dark:text-slate-300 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                       title="Download"
                     >
                       <FaDownload className="w-5 h-5" />
@@ -249,7 +249,7 @@ const InvoiceViewer: React.FC = () => {
                         e.stopPropagation();
                         handlePrint(invoice);
                       }}
-                      className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      className="p-2 text-gray-600 dark:text-slate-300 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                       title="Print"
                     >
                       <FaPrint className="w-5 h-5" />
@@ -265,15 +265,15 @@ const InvoiceViewer: React.FC = () => {
       {/* Invoice Detail Modal */}
       {selectedInvoice && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold text-gray-900">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Invoice {selectedInvoice.invoiceNumber}
                 </h3>
                 <button
                   onClick={() => setSelectedInvoice(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                 >
                   <FaTimesCircle className="w-6 h-6" />
                 </button>
@@ -285,15 +285,15 @@ const InvoiceViewer: React.FC = () => {
               <div className="grid grid-cols-3 gap-6">
                 <div>
                   <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">From (Sender)</h4>
-                  <p className="text-gray-900 font-medium">{selectedInvoice.senderName || 'Carrier'}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{selectedInvoice.senderName || 'Carrier'}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Bill To</h4>
-                  <p className="text-gray-900 font-medium">{selectedInvoice.customerName}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{selectedInvoice.customerName}</p>
                 </div>
                 <div className="text-right">
                   <div className="mb-2">{getStatusBadge(selectedInvoice.status)}</div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 dark:text-slate-300">
                     <p>Issue Date: {formatDate(selectedInvoice.issueDate)}</p>
                     <p>Due Date: {formatDate(selectedInvoice.dueDate)}</p>
                   </div>
@@ -304,7 +304,7 @@ const InvoiceViewer: React.FC = () => {
               {selectedInvoice.items && selectedInvoice.items.length > 0 && (
                 <div>
                   <h4 className="text-sm font-semibold text-gray-500 uppercase mb-4">Items</h4>
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
                     <StandardDataTable<InvoiceItem>
                       embedded
                       dense
@@ -323,20 +323,20 @@ const InvoiceViewer: React.FC = () => {
               )}
 
               {/* Invoice Summary */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
                 <div className="flex justify-end">
                   <div className="w-64 space-y-2">
-                    <div className="flex justify-between text-gray-600">
+                    <div className="flex justify-between text-gray-600 dark:text-slate-300">
                       <span>Subtotal:</span>
                       <span>{formatCurrency(selectedInvoice.subtotal, selectedInvoice.currency)}</span>
                     </div>
                     {selectedInvoice.taxAmount > 0 && (
-                      <div className="flex justify-between text-gray-600">
+                      <div className="flex justify-between text-gray-600 dark:text-slate-300">
                         <span>Tax:</span>
                         <span>{formatCurrency(selectedInvoice.taxAmount, selectedInvoice.currency)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-200">
+                    <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-slate-700">
                       <span>Total:</span>
                       <span>{formatCurrency(selectedInvoice.totalAmount, selectedInvoice.currency)}</span>
                     </div>
@@ -345,17 +345,17 @@ const InvoiceViewer: React.FC = () => {
               </div>
 
               {selectedInvoice.notes && (
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
                   <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Notes</h4>
-                  <p className="text-gray-700">{selectedInvoice.notes}</p>
+                  <p className="text-gray-700 dark:text-slate-300">{selectedInvoice.notes}</p>
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <button
                   onClick={() => handleDownload(selectedInvoice)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 flex items-center gap-2"
                 >
                   <FaDownload className="w-4 h-4" />
                   Download

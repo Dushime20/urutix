@@ -29,7 +29,7 @@ const headerColorClasses = {
   warning: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white',
   error: 'bg-gradient-to-r from-red-500 to-rose-600 text-white',
   info: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white',
-  default: 'bg-gray-50 text-gray-900 border-b border-gray-200',
+  default: 'bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white border-b border-gray-200 dark:border-slate-700',
 };
 
 export const Modal: React.FC<ModalProps> = ({
@@ -92,7 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, type: 'spring', damping: 25 }}
-            className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}
+            className={`relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}
           >
             {/* Header */}
             {(title || showCloseButton) && (
@@ -107,7 +107,7 @@ export const Modal: React.FC<ModalProps> = ({
                     onClick={onClose}
                     className={`p-2 rounded-lg transition-colors ${
                       headerColor === 'default'
-                        ? 'hover:bg-gray-200 text-gray-600'
+                        ? 'hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300'
                         : 'hover:bg-white/20 text-white'
                     }`}
                   >
@@ -118,13 +118,13 @@ export const Modal: React.FC<ModalProps> = ({
             )}
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-6 py-4 text-slate-900 dark:text-slate-100">
               {children}
             </div>
 
             {/* Footer */}
             {footer && (
-              <div className="px-6 py-4 bg-gray-50 rounded-b-2xl border-t border-gray-200">
+              <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 rounded-b-2xl border-t border-gray-200 dark:border-slate-700">
                 {footer}
               </div>
             )}

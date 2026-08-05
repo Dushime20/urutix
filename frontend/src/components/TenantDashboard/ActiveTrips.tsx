@@ -197,14 +197,14 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId, onTrackTrip }) => {
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4 pt-8 border-t border-slate-50 dark:border-slate-800">
-                                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-colors">
+                                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] border border-transparent hover:border-slate-100 dark:border-slate-800 dark:hover:border-slate-700 transition-colors">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <Box className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                                                     <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-0.5 italic"><TranslatedText text="Asset" /></span>
                                                 </div>
                                                 <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">{trip.truckNumber || 'Asset-74X'}</p>
                                             </div>
-                                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-colors">
+                                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] border border-transparent hover:border-slate-100 dark:border-slate-800 dark:hover:border-slate-700 transition-colors">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                                                     <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-0.5 italic"><TranslatedText text="Location" /></span>

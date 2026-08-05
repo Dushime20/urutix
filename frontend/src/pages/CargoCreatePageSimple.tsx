@@ -167,21 +167,21 @@ const CargoCreatePageSimple: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
             <FaTruck className="text-blue-500 mr-3" size={24} />
-            <h1 className="text-3xl font-bold text-gray-900">Create New Cargo</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Create New Cargo</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-300">
             Create your cargo with basic information
           </p>
         </div>
 
         {/* Content */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -191,11 +191,11 @@ const CargoCreatePageSimple: React.FC = () => {
 
             {/* Basic Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Basic Information</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Cargo Title *
                   </label>
                   <input
@@ -210,7 +210,7 @@ const CargoCreatePageSimple: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Cargo Type
                   </label>
                   <select
@@ -230,7 +230,7 @@ const CargoCreatePageSimple: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Weight (kg) *
                   </label>
                   <input
@@ -245,7 +245,7 @@ const CargoCreatePageSimple: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Load Value ($) *
                   </label>
                   <input
@@ -261,7 +261,7 @@ const CargoCreatePageSimple: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Description
                 </label>
                 <textarea
@@ -277,11 +277,11 @@ const CargoCreatePageSimple: React.FC = () => {
 
             {/* Dates */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Pickup & Delivery Dates</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Pickup & Delivery Dates</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Pickup Date *
                   </label>
                   <input
@@ -295,7 +295,7 @@ const CargoCreatePageSimple: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Delivery Date *
                   </label>
                   <input
@@ -312,11 +312,11 @@ const CargoCreatePageSimple: React.FC = () => {
 
             {/* Contact Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Contact Person
                   </label>
                   <input
@@ -330,7 +330,7 @@ const CargoCreatePageSimple: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Phone
                   </label>
                   <input
@@ -344,7 +344,7 @@ const CargoCreatePageSimple: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Email
                   </label>
                   <input
@@ -361,7 +361,7 @@ const CargoCreatePageSimple: React.FC = () => {
 
             {/* Special Requirements */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Special Requirements</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Special Requirements</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <label className="flex items-center">
@@ -372,7 +372,7 @@ const CargoCreatePageSimple: React.FC = () => {
                     onChange={handleChange}
                     className="mr-2"
                   />
-                  <span className="text-sm text-gray-700">Fragile</span>
+                  <span className="text-sm text-gray-700 dark:text-slate-300">Fragile</span>
                 </label>
 
                 <label className="flex items-center">
@@ -383,7 +383,7 @@ const CargoCreatePageSimple: React.FC = () => {
                     onChange={handleChange}
                     className="mr-2"
                   />
-                  <span className="text-sm text-gray-700">Hazardous</span>
+                  <span className="text-sm text-gray-700 dark:text-slate-300">Hazardous</span>
                 </label>
 
                 <label className="flex items-center">
@@ -394,12 +394,12 @@ const CargoCreatePageSimple: React.FC = () => {
                     onChange={handleChange}
                     className="mr-2"
                   />
-                  <span className="text-sm text-gray-700">Refrigerated</span>
+                  <span className="text-sm text-gray-700 dark:text-slate-300">Refrigerated</span>
                 </label>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Special Instructions
                 </label>
                 <textarea
@@ -414,11 +414,11 @@ const CargoCreatePageSimple: React.FC = () => {
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/cargos')}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Cancel
               </button>

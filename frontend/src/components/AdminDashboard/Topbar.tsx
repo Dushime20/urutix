@@ -49,7 +49,7 @@ const Topbar: React.FC = () => {
             >
               <FaBars />
             </button>
-            <div className="hidden sm:block text-sm text-gray-600">Scope</div>
+            <div className="hidden sm:block text-sm text-gray-600 dark:text-slate-300">Scope</div>
             <TenantSwitcher />
           </div>
           
@@ -62,21 +62,21 @@ const Topbar: React.FC = () => {
             <div className="hidden md:flex items-center bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded ${viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'} transition-colors`}
+                className={`p-2 rounded ${viewMode === 'list' ? 'bg-white dark:bg-slate-900 shadow-sm' : 'hover:bg-gray-200'} transition-colors`}
                 title="List view"
               >
                 <FiList className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'} transition-colors`}
+                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-slate-900 shadow-sm' : 'hover:bg-gray-200'} transition-colors`}
                 title="Grid view"
               >
                 <FiGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('card')}
-                className={`p-2 rounded ${viewMode === 'card' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'} transition-colors`}
+                className={`p-2 rounded ${viewMode === 'card' ? 'bg-white dark:bg-slate-900 shadow-sm' : 'hover:bg-gray-200'} transition-colors`}
                 title="Card view"
               >
                 <FaTh className="w-4 h-4" />
@@ -119,13 +119,13 @@ const Topbar: React.FC = () => {
 
             <div className="hidden sm:block w-px h-6 bg-gray-300"></div>
 
-            <span className="hidden md:block text-sm text-gray-600">Admin Panel</span>
+            <span className="hidden md:block text-sm text-gray-600 dark:text-slate-300">Admin Panel</span>
             
             {/* Admin User Info */}
             <div className="flex items-center space-x-3 bg-gray-100 rounded-lg px-3 py-2">
-              <FaUserCircle className="text-gray-600" />
+              <FaUserCircle className="text-gray-600 dark:text-slate-300" />
               <div className="text-sm">
-                <div className="font-medium text-gray-900">
+                <div className="font-medium text-gray-900 dark:text-white">
                   {user?.firstName || user?.lastName 
                     ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim() 
                     : user?.email || 'Admin User'}
@@ -149,16 +149,16 @@ const Topbar: React.FC = () => {
       {/* Logout Confirmation Dialog */}
       {showLogoutDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
             <div className="text-center">
               <FaSignOutAlt className="mx-auto text-4xl text-red-500 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Logout</h3>
-              <p className="text-gray-600 mb-6">Are you sure you want to logout from the admin panel?</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Confirm Logout</h3>
+              <p className="text-gray-600 dark:text-slate-300 mb-6">Are you sure you want to logout from the admin panel?</p>
               
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowLogoutDialog(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Cancel
                 </button>

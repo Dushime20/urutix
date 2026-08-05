@@ -84,7 +84,7 @@ const UnifiedAnalyticsManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 relative">
       {/* Background Logo */}
       <img
         src={logoUrutiX}
@@ -100,7 +100,7 @@ const UnifiedAnalyticsManagement = () => {
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 text-[#345E85] flex items-center justify-center shadow-sm">
                 <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#0f172a] tracking-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#0f172a] dark:text-white tracking-tight">
                 Operations <span className="text-[#345E85]">Analytics</span>
               </h1>
             </div>
@@ -116,7 +116,7 @@ const UnifiedAnalyticsManagement = () => {
         </div>
 
         {/* Premium Navigation Tabs */}
-        <div className="bg-slate-100/50 border border-slate-200/60 rounded-2xl sm:rounded-3xl p-1 sm:p-1.5 mb-8 shadow-inner max-w-full overflow-hidden">
+        <div className="bg-slate-100/50 border border-slate-200 dark:border-slate-700/60 rounded-2xl sm:rounded-3xl p-1 sm:p-1.5 mb-8 shadow-inner max-w-full overflow-hidden">
           <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -128,8 +128,8 @@ const UnifiedAnalyticsManagement = () => {
                   className={cn(
                     "px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
                     isActive
-                      ? "bg-white text-[#345E85] shadow-sm border border-slate-200"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                      ? "bg-white dark:bg-slate-900 text-[#345E85] shadow-sm border border-slate-200 dark:border-slate-700"
+                      : "text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-white/50"
                   )}
                 >
                   <Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -141,7 +141,7 @@ const UnifiedAnalyticsManagement = () => {
         </div>
 
         {/* Main Content Container */}
-        <div className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 sm:p-8 md:p-12">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 sm:p-8 md:p-12">
           {activeTab === "analytics" && (
             <Suspense fallback={<ModernLoader isLoading={true} text="Calibrating_Metrics" containerRelative={true} />}>
               <Analytics />

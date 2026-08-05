@@ -327,7 +327,7 @@ const NewInspectionPage: React.FC = () => {
                       className={`p-5 rounded-2xl border-0 text-left transition-all duration-300 outline-none ${
                         form.inspectionChannel === ch.val 
                           ? 'bg-[#2c5173] text-white scale-[1.02]' 
-                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
                       }`}
                     >
                       <p className="text-sm font-black">{ch.label}</p>
@@ -352,7 +352,7 @@ const NewInspectionPage: React.FC = () => {
                       className={`p-4 rounded-2xl border-0 text-left transition-all duration-300 outline-none ${
                         form.examType === ex.val 
                           ? 'bg-[#2c5173] text-white scale-[1.02]' 
-                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
                       }`}>
                       <p className="text-sm font-black">{ex.label}</p>
                       <p className={`text-[10px] mt-1 font-bold ${form.examType === ex.val ? 'text-white/70' : 'text-slate-400'}`}>{ex.sub}</p>
@@ -380,7 +380,7 @@ const NewInspectionPage: React.FC = () => {
                       className={`p-3 rounded-2xl border-0 text-center text-xs font-black transition-all duration-300 outline-none ${
                         form.holdType === h.val
                           ? 'bg-[#2c5173] text-white scale-[1.02]'
-                          : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'
                       }`}>
                       {h.label}
                     </button>
@@ -449,7 +449,7 @@ const NewInspectionPage: React.FC = () => {
           <button 
             type="button" 
             onClick={currentStep === 1 ? () => navigate(-1) : prevStep} 
-            className="px-8 py-3.5 rounded-2xl bg-slate-50 text-sm font-black text-slate-500 hover:bg-slate-100 transition-colors"
+            className="px-8 py-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800 text-sm font-black text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
             {currentStep === 1 ? 'CANCEL' : 'PREVIOUS STEP'}
           </button>

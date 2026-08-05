@@ -108,7 +108,7 @@ export const FinancialManagement: React.FC = () => {
                 "px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300",
                 activeTab === tab 
                   ? "bg-blue-600 dark:bg-blue-600 text-white" 
-                  : "text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300"
+                  : "text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300"
               )}
             >
               {tab}

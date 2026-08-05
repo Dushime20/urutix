@@ -187,9 +187,9 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
   };
 
   const renderFilters = () => (
-    <div className="bg-gray-50 rounded-lg p-4 mb-6">
+    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-medium text-gray-900">Filters & Sort</h3>
+        <h3 className="font-medium text-gray-900 dark:text-white">Filters & Sort</h3>
         <button
           onClick={() => setFilters({ minScore: 0, maxCost: 0, minRating: 0, truckType: '', hasGPS: false, hasRefrigeration: false, hasHazmat: false })}
           className="text-sm text-blue-600 hover:text-blue-700 font-medium"
@@ -199,7 +199,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Min Match Score</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Min Match Score</label>
           <input
             type="number"
             min="0"
@@ -211,7 +211,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Max Cost ($)</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Max Cost ($)</label>
           <input
             type="number"
             min="0"
@@ -222,7 +222,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Min Rating</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Min Rating</label>
           <select
             value={filters.minRating}
             onChange={(e) => setFilters(prev => ({ ...prev, minRating: Number(e.target.value) }))}
@@ -235,7 +235,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Sort By</label>
           <div className="flex gap-2">
             <select
               value={sortBy}
@@ -295,7 +295,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       sortable: false,
       render: (_, truck) => (
         <>
-          <div className="font-medium text-gray-900">{truck.truckOwner.name}</div>
+          <div className="font-medium text-gray-900 dark:text-white">{truck.truckOwner.name}</div>
           <div className="text-xs text-gray-500">{truck.truck.make} {truck.truck.model}</div>
         </>
       ),
@@ -457,7 +457,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
     return (
       <div className="text-center py-12">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <p className="mt-3 text-gray-600">Finding optimal matches...</p>
+        <p className="mt-3 text-gray-600 dark:text-slate-300">Finding optimal matches...</p>
       </div>
     );
   }
@@ -465,11 +465,11 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
   return (
     <div className="smart-matching-flow">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           <FaTruck className="inline mr-2 text-blue-500" />
           AI-Powered Smart Matching
         </h2>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-slate-300">
           We've found {matchedTrucks.length} optimal matches for your cargo using advanced algorithms.
         </p>
       </div>
@@ -491,8 +491,8 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
 
       {/* Market Insights Dashboard */}
       {marketInsights && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
             <FaChartLine className="mr-2 text-blue-600" />
             Market Intelligence
           </h3>
@@ -556,24 +556,24 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
         <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setViewMode('list')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow' : 'text-gray-600 dark:text-slate-300'}`}
           >
             List View
           </button>
           <button
             onClick={() => setViewMode('table')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow' : 'text-gray-600 dark:text-slate-300'}`}
           >
             Table View
           </button>
           <button
             onClick={() => setViewMode('comparison')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'comparison' ? 'bg-white text-gray-900 shadow' : 'text-gray-600'}`}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === 'comparison' ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-white shadow' : 'text-gray-600 dark:text-slate-300'}`}
           >
             Compare ({compareList.length}/3)
           </button>
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-slate-300">
           Showing {filteredTrucks.length} of {matchedTrucks.length} matches
         </div>
       </div>
@@ -593,7 +593,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
               key={truck.id}
               className={`border rounded-lg p-6 cursor-pointer transition-all ${selectedTruck?.id === truck.id
                 ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-blue-300'
+                : 'border-gray-200 dark:border-slate-700 hover:border-blue-300'
                 }`}
               onClick={() => handleSelectTruck(truck)}
             >
@@ -609,10 +609,10 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
                         disabled={!compareList.includes(truck.id) && compareList.length >= 3}
                       />
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {truck.truckOwner.name}
                         </h3>
-                        <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.truckType})</p>
+                        <p className="text-sm text-gray-600 dark:text-slate-300">{truck.truck.make} {truck.truck.model} ({truck.truck.truckType})</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -620,7 +620,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
                         <FaStar className="mr-1" />
                         {truck.score}% Match
                       </div>
-                      <p className="text-lg font-bold text-gray-900 mt-1">
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">
                         ${truck.estimatedCost.toLocaleString()}
                       </p>
                     </div>
@@ -645,7 +645,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-slate-300">
                     <div className="flex items-center">
                       <FaCheck className="text-green-500 mr-1" />
                       <span>Available Now</span>
@@ -684,21 +684,21 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
 
               {/* Detailed View */}
               {showDetails === truck.id && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-slate-700">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Driver Details</h4>
-                      <p className="text-sm text-gray-600">{truck.driver.firstName} {truck.driver.lastName}</p>
-                      <p className="text-sm text-gray-600">{truck.driver.experience} years experience</p>
-                      <p className="text-sm text-gray-600">Rating: {truck.driver.rating} ★</p>
-                      <p className="text-sm text-gray-600">Endorsements: {truck.driver.endorsements.join(', ')}</p>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Driver Details</h4>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">{truck.driver.firstName} {truck.driver.lastName}</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">{truck.driver.experience} years experience</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">Rating: {truck.driver.rating} ★</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">Endorsements: {truck.driver.endorsements.join(', ')}</p>
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Truck Details</h4>
-                      <p className="text-sm text-gray-600">{truck.truck.make} {truck.truck.model} ({truck.truck.year})</p>
-                      <p className="text-sm text-gray-600">Capacity: {truck.truck.capacityWeight} kg</p>
-                      <p className="text-sm text-gray-600">Type: {truck.truck.truckType}</p>
-                      <p className="text-sm text-gray-600">Insurance: ${truck.truck.insuranceCoverage.toLocaleString()}</p>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Truck Details</h4>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">{truck.truck.make} {truck.truck.model} ({truck.truck.year})</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">Capacity: {truck.truck.capacityWeight} kg</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">Type: {truck.truck.truckType}</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300">Insurance: ${truck.truck.insuranceCoverage.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
@@ -722,7 +722,7 @@ const SmartMatchingFlow: React.FC<SmartMatchingFlowProps> = ({ cargoDetails, onC
       <div className="mt-8 flex justify-end space-x-4">
         <button
           onClick={() => window.history.back()}
-          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
         >
           Back
         </button>

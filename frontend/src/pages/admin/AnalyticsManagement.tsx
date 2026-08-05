@@ -211,10 +211,10 @@ const AnalyticsManagement: React.FC = () => {
             className={`py-2.5 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-3 ${
               isRealTime 
                 ? 'bg-emerald-500 text-white' 
-                : 'bg-white border border-slate-100 text-slate-500 hover:border-slate-200'
+                : 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-200 dark:border-slate-700'
             }`}
           >
-            <div className={`w-2 h-2 rounded-full ${isRealTime ? 'bg-white animate-pulse' : 'bg-slate-300'}`} />
+            <div className={`w-2 h-2 rounded-full ${isRealTime ? 'bg-white dark:bg-slate-900 animate-pulse' : 'bg-slate-300'}`} />
             {isRealTime ? <TranslatedText text="LIVE SYNC ACTIVE" /> : <TranslatedText text="ACTIVATE LIVE SYNC" />}
           </button>
 
@@ -306,7 +306,7 @@ const AnalyticsManagement: React.FC = () => {
                           tension: 0.4,
                           borderWidth: 4,
                           pointRadius: 4,
-                          pointBackgroundColor: '#fff',
+                          pointbackgroundColor: undefined,
                           pointBorderWidth: 2,
                         },
                       ]
@@ -572,7 +572,7 @@ const AnalyticsManagement: React.FC = () => {
                             options={{ responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }}
                           />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-sm font-black text-slate-900">{systemData?.system?.memoryPercent || 0}%</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white">{systemData?.system?.memoryPercent || 0}%</span>
                           </div>
                         </div>
                         <div className="flex gap-6 text-center">

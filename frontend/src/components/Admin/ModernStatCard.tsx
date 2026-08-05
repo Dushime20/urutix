@@ -81,7 +81,7 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
-      className={`group relative bg-white rounded-2xl p-6 border ${colors.border} ${colors.hoverBorder} transition-all duration-300`}
+      className={`group relative bg-white dark:bg-slate-900 rounded-2xl p-6 border ${colors.border} ${colors.hoverBorder} transition-all duration-300`}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-2">
@@ -89,7 +89,7 @@ const ModernStatCard: React.FC<ModernStatCardProps> = ({
             <TranslatedText text={title} />
           </p>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-3xl font-black text-gray-900">{value}</h3>
+            <h3 className="text-3xl font-black text-gray-900 dark:text-white">{value}</h3>
           </div>
           <div className="flex items-center gap-1.5 mt-2">
             <div className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-tighter ${trend >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

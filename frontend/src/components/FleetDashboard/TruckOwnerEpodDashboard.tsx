@@ -94,7 +94,7 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       key: 'tripNumber',
       label: 'Trip',
       sortable: true,
-      render: (_, epod) => <p className="text-sm font-semibold text-slate-900">{epod.tripNumber}</p>,
+      render: (_, epod) => <p className="text-sm font-semibold text-slate-900 dark:text-white">{epod.tripNumber}</p>,
     },
     {
       key: 'truckNumber',
@@ -103,7 +103,7 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       render: (_, epod) => (
         <div className="flex items-center gap-2">
           <Truck size={14} className="text-slate-400" />
-          <p className="text-sm text-slate-600">{epod.truckNumber}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{epod.truckNumber}</p>
         </div>
       ),
     },
@@ -114,7 +114,7 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       render: (_, epod) => (
         <div className="flex items-center gap-2">
           <User size={14} className="text-slate-400" />
-          <p className="text-sm text-slate-600">{epod.driverName}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{epod.driverName}</p>
         </div>
       ),
     },
@@ -122,13 +122,13 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       key: 'loadTitle',
       label: 'Load',
       sortable: true,
-      render: (_, epod) => <p className="text-sm text-slate-600 max-w-xs truncate">{epod.loadTitle}</p>,
+      render: (_, epod) => <p className="text-sm text-slate-600 dark:text-slate-300 max-w-xs truncate">{epod.loadTitle}</p>,
     },
     {
       key: 'recipientName',
       label: 'Recipient',
       sortable: true,
-      render: (_, epod) => <p className="text-sm text-slate-600">{epod.recipientName}</p>,
+      render: (_, epod) => <p className="text-sm text-slate-600 dark:text-slate-300">{epod.recipientName}</p>,
     },
     {
       key: 'submittedAt',
@@ -137,7 +137,7 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       render: (_, epod) => (
         <div className="flex items-center gap-2">
           <Calendar size={14} className="text-slate-400" />
-          <p className="text-sm text-slate-600">{new Date(epod.submittedAt).toLocaleDateString()}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{new Date(epod.submittedAt).toLocaleDateString()}</p>
         </div>
       ),
     },
@@ -173,7 +173,7 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       <div className="space-y-6">
         <button
           onClick={() => setSelectedEpodId(null)}
-          className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+          className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
         >
           ← Back to ePOD List
         </button>
@@ -187,7 +187,7 @@ const TruckOwnerEpodDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">ePOD Reports</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">ePOD Reports</h1>
           <p className="text-sm text-slate-500 mt-1">View delivery confirmations and proof of delivery</p>
         </div>
         <button
@@ -201,60 +201,60 @@ const TruckOwnerEpodDashboard: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
               <FileCheck size={20} className="text-blue-600" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">{summary.totalEpods}</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white">{summary.totalEpods}</p>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total ePODs</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
               <Clock size={20} className="text-amber-600" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">{summary.pendingConfirmations}</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white">{summary.pendingConfirmations}</p>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
               <CheckCircle2 size={20} className="text-emerald-600" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">{summary.confirmedDeliveries}</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white">{summary.confirmedDeliveries}</p>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Confirmed</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
               <DollarSign size={20} className="text-green-600" />
             </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">${summary.totalRevenue.toLocaleString()}</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white">${summary.totalRevenue.toLocaleString()}</p>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Revenue</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Filter size={16} className="text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Filters</h3>
+          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Filters</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-2">Status</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Status</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Status</option>
               <option value="PENDING">Pending</option>
@@ -263,27 +263,27 @@ const TruckOwnerEpodDashboard: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-2">Start Date</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Start Date</label>
             <input
               type="date"
               value={filters.startDate}
               onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-2">End Date</label>
+            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">End Date</label>
             <input
               type="date"
               value={filters.endDate}
               onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="md:col-span-2 flex items-end">
             <button
               onClick={() => setFilters({ truckId: '', driverId: '', startDate: '', endDate: '', status: 'all' })}
-              className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
               Clear Filters
             </button>
@@ -296,7 +296,7 @@ const TruckOwnerEpodDashboard: React.FC = () => {
         embedded
         searchable={false}
         columnVisibility={false}
-        className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden px-4 py-4"
+        className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden px-4 py-4"
         columns={epodColumns}
         data={epods}
         loading={isLoading}

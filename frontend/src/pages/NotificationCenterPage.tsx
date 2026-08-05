@@ -80,16 +80,16 @@ const NotificationCenterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <Bell size={32} className="text-blue-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Notification Center</h1>
-                <p className="text-sm text-gray-500">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notification Center</h1>
+                <p className="text-sm text-gray-500 dark:text-slate-400">
                   {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
                 </p>
               </div>
@@ -119,7 +119,7 @@ const NotificationCenterPage: React.FC = () => {
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                       filter === f
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-gray-100 text-gray-600 dark:text-slate-300 hover:bg-gray-200'
                     }`}
                   >
                     {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -157,7 +157,7 @@ const NotificationCenterPage: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
                 >
                   <X size={18} />
                 </button>
@@ -171,9 +171,9 @@ const NotificationCenterPage: React.FC = () => {
           {loading ? (
             <ModernLoader isLoading={true} type="list" items={10} />
           ) : filteredNotifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700">
               <Bell size={64} className="text-gray-300 mb-4" />
-              <p className="text-lg font-medium text-gray-500">No notifications found</p>
+              <p className="text-lg font-medium text-gray-500 dark:text-slate-400">No notifications found</p>
               <p className="text-sm text-gray-400 mt-1">
                 {searchQuery ? 'Try adjusting your search or filters' : 'You\'re all caught up!'}
               </p>
@@ -183,8 +183,8 @@ const NotificationCenterPage: React.FC = () => {
               <div
                 key={notification.id}
                 onClick={() => handleNotificationClick(notification)}
-                className={`bg-white rounded-lg shadow-sm border-l-4 ${getPriorityColor(notification.priority)} ${
-                  !notification.isRead ? 'border-r-4 border-r-blue-500' : 'border border-gray-200'
+                className={`bg-white dark:bg-slate-900 rounded-lg shadow-sm border-l-4 ${getPriorityColor(notification.priority)} ${
+                  !notification.isRead ? 'border-r-4 border-r-blue-500' : 'border border-gray-200 dark:border-slate-700'
                 } p-6 hover:shadow-md transition-all cursor-pointer`}
               >
                 <div className="flex items-start gap-4">
@@ -198,7 +198,7 @@ const NotificationCenterPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className={`text-lg font-semibold ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'}`}>
+                          <h3 className={`text-lg font-semibold ${!notification.isRead ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-slate-300'}`}>
                             {notification.title}
                           </h3>
                           {!notification.isRead && (
@@ -207,20 +207,20 @@ const NotificationCenterPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-600 dark:text-slate-300 mb-3">
                           {notification.message}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-slate-400">
                           <span className={`px-2 py-1 rounded-full font-medium ${
                             notification.priority === 'CRITICAL' || notification.priority === 'URGENT'
                               ? 'bg-red-100 text-red-700'
                               : notification.priority === 'HIGH'
                               ? 'bg-orange-100 text-orange-700'
-                              : 'bg-gray-100 text-gray-700'
+                              : 'bg-gray-100 text-gray-700 dark:text-slate-300'
                           }`}>
                             {notification.priority}
                           </span>
-                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-full">
                             {notification.category}
                           </span>
                           <span>

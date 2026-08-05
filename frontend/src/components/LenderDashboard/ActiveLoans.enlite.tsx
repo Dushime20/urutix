@@ -134,7 +134,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
         if (repaymentCount >= 5) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
         if (repaymentCount >= 3) return 'text-[#345E85] bg-blue-50 border-blue-100';
         if (repaymentCount >= 1) return 'text-amber-600 bg-amber-50 border-amber-100';
-        return 'text-slate-600 bg-slate-50 border-slate-100';
+        return 'text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800';
     };
 
     const getPerformanceLabel = (repaymentCount: number) => {
@@ -145,16 +145,16 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
     };
 
     const viewModeToggle = (
-        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
+        <div className="flex bg-slate-50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
             <button
                 onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-[#345E85]' : 'text-slate-400'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 shadow-sm text-[#345E85]' : 'text-slate-400'}`}
             >
                 <List size={14} />
             </button>
             <button
                 onClick={() => setViewMode('grouped')}
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grouped' ? 'bg-white shadow-sm text-[#345E85]' : 'text-slate-400'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grouped' ? 'bg-white dark:bg-slate-900 shadow-sm text-[#345E85]' : 'text-slate-400'}`}
             >
                 <LayoutGrid size={14} />
             </button>
@@ -177,7 +177,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                             {(loan.borrower.name || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-black text-slate-900 uppercase tracking-tight text-[11px]">
+                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-[11px]">
                                 {loan.borrower.name || 'Unknown'}
                             </span>
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
@@ -195,11 +195,11 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
             render: (_: any, loan: ActiveLoan) => (
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900 text-[11px]">
+                        <span className="font-black text-slate-900 dark:text-white text-[11px]">
                             {cpt(loan.principal_amount, loan.currency || 'RWF')}
                         </span>
                         {loan.interest_rate && (
-                            <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-black">
+                            <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-600 dark:text-slate-300 rounded font-black">
                                 {loan.interest_rate}%
                             </span>
                         )}
@@ -218,7 +218,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                 return (
                     <div className="space-y-2 min-w-[120px]">
                         <div className="flex justify-between items-center mb-1">
-                            <span className="font-black text-slate-900 text-[11px]">
+                            <span className="font-black text-slate-900 dark:text-white text-[11px]">
                                 {cpt(loan.outstanding_balance, loan.currency || 'RWF')}
                             </span>
                             <span className="text-[10px] font-black text-[#345E85]">{progress.toFixed(0)}%</span>
@@ -239,7 +239,7 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
             label: 'NEXT SETTLEMENT',
             render: (_: any, loan: ActiveLoan) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-[11px]">
+                    <span className="font-black text-slate-900 dark:text-white text-[11px]">
                         {loan.due_date ? new Date(loan.due_date).toLocaleDateString() : 'N/A'}
                     </span>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
@@ -359,12 +359,12 @@ const ActiveLoansEnlite: React.FC<ActiveLoansEnliteProps> = ({
                                     <ShieldAlert size={16} />
                                 </div>
                                 <div>
-                                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-tighter">{status} <TranslatedText text="OPERATIONS" /></h3>
+                                    <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tighter">{status} <TranslatedText text="OPERATIONS" /></h3>
                                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{statusLoans.length} <TranslatedText text="Active Assets Assigned" /></p>
                                 </div>
-                                <div className="flex-1 border-t border-slate-100 border-dashed mx-4"></div>
+                                <div className="flex-1 border-t border-slate-100 dark:border-slate-800 border-dashed mx-4"></div>
                                 <div className="text-right">
-                                    <p className="text-xs font-black text-slate-900 uppercase">{cpt(statusLoans.reduce((sum, l) => sum + l.outstanding_balance, 0))}</p>
+                                    <p className="text-xs font-black text-slate-900 dark:text-white uppercase">{cpt(statusLoans.reduce((sum, l) => sum + l.outstanding_balance, 0))}</p>
                                     <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest"><TranslatedText text="Total Exposure" /></p>
                                 </div>
                             </div>

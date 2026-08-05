@@ -171,9 +171,9 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
     children: React.ReactNode;
     className?: string;
   }> = ({ title, icon, action, children, className }) => (
-    <div className={cn('bg-white rounded-2xl border border-slate-100 shadow-sm', className)}>
-      <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-100">
-        <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
+    <div className={cn('bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm', className)}>
+      <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+        <h3 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
           {icon}
           <TranslatedText text={title} />
         </h3>
@@ -247,7 +247,7 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight"><TranslatedText text="Safety Records" /></h2>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="Safety Records" /></h2>
           <p className="text-sm text-slate-500 mt-1">
             <TranslatedText text="Track your safety score, incidents, rest breaks, and trip compliance." />
           </p>
@@ -272,7 +272,7 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
             incidents.length > 5 ? (
               <button
                 onClick={() => setShowAllIncidents(!showAllIncidents)}
-                className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 transition-colors"
+                className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors"
               >
                 {showAllIncidents ? <TranslatedText text="Show Less" /> : <TranslatedText text="View All" />}
               </button>
@@ -302,7 +302,7 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
                   key={incident.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-5 rounded-2xl border border-slate-100 hover:border-rose-200 hover:bg-rose-50/20 transition-all"
+                  className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-rose-200 hover:bg-rose-50/20 transition-all"
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex-1 min-w-0">
@@ -317,7 +317,7 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
                           <TranslatedText text={incident.status} />
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-slate-900 mb-2">{incident.description}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white mb-2">{incident.description}</p>
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <MapPin className="w-3 h-3 shrink-0" />
                         <span className="truncate">{incident.location}</span>
@@ -351,41 +351,41 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1"><TranslatedText text="Date" /></p>
-                      <p className="text-xs font-bold text-slate-900">{formatDate(incident.date)}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{formatDate(incident.date)}</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1"><TranslatedText text="Truck" /></p>
-                      <p className="text-xs font-bold text-slate-900">{incident.truckPlate || t('N/A')}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{incident.truckPlate || t('N/A')}</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1"><TranslatedText text="Police Report" /></p>
-                      <p className="text-xs font-bold text-slate-900">{incident.policeReport ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{incident.policeReport ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1"><TranslatedText text="Insurance Claim" /></p>
-                      <p className="text-xs font-bold text-slate-900">{incident.insuranceClaim ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{incident.insuranceClaim ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
                     </div>
                   </div>
 
                   {(incident.injuries || incident.weatherConditions || incident.roadConditions) && (
-                    <div className="pt-4 mt-4 border-t border-slate-100">
+                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {incident.injuries && (
                           <div>
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1"><TranslatedText text="Injuries" /></p>
-                            <p className="text-xs text-slate-700">{incident.injuries}</p>
+                            <p className="text-xs text-slate-700 dark:text-slate-300">{incident.injuries}</p>
                           </div>
                         )}
                         {incident.weatherConditions && (
                           <div>
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1"><TranslatedText text="Weather" /></p>
-                            <p className="text-xs text-slate-700">{incident.weatherConditions}</p>
+                            <p className="text-xs text-slate-700 dark:text-slate-300">{incident.weatherConditions}</p>
                           </div>
                         )}
                         {incident.roadConditions && (
                           <div>
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1"><TranslatedText text="Road Conditions" /></p>
-                            <p className="text-xs text-slate-700">{incident.roadConditions}</p>
+                            <p className="text-xs text-slate-700 dark:text-slate-300">{incident.roadConditions}</p>
                           </div>
                         )}
                       </div>
@@ -393,11 +393,11 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
                   )}
 
                   {incident.correctiveActions && incident.correctiveActions.length > 0 && (
-                    <div className="pt-4 mt-4 border-t border-slate-100">
+                    <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2"><TranslatedText text="Corrective Actions" /></p>
                       <ul className="space-y-1">
                         {incident.correctiveActions.map((action: string, idx: number) => (
-                          <li key={idx} className="text-xs text-slate-700 flex items-start gap-2">
+                          <li key={idx} className="text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2">
                             <span className="text-emerald-600 mt-0.5">✓</span>
                             <span>{action}</span>
                           </li>
@@ -439,7 +439,7 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
           {activeBreak && (
             <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200">
               <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1"><TranslatedText text="Active Break" /></p>
-              <p className="text-sm font-bold text-slate-900">{activeBreak.breakType}</p>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">{activeBreak.breakType}</p>
               <p className="text-xs text-slate-500 mt-1">
                 <TranslatedText text="Started" /> {formatDate(activeBreak.startTime)} <TranslatedText text="at" />{' '}
                 {new Date(activeBreak.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -458,13 +458,13 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
               {allBreaks.slice(0, 12).map((breakItem: any) => (
                 <div
                   key={breakItem.id}
-                  className="p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all relative group"
+                  className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 hover:bg-blue-50/30 transition-all relative group"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-black uppercase">
                       {breakItem.breakType}
                     </span>
-                    <span className="text-sm font-black text-slate-900">
+                    <span className="text-sm font-black text-slate-900 dark:text-white">
                       {breakItem.duration ? formatDuration(breakItem.duration) : <TranslatedText text="Active" />}
                     </span>
                   </div>
@@ -498,7 +498,7 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
           trips.length > 5 ? (
             <button
               onClick={() => setShowAllTrips(!showAllTrips)}
-              className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 transition-colors"
+              className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 transition-colors"
             >
               {showAllTrips ? <TranslatedText text="Show Less" /> : <TranslatedText text="View All" />}
             </button>
@@ -530,13 +530,13 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
                   key={trip.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-6 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all"
+                  className="p-6 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 hover:bg-blue-50/30 transition-all"
                 >
                   {/* Trip Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h4 className="text-sm font-black text-slate-900">
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white">
                           {trip.tripNumber || `Trip #${trip.id.slice(0, 8)}`}
                         </h4>
                         <span className={cn("px-3 py-1 rounded-full border text-[9px] font-black uppercase", getTripStatusColor(trip.status))}>
@@ -556,41 +556,41 @@ export const SafetyRecords: React.FC<SafetyRecordsProps> = ({
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Start Date</p>
-                      <p className="text-xs font-bold text-slate-900">{formatDate(trip.startTime)}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{formatDate(trip.startTime)}</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">End Date</p>
-                      <p className="text-xs font-bold text-slate-900">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">
                         {trip.endTime ? formatDate(trip.endTime) : trip.estimatedArrival ? formatDate(trip.estimatedArrival) : 'In Progress'}
                       </p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Distance</p>
-                      <p className="text-xs font-bold text-slate-900">{trip.distance ? `${trip.distance} km` : 'N/A'}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{trip.distance ? `${trip.distance} km` : 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Breaks Taken</p>
-                      <p className="text-xs font-bold text-slate-900">{tripBreaks.length}</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{tripBreaks.length}</p>
                     </div>
                   </div>
 
                   {/* Breaks in this trip */}
                   {tripBreaks.length > 0 && (
-                    <div className="pt-4 border-t border-slate-100">
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                         <Coffee className="w-3 h-3" />
                         Breaks During Trip
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {tripBreaks.map((breakItem: any) => (
-                          <div key={breakItem.id} className="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+                          <div key={breakItem.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-between">
                             <div>
-                              <p className="text-xs font-bold text-slate-900">{breakItem.breakType}</p>
+                              <p className="text-xs font-bold text-slate-900 dark:text-white">{breakItem.breakType}</p>
                               <p className="text-[9px] text-slate-500">
                                 {formatDate(breakItem.startTime)} {new Date(breakItem.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
                             </div>
-                            <span className="text-xs font-black text-slate-600">
+                            <span className="text-xs font-black text-slate-600 dark:text-slate-300">
                               {breakItem.duration ? formatDuration(breakItem.duration) : <TranslatedText text="Active" />}
                             </span>
                           </div>

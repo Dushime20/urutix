@@ -72,7 +72,7 @@ export const MaintenanceTicketModal: React.FC<MaintenanceTicketModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white border-none rounded-[2.5rem] shadow-2xl">
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white dark:bg-slate-900 border-none rounded-[2.5rem] shadow-2xl">
         <div className="bg-[#0F172A] p-8 text-white relative h-32 flex items-center overflow-hidden">
            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
            <div className="relative z-10 flex items-center gap-4">
@@ -91,15 +91,15 @@ export const MaintenanceTicketModal: React.FC<MaintenanceTicketModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1"><TranslatedText text="Assigned Truck" /></Label>
-                    <div className="h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 flex items-center gap-3">
+                    <div className="h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 flex items-center gap-3">
                        <Truck size={14} className="text-[#345E85]" />
-                       <span className="text-xs font-black text-slate-700">{truckPlate}</span>
+                       <span className="text-xs font-black text-slate-700 dark:text-slate-300">{truckPlate}</span>
                     </div>
                  </div>
                  <div className="space-y-2">
                     <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1"><TranslatedText text="Issue Priority" /></Label>
                     <select 
-                      className="w-full h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                      className="w-full h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
                       value={formData.type}
                       onChange={(e) => setFormData({...formData, type: e.target.value})}
                     >
@@ -115,7 +115,7 @@ export const MaintenanceTicketModal: React.FC<MaintenanceTicketModalProps> = ({
                  <Input 
                    id="taskName"
                    placeholder={t('e.g., Brake pad grinding noise, Left headlight out')}
-                   className="h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 text-xs font-bold placeholder:text-slate-300 focus:ring-[#345E85]"
+                   className="h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 text-xs font-bold placeholder:text-slate-300 focus:ring-[#345E85]"
                    value={formData.taskName}
                    onChange={(e) => setFormData({...formData, taskName: e.target.value})}
                  />
@@ -126,7 +126,7 @@ export const MaintenanceTicketModal: React.FC<MaintenanceTicketModalProps> = ({
                  <Textarea 
                    id="description"
                    placeholder={t('Describe what you hear, feel, or see in detail...')}
-                   className="min-h-[100px] bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs font-bold placeholder:text-slate-300 focus:ring-[#345E85] resize-none"
+                   className="min-h-[100px] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 text-xs font-bold placeholder:text-slate-300 focus:ring-[#345E85] resize-none"
                    value={formData.description}
                    onChange={(e) => setFormData({...formData, description: e.target.value})}
                  />
@@ -138,7 +138,7 @@ export const MaintenanceTicketModal: React.FC<MaintenanceTicketModalProps> = ({
                    id="odo"
                    type="number"
                    placeholder="124502"
-                   className="h-12 bg-slate-50 border border-slate-100 rounded-2xl px-4 text-xs font-bold placeholder:text-slate-300 focus:ring-[#345E85]"
+                   className="h-12 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-4 text-xs font-bold placeholder:text-slate-300 focus:ring-[#345E85]"
                    value={formData.odometerReading}
                    onChange={(e) => setFormData({...formData, odometerReading: e.target.value})}
                  />
@@ -150,7 +150,7 @@ export const MaintenanceTicketModal: React.FC<MaintenanceTicketModalProps> = ({
                 type="button" 
                 variant="outline" 
                 onClick={onClose}
-                className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest border-slate-200 text-slate-400 hover:bg-slate-50"
+                className="flex-1 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                  <TranslatedText text="Cancel" />
               </Button>

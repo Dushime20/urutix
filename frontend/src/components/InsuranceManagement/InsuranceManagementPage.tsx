@@ -182,14 +182,14 @@ const InsuranceManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-slate-900 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Insurance Management</h1>
-              <p className="text-gray-600">Comprehensive insurance management system</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Insurance Management</h1>
+              <p className="text-gray-600 dark:text-slate-300">Comprehensive insurance management system</p>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -217,8 +217,8 @@ const InsuranceManagementPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Navigation</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Navigation</h2>
               <nav className="space-y-2">
                 {navigationItems.map((item) => {
                   const Icon = item.icon;
@@ -231,7 +231,7 @@ const InsuranceManagementPage: React.FC = () => {
                       className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
                         isActive
                           ? 'bg-gradient-to-r ' + item.color + ' text-white shadow-md transform scale-105'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -250,8 +250,8 @@ const InsuranceManagementPage: React.FC = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="bg-white rounded-lg shadow-sm border p-6 mt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border p-6 mt-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Stats</h2>
               <div className="space-y-4">
                 {quickStats.map((stat, index) => {
                   const Icon = stat.icon;
@@ -259,10 +259,10 @@ const InsuranceManagementPage: React.FC = () => {
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <Icon className={`h-5 w-5 ${stat.color}`} />
-                        <span className="text-sm text-gray-600">{stat.label}</span>
+                        <span className="text-sm text-gray-600 dark:text-slate-300">{stat.label}</span>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-gray-900">{stat.value}</div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{stat.value}</div>
                         <div className={`text-xs ${
                           stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
                         }`}>
@@ -276,8 +276,8 @@ const InsuranceManagementPage: React.FC = () => {
             </div>
 
             {/* Recent Alerts */}
-            <div className="bg-white rounded-lg shadow-sm border p-6 mt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Alerts</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border p-6 mt-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Alerts</h2>
               <div className="space-y-3">
                 {recentAlerts.map((alert) => (
                   <div
@@ -302,7 +302,7 @@ const InsuranceManagementPage: React.FC = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm border">
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border">
               {renderActiveComponent()}
             </div>
           </div>

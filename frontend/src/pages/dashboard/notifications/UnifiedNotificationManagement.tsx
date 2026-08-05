@@ -86,7 +86,7 @@ const UnifiedNotificationManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 relative">
       {/* Background Logo */}
       <img
         src={logoUrutiX}
@@ -102,7 +102,7 @@ const UnifiedNotificationManagement = () => {
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm">
                 <Bell className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] dark:text-white tracking-tight">
                 Communication <span className="text-indigo-600">Hub</span>
               </h1>
             </div>
@@ -111,10 +111,10 @@ const UnifiedNotificationManagement = () => {
             </p>
           </div>
 
-          <div className="flex items-center justify-between md:justify-end gap-3 bg-slate-50 p-1.5 sm:p-2 rounded-2xl border border-slate-100 shadow-inner w-full md:w-auto">
-            <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white rounded-xl shadow-sm border border-slate-100 flex-1 md:flex-none">
+          <div className="flex items-center justify-between md:justify-end gap-3 bg-slate-50 dark:bg-slate-800/50 p-1.5 sm:p-2 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-inner w-full md:w-auto">
+            <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 flex-1 md:flex-none">
               <div className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">Unread Alerts</div>
-              <div className="text-base sm:text-lg font-black text-[#0f172a]">12 New</div>
+              <div className="text-base sm:text-lg font-black text-[#0f172a] dark:text-white">12 New</div>
             </div>
             <button className="p-3 sm:p-4 bg-[#345E85] text-white rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-blue-900/10 flex-shrink-0">
               <MessageSquare className="w-5 h-5" />
@@ -123,7 +123,7 @@ const UnifiedNotificationManagement = () => {
         </div>
 
         {/* Premium Navigation Tabs */}
-        <div className="bg-slate-50 border border-slate-100 rounded-2xl sm:rounded-[2rem] p-1.5 sm:p-2 mb-8 sm:mb-10 shadow-inner max-w-full overflow-hidden">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] p-1.5 sm:p-2 mb-8 sm:mb-10 shadow-inner max-w-full overflow-hidden">
           <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -135,8 +135,8 @@ const UnifiedNotificationManagement = () => {
                   className={cn(
                     "px-4 sm:px-6 py-2.5 sm:py-3 rounded-[1.25rem] sm:rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-2.5 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
                     isActive
-                      ? "bg-white text-[#345E85] shadow-md border border-slate-200"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                      ? "bg-white dark:bg-slate-900 text-[#345E85] shadow-md border border-slate-200 dark:border-slate-700"
+                      : "text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-white/50"
                   )}
                 >
                   <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -148,7 +148,7 @@ const UnifiedNotificationManagement = () => {
         </div>
 
         {/* Main Content Container */}
-        <div className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-4 sm:p-8 md:p-12">
             <NotificationsPage />
           </div>

@@ -84,7 +84,7 @@ const UnifiedDocumentManagement = () => {
   const isCargoOwner = user?.role === 'CARGO_OWNER';
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 relative">
       {/* Background Logo */}
       <img
         src={logoUrutiX}
@@ -100,7 +100,7 @@ const UnifiedDocumentManagement = () => {
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm">
                 <FolderOpen className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] dark:text-white tracking-tight">
                 Document <span className="text-amber-600">Vault</span>
               </h1>
             </div>
@@ -117,7 +117,7 @@ const UnifiedDocumentManagement = () => {
 
         {/* Premium Navigation Tabs - Only show if not Cargo Owner or if needed */}
         {!isCargoOwner && (
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl sm:rounded-[2rem] p-1.5 sm:p-2 mb-8 sm:mb-10 shadow-inner max-w-full overflow-hidden">
+          <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl sm:rounded-[2rem] p-1.5 sm:p-2 mb-8 sm:mb-10 shadow-inner max-w-full overflow-hidden">
             <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -129,8 +129,8 @@ const UnifiedDocumentManagement = () => {
                     className={cn(
                       "px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-2.5 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
                       isActive
-                        ? "bg-white text-[#345E85] shadow-md border border-slate-200"
-                        : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                        ? "bg-white dark:bg-slate-900 text-[#345E85] shadow-md border border-slate-200 dark:border-slate-700"
+                        : "text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-white/50"
                     )}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
@@ -143,7 +143,7 @@ const UnifiedDocumentManagement = () => {
         )}
 
         {/* Main Content Container */}
-        <div className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-4 sm:p-8 md:p-12">
             <DocumentsPage
               key={activeTab}

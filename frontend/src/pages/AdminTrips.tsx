@@ -741,7 +741,7 @@ const AdminTrips: React.FC = () => {
                   setShowCancelModal(false);
                   setTripToCancel(null);
                 }}
-                className="flex-1 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border border-gray-200 dark:border-slate-800 rounded-2xl hover:bg-white dark:hover:bg-slate-800 transition-all"
+                className="flex-1 py-4 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border border-gray-200 dark:border-slate-800 rounded-2xl hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 transition-all"
               >
                 Keep Trip
               </button>

@@ -120,7 +120,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-white/20"
+            className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/20"
           >
             {/* Header */}
             <div className="bg-[#0f172a] px-10 py-8 relative overflow-hidden">
@@ -152,7 +152,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="bg-slate-50 rounded-[2rem] border border-slate-200 p-6 group hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500"
+                    className="bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-200 dark:border-slate-700 p-6 group hover:bg-white dark:bg-slate-900 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500"
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -187,7 +187,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
 
                       <button
                         onClick={() => handleAction('email', contact)}
-                        className="w-full aspect-square rounded-2xl bg-slate-100 text-slate-600 flex flex-col items-center justify-center gap-1 hover:bg-slate-600 hover:text-white transition-all border border-slate-200 group/btn"
+                        className="w-full aspect-square rounded-2xl bg-slate-100 text-slate-600 dark:text-slate-300 flex flex-col items-center justify-center gap-1 hover:bg-slate-600 hover:text-white transition-all border border-slate-200 dark:border-slate-700 group/btn"
                         title={t('Email')}
                       >
                         <Mail size={14} className="group-hover/btn:scale-110 transition-transform" />
@@ -204,14 +204,14 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                       </button>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between group/call">
+                    <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between group/call">
                         <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover/call:bg-emerald-50 group-hover/call:text-emerald-500 transition-colors">
                                 <Phone size={10} />
                             </div>
                             <span className="text-[10px] font-bold text-slate-500 font-mono tracking-wider">{contact.phone}</span>
                         </div>
-                        <a href={`tel:${contact.phone}`} className="p-1 rounded bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-colors">
+                        <a href={`tel:${contact.phone}`} className="p-1 rounded bg-slate-50 dark:bg-slate-800/50 text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-colors">
                             <ArrowUpRight size={14} />
                         </a>
                     </div>
@@ -219,7 +219,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                 ))}
               </div>
 
-              <div className="mt-8 pt-8 border-t border-slate-100">
+              <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
                         <MessageSquare size={16} />
@@ -230,7 +230,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                     value={draftMessage}
                     onChange={(e) => setDraftMessage(e.target.value)}
                     placeholder={t('e.g. I have arrived at the pickup location.')}
-                    className="w-full h-24 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all resize-none"
+                    className="w-full h-24 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all resize-none"
                   />
                   <p className="text-[9px] text-slate-400 mt-2 italic"><TranslatedText text="* We will put this text into your SMS or WhatsApp for you." /></p>
               </div>
@@ -243,7 +243,7 @@ export const CommunicationRelay: React.FC<CommunicationRelayProps> = ({
                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest"><TranslatedText text="Support Line" /></p>
                     <p className="text-sm font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Need help? We are online 24/7" /></p>
                  </div>
-                 <button className="ml-auto px-5 py-2.5 bg-white border border-blue-200 text-[#345E85] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors shadow-sm">
+                 <button className="ml-auto px-5 py-2.5 bg-white dark:bg-slate-900 border border-blue-200 text-[#345E85] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors shadow-sm">
                     <TranslatedText text="Contact Now" />
                  </button>
               </div>

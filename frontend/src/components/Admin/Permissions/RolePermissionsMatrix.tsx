@@ -174,7 +174,7 @@ const RoleDetailModal: React.FC<RoleDetailModalProps> = ({ role, onClose, onSave
                             </p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:text-slate-300 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
                         <FaTimes />
                     </button>
                 </div>
@@ -804,7 +804,7 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                 type="button"
                                 onClick={() => setSelectedPermissions(new Set())}
                                 disabled={selectedPermissions.size === 0}
-                                className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50"
+                                className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50"
                             >
                                 Clear selection
                             </button>
@@ -887,7 +887,7 @@ export const RolePermissionsMatrix: React.FC<RolePermissionsMatrixProps> = ({ cl
                                 type="button"
                                 onClick={() => setActiveRoleModal(role)}
                                 title={`View / edit ${role} permissions`}
-                                className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors px-2 py-1 rounded-lg hover:bg-white dark:hover:bg-slate-700"
+                                className="text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors px-2 py-1 rounded-lg hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-700"
                             >
                                 {role.replace('_', ' ')}
                             </button>

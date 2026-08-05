@@ -134,7 +134,7 @@ const FleetHelpSupport: React.FC = () => {
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={handleStartTour}
-                className="px-8 py-4 bg-white text-[#345E85] rounded-3xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl active:scale-95 flex items-center gap-2"
+                className="px-8 py-4 bg-white dark:bg-slate-900 text-[#345E85] rounded-3xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl active:scale-95 flex items-center gap-2"
               >
                 <Play size={16} fill="currentColor" /> Initialize Tour
               </button>
@@ -178,7 +178,7 @@ const FleetHelpSupport: React.FC = () => {
                   { icon: Phone, label: 'Voice Link', detail: '+254 700 000 000' },
                   { icon: MessageSquare, label: 'Pulse Chat', detail: 'Real-time Linkage' }
                 ].map((link, idx) => (
-                  <div key={idx} className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all cursor-pointer">
+                  <div key={idx} className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-950 rounded-3xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-100 dark:border-slate-800 dark:hover:border-slate-700 transition-all cursor-pointer">
                     <div className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 shadow-sm">
                       <link.icon size={18} />
                     </div>
@@ -195,7 +195,7 @@ const FleetHelpSupport: React.FC = () => {
               <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-4">Urgent Vector</p>
               <h4 className="text-2xl font-black mb-6">Need Immediate Assistance?</h4>
               <p className="text-xs text-blue-100/70 leading-relaxed mb-8">Our personnel are available 24/7 for critical system divergence resolution.</p>
-              <button className="w-full py-4 bg-white text-[#345E85] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all outline-none">
+              <button className="w-full py-4 bg-white dark:bg-slate-900 text-[#345E85] rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all outline-none">
                 Transmit SOS Signal
               </button>
             </div>

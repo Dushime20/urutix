@@ -221,7 +221,7 @@ const FinancialDashboard: React.FC = () => {
       sortable: true,
       render: (_v, t) => (
         <div>
-          <div className="text-sm font-medium text-gray-900">{t.transactionId}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">{t.transactionId}</div>
           <div className="text-sm text-gray-500">{t.description}</div>
         </div>
       ),
@@ -245,7 +245,7 @@ const FinancialDashboard: React.FC = () => {
       sortable: true,
       render: (_v, t) => (
         <div>
-          <div className="text-sm font-medium text-gray-900">${t.amount.toLocaleString()}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">${t.amount.toLocaleString()}</div>
           <div className="text-sm text-gray-500">Fees: ${t.fees}</div>
         </div>
       ),
@@ -310,7 +310,7 @@ const FinancialDashboard: React.FC = () => {
 
       {/* Revenue Chart and Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-transparent p-6">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-transparent p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trend (Last 7 Days)</h3>
           <div className="flex items-end space-x-2 h-48">
             {metrics.dailyRevenue.map((revenue, index) => (
@@ -322,33 +322,33 @@ const FinancialDashboard: React.FC = () => {
                 <span className="text-xs text-gray-500 mt-2">
                   {new Date(Date.now() - (6 - index) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
-                <span className="text-xs font-medium text-gray-700">${(revenue / 1000).toFixed(1)}k</span>
+                <span className="text-xs font-medium text-gray-700 dark:text-slate-300">${(revenue / 1000).toFixed(1)}k</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-transparent p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-transparent p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Financial Summary</h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Platform Fees Collected</span>
+              <span className="text-sm text-gray-600 dark:text-slate-300">Platform Fees Collected</span>
               <span className="font-semibold text-green-600">${metrics.platformFees.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Completed Transactions</span>
+              <span className="text-sm text-gray-600 dark:text-slate-300">Completed Transactions</span>
               <span className="font-semibold text-blue-600">
                 {transactions.filter(t => t.status === 'completed').length}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Failed Transactions</span>
+              <span className="text-sm text-gray-600 dark:text-slate-300">Failed Transactions</span>
               <span className="font-semibold text-red-600">
                 {transactions.filter(t => t.status === 'failed').length}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Pending Transactions</span>
+              <span className="text-sm text-gray-600 dark:text-slate-300">Pending Transactions</span>
               <span className="font-semibold text-yellow-600">
                 {transactions.filter(t => t.status === 'pending').length}
               </span>
@@ -360,7 +360,7 @@ const FinancialDashboard: React.FC = () => {
       {/* Transactions Table */}
       <StandardDataTable<Transaction>
         embedded
-        className="bg-white rounded-xl border border-transparent p-2"
+        className="bg-white dark:bg-slate-900 rounded-xl border border-transparent p-2"
         title="Recent Transactions"
         columns={transactionColumns}
         data={transactions}

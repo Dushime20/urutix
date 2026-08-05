@@ -293,7 +293,7 @@ const FinancialAdminDashboard: React.FC = () => {
             {getTypeIcon(transaction.type)}
           </div>
           <div>
-            <div className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{transaction.description}</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-tight uppercase">{transaction.description}</div>
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{transaction.transactionId}</div>
           </div>
         </div>
@@ -304,11 +304,11 @@ const FinancialAdminDashboard: React.FC = () => {
       label: 'Parties',
       render: (_: unknown, transaction: Transaction) => (
         <div className="space-y-1">
-          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{transaction.fromAccount}</div>
+          <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase">{transaction.fromAccount}</div>
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 leading-none">
             <span className="w-4 h-[1px] bg-slate-200" /> TO <span className="w-4 h-[1px] bg-slate-200" />
           </div>
-          <div className="text-sm font-black text-slate-700 tracking-tight leading-none uppercase">{transaction.toAccount}</div>
+          <div className="text-sm font-black text-slate-700 dark:text-slate-300 tracking-tight leading-none uppercase">{transaction.toAccount}</div>
         </div>
       ),
     },
@@ -317,7 +317,7 @@ const FinancialAdminDashboard: React.FC = () => {
       label: 'Fiscal Yield',
       render: (_: unknown, transaction: Transaction) => (
         <div className="space-y-1">
-          <div className="text-sm font-black text-gray-900 tracking-tight leading-none uppercase">{fmtFull(transaction.amount)}</div>
+          <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-none uppercase">{fmtFull(transaction.amount)}</div>
           <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
             NET: {fmtFull(transaction.netAmount)}
           </div>
@@ -328,9 +328,9 @@ const FinancialAdminDashboard: React.FC = () => {
       key: 'paymentMethod',
       label: 'Method',
       render: (_: unknown, transaction: Transaction) => (
-        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 rounded-lg border border-gray-100 w-fit">
+        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800 w-fit">
           {getPaymentMethodIcon(transaction.paymentMethod)}
-          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+          <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
             {transaction.paymentMethod.replace('_', ' ')}
           </span>
         </div>
@@ -356,7 +356,7 @@ const FinancialAdminDashboard: React.FC = () => {
       label: 'Timestamp',
       render: (_: unknown, transaction: Transaction) => (
         <div className="space-y-1">
-          <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none">{getTimeAgo(transaction.createdAt)}</div>
+          <div className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">{getTimeAgo(transaction.createdAt)}</div>
           {transaction.processedAt && (
             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">SYNCED {getTimeAgo(transaction.processedAt)}</div>
           )}
@@ -422,16 +422,16 @@ const FinancialAdminDashboard: React.FC = () => {
 
         {/* Revenue Chart and Quick Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase">Revenue Trend</h3>
+                <h3 className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">Revenue Trend</h3>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">LATEST FISCAL PERFORMANCE (7D)</p>
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-100 dark:border-slate-800">
                   <Calendar size={12} className="text-slate-400" />
-                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">LAST 7 DAYS</span>
+                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">LAST 7 DAYS</span>
                 </div>
               </div>
             </div>
@@ -440,7 +440,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <div key={index} className="flex-1 flex flex-col items-center group">
                   <div className="relative w-full flex flex-col items-center">
                     <div
-                      className="w-full bg-[#2c5173]/20 rounded-lg transition-all duration-500 group-hover:bg-[#2c5173] overflow-hidden relative border border-gray-100 group-hover:border-[#2c5173]"
+                      className="w-full bg-[#2c5173]/20 rounded-lg transition-all duration-500 group-hover:bg-[#2c5173] overflow-hidden relative border border-gray-100 dark:border-slate-800 group-hover:border-[#2c5173]"
                       style={{ height: `${(revenue / Math.max(...metrics.dailyRevenue)) * 180}px` }}
                     >
                       <div className="absolute inset-0 bg-[#2c5173]/10 opacity-100 group-hover:from-black/20" />
@@ -451,7 +451,7 @@ const FinancialAdminDashboard: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3 group-hover:text-slate-900 transition-colors">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3 group-hover:text-slate-900 dark:hover:text-white transition-colors">
                     {new Date(Date.now() - (6 - index) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' })}
                   </span>
                 </div>
@@ -459,24 +459,24 @@ const FinancialAdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col">
-            <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase mb-6">Fiscal Intelligence</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 flex flex-col">
+            <h3 className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase mb-6">Fiscal Intelligence</h3>
             <div className="space-y-4 flex-1">
-              <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100 group hover:border-primary-100 transition-all">
+              <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100 dark:border-slate-800 group hover:border-primary-100 transition-all">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Fees</span>
-                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-slate-400 group-hover:text-[#2c5173] transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-slate-400 group-hover:text-[#2c5173] transition-colors">
                     <Receipt size={14} />
                   </div>
                 </div>
-                <span className="text-lg font-black text-gray-900 tracking-tight">{fmtMoney(metrics.platformFees)}</span>
+                <span className="text-lg font-black text-gray-900 dark:text-white tracking-tight">{fmtMoney(metrics.platformFees)}</span>
                 <div className="mt-2 w-full bg-gray-100 h-1 rounded-full overflow-hidden">
                   <div className="bg-[#2c5173] h-full w-[65%]" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100">
+                <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100 dark:border-slate-800">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Success</span>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-black text-emerald-600 tracking-tight">
@@ -485,7 +485,7 @@ const FinancialAdminDashboard: React.FC = () => {
                     <TrendingUp size={14} className="text-emerald-500" />
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100">
+                <div className="p-4 rounded-xl bg-[#fafafa] border border-gray-100 dark:border-slate-800">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Failed</span>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-black text-rose-600 tracking-tight">
@@ -503,7 +503,7 @@ const FinancialAdminDashboard: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="relative group min-w-[240px]">
@@ -512,7 +512,7 @@ const FinancialAdminDashboard: React.FC = () => {
                   placeholder="SEARCH TRANSACTIONS..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent w-full bg-[#fafafa] transition-all"
+                  className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent w-full bg-[#fafafa] transition-all"
                 />
                 <Search className="absolute left-3.5 top-3 text-slate-400 group-hover:text-[#2c5173] transition-colors w-3.5 h-3.5" />
               </div>
@@ -521,7 +521,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white dark:bg-slate-900 cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="">ALL STATUS</option>
                   <option value="completed">COMPLETED</option>
@@ -534,7 +534,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white dark:bg-slate-900 cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="">ALL TYPES</option>
                   <option value="payment">PAYMENT</option>
@@ -548,7 +548,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <select
                   value={filterPaymentMethod}
                   onChange={(e) => setFilterPaymentMethod(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white dark:bg-slate-900 cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="">ALL METHODS</option>
                   <option value="credit_card">CREDIT CARD</option>
@@ -560,7 +560,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
-                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white cursor-pointer hover:border-primary-200 transition-all"
+                  className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#2c5173] focus:border-transparent bg-white dark:bg-slate-900 cursor-pointer hover:border-primary-200 transition-all"
                 >
                   <option value="7d">LAST 7 DAYS</option>
                   <option value="30d">LAST 30 DAYS</option>
@@ -570,7 +570,7 @@ const FinancialAdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all text-slate-600">
+            <button className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 transition-all text-slate-600 dark:text-slate-300">
               <Download className="w-3.5 h-3.5" />
               <span>Export</span>
             </button>
@@ -578,7 +578,7 @@ const FinancialAdminDashboard: React.FC = () => {
         </div>
 
         {/* Transactions Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden p-4">
           <StandardDataTable<Transaction>
             embedded
             columns={transactionColumns}
@@ -601,16 +601,16 @@ const FinancialAdminDashboard: React.FC = () => {
         {/* Transaction Details Modal */}
         {showDetailsModal && selectedTransaction && (
           <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-[32px] w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-100 flex flex-col">
-              <div className="p-8 border-b border-gray-100 bg-[#fafafa]">
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-100 dark:border-slate-800 flex flex-col">
+              <div className="p-8 border-b border-gray-100 dark:border-slate-800 bg-[#fafafa]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">FISCAL AUDIT</h2>
+                    <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">FISCAL AUDIT</h2>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">TRANSACTION CLEARANCE DATA</p>
                   </div>
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                    className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 rounded-xl transition-all"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -620,29 +620,29 @@ const FinancialAdminDashboard: React.FC = () => {
               <div className="p-8 overflow-y-auto space-y-8">
                 {/* Transaction Information */}
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
-                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">{selectedTransaction.transactionId}</p>
+                    <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{selectedTransaction.transactionId}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Status</p>
                     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${getStatusColor(selectedTransaction.status)}`}>
                       {getStatusIcon(selectedTransaction.status)}
                       {selectedTransaction.status}
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Fiscal Type</p>
                     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${getTypeColor(selectedTransaction.type)}`}>
                       {getTypeIcon(selectedTransaction.type)}
                       {selectedTransaction.type}
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Method</p>
                     <div className="flex items-center gap-2">
                       {getPaymentMethodIcon(selectedTransaction.paymentMethod)}
-                      <span className="text-sm font-black text-gray-900 uppercase tracking-tight">
+                      <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
                         {selectedTransaction.paymentMethod.replace('_', ' ')}
                       </span>
                     </div>
@@ -650,19 +650,19 @@ const FinancialAdminDashboard: React.FC = () => {
                 </div>
 
                 {/* Parties */}
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-gray-100 dark:border-slate-800">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">IDENTIFIED PARTIES</h4>
                   <div className="space-y-6 relative ml-2">
                     <div className="absolute left-0 top-3 bottom-3 w-[1px] bg-primary-100 border-l border-dashed border-primary-200" />
                     <div className="pl-6 relative">
                       <div className="absolute left-[-2px] top-1.5 w-1 h-1 rounded-full bg-[#2c5173]" />
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">SOURCE ACCOUNT</p>
-                      <p className="text-sm font-black text-gray-900 uppercase tracking-tight">{selectedTransaction.fromAccount}</p>
+                      <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{selectedTransaction.fromAccount}</p>
                     </div>
                     <div className="pl-6 relative">
                       <div className="absolute left-[-2px] top-1.5 w-1 h-1 rounded-full bg-[#2c5173]" />
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">TARGET RECIPIENT</p>
-                      <p className="text-sm font-black text-gray-900 uppercase tracking-tight">{selectedTransaction.toAccount}</p>
+                      <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{selectedTransaction.toAccount}</p>
                     </div>
                   </div>
                 </div>
@@ -688,14 +688,14 @@ const FinancialAdminDashboard: React.FC = () => {
 
                 {/* Description & Timeline */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">AUDIT NOTES</p>
-                    <p className="text-xs font-medium text-slate-600 leading-relaxed uppercase">{selectedTransaction.description}</p>
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-relaxed uppercase">{selectedTransaction.description}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3">
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800 space-y-3">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">INITIATED</p>
-                      <p className="text-[10px] font-black text-gray-900 uppercase tracking-tight">{formatDateTime(selectedTransaction.createdAt)}</p>
+                      <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-tight">{formatDateTime(selectedTransaction.createdAt)}</p>
                     </div>
                     {selectedTransaction.processedAt && (
                       <div>
@@ -707,7 +707,7 @@ const FinancialAdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-8 border-t border-gray-100 bg-[#fafafa]">
+              <div className="p-8 border-t border-gray-100 dark:border-slate-800 bg-[#fafafa]">
                 <div className="flex gap-4">
                   {selectedTransaction.status === 'pending' && (
                     <button
@@ -722,7 +722,7 @@ const FinancialAdminDashboard: React.FC = () => {
                   )}
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="flex-1 py-4 bg-white text-slate-600 border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all"
+                    className="flex-1 py-4 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-gray-200 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-slate-800 transition-all"
                   >
                     Close Audit
                   </button>

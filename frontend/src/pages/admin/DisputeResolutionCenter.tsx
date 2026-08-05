@@ -26,10 +26,10 @@ import { StandardDataTable, StatusBadge, type Column, type TableAction } from '.
 const Stat: React.FC<{ label: string; value: number | string; icon: React.ReactNode; color?: string }> = ({
   label, value, icon, color = 'bg-slate-50 text-slate-700',
 }) => (
-  <div className={`flex items-center gap-3 p-4 rounded-2xl border border-gray-100 bg-white`}>
+  <div className={`flex items-center gap-3 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900`}>
     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>{icon}</div>
     <div>
-      <p className="text-2xl font-black text-gray-900">{value}</p>
+      <p className="text-2xl font-black text-gray-900 dark:text-white">{value}</p>
       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
     </div>
   </div>
@@ -82,7 +82,7 @@ const DisputeResolutionCenter: React.FC = () => {
       sortable: true,
       render: (_: unknown, d: Dispute) => (
         <div className="max-w-[180px]">
-          <p className="text-sm font-bold text-gray-900 truncate">{d.title}</p>
+          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{d.title}</p>
           {d.trip && <p className="text-[10px] text-gray-400 mt-0.5">{d.trip.tripNumber}</p>}
         </div>
       ),
@@ -92,7 +92,7 @@ const DisputeResolutionCenter: React.FC = () => {
       label: 'Category',
       sortable: true,
       render: (_: unknown, d: Dispute) => (
-        <span className="text-xs text-gray-600 whitespace-nowrap">{CATEGORY_LABELS[d.category]}</span>
+        <span className="text-xs text-gray-600 dark:text-slate-300 whitespace-nowrap">{CATEGORY_LABELS[d.category]}</span>
       ),
     },
     {
@@ -115,7 +115,7 @@ const DisputeResolutionCenter: React.FC = () => {
       key: 'complainant',
       label: 'Complainant',
       render: (_: unknown, d: Dispute) => (
-        <span className="text-xs text-gray-700 whitespace-nowrap">{getUserDisplayName(d.complainant)}</span>
+        <span className="text-xs text-gray-700 dark:text-slate-300 whitespace-nowrap">{getUserDisplayName(d.complainant)}</span>
       ),
     },
     {
@@ -166,10 +166,10 @@ const DisputeResolutionCenter: React.FC = () => {
       description={<TranslatedText text="Investigate, communicate, and resolve platform disputes" />}
       actions={
         <div className="flex gap-2">
-          <button onClick={() => refetch()} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 flex items-center gap-2">
+          <button onClick={() => refetch()} className="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-2">
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
-          <button onClick={handleExport} className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-bold hover:bg-gray-50 flex items-center gap-2">
+          <button onClick={handleExport} className="px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-gray-50 dark:hover:bg-slate-800 flex items-center gap-2">
             <Download className="w-4 h-4" /> Export
           </button>
           <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-[#2c5173] text-white rounded-xl text-sm font-bold hover:bg-[#1e3a54] flex items-center gap-2">
@@ -194,13 +194,13 @@ const DisputeResolutionCenter: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-[24px] border border-gray-100 p-4 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 p-4 mb-6">
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input type="text" placeholder="Search by reference, title..." value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-transparent" />
+              className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#2c5173] focus:border-transparent" />
           </div>
           {[
             { label: 'All Status', value: statusFilter, setter: setStatus, options: Object.entries(STATUS_LABELS) },
@@ -209,7 +209,7 @@ const DisputeResolutionCenter: React.FC = () => {
           ].map(({ label, value, setter, options }) => (
             <div key={label} className="relative">
               <select value={value} onChange={e => setter(e.target.value)}
-                className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-[#2c5173]">
+                className="pl-3 pr-8 py-2 bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-[#2c5173]">
                 <option value="">{label}</option>
                 {options.map(([k, v]) => <option key={k} value={k}>{v as string}</option>)}
               </select>
@@ -237,7 +237,7 @@ const DisputeResolutionCenter: React.FC = () => {
         onExport={handleExport}
         emptyMessage="No disputes found"
         ariaLabel="Dispute resolution"
-        className="bg-white rounded-[24px] border border-gray-100 overflow-hidden"
+        className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 overflow-hidden"
       />
 
       {selectedId && (

@@ -45,7 +45,7 @@ const FinancialReport: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded shadow p-4 min-h-[120px]">
+    <div className="bg-white dark:bg-slate-900 rounded shadow p-4 min-h-[120px]">
       <div className="text-xl font-bold mb-2">Financial Reporting</div>
       {isLoading ? (
         <div className="h-32 flex items-center justify-center text-gray-400">Loading...</div>

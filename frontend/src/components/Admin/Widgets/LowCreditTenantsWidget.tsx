@@ -24,7 +24,7 @@ const LowCreditTenantsWidget: React.FC = () => {
         .slice(0, 5);
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6 hover:shadow-md transition-all duration-300">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -32,7 +32,7 @@ const LowCreditTenantsWidget: React.FC = () => {
                         <FaWallet className="text-rose-600" size={18} />
                     </div>
                     <div>
-                        <h3 className="font-black text-slate-800 uppercase tracking-tight text-sm">
+                        <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight text-sm">
                             <TranslatedText text="Low Credit Alerts" />
                         </h3>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -53,7 +53,7 @@ const LowCreditTenantsWidget: React.FC = () => {
                     <FaSpinner className="animate-spin text-primary-600" size={24} />
                 </div>
             ) : lowCreditTenants.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <div className="flex flex-col items-center justify-center h-48 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                     <FaBell className="text-slate-300 mb-2" size={24} />
                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                         <TranslatedText text="No critical alerts" />
@@ -68,14 +68,14 @@ const LowCreditTenantsWidget: React.FC = () => {
                         return (
                             <div
                                 key={tenant.id || idx}
-                                className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100 group"
+                                className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all border border-transparent hover:border-slate-100 dark:border-slate-800 group"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 text-xs font-black uppercase group-hover:bg-white group-hover:shadow-sm transition-all">
+                                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 text-xs font-black uppercase group-hover:bg-white dark:bg-slate-900 group-hover:shadow-sm transition-all">
                                         {tenant.name?.[0]}
                                     </div>
                                     <div>
-                                        <div className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                                        <div className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
                                             {tenant.name}
                                         </div>
                                         <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">

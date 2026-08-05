@@ -296,7 +296,7 @@ const CargoCreatePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Draft Success Notification */}
         {draftSaved && (
@@ -321,7 +321,7 @@ const CargoCreatePage: React.FC = () => {
         )}
 
         {/* Header - Enlite Prime Style */}
-        <div className="mb-10 rounded-[2.5rem] p-8 sm:p-10 bg-white border border-slate-100 shadow-sm relative overflow-hidden">
+        <div className="mb-10 rounded-[2.5rem] p-8 sm:p-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center gap-4 mb-3">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
@@ -362,7 +362,7 @@ const CargoCreatePage: React.FC = () => {
 
         {/* Recent Drafts */}
         {drafts.length > 0 && (
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 sm:p-10 mb-10">
+          <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm p-8 sm:p-10 mb-10">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h3 className="text-xl font-black text-[#0f172a] tracking-tight">
@@ -372,7 +372,7 @@ const CargoCreatePage: React.FC = () => {
                   Pick up where you left off
                 </p>
               </div>
-              <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-xs font-black">
+              <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 rounded-full text-xs font-black">
                 {drafts.length} TOTAL
               </span>
             </div>
@@ -381,7 +381,7 @@ const CargoCreatePage: React.FC = () => {
               {drafts.slice(0, 4).map((draft: any) => (
                 <div
                   key={draft.id}
-                  className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-slate-100 rounded-3xl hover:border-blue-200 hover:bg-slate-50/50 transition-all duration-300"
+                  className="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-slate-100 dark:border-slate-800 rounded-3xl hover:border-blue-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-300"
                 >
                   <div className="flex-1 min-w-0 mr-4 mb-4 sm:mb-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -502,18 +502,18 @@ const CargoCreatePage: React.FC = () => {
         {/* Draft Selection Modal */}
         {showDraftModal && mounted && createPortal(
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999] p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900">Continue with Draft?</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Continue with Draft?</h2>
                   <button
                     onClick={() => setShowDraftModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
                   >
                     <X className="w-6 h-6" />
                   </button>
                 </div>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 dark:text-slate-300 mb-6">
                   You have {drafts.length} saved draft{drafts.length > 1 ? "s" : ""}. Would you like to continue with one of them or create a new cargo?
                 </p>
 
@@ -522,18 +522,18 @@ const CargoCreatePage: React.FC = () => {
                     <button
                       key={draft.id}
                       onClick={() => handleContinueDraft(draft)}
-                      className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+                      className="w-full text-left p-4 border-2 border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <FileText className="w-5 h-5 text-gray-400" />
-                            <h3 className="font-semibold text-gray-900">{draft.title || "Untitled Draft"}</h3>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">{draft.title || "Untitled Draft"}</h3>
                           </div>
                           {draft.description && (
-                            <p className="text-sm text-gray-600 mb-2">{draft.description}</p>
+                            <p className="text-sm text-gray-600 dark:text-slate-300 mb-2">{draft.description}</p>
                           )}
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-slate-400">
                             <span>Last updated: {new Date(draft.updatedAt).toLocaleDateString()}</span>
                             {draft.weight && <span>Weight: {draft.weight} kg</span>}
                             {draft.cargoType && <span>Type: {draft.cargoType}</span>}
@@ -553,7 +553,7 @@ const CargoCreatePage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setShowDraftModal(false)}
-                    className="px-4 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+                    className="px-4 py-3 text-gray-600 dark:text-slate-300 hover:text-gray-800 transition-colors"
                   >
                     Cancel
                   </button>

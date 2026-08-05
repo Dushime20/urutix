@@ -85,7 +85,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
             label: 'RECEIPT ID',
             render: (_: unknown, r: ReceiptData) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-[11px] uppercase tracking-tight">
+                    <span className="font-black text-slate-900 dark:text-white text-[11px] uppercase tracking-tight">
                         {r.receiptNumber}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
@@ -100,11 +100,11 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
             label: 'CARGO & TRIP',
             render: (_: unknown, r: ReceiptData) => (
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-50 rounded-xl text-slate-400 group-hover:text-[#345E85] group-hover:bg-blue-50 transition-all">
+                    <div className="p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-slate-400 group-hover:text-[#345E85] group-hover:bg-blue-50 transition-all">
                         <Box size={14} />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-black text-slate-900 uppercase tracking-tighter text-[11px]">
+                        <span className="font-black text-slate-900 dark:text-white uppercase tracking-tighter text-[11px]">
                             {r.cargoName}
                         </span>
                         <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">
@@ -123,7 +123,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
                         {r.cargoOwnerName.charAt(0)}
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-black text-slate-900 uppercase tracking-tight text-[11px]">{r.cargoOwnerName}</span>
+                        <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-[11px]">{r.cargoOwnerName}</span>
                         <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">{r.cargoOwnerPhone || 'No contact'}</span>
                     </div>
                 </div>
@@ -134,7 +134,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
             label: 'SETTLEMENT',
             render: (_: unknown, r: ReceiptData) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-[11px]">
+                    <span className="font-black text-slate-900 dark:text-white text-[11px]">
                         {formatMoney(r.amount, r.currency || 'RWF')}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
@@ -149,7 +149,7 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
             label: 'ISSUANCE',
             render: (_: unknown, r: ReceiptData) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-[11px] uppercase tracking-tight">
+                    <span className="font-black text-slate-900 dark:text-white text-[11px] uppercase tracking-tight">
                         {new Date(r.paymentDate).toLocaleDateString()}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
@@ -206,9 +206,9 @@ const ReceiptsEnlite: React.FC<ReceiptsEnliteProps> = ({
                 icon={<FileText className="w-5 h-5" />}
                 headerColor="primary"
                 headerActions={
-                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                        <button className="px-3 py-1.5 bg-white text-[#345E85] rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Current</button>
-                        <button className="px-3 py-1.5 text-slate-500 hover:text-slate-700 text-[10px] font-black uppercase tracking-widest">Archival</button>
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <button className="px-3 py-1.5 bg-white dark:bg-slate-900 text-[#345E85] rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">Current</button>
+                        <button className="px-3 py-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest">Archival</button>
                     </div>
                 }
                 columns={columns}

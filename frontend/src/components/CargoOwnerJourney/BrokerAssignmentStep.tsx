@@ -168,15 +168,15 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
     return createPortal(
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]">
         <div 
-          className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Broker Assigned Successfully</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Broker Assigned Successfully</h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -218,27 +218,27 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                       ? `${selectedBroker.profile.firstName} ${selectedBroker.profile.lastName}`
                       : selectedBroker.email);
                   return (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="font-medium text-gray-900 mb-2">Assignment Details</h3>
+                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4">
+                      <h3 className="font-medium text-gray-900 dark:text-white mb-2">Assignment Details</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Broker:</span>
-                          <span className="font-medium text-gray-900">{brokerName}</span>
+                          <span className="text-gray-600 dark:text-slate-300">Broker:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{brokerName}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Commission Rate:</span>
-                          <span className="font-medium text-gray-900">{commissionRate}%</span>
+                          <span className="text-gray-600 dark:text-slate-300">Commission Rate:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{commissionRate}%</span>
                         </div>
                         {commissionBasis > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Commission Amount:</span>
-                            <span className="font-medium text-gray-900">
+                            <span className="text-gray-600 dark:text-slate-300">Commission Amount:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">
                               {fmtFull(commissionAmount)}
                             </span>
                           </div>
                         )}
                         {commissionBasis > 0 && (
-                          <p className="text-xs text-gray-400 pt-1 border-t border-gray-200">
+                          <p className="text-xs text-gray-400 pt-1 border-t border-gray-200 dark:border-slate-700">
                             Calculated on transportation fee{targetPrice && targetPrice > 0 ? ` (Target Price: ${fmtFull(targetPrice)})` : ''}, not declared cargo value.
                           </p>
                         )}
@@ -269,13 +269,13 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
   return createPortal(
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[99999]" onClick={onClose}>
       <div 
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Assign a Broker</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Assign a Broker</h2>
             {loadTitle && (
               <p className="text-sm text-gray-500 mt-1">{loadTitle}</p>
             )}
@@ -285,7 +285,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -296,18 +296,18 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
         <div className="p-6 space-y-6">
           {/* Transportation Fee Info */}
           {loadValue > 0 && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-1">
+            <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-1">
               {targetPrice && targetPrice > 0 ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Target Transportation Price:</span>
-                  <span className="text-lg font-semibold text-gray-900">
+                  <span className="text-sm text-gray-600 dark:text-slate-300">Target Transportation Price:</span>
+                  <span className="text-lg font-semibold text-gray-900 dark:text-white">
                     {fmtFull(targetPrice)}
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Transportation Value:</span>
-                  <span className="text-lg font-semibold text-gray-900">
+                  <span className="text-sm text-gray-600 dark:text-slate-300">Transportation Value:</span>
+                  <span className="text-lg font-semibold text-gray-900 dark:text-white">
                     {fmtFull(loadValue)}
                   </span>
                 </div>
@@ -318,7 +318,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
 
           {/* Broker Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               Select Broker
             </label>
             
@@ -351,14 +351,14 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                     className={`p-4 border-2 rounded-lg transition-all cursor-pointer ${
                       selectedBrokerId === broker.id
                         ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
                           <User className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium text-gray-900">
+                          <span className="font-medium text-gray-900 dark:text-white">
                             {broker.profile?.firstName && broker.profile?.lastName
                               ? `${broker.profile.firstName} ${broker.profile.lastName}`
                               : broker.email}
@@ -368,7 +368,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                         {broker.profile?.companyName && (
                           <div className="flex items-center space-x-2 mb-1">
                             <Building2 className="w-3 h-3 text-gray-400" />
-                            <span className="text-sm text-gray-600">{broker.profile.companyName}</span>
+                            <span className="text-sm text-gray-600 dark:text-slate-300">{broker.profile.companyName}</span>
                           </div>
                         )}
                         
@@ -382,7 +382,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                         {broker.defaultCommissionRate !== undefined && (
                           <div className="flex items-center space-x-1 mb-1">
                             <DollarSign className="w-3 h-3 text-gray-400" />
-                            <span className="text-sm font-medium text-gray-700">
+                            <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
                               {broker.defaultCommissionRate}% default
                             </span>
                           </div>
@@ -402,7 +402,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
 
           {/* Commission Rate */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               Commission Rate (%)
             </label>
             <div className="flex items-center space-x-4">
@@ -415,7 +415,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
                 onChange={(e) => setCommissionRate(parseFloat(e.target.value) || 0)}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <div className="text-sm text-gray-600 min-w-[120px]">
+              <div className="text-sm text-gray-600 dark:text-slate-300 min-w-[120px]">
                 {selectedBrokerId && loadValue > 0 && (
                   <div className="flex items-center space-x-1">
                     <DollarSign className="w-4 h-4" />
@@ -435,11 +435,11 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
           <button
             onClick={onSkip}
             disabled={assigning}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
           >
             Skip (Proceed Without Broker)
           </button>
@@ -447,7 +447,7 @@ const BrokerAssignmentStep: React.FC<BrokerAssignmentStepProps> = ({
             <button
               onClick={onClose}
               disabled={assigning}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
             >
               Cancel
             </button>

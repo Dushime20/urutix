@@ -277,12 +277,12 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Pending */}
-        <div className="bg-white rounded-md border border-gray-200 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600">Total Pending</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Total Pending</span>
             <FaClock className="w-3.5 h-3.5 text-gray-500" />
           </div>
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
             {formatCurrency(summary.totalPending)}
           </p>
           <p className="text-[10px] text-gray-500 mt-1">
@@ -291,12 +291,12 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
         </div>
 
         {/* Upcoming (Next 7 Days) */}
-        <div className="bg-white rounded-md border border-gray-200 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600">Upcoming (7 days)</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Upcoming (7 days)</span>
             <FaCalendarAlt className="w-3.5 h-3.5 text-gray-500" />
           </div>
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
             {formatCurrency(summary.totalUpcoming)}
           </p>
           <p className="text-[10px] text-gray-500 mt-1">
@@ -305,12 +305,12 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
         </div>
 
         {/* Total Received */}
-        <div className="bg-white rounded-md border border-gray-200 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600">Total Received</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Total Received</span>
             <FaCheckCircle className="w-3.5 h-3.5 text-gray-500" />
           </div>
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
             {formatCurrency(summary.totalReceived)}
           </p>
           <p className="text-[10px] text-gray-500 mt-1">
@@ -319,9 +319,9 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
         </div>
 
         {/* Overdue */}
-        <div className="bg-white rounded-md border border-gray-200 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600">Overdue</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Overdue</span>
             <FaExclamationTriangle className="w-3.5 h-3.5 text-red-500" />
           </div>
           <p className="text-lg font-semibold text-red-700">
@@ -335,9 +335,9 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
 
       {/* Payment Reliability Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="bg-white rounded-md border border-gray-200 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600">Payment Reliability</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Payment Reliability</span>
             <FaChartLine className="w-3.5 h-3.5 text-gray-500" />
           </div>
           <div className="flex items-center space-x-2">
@@ -352,7 +352,7 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
                 />
               </div>
             </div>
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
               {summary.paymentReliability}%
             </span>
           </div>
@@ -361,12 +361,12 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-white rounded-md border border-gray-200 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600">Avg. Payment Delay</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Avg. Payment Delay</span>
             <FaClock className="w-3.5 h-3.5 text-gray-500" />
           </div>
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
             {summary.averagePaymentDelay} days
           </p>
           <p className="text-[10px] text-gray-500 mt-1">
@@ -376,10 +376,10 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
       </div>
 
       {/* Payment Forecast */}
-      <div className="bg-white rounded-md border border-gray-200">
-        <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700">
+        <div className="p-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Payment Forecast</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Payment Forecast</h3>
             <p className="text-xs text-gray-500 mt-0.5">Upcoming payments for the next 30 days</p>
           </div>
           <div className="flex items-center space-x-2">
@@ -428,45 +428,45 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
               return (
                 <div
                   key={payment.id}
-                  className={`p-3 hover:bg-gray-50 transition-colors ${
+                  className={`p-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors ${
                     isOverdue ? 'bg-red-50/50' : ''
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-xs font-semibold text-gray-900">
+                        <span className="text-xs font-semibold text-gray-900 dark:text-white">
                           {payment.tripNumber}
                         </span>
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${getStatusColor(payment.status)}`}>
                           {payment.status.toUpperCase()}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-700">
                           {payment.paymentType.toUpperCase()}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600 dark:text-slate-300">
                         <div>
                           <span className="text-gray-500">Amount:</span>{' '}
-                          <span className="font-medium text-gray-900">
+                          <span className="font-medium text-gray-900 dark:text-white">
                             {formatCurrency(payment.amount, payment.currency)}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500">Due:</span>{' '}
-                          <span className={`font-medium ${isOverdue ? 'text-red-700' : 'text-gray-900'}`}>
+                          <span className={`font-medium ${isOverdue ? 'text-red-700' : 'text-gray-900 dark:text-white'}`}>
                             {payment.dueDate.toLocaleDateString()}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500">Cargo Owner:</span>{' '}
-                          <span className="font-medium text-gray-900">{payment.cargoOwnerName}</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{payment.cargoOwnerName}</span>
                         </div>
                         <div>
                           <span className="text-gray-500">
                             {isOverdue ? 'Overdue by:' : 'Due in:'}
                           </span>{' '}
-                          <span className={`font-medium ${isOverdue ? 'text-red-700' : 'text-gray-900'}`}>
+                          <span className={`font-medium ${isOverdue ? 'text-red-700' : 'text-gray-900 dark:text-white'}`}>
                             {isOverdue ? `${Math.abs(daysUntilDue)} days` : `${daysUntilDue} days`}
                           </span>
                         </div>
@@ -484,7 +484,7 @@ const TruckOwnerFinancialDashboard: React.FC = () => {
                         </button>
                       )}
                       <button
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                        className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-md transition-colors"
                         title="View Details"
                       >
                         <FaEye className="w-3 h-3" />

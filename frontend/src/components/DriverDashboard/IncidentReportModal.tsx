@@ -155,7 +155,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden"
       >
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-100">
@@ -183,7 +183,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
           </div>
           <button 
             onClick={onClose}
-            className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors"
+            className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 transition-colors"
           >
             <X size={20} />
           </button>
@@ -225,7 +225,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                       className={`p-6 rounded-[2rem] border-2 transition-all group flex flex-col items-center gap-3 ${
                         formData.type === type.id 
                           ? 'border-[#345E85] bg-blue-50/50' 
-                          : 'border-slate-100 hover:border-slate-200 bg-white'
+                          : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'
                       }`}
                     >
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${type.bg} ${type.color}`}>
@@ -250,7 +250,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                           formData.severity === s 
                             ? 'bg-[#345E85] text-white shadow-lg' 
-                            : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                            : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 hover:bg-slate-100'
                         }`}
                       >
                         <TranslatedText text={s} />
@@ -276,7 +276,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder={formData.type === 'expense' ? t('What was this fee for? (e.g. Parking, Local Tax)') : t('What happened?')}
-                      className="w-full h-32 px-5 py-4 rounded-2xl border border-slate-100 focus:border-[#345E85] focus:outline-none transition-all text-sm font-bold text-[#0f172a] placeholder:text-slate-300 resize-none"
+                      className="w-full h-32 px-5 py-4 rounded-2xl border border-slate-100 dark:border-slate-800 focus:border-[#345E85] focus:outline-none transition-all text-sm font-bold text-[#0f172a] placeholder:text-slate-300 resize-none"
                     />
                   </div>
                   {formData.type === 'expense' && (
@@ -317,7 +317,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         value={formData.location}
                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                         placeholder={t('Current address or coordinates')}
-                        className="w-full pl-12 pr-5 py-4 rounded-xl border border-slate-100 focus:border-[#345E85] text-sm font-bold text-[#0f172a]"
+                        className="w-full pl-12 pr-5 py-4 rounded-xl border border-slate-100 dark:border-slate-800 focus:border-[#345E85] text-sm font-bold text-[#0f172a]"
                       />
                     </div>
                   </div>
@@ -333,7 +333,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
               >
                 <div className="space-y-6">
                   {/* Police Report */}
-                  <div className={`p-6 rounded-3xl border-2 transition-all ${formData.policeReport ? 'border-indigo-100 bg-indigo-50/20' : 'border-slate-50 bg-slate-50/30'}`}>
+                  <div className={`p-6 rounded-3xl border-2 transition-all ${formData.policeReport ? 'border-indigo-100 bg-indigo-50/20' : 'border-slate-50 bg-slate-50/30 dark:bg-slate-950'}`}>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <Navigation size={20} className="text-indigo-500" />
@@ -345,7 +345,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         onClick={() => setFormData({ ...formData, policeReport: !formData.policeReport })}
                         className={`w-12 h-6 rounded-full transition-all relative ${formData.policeReport ? 'bg-indigo-500' : 'bg-slate-200'}`}
                       >
-                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.policeReport ? 'translate-x-6' : ''}`} />
+                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white dark:bg-slate-900 rounded-full transition-transform ${formData.policeReport ? 'translate-x-6' : ''}`} />
                       </button>
                     </div>
                     {formData.policeReport && (
@@ -354,13 +354,13 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         value={formData.reportNumber}
                         onChange={(e) => setFormData({ ...formData, reportNumber: e.target.value })}
                         placeholder="Police Report Number"
-                        className="w-full px-5 py-3 rounded-xl border border-indigo-100 bg-white text-sm font-bold text-[#0f172a] placeholder:text-slate-300"
+                        className="w-full px-5 py-3 rounded-xl border border-indigo-100 bg-white dark:bg-slate-900 text-sm font-bold text-[#0f172a] placeholder:text-slate-300"
                       />
                     )}
                   </div>
 
                   {/* Insurance Claim */}
-                  <div className={`p-6 rounded-3xl border-2 transition-all ${formData.insuranceClaim ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-50 bg-slate-50/30'}`}>
+                  <div className={`p-6 rounded-3xl border-2 transition-all ${formData.insuranceClaim ? 'border-emerald-100 bg-emerald-50/20' : 'border-slate-50 bg-slate-50/30 dark:bg-slate-950'}`}>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <FileText size={20} className="text-emerald-500" />
@@ -372,7 +372,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         onClick={() => setFormData({ ...formData, insuranceClaim: !formData.insuranceClaim })}
                         className={`w-12 h-6 rounded-full transition-all relative ${formData.insuranceClaim ? 'bg-emerald-500' : 'bg-slate-200'}`}
                       >
-                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.insuranceClaim ? 'translate-x-6' : ''}`} />
+                        <div className={`absolute top-1 left-1 w-4 h-4 bg-white dark:bg-slate-900 rounded-full transition-transform ${formData.insuranceClaim ? 'translate-x-6' : ''}`} />
                       </button>
                     </div>
                     {formData.insuranceClaim && (
@@ -381,7 +381,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                         value={formData.claimNumber}
                         onChange={(e) => setFormData({ ...formData, claimNumber: e.target.value })}
                         placeholder="Insurance Claim Number"
-                        className="w-full px-5 py-3 rounded-xl border border-emerald-100 bg-white text-sm font-bold text-[#0f172a] placeholder:text-slate-300"
+                        className="w-full px-5 py-3 rounded-xl border border-emerald-100 bg-white dark:bg-slate-900 text-sm font-bold text-[#0f172a] placeholder:text-slate-300"
                       />
                     )}
                   </div>
@@ -397,7 +397,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                     className={`relative p-10 rounded-[2.5rem] border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-4 group ${
                       selectedFile 
                         ? 'border-emerald-200 bg-emerald-50/20' 
-                        : 'border-slate-100 bg-slate-50/50 hover:border-[#345E85] hover:bg-blue-50/30'
+                        : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 hover:border-[#345E85] hover:bg-blue-50/30'
                     }`}
                   >
                     <input 
@@ -427,14 +427,14 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                             e.stopPropagation();
                             setSelectedFile(null);
                           }}
-                          className="px-6 py-2 bg-white border border-rose-100 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all shadow-sm"
+                          className="px-6 py-2 bg-white dark:bg-slate-900 border border-rose-100 text-rose-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all shadow-sm"
                         >
                           Remove
                         </button>
                       </>
                     ) : (
                       <>
-                        <div className="w-16 h-16 rounded-2xl bg-white border border-slate-100 text-[#345E85] flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                        <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[#345E85] flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                           <Camera size={32} />
                         </div>
                         <div className="text-center">
@@ -445,7 +445,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
                             <TranslatedText text="JPG, PNG or PDF (Max 10MB)" />
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest">
                           <Upload size={12} />
                           Browse Gallery
                         </div>
@@ -471,7 +471,7 @@ export const IncidentReportModal: React.FC<IncidentReportModalProps> = ({
             {step > 1 && (
               <button 
                 onClick={() => setStep(step - 1)}
-                className="px-8 py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95"
+                className="px-8 py-4 bg-slate-50 dark:bg-slate-800/50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95"
               >
                 <TranslatedText text="Back" />
               </button>

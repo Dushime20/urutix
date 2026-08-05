@@ -1708,7 +1708,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
                           </div>
                           <button
                             onClick={() => setSelectedExistingDriver(null)}
-                            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-white dark:hover:bg-gray-800 rounded-lg transition-all"
+                            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 dark:hover:text-gray-200 hover:bg-white dark:bg-slate-900 dark:hover:bg-gray-800 rounded-lg transition-all"
                           >
                             <X size={18} />
                           </button>

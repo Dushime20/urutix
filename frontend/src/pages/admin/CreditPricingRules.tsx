@@ -167,18 +167,18 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
       key: 'ruleName',
       label: 'Rule Name',
       alwaysVisible: true,
-      render: (v) => <div className="text-sm font-medium text-gray-900">{v}</div>,
+      render: (v) => <div className="text-sm font-medium text-gray-900 dark:text-white">{v}</div>,
     },
     {
       key: 'ruleType',
       label: 'Type',
-      render: (v) => <span className="text-sm text-gray-600">{getRuleTypeLabel(v)}</span>,
+      render: (v) => <span className="text-sm text-gray-600 dark:text-slate-300">{getRuleTypeLabel(v)}</span>,
     },
     {
       key: 'creditCost',
       label: 'Cost',
       render: (_v, rule) => (
-        <div className="text-sm text-gray-900">
+        <div className="text-sm text-gray-900 dark:text-white">
           {rule.creditCost} credits / {rule.unit}
         </div>
       ),
@@ -187,7 +187,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
       key: 'minValue',
       label: 'Range',
       render: (_v, rule) => (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-slate-300">
           {rule.minValue || rule.maxValue ? (
             <>
               {rule.minValue ? `${rule.minValue}+` : ''}
@@ -204,7 +204,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
       key: 'priority',
       label: 'Priority',
       sortable: true,
-      render: (v) => <span className="text-sm text-gray-600">{v}</span>,
+      render: (v) => <span className="text-sm text-gray-600 dark:text-slate-300">{v}</span>,
     },
     {
       key: 'isActive',
@@ -255,14 +255,14 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
 
         {/* Create/Edit Form */}
         {isCreating && (
-          <div className="bg-white rounded-lg p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-4">
               {editingId ? <TranslatedText text="Edit Pricing Rule" /> : <TranslatedText text="Create New Pricing Rule" />}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     <TranslatedText text="Rule Name" />
                   </label>
                   <input
@@ -276,7 +276,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     <TranslatedText text="Rule Type" />
                   </label>
                   <select
@@ -292,7 +292,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     <TranslatedText text="Unit" />
                   </label>
                   <input
@@ -306,7 +306,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     <TranslatedText text="Credit Cost (per unit)" />
                   </label>
                   <input
@@ -320,7 +320,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     <TranslatedText text="Min Value (optional, for tiered pricing)" />
                   </label>
                   <input
@@ -334,7 +334,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     <TranslatedText text="Max Value (optional, for tiered pricing)" />
                   </label>
                   <input
@@ -348,7 +348,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     <TranslatedText text="Priority" />
                   </label>
                   <input
@@ -368,7 +368,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                       onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                       className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                     />
-                    <span className="ml-2 text-sm font-medium text-gray-700"><TranslatedText text="Active" /></span>
+                    <span className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300"><TranslatedText text="Active" /></span>
                   </label>
                 </div>
               </div>
@@ -385,7 +385,7 @@ const CreditPricingRules: React.FC<{ embedded?: boolean }> = ({ embedded = false
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 flex items-center gap-2"
                 >
                   <FaTimes />
                   <TranslatedText text="Cancel" />

@@ -228,7 +228,7 @@ const AssignmentModal: React.FC<AssignmentModalProps> = ({ isOpen, onClose, truc
                                 <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mt-1 transition-colors">Manage personnel for {truckName}</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all">
+                        <button onClick={onClose} className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-gray-800 rounded-lg transition-all">
                             <X size={20} />
                         </button>
                     </div>

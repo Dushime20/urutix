@@ -100,7 +100,7 @@ const BiddingManagement: React.FC = () => {
     const normalizedStatus = status?.toUpperCase();
     switch (normalizedStatus) {
       case 'PENDING': return <FaClock className="text-gray-500 text-xs" />;
-      case 'ACCEPTED': return <FaCheckCircle className="text-gray-600 text-xs" />;
+      case 'ACCEPTED': return <FaCheckCircle className="text-gray-600 dark:text-slate-300 text-xs" />;
       case 'REJECTED': return <FaTimesCircle className="text-gray-500 text-xs" />;
       case 'WITHDRAWN': return <FaExclamationTriangle className="text-gray-400 text-xs" />;
       case 'EXPIRED': return <FaExclamationTriangle className="text-gray-400 text-xs" />;
@@ -226,7 +226,7 @@ const BiddingManagement: React.FC = () => {
             <FaGavel className="text-white text-xs" />
           </div>
           <div>
-            <div className="text-xs font-medium text-gray-900">{getCargoTitle(bid)}</div>
+            <div className="text-xs font-medium text-gray-900 dark:text-white">{getCargoTitle(bid)}</div>
             <div className="text-[10px] text-gray-500">Load: {bid.loadId?.slice(0, 8)} • Bid: {bid.id.slice(0, 8)}</div>
           </div>
         </div>
@@ -236,7 +236,7 @@ const BiddingManagement: React.FC = () => {
       key: 'truckOwner',
       label: 'Bidder',
       render: (_v, bid) => (
-        <div className="text-xs text-gray-900">
+        <div className="text-xs text-gray-900 dark:text-white">
           <div className="font-medium">{getBidderName(bid)}</div>
           <div className="text-[10px] text-gray-500">{getBidderCompany(bid)}</div>
           <div className="flex items-center gap-1 mt-0.5">
@@ -251,8 +251,8 @@ const BiddingManagement: React.FC = () => {
       label: 'Amount',
       sortable: true,
       render: (_v, bid) => (
-        <div className="text-xs text-gray-900">
-          <div className="text-sm font-bold text-gray-900">{fmtFull(bid.bidAmount || 0)}</div>
+        <div className="text-xs text-gray-900 dark:text-white">
+          <div className="text-sm font-bold text-gray-900 dark:text-white">{fmtFull(bid.bidAmount || 0)}</div>
           <div className="text-[10px] text-gray-500 flex items-center gap-1">
             <FaTruck className="w-2.5 h-2.5" />
             {bid.load?.weight ? `${bid.load.weight.toLocaleString()} kg` : 'N/A'}
@@ -276,10 +276,10 @@ const BiddingManagement: React.FC = () => {
       label: 'Timeline',
       sortable: true,
       render: (_v, bid) => (
-        <div className="space-y-0.5 text-xs text-gray-900">
-          <div className="text-[10px] text-gray-600">Submitted: {getTimeAgo(bid.createdAt)}</div>
-          <div className="text-[10px] text-gray-600">Pickup: {bid.proposedPickupDate ? formatDate(bid.proposedPickupDate) : 'N/A'}</div>
-          <div className="text-[10px] text-gray-600">Delivery: {bid.proposedDeliveryDate ? formatDate(bid.proposedDeliveryDate) : 'N/A'}</div>
+        <div className="space-y-0.5 text-xs text-gray-900 dark:text-white">
+          <div className="text-[10px] text-gray-600 dark:text-slate-300">Submitted: {getTimeAgo(bid.createdAt)}</div>
+          <div className="text-[10px] text-gray-600 dark:text-slate-300">Pickup: {bid.proposedPickupDate ? formatDate(bid.proposedPickupDate) : 'N/A'}</div>
+          <div className="text-[10px] text-gray-600 dark:text-slate-300">Delivery: {bid.proposedDeliveryDate ? formatDate(bid.proposedDeliveryDate) : 'N/A'}</div>
         </div>
       ),
     },
@@ -360,94 +360,94 @@ const BiddingManagement: React.FC = () => {
 
         {showDetailsModal && selectedBid && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-gray-900"><TranslatedText text="Bid Details" /></h3>
+            <div className="bg-white dark:bg-slate-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+              <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white"><TranslatedText text="Bid Details" /></h3>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
                 >
                   <FaTimes className="w-4 h-4" />
                 </button>
               </div>
               <div className="p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Bid ID" /></div>
-                    <div className="text-xs font-medium text-gray-900">{selectedBid.id}</div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300 mb-0.5"><TranslatedText text="Bid ID" /></div>
+                    <div className="text-xs font-medium text-gray-900 dark:text-white">{selectedBid.id}</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Load ID" /></div>
-                    <div className="text-xs font-medium text-gray-900">{selectedBid.loadId}</div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300 mb-0.5"><TranslatedText text="Load ID" /></div>
+                    <div className="text-xs font-medium text-gray-900 dark:text-white">{selectedBid.loadId}</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Cargo Title" /></div>
-                    <div className="text-xs font-medium text-gray-900">{getCargoTitle(selectedBid)}</div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300 mb-0.5"><TranslatedText text="Cargo Title" /></div>
+                    <div className="text-xs font-medium text-gray-900 dark:text-white">{getCargoTitle(selectedBid)}</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Status" /></div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300 mb-0.5"><TranslatedText text="Status" /></div>
                     <div className="flex items-center gap-1.5">
                       <StatusBadge status={selectedBid.status} label={selectedBid.status} icon={getStatusIcon(selectedBid.status)} />
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-xs font-medium text-gray-900 mb-2"><TranslatedText text="Bidder Information" /></div>
+                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                  <div className="text-xs font-medium text-gray-900 dark:text-white mb-2"><TranslatedText text="Bidder Information" /></div>
                   <div className="space-y-1.5">
                     <div>
-                      <div className="text-[10px] text-gray-600"><TranslatedText text="Name" /></div>
-                      <div className="text-xs text-gray-900">{getBidderName(selectedBid)}</div>
+                      <div className="text-[10px] text-gray-600 dark:text-slate-300"><TranslatedText text="Name" /></div>
+                      <div className="text-xs text-gray-900 dark:text-white">{getBidderName(selectedBid)}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-gray-600"><TranslatedText text="Company" /></div>
-                      <div className="text-xs text-gray-900">{getBidderCompany(selectedBid)}</div>
+                      <div className="text-[10px] text-gray-600 dark:text-slate-300"><TranslatedText text="Company" /></div>
+                      <div className="text-xs text-gray-900 dark:text-white">{getBidderCompany(selectedBid)}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-gray-600"><TranslatedText text="Email" /></div>
-                      <div className="text-xs text-gray-900">{selectedBid.truckOwner?.email || 'N/A'}</div>
+                      <div className="text-[10px] text-gray-600 dark:text-slate-300"><TranslatedText text="Email" /></div>
+                      <div className="text-xs text-gray-900 dark:text-white">{selectedBid.truckOwner?.email || 'N/A'}</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Bid Amount" /></div>
-                    <div className="text-sm font-bold text-gray-900">{fmtFull(selectedBid.bidAmount || 0)}</div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300 mb-0.5"><TranslatedText text="Bid Amount" /></div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">{fmtFull(selectedBid.bidAmount || 0)}</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-[10px] text-gray-600 mb-0.5"><TranslatedText text="Load Weight" /></div>
-                    <div className="text-sm font-medium text-gray-900">{selectedBid.load?.weight ? `${selectedBid.load.weight.toLocaleString()} kg` : 'N/A'}</div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                    <div className="text-[10px] text-gray-600 dark:text-slate-300 mb-0.5"><TranslatedText text="Load Weight" /></div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{selectedBid.load?.weight ? `${selectedBid.load.weight.toLocaleString()} kg` : 'N/A'}</div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                  <div className="text-xs font-medium text-gray-900 mb-2"><TranslatedText text="Timeline" /></div>
+                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                  <div className="text-xs font-medium text-gray-900 dark:text-white mb-2"><TranslatedText text="Timeline" /></div>
                   <div className="space-y-1.5">
                     <div>
-                      <div className="text-[10px] text-gray-600"><TranslatedText text="Submitted" /></div>
-                      <div className="text-xs text-gray-900">{formatDateTime(selectedBid.createdAt)}</div>
+                      <div className="text-[10px] text-gray-600 dark:text-slate-300"><TranslatedText text="Submitted" /></div>
+                      <div className="text-xs text-gray-900 dark:text-white">{formatDateTime(selectedBid.createdAt)}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-gray-600"><TranslatedText text="Proposed Pickup" /></div>
-                      <div className="text-xs text-gray-900">{selectedBid.proposedPickupDate ? formatDate(selectedBid.proposedPickupDate) : 'N/A'}</div>
+                      <div className="text-[10px] text-gray-600 dark:text-slate-300"><TranslatedText text="Proposed Pickup" /></div>
+                      <div className="text-xs text-gray-900 dark:text-white">{selectedBid.proposedPickupDate ? formatDate(selectedBid.proposedPickupDate) : 'N/A'}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-gray-600"><TranslatedText text="Proposed Delivery" /></div>
-                      <div className="text-xs text-gray-900">{selectedBid.proposedDeliveryDate ? formatDate(selectedBid.proposedDeliveryDate) : 'N/A'}</div>
+                      <div className="text-[10px] text-gray-600 dark:text-slate-300"><TranslatedText text="Proposed Delivery" /></div>
+                      <div className="text-xs text-gray-900 dark:text-white">{selectedBid.proposedDeliveryDate ? formatDate(selectedBid.proposedDeliveryDate) : 'N/A'}</div>
                     </div>
                   </div>
                 </div>
 
                 {selectedBid.bidNotes && (
-                  <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="text-xs font-medium text-gray-900 mb-1"><TranslatedText text="Notes" /></div>
-                    <div className="text-xs text-gray-700">{selectedBid.bidNotes}</div>
+                  <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-gray-200 dark:border-slate-700">
+                    <div className="text-xs font-medium text-gray-900 dark:text-white mb-1"><TranslatedText text="Notes" /></div>
+                    <div className="text-xs text-gray-700 dark:text-slate-300">{selectedBid.bidNotes}</div>
                   </div>
                 )}
 
                 {selectedBid.status?.toUpperCase() === 'PENDING' && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-slate-700">
                     <button
                       onClick={() => {
                         handleAcceptBid(selectedBid.id);
@@ -462,7 +462,7 @@ const BiddingManagement: React.FC = () => {
                         handleRejectBid(selectedBid.id);
                         setShowDetailsModal(false);
                       }}
-                      className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-xs font-medium"
+                      className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 transition-colors text-xs font-medium"
                     >
                       <TranslatedText text="Reject Bid" />
                     </button>

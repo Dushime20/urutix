@@ -294,12 +294,12 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
   if (loading) {
     return (
       <div className={`space-y-6 animate-pulse p-8 ${className}`}>
-        <div className="h-20 bg-slate-50 rounded-[32px]" />
+        <div className="h-20 bg-slate-50 dark:bg-slate-800/50 rounded-[32px]" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => <div key={i} className="h-32 bg-slate-50 rounded-[32px]" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-32 bg-slate-50 dark:bg-slate-800/50 rounded-[32px]" />)}
         </div>
         <div className="space-y-4">
-          {[1, 2].map(i => <div key={i} className="h-48 bg-slate-50 rounded-[32px]" />)}
+          {[1, 2].map(i => <div key={i} className="h-48 bg-slate-50 dark:bg-slate-800/50 rounded-[32px]" />)}
         </div>
       </div>
     );
@@ -380,7 +380,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
 
       {/* Routes Management Section */}
       {!assignMode && (
-        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -388,7 +388,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                   <Navigation size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">All Routes</h3>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">All Routes</h3>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
                     {routes.length} Total Corridors
                   </p>
@@ -404,11 +404,11 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                   <motion.div
                     key={route.id}
                     whileHover={{ y: -2 }}
-                    className="bg-slate-50/50 border border-slate-100 rounded-[20px] p-5 group hover:border-indigo-200 hover:bg-indigo-50/30 transition-all"
+                    className="bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-[20px] p-5 group hover:border-indigo-200 hover:bg-indigo-50/30 transition-all"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h4 className="text-base font-black text-slate-900 tracking-tight mb-1">
+                        <h4 className="text-base font-black text-slate-900 dark:text-white tracking-tight mb-1">
                           {route.name}
                         </h4>
                         <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
@@ -424,7 +424,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                             console.log('🔧 Edit button clicked for route:', route.name);
                             handleEditRoute(route);
                           }}
-                          className="size-7 bg-white text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm hover:shadow-md relative z-20"
+                          className="size-7 bg-white dark:bg-slate-900 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm hover:shadow-md relative z-20"
                           title={`Edit route "${route.name}"`}
                         >
                           <Edit3 size={12} />
@@ -436,7 +436,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                             console.log('🗑️ Delete button clicked for route:', route.name);
                             handleDeleteRoute(route);
                           }}
-                          className="size-7 bg-white text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm hover:shadow-md relative z-20"
+                          className="size-7 bg-white dark:bg-slate-900 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-sm hover:shadow-md relative z-20"
                           title={`Delete route "${route.name}"`}
                         >
                           <Trash2 size={12} />
@@ -447,11 +447,11 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Distance</span>
-                        <span className="text-sm font-black text-slate-900">{route.distance} km</span>
+                        <span className="text-sm font-black text-slate-900 dark:text-white">{route.distance} km</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Duration</span>
-                        <span className="text-sm font-black text-slate-900">{route.estimatedTime}h</span>
+                        <span className="text-sm font-black text-slate-900 dark:text-white">{route.estimatedTime}h</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
@@ -460,7 +460,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                             ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                             : route.status === 'maintenance'
                             ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                            : 'bg-slate-50 text-slate-600 border border-slate-100'
+                            : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800'
                         }`}>
                           {route.status}
                         </span>
@@ -468,13 +468,13 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                       {route.routeType && (
                         <div className="flex items-center justify-between">
                           <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Type</span>
-                          <span className="text-sm font-black text-slate-900 capitalize">{route.routeType}</span>
+                          <span className="text-sm font-black text-slate-900 dark:text-white capitalize">{route.routeType}</span>
                         </div>
                       )}
                     </div>
 
                     {route.description && (
-                      <div className="mt-3 pt-3 border-t border-slate-100">
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                         <p className="text-xs text-slate-500 line-clamp-2">{route.description}</p>
                       </div>
                     )}
@@ -483,10 +483,10 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
               </div>
             ) : (
               <div className="py-12 text-center">
-                <div className="size-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-slate-200 mb-6 mx-auto">
+                <div className="size-16 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] flex items-center justify-center text-slate-200 mb-6 mx-auto">
                   <Navigation size={32} />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 tracking-tight mb-2">No Routes Created</h4>
+                <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-2">No Routes Created</h4>
                 <p className="text-sm font-medium text-slate-400 mb-6">Create your first route to start managing logistics corridors.</p>
                 <button
                   onClick={handleCreateRoute}
@@ -508,17 +508,17 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
           <motion.div
             layout
             key={truck.id}
-            className={`bg-white rounded-[32px] border transition-all duration-300 overflow-hidden ${selectedTruck === truck.id ? 'border-indigo-500 shadow-lg ring-1 ring-indigo-500/10' : 'border-slate-100 shadow-sm'
+            className={`bg-white dark:bg-slate-900 rounded-[32px] border transition-all duration-300 overflow-hidden ${selectedTruck === truck.id ? 'border-indigo-500 shadow-lg ring-1 ring-indigo-500/10' : 'border-slate-100 dark:border-slate-800 shadow-sm'
               }`}
           >
             <div className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="size-12 bg-slate-50 rounded-[18px] flex items-center justify-center text-slate-400">
+                  <div className="size-12 bg-slate-50 dark:bg-slate-800/50 rounded-[18px] flex items-center justify-center text-slate-400">
                     <Truck size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-3">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
                       {truck.plateNumber}
                       <span className={`px-2 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest ${getStatusColor(truck.status)}`}>
                         {truck.status}
@@ -535,7 +535,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                     onClick={() => setSelectedTruck(selectedTruck === truck.id ? null : truck.id)}
                     className={`h-10 px-5 rounded-[16px] text-[9px] font-black uppercase tracking-widest transition-all ${selectedTruck === truck.id
                         ? 'bg-indigo-600 text-white shadow-lg'
-                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
                       }`}
                   >
                     {selectedTruck === truck.id ? 'Close Assignment' : 'Assign Routes'}
@@ -562,7 +562,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                         </div>
                         <button
                           onClick={() => handleUnassignRoute(truck.id, route.id)}
-                          className="size-6 bg-white text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg flex items-center justify-center transition-all shadow-sm"
+                          className="size-6 bg-white dark:bg-slate-900 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg flex items-center justify-center transition-all shadow-sm"
                         >
                           <Minus size={12} />
                         </button>
@@ -570,7 +570,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                     ))}
                   </div>
                 ) : (
-                  <div className="bg-slate-50/50 border border-dashed border-slate-200 rounded-[20px] p-4 text-center">
+                  <div className="bg-slate-50/50 dark:bg-slate-950 border border-dashed border-slate-200 dark:border-slate-700 rounded-[20px] p-4 text-center">
                     <p className="text-[10px] font-bold text-slate-400 lowercase tracking-widest italic opacity-60">no routes assigned</p>
                   </div>
                 )}
@@ -594,10 +594,10 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                         <button
                           key={route.id}
                           onClick={() => handleAssignRoute(truck.id, route.id)}
-                          className="bg-white border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30 p-4 rounded-[20px] text-left transition-all group flex items-start justify-between"
+                          className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-emerald-200 hover:bg-emerald-50/30 p-4 rounded-[20px] text-left transition-all group flex items-start justify-between"
                         >
                           <div>
-                            <p className="text-sm font-black text-slate-900 mb-1">{route.name}</p>
+                            <p className="text-sm font-black text-slate-900 dark:text-white mb-1">{route.name}</p>
                             <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                               {route.origin} <ArrowRight size={8} /> {route.destination}
                             </p>
@@ -608,7 +608,7 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
                         </button>
                       ))}
                       {getUnassignedRoutes(truck.id).length === 0 && (
-                        <div className="col-span-full py-8 text-center bg-slate-50 rounded-[24px]">
+                        <div className="col-span-full py-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-[24px]">
                           <p className="text-[10px] font-bold text-slate-400 italic">all routes assigned</p>
                         </div>
                       )}
@@ -623,11 +623,11 @@ export const RouteAssignmentManager: React.FC<RouteAssignmentManagerProps> = ({ 
       )}
 
       {trucks.length === 0 && (
-        <div className="p-16 text-center flex flex-col items-center bg-white rounded-[32px] border border-slate-100">
-          <div className="size-16 bg-slate-50 rounded-[24px] flex items-center justify-center text-slate-200 mb-6">
+        <div className="p-16 text-center flex flex-col items-center bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800">
+          <div className="size-16 bg-slate-50 dark:bg-slate-800/50 rounded-[24px] flex items-center justify-center text-slate-200 mb-6">
             <Truck size={32} />
           </div>
-          <h3 className="text-lg font-black text-slate-900 tracking-tight">No Trucks Available</h3>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">No Trucks Available</h3>
           <p className="text-sm font-medium text-slate-400 mt-2 max-w-xs">Add trucks to your fleet to start managing routes and assignments.</p>
         </div>
       )}

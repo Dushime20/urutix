@@ -146,7 +146,7 @@ export const EnhancedKycVerificationCenter: React.FC = () => {
   }
 
   return (
-    <Box className="min-h-screen bg-slate-50 font-inter">
+    <Box className="min-h-screen bg-slate-50 dark:bg-slate-950 font-inter">
       {/* Premium Header with Dynamic Mesh Background */}
       <Box className="relative overflow-hidden font-manrope">
         {/* Dynamic Background */}

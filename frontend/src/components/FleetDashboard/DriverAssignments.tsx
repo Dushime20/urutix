@@ -145,7 +145,7 @@ export const DriverAssignments: React.FC = () => {
       </div>
 
       {/* Matrix Control */}
-      <div className="bg-white rounded-[32px] border border-slate-100 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-4">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
           <input
@@ -153,7 +153,7 @@ export const DriverAssignments: React.FC = () => {
             placeholder="Filter by plate, make or model..."
             value={searchTruck}
             onChange={(e) => setSearchTruck(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-[24px] text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-50 rounded-[24px] text-[11px] font-bold text-slate-900 dark:text-white focus:bg-white dark:bg-slate-900 focus:ring-4 focus:ring-primary-50 focus:border-primary-500 outline-none transition-all"
           />
         </div>
       </div>
@@ -167,7 +167,7 @@ export const DriverAssignments: React.FC = () => {
               key={truck.id}
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
+              className="bg-white dark:bg-slate-900 p-6 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none group-hover:scale-110 transition-transform"><Zap size={80} /></div>
 
@@ -176,7 +176,7 @@ export const DriverAssignments: React.FC = () => {
                   <Truck size={24} />
                 </div>
                 <div className="text-right">
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">{truck.make} {truck.model}</h3>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{truck.make} {truck.model}</h3>
                   <p className="text-[10px] font-bold text-primary-500 uppercase tracking-widest">{truck.plateNumber}</p>
                 </div>
               </div>
@@ -186,13 +186,13 @@ export const DriverAssignments: React.FC = () => {
                 <div className="space-y-2">
                   {(truck.assignedDrivers || []).length > 0 ? (
                     truck.assignedDrivers?.map((assignment: DriverAssignment) => (
-                      <div key={assignment.driverId} className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-50 group/item hover:bg-white hover:border-slate-100 transition-all">
+                      <div key={assignment.driverId} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-50 group/item hover:bg-white dark:bg-slate-900 hover:border-slate-100 dark:border-slate-800 transition-all">
                         <div className="flex items-center gap-3">
-                          <div className="size-8 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover/item:text-primary-500 shadow-sm transition-colors">
+                          <div className="size-8 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 group-hover/item:text-primary-500 shadow-sm transition-colors">
                             <User size={14} />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-900">{assignment.driverName || 'Personnel Null'}</p>
+                            <p className="text-xs font-bold text-slate-900 dark:text-white">{assignment.driverName || 'Personnel Null'}</p>
                             <p className="text-[9px] font-black uppercase text-primary-500">Active Duty</p>
                           </div>
                         </div>
@@ -205,7 +205,7 @@ export const DriverAssignments: React.FC = () => {
                       </div>
                     ))
                   ) : (
-                    <div className="py-4 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                    <div className="py-4 text-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl">
                       <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Available for Deployment</p>
                     </div>
                   )}
@@ -217,7 +217,7 @@ export const DriverAssignments: React.FC = () => {
                   setSelectedTruck(truck);
                   setShowAssignModal(true);
                 }}
-                className="mt-6 w-full py-3 bg-slate-50 text-primary-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all group-hover:shadow-lg group-hover:shadow-primary-500/20"
+                className="mt-6 w-full py-3 bg-slate-50 dark:bg-slate-800/50 text-primary-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all group-hover:shadow-lg group-hover:shadow-primary-500/20"
               >
                 <Plus size={14} className="inline mr-2" />
                 Deploy Personnel
@@ -240,7 +240,7 @@ export const DriverAssignments: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[40px] shadow-2xl max-w-lg w-full overflow-hidden"
+            className="bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl max-w-lg w-full overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-10 bg-primary-500 text-white text-center relative overflow-hidden">
@@ -263,7 +263,7 @@ export const DriverAssignments: React.FC = () => {
                   placeholder="Search available personnel..."
                   value={searchDriver}
                   onChange={(e) => setSearchDriver(e.target.value)}
-                  className="w-full pl-11 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 outline-none transition-all"
+                  className="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:bg-white dark:bg-slate-900 focus:ring-4 focus:ring-primary-50 outline-none transition-all"
                 />
               </div>
 
@@ -275,14 +275,14 @@ export const DriverAssignments: React.FC = () => {
                       key={driver.id}
                       onClick={() => handleAssignDriver(selectedTruck.id, driver.id)}
                       disabled={assigning}
-                      className="w-full p-4 flex items-center justify-between bg-slate-50 rounded-2xl border border-transparent hover:border-primary-100 hover:bg-primary-50 transition-all group/driver"
+                      className="w-full p-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-primary-100 hover:bg-primary-50 transition-all group/driver"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="size-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover/driver:text-primary-500 shadow-sm">
+                        <div className="size-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 group-hover/driver:text-primary-500 shadow-sm">
                           <User size={18} />
                         </div>
                         <div className="text-left">
-                          <p className="text-sm font-bold text-slate-900">{driver.firstName} {driver.lastName}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{driver.firstName} {driver.lastName}</p>
                           <p className="text-[9px] font-black uppercase text-emerald-500 tracking-widest">Available</p>
                         </div>
                       </div>
@@ -300,11 +300,11 @@ export const DriverAssignments: React.FC = () => {
                       className="w-full p-4 flex items-center justify-between bg-amber-50 rounded-2xl border border-amber-100 hover:border-amber-200 hover:bg-amber-100/60 transition-all group/driver"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="size-10 bg-white rounded-xl flex items-center justify-center text-amber-500 shadow-sm">
+                        <div className="size-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-amber-500 shadow-sm">
                           <User size={18} />
                         </div>
                         <div className="text-left">
-                          <p className="text-sm font-bold text-slate-900">{driver.firstName} {driver.lastName}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{driver.firstName} {driver.lastName}</p>
                           <p className="text-[9px] font-black uppercase text-amber-600 tracking-widest">
                             On {getTruckLabel(driver.currentTruckId)} — tap to transfer
                           </p>
@@ -326,7 +326,7 @@ export const DriverAssignments: React.FC = () => {
                 placeholder="Strategic deployment notes (optional)..."
                 value={assignmentNotes}
                 onChange={(e) => setAssignmentNotes(e.target.value)}
-                className="w-full p-4 bg-slate-50 border-none rounded-2xl text-[11px] font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-primary-50 outline-none transition-all resize-none h-24"
+                className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl text-[11px] font-bold text-slate-900 dark:text-white focus:bg-white dark:bg-slate-900 focus:ring-4 focus:ring-primary-50 outline-none transition-all resize-none h-24"
               />
             </div>
           </motion.div>

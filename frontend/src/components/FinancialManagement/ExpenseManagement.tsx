@@ -561,7 +561,7 @@ const ExpenseManagement: React.FC = () => {
               </div>
               <button
                 onClick={() => { setShowAddModal(false); setSelectedTruckId(''); }}
-                className="w-10 h-10 rounded-2xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all flex items-center justify-center text-slate-400 dark:text-slate-500"
+                className="w-10 h-10 rounded-2xl hover:bg-white dark:bg-slate-900 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:border-slate-700 dark:hover:border-slate-700 transition-all flex items-center justify-center text-slate-400 dark:text-slate-500"
               >
                 <XCircle className="w-5 h-5" />
               </button>

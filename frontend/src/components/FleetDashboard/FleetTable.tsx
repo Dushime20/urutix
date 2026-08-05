@@ -80,7 +80,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
             {activeTab === 'trucks' ? <Truck size={20} /> : <User size={20} />}
           </div>
           <div>
-            <h4 className="font-black text-slate-900 tracking-tight leading-none mb-1">{item.name}</h4>
+            <h4 className="font-black text-slate-900 dark:text-white tracking-tight leading-none mb-1">{item.name}</h4>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.id.substring(0, 8)}</p>
           </div>
         </div>
@@ -111,7 +111,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
       label: 'Technical Matrix',
       render: (_: unknown, item: FleetItem) => (
         <div className="flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1.5">
+          <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
             <Zap size={10} className="text-primary-500" />
             {activeTab === 'trucks' ? item.plateNumber : item.licenseNumber || 'PROTOTYPE'}
           </span>
@@ -196,9 +196,9 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
               transition={{ delay: index * 0.05 }}
               key={item.id}
               ref={index === fleetItems.length - 1 ? lastFleetItemRef : null}
-              className={`group bg-white rounded-[32px] border transition-all duration-300 relative overflow-hidden flex flex-col ${selectedIds.includes(item.id)
+              className={`group bg-white dark:bg-slate-900 rounded-[32px] border transition-all duration-300 relative overflow-hidden flex flex-col ${selectedIds.includes(item.id)
                 ? 'border-primary-500 shadow-xl ring-1 ring-primary-500/20'
-                : 'border-slate-100 shadow-sm hover:shadow-xl hover:border-primary-200'
+                : 'border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-primary-200'
                 }`}
               onClick={() => onRowClick(item)}
             >
@@ -239,7 +239,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                     <span className="text-[10px] font-black text-primary-500/60 uppercase tracking-[0.2em]">Asset Matrix</span>
                     <div className="h-px flex-1 bg-gradient-to-r from-primary-500/20 to-transparent" />
                   </div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight leading-tight truncate">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
                     {item.name}
                   </h3>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -251,24 +251,24 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                   {activeTab === 'trucks' ? (
                     <>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                      <div className="bg-slate-50/50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-50">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Plate</p>
-                        <p className="text-xs font-bold text-slate-700">{item.plateNumber || 'N/A'}</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{item.plateNumber || 'N/A'}</p>
                       </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                      <div className="bg-slate-50/50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-50">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Capacity</p>
-                        <p className="text-xs font-bold text-slate-700">{item.capacityWeight?.toLocaleString() || 0} kg</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{item.capacityWeight?.toLocaleString() || 0} kg</p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                      <div className="bg-slate-50/50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-50">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Experience</p>
-                        <p className="text-xs font-bold text-slate-700">{item.experience || 0} Years</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{item.experience || 0} Years</p>
                       </div>
-                      <div className="bg-slate-50/50 p-3 rounded-2xl border border-slate-50">
+                      <div className="bg-slate-50/50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-50">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Asset Link</p>
-                        <p className="text-xs font-bold text-slate-700 truncate">{item.currentTruck?.licensePlate || 'None'}</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{item.currentTruck?.licensePlate || 'None'}</p>
                       </div>
                     </>
                   )}
@@ -277,14 +277,14 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 {item.currentLocation?.address && (
                   <div className="bg-primary-50/30 p-3 rounded-2xl border border-primary-50/50 flex items-start gap-3">
                     <MapPin size={14} className="text-primary-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-[11px] font-medium text-slate-600 leading-snug line-clamp-1 italic">
+                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-snug line-clamp-1 italic">
                       {item.currentLocation.address}
                     </p>
                   </div>
                 )}
               </div>
 
-              <div className="p-3 bg-slate-50/50 group-hover:bg-primary-50/50 transition-colors border-t border-slate-50 flex items-center justify-between mt-auto">
+              <div className="p-3 bg-slate-50/50 dark:bg-slate-950 group-hover:bg-primary-50/50 transition-colors border-t border-slate-50 flex items-center justify-between mt-auto">
                 <div className="flex -space-x-1 pl-3">
                   <div className="size-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-500">
                     <Shield size={10} />
@@ -297,13 +297,13 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
                 <div className="flex items-center gap-1 pr-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); onEditFleetItem(item); }}
-                    className="size-9 bg-white hover:bg-primary-500 hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100"
+                    className="size-9 bg-white dark:bg-slate-900 hover:bg-primary-500 hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100 dark:border-slate-800"
                   >
                     <Edit3 size={16} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeleteFleetItem(item.id); }}
-                    className="size-9 bg-white hover:bg-rose-500 hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100"
+                    className="size-9 bg-white dark:bg-slate-900 hover:bg-rose-500 hover:text-white rounded-xl flex items-center justify-center text-slate-400 transition-all shadow-sm border border-slate-100 dark:border-slate-800"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -323,7 +323,7 @@ const FleetTableComp: React.FC<FleetTableProps> = ({
     <div className="relative">
       <StandardDataTable
         embedded
-        className="bg-white rounded-[40px] border border-slate-100 shadow-xl overflow-hidden"
+        className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden"
         columns={listColumns}
         data={fleetItems}
         getRowId={(row) => row.id}

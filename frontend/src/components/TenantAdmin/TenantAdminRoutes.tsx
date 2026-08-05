@@ -333,19 +333,19 @@ const TenantAdminRoutes: React.FC = () => {
   return (
     <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
               <FaRoute className="text-blue-600 flex-shrink-0" />
               Route Management
             </h1>
-            <p className="text-gray-600 mt-2 text-sm sm:text-base">Manage and monitor your tenant routes</p>
+            <p className="text-gray-600 dark:text-slate-300 mt-2 text-sm sm:text-base">Manage and monitor your tenant routes</p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => refetchRoutes()}
-              className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
+              className="px-3 py-2 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-sm"
             >
               <FaSync className="w-4 h-4" />
               <span className="hidden sm:inline">Refresh</span>
@@ -364,7 +364,7 @@ const TenantAdminRoutes: React.FC = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="relative sm:col-span-2 lg:col-span-1">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -398,7 +398,7 @@ const TenantAdminRoutes: React.FC = () => {
           </select>
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+            className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
           >
             <FaFilter className="w-4 h-4" />
             {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
@@ -543,9 +543,9 @@ const TenantAdminRoutes: React.FC = () => {
       {/* Create Route Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <FaPlus className="text-blue-600" />
                 Create New Route
               </h2>
@@ -554,7 +554,7 @@ const TenantAdminRoutes: React.FC = () => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <FaTimesCircle className="w-6 h-6" />
               </button>
@@ -562,7 +562,7 @@ const TenantAdminRoutes: React.FC = () => {
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Route Name *
                   </label>
                   <input
@@ -575,7 +575,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Status *</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -587,7 +587,7 @@ const TenantAdminRoutes: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Origin *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Origin *</label>
                   <input
                     type="text"
                     required
@@ -598,7 +598,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Destination *
                   </label>
                   <input
@@ -611,7 +611,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Distance (km) *
                   </label>
                   <input
@@ -627,7 +627,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Estimated Time (hours) *
                   </label>
                   <input
@@ -644,7 +644,7 @@ const TenantAdminRoutes: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -661,18 +661,18 @@ const TenantAdminRoutes: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="isActive" className="text-sm text-gray-700">
+                <label htmlFor="isActive" className="text-sm text-gray-700 dark:text-slate-300">
                   Route is active
                 </label>
               </div>
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -702,9 +702,9 @@ const TenantAdminRoutes: React.FC = () => {
       {/* Edit Route Modal */}
       {showEditModal && editingRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <FaEdit className="text-blue-600" />
                 Edit Route
               </h2>
@@ -713,7 +713,7 @@ const TenantAdminRoutes: React.FC = () => {
                   setShowEditModal(false);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <FaTimesCircle className="w-6 h-6" />
               </button>
@@ -721,7 +721,7 @@ const TenantAdminRoutes: React.FC = () => {
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Route Name *
                   </label>
                   <input
@@ -733,7 +733,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Status *</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -745,7 +745,7 @@ const TenantAdminRoutes: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Origin *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Origin *</label>
                   <input
                     type="text"
                     required
@@ -755,7 +755,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Destination *
                   </label>
                   <input
@@ -767,7 +767,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Distance (km) *
                   </label>
                   <input
@@ -783,7 +783,7 @@ const TenantAdminRoutes: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Estimated Time (hours) *
                   </label>
                   <input
@@ -800,7 +800,7 @@ const TenantAdminRoutes: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Description</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -816,18 +816,18 @@ const TenantAdminRoutes: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="isActiveEdit" className="text-sm text-gray-700">
+                <label htmlFor="isActiveEdit" className="text-sm text-gray-700 dark:text-slate-300">
                   Route is active
                 </label>
               </div>
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => {
                     setShowEditModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -857,15 +857,15 @@ const TenantAdminRoutes: React.FC = () => {
       {/* Route Details Modal */}
       {showDetailsModal && selectedRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <FaRoute className="text-blue-600" />
                 Route Details
               </h2>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <FaTimesCircle className="w-6 h-6" />
               </button>
@@ -874,7 +874,7 @@ const TenantAdminRoutes: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Route Name</label>
-                  <p className="text-lg font-semibold text-gray-900">{selectedRoute.name}</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">{selectedRoute.name}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Status</label>
@@ -889,35 +889,35 @@ const TenantAdminRoutes: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Origin</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <FaMapMarkerAlt className="w-4 h-4 text-green-500" />
                     {selectedRoute.origin}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Destination</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <FaMapMarkerAlt className="w-4 h-4 text-red-500" />
                     {selectedRoute.destination}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Distance</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <FaRoad className="w-4 h-4 text-gray-400" />
                     {selectedRoute.distance || 0} km
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Estimated Time</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <FaClock className="w-4 h-4 text-gray-400" />
                     {selectedRoute.estimatedDuration || selectedRoute.estimatedTime || 0} hours
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Assigned Trucks</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <FaTruck className="w-4 h-4 text-gray-400" />
                     {Array.isArray(selectedRoute.assignedTrucks)
                       ? selectedRoute.assignedTrucks.length
@@ -928,7 +928,7 @@ const TenantAdminRoutes: React.FC = () => {
               {selectedRoute.description && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">Description</label>
-                  <p className="text-gray-900 mt-1">{selectedRoute.description}</p>
+                  <p className="text-gray-900 dark:text-white mt-1">{selectedRoute.description}</p>
                 </div>
               )}
             </div>
@@ -939,22 +939,22 @@ const TenantAdminRoutes: React.FC = () => {
       {/* Assign Route to Truck Modal */}
       {showAssignModal && selectedRoute && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <FaTruck className="text-green-600" />
                 Assign Route to Truck
               </h2>
               <button
                 onClick={() => setShowAssignModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <FaTimesCircle className="w-6 h-6" />
               </button>
             </div>
             <div className="p-6">
               <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-gray-600 dark:text-slate-300 mb-2">
                   Select a truck to assign route: <strong>{selectedRoute.name}</strong>
                 </p>
               </div>
@@ -972,7 +972,7 @@ const TenantAdminRoutes: React.FC = () => {
                         className={`p-4 border rounded-lg transition-colors ${
                           isAssigned
                             ? 'bg-green-50 border-green-200'
-                            : 'bg-white border-gray-200 hover:border-blue-300'
+                            : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 hover:border-blue-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -980,7 +980,7 @@ const TenantAdminRoutes: React.FC = () => {
                             <div className="flex items-center gap-3">
                               <FaTruck className="w-5 h-5 text-gray-400" />
                               <div>
-                                <p className="font-medium text-gray-900">
+                                <p className="font-medium text-gray-900 dark:text-white">
                                   {truck.plateNumber} - {truck.make} {truck.model}
                                 </p>
                                 <p className="text-sm text-gray-500">

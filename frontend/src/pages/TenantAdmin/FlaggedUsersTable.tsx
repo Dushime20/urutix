@@ -103,7 +103,7 @@ const FlaggedUsersTable: React.FC = () => {
       alwaysVisible: true,
       render: (_v, flag) => (
         <div>
-          <div className="text-sm font-medium text-gray-900">{flag.userName}</div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">{flag.userName}</div>
           <div className="text-sm text-gray-500">{flag.userEmail}</div>
         </div>
       ),
@@ -111,13 +111,13 @@ const FlaggedUsersTable: React.FC = () => {
     {
       key: 'reason',
       label: 'Reason',
-      render: (v) => <div className="text-sm text-gray-900 max-w-xs truncate">{v}</div>,
+      render: (v) => <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate">{v}</div>,
     },
     {
       key: 'riskType',
       label: 'Risk Type',
       render: (v) => (
-        <span className="px-2 py-1 text-xs font-medium border rounded-full bg-gray-50 text-gray-700 border-gray-200">
+        <span className="px-2 py-1 text-xs font-medium border rounded-full bg-gray-50 dark:bg-slate-800/50 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700">
           {v}
         </span>
       ),
@@ -135,7 +135,7 @@ const FlaggedUsersTable: React.FC = () => {
       sortable: true,
       render: (_v, flag) => (
         <div className="flex items-center gap-1">
-          <span className="text-sm font-bold text-gray-900">{flag.riskScore}</span>
+          <span className="text-sm font-bold text-gray-900 dark:text-white">{flag.riskScore}</span>
           <span className="text-xs text-gray-500">/ 100</span>
         </div>
       ),

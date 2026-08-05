@@ -135,7 +135,7 @@ const LenderDashboard: React.FC = () => {
   const LoadingSpinner = () => (
     <div className="flex items-center justify-center h-64">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600">
+                  <span className="ml-3 text-gray-600 dark:text-slate-300">
                     <TranslatedText text="Loading dashboard data..." />
                   </span>
     </div>
@@ -166,12 +166,12 @@ const LenderDashboard: React.FC = () => {
   // Authentication check
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             <TranslatedText text="Access Required" />
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-300">
             <TranslatedText text="Please log in to access the lender dashboard." />
           </p>
         </div>
@@ -181,15 +181,15 @@ const LenderDashboard: React.FC = () => {
 
   if (!lenderId) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             <TranslatedText text="Lender Access Required" />
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-300">
             <TranslatedText text="Your account doesn't have lender permissions." />
           </p>
-          <p className="text-sm text-gray-500 mt-2">Current role: {user?.role}</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">Current role: {user?.role}</p>
         </div>
       </div>
     );
@@ -243,9 +243,9 @@ const LenderDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between px-6 py-4">
           {/* Search Bar */}
           <div className="flex items-center flex-1 max-w-md">
@@ -264,13 +264,13 @@ const LenderDashboard: React.FC = () => {
           {/* Right Side Icons */}
           <div className="flex items-center gap-4">
             {loading && (
-              <span className="text-sm text-gray-500 flex items-center">
+              <span className="text-sm text-gray-500 dark:text-slate-400 flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                 <TranslatedText text="Updating..." />
               </span>
             )}
             <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -288,19 +288,19 @@ const LenderDashboard: React.FC = () => {
           <button className="pb-3 border-b-2 border-navy-600 text-navy-600 font-medium">
             <TranslatedText text="Overview" />
           </button>
-          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white">
             <TranslatedText text="Loans" />
           </button>
-          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white">
             <TranslatedText text="Requests" />
           </button>
-          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white">
             <TranslatedText text="Analytics" />
           </button>
-          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white">
             <TranslatedText text="Reports" />
           </button>
-          <button className="pb-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900">
+          <button className="pb-3 border-b-2 border-transparent text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white">
             <TranslatedText text="Help" />
           </button>
         </div>
@@ -318,10 +318,10 @@ const LenderDashboard: React.FC = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {/* Total Loans Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-1">
                       <TranslatedText text="Total Loans" />
                     </p>
                     <p className="text-3xl font-bold text-gray-800 mb-2">{stats.totalLoans}</p>
@@ -330,11 +330,11 @@ const LenderDashboard: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
                       </svg>
                       <span className="text-sm font-semibold text-green-600">+12%</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-slate-400">
                         <TranslatedText text="vs last month" />
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                       <TranslatedText text="Active lending portfolio" />
                     </p>
                   </div>
@@ -347,10 +347,10 @@ const LenderDashboard: React.FC = () => {
               </div>
 
               {/* Total Amount Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-1">
                       <TranslatedText text="Total Amount" />
                     </p>
                     <p className="text-3xl font-bold text-gray-800 mb-2">{fmtCurrency(stats.totalAmount)}</p>
@@ -359,11 +359,11 @@ const LenderDashboard: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
                       </svg>
                       <span className="text-sm font-semibold text-green-600">+8.5%</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-slate-400">
                         <TranslatedText text="vs last month" />
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                       <TranslatedText text="Total disbursed capital" />
                     </p>
                   </div>
@@ -376,10 +376,10 @@ const LenderDashboard: React.FC = () => {
               </div>
 
               {/* Active Loans Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-1">
                       <TranslatedText text="Active Loans" />
                     </p>
                     <p className="text-3xl font-bold text-gray-800 mb-2">{stats.activeLoans}</p>
@@ -388,11 +388,11 @@ const LenderDashboard: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
                       </svg>
                       <span className="text-sm font-semibold text-green-600">+5</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-slate-400">
                         <TranslatedText text="this week" />
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                       <TranslatedText text="Currently disbursed" />
                     </p>
                   </div>
@@ -405,10 +405,10 @@ const LenderDashboard: React.FC = () => {
               </div>
 
               {/* Default Rate Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-1">
                       <TranslatedText text="Default Rate" />
                     </p>
                     <p className="text-3xl font-bold text-gray-800 mb-2">{stats.defaultRate}%</p>
@@ -417,11 +417,11 @@ const LenderDashboard: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                       </svg>
                       <span className="text-sm font-semibold text-green-600">-0.2%</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-slate-400">
                         <TranslatedText text="vs last month" />
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                       <TranslatedText text="Risk management" />
                     </p>
                   </div>
@@ -434,10 +434,10 @@ const LenderDashboard: React.FC = () => {
               </div>
 
               {/* Average Amount Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-1">
                       <TranslatedText text="Average Amount" />
                     </p>
                     <p className="text-3xl font-bold text-gray-800 mb-2">{fmtCurrency(stats.averageAmount)}</p>
@@ -446,11 +446,11 @@ const LenderDashboard: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7M17 17H7" />
                       </svg>
                       <span className="text-sm font-semibold text-green-600">+2.3%</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-slate-400">
                         <TranslatedText text="vs last month" />
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                       <TranslatedText text="Per loan amount" />
                     </p>
                   </div>
@@ -463,10 +463,10 @@ const LenderDashboard: React.FC = () => {
               </div>
 
               {/* Pending Requests Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-1">
                       <TranslatedText text="Pending Requests" />
                     </p>
                     <p className="text-3xl font-bold text-gray-800 mb-2">{stats.pendingRequests}</p>
@@ -475,11 +475,11 @@ const LenderDashboard: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                       </svg>
                       <span className="text-sm font-semibold text-yellow-600">+3</span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-slate-400">
                         <TranslatedText text="new today" />
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                       <TranslatedText text="Awaiting approval" />
                     </p>
                   </div>
@@ -494,7 +494,7 @@ const LenderDashboard: React.FC = () => {
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   <TranslatedText text="Monthly Loan Disbursements" />
                 </h3>
@@ -503,7 +503,7 @@ const LenderDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   <TranslatedText text="Loan Status Distribution" />
                 </h3>
@@ -514,12 +514,12 @@ const LenderDashboard: React.FC = () => {
             </div>
 
             {/* Recent Loan Requests Table */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
-              <div className="p-6 border-b border-gray-200">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-800">
+              <div className="p-6 border-b border-gray-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-gray-800">
                   <TranslatedText text="Recent Loan Requests" />
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">
                   <TranslatedText text="Latest loan applications requiring your attention" />
                 </p>
               </div>

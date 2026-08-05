@@ -56,9 +56,9 @@ const TruckOwnerFinancialManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -68,8 +68,8 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                 </div>
               </div>
               <div className="ml-4">
-                <h1 className="text-xl font-semibold text-gray-900">Financial Management</h1>
-                <p className="text-sm text-gray-500">Manage your trucking business finances</p>
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Financial Management</h1>
+                <p className="text-sm text-gray-500 dark:text-slate-400">Manage your trucking business finances</p>
               </div>
             </div>
             
@@ -88,7 +88,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {tabs.map((tab) => {
@@ -102,7 +102,7 @@ const TruckOwnerFinancialManagement: React.FC = () => {
                   className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
                     isActive
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
                   }`}
                 >
                   <IconComponent className="w-4 h-4" />
@@ -135,21 +135,21 @@ const TruckOwnerFinancialManagement: React.FC = () => {
       </div>
 
       {/* Quick Stats Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 py-2 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-slate-300">
             <div className="flex items-center space-x-6">
               <span className="flex items-center space-x-2">
                 <FaDollarSign className="w-4 h-4 text-green-600" />
-                <span>Total Revenue: <span className="font-semibold text-gray-900">$47,500</span></span>
+                <span>Total Revenue: <span className="font-semibold text-gray-900 dark:text-white">$47,500</span></span>
               </span>
               <span className="flex items-center space-x-2">
                 <FaReceipt className="w-4 h-4 text-red-600" />
-                <span>Total Expenses: <span className="font-semibold text-gray-900">$38,700</span></span>
+                <span>Total Expenses: <span className="font-semibold text-gray-900 dark:text-white">$38,700</span></span>
               </span>
               <span className="flex items-center space-x-2">
                 <FaChartLine className="w-4 h-4 text-blue-600" />
-                <span>Net Profit: <span className="font-semibold text-gray-900">$8,800</span></span>
+                <span>Net Profit: <span className="font-semibold text-gray-900 dark:text-white">$8,800</span></span>
               </span>
             </div>
             

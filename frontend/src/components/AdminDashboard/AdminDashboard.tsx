@@ -301,7 +301,7 @@ const AdminDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-          <p className="text-gray-600">Welcome to the UrutiX administration panel</p>
+          <p className="text-gray-600 dark:text-slate-300">Welcome to the UrutiX administration panel</p>
         </div>
         <div className="flex items-center space-x-4 mt-4 sm:mt-0">
           <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -320,7 +320,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Time Range Selector */}
-      <div className="bg-white rounded-2xl shadow-lg p-4 border border-gray-100">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-slate-800">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">Time Range</h3>
           <div className="flex space-x-2">
@@ -331,7 +331,7 @@ const AdminDashboard: React.FC = () => {
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   timeRange === range
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-600 dark:text-slate-300 hover:bg-gray-200'
                 }`}
               >
                 {range === '1d' ? '24h' : range === '7d' ? '7 days' : range === '30d' ? '30 days' : '90 days'}
@@ -346,10 +346,10 @@ const AdminDashboard: React.FC = () => {
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div key={index} className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800 hover:shadow-xl transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.label}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-1">{stat.label}</p>
                   <p className="text-3xl font-bold text-gray-800 mb-2">{stat.value}</p>
                   <div className="flex items-center space-x-2">
                     {getTrendIcon(stat.trend)}
@@ -371,17 +371,17 @@ const AdminDashboard: React.FC = () => {
 
       {/* Enhanced Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">Revenue & Shipments Trend</h3>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Revenue</span>
+                <span className="text-sm text-gray-600 dark:text-slate-300">Revenue</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Shipments</span>
+                <span className="text-sm text-gray-600 dark:text-slate-300">Shipments</span>
               </div>
             </div>
           </div>
@@ -390,7 +390,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">Cargo Status Distribution</h3>
             <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">View Details</button>
@@ -403,7 +403,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Enhanced Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">User Distribution</h3>
             <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Export Data</button>
@@ -413,7 +413,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
             <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">View All</button>

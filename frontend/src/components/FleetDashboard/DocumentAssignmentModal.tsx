@@ -156,7 +156,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
 
     return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
 
                 {/* Header */}
                 <div className="bg-indigo-600 px-6 py-4 flex items-center justify-between">
@@ -175,12 +175,12 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-800/50">
 
                     {/* Action Bar */}
                     {!showAddForm && (
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-slate-800">Current Documents</h3>
+                            <h3 className="font-bold text-slate-800 dark:text-slate-100">Current Documents</h3>
                             <button
                                 onClick={() => setShowAddForm(true)}
                                 className={`flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm ${entityType === 'truck' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
@@ -191,16 +191,16 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                     )}
 
                     {showAddForm ? (
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-slate-800">Add New Document</h3>
-                                <button onClick={() => setShowAddForm(false)} className="text-sm text-slate-500 hover:text-slate-800">Cancel</button>
+                                <h3 className="font-bold text-slate-800 dark:text-slate-100">Add New Document</h3>
+                                <button onClick={() => setShowAddForm(false)} className="text-sm text-slate-500 hover:text-slate-800 dark:text-slate-100">Cancel</button>
                             </div>
 
                             <form onSubmit={handleAddDocument} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Document Type</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Document Type</label>
                                         <select
                                             value={newDocType}
                                             onChange={(e) => setNewDocType(e.target.value)}
@@ -210,7 +210,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Reference Number</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Reference Number</label>
                                         <input
                                             type="text"
                                             value={newDocRef}
@@ -221,7 +221,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Issue Date</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Issue Date</label>
                                         <input
                                             type="date"
                                             value={newDocIssueDate}
@@ -231,7 +231,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Expiry Date</label>
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Expiry Date</label>
                                         <input
                                             type="date"
                                             value={newDocExpiry}
@@ -244,8 +244,8 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
 
                                 {/* File Upload Section */}
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Document File</label>
-                                    <div className="border border-slate-300 rounded-lg p-3 bg-slate-50">
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Document File</label>
+                                    <div className="border border-slate-300 rounded-lg p-3 bg-slate-50 dark:bg-slate-800/50">
                                         <input
                                             type="file"
                                             onChange={(e) => {
@@ -260,7 +260,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Notes</label>
                                     <textarea
                                         value={newDocNotes}
                                         onChange={(e) => setNewDocNotes(e.target.value)}
@@ -273,7 +273,7 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                                     <button
                                         type="button"
                                         onClick={() => setShowAddForm(false)}
-                                        className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+                                        className="px-4 py-2 bg-slate-100 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-200 transition-colors"
                                     >
                                         Cancel
                                     </button>
@@ -294,8 +294,8 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                                     <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${entityType === 'truck' ? 'border-indigo-600' : 'border-emerald-600'}`}></div>
                                 </div>
                             ) : documents.length === 0 ? (
-                                <div className="text-center py-10 bg-white rounded-xl border border-dashed border-slate-300">
-                                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300">
+                                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <FaFileAlt className="text-slate-300 text-xl" />
                                     </div>
                                     <p className="text-slate-500 font-medium">No documents found</p>
@@ -303,17 +303,17 @@ const DocumentAssignmentModal: React.FC<DocumentAssignmentModalProps> = ({ isOpe
                                 </div>
                             ) : (
                                 documents.map(doc => (
-                                    <div key={doc.id} className="bg-white p-4 rounded-xl border border-slate-200 hover:shadow-md transition-shadow flex items-center justify-between group">
+                                    <div key={doc.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow flex items-center justify-between group">
                                         <div className="flex items-center gap-4">
                                             <div className={`
                                                 w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold
                                                 ${['Registration', 'Permit', 'Driver License'].includes(doc.regulation) ? 'bg-emerald-100 text-emerald-600' :
-                                                    ['Insurance', 'Medical Certificate'].includes(doc.regulation) ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}
+                                                    ['Insurance', 'Medical Certificate'].includes(doc.regulation) ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600 dark:text-slate-300'}
                                             `}>
                                                 {doc.regulation.charAt(0)}
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-slate-800">{doc.regulation}</h4>
+                                                <h4 className="font-bold text-slate-800 dark:text-slate-100">{doc.regulation}</h4>
                                                 <p className="text-xs text-slate-500 flex items-center gap-2">
                                                     <span className="font-mono">{doc.requirement}</span>
                                                     <span>•</span>

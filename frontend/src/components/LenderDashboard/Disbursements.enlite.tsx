@@ -74,7 +74,7 @@ const RejectModal: React.FC<{
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-            <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="bg-rose-50 px-8 py-6 border-b border-rose-100">
                     <h3 className="text-lg font-black text-rose-900 uppercase tracking-tight">Reject Disbursement</h3>
                     <p className="text-xs text-rose-600 mt-1">
@@ -91,13 +91,13 @@ const RejectModal: React.FC<{
                             onChange={e => setReason(e.target.value)}
                             placeholder="State the reason for rejection..."
                             rows={3}
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-900 focus:ring-4 focus:ring-rose-50 focus:border-rose-400 outline-none transition-all resize-none"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-medium text-slate-900 dark:text-white focus:ring-4 focus:ring-rose-50 focus:border-rose-400 outline-none transition-all resize-none"
                         />
                     </div>
                     <div className="flex gap-3 pt-2">
                         <button
                             onClick={onCancel}
-                            className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                            className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 transition-all"
                         >
                             Cancel
                         </button>
@@ -127,16 +127,16 @@ const DisburseModal: React.FC<{
         amount === null ? '—' : fmtDisburse(amount, entry.currency || 'RWF');
     return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-        <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="bg-[#345E85] px-8 py-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Confirm Disbursement</p>
                 <h3 className="text-xl font-black text-white tracking-tight mt-1">Release Funds</h3>
             </div>
             <div className="p-8 space-y-6">
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-3">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 space-y-3">
                     <div className="flex justify-between">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Borrower</span>
-                        <span className="text-sm font-black text-slate-900">
+                        <span className="text-sm font-black text-slate-900 dark:text-white">
                             {entry.borrowerName ?? <span className="text-slate-400 italic font-medium">No name on record</span>}
                         </span>
                     </div>
@@ -147,19 +147,19 @@ const DisburseModal: React.FC<{
                     {entry.purpose && (
                         <div className="flex justify-between">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Purpose</span>
-                            <span className="text-sm font-semibold text-slate-700 capitalize">{entry.purpose}</span>
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize">{entry.purpose}</span>
                         </div>
                     )}
                     {entry.interestRate !== null && (
                         <div className="flex justify-between">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Interest Rate</span>
-                            <span className="text-sm font-black text-slate-900">{entry.interestRate}% APR</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white">{entry.interestRate}% APR</span>
                         </div>
                     )}
                     {entry.termMonths !== null && (
                         <div className="flex justify-between">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Term</span>
-                            <span className="text-sm font-black text-slate-900">{entry.termMonths} months</span>
+                            <span className="text-sm font-black text-slate-900 dark:text-white">{entry.termMonths} months</span>
                         </div>
                     )}
                 </div>
@@ -174,7 +174,7 @@ const DisburseModal: React.FC<{
                 <div className="flex gap-3">
                     <button
                         onClick={onCancel}
-                        className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                        className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 dark:hover:bg-slate-800 transition-all"
                     >
                         Cancel
                     </button>
@@ -221,7 +221,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             label: t('DISBURSEMENT ID'),
             render: (id: string, d: DisbursementEntry) => (
                 <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-black text-slate-900 font-mono">
+                    <span className="text-[11px] font-black text-slate-900 dark:text-white font-mono">
                         {id.substring(0, 8)}…
                     </span>
                     {d.loanId && (
@@ -237,10 +237,10 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             label: 'BORROWER',
             render: (_: any, d: DisbursementEntry) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center border border-slate-100 dark:border-slate-800 flex-shrink-0">
                         <User size={16} className="text-[#345E85]" />
                     </div>
-                    <span className="font-black text-slate-900 uppercase text-[11px] truncate max-w-[160px]">
+                    <span className="font-black text-slate-900 dark:text-white uppercase text-[11px] truncate max-w-[160px]">
                         {d.borrowerName ?? (
                             <span className="text-slate-400 italic normal-case font-medium">No name on record</span>
                         )}
@@ -253,7 +253,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             label: 'AMOUNT',
             render: (_: any, d: DisbursementEntry) => (
                 <div className="flex flex-col gap-0.5">
-                    <span className="font-black text-slate-900 text-[12px]">
+                    <span className="font-black text-slate-900 dark:text-white text-[12px]">
                         {formatAmount(d.amount, d.currency)}
                     </span>
                     {d.purpose && (
@@ -269,7 +269,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             label: 'TERMS',
             render: (_: any, d: DisbursementEntry) => (
                 <div className="flex flex-col gap-0.5">
-                    <span className="text-[11px] font-semibold text-slate-700">
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                         {d.interestRate !== null ? `${d.interestRate}% APR` : '—'}
                     </span>
                     <span className="text-[9px] text-slate-400">
@@ -285,7 +285,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                 <div className="flex flex-col gap-0.5">
                     <div className="flex items-center gap-1">
                         <Calendar size={10} className="text-slate-400" />
-                        <span className="text-[10px] font-semibold text-slate-600">
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300">
                             {formatDate(d.requestedDate)}
                         </span>
                     </div>
@@ -302,7 +302,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             label: 'STATUS',
             render: (_: any, d: DisbursementEntry) => {
                 if (!d.status) return <span className="text-slate-400 text-[10px]">—</span>;
-                const style = statusStyle[d.status] ?? 'bg-slate-50 text-slate-600 border-slate-100';
+                const style = statusStyle[d.status] ?? 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-100 dark:border-slate-800';
                 return (
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black border uppercase ${style}`}>
                         {d.status.replace('_', ' ')}
@@ -379,7 +379,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
 
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-2">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm space-y-2">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
                             Status Breakdown
                         </p>
@@ -395,7 +395,7 @@ const DisbursementsEnlite: React.FC<DisbursementsEnliteProps> = ({
                                         {s.replace('_', ' ')}
                                     </span>
                                     <div className="text-right">
-                                        <p className="text-[11px] font-black text-slate-700">{cnt}</p>
+                                        <p className="text-[11px] font-black text-slate-700 dark:text-slate-300">{cnt}</p>
                                         <p className="text-[9px] text-slate-400">{formatAmount(total > 0 ? total : null, disbursements.find(d => d.status === s)?.currency)}</p>
                                     </div>
                                 </div>

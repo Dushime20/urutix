@@ -4,7 +4,7 @@ const FleetSkeletonComp: React.FC = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {[...Array(8)].map((_, index) => (
-        <div key={index} className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm">
+        <div key={index} className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
           <div className="animate-pulse space-y-6">
             <div className="flex items-center justify-between">
               <div className="size-12 bg-slate-100 rounded-2xl" />

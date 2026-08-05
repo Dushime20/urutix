@@ -306,7 +306,7 @@ const AdminDashboard: React.FC = () => {
 
           <div className="space-y-4 relative z-10">
             {analyticsData?.recentTrips?.slice(0, 3).map((trip, index) => (
-              <div key={trip.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-slate-800/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 dark:hover:border-slate-700/50 group">
+              <div key={trip.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-slate-800/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 dark:border-slate-800 dark:hover:border-slate-700/50 group">
                 <div className="relative">
                   <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-green-600 dark:text-green-400 rounded-xl flex items-center justify-center">
                     <FaRoute size={18} />
@@ -328,7 +328,7 @@ const AdminDashboard: React.FC = () => {
             )) || []}
             
             {analyticsData?.recentPayments?.slice(0, 2).map((payment, index) => (
-              <div key={payment.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-slate-800/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 dark:hover:border-slate-700/50 group">
+              <div key={payment.id || index} className="flex items-center gap-4 p-4 bg-gray-50/50 dark:bg-slate-800/40 hover:bg-gray-50 dark:hover:bg-slate-800/80 rounded-2xl transition-all duration-300 border border-transparent hover:border-gray-100 dark:border-slate-800 dark:hover:border-slate-700/50 group">
                 <div className="relative">
                   <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
                     <FaMoneyBillWave size={18} />

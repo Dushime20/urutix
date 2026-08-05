@@ -177,7 +177,7 @@ const LenderSupportPage: React.FC = () => {
       key: 'subject',
       label: 'Subject Payload',
       sortable: true,
-      render: (v) => <p className="text-sm font-bold text-slate-900">{String(v)}</p>,
+      render: (v) => <p className="text-sm font-bold text-slate-900 dark:text-white">{String(v)}</p>,
     },
     {
       key: 'status',
@@ -236,12 +236,12 @@ const LenderSupportPage: React.FC = () => {
       {/* Featured FAQs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {faqs.filter(f => f.isPopular).map(faq => (
-          <div key={faq.id} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+          <div key={faq.id} className="bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group">
             <div className="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-[#345E85] group-hover:scale-110 transition-transform">
               <Zap size={24} />
             </div>
-            <h3 className="text-sm font-black text-slate-900 leading-tight mb-3">{faq.question}</h3>
-            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">{faq.answer}</p>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white leading-tight mb-3">{faq.question}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">{faq.answer}</p>
             <button
               onClick={() => {
                 setExpandedFAQ(faq.id);
@@ -256,10 +256,10 @@ const LenderSupportPage: React.FC = () => {
       </div>
 
       {/* Main FAQ List */}
-      <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-slate-50">
           <div>
-            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Intelligence Repository</h3>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Intelligence Repository</h3>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Foundational knowledge synchronization</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -269,7 +269,7 @@ const LenderSupportPage: React.FC = () => {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat
                     ? 'bg-[#345E85] text-white shadow-lg shadow-blue-100'
-                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                    : 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100'
                   }`}
               >
                 {cat}
@@ -283,7 +283,7 @@ const LenderSupportPage: React.FC = () => {
             <div
               key={faq.id}
               id={`faq-${faq.id}`}
-              className={`border rounded-3xl transition-all duration-500 ${expandedFAQ === faq.id ? 'border-[#345E85] bg-blue-50/30' : 'border-slate-100 bg-white hover:border-slate-200'
+              className={`border rounded-3xl transition-all duration-500 ${expandedFAQ === faq.id ? 'border-[#345E85] bg-blue-50/30' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-200 dark:border-slate-700'
                 }`}
             >
               <button
@@ -306,10 +306,10 @@ const LenderSupportPage: React.FC = () => {
                     className="overflow-hidden"
                   >
                     <div className="px-14 pb-8">
-                      <p className="text-sm text-slate-600 leading-relaxed italic">{faq.answer}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic">{faq.answer}</p>
                       <div className="flex flex-wrap gap-2 mt-6">
                         {faq.tags.map(tag => (
-                          <span key={tag} className="px-3 py-1 bg-white border border-slate-100 text-[9px] font-black uppercase text-slate-400 rounded-lg tracking-widest">
+                          <span key={tag} className="px-3 py-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[9px] font-black uppercase text-slate-400 rounded-lg tracking-widest">
                             #{tag}
                           </span>
                         ))}
@@ -332,13 +332,13 @@ const LenderSupportPage: React.FC = () => {
       className="grid grid-cols-1 lg:grid-cols-2 gap-10"
     >
       <div className="space-y-8">
-        <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform duration-700">
             <Headphones size={120} className="text-[#345E85]" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] mb-4">Direct Linkage</p>
-          <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-6">Omni-Channel Support</h3>
-          <p className="text-sm text-slate-500 leading-relaxed mb-10">Select your preferred communication vector for immediate personnel synchronization.</p>
+          <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-6">Omni-Channel Support</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-10">Select your preferred communication vector for immediate personnel synchronization.</p>
 
           <div className="space-y-4">
             {[
@@ -346,14 +346,14 @@ const LenderSupportPage: React.FC = () => {
               { icon: Phone, label: 'Voice Authorization', detail: '+1 (555) 123-4567', action: 'Establish Link' },
               { icon: Mail, label: 'Asynchronous Data', detail: 'support@urutix.com', action: 'Transmit Packet' }
             ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-transparent hover:border-slate-100 hover:bg-white transition-all group/item">
+              <div key={idx} className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:bg-white dark:bg-slate-900 transition-all group/item">
                 <div className="flex items-center gap-4">
-                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center bg-white shadow-sm text-slate-600 group-hover/item:text-[#345E85] transition-colors`}>
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center bg-white dark:bg-slate-900 shadow-sm text-slate-600 dark:text-slate-300 group-hover/item:text-[#345E85] transition-colors`}>
                     <item.icon size={20} />
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.label}</p>
-                    <p className="text-sm font-bold text-slate-900">{item.detail}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{item.detail}</p>
                   </div>
                 </div>
                 <button className="text-[9px] font-black uppercase tracking-widest text-[#345E85] opacity-0 group-hover/item:opacity-100 transition-all">
@@ -383,9 +383,9 @@ const LenderSupportPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="mb-10">
-          <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Support Manifest</h3>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Support Manifest</h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Formal incident report generation</p>
         </div>
 
@@ -394,14 +394,14 @@ const LenderSupportPage: React.FC = () => {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Incident Subject</label>
             <input
               type="text"
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+              className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
               placeholder="Primary identifier of support requirement..."
             />
           </div>
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Domain Category</label>
-              <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none cursor-pointer">
+              <select className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none cursor-pointer">
                 <option>Technical Architecture</option>
                 <option>Financial Settlement</option>
                 <option>Policy Configuration</option>
@@ -410,7 +410,7 @@ const LenderSupportPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority Vector</label>
-              <select className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none cursor-pointer">
+              <select className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none cursor-pointer">
                 <option>Low Impact</option>
                 <option>Medium (Operational)</option>
                 <option>High (Blocking)</option>
@@ -422,7 +422,7 @@ const LenderSupportPage: React.FC = () => {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Detail Specification</label>
             <textarea
               rows={5}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all resize-none"
+              className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all resize-none"
               placeholder="Elaborate on the specific divergence from expected behavior..."
             ></textarea>
           </div>
@@ -447,11 +447,11 @@ const LenderSupportPage: React.FC = () => {
           { icon: Shield, title: 'Compliance Assets', count: 8 },
           { icon: TrendingUp, title: 'Strategic Analytics', count: 15 }
         ].map((cat, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-center group hover:border-[#345E85] transition-all">
-            <div className="h-14 w-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 group-hover:bg-blue-50 group-hover:text-[#345E85] transition-all">
+          <div key={idx} className="bg-white dark:bg-slate-900 p-6 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm text-center group hover:border-[#345E85] transition-all">
+            <div className="h-14 w-14 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 group-hover:bg-blue-50 group-hover:text-[#345E85] transition-all">
               <cat.icon size={26} />
             </div>
-            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-900 mb-1">{cat.title}</h4>
+            <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white mb-1">{cat.title}</h4>
             <p className="text-[10px] font-bold text-slate-400">{cat.count} Artifacts Available</p>
           </div>
         ))}
@@ -459,8 +459,8 @@ const LenderSupportPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {resources.map(res => (
-          <div key={res.id} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-6 items-center group">
-            <div className={`h-24 w-24 rounded-3xl flex items-center justify-center bg-slate-50 text-slate-400 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-500`}>
+          <div key={res.id} className="bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex gap-6 items-center group">
+            <div className={`h-24 w-24 rounded-3xl flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 text-slate-400 group-hover:bg-[#345E85] group-hover:text-white transition-all duration-500`}>
               {res.type === 'guide' ? <BookOpen size={32} /> : res.type === 'video' ? <Video size={32} /> : res.type === 'pdf' ? <FileText size={32} /> : <GraduationCap size={32} />}
             </div>
             <div className="flex-1">
@@ -468,13 +468,13 @@ const LenderSupportPage: React.FC = () => {
                 <span className="text-[9px] font-black uppercase tracking-widest text-[#345E85] bg-blue-50 px-2 py-0.5 rounded-md">{res.category}</span>
                 {res.isNew && <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">New Arrival</span>}
               </div>
-              <h3 className="text-base font-black text-slate-900 mb-2">{res.title}</h3>
-              <p className="text-xs text-slate-500 mb-4 pr-10">{res.description}</p>
+              <h3 className="text-base font-black text-slate-900 dark:text-white mb-2">{res.title}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 pr-10">{res.description}</p>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase">
                   <Clock size={12} /> {res.duration || 'Variable Duration'}
                 </span>
-                <button className="h-10 w-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:bg-[#345E85] hover:text-white transition-all group/dl">
+                <button className="h-10 w-10 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-center text-slate-400 hover:bg-[#345E85] hover:text-white transition-all group/dl">
                   <Download size={18} />
                 </button>
               </div>
@@ -489,11 +489,11 @@ const LenderSupportPage: React.FC = () => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm"
+      className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm"
     >
       <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
         <div>
-          <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Active Liaison Logs</h3>
+          <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Active Liaison Logs</h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Personnel incident synchronization status</p>
         </div>
         <button
@@ -522,7 +522,7 @@ const LenderSupportPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-10 animate-in fade-in duration-700">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 md:p-10 animate-in fade-in duration-700">
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Header Hero */}
         <div className="bg-[#345E85] rounded-[48px] p-12 md:p-20 relative overflow-hidden shadow-2xl shadow-blue-100">
@@ -559,7 +559,7 @@ const LenderSupportPage: React.FC = () => {
         </div>
 
         {/* Tab Selection */}
-        <div className="bg-white p-3 rounded-[32px] border border-slate-100 shadow-sm flex flex-wrap gap-2 sticky top-6 z-50">
+        <div className="bg-white dark:bg-slate-900 p-3 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap gap-2 sticky top-6 z-50">
           {[
             { id: 'faq', label: 'Intelligence Repository', icon: HelpCircle },
             { id: 'contact', label: 'Multi-Vector Support', icon: Headphones },
@@ -571,7 +571,7 @@ const LenderSupportPage: React.FC = () => {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 min-w-[150px] flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 ${activeTab === tab.id
                   ? 'bg-[#345E85] text-white shadow-xl shadow-blue-100'
-                  : 'bg-transparent text-slate-400 hover:bg-slate-50'
+                  : 'bg-transparent text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
             >
               <tab.icon size={16} />
@@ -589,28 +589,28 @@ const LenderSupportPage: React.FC = () => {
         </div>
 
         {/* Footer Guarantee */}
-        <div className="flex flex-col md:flex-row items-center justify-between p-10 bg-slate-100 rounded-[40px] border border-slate-200 border-dashed">
+        <div className="flex flex-col md:flex-row items-center justify-between p-10 bg-slate-100 rounded-[40px] border border-slate-200 dark:border-slate-700 border-dashed">
           <div className="flex items-center gap-6 mb-6 md:mb-0">
-            <div className="h-16 w-16 bg-white rounded-3xl flex items-center justify-center text-[#345E85] shadow-sm">
+            <div className="h-16 w-16 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center text-[#345E85] shadow-sm">
               <CheckCircle2 size={32} />
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">Verified Infrastructure</p>
-              <h4 className="text-xl font-black text-slate-900 uppercase">Operational Excellence</h4>
+              <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase">Operational Excellence</h4>
             </div>
           </div>
           <div className="flex gap-10">
             <div className="text-center md:text-left">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Human Satisfaction</p>
-              <p className="text-2xl font-black text-slate-900">99.8%</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">99.8%</p>
             </div>
             <div className="text-center md:text-left">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Resolution Horizon</p>
-              <p className="text-2xl font-black text-slate-900">4.2h</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">4.2h</p>
             </div>
             <div className="text-center md:text-left">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Network Reliability</p>
-              <p className="text-2xl font-black text-slate-900">365/24</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white">365/24</p>
             </div>
           </div>
         </div>

@@ -39,8 +39,8 @@ const Fleet = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Fleet Management</h1>
-          <p className="text-gray-600 mt-2">Manage your trucks and drivers</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Fleet Management</h1>
+          <p className="text-gray-600 dark:text-slate-300 mt-2">Manage your trucks and drivers</p>
         </div>
         <button className="btn btn-primary">
           <Plus className="w-4 h-4 mr-2" />
@@ -48,15 +48,15 @@ const Fleet = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700">
+        <div className="border-b border-gray-200 dark:border-slate-700">
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab('trucks')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'trucks'
                   ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
               }`}
             >
               Trucks
@@ -66,7 +66,7 @@ const Fleet = () => {
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'drivers'
                   ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
               }`}
             >
               Drivers
@@ -116,18 +116,18 @@ const Fleet = () => {
                 </div>
               ) : trucks?.length > 0 ? (
                 trucks.map((truck: any) => (
-                <div key={truck.id} className="py-4 hover:bg-gray-50 transition-colors">
+                <div key={truck.id} className="py-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                           {truck.licensePlate}
                         </h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(truck.status)}`}>
                           {truck.status}
                         </span>
                       </div>
-                      <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-slate-300">
                         <div className="flex items-center space-x-2">
                           <Truck className="w-4 h-4" />
                           <span>{truck.make} {truck.model}</span>
@@ -143,10 +143,10 @@ const Fleet = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors">
                         <Edit className="w-4 h-4" />
                       </button>
                       <button className="p-2 text-gray-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-colors">
@@ -172,18 +172,18 @@ const Fleet = () => {
                 </div>
               ) : drivers?.length > 0 ? (
                 drivers.map((driver: any) => (
-                <div key={driver.id} className="py-4 hover:bg-gray-50 transition-colors">
+                <div key={driver.id} className="py-4 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                           {driver.firstName} {driver.lastName}
                         </h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(driver.status)}`}>
                           {driver.status}
                         </span>
                       </div>
-                      <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-slate-300">
                         <div className="flex items-center space-x-2">
                           <User className="w-4 h-4" />
                           <span>{driver.licenseNumber}</span>
@@ -199,10 +199,10 @@ const Fleet = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors">
                         <Edit className="w-4 h-4" />
                       </button>
                       <button className="p-2 text-gray-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-colors">

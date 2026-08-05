@@ -417,9 +417,9 @@ const AdminBorrowersPage: React.FC = () => {
         <div className="flex flex-wrap gap-3 md:gap-4">
           <button
             onClick={() => setGroupByLender(!groupByLender)}
-            className="px-4 py-2.5 bg-white border border-gray-100 hover:border-gray-200 text-slate-600 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
+            className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
           >
-            <div className="absolute inset-0 bg-gray-50/50 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+            <div className="absolute inset-0 bg-gray-50/50 dark:bg-slate-950 translate-y-full group-hover:translate-y-0 transition-transform"></div>
             <Users size={14} className="relative z-10" />
             <span className="text-[10px] font-black uppercase tracking-widest relative z-10">
               <TranslatedText text={groupByLender ? 'Ungroup' : 'Group'} /> <TranslatedText text="Matrix" />
@@ -427,9 +427,9 @@ const AdminBorrowersPage: React.FC = () => {
           </button>
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className="px-4 py-2.5 bg-white border border-gray-100 hover:border-gray-200 text-slate-600 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
+            className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl flex items-center gap-2 transition-all group overflow-hidden relative shadow-sm"
           >
-            <div className="absolute inset-0 bg-gray-50/50 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+            <div className="absolute inset-0 bg-gray-50/50 dark:bg-slate-950 translate-y-full group-hover:translate-y-0 transition-transform"></div>
             <TrendingUp size={14} className="relative z-10" />
             <span className="text-[10px] font-black uppercase tracking-widest relative z-10">
               <TranslatedText text={showAnalytics ? 'Hide' : 'Show'} /> <TranslatedText text="Intelligence" />
@@ -451,14 +451,14 @@ const AdminBorrowersPage: React.FC = () => {
         <div className="space-y-6">
 
           {/* Performance Insights */}
-          <div className="bg-white rounded-[32px] border border-transparent p-8">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-transparent p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entity Intelligence</h3>
-                <p className="text-xl font-black text-gray-900 tracking-tight uppercase">Performance Analytics</p>
+                <p className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Performance Analytics</p>
               </div>
               <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center">
-                <TrendingUp className="text-slate-600" size={24} />
+                <TrendingUp className="text-slate-600 dark:text-slate-300" size={24} />
               </div>
             </div>
 
@@ -466,12 +466,12 @@ const AdminBorrowersPage: React.FC = () => {
               <div className="group">
                 <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-transparent">
+                    <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-transparent">
                       <Star className="text-amber-500" size={20} />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Credit Alpha</p>
                   </div>
-                  <p className="text-4xl font-black text-gray-900 tracking-tighter mb-1">{analytics?.avgCreditScore}</p>
+                  <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">{analytics?.avgCreditScore}</p>
                   <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">System-wide Average</p>
                 </div>
               </div>
@@ -479,12 +479,12 @@ const AdminBorrowersPage: React.FC = () => {
               <div className="group">
                 <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-transparent">
+                    <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-transparent">
                       <Percent className="text-emerald-500" size={20} />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Repayment Matrix</p>
                   </div>
-                  <p className="text-4xl font-black text-gray-900 tracking-tighter mb-1">{(100 - (analytics?.defaultRate || 0)).toFixed(1)}%</p>
+                  <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">{(100 - (analytics?.defaultRate || 0)).toFixed(1)}%</p>
                   <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Protocol Success Rate</p>
                 </div>
               </div>
@@ -492,12 +492,12 @@ const AdminBorrowersPage: React.FC = () => {
               <div className="group">
                 <div className="bg-[#fafafa] rounded-[24px] p-6 border border-transparent transition-all">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center border border-transparent">
+                    <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-transparent">
                       <TrendingUp className="text-indigo-600" size={20} />
                     </div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Growth Vector</p>
                   </div>
-                  <p className="text-4xl font-black text-gray-900 tracking-tighter mb-1">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
+                  <p className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter mb-1">+{analytics?.monthlyGrowth.toFixed(1)}%</p>
                   <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">MoM Scalability</p>
                 </div>
               </div>
@@ -507,7 +507,7 @@ const AdminBorrowersPage: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-[32px] border border-transparent p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-transparent p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={16} />
@@ -523,7 +523,7 @@ const AdminBorrowersPage: React.FC = () => {
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value as any)}
-              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 dark:text-slate-300 cursor-pointer"
             >
               <option value="all">Operational Matrix (All)</option>
               <option value="active">Active Protocol</option>
@@ -537,7 +537,7 @@ const AdminBorrowersPage: React.FC = () => {
             <select
               value={riskFilter}
               onChange={e => setRiskFilter(e.target.value as any)}
-              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 dark:text-slate-300 cursor-pointer"
             >
               <option value="all">Vulnerability Tiers (All)</option>
               <option value="low">Validated (Low Risk)</option>
@@ -550,7 +550,7 @@ const AdminBorrowersPage: React.FC = () => {
             <select
               value={lenderFilter}
               onChange={e => setLenderFilter(e.target.value)}
-              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 cursor-pointer"
+              className="px-4 py-3 w-full rounded-2xl border border-transparent focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/30 text-sm bg-[#fafafa] outline-none transition-all appearance-none font-medium text-slate-600 dark:text-slate-300 cursor-pointer"
             >
               <option value="all">Provider Matrix (All)</option>
               {uniqueLenders.map(lender => (
@@ -666,7 +666,7 @@ const AdminBorrowersPage: React.FC = () => {
       {showDetailsModal && selectedBorrower && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowDetailsModal(false)} />
-          <div className="relative bg-white rounded-[32px] w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl animate-enter">
+          <div className="relative bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl animate-enter">
             <div className="flex flex-col h-full">
               {/* Modal Header */}
               <div className="px-12 py-10 border-b border-gray-50 flex items-center justify-between bg-[#fafafa]/50">
@@ -676,7 +676,7 @@ const AdminBorrowersPage: React.FC = () => {
                     {selectedBorrower.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase mb-2">{selectedBorrower.name}</h2>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase mb-2">{selectedBorrower.name}</h2>
                     <div className="flex items-center gap-3">
                       <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(selectedBorrower.status)}`}>
                         {selectedBorrower.status.toUpperCase()} PROTOCOL
@@ -690,7 +690,7 @@ const AdminBorrowersPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="w-12 h-12 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-slate-400 hover:text-gray-900 hover:border-gray-200 transition-all"
+                  className="w-12 h-12 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl flex items-center justify-center text-slate-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-200 dark:border-slate-700 transition-all"
                 >
                   <X size={24} />
                 </button>
@@ -710,17 +710,17 @@ const AdminBorrowersPage: React.FC = () => {
                       <div className="grid grid-cols-3 gap-6">
                         <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-50">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Reliability Core</p>
-                          <p className="text-2xl font-black text-gray-900 tracking-tight">{selectedBorrower.creditScore}</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{selectedBorrower.creditScore}</p>
                           <div className="mt-2 text-[9px] font-black text-emerald-500 uppercase tracking-tighter bg-emerald-50 px-2 py-0.5 rounded-full inline-block">Top 15%</div>
                         </div>
                         <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-50">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Exposure Ratio</p>
-                          <p className="text-2xl font-black text-gray-900 tracking-tight">{fmtMoney(selectedBorrower.outstandingAmount)}</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{fmtMoney(selectedBorrower.outstandingAmount)}</p>
                           <div className="mt-2 text-[9px] font-black text-slate-400 uppercase tracking-tighter">{((selectedBorrower.outstandingAmount / (selectedBorrower.totalBorrowed || 1)) * 100).toFixed(0)}% Utilization</div>
                         </div>
                         <div className="bg-[#fafafa] rounded-3xl p-6 border border-gray-50">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Protocol History</p>
-                          <p className="text-2xl font-black text-gray-900 tracking-tight">{selectedBorrower.totalLoans}</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{selectedBorrower.totalLoans}</p>
                           <div className="mt-2 text-[9px] font-black text-indigo-500 uppercase tracking-tighter">{selectedBorrower.onTimePayments} Success</div>
                         </div>
                       </div>
@@ -734,12 +734,12 @@ const AdminBorrowersPage: React.FC = () => {
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
                         {Object.entries(selectedBorrower.documents).map(([doc, status]) => (
-                          <div key={doc} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl group hover:border-indigo-100 transition-all">
+                          <div key={doc} className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl group hover:border-indigo-100 transition-all">
                             <div className="flex items-center gap-3">
                               <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${status ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                                 {status ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
                               </div>
-                              <span className="text-xs font-black text-gray-900 uppercase tracking-tight">{doc.replace(/([A-Z])/g, ' $1').trim()}</span>
+                              <span className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight">{doc.replace(/([A-Z])/g, ' $1').trim()}</span>
                             </div>
                             <span className={`text-[9px] font-black uppercase tracking-widest ${status ? 'text-emerald-500' : 'text-rose-500'}`}>
                               {status ? 'Validated' : 'Required'}
@@ -783,11 +783,11 @@ const AdminBorrowersPage: React.FC = () => {
                       <div className="space-y-6">
                         <div>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Company Entity</p>
-                          <p className="text-sm font-black text-gray-900 uppercase tracking-tight">{selectedBorrower.company || 'Private Entity'}</p>
+                          <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">{selectedBorrower.company || 'Private Entity'}</p>
                         </div>
                         <div>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">System Cipher ID</p>
-                          <p className="text-sm font-mono font-bold text-gray-600">{selectedBorrower.nationalId}</p>
+                          <p className="text-sm font-mono font-bold text-gray-600 dark:text-slate-300">{selectedBorrower.nationalId}</p>
                         </div>
                         <div>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Registry Email</p>
@@ -795,7 +795,7 @@ const AdminBorrowersPage: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Protocol Entry</p>
-                          <p className="text-sm font-black text-gray-900 tracking-tight">{new Date(selectedBorrower.joinedDate).toLocaleDateString()}</p>
+                          <p className="text-sm font-black text-gray-900 dark:text-white tracking-tight">{new Date(selectedBorrower.joinedDate).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </div>
@@ -806,17 +806,17 @@ const AdminBorrowersPage: React.FC = () => {
                         Operational Vault
                       </h3>
                       <div className="space-y-4">
-                        <button className="w-full bg-white border border-gray-100 hover:border-gray-200 px-6 py-4 rounded-2xl flex items-center justify-between group transition-all">
+                        <button className="w-full bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:border-slate-700 px-6 py-4 rounded-2xl flex items-center justify-between group transition-all">
                           <div className="flex items-center gap-3">
                             <Edit size={14} className="text-slate-400" />
-                            <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Edit Profile</span>
+                            <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Edit Profile</span>
                           </div>
                           <ChevronRight size={14} className="text-slate-400" />
                         </button>
-                        <button className="w-full bg-white border border-gray-100 hover:border-gray-200 px-6 py-4 rounded-2xl flex items-center justify-between group transition-all">
+                        <button className="w-full bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:border-slate-700 px-6 py-4 rounded-2xl flex items-center justify-between group transition-all">
                           <div className="flex items-center gap-3">
                             <CreditCard size={14} className="text-slate-400" />
-                            <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Registry Vault</span>
+                            <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Registry Vault</span>
                           </div>
                           <ExternalLink size={14} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
                         </button>

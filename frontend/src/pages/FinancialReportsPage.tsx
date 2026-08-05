@@ -151,12 +151,12 @@ const FinancialReportsPage: React.FC = () => {
 
     return (
       <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950 p-6 md:p-8">
-        <div className="max-w-xl mx-auto mt-20 bg-white border border-rose-100 rounded-3xl p-8 text-center shadow-sm">
+        <div className="max-w-xl mx-auto mt-20 bg-white dark:bg-slate-900 border border-rose-100 rounded-3xl p-8 text-center shadow-sm">
           <AlertCircle className="mx-auto text-rose-500 mb-4" size={36} />
-          <h2 className="text-lg font-black uppercase text-slate-900 tracking-tight">
+          <h2 className="text-lg font-black uppercase text-slate-900 dark:text-white tracking-tight">
             Reports unavailable
           </h2>
-          <p className="text-sm text-slate-500 mt-2">{errMsg}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{errMsg}</p>
           <button
             onClick={() => refetch()}
             className="mt-6 px-4 py-2.5 bg-[#2c5173] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest"
@@ -195,7 +195,7 @@ const FinancialReportsPage: React.FC = () => {
             <button
               type="button"
               onClick={() => refetch()}
-              className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 transition-all"
+              className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-all"
               title="Refresh"
             >
               <RotateCcw size={16} />

@@ -76,7 +76,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
             <div className="relative group">
                 <button
                     className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200
-            ${active || isOpen ? 'text-primary-500 bg-primary-50/50' : 'text-slate-600 hover:text-primary-500 hover:bg-slate-50'}
+            ${active || isOpen ? 'text-primary-500 bg-primary-50/50' : 'text-slate-600 dark:text-slate-300 hover:text-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800'}
           `}
                     onClick={() => setActiveDropdown(isOpen ? null : title)}
                 >
@@ -86,7 +86,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                 </button>
 
                 {isOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="absolute top-full left-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 p-2 z-50 animate-in fade-in slide-in-from-top-2">
                         {children}
                     </div>
                 )}
@@ -101,7 +101,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                 setActiveDropdown(null);
             }}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
-        ${isActive(to) ? 'bg-primary-50 text-primary-500' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}
+        ${isActive(to) ? 'bg-primary-50 text-primary-500' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}
       `}
         >
             {label}
@@ -110,7 +110,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
 
     return (
         <>
-        <div className="bg-white border-b border-gray-200 text-gray-900 px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 fixed top-0 left-0 right-0 z-[300] shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 text-gray-900 dark:text-white px-4 pt-6 pb-3 sm:px-6 sm:pt-8 sm:pb-4 fixed top-0 left-0 right-0 z-[300] shadow-sm">
             <header className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 flex items-center justify-between">
 
                 {/* Logo Section */}
@@ -128,7 +128,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-200
                 ${location.pathname === '/dashboard/fleet'
                                     ? 'bg-primary-50 text-primary-500 shadow-sm ring-1 ring-primary-100'
-                                    : 'text-slate-500 hover:text-primary-500 hover:bg-slate-50'}
+                                    : 'text-slate-500 hover:text-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800'}
               `}
                         >
                             <LayoutDashboard size={18} />
@@ -176,7 +176,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                 <div className="flex items-center gap-4">
 
                     {/* Notifications */}
-                    <button className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all relative group">
+                    <button className="p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full transition-all relative group">
                         <Bell size={20} />
                         <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-rose-500 rounded-full border-2 border-white"></span>
                     </button>
@@ -184,7 +184,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
                     {/* Help Button */}
                     <button
                         onClick={() => navigate('/dashboard/fleet/support')}
-                        className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-full text-slate-600 text-xs font-black uppercase tracking-widest hover:border-primary-500 hover:text-primary-500 transition-all"
+                        className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:border-primary-500 hover:text-primary-500 transition-all"
                     >
                         <HelpCircle size={16} />
                         <span>Help</span>
@@ -204,9 +204,9 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
 
                         {/* Profile Dropdown */}
                         {showUserMenu && (
-                            <div className="absolute top-full right-0 mt-3 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2">
+                            <div className="absolute top-full right-0 mt-3 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2">
                                 <div className="px-4 py-3 border-b border-slate-50 mb-2">
-                                    <p className="text-sm font-bold text-slate-900 truncate">
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
                                         {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Fleet Manager'}
                                     </p>
                                     <p className="text-xs text-slate-500 truncate">{user?.email}</p>
@@ -214,11 +214,11 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
 
                                 <button
                                     onClick={() => navigate('/dashboard/fleet/settings')}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-3 transition-colors"
+                                    className="w-full text-left px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                                 >
                                     <Settings size={16} /> Settings
                                 </button>
-                                <div className="h-px bg-slate-50 my-2" />
+                                <div className="h-px bg-slate-50 dark:bg-slate-800/50 my-2" />
                                 <button
                                     onClick={handleLogout}
                                     className="w-full text-left px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition-colors"
@@ -231,7 +231,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
 
                     {/* Mobile Menu Toggle */}
                     <button
-                        className="lg:hidden p-2 text-slate-600"
+                        className="lg:hidden p-2 text-slate-600 dark:text-slate-300"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     >
                         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -242,7 +242,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = () => {
 
             {/* Mobile Navigation Drawer */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden border-t border-slate-100 bg-white absolute w-full left-0 shadow-lg py-4 px-4 flex flex-col gap-2">
+                <div className="lg:hidden border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 absolute w-full left-0 shadow-lg py-4 px-4 flex flex-col gap-2">
                     <DropdownItem to="/dashboard/fleet" label="Dashboard" />
                     <div className="h-px bg-slate-100 my-1" />
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-4 py-2">Fleet</p>

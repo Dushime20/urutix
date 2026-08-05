@@ -466,7 +466,7 @@ const NewFleetManager: React.FC = () => {
             sortable: true,
             render: (_: unknown, vehicle: Vehicle) => (
                 <div className="flex flex-col">
-                    <span className="text-slate-900 font-mono font-semibold text-[13px]">{vehicle.vinNumber}</span>
+                    <span className="text-slate-900 dark:text-white font-mono font-semibold text-[13px]">{vehicle.vinNumber}</span>
                     <span className="text-[10px] text-slate-400 mt-0.5">Registered 2023</span>
                 </div>
             ),
@@ -476,9 +476,9 @@ const NewFleetManager: React.FC = () => {
             label: 'License Plate',
             sortable: true,
             render: (_: unknown, vehicle: Vehicle) => (
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                     <span className="material-symbols-outlined text-[#135bec] text-sm">credit_card</span>
-                    <span className="text-slate-800 font-bold text-[13px] tracking-wide">{vehicle.licensePlate}</span>
+                    <span className="text-slate-800 dark:text-slate-100 font-bold text-[13px] tracking-wide">{vehicle.licensePlate}</span>
                 </div>
             ),
         },
@@ -492,13 +492,13 @@ const NewFleetManager: React.FC = () => {
                         vehicle.assetCategory === 'Logistics Bus' ? 'from-orange-100 to-orange-50' :
                             vehicle.assetCategory === 'Van Delivery' ? 'from-indigo-100 to-indigo-50' :
                                 'from-purple-100 to-purple-50'
-                        } flex items-center justify-center border border-slate-200 shadow-sm`}>
+                        } flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm`}>
                         <span className={`material-symbols-outlined ${vehicle.categoryColor} text-lg`}>
                             {vehicle.categoryIcon}
                         </span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-slate-800 font-medium">{vehicle.assetCategory}</span>
+                        <span className="text-slate-800 dark:text-slate-100 font-medium">{vehicle.assetCategory}</span>
                         <span className="text-[10px] text-slate-400">25 tons capacity</span>
                     </div>
                 </div>
@@ -519,7 +519,7 @@ const NewFleetManager: React.FC = () => {
                             <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-slate-800 font-medium">{vehicle.assignedDriver.name}</span>
+                            <span className="text-slate-800 dark:text-slate-100 font-medium">{vehicle.assignedDriver.name}</span>
                             <span className="text-[10px] text-slate-400">Active since 2022</span>
                         </div>
                     </div>
@@ -574,7 +574,7 @@ const NewFleetManager: React.FC = () => {
             sortable: true,
             render: (_: unknown, vehicle: Vehicle) => (
                 <div className="flex flex-col">
-                    <span className={`font-medium ${vehicle.inspectionExpired ? 'text-red-600' : 'text-slate-800'}`}>
+                    <span className={`font-medium ${vehicle.inspectionExpired ? 'text-red-600' : 'text-slate-800 dark:text-slate-100'}`}>
                         {vehicle.lastInspection}
                     </span>
                     <span className={`text-[10px] ${vehicle.inspectionExpired ? 'text-red-500' : 'text-slate-400'}`}>
@@ -638,7 +638,7 @@ const NewFleetManager: React.FC = () => {
                         className="w-10 h-10 rounded-full bg-slate-200"
                     />
                     <div>
-                        <div className="font-bold text-slate-900">{driver.firstName} {driver.lastName}</div>
+                        <div className="font-bold text-slate-900 dark:text-white">{driver.firstName} {driver.lastName}</div>
                         <div className="text-xs text-slate-500">ID: {driver.id.substring(0, 8)}</div>
                     </div>
                 </div>
@@ -664,7 +664,7 @@ const NewFleetManager: React.FC = () => {
             key: 'phone',
             label: 'Contact',
             render: (_: unknown, driver: Driver) => (
-                <span className="text-sm text-slate-600">{driver.phone || 'N/A'}</span>
+                <span className="text-sm text-slate-600 dark:text-slate-300">{driver.phone || 'N/A'}</span>
             ),
         },
     ], []);
@@ -694,7 +694,7 @@ const NewFleetManager: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#f6f6f8] text-slate-900 font-['Inter']">
+        <div className="min-h-screen bg-[#f6f6f8] text-slate-900 dark:text-white font-['Inter']">
             {/* Link to Material Symbols */}
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
@@ -949,7 +949,7 @@ const NewFleetManager: React.FC = () => {
                     </div>
 
                     {/* Content Section - Based on Active Tab */}
-                    <div className="overflow-x-auto bg-white">
+                    <div className="overflow-x-auto bg-white dark:bg-slate-900">
                         {activeTab === 'vehicles' ? (
                             <StandardDataTable
                                 embedded
@@ -984,13 +984,13 @@ const NewFleetManager: React.FC = () => {
                     </div>
 
                     {/* Enhanced Pagination - Light Theme */}
-                    <div className="px-6 py-4 flex items-center justify-between border-t border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                    <div className="px-6 py-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-white">
                         <div className="flex items-center gap-4">
-                            <p className="text-xs text-slate-500">Showing <span className="text-slate-800 font-semibold">{paginatedVehicles.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="text-slate-800 font-semibold">{Math.min(currentPage * itemsPerPage, filteredVehicles.length)}</span> of <span className="text-slate-800 font-semibold">{filteredVehicles.length}</span> results</p>
+                            <p className="text-xs text-slate-500">Showing <span className="text-slate-800 dark:text-slate-100 font-semibold">{paginatedVehicles.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="text-slate-800 dark:text-slate-100 font-semibold">{Math.min(currentPage * itemsPerPage, filteredVehicles.length)}</span> of <span className="text-slate-800 dark:text-slate-100 font-semibold">{filteredVehicles.length}</span> results</p>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-slate-500">Per page:</span>
                                 <select
-                                    className="bg-white border border-slate-200 rounded px-2 py-1 text-xs text-slate-700 focus:ring-1 focus:ring-[#135bec] shadow-sm"
+                                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-[#135bec] shadow-sm"
                                     value={itemsPerPage}
                                     onChange={(e) => {
                                         setItemsPerPage(Number(e.target.value));
@@ -1008,14 +1008,14 @@ const NewFleetManager: React.FC = () => {
                             <button
                                 onClick={() => handlePageChange(1)}
                                 disabled={currentPage === 1}
-                                className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
+                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
                             >
                                 <span className="material-symbols-outlined text-lg">first_page</span>
                             </button>
                             <button
                                 onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
-                                className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
+                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
                             >
                                 <span className="material-symbols-outlined text-lg">chevron_left</span>
                             </button>
@@ -1027,14 +1027,14 @@ const NewFleetManager: React.FC = () => {
                             <button
                                 onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
-                                className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
+                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
                             >
                                 <span className="material-symbols-outlined text-lg">chevron_right</span>
                             </button>
                             <button
                                 onClick={() => handlePageChange(totalPages)}
                                 disabled={currentPage === totalPages}
-                                className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
+                                className="p-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 shadow-sm disabled:cursor-not-allowed"
                             >
                                 <span className="material-symbols-outlined text-lg">last_page</span>
                             </button>

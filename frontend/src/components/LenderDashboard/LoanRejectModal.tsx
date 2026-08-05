@@ -50,19 +50,19 @@ const LoanRejectModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
 
   return createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-[1.75rem] shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 bg-rose-50 flex items-start justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-[1.75rem] shadow-2xl w-full max-w-lg border border-slate-100 dark:border-slate-800 overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-rose-50 flex items-start justify-between gap-4">
           <div>
             <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1">
               Reject Application
             </p>
-            <h2 className="text-xl font-black text-slate-900">Confirm Rejection</h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white">Confirm Rejection</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               {loan.borrower_name || 'Borrower'} · {fmt(loan.requested_amount)}
             </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/70 rounded-full">
-            <X className="w-5 h-5 text-slate-500" />
+            <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           </button>
         </div>
 
@@ -87,7 +87,7 @@ const LoanRejectModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
                   className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-colors ${
                     reason === preset
                       ? 'bg-rose-100 border-rose-200 text-rose-800'
-                      : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'
+                      : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
                   {preset}
@@ -97,7 +97,7 @@ const LoanRejectModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">
               Rejection reason
             </label>
             <textarea
@@ -105,12 +105,12 @@ const LoanRejectModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
               onChange={(e) => setReason(e.target.value)}
               rows={4}
               placeholder="Explain why this application is rejected…"
-              className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:border-rose-400 outline-none resize-none"
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm focus:border-rose-400 outline-none resize-none"
             />
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
           <button
             onClick={onClose}
             className="px-5 py-3 text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-200 rounded-xl"

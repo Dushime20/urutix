@@ -99,7 +99,7 @@ export const RouteSelectionComponent: React.FC<RouteSelectionComponentProps> = (
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-[20px] text-sm font-bold text-slate-900 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
+          className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[20px] text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none shadow-sm transition-all"
           placeholder="Search routes by name, origin, or destination..."
         />
       </div>
@@ -125,7 +125,7 @@ export const RouteSelectionComponent: React.FC<RouteSelectionComponentProps> = (
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-slate-900">{route.name}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{route.name}</p>
                       <div className="flex items-center gap-2 text-xs text-slate-500">
                         <MapPin className="w-3 h-3" />
                         <span>{route.origin} → {route.destination}</span>
@@ -159,7 +159,7 @@ export const RouteSelectionComponent: React.FC<RouteSelectionComponentProps> = (
         </h5>
         
         {filteredRoutes.length === 0 ? (
-          <div className="p-8 text-center bg-slate-50 border border-slate-100 rounded-[24px]">
+          <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[24px]">
             <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-3" />
             <p className="text-sm font-medium text-slate-500">
               {searchTerm ? 'No routes match your search' : 'No routes available'}
@@ -177,7 +177,7 @@ export const RouteSelectionComponent: React.FC<RouteSelectionComponentProps> = (
                   className={`p-4 border rounded-[16px] cursor-pointer transition-all group ${
                     isSelected
                       ? 'bg-primary-50 border-primary-200 shadow-sm'
-                      : 'bg-white border-slate-100 hover:border-primary-100 hover:bg-slate-50'
+                      : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-primary-100 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -195,7 +195,7 @@ export const RouteSelectionComponent: React.FC<RouteSelectionComponentProps> = (
                       </div>
                       <div>
                         <p className={`text-sm font-bold transition-colors ${
-                          isSelected ? 'text-primary-700' : 'text-slate-900'
+                          isSelected ? 'text-primary-700' : 'text-slate-900 dark:text-white'
                         }`}>
                           {route.name}
                         </p>

@@ -60,7 +60,7 @@ export const CargoInspectionReportModal: React.FC<CargoInspectionReportModalProp
               </div>
               <button 
                 onClick={onClose}
-                className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all shadow-sm"
+                className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all shadow-sm"
               >
                 <X size={20} />
               </button>

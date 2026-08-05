@@ -57,7 +57,7 @@ export const RewardsTimeline: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 shadow-xl shadow-slate-200/50 flex flex-col h-full">
+    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-8 shadow-xl shadow-slate-200/50 flex flex-col h-full">
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
@@ -88,7 +88,7 @@ export const RewardsTimeline: React.FC = () => {
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-4 transition-all duration-500 relative ${
               step.status === 'completed' ? 'bg-emerald-500 border-emerald-50 text-white shadow-lg shadow-emerald-200' :
               step.status === 'unlocked' ? 'bg-blue-500 border-blue-50 text-white shadow-lg shadow-blue-200' :
-              'bg-white border-slate-50 text-slate-300'
+              'bg-white dark:bg-slate-900 border-slate-50 text-slate-300'
             }`}>
                 {step.status === 'completed' ? <CheckCircle2 size={20} /> :
                  step.status === 'locked' ? <Lock size={18} /> :

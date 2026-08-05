@@ -217,7 +217,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
             <FaBuilding className="text-[#2c5173]" />
           </div>
           <div>
-            <div className="font-medium text-slate-900">{subscription.tenantName}</div>
+            <div className="font-medium text-slate-900 dark:text-white">{subscription.tenantName}</div>
             <div className="text-xs text-slate-500">{subscription.tenantId.slice(0, 8)}...</div>
           </div>
         </div>
@@ -228,7 +228,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
       label: 'Plan',
       render: (_v, subscription) => (
         <div>
-          <div className="font-medium text-slate-900">{subscription.plan.name}</div>
+          <div className="font-medium text-slate-900 dark:text-white">{subscription.plan.name}</div>
           <div className="text-xs text-slate-500">
             {subscription.plan.totalCredits && subscription.plan.totalCredits > 0
               ? `${subscription.plan.totalCredits.toLocaleString()} credits total`
@@ -255,7 +255,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
       label: 'Billing',
       render: (_v, subscription) => (
         <div>
-          <div className="font-medium text-slate-900 capitalize">{subscription.billingCycle}</div>
+          <div className="font-medium text-slate-900 dark:text-white capitalize">{subscription.billingCycle}</div>
           <div className="text-xs text-slate-500">
             {subscription.plan.pricePerCredit && Number(subscription.plan.pricePerCredit) > 0
               ? `${fmtFull(subscription.plan.pricePerCredit)}/credit`
@@ -304,7 +304,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
       sortable: true,
       render: (_v, subscription) => (
         <div>
-          <div className="text-sm text-slate-900">
+          <div className="text-sm text-slate-900 dark:text-white">
             {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
           </div>
           <div className="text-xs text-slate-500">
@@ -378,7 +378,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
           toolbarExtra={
             <div className="flex flex-wrap gap-2">
               <select
-                className="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-lg"
+                className="px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -390,7 +390,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                 <option value="suspended">Suspended</option>
               </select>
               <select
-                className="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 rounded-lg"
+                className="px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg"
                 value={planFilter}
                 onChange={(e) => setPlanFilter(e.target.value)}
               >
@@ -410,43 +410,43 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
         {/* Details Modal */}
         {showDetailsModal && selectedSubscription && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Subscription Details</h3>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Subscription Details</h3>
                 <button
                   onClick={() => setShowDetailsModal(false)}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 >
-                  <FaTimes className="text-slate-600" />
+                  <FaTimes className="text-slate-600 dark:text-slate-300" />
                 </button>
               </div>
 
               <div className="space-y-6">
                 {/* Tenant Info */}
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <h4 className="font-bold text-slate-900 mb-3">Tenant Information</h4>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-bold text-slate-900 dark:text-white mb-3">Tenant Information</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm text-slate-600">Name</div>
-                      <div className="font-medium text-slate-900">{selectedSubscription.tenantName}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Name</div>
+                      <div className="font-medium text-slate-900 dark:text-white">{selectedSubscription.tenantName}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">ID</div>
-                      <div className="font-medium text-slate-900 text-xs">{selectedSubscription.tenantId}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">ID</div>
+                      <div className="font-medium text-slate-900 dark:text-white text-xs">{selectedSubscription.tenantId}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Subscription Info */}
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <h4 className="font-bold text-slate-900 mb-3">Subscription Details</h4>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-bold text-slate-900 dark:text-white mb-3">Subscription Details</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm text-slate-600">Plan</div>
-                      <div className="font-medium text-slate-900">{selectedSubscription.plan.name}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Plan</div>
+                      <div className="font-medium text-slate-900 dark:text-white">{selectedSubscription.plan.name}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Status</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Status</div>
                       <StatusBadge
                         status={selectedSubscription.status}
                         label={selectedSubscription.status.toUpperCase()}
@@ -454,22 +454,22 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                       />
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Billing Cycle</div>
-                      <div className="font-medium text-slate-900 capitalize">{selectedSubscription.billingCycle}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Billing Cycle</div>
+                      <div className="font-medium text-slate-900 dark:text-white capitalize">{selectedSubscription.billingCycle}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Auto Renew</div>
-                      <div className="font-medium text-slate-900">{selectedSubscription.autoRenew ? 'Yes' : 'No'}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Auto Renew</div>
+                      <div className="font-medium text-slate-900 dark:text-white">{selectedSubscription.autoRenew ? 'Yes' : 'No'}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Period Start</div>
-                      <div className="font-medium text-slate-900">
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Period Start</div>
+                      <div className="font-medium text-slate-900 dark:text-white">
                         {new Date(selectedSubscription.currentPeriodStart).toLocaleDateString()}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Period End</div>
-                      <div className="font-medium text-slate-900">
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Period End</div>
+                      <div className="font-medium text-slate-900 dark:text-white">
                         {new Date(selectedSubscription.currentPeriodEnd).toLocaleDateString()}
                       </div>
                     </div>
@@ -477,29 +477,29 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                 </div>
 
                 {/* Credits & Revenue */}
-                <div className="bg-slate-50 rounded-lg p-4">
-                  <h4 className="font-bold text-slate-900 mb-3">Credits & Revenue</h4>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                  <h4 className="font-bold text-slate-900 dark:text-white mb-3">Credits & Revenue</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm text-slate-600">Current Balance</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Current Balance</div>
                       <div className="text-2xl font-bold text-indigo-600">
                         {(selectedSubscription.creditBalance || 0).toLocaleString()}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Paid Amount</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Paid Amount</div>
                       <div className="text-2xl font-bold text-green-600">
                         {fmtFull(selectedSubscription.paidAmount || 0)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Total Amount</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Total Amount</div>
                       <div className="text-2xl font-bold text-blue-600">
                         {fmtFull(selectedSubscription.totalAmount || 0)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Outstanding</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-300">Outstanding</div>
                       <div className="text-2xl font-bold text-orange-600">
                         {fmtFull((selectedSubscription.totalAmount || 0) - (selectedSubscription.paidAmount || 0))}
                       </div>
@@ -533,7 +533,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                   )}
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all font-bold"
+                    className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 transition-all font-bold"
                   >
                     Close
                   </button>
@@ -546,9 +546,9 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
         {/* Add Credits Modal */}
         {showAddCreditsModal && selectedSubscription && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-8">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-8">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-slate-900">Sell / Grant Credits</h3>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Sell / Grant Credits</h3>
                 <button
                   onClick={() => {
                     setShowAddCreditsModal(false);
@@ -558,7 +558,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                   }}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 >
-                  <FaTimes className="text-slate-600" />
+                  <FaTimes className="text-slate-600 dark:text-slate-300" />
                 </button>
               </div>
 
@@ -573,7 +573,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Transaction Type
                   </label>
                   <select
@@ -587,7 +587,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Credits to Issue
                   </label>
                   <input
@@ -601,7 +601,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Reason / Reference (Optional)
                   </label>
                   <textarea
@@ -648,7 +648,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                       setCreditReason('');
                       setTransactionType('purchase');
                     }}
-                    className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all font-bold"
+                    className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 transition-all font-bold"
                   >
                     Cancel
                   </button>
@@ -661,17 +661,17 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
         {/* Transactions Modal */}
         {showTransactionsModal && selectedSubscription && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900">Credit Transactions</h3>
-                  <p className="text-slate-600 mt-1">{selectedSubscription.tenantName}</p>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Credit Transactions</h3>
+                  <p className="text-slate-600 dark:text-slate-300 mt-1">{selectedSubscription.tenantName}</p>
                 </div>
                 <button
                   onClick={() => setShowTransactionsModal(false)}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 >
-                  <FaTimes className="text-slate-600" />
+                  <FaTimes className="text-slate-600 dark:text-slate-300" />
                 </button>
               </div>
 
@@ -691,14 +691,14 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
               ) : transactionsData?.data?.length === 0 ? (
                 <div className="text-center py-12">
                   <FaChartLine className="text-6xl text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-600">No transactions found</p>
+                  <p className="text-slate-600 dark:text-slate-300">No transactions found</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {transactionsData?.data?.map((transaction: any) => (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between bg-slate-50 rounded-lg p-4 hover:bg-slate-100 transition-colors"
+                      className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 hover:bg-slate-100 transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <div
@@ -712,8 +712,8 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-slate-900">{transaction.description}</div>
-                          <div className="text-sm text-slate-600">
+                          <div className="font-medium text-slate-900 dark:text-white">{transaction.description}</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-300">
                             {new Date(transaction.createdAt).toLocaleString()}
                           </div>
                           <div className="text-xs text-slate-500 mt-1">
@@ -729,7 +729,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
                           {transaction.amount > 0 ? '+' : ''}
                           {transaction.amount.toLocaleString()}
                         </div>
-                        <div className="text-xs text-slate-600 mt-1">
+                        <div className="text-xs text-slate-600 dark:text-slate-300 mt-1">
                           Balance: {transaction.balanceAfter.toLocaleString()}
                         </div>
                       </div>
@@ -741,7 +741,7 @@ const TenantSubscriptions: React.FC<{ embedded?: boolean }> = ({ embedded = fals
               <div className="mt-6">
                 <button
                   onClick={() => setShowTransactionsModal(false)}
-                  className="w-full px-6 py-3 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-all font-bold"
+                  className="w-full px-6 py-3 bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 transition-all font-bold"
                 >
                   Close
                 </button>

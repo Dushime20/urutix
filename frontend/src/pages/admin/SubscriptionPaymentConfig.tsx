@@ -143,7 +143,7 @@ const SubscriptionPaymentConfig: React.FC = () => {
                 className={`p-4 rounded-xl border-2 text-xs font-black uppercase tracking-wider ${
                   form.payment_method === method
                     ? 'border-primary-600 bg-primary-50 text-primary-700'
-                    : 'border-slate-100 text-slate-500'
+                    : 'border-slate-100 dark:border-slate-800 text-slate-500'
                 }`}
               >
                 {method === 'mobile_money' ? '📱 Mobile Money' : '🏦 Bank Transfer'}
@@ -155,7 +155,7 @@ const SubscriptionPaymentConfig: React.FC = () => {
         {form.payment_method === 'mobile_money' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1.5">
                 <Phone className="w-3.5 h-3.5" />
                 <TranslatedText text="MoMo receiving number" />
               </label>
@@ -164,20 +164,20 @@ const SubscriptionPaymentConfig: React.FC = () => {
                 value={form.momo_phone}
                 onChange={e => setForm(f => ({ ...f, momo_phone: e.target.value }))}
                 placeholder="0788123456"
-                className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
               <p className="text-xs text-slate-500 mt-1">
                 <TranslatedText text="Tenant subscription payments are sent to this Ishema-registered number." />
               </p>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
                 <TranslatedText text="Provider" />
               </label>
               <select
                 value={form.momo_provider}
                 onChange={e => setForm(f => ({ ...f, momo_provider: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-lg"
+                className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-lg"
               >
                 <option value="MTN">MTN MoMo</option>
                 <option value="Airtel">Airtel Money</option>
@@ -189,18 +189,18 @@ const SubscriptionPaymentConfig: React.FC = () => {
         {form.payment_method === 'bank_transfer' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
                 <TranslatedText text="Account holder" />
               </label>
               <input
                 type="text"
                 value={form.account_holder}
                 onChange={e => setForm(f => ({ ...f, account_holder: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-lg"
+                className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-lg"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-2 flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5" />
                 <TranslatedText text="Bank name" />
               </label>
@@ -208,18 +208,18 @@ const SubscriptionPaymentConfig: React.FC = () => {
                 type="text"
                 value={form.bank_name}
                 onChange={e => setForm(f => ({ ...f, bank_name: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-lg"
+                className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-lg"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-600 mb-2">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
                 <TranslatedText text="Account number" />
               </label>
               <input
                 type="text"
                 value={form.bank_account}
                 onChange={e => setForm(f => ({ ...f, bank_account: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-lg"
+                className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-lg"
               />
             </div>
           </div>

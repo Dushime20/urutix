@@ -189,7 +189,7 @@ const AdminSidebar: React.FC = () => {
             <div className="p-4 border-t border-slate-50 dark:border-slate-800">
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="w-full flex items-center justify-center p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+                    className="w-full flex items-center justify-center p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-slate-400 transition-all border border-transparent hover:border-slate-100 dark:border-slate-800 dark:hover:border-slate-700"
                 >
                     {collapsed ? <ChevronRight size={18} /> : (
                         <div className="flex items-center gap-2">

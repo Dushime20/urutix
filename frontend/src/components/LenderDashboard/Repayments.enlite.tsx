@@ -38,7 +38,7 @@ const statusStyle: Record<string, string> = {
     pending:   'bg-amber-50 text-amber-700 border-amber-100',
     overdue:   'bg-rose-50 text-rose-700 border-rose-100',
     partial:   'bg-blue-50 text-blue-700 border-blue-100',
-    failed:    'bg-slate-50 text-slate-600 border-slate-100',
+    failed:    'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-100 dark:border-slate-800',
     completed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
 };
 
@@ -65,11 +65,11 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             label: 'Repayment',
             render: (id: string, r: RepaymentEntry) => (
                 <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm font-mono">
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm font-mono">
                         {id.substring(0, 8)}…
                     </p>
                     {r.loanId && (
-                        <p className="text-[10px] text-slate-500 font-medium font-mono">
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium font-mono">
                             Loan: {r.loanId.substring(0, 8)}…
                         </p>
                     )}
@@ -81,17 +81,17 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             label: 'Borrower',
             render: (_: any, r: RepaymentEntry) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm flex-shrink-0">
                         <User size={14} className="text-[#2c5173]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm truncate">
+                        <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
                             {r.borrowerName ?? (
                                 <span className="text-slate-400 italic font-medium">No name on record</span>
                             )}
                         </p>
                         {r.borrowerEmail && (
-                            <p className="text-[10px] text-slate-500 truncate">{r.borrowerEmail}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{r.borrowerEmail}</p>
                         )}
                     </div>
                 </div>
@@ -102,7 +102,7 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             label: 'Amount Paid',
             render: (_: any, r: RepaymentEntry) => (
                 <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm">
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
                         {formatAmount(r.amount, r.currency)}
                     </p>
                     <div className="flex gap-2 text-[10px] font-medium uppercase tracking-wider">
@@ -121,11 +121,11 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             label: 'Loan Amount',
             render: (_: any, r: RepaymentEntry) => (
                 <div className="min-w-0">
-                    <p className="font-semibold text-slate-900 text-sm">
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
                         {formatAmount(r.approvedAmount ?? r.requestedAmount, r.currency)}
                     </p>
                     {r.approvedAmount !== null && r.requestedAmount !== null && r.approvedAmount !== r.requestedAmount && (
-                        <p className="text-[10px] text-slate-500">
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
                             Req: {formatAmount(r.requestedAmount, r.currency)}
                         </p>
                     )}
@@ -138,7 +138,7 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             render: (_: any, r: RepaymentEntry) => (
                 <div className="flex items-center gap-1.5">
                     <Calendar size={11} className="text-slate-400 flex-shrink-0" />
-                    <span className="text-sm font-medium text-slate-600 whitespace-nowrap">
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
                         {formatDate(r.repaymentDate)}
                     </span>
                 </div>
@@ -149,7 +149,7 @@ const RepaymentsEnlite: React.FC<RepaymentsEnliteProps> = ({
             label: 'Status',
             render: (_: any, r: RepaymentEntry) => {
                 if (!r.status) return <span className="text-slate-400 text-sm">—</span>;
-                const style = statusStyle[r.status] ?? 'bg-slate-50 text-slate-600 border-slate-100';
+                const style = statusStyle[r.status] ?? 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-100 dark:border-slate-800';
                 const icon = r.status === 'paid' || r.status === 'completed'
                     ? <CheckCircle size={10} />
                     : r.status === 'overdue'

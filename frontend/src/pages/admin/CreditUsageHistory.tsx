@@ -208,7 +208,7 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
       alwaysVisible: true,
       sortable: true,
       render: (_v, t) => (
-        <span className="text-sm text-gray-900 whitespace-nowrap">{formatDate(t.createdAt)}</span>
+        <span className="text-sm text-gray-900 dark:text-white whitespace-nowrap">{formatDate(t.createdAt)}</span>
       ),
     },
     {
@@ -216,7 +216,7 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
       label: 'Tenant',
       render: (_v, t) => (
         <div>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-medium text-gray-900 dark:text-white">
             {t.creditAccount?.tenant?.name || t.tenant?.name || 'Unknown'}
           </p>
           <p className="text-xs text-gray-500">
@@ -240,7 +240,7 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
       key: 'description',
       label: 'Description',
       render: (_v, t) => (
-        <span className="text-sm text-gray-900">
+        <span className="text-sm text-gray-900 dark:text-white">
           {t.description}
           {t.referenceType && (
             <span className="ml-2 text-xs text-gray-500">({t.referenceType})</span>
@@ -266,7 +266,7 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
       label: 'Balance After',
       sortable: true,
       render: (_v, t) => (
-        <span className="text-sm font-medium text-gray-900">
+        <span className="text-sm font-medium text-gray-900 dark:text-white">
           {Number(t.balanceAfter).toLocaleString()}
         </span>
       ),
@@ -277,15 +277,15 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
       <div className="safe-bottom space-y-6">
       {/* Top Consumers */}
       {stats.topConsumers.length > 0 && (
-        <div className="bg-white rounded-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4"><TranslatedText text="Top Credit Consumers" /></h3>
+        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4"><TranslatedText text="Top Credit Consumers" /></h3>
           <div className="space-y-3">
             {stats.topConsumers.map((consumer: any, index: number) => (
-              <div key={consumer.tenantId || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={consumer.tenantId || index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
                   <div>
-                    <p className="font-medium text-gray-900">{consumer.tenantName}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{consumer.tenantName}</p>
                     <p className="text-sm text-gray-500">
                       {consumer.tenantId ? `${consumer.tenantId.substring(0, 8)}...` : 'N/A'}
                     </p>
@@ -302,10 +302,10 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
       )}
 
       {/* Server-side Filters */}
-      <div className="bg-white rounded-lg p-6 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               <FaTruck className="inline mr-2" />
               <TranslatedText text="Tenant" />
             </label>
@@ -324,7 +324,7 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               <FaFilter className="inline mr-2" />
               <TranslatedText text="Transaction Type" />
             </label>
@@ -344,7 +344,7 @@ const CreditUsageHistory: React.FC<{ embedded?: boolean }> = ({ embedded = false
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               <FaCalendar className="inline mr-2" />
               <TranslatedText text="Date Range" />
             </label>

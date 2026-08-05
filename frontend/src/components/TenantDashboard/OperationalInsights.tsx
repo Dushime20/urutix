@@ -462,7 +462,7 @@ const OperationalInsights: React.FC<OperationalInsightsProps> = ({
                   </div>
                   <h4 className="text-xl font-black tracking-tight italic uppercase"><TranslatedText text="Access Regional Radar" /></h4>
                   <p className="text-sm text-white/70 font-medium mb-6 italic"><TranslatedText text="View live environmental vectors and corridor analytics." /></p>
-                  <button className="bg-white text-primary-600 px-8 py-3 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-xl"><TranslatedText text="Launch Radar Scan" /></button>
+                  <button className="bg-white dark:bg-slate-900 text-primary-600 px-8 py-3 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-xl"><TranslatedText text="Launch Radar Scan" /></button>
                 </div>
                 <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 backdrop-blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24 blur-3xl group-hover:bg-white/10 transition-colors duration-700"></div>

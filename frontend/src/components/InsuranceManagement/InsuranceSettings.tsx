@@ -148,8 +148,8 @@ const InsuranceSettings: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Insurance Settings</h1>
-          <p className="text-gray-600">Configure insurance management preferences and system settings</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Insurance Settings</h1>
+          <p className="text-gray-600 dark:text-slate-300">Configure insurance management preferences and system settings</p>
         </div>
         
         <button
@@ -168,7 +168,7 @@ const InsuranceSettings: React.FC = () => {
       </div>
 
       {/* Settings Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-gray-200 dark:border-slate-700 mb-6">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'general', name: 'General', icon: FaCog },
@@ -185,7 +185,7 @@ const InsuranceSettings: React.FC = () => {
                 className={`py-2 px-1 border-b-2 font-medium text-sm inline-flex items-center ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
                 }`}
               >
                 <Icon className="mr-2 h-4 w-4" />
@@ -199,11 +199,11 @@ const InsuranceSettings: React.FC = () => {
       {/* General Settings */}
       {activeTab === 'general' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Information</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Company Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Company Name</label>
                 <input
                   type="text"
                   value={settings.general.companyName}
@@ -213,7 +213,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Default Deductible</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Default Deductible</label>
                 <input
                   type="number"
                   value={settings.general.defaultDeductible}
@@ -224,11 +224,11 @@ const InsuranceSettings: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">System Preferences</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">System Preferences</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Auto-Renewal</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Auto-Renewal</label>
                 <select
                   value={settings.general.autoRenewal ? 'enabled' : 'disabled'}
                   onChange={(e) => handleSettingChange('general', 'autoRenewal', e.target.value === 'enabled')}
@@ -240,7 +240,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Payment Method</label>
                 <select
                   value={settings.general.paymentMethod}
                   onChange={(e) => handleSettingChange('general', 'paymentMethod', e.target.value)}
@@ -253,7 +253,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Currency</label>
                 <select
                   value={settings.general.currency}
                   onChange={(e) => handleSettingChange('general', 'currency', e.target.value)}
@@ -273,8 +273,8 @@ const InsuranceSettings: React.FC = () => {
       {/* Notification Settings */}
       {activeTab === 'notifications' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Channels</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notification Channels</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-center">
                 <input
@@ -320,8 +320,8 @@ const InsuranceSettings: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Renewal Reminders</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Renewal Reminders</h3>
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
@@ -336,7 +336,7 @@ const InsuranceSettings: React.FC = () => {
               
               {settings.notifications.renewalReminders.enabled && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Remind me (days in advance)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Remind me (days in advance)</label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 3, 7, 15, 30, 60].map((days) => (
                       <label key={days} className="flex items-center">
@@ -352,7 +352,7 @@ const InsuranceSettings: React.FC = () => {
                           }}
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                         />
-                        <span className="ml-2 text-sm text-gray-700">{days} days</span>
+                        <span className="ml-2 text-sm text-gray-700 dark:text-slate-300">{days} days</span>
                       </label>
                     ))}
                   </div>
@@ -361,8 +361,8 @@ const InsuranceSettings: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Claim Updates</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Claim Updates</h3>
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
@@ -391,7 +391,7 @@ const InsuranceSettings: React.FC = () => {
                         }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <span className="ml-2 text-sm text-gray-700 capitalize">{type} Updates</span>
+                      <span className="ml-2 text-sm text-gray-700 dark:text-slate-300 capitalize">{type} Updates</span>
                     </label>
                   ))}
                 </div>
@@ -404,13 +404,13 @@ const InsuranceSettings: React.FC = () => {
       {/* Coverage Defaults */}
       {activeTab === 'coverage' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Default Coverage Limits</h3>
-            <p className="text-sm text-gray-600 mb-4">These values will be used as defaults when creating new policies</p>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Default Coverage Limits</h3>
+            <p className="text-sm text-gray-600 dark:text-slate-300 mb-4">These values will be used as defaults when creating new policies</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Liability Coverage</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Liability Coverage</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
@@ -423,7 +423,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Collision Coverage</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Collision Coverage</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
@@ -436,7 +436,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Comprehensive Coverage</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Comprehensive Coverage</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
@@ -449,7 +449,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cargo Coverage</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Cargo Coverage</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
@@ -468,12 +468,12 @@ const InsuranceSettings: React.FC = () => {
       {/* Risk Management */}
       {activeTab === 'risk' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Assessment Settings</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Risk Assessment Settings</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">High Risk Threshold (%)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">High Risk Threshold (%)</label>
                 <input
                   type="number"
                   min="0"
@@ -486,7 +486,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Medium Risk Threshold (%)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Medium Risk Threshold (%)</label>
                 <input
                   type="number"
                   min="0"
@@ -512,7 +512,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Risk Update Frequency</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Risk Update Frequency</label>
                 <select
                   value={settings.risk.riskUpdateFrequency}
                   onChange={(e) => handleSettingChange('risk', 'riskUpdateFrequency', e.target.value)}
@@ -542,12 +542,12 @@ const InsuranceSettings: React.FC = () => {
       {/* Integrations */}
       {activeTab === 'integration' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Third-Party Integrations</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Third-Party Integrations</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Accounting System</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Accounting System</label>
                 <select
                   value={settings.integration.accountingSystem}
                   onChange={(e) => handleSettingChange('integration', 'accountingSystem', e.target.value)}
@@ -561,7 +561,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fleet Management</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Fleet Management</label>
                 <select
                   value={settings.integration.fleetManagement}
                   onChange={(e) => handleSettingChange('integration', 'fleetManagement', e.target.value)}
@@ -575,7 +575,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Document Storage</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Document Storage</label>
                 <select
                   value={settings.integration.documentStorage}
                   onChange={(e) => handleSettingChange('integration', 'documentStorage', e.target.value)}
@@ -589,7 +589,7 @@ const InsuranceSettings: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">API Access</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">API Access</label>
                 <select
                   value={settings.integration.apiEnabled ? 'enabled' : 'disabled'}
                   onChange={(e) => handleSettingChange('integration', 'apiEnabled', e.target.value === 'enabled')}
@@ -603,7 +603,7 @@ const InsuranceSettings: React.FC = () => {
             
             {settings.integration.apiEnabled && (
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Webhook URL</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Webhook URL</label>
                 <input
                   type="url"
                   value={settings.integration.webhookUrl}

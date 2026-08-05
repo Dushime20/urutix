@@ -327,14 +327,14 @@ const LenderProfilePage: React.FC = () => {
     return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-500">
       {/* Profile Essence Card */}
-      <div className="bg-white p-8 md:p-12 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden group">
+      <div className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-700">
           <User size={120} className="text-[#345E85]" />
         </div>
 
         <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
           <div className="relative">
-            <div className="h-32 w-32 md:h-40 md:w-40 bg-slate-50 rounded-[40px] flex items-center justify-center border border-slate-100 shadow-inner overflow-hidden">
+            <div className="h-32 w-32 md:h-40 md:w-40 bg-slate-50 dark:bg-slate-800/50 rounded-[40px] flex items-center justify-center border border-slate-100 dark:border-slate-800 shadow-inner overflow-hidden">
               {profile.personal.profileImage ? (
                 <img
                   src={profile.personal.profileImage}
@@ -353,10 +353,10 @@ const LenderProfilePage: React.FC = () => {
           <div className="text-center md:text-left space-y-4 flex-1">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#345E85] mb-2">Authority Figure</p>
-              <h4 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none">
+              <h4 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
                 {profile.personal.firstName} {profile.personal.lastName}
               </h4>
-              <p className="text-slate-500 mt-2 font-bold uppercase text-[10px] tracking-widest flex items-center justify-center md:justify-start gap-2">
+              <p className="text-slate-500 dark:text-slate-400 mt-2 font-bold uppercase text-[10px] tracking-widest flex items-center justify-center md:justify-start gap-2">
                 <Briefcase size={12} className="text-slate-400" /> {profile.personal.title}
               </p>
             </div>
@@ -365,7 +365,7 @@ const LenderProfilePage: React.FC = () => {
               <button className="px-6 py-3 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-blue-100">
                 Update Security Credential
               </button>
-              <button className="px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95">
+              <button className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95">
                 Revoke Visual Asset
               </button>
             </div>
@@ -374,15 +374,15 @@ const LenderProfilePage: React.FC = () => {
       </div>
 
       {/* Attributes Grid */}
-      <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden">
         <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-50">
           <div>
-            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Core Attributes</h3>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">Core Attributes</h3>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Personnel detail synchronization</p>
           </div>
           <button
             onClick={() => setIsEditing(isEditing === 'personal' ? null : 'personal')}
-            className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${isEditing === 'personal' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-[#345E85] hover:bg-blue-50'
+            className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${isEditing === 'personal' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 dark:bg-slate-800/50 text-[#345E85] hover:bg-blue-50'
               }`}
           >
             {isEditing === 'personal' ? <X className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
@@ -405,10 +405,10 @@ const LenderProfilePage: React.FC = () => {
                   type={item.type}
                   value={item.value}
                   onChange={(e) => handleInputChange('personal', item.field, e.target.value)}
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner"
                 />
               ) : (
-                <div className="px-5 py-4 bg-slate-50/50 rounded-2xl flex items-center justify-between group-hover:bg-white border border-transparent group-hover:border-slate-50 transition-all duration-300">
+                <div className="px-5 py-4 bg-slate-50/50 rounded-2xl flex items-center justify-between group-hover:bg-white dark:bg-slate-900 border border-transparent group-hover:border-slate-50 transition-all duration-300">
                   <span className="text-sm font-bold text-slate-800">{item.render ? item.render(item.value) : item.value}</span>
                   <div className="h-1 w-1 rounded-full bg-slate-200 group-hover:bg-[#345E85] group-hover:scale-150 transition-all" />
                 </div>
@@ -424,12 +424,12 @@ const LenderProfilePage: React.FC = () => {
               rows={4}
               value={profile.personal.bio}
               onChange={(e) => handleInputChange('personal', 'bio', e.target.value)}
-              className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner resize-none"
+              className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner resize-none"
               placeholder="Explicate your professional trajectory and mission objectives..."
             />
           ) : (
-            <div className="px-6 py-6 bg-slate-50/50 rounded-3xl border border-transparent hover:border-slate-100 transition-all">
-              <p className="text-sm font-medium text-slate-600 leading-relaxed italic">{profile.personal.bio}</p>
+            <div className="px-6 py-6 bg-slate-50/50 rounded-3xl border border-transparent hover:border-slate-100 dark:border-slate-800 transition-all">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed italic">{profile.personal.bio}</p>
             </div>
           )}
         </div>
@@ -438,7 +438,7 @@ const LenderProfilePage: React.FC = () => {
           <div className="flex justify-end gap-3 mt-10">
             <button
               onClick={() => setIsEditing(null)}
-              className="px-8 py-4 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+              className="px-8 py-4 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
             >
               Cancel Sync
             </button>
@@ -461,9 +461,9 @@ const LenderProfilePage: React.FC = () => {
     return (
       <div className="space-y-6">
       {/* Company Information */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Company Information</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Company Information</h3>
           <button
             onClick={() => setIsEditing(isEditing === 'business' ? null : 'business')}
             className="text-blue-600 hover:text-blue-800"
@@ -474,54 +474,54 @@ const LenderProfilePage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Company Name</label>
             {isEditing === 'business' ? (
               <input
                 type="text"
                 value={profile.business.companyName}
                 onChange={(e) => handleInputChange('business', 'companyName', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.companyName}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.companyName}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Registration Number</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Registration Number</label>
             {isEditing === 'business' ? (
               <input
                 type="text"
                 value={profile.business.registrationNumber}
                 onChange={(e) => handleInputChange('business', 'registrationNumber', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.registrationNumber}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.registrationNumber}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tax ID</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Tax ID</label>
             {isEditing === 'business' ? (
               <input
                 type="text"
                 value={profile.business.taxId}
                 onChange={(e) => handleInputChange('business', 'taxId', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.taxId}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.taxId}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Business Type</label>
             {isEditing === 'business' ? (
               <select
                 value={profile.business.businessType}
                 onChange={(e) => handleInputChange('business', 'businessType', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="Financial Services">Financial Services</option>
                 <option value="Investment Firm">Investment Firm</option>
@@ -530,64 +530,64 @@ const LenderProfilePage: React.FC = () => {
                 <option value="Private Lending">Private Lending</option>
               </select>
             ) : (
-              <p className="text-gray-900">{profile.business.businessType}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.businessType}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Industry</label>
             {isEditing === 'business' ? (
               <input
                 type="text"
                 value={profile.business.industry}
                 onChange={(e) => handleInputChange('business', 'industry', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.industry}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.industry}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Founded Year</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Founded Year</label>
             {isEditing === 'business' ? (
               <input
                 type="text"
                 value={profile.business.foundedYear}
                 onChange={(e) => handleInputChange('business', 'foundedYear', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.foundedYear}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.foundedYear}</p>
             )}
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Website</label>
             {isEditing === 'business' ? (
               <input
                 type="url"
                 value={profile.business.website}
                 onChange={(e) => handleInputChange('business', 'website', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.website}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.website}</p>
             )}
           </div>
         </div>
 
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Company Description</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Company Description</label>
           {isEditing === 'business' ? (
             <textarea
               rows={4}
               value={profile.business.description}
               onChange={(e) => handleInputChange('business', 'description', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           ) : (
-            <p className="text-gray-900">{profile.business.description}</p>
+            <p className="text-gray-900 dark:text-white">{profile.business.description}</p>
           )}
         </div>
 
@@ -595,7 +595,7 @@ const LenderProfilePage: React.FC = () => {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={() => setIsEditing(null)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-6 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
@@ -610,9 +610,9 @@ const LenderProfilePage: React.FC = () => {
       </div>
 
       {/* Business Address */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Business Address</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Business Address</h3>
           <button
             onClick={() => setIsEditing(isEditing === 'address' ? null : 'address')}
             className="text-blue-600 hover:text-blue-800"
@@ -623,72 +623,72 @@ const LenderProfilePage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Street Address</label>
             {isEditing === 'address' ? (
               <input
                 type="text"
                 value={profile.business.address.street}
                 onChange={(e) => handleNestedInputChange('business', 'address', 'street', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.address.street}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.address.street}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">City</label>
             {isEditing === 'address' ? (
               <input
                 type="text"
                 value={profile.business.address.city}
                 onChange={(e) => handleNestedInputChange('business', 'address', 'city', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.address.city}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.address.city}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">State</label>
             {isEditing === 'address' ? (
               <input
                 type="text"
                 value={profile.business.address.state}
                 onChange={(e) => handleNestedInputChange('business', 'address', 'state', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.address.state}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.address.state}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">ZIP Code</label>
             {isEditing === 'address' ? (
               <input
                 type="text"
                 value={profile.business.address.zipCode}
                 onChange={(e) => handleNestedInputChange('business', 'address', 'zipCode', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.address.zipCode}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.address.zipCode}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Country</label>
             {isEditing === 'address' ? (
               <input
                 type="text"
                 value={profile.business.address.country}
                 onChange={(e) => handleNestedInputChange('business', 'address', 'country', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             ) : (
-              <p className="text-gray-900">{profile.business.address.country}</p>
+              <p className="text-gray-900 dark:text-white">{profile.business.address.country}</p>
             )}
           </div>
         </div>
@@ -697,7 +697,7 @@ const LenderProfilePage: React.FC = () => {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={() => setIsEditing(null)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-6 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
@@ -712,9 +712,9 @@ const LenderProfilePage: React.FC = () => {
       </div>
 
       {/* Operational Scope */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Operational Scope</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Operational Scope</h3>
           <button
             onClick={() => setIsEditing(isEditing === 'operations' ? null : 'operations')}
             className="text-blue-600 hover:text-blue-800"
@@ -725,7 +725,7 @@ const LenderProfilePage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Countries of Operation</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Countries of Operation</label>
             {isEditing === 'operations' ? (
               <div className="space-y-2">
                 {profile.business.operationalCountries.map((country, index) => (
@@ -738,7 +738,7 @@ const LenderProfilePage: React.FC = () => {
                         newCountries[index] = e.target.value;
                         handleInputChange('business', 'operationalCountries', newCountries);
                       }}
-                      className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <button
                       onClick={() => {
@@ -774,7 +774,7 @@ const LenderProfilePage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Supported Currencies</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Supported Currencies</label>
             {isEditing === 'operations' ? (
               <div className="space-y-2">
                 {profile.business.supportedCurrencies.map((currency, index) => (
@@ -786,7 +786,7 @@ const LenderProfilePage: React.FC = () => {
                         newCurrencies[index] = e.target.value;
                         handleInputChange('business', 'supportedCurrencies', newCurrencies);
                       }}
-                      className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="USD">USD - US Dollar</option>
                       <option value="EUR">EUR - Euro</option>
@@ -839,7 +839,7 @@ const LenderProfilePage: React.FC = () => {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={() => setIsEditing(null)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-6 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
@@ -854,9 +854,9 @@ const LenderProfilePage: React.FC = () => {
       </div>
 
       {/* Lending Capacity */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Lending Capacity</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Lending Capacity</h3>
           <button
             onClick={() => setIsEditing(isEditing === 'capacity' ? null : 'capacity')}
             className="text-blue-600 hover:text-blue-800"
@@ -867,7 +867,7 @@ const LenderProfilePage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Loan Amount</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Minimum Loan Amount</label>
             {isEditing === 'capacity' ? (
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -875,16 +875,16 @@ const LenderProfilePage: React.FC = () => {
                   type="number"
                   value={profile.business.lendingCapacity.minLoanAmount}
                   onChange={(e) => handleNestedInputChange('business', 'lendingCapacity', 'minLoanAmount', Number(e.target.value))}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             ) : (
-              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.minLoanAmount)}</p>
+              <p className="text-gray-900 dark:text-white">{fmtMoney(profile.business.lendingCapacity.minLoanAmount)}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Loan Amount</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Maximum Loan Amount</label>
             {isEditing === 'capacity' ? (
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -892,16 +892,16 @@ const LenderProfilePage: React.FC = () => {
                   type="number"
                   value={profile.business.lendingCapacity.maxLoanAmount}
                   onChange={(e) => handleNestedInputChange('business', 'lendingCapacity', 'maxLoanAmount', Number(e.target.value))}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             ) : (
-              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.maxLoanAmount)}</p>
+              <p className="text-gray-900 dark:text-white">{fmtMoney(profile.business.lendingCapacity.maxLoanAmount)}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Total Lending Capacity</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Total Lending Capacity</label>
             {isEditing === 'capacity' ? (
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -909,18 +909,18 @@ const LenderProfilePage: React.FC = () => {
                   type="number"
                   value={profile.business.lendingCapacity.totalCapacity}
                   onChange={(e) => handleNestedInputChange('business', 'lendingCapacity', 'totalCapacity', Number(e.target.value))}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             ) : (
-              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.totalCapacity)}</p>
+              <p className="text-gray-900 dark:text-white">{fmtMoney(profile.business.lendingCapacity.totalCapacity)}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Available Capacity</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Available Capacity</label>
             <div className="flex items-center gap-4">
-              <p className="text-gray-900">{fmtMoney(profile.business.lendingCapacity.availableCapacity)}</p>
+              <p className="text-gray-900 dark:text-white">{fmtMoney(profile.business.lendingCapacity.availableCapacity)}</p>
               <div className="flex-1 bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full"
@@ -929,7 +929,7 @@ const LenderProfilePage: React.FC = () => {
                   }}
                 />
               </div>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-slate-300">
                 {Math.round((profile.business.lendingCapacity.availableCapacity / profile.business.lendingCapacity.totalCapacity) * 100)}%
               </span>
             </div>
@@ -940,7 +940,7 @@ const LenderProfilePage: React.FC = () => {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={() => setIsEditing(null)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-6 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
@@ -955,9 +955,9 @@ const LenderProfilePage: React.FC = () => {
       </div>
 
       {/* Specializations & Certifications */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Specializations & Certifications</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Specializations & Certifications</h3>
           <button
             onClick={() => setIsEditing(isEditing === 'specializations' ? null : 'specializations')}
             className="text-blue-600 hover:text-blue-800"
@@ -968,7 +968,7 @@ const LenderProfilePage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Specializations</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Specializations</label>
             {isEditing === 'specializations' ? (
               <div className="space-y-2">
                 {profile.business.specializations.map((spec, index) => (
@@ -981,7 +981,7 @@ const LenderProfilePage: React.FC = () => {
                         newSpecs[index] = e.target.value;
                         handleInputChange('business', 'specializations', newSpecs);
                       }}
-                      className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <button
                       onClick={() => {
@@ -1017,7 +1017,7 @@ const LenderProfilePage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Certifications</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Certifications</label>
             {isEditing === 'specializations' ? (
               <div className="space-y-2">
                 {profile.business.certifications.map((cert, index) => (
@@ -1030,7 +1030,7 @@ const LenderProfilePage: React.FC = () => {
                         newCerts[index] = e.target.value;
                         handleInputChange('business', 'certifications', newCerts);
                       }}
-                      className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <button
                       onClick={() => {
@@ -1070,7 +1070,7 @@ const LenderProfilePage: React.FC = () => {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={() => setIsEditing(null)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-6 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
             >
               Cancel
             </button>
@@ -1092,9 +1092,9 @@ const LenderProfilePage: React.FC = () => {
     
     return (
       <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Banking Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Banking Information</h3>
             <button
               onClick={() => setIsEditing(isEditing === 'banking' ? null : 'banking')}
               className="text-blue-600 hover:text-blue-800"
@@ -1105,72 +1105,72 @@ const LenderProfilePage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Account Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Account Name</label>
               {isEditing === 'banking' ? (
                 <input
                   type="text"
                   value={profile.banking.accountName}
                   onChange={(e) => handleInputChange('banking', 'accountName', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               ) : (
-                <p className="text-gray-900">{profile.banking.accountName}</p>
+                <p className="text-gray-900 dark:text-white">{profile.banking.accountName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Account Number</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Account Number</label>
               {isEditing === 'banking' ? (
                 <input
                   type="text"
                   value={profile.banking.accountNumber}
                   onChange={(e) => handleInputChange('banking', 'accountNumber', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               ) : (
-                <p className="text-gray-900">{profile.banking.accountNumber}</p>
+                <p className="text-gray-900 dark:text-white">{profile.banking.accountNumber}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Routing Number</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Routing Number</label>
               {isEditing === 'banking' ? (
                 <input
                   type="text"
                   value={profile.banking.routingNumber}
                   onChange={(e) => handleInputChange('banking', 'routingNumber', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               ) : (
-                <p className="text-gray-900">{profile.banking.routingNumber}</p>
+                <p className="text-gray-900 dark:text-white">{profile.banking.routingNumber}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bank Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Bank Name</label>
               {isEditing === 'banking' ? (
                 <input
                   type="text"
                   value={profile.banking.bankName}
                   onChange={(e) => handleInputChange('banking', 'bankName', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               ) : (
-                <p className="text-gray-900">{profile.banking.bankName}</p>
+                <p className="text-gray-900 dark:text-white">{profile.banking.bankName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">SWIFT Code</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">SWIFT Code</label>
               {isEditing === 'banking' ? (
                 <input
                   type="text"
                   value={profile.banking.swiftCode}
                   onChange={(e) => handleInputChange('banking', 'swiftCode', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               ) : (
-                <p className="text-gray-900">{profile.banking.swiftCode}</p>
+                <p className="text-gray-900 dark:text-white">{profile.banking.swiftCode}</p>
               )}
             </div>
           </div>
@@ -1179,7 +1179,7 @@ const LenderProfilePage: React.FC = () => {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setIsEditing(null)}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-6 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
               >
                 Cancel
               </button>
@@ -1201,12 +1201,12 @@ const LenderProfilePage: React.FC = () => {
     
     return (
       <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">General Preferences</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">General Preferences</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Language</label>
               <div className="flex items-center gap-3">
                 <LanguageSwitcher />
                 <span className="text-[10px] text-gray-400">
@@ -1216,11 +1216,11 @@ const LenderProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Timezone</label>
               <select
                 value={profile.preferences.timezone}
                 onChange={(e) => handleInputChange('preferences', 'timezone', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="America/New_York">Eastern Time (ET)</option>
                 <option value="America/Chicago">Central Time (CT)</option>
@@ -1230,7 +1230,7 @@ const LenderProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Currency</label>
               <CurrencySelector variant="settings" />
               <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">
                 All monetary values across the platform will display in your selected currency. Changes take effect immediately.
@@ -1238,11 +1238,11 @@ const LenderProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Date Format</label>
               <select
                 value={profile.preferences.dateFormat}
                 onChange={(e) => handleInputChange('preferences', 'dateFormat', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                 <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -1270,23 +1270,23 @@ const LenderProfilePage: React.FC = () => {
     return (
       <div className="space-y-6">
         {/* Password Change */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Change Password</h3>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Current Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                  className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -1294,22 +1294,22 @@ const LenderProfilePage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">New Password</label>
               <input
                 type="password"
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Confirm New Password</label>
               <input
                 type="password"
                 value={passwordForm.confirmPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -1325,22 +1325,22 @@ const LenderProfilePage: React.FC = () => {
         </div>
 
         {/* Two-Factor Authentication */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Two-Factor Authentication</h3>
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-900 font-medium">Two-Factor Authentication</p>
-              <p className="text-gray-600 text-sm">Add an extra layer of security to your account</p>
+              <p className="text-gray-900 dark:text-white font-medium">Two-Factor Authentication</p>
+              <p className="text-gray-600 dark:text-slate-300 text-sm">Add an extra layer of security to your account</p>
             </div>
             <div className="flex items-center">
               <input
                 type="checkbox"
                 checked={profile.preferences.twoFactorAuth}
                 onChange={(e) => handleInputChange('preferences', 'twoFactorAuth', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded"
               />
-              <span className="ml-2 text-sm text-gray-700">
+              <span className="ml-2 text-sm text-gray-700 dark:text-slate-300">
                 {profile.preferences.twoFactorAuth ? 'Enabled' : 'Disabled'}
               </span>
             </div>
@@ -1348,17 +1348,17 @@ const LenderProfilePage: React.FC = () => {
         </div>
 
         {/* Security Information */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Information</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Security Information</h3>
 
           <div className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-gray-600">Last Password Change:</span>
-              <span className="text-gray-900">{new Date(profile.security.lastPasswordChange).toLocaleDateString()}</span>
+              <span className="text-gray-600 dark:text-slate-300">Last Password Change:</span>
+              <span className="text-gray-900 dark:text-white">{new Date(profile.security.lastPasswordChange).toLocaleDateString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Active Login Sessions:</span>
-              <span className="text-gray-900">{profile.security.loginSessions}</span>
+              <span className="text-gray-600 dark:text-slate-300">Active Login Sessions:</span>
+              <span className="text-gray-900 dark:text-white">{profile.security.loginSessions}</span>
             </div>
           </div>
         </div>
@@ -1371,46 +1371,46 @@ const LenderProfilePage: React.FC = () => {
     
     return (
       <div className="space-y-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h3>
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-lg border border-gray-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Notification Preferences</h3>
 
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-900 font-medium">Email Notifications</p>
-                <p className="text-gray-600 text-sm">Receive notifications via email</p>
+                <p className="text-gray-900 dark:text-white font-medium">Email Notifications</p>
+                <p className="text-gray-600 dark:text-slate-300 text-sm">Receive notifications via email</p>
               </div>
               <input
                 type="checkbox"
                 checked={profile.preferences.emailNotifications}
                 onChange={(e) => handleInputChange('preferences', 'emailNotifications', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded"
               />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-900 font-medium">SMS Notifications</p>
-                <p className="text-gray-600 text-sm">Receive notifications via SMS</p>
+                <p className="text-gray-900 dark:text-white font-medium">SMS Notifications</p>
+                <p className="text-gray-600 dark:text-slate-300 text-sm">Receive notifications via SMS</p>
               </div>
               <input
                 type="checkbox"
                 checked={profile.preferences.smsNotifications}
                 onChange={(e) => handleInputChange('preferences', 'smsNotifications', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded"
               />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-900 font-medium">Marketing Emails</p>
-                <p className="text-gray-600 text-sm">Receive promotional and marketing emails</p>
+                <p className="text-gray-900 dark:text-white font-medium">Marketing Emails</p>
+                <p className="text-gray-600 dark:text-slate-300 text-sm">Receive promotional and marketing emails</p>
               </div>
               <input
                 type="checkbox"
                 checked={profile.preferences.marketingEmails}
                 onChange={(e) => handleInputChange('preferences', 'marketingEmails', e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600 rounded"
               />
             </div>
           </div>
@@ -1448,18 +1448,18 @@ const LenderProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-10 space-y-10">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 md:p-10 space-y-10">
       <div className="max-w-7xl mx-auto">
         {/* Loading State */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-[40px] border border-slate-100">
+          <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-[40px] border border-slate-100 dark:border-slate-800">
             <div className="relative">
-              <div className="h-16 w-16 rounded-full border-4 border-slate-100 border-t-[#345E85] animate-spin" />
+              <div className="h-16 w-16 rounded-full border-4 border-slate-100 dark:border-slate-800 border-t-[#345E85] animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="h-8 w-8 rounded-full bg-[#345E85]/10 animate-pulse" />
               </div>
             </div>
-            <span className="mt-6 text-slate-500 font-black text-[10px] uppercase tracking-widest">Synchronizing Profile Data</span>
+            <span className="mt-6 text-slate-500 dark:text-slate-400 font-black text-[10px] uppercase tracking-widest">Synchronizing Profile Data</span>
           </div>
         )}
 
@@ -1487,10 +1487,10 @@ const LenderProfilePage: React.FC = () => {
                   <span className="text-[10px] font-black text-[#345E85] uppercase tracking-widest">Entity Core Identity</span>
                 </div>
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">
+                  <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
                     Lender Profile
                   </h1>
-                  <p className="text-slate-500 mt-3 text-xs font-bold uppercase tracking-[0.2em] opacity-60">
+                  <p className="text-slate-500 dark:text-slate-400 mt-3 text-xs font-bold uppercase tracking-[0.2em] opacity-60">
                     Authority management & operational configuration
                   </p>
                 </div>
@@ -1512,7 +1512,7 @@ const LenderProfilePage: React.FC = () => {
                 )}
                 <button
                   onClick={() => setIsEditing(null)}
-                  className="px-8 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                  className="px-8 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
                 >
                   Dashboard Overview
                 </button>
@@ -1529,10 +1529,10 @@ const LenderProfilePage: React.FC = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-3 px-6 py-4 rounded-3xl transition-all duration-300 whitespace-nowrap group ${isActive
                       ? 'bg-[#345E85] text-white shadow-xl shadow-blue-100'
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                       }`}
                   >
-                    <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100 group-hover:bg-white'}`}>
+                    <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-100 group-hover:bg-white dark:bg-slate-900'}`}>
                       {tab.icon}
                     </div>
                     <span className="text-[11px] font-black uppercase tracking-widest">{tab.name}</span>
@@ -1550,12 +1550,12 @@ const LenderProfilePage: React.FC = () => {
 
         {/* No Profile Data State */}
         {!loading && !profile && !error && (
-          <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-[40px] border border-slate-100">
+          <div className="flex flex-col items-center justify-center py-20 bg-white/50 backdrop-blur-sm rounded-[40px] border border-slate-100 dark:border-slate-800">
             <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-6">
               <User className="h-8 w-8 text-slate-400" />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">No Profile Data</h3>
-            <p className="text-slate-500 text-center max-w-md">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">No Profile Data</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-center max-w-md">
               Unable to load profile information. Please try refreshing the page or contact support.
             </p>
           </div>

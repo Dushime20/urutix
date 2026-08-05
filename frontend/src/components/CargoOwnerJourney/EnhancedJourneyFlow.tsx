@@ -213,7 +213,7 @@ const EnhancedJourneyFlow: React.FC = () => {
                 ? 'bg-green-500 border-green-500 text-white' 
                 : step.current 
                   ? 'bg-[#345E85] border-[#345E85] text-white'
-                  : 'bg-gray-100 border-gray-200 text-gray-400'
+                  : 'bg-gray-100 border-gray-200 dark:border-slate-700 text-gray-400'
             }`}>
               {step.completed ? (
                 <FaCheck className="w-4 h-4 md:w-5 md:h-5" />
@@ -249,20 +249,20 @@ const EnhancedJourneyFlow: React.FC = () => {
 
   const renderComparisonModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Journey Comparison</h2>
-            <button onClick={() => setShowComparison(false)} className="text-gray-500 hover:text-gray-700">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Journey Comparison</h2>
+            <button onClick={() => setShowComparison(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border rounded-xl overflow-hidden">
             {/* Header Column */}
-            <div className="bg-gray-50 p-4 border-b md:border-b-0 md:border-r">
+            <div className="bg-gray-50 dark:bg-slate-800/50 p-4 border-b md:border-b-0 md:border-r">
               <div className="h-16 md:block hidden"></div>
-              <div className="space-y-4 font-medium text-gray-700 mt-4">
+              <div className="space-y-4 font-medium text-gray-700 dark:text-slate-300 mt-4">
                 <div className="h-10 flex items-center">Speed</div>
                 <div className="h-10 flex items-center">Cost</div>
                 <div className="h-10 flex items-center">Control</div>
@@ -348,10 +348,10 @@ const EnhancedJourneyFlow: React.FC = () => {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl max-w-md w-full p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Journey Helper</h2>
-            <button onClick={() => { setShowWizard(false); setWizardStep(0); setWizardScores({ smart: 0, bid: 0 }); }} className="text-gray-500 hover:text-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Journey Helper</h2>
+            <button onClick={() => { setShowWizard(false); setWizardStep(0); setWizardScores({ smart: 0, bid: 0 }); }} className="text-gray-500 hover:text-gray-700 dark:hover:text-slate-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
@@ -360,7 +360,7 @@ const EnhancedJourneyFlow: React.FC = () => {
             <div>
               <div className="mb-6">
                 <div className="text-sm text-gray-500 mb-2">Question {wizardStep + 1} of {questions.length}</div>
-                <h3 className="text-lg font-medium text-gray-900">{currentQuestion.text}</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">{currentQuestion.text}</h3>
               </div>
               <div className="space-y-3">
                 {currentQuestion.options.map((option, idx) => (
@@ -386,8 +386,8 @@ const EnhancedJourneyFlow: React.FC = () => {
                 <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4">
                   <FaStar className="w-8 h-8 text-indigo-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Recommendation</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Recommendation</h3>
+                <p className="text-gray-600 dark:text-slate-300">
                   Based on your answers, we recommend:
                 </p>
                 <div className="mt-4 text-2xl font-bold text-indigo-600">
@@ -419,8 +419,8 @@ const EnhancedJourneyFlow: React.FC = () => {
       
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 2: Choose Your Journey</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Step 2: Choose Your Journey</h2>
+          <p className="text-gray-600 dark:text-slate-300">
             Select the best fulfillment method for your shipment.
           </p>
         </div>
@@ -434,7 +434,7 @@ const EnhancedJourneyFlow: React.FC = () => {
           </button>
           <button 
             onClick={() => setShowComparison(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 font-medium text-sm transition-colors"
           >
             <FaCheck className="w-4 h-4" />
             Compare
@@ -460,15 +460,15 @@ const EnhancedJourneyFlow: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Option A: Smart Matching */}
-        <div className="bg-white rounded-lg shadow-lg border-2 border-blue-200 hover:border-blue-400 transition-colors duration-200">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg border-2 border-blue-200 hover:border-blue-400 transition-colors duration-200">
           <div className="p-6">
             <div className="flex items-center mb-4">
               <div className="bg-blue-100 rounded-full p-3 mr-4">
                 <FaRocket className="text-blue-600" size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">Smart Matching</h3>
-                <p className="text-sm text-gray-600">Fast, automated matching</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Smart Matching</h3>
+                <p className="text-sm text-gray-600 dark:text-slate-300">Fast, automated matching</p>
               </div>
             </div>
             
@@ -510,15 +510,15 @@ const EnhancedJourneyFlow: React.FC = () => {
         </div>
 
         {/* Option B: Publish for Bid */}
-        <div className="bg-white rounded-lg shadow-lg border-2 border-gray-200 hover:border-gray-400 transition-colors duration-200">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg border-2 border-gray-200 dark:border-slate-700 hover:border-gray-400 transition-colors duration-200">
           <div className="p-6">
             <div className="flex items-center mb-4">
               <div className="bg-green-100 rounded-full p-3 mr-4">
                 <FaGavel className="text-green-600" size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">Publish for Bid</h3>
-                <p className="text-sm text-gray-600">Competitive pricing, flexible selection</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Publish for Bid</h3>
+                <p className="text-sm text-gray-600 dark:text-slate-300">Competitive pricing, flexible selection</p>
               </div>
             </div>
             
@@ -561,8 +561,8 @@ const EnhancedJourneyFlow: React.FC = () => {
 
       {/* Cargo Summary */}
       {cargoData && (
-        <div className="mt-8 bg-gray-50 rounded-lg p-4">
-          <h3 className="text-lg font-medium text-gray-900 mb-3">Cargo Summary</h3>
+        <div className="mt-8 bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Cargo Summary</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <span className="font-medium">Title:</span> {cargoData.title}
@@ -595,14 +595,14 @@ const EnhancedJourneyFlow: React.FC = () => {
     return (
     <div className="booking-confirmation">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 4: Booking Confirmation</h2>
-        <p className="text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Step 4: Booking Confirmation</h2>
+        <p className="text-gray-600 dark:text-slate-300">
           Review and confirm your booking details.
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Booking Summary</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Booking Summary</h3>
         
         {!selectedTruck && !bidData && (
           <div className="mb-6">
@@ -625,7 +625,7 @@ const EnhancedJourneyFlow: React.FC = () => {
         
         {selectedTruck && (
           <div className="mb-6">
-            <h4 className="font-medium text-gray-900 mb-2">Selected Truck</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-2">Selected Truck</h4>
             <div className="bg-blue-50 rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div><strong>Driver:</strong> {selectedTruck.driver?.name || selectedTruck.driverName}</div>
@@ -641,7 +641,7 @@ const EnhancedJourneyFlow: React.FC = () => {
 
         {bidData && (
           <div className="mb-6">
-            <h4 className="font-medium text-gray-900 mb-2">Bid Details</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-2">Bid Details</h4>
             <div className="bg-green-50 rounded-lg p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div><strong>Bid Amount:</strong> ${bidData.selectedBid?.bidAmount || bidData.bidAmount}</div>
@@ -660,7 +660,7 @@ const EnhancedJourneyFlow: React.FC = () => {
         <div className="flex justify-end space-x-3">
           <button
             onClick={() => setCurrentStep('journey-selection')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Back
           </button>
@@ -698,15 +698,15 @@ const EnhancedJourneyFlow: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
       <div className="container mx-auto px-4 py-4 md:py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center mb-4">
             <FaTruck className="text-blue-500 mr-3" size={24} />
-            <h1 className="text-3xl font-bold text-gray-900">Cargo Owner Journey</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Cargo Owner Journey</h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-slate-300">
             Complete your shipment from start to finish with our streamlined process
           </p>
         </div>
@@ -714,7 +714,7 @@ const EnhancedJourneyFlow: React.FC = () => {
         {/* Step Indicator */}
         {renderStepIndicator()}
 
-                 {/* Current Step Content */}          <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 p-4 md:p-8">
+                 {/* Current Step Content */}          <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 md:p-8">
            {currentStep === 'cargo-form' && (
             <EnhancedCargoForm
               isOpen={showCargoForm}

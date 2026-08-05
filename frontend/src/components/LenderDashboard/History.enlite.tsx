@@ -80,7 +80,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
             label: 'DATE',
             render: (_: any, e: TxEntry) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-[11px]">
+                    <span className="font-black text-slate-900 dark:text-white text-[11px]">
                         {formatDate(e.date)}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold">
@@ -100,7 +100,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                             : <ArrowDownLeft size={13} />}
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-black text-slate-900 uppercase text-[10px] tracking-tight">
+                        <span className="font-black text-slate-900 dark:text-white uppercase text-[10px] tracking-tight">
                             {e.source === 'disbursement' ? 'Disbursement' : 'Repayment'}
                         </span>
                         {e.purpose && (
@@ -117,7 +117,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
             label: 'BORROWER',
             render: (_: any, e: TxEntry) => (
                 <div className="flex flex-col min-w-0">
-                    <span className="font-black text-slate-900 uppercase text-[11px] truncate">
+                    <span className="font-black text-slate-900 dark:text-white uppercase text-[11px] truncate">
                         {e.borrowerName ?? (
                             <span className="text-slate-400 italic normal-case font-medium">No name on record</span>
                         )}
@@ -204,7 +204,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
 
                 <div className="lg:col-span-1 space-y-4">
 
-                    <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm space-y-3">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                             Transaction Types
                         </p>
@@ -213,22 +213,22 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                                 <div className="p-1.5 rounded-lg bg-rose-50">
                                     <ArrowUpRight size={12} className="text-rose-600" />
                                 </div>
-                                <span className="text-[10px] font-black text-slate-700 uppercase">Disbursements</span>
+                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase">Disbursements</span>
                             </div>
-                            <span className="text-[11px] font-black text-slate-900">{disbursements.length}</span>
+                            <span className="text-[11px] font-black text-slate-900 dark:text-white">{disbursements.length}</span>
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="p-1.5 rounded-lg bg-emerald-50">
                                     <ArrowDownLeft size={12} className="text-emerald-600" />
                                 </div>
-                                <span className="text-[10px] font-black text-slate-700 uppercase">Repayments</span>
+                                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase">Repayments</span>
                             </div>
-                            <span className="text-[11px] font-black text-slate-900">{repayments.length}</span>
+                            <span className="text-[11px] font-black text-slate-900 dark:text-white">{repayments.length}</span>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-2">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm space-y-2">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
                             Status Breakdown
                         </p>
@@ -240,7 +240,7 @@ const HistoryEnlite: React.FC<HistoryEnliteProps> = ({ loading, entries }) => {
                                     <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase ${statusStyle[s]}`}>
                                         {s.replace('_', ' ')}
                                     </span>
-                                    <span className="text-[11px] font-black text-slate-700">{cnt}</span>
+                                    <span className="text-[11px] font-black text-slate-700 dark:text-slate-300">{cnt}</span>
                                 </div>
                             );
                         })}

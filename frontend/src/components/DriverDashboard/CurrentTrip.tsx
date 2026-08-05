@@ -587,7 +587,7 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
                 'h-16 px-8 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all border active:scale-95',
                 isPaused
                   ? 'bg-blue-50 text-[#2b5271] border-blue-100 hover:bg-blue-100'
-                  : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-slate-100'
+                  : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-100 dark:border-slate-800 hover:bg-slate-100'
               )}
             >
               {isPaused ? <Play size={16} /> : <Pause size={16} />}

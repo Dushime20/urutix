@@ -237,7 +237,7 @@ const RevenueTracking: React.FC = () => {
             </div>
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">{revenue.tripNumber}</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{revenue.tripNumber}</div>
             <div className="text-sm text-gray-500">{revenue.customerName}</div>
             <div className="text-xs text-gray-400">
               <FaMapMarkerAlt className="inline w-3 h-3 mr-1" />
@@ -256,7 +256,7 @@ const RevenueTracking: React.FC = () => {
       sortable: true,
       render: (_v, revenue) => (
         <div>
-          <div className="text-sm font-semibold text-gray-900">{formatCurrency(revenue.amount)}</div>
+          <div className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(revenue.amount)}</div>
           <div className="text-sm text-gray-500">Due: {formatDate(revenue.dueDate)}</div>
         </div>
       ),
@@ -295,7 +295,7 @@ const RevenueTracking: React.FC = () => {
           <div>
             <div className="flex items-center">
               <PaymentIcon className="w-4 h-4 mr-2 text-gray-400" />
-              <span className="text-sm text-gray-900 capitalize">
+              <span className="text-sm text-gray-900 dark:text-white capitalize">
                 {revenue.paymentMethod.replace(/_/g, ' ')}
               </span>
             </div>
@@ -355,12 +355,12 @@ const RevenueTracking: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Revenue Tracking</h1>
-          <p className="text-gray-600 mt-2">Monitor your trip revenue, payments, and profitability</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Revenue Tracking</h1>
+          <p className="text-gray-600 dark:text-slate-300 mt-2">Monitor your trip revenue, payments, and profitability</p>
         </div>
 
         {/* Period Selector */}
@@ -381,10 +381,10 @@ const RevenueTracking: React.FC = () => {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-slate-300">Total Revenue</p>
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenue)}</p>
               </div>
               <div className="p-3 bg-green-100 rounded-full">
@@ -394,10 +394,10 @@ const RevenueTracking: React.FC = () => {
             <p className="text-sm text-gray-500 mt-2">{filteredRevenues.length} trips</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Net Profit</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-slate-300">Net Profit</p>
                 <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalProfit)}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-full">
@@ -407,10 +407,10 @@ const RevenueTracking: React.FC = () => {
             <p className="text-sm text-gray-500 mt-2">{averageProfitMargin.toFixed(1)}% avg margin</p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Payments</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-slate-300">Pending Payments</p>
                 <p className="text-2xl font-bold text-yellow-600">{formatCurrency(pendingPayments)}</p>
               </div>
               <div className="p-3 bg-yellow-100 rounded-full">
@@ -422,10 +422,10 @@ const RevenueTracking: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Overdue</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-slate-300">Overdue</p>
                 <p className="text-2xl font-bold text-red-600">{formatCurrency(overduePayments)}</p>
               </div>
               <div className="p-3 bg-red-100 rounded-full">
@@ -441,8 +441,8 @@ const RevenueTracking: React.FC = () => {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Revenue Trend */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue & Profit Trend</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue & Profit Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyRevenue.map((revenue, index) => ({ 
                 month: `Month ${index + 1}`, 
@@ -460,8 +460,8 @@ const RevenueTracking: React.FC = () => {
           </div>
 
           {/* Revenue by Status */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue by Status</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revenue by Status</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -485,10 +485,10 @@ const RevenueTracking: React.FC = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -503,7 +503,7 @@ const RevenueTracking: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Payment Method</label>
               <select
                 value={filters.paymentMethod}
                 onChange={(e) => setFilters({ ...filters, paymentMethod: e.target.value })}
@@ -517,7 +517,7 @@ const RevenueTracking: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Min Amount</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Min Amount</label>
               <input
                 type="number"
                 value={filters.minAmount}
@@ -528,7 +528,7 @@ const RevenueTracking: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Max Amount</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Max Amount</label>
               <input
                 type="number"
                 value={filters.maxAmount}
@@ -566,7 +566,7 @@ const RevenueTracking: React.FC = () => {
 
         {/* Actions */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Revenue Details</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Revenue Details</h2>
           <button
             onClick={() => setShowAddModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"

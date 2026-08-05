@@ -450,7 +450,7 @@ const AdminTenants: React.FC = () => {
             <Building2 className="relative z-10 text-white" size={18} />
           </div>
           <div>
-            <div className="text-sm font-black text-gray-900 tracking-tight leading-tight uppercase">{tenant.name}</div>
+            <div className="text-sm font-black text-gray-900 dark:text-white tracking-tight leading-tight uppercase">{tenant.name}</div>
             {tenant.location && (
               <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-0.5">{tenant.location}</div>
             )}
@@ -588,7 +588,7 @@ const AdminTenants: React.FC = () => {
     >
 
       {/* Tenants Table */}
-      <div className="bg-white rounded-xl overflow-hidden border border-transparent p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-transparent p-4">
         <StandardDataTable<Tenant>
           embedded
           columns={tenantColumns}
@@ -633,14 +633,14 @@ const AdminTenants: React.FC = () => {
                 onClick={() => setUseEnrichedData(!useEnrichedData)}
                 className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border rounded-xl flex items-center gap-2 transition-all ${useEnrichedData
                   ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-500'
-                  : 'bg-white text-slate-600 border-gray-200 hover:bg-gray-50'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'
                   }`}
                 title={useEnrichedData ? 'Showing enriched data with health scores' : 'Showing basic data'}
               >
                 <Heart className="w-3 h-3" />
                 {useEnrichedData ? 'Enhanced View' : 'Basic View'}
               </button>
-              <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-gray-200 rounded-xl flex items-center gap-2 hover:bg-gray-50 bg-white transition-all text-slate-600">
+              <button className="px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-xl flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-slate-800 bg-white dark:bg-slate-900 transition-all text-slate-600 dark:text-slate-300">
                 <Download className="w-3 h-3" /> Export
               </button>
             </>
@@ -652,11 +652,11 @@ const AdminTenants: React.FC = () => {
       {/* Create Tenant Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
-            <div className="p-8 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
+            <div className="p-8 border-b border-gray-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Create New Tenant</h2>
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Create New Tenant</h2>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Tenant Setup Sequence</p>
                 </div>
                 <button
@@ -664,7 +664,7 @@ const AdminTenants: React.FC = () => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 rounded-xl transition-all"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -679,7 +679,7 @@ const AdminTenants: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                    className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                     placeholder="ENTER TENANT NAME"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -693,7 +693,7 @@ const AdminTenants: React.FC = () => {
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-indigo-600 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-indigo-600 border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
                       placeholder="subdomain"
                       value={subdomain}
                       onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9.-]/g, '').replace(/\.{2,}/g, '.').replace(/^\.|\.$/g, ''))}
@@ -714,7 +714,7 @@ const AdminTenants: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                    className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                     placeholder="EXAMPLE.COM"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
@@ -727,7 +727,7 @@ const AdminTenants: React.FC = () => {
                   </label>
                   <input
                     type="email"
-                    className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
+                    className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
                     placeholder="admin@company.com"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
@@ -735,13 +735,13 @@ const AdminTenants: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-[#fafafa] border border-gray-100 rounded-[24px] p-6">
+              <div className="bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-[24px] p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-indigo-600 border border-gray-50">
+                  <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center shadow-sm text-indigo-600 border border-gray-50">
                     <ShieldCheck size={20} />
                   </div>
                   <div>
-                    <h4 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">Protocol Intelligence</h4>
+                    <h4 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Protocol Intelligence</h4>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 leading-relaxed">
                       Initializing this node will trigger automated environment configuration and registry notification.
                     </p>
@@ -750,13 +750,13 @@ const AdminTenants: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-8 border-t border-gray-100 flex justify-end gap-4">
+            <div className="p-8 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-4">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
-                className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all"
+                className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-all"
               >
                 ABORT INIT
               </button>
@@ -776,11 +776,11 @@ const AdminTenants: React.FC = () => {
       {/* Edit Tenant Modal */}
       {showEditModal && editingTenantId && (
         <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
-            <div className="p-8 border-b border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
+            <div className="p-8 border-b border-gray-100 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase">Edit Tenant</h2>
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase">Edit Tenant</h2>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Update Tenant Information</p>
                 </div>
                 <button
@@ -789,7 +789,7 @@ const AdminTenants: React.FC = () => {
                     setEditingTenantId(null);
                     resetEditForm();
                   }}
-                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
+                  className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 rounded-xl transition-all"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -807,7 +807,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                       placeholder="ENTER TENANT NAME"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
@@ -821,7 +821,7 @@ const AdminTenants: React.FC = () => {
                     <div className="relative">
                       <input
                         type="text"
-                        className="w-full px-5 py-3 text-sm font-black text-indigo-600 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
+                        className="w-full px-5 py-3 text-sm font-black text-indigo-600 border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
                         placeholder="subdomain"
                         value={editSubdomain}
                         onChange={(e) => setEditSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9.-]/g, '').replace(/\.{2,}/g, '.').replace(/^\.|\.$/g, ''))}
@@ -842,7 +842,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                       placeholder="EXAMPLE.COM"
                       value={editDomain}
                       onChange={(e) => setEditDomain(e.target.value)}
@@ -855,7 +855,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="email"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
                       placeholder="admin@company.com"
                       value={editContactEmail}
                       onChange={(e) => setEditContactEmail(e.target.value)}
@@ -870,7 +870,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="tel"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal tracking-tight"
                       placeholder="+1234567890"
                       value={editContactPhone}
                       onChange={(e) => setEditContactPhone(e.target.value)}
@@ -883,7 +883,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="url"
-                      className="w-full px-5 py-3 text-sm font-black text-indigo-600 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-indigo-600 border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal lowercase tracking-tight"
                       placeholder="https://www.example.com"
                       value={editWebsiteUrl}
                       onChange={(e) => setEditWebsiteUrl(e.target.value)}
@@ -896,7 +896,7 @@ const AdminTenants: React.FC = () => {
                     Description
                   </label>
                   <textarea
-                    className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal tracking-tight"
+                    className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal tracking-tight"
                     placeholder="ENTER TENANT DESCRIPTION"
                     rows={3}
                     value={editDescription}
@@ -911,7 +911,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                       placeholder="123 MAIN STREET"
                       value={editAddress}
                       onChange={(e) => setEditAddress(e.target.value)}
@@ -924,7 +924,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                       placeholder="NEW YORK"
                       value={editCity}
                       onChange={(e) => setEditCity(e.target.value)}
@@ -939,7 +939,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                       placeholder="NY"
                       value={editState}
                       onChange={(e) => setEditState(e.target.value)}
@@ -952,7 +952,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal uppercase tracking-tight"
                       placeholder="USA"
                       value={editCountry}
                       onChange={(e) => setEditCountry(e.target.value)}
@@ -965,7 +965,7 @@ const AdminTenants: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      className="w-full px-5 py-3 text-sm font-black text-gray-900 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal tracking-tight"
+                      className="w-full px-5 py-3 text-sm font-black text-gray-900 dark:text-white border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 placeholder:font-normal tracking-tight"
                       placeholder="10001"
                       value={editPostalCode}
                       onChange={(e) => setEditPostalCode(e.target.value)}
@@ -976,14 +976,14 @@ const AdminTenants: React.FC = () => {
               </div>
             )}
 
-            <div className="p-8 border-t border-gray-100 flex justify-end gap-4">
+            <div className="p-8 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-4">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingTenantId(null);
                   resetEditForm();
                 }}
-                className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all"
+                className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-all"
               >
                 CANCEL
               </button>
@@ -1003,9 +1003,9 @@ const AdminTenants: React.FC = () => {
       {/* Tenant Details Modal */}
       {showDetailsModal && selectedTenant && (
         <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8 border border-white/20">
             {/* Header */}
-            <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 p-8 z-10">
+            <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 p-8 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-gray-900 rounded-[24px] flex items-center justify-center shadow-2xl relative overflow-hidden group">
@@ -1014,7 +1014,7 @@ const AdminTenants: React.FC = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">{selectedTenant.name}</h2>
+                      <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">{selectedTenant.name}</h2>
                       <div className={`w-2 h-2 rounded-full ${selectedTenant.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'} shadow-sm shadow-current/20`}></div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -1033,7 +1033,7 @@ const AdminTenants: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-gray-900 hover:bg-gray-100 rounded-2xl transition-all"
+                  className="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 rounded-2xl transition-all"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -1042,14 +1042,14 @@ const AdminTenants: React.FC = () => {
 
             <div className="p-8 space-y-10">
               {/* Stats Section */}
-              <div className="flex flex-wrap items-center gap-x-12 gap-y-6 py-6 border-b border-gray-100">
+              <div className="flex flex-wrap items-center gap-x-12 gap-y-6 py-6 border-b border-gray-100 dark:border-slate-800">
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Users</div>
-                  <div className="text-2xl font-black text-gray-900 tracking-tight uppercase">{selectedTenant.userCount || 0}</div>
+                  <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase">{selectedTenant.userCount || 0}</div>
                 </div>
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Trucks</div>
-                  <div className="text-2xl font-black text-gray-900 tracking-tight uppercase">{selectedTenant.trucksCount || 0}</div>
+                  <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase">{selectedTenant.trucksCount || 0}</div>
                 </div>
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</div>
@@ -1057,7 +1057,7 @@ const AdminTenants: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Days Active</div>
-                  <div className="text-2xl font-black text-gray-900 tracking-tight uppercase">
+                  <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
                     {Math.ceil((new Date().getTime() - new Date(selectedTenant.createdAt).getTime()) / (1000 * 3600 * 24))}
                   </div>
                 </div>
@@ -1071,10 +1071,10 @@ const AdminTenants: React.FC = () => {
                     <Building2 className="text-indigo-600" size={14} />
                     General Info
                   </h3>
-                  <div className="bg-white border border-gray-100 rounded-3xl p-6 space-y-4">
+                  <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 space-y-4">
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tenant ID</span>
-                      <span className="text-sm font-black text-gray-900 tracking-tight font-mono truncate max-w-[200px]">{selectedTenant.id}</span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight font-mono truncate max-w-[200px]">{selectedTenant.id}</span>
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subdomain</span>
@@ -1082,11 +1082,11 @@ const AdminTenants: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Domain</span>
-                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.domain || 'NOT SET'}</span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">{selectedTenant.domain || 'NOT SET'}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Created At</span>
-                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{new Date(selectedTenant.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">{new Date(selectedTenant.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                     </div>
                   </div>
                 </div>
@@ -1097,10 +1097,10 @@ const AdminTenants: React.FC = () => {
                     <Users className="text-emerald-600" size={14} />
                     Contact Information
                   </h3>
-                  <div className="bg-white border border-gray-100 rounded-3xl p-6 space-y-4">
+                  <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-6 space-y-4">
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Admin Name</span>
-                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.adminName || 'NOT ASSIGNED'}</span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">{selectedTenant.adminName || 'NOT ASSIGNED'}</span>
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Email</span>
@@ -1108,7 +1108,7 @@ const AdminTenants: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</span>
-                      <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{selectedTenant.location || 'GLOBAL'}</span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">{selectedTenant.location || 'GLOBAL'}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">KYC Status</span>
@@ -1135,10 +1135,10 @@ const AdminTenants: React.FC = () => {
                       handleEditTenant(selectedTenant);
                       setShowDetailsModal(false);
                     }}
-                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group shadow-sm hover:shadow-md"
+                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-3xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Edit className="text-slate-400 group-hover:text-indigo-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-indigo-600">Edit Tenant</span>
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest group-hover:text-indigo-600">Edit Tenant</span>
                   </button>
 
                   <button
@@ -1147,10 +1147,10 @@ const AdminTenants: React.FC = () => {
                       setShowSettingsModal(true);
                       setShowDetailsModal(false);
                     }}
-                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-purple-200 hover:bg-purple-50/30 transition-all group shadow-sm hover:shadow-md"
+                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-3xl hover:border-purple-200 hover:bg-purple-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Settings className="text-slate-400 group-hover:text-purple-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-purple-600">Settings</span>
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest group-hover:text-purple-600">Settings</span>
                   </button>
 
                   <button
@@ -1160,10 +1160,10 @@ const AdminTenants: React.FC = () => {
                       setShowManageUsersModal(true);
                       setShowDetailsModal(false);
                     }}
-                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-all group shadow-sm hover:shadow-md"
+                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-3xl hover:border-emerald-200 hover:bg-emerald-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Users className="text-slate-400 group-hover:text-emerald-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-emerald-600">Manage Users</span>
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest group-hover:text-emerald-600">Manage Users</span>
                   </button>
 
                   <button
@@ -1172,10 +1172,10 @@ const AdminTenants: React.FC = () => {
                       setShowKYCModal(true);
                       setShowDetailsModal(false);
                     }}
-                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-amber-200 hover:bg-amber-50/30 transition-all group shadow-sm hover:shadow-md"
+                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-3xl hover:border-amber-200 hover:bg-amber-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <ShieldCheck className="text-slate-400 group-hover:text-amber-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-amber-600">Review KYC</span>
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest group-hover:text-amber-600">Review KYC</span>
                   </button>
 
                   <button
@@ -1183,19 +1183,19 @@ const AdminTenants: React.FC = () => {
                       handleDeleteTenant(selectedTenant);
                       setShowDetailsModal(false);
                     }}
-                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 rounded-3xl hover:border-rose-200 hover:bg-rose-50/30 transition-all group shadow-sm hover:shadow-md"
+                    className="flex flex-col items-center justify-center p-6 bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-3xl hover:border-rose-200 hover:bg-rose-50/30 transition-all group shadow-sm hover:shadow-md"
                   >
                     <Trash2 className="text-slate-400 group-hover:text-rose-600 mb-3 transition-colors" size={24} />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-rose-600">Delete</span>
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest group-hover:text-rose-600">Delete</span>
                   </button>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-between items-center pt-8 border-t border-gray-100">
+              <div className="flex justify-between items-center pt-8 border-t border-gray-100 dark:border-slate-800">
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all"
+                  className="px-8 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-all"
                 >
                   DISMISS
                 </button>
@@ -1270,24 +1270,24 @@ const AdminTenants: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && tenantToDelete && (
         <div className="fixed inset-0 bg-[#0a0a0b]/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md border border-white/20 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-full max-w-md border border-white/20 overflow-hidden">
             <div className="p-8 text-center">
               <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-100">
                 <AlertTriangle className="text-rose-600" size={40} />
               </div>
-              <h2 className="text-xl font-black text-gray-900 tracking-tight uppercase mb-2">Delete Tenant</h2>
+              <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase mb-2">Delete Tenant</h2>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed px-4">
-                Are you sure you want to delete <span className="text-gray-900">{tenantToDelete.name}</span>? This will deactivate the tenant and suspend all access.
+                Are you sure you want to delete <span className="text-gray-900 dark:text-white">{tenantToDelete.name}</span>? This will deactivate the tenant and suspend all access.
               </p>
             </div>
 
-            <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-4">
+            <div className="p-8 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-4">
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
                   setTenantToDelete(null);
                 }}
-                className="flex-1 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 rounded-2xl hover:bg-white transition-all"
+                className="flex-1 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-gray-200 dark:border-slate-700 rounded-2xl hover:bg-white dark:bg-slate-900 transition-all"
               >
                 Cancel
               </button>
@@ -1345,7 +1345,7 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
 
   if (isLoading) {
     return (
-      <div className="bg-[#fafafa] border border-gray-100 rounded-[32px] p-8 mt-10">
+      <div className="bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-[32px] p-8 mt-10">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
           <CreditCard className="text-purple-600" size={14} />
           Billing & Subscription
@@ -1357,13 +1357,13 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
 
   if (!subscription) {
     return (
-      <div className="bg-[#fafafa] border border-gray-100 rounded-[32px] p-8 mt-10">
+      <div className="bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-[32px] p-8 mt-10">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
           <CreditCard className="text-purple-600" size={14} />
           Billing & Subscription
         </h3>
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-50">
+          <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-50">
             <AlertTriangle className="text-slate-300" size={24} />
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">No Active Subscription Found</p>
@@ -1381,7 +1381,7 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
   const isTrial = subscription.status === 'trial';
 
   return (
-    <div className="bg-[#fafafa] border border-gray-100 rounded-[32px] p-8 mt-10">
+    <div className="bg-[#fafafa] border border-gray-100 dark:border-slate-800 rounded-[32px] p-8 mt-10">
       <div className="flex items-center justify-between mb-8">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
           <CreditCard className="text-purple-600" size={14} />
@@ -1389,7 +1389,7 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
         </h3>
         <button
           onClick={() => navigate('/admin/subscriptions')}
-          className="text-[10px] font-black text-purple-600 hover:text-purple-700 uppercase tracking-widest flex items-center gap-1 bg-white px-4 py-2 rounded-xl border border-purple-100 shadow-sm transition-all"
+          className="text-[10px] font-black text-purple-600 hover:text-purple-700 uppercase tracking-widest flex items-center gap-1 bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-purple-100 shadow-sm transition-all"
         >
           <Settings className="w-3 h-3" />
           Manage Subscription
@@ -1400,7 +1400,7 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
         <div className="space-y-4">
           <div className="flex items-center justify-between pb-4 border-b border-gray-50">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscription Plan</span>
-            <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{subscription.plan.name}</span>
+            <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">{subscription.plan.name}</span>
           </div>
           <div className="flex items-center justify-between pb-4 border-b border-gray-50">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscription Status</span>
@@ -1410,7 +1410,7 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Billing Cycle</span>
-            <span className="text-sm font-black text-gray-900 tracking-tight uppercase">{subscription.billingCycle}</span>
+            <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">{subscription.billingCycle}</span>
           </div>
         </div>
 
@@ -1421,13 +1421,13 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
           </div>
           <div className="flex items-center justify-between pb-4 border-b border-gray-50">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Renews On</span>
-            <span className="text-sm font-black text-gray-900 tracking-tight uppercase">
+            <span className="text-sm font-black text-gray-900 dark:text-white tracking-tight uppercase">
               {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Auto Renew</span>
-            <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${subscription.autoRenew ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-600 border-gray-100'}`}>
+            <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${subscription.autoRenew ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 dark:bg-slate-800/50 text-gray-600 dark:text-slate-300 border-gray-100 dark:border-slate-800'}`}>
               {subscription.autoRenew ? 'ACTIVE' : 'DISABLED'}
             </span>
           </div>
@@ -1453,13 +1453,13 @@ const TenantSubscriptionDetails: React.FC<{ tenantId: string }> = ({ tenantId })
 
       {/* Plan Metrics */}
       <div className="mt-8 grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-[24px] p-6 border border-gray-100 hover:border-purple-100 transition-all group">
+        <div className="bg-white dark:bg-slate-900 rounded-[24px] p-6 border border-gray-100 dark:border-slate-800 hover:border-purple-100 transition-all group">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-purple-600 transition-colors">Monthly Credits</div>
-          <div className="text-2xl font-black text-gray-900 tracking-tight">{subscription.plan.includedCredits}</div>
+          <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{subscription.plan.includedCredits}</div>
         </div>
-        <div className="bg-white rounded-[24px] p-6 border border-gray-100 hover:border-emerald-100 transition-all group">
+        <div className="bg-white dark:bg-slate-900 rounded-[24px] p-6 border border-gray-100 dark:border-slate-800 hover:border-emerald-100 transition-all group">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 group-hover:text-emerald-600 transition-colors">Lifetime Revenue</div>
-          <div className="text-2xl font-black text-gray-900 tracking-tight">${(subscription.totalRevenue || 0).toFixed(2)}</div>
+          <div className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">${(subscription.totalRevenue || 0).toFixed(2)}</div>
         </div>
       </div>
     </div>

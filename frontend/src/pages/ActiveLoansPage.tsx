@@ -165,12 +165,12 @@ const ActiveLoansPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-slate-950 p-6 md:p-8 transition-colors duration-200">
       <div className="max-w-[1536px] mx-auto space-y-8">
-        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Active Loan Book</h1>
-            <p className="text-gray-500 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight uppercase">Active Loan Book</h1>
+            <p className="text-gray-500 dark:text-slate-400 mt-1 uppercase text-xs font-bold tracking-widest opacity-70">
               Approved and disbursed loans — real data only
             </p>
           </div>
@@ -178,7 +178,7 @@ const ActiveLoansPage: React.FC = () => {
             <button
               onClick={() => { setLoading(true); lendingApi.getActiveLoans(user!.id).then(r => { const d = r?.data ?? []; setLoans(d.map((loan: any) => { const borrower = loan.borrower ?? null; const borrowerName = borrower?.contact_name ?? borrower?.company_name ?? null; const repayments: any[] = loan.repayments ?? []; const totalPrincipalPaid = repayments.reduce((s: number, r: any) => s + (Number(r.principal_paid) || 0), 0); const totalInterestPaid = repayments.reduce((s: number, r: any) => s + (Number(r.interest_paid) || 0), 0); const totalRepaid = repayments.reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0); const approvedAmount = loan.approved_amount != null ? Number(loan.approved_amount) : null; const requestedAmount = loan.requested_amount != null ? Number(loan.requested_amount) : null; const principal = approvedAmount ?? requestedAmount ?? 0; const outstanding = Math.max(0, principal - totalPrincipalPaid); const dueDate = loan.due_date ?? null; const isOverdue = dueDate && new Date(dueDate) < new Date() && loan.status !== 'repaid'; return { id: loan.id, loan_request_id: loan.id, borrower: { id: borrower?.id ?? null, name: borrowerName, email: borrower?.email ?? null, phone: borrower?.phone ?? null, company: borrower?.company_name ?? null, credit_score: borrower?.credit_score ?? null, verification_status: borrower?.status ?? null }, principal_amount: principal, approved_amount: approvedAmount, interest_rate: loan.interest_rate ?? null, loan_term_months: loan.loan_term_months ?? null, total_amount: principal, amount_repaid: totalRepaid, outstanding_balance: outstanding, total_principal_paid: totalPrincipalPaid, total_interest_paid: totalInterestPaid, created_at: loan.created_at ?? null, due_date: dueDate, status: isOverdue ? 'overdue' : loan.status, purpose: loan.metadata?.purpose ?? null, repayment_count: repayments.length, lender_name: loan.lender?.name ?? null, currency: loan.currency || 'RWF', _rawData: loan }; })); }).catch(() => toast.error('Failed to refresh')).finally(() => setLoading(false)); }}
               disabled={loading}
-              className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-40"
+              className="px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-40"
             >
               <RotateCcw size={14} className={loading ? 'animate-spin' : ''} />
               {loading ? 'Loading...' : 'Refresh'}
@@ -187,7 +187,7 @@ const ActiveLoansPage: React.FC = () => {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex flex-wrap items-center gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input
@@ -195,13 +195,13 @@ const ActiveLoansPage: React.FC = () => {
               placeholder="SEARCH LOANS..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#345E85] focus:border-transparent w-full bg-slate-50 transition-all"
+              className="pl-10 pr-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#345E85] focus:border-transparent w-full bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 transition-all"
             />
           </div>
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 rounded-xl bg-white cursor-pointer"
+            className="px-4 py-2.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
           >
             <option value="all">ALL STATUS</option>
             <option value="approved">APPROVED</option>

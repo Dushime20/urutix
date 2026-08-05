@@ -280,42 +280,42 @@ const RenewalManagement: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaCalendarAlt className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Renewals</p>
-              <p className="text-2xl font-bold text-gray-900">{renewals.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{renewals.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaExclamationTriangle className="h-8 w-8 text-red-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Urgent</p>
-              <p className="text-2xl font-bold text-gray-900">{urgentRenewals.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{urgentRenewals.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaClock className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Upcoming</p>
-              <p className="text-2xl font-bold text-gray-900">{upcomingRenewals.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{upcomingRenewals.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaShieldAlt className="h-8 w-8 text-green-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Auto-Renew</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {renewals.filter((r) => r.autoRenew).length}
               </p>
             </div>
@@ -323,11 +323,11 @@ const RenewalManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border p-6 mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Renewal Calendar</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-lg border p-6 mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Renewal Calendar</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">This Month</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-3">This Month</h4>
             <div className="space-y-2">
               {renewals
                 .filter((r) => {
@@ -339,8 +339,8 @@ const RenewalManagement: React.FC = () => {
                   );
                 })
                 .map((renewal) => (
-                  <div key={renewal.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <span className="text-sm text-gray-700">{renewal.truckPlate}</span>
+                  <div key={renewal.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800/50 rounded">
+                    <span className="text-sm text-gray-700 dark:text-slate-300">{renewal.truckPlate}</span>
                     <StatusBadge
                       status={renewal.status}
                       variant={statusVariant(renewal.status)}
@@ -352,7 +352,7 @@ const RenewalManagement: React.FC = () => {
           </div>
 
           <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Next Month</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Next Month</h4>
             <div className="space-y-2">
               {renewals
                 .filter((r) => {
@@ -365,8 +365,8 @@ const RenewalManagement: React.FC = () => {
                   );
                 })
                 .map((renewal) => (
-                  <div key={renewal.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <span className="text-sm text-gray-700">{renewal.truckPlate}</span>
+                  <div key={renewal.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800/50 rounded">
+                    <span className="text-sm text-gray-700 dark:text-slate-300">{renewal.truckPlate}</span>
                     <StatusBadge
                       status={renewal.status}
                       variant={statusVariant(renewal.status)}
@@ -378,7 +378,7 @@ const RenewalManagement: React.FC = () => {
           </div>
 
           <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Overdue</h4>
+            <h4 className="font-medium text-gray-900 dark:text-white mb-3">Overdue</h4>
             <div className="space-y-2">
               {renewals
                 .filter((r) => r.daysUntilRenewal < 0)
@@ -399,9 +399,9 @@ const RenewalManagement: React.FC = () => {
 
       {showAddModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-900">
             <div className="mt-3 text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Renewal</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Add New Renewal</h3>
               <p className="text-sm text-gray-500 mb-4">Renewal creation form would go here</p>
               <button
                 onClick={() => setShowAddModal(false)}

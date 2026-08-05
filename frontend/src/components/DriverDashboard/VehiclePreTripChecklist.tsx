@@ -116,14 +116,14 @@ export const VehiclePreTripChecklist: React.FC<VehiclePreTripChecklistProps> = (
         className={`w-full text-left flex items-start gap-4 p-4 rounded-2xl border transition-all ${
           checkedItems.has(item.id)
             ? 'bg-blue-50/50 border-blue-200'
-            : 'bg-white border-slate-100 hover:border-slate-300'
+            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-300'
         }`}
       >
         <div
           className={`mt-0.5 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0 ${
             checkedItems.has(item.id)
               ? 'bg-[#345E85] border-[#345E85]'
-              : 'bg-white border-slate-200'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
           }`}
         >
           {checkedItems.has(item.id) && <Check className="w-4 h-4 text-white" />}
@@ -133,7 +133,7 @@ export const VehiclePreTripChecklist: React.FC<VehiclePreTripChecklistProps> = (
             <span className="p-1 px-1.5 rounded-md bg-slate-100 text-slate-500">
               {categoryIcon(item.category)}
             </span>
-            <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+            <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
               <TranslatedText text={item.label} />
               {item.required && <span className="text-rose-500 ml-1">*</span>}
             </h4>

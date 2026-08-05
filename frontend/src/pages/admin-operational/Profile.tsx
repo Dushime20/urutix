@@ -82,7 +82,7 @@ const PasswordInput: React.FC<{
         <button
           type="button"
           onClick={() => setShow(s => !s)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-slate-300 dark:hover:text-slate-300"
         >
           {show ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>

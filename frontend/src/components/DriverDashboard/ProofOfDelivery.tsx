@@ -230,7 +230,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
       <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100 mb-4">
         <TranslatedText text="ePOD Confirmed" />
       </span>
-      <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-3"><TranslatedText text="Delivery Verified" /></h2>
+      <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3"><TranslatedText text="Delivery Verified" /></h2>
       <p className="text-slate-500 text-sm max-w-sm leading-relaxed">
         <TranslatedText text="Electronic Proof of Delivery submitted successfully. Trip is marked COMPLETED, invoice generated, and cargo owner notified." />
       </p>
@@ -242,7 +242,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
   const lbl = 'block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5';
 
   return (
-    <div className="flex flex-col h-full max-h-[90vh] bg-white rounded-[2rem] overflow-hidden">
+    <div className="flex flex-col h-full max-h-[90vh] bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden">
 
       {/* ── Top header ────────────────────────────────────────────────── */}
       <div className="shrink-0 bg-white dark:bg-[#0f172a] border-b border-slate-100 dark:border-transparent px-6 pt-6 pb-5">
@@ -310,7 +310,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s1" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 1 of 5" /></p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Delivery Details" /></h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Delivery Details" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Record when and where the cargo was delivered." /></p>
               </div>
 
@@ -338,7 +338,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                 gpsStatus === 'ok'      ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
                 gpsStatus === 'denied'  ? 'bg-amber-50  border-amber-100  text-amber-700'  :
                 gpsStatus === 'loading' ? 'bg-blue-50   border-blue-100   text-blue-700'   :
-                'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-500'}`}>
                 <MapPin size={14} className="shrink-0" />
                 {gpsStatus === 'ok'      && `${t('GPS captured:')} ${gps!.lat.toFixed(5)}, ${gps!.lng.toFixed(5)}`}
                 {gpsStatus === 'loading' && t('Capturing GPS coordinates…')}
@@ -358,7 +358,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s2" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 2 of 5" /></p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recipient Information" /></h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Recipient Information" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Identity of the person who physically accepted the cargo." /></p>
               </div>
 
@@ -401,7 +401,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s3" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 3 of 5" /></p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Cargo Condition" /></h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Cargo Condition" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Declare the state of goods at point of delivery." /></p>
               </div>
 
@@ -425,7 +425,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                       className={`text-left p-4 rounded-xl border-2 transition-all shadow-sm ${colors[c.color]}`}>
                       <div className="flex items-center gap-3 mb-1">
                         <Icon size={16} className={iconColors[c.color]} />
-                        <span className="text-xs font-black text-slate-800 uppercase tracking-tight"><TranslatedText text={c.label} /></span>
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight"><TranslatedText text={c.label} /></span>
                         {active && <CheckCircle2 size={13} className={`ml-auto ${iconColors[c.color]}`} />}
                       </div>
                       <p className="text-[10px] text-slate-400 leading-tight"><TranslatedText text={c.desc} /></p>
@@ -448,7 +448,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                   </label>
                   <textarea rows={3} placeholder={t('Describe the damage, shortage, or exception in detail...')}
                     value={form.exceptionNotes} onChange={e => set('exceptionNotes', e.target.value)}
-                    className="w-full bg-slate-50 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all resize-none" />
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400 transition-all resize-none" />
                 </div>
               )}
 
@@ -456,7 +456,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                 <label className={lbl}><TranslatedText text="General Delivery Remarks" /></label>
                 <textarea rows={3} placeholder={t('Any additional notes, access instructions, or remarks for the record...')}
                   value={form.deliveryNotes} onChange={e => set('deliveryNotes', e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-all resize-none" />
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-all resize-none" />
               </div>
             </motion.div>
           )}
@@ -466,13 +466,13 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s4" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 4 of 5" /></p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Delivery Evidence" /></h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Delivery Evidence" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Photographic proof of delivery — recommended for all cargo." /></p>
               </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {previews.map((src, i) => (
-                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group shadow-sm">
+                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 group shadow-sm">
                     <img src={src} alt={`Photo ${i+1}`} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
                     <button onClick={() => removePhoto(i)}
@@ -485,8 +485,8 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                   </div>
                 ))}
                 {photos.length < 8 && (
-                  <label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-[#345E85] hover:bg-blue-50/40 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-white flex items-center justify-center transition-all">
+                  <label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#345E85] hover:bg-blue-50/40 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-white dark:bg-slate-900 flex items-center justify-center transition-all">
                       <Plus size={16} className="text-slate-400 group-hover:text-[#345E85]" />
                     </div>
                     <span className="text-[9px] font-black text-slate-400 group-hover:text-[#345E85] uppercase tracking-widest"><TranslatedText text="Add Photo" /></span>
@@ -496,16 +496,16 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-2">
                   <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Cargo unloaded at destination" />
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-2">
                   <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Delivery location / dock" />
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-2">
                   <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Condition of packaging" />
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-2">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-2">
                   <Camera size={13} className="text-[#345E85]" /><TranslatedText text="Any damage (if applicable)" />
                 </div>
               </div>
@@ -526,7 +526,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
             <motion.div key="s5" initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-20 }} className="space-y-5">
               <div>
                 <p className="text-[10px] font-black text-[#345E85] uppercase tracking-widest mb-0.5"><TranslatedText text="Step 5 of 5" /></p>
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recipient Sign-Off" /></h3>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Recipient Sign-Off" /></h3>
                 <p className="text-xs text-slate-400 mt-0.5"><TranslatedText text="Recipient must sign to legally acknowledge receipt of cargo." /></p>
               </div>
 
@@ -539,7 +539,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                     <RotateCcw size={10} /> <TranslatedText text="Clear" />
                   </button>
                 </div>
-                <div className="relative h-48 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl overflow-hidden hover:border-[#345E85]/50 transition-colors group">
+                <div className="relative h-48 bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden hover:border-[#345E85]/50 transition-colors group">
                   <canvas ref={canvasRef}
                     onMouseDown={startDraw} onMouseMove={draw} onMouseUp={stopDraw} onMouseLeave={stopDraw}
                     onTouchStart={e => { e.preventDefault(); startDraw(e); }}
@@ -559,7 +559,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
               </div>
 
               {/* Final summary */}
-              <div className="bg-slate-50 rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 overflow-hidden">
                 <div className="px-4 py-2.5 bg-slate-100">
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest"><TranslatedText text="ePOD Submission Summary" /></p>
                 </div>
@@ -576,7 +576,7 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
                 ].map(row => (
                   <div key={row.label} className="flex justify-between items-center px-4 py-2.5">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest"><TranslatedText text={row.label} /></span>
-                    <span className={`text-xs font-bold text-right ${(row as any).color || 'text-slate-700'}`}>{row.value}</span>
+                    <span className={`text-xs font-bold text-right ${(row as any).color || 'text-slate-700 dark:text-slate-300'}`}>{row.value}</span>
                   </div>
                 ))}
               </div>
@@ -587,10 +587,10 @@ export const ProofOfDelivery: React.FC<ProofOfDeliveryProps> = ({
       </div>
 
       {/* ── Bottom navigation ─────────────────────────────────────────── */}
-      <div className="shrink-0 px-6 py-4 bg-white border-t border-slate-100 flex items-center gap-3">
+      <div className="shrink-0 px-6 py-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
         {step > 1 && (
           <button onClick={() => setStep(s => s - 1)}
-            className="h-12 px-6 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+            className="h-12 px-6 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
             <TranslatedText text="Back" />
           </button>
         )}

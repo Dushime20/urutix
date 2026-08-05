@@ -339,12 +339,12 @@ const EnhancedCargoDemo: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800/50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading enhanced cargo data...</p>
+              <p className="text-gray-600 dark:text-slate-300">Loading enhanced cargo data...</p>
             </div>
           </div>
         </div>
@@ -354,7 +354,7 @@ const EnhancedCargoDemo: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800/50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Data</h2>
@@ -362,7 +362,7 @@ const EnhancedCargoDemo: React.FC = () => {
             
             {!user && (
               <div className="mt-4">
-                <p className="text-gray-600 mb-4">You need to be logged in to view enhanced cargo data.</p>
+                <p className="text-gray-600 dark:text-slate-300 mb-4">You need to be logged in to view enhanced cargo data.</p>
                 <button
                   onClick={handleLogin}
                   disabled={isLoggingIn}
@@ -388,15 +388,15 @@ const EnhancedCargoDemo: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800/50 py-8">
       <div className="max-w-7xl mx-auto px-4">
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                 Enhanced Cargo Display Demo
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-slate-300">
                 Showcasing cargo data with integrated location intelligence
               </p>
               <div className="flex items-center mt-2 space-x-2">

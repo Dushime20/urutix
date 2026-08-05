@@ -43,7 +43,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden"
       >
         {/* Header Banner */}
         <div className={cn(
@@ -73,7 +73,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-8">
                  <div className="flex gap-5">
-                    <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">
                        <Truck size={22} />
                     </div>
                     <div>
@@ -84,7 +84,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
                  </div>
 
                  <div className="flex gap-5">
-                    <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">
                        <Calendar size={22} />
                     </div>
                     <div>
@@ -96,7 +96,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
                  </div>
 
                  <div className="flex gap-5">
-                    <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">
                        <User size={22} />
                     </div>
                     <div>
@@ -108,7 +108,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
 
               <div className="space-y-8">
                  <div className="flex gap-5">
-                    <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">
                        <Activity size={22} />
                     </div>
                     <div>
@@ -118,7 +118,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
                           record.status === 'completed' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
                           record.status === 'in-progress' ? "bg-blue-50 text-blue-600 border border-blue-100" :
                           isFault ? "bg-rose-50 text-rose-600 border border-rose-100" :
-                          "bg-slate-50 text-slate-600 border border-slate-100"
+                          "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-800"
                         )}>
                           {record.status}
                        </span>
@@ -126,7 +126,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
                  </div>
 
                  <div className="flex gap-5">
-                    <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">
                        <Clock size={22} />
                     </div>
                     <div>
@@ -136,7 +136,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
                  </div>
 
                  <div className="flex gap-5">
-                    <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-sm">
+                    <div className="size-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 border border-slate-100 dark:border-slate-800 shadow-sm">
                        <FileText size={22} />
                     </div>
                     <div className="flex-1">
@@ -152,7 +152,7 @@ export const MaintenanceDetailsModal: React.FC<MaintenanceDetailsModalProps> = (
            <div className="mt-12 flex gap-4">
               <button 
                 onClick={onClose}
-                className="px-8 py-4 bg-slate-50 hover:bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+                className="px-8 py-4 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
               >
                 Close Audit
               </button>

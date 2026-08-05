@@ -244,7 +244,7 @@ const ReceiverCargosPage: React.FC = () => {
       </div>
 
       {/* Filters and View Toggle */}
-      <div className="bg-white rounded-[2rem] border border-slate-100 p-2 sm:p-4 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-2 sm:p-4 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 transform text-slate-300 w-4 h-4" />
@@ -253,7 +253,7 @@ const ReceiverCargosPage: React.FC = () => {
               placeholder="SEARCH LOGISTICS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl sm:rounded-2xl border-none bg-slate-50 px-3 py-3.5 pl-12 text-[10px] font-black uppercase tracking-widest focus:ring-4 focus:ring-primary-50 transition-all placeholder:text-slate-300 shadow-inner"
+              className="w-full rounded-xl sm:rounded-2xl border-none bg-slate-50 dark:bg-slate-800/50 px-3 py-3.5 pl-12 text-[10px] font-black uppercase tracking-widest focus:ring-4 focus:ring-primary-50 transition-all placeholder:text-slate-300 shadow-inner"
             />
           </div>
           
@@ -289,14 +289,14 @@ const ReceiverCargosPage: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl p-1 border border-slate-100 self-end lg:self-center">
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-1 border border-slate-100 dark:border-slate-800 self-end lg:self-center">
             <button
               onClick={() => setViewMode('card')}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
                 viewMode === 'card'
-                  ? "bg-white text-primary-600 shadow-sm"
-                  : "text-slate-400 hover:text-slate-600"
+                  ? "bg-white dark:bg-slate-900 text-primary-600 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               )}
             >
               <Grid className="w-3.5 h-3.5" />
@@ -307,8 +307,8 @@ const ReceiverCargosPage: React.FC = () => {
               className={cn(
                 "hidden md:flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
                 viewMode === 'table'
-                  ? "bg-white text-primary-600 shadow-sm"
-                  : "text-slate-400 hover:text-slate-600"
+                  ? "bg-white dark:bg-slate-900 text-primary-600 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               )}
             >
               <Table className="w-3.5 h-3.5" />
@@ -337,11 +337,11 @@ const ReceiverCargosPage: React.FC = () => {
       )}
 
       {filteredCargos.length === 0 ? (
-        <div className="bg-white rounded-[3rem] border border-slate-100 border-dashed p-16 sm:p-24 text-center">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+        <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 border-dashed p-16 sm:p-24 text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
              <Package className="text-slate-200 w-8 h-8 sm:w-10 sm:h-10" />
           </div>
-          <h3 className="text-xl font-black text-slate-900 tracking-tight">Inventory Empty</h3>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Inventory Empty</h3>
           <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-2 max-w-sm mx-auto leading-relaxed">
             {hasActiveFilters
               ? "Zero payloads match your authorization query parameters." 
@@ -363,7 +363,7 @@ const ReceiverCargosPage: React.FC = () => {
             {filteredCargos.map((cargo) => (
               <div
                 key={cargo.id}
-                className="group relative bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-primary-900/5 hover:border-primary-100 transition-all duration-500"
+                className="group relative bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:shadow-primary-900/5 hover:border-primary-100 transition-all duration-500"
               >
                 <div className="flex flex-col h-full">
                   <div className="flex items-start justify-between mb-6">
@@ -399,7 +399,7 @@ const ReceiverCargosPage: React.FC = () => {
                       <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Protocol Date</p>
                       <div className="flex items-center gap-2">
                          <FaCalendarAlt className="text-primary-300 text-[10px]" />
-                         <p className="text-[10px] font-bold text-slate-700">
+                         <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
                             {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString() : 'N/A'}
                          </p>
                       </div>
@@ -409,7 +409,7 @@ const ReceiverCargosPage: React.FC = () => {
                         <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">ETA Window</p>
                         <div className="flex items-center gap-2">
                            <FaCalendarAlt className="text-emerald-300 text-[10px]" />
-                           <p className="text-[10px] font-bold text-slate-700">
+                           <p className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
                               {new Date(cargo.deliveryDate).toLocaleDateString()}
                            </p>
                         </div>
@@ -422,7 +422,7 @@ const ReceiverCargosPage: React.FC = () => {
                       {cargo.weight && (
                         <div className="flex flex-col">
                           <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Mass</span>
-                          <span className="text-xs font-black text-slate-900 mt-0.5">
+                          <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
                             {cargo.weight} <span className="text-slate-400 font-bold">KG</span>
                           </span>
                         </div>
@@ -430,7 +430,7 @@ const ReceiverCargosPage: React.FC = () => {
                       {cargo.volume && (
                         <div className="flex flex-col">
                           <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Vol</span>
-                          <span className="text-xs font-black text-slate-900 mt-0.5">
+                          <span className="text-xs font-black text-slate-900 dark:text-white mt-0.5">
                             {cargo.volume} <span className="text-slate-400 font-bold">M³</span>
                           </span>
                         </div>
@@ -441,7 +441,7 @@ const ReceiverCargosPage: React.FC = () => {
                   <div className="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
                       <button
                         onClick={() => handleViewDetails(cargo)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-all text-[9px] font-black uppercase tracking-widest border border-slate-100 shadow-sm active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-slate-100 transition-all text-[9px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-800 shadow-sm active:scale-95"
                       >
                          <Eye className="w-3.5 h-3.5" />
                          Full Logic
@@ -483,7 +483,7 @@ const ReceiverCargosPage: React.FC = () => {
                       <Package className="h-5 w-5 text-primary-500" />
                     </div>
                     <div className="ml-4">
-                      <div className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{cargo.title || 'NULL'}</div>
+                      <div className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">{cargo.title || 'NULL'}</div>
                       <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{cargo.cargoType}</div>
                       {cargo.cargoOwner?.profile && (
                         <div className="text-[8px] text-slate-300 mt-1 flex items-center gap-1 font-bold">
@@ -500,9 +500,9 @@ const ReceiverCargosPage: React.FC = () => {
                 label: 'Routing',
                 render: (_: any, cargo: Cargo) => (
                   <div>
-                    <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.pickupLocation, 'N/A')}</div>
+                    <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 break-words max-w-[200px] leading-tight">{formatLocation(cargo.pickupLocation, 'N/A')}</div>
                     <div className="text-[10px] text-slate-200 my-0.5">↓</div>
-                    <div className="text-[10px] font-bold text-slate-600 break-words max-w-[200px] leading-tight">{formatLocation(cargo.deliveryLocation, 'N/A')}</div>
+                    <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 break-words max-w-[200px] leading-tight">{formatLocation(cargo.deliveryLocation, 'N/A')}</div>
                   </div>
                 ),
               },
@@ -512,11 +512,11 @@ const ReceiverCargosPage: React.FC = () => {
                 sortable: true,
                 render: (_: any, cargo: Cargo) => (
                   <div>
-                    <div className="text-[10px] text-slate-600 font-bold">
+                    <div className="text-[10px] text-slate-600 dark:text-slate-300 font-bold">
                       <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">START:</span>
                       {cargo.pickupDate ? new Date(cargo.pickupDate).toLocaleDateString() : 'N/A'}
                     </div>
-                    <div className="text-[10px] text-slate-600 mt-1.5 font-bold">
+                    <div className="text-[10px] text-slate-600 dark:text-slate-300 mt-1.5 font-bold">
                       <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-2">DEST:</span>
                       {cargo.deliveryDate ? new Date(cargo.deliveryDate).toLocaleDateString() : 'N/A'}
                     </div>

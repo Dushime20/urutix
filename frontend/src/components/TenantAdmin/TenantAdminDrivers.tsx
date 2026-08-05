@@ -503,7 +503,7 @@ const TenantAdminDrivers: React.FC = () => {
   return (
     <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -512,13 +512,13 @@ const TenantAdminDrivers: React.FC = () => {
               </div>
               <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600">Driver Management</h2>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Fleet Drivers</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Fleet Drivers</h1>
             <p className="text-gray-500 font-medium mt-1 text-sm sm:text-base">Manage and monitor your tenant drivers</p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => refetchDrivers()}
-              className="px-3 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 font-medium text-sm"
+              className="px-3 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 font-medium text-sm"
             >
               <RefreshCw className="w-4 h-4" />
               <span className="hidden sm:inline">Refresh</span>
@@ -535,7 +535,7 @@ const TenantAdminDrivers: React.FC = () => {
         </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 text-gray-400" />
@@ -583,7 +583,7 @@ const TenantAdminDrivers: React.FC = () => {
             </select>
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              className="px-4 py-2 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
             >
               <Filter className="w-4 h-4" />
               {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
@@ -593,8 +593,8 @@ const TenantAdminDrivers: React.FC = () => {
               <button
                 onClick={() => setViewMode('table')}
                 className={`p-2 rounded-md transition-all ${viewMode === 'table'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'
                   }`}
               >
                 <List className="w-4 h-4" />
@@ -602,8 +602,8 @@ const TenantAdminDrivers: React.FC = () => {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-md transition-all ${viewMode === 'grid'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-slate-300'
                   }`}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -614,7 +614,7 @@ const TenantAdminDrivers: React.FC = () => {
       </div>
 
       {/* Drivers Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
         {driversError ? (
           <div className="p-6 text-center">
             <div className="text-red-600 mb-2">Failed to load drivers</div>
@@ -628,7 +628,7 @@ const TenantAdminDrivers: React.FC = () => {
         ) : filteredAndSortedDrivers.length === 0 ? (
           <div className="p-12 text-center">
             <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 text-lg mb-2">No drivers found</p>
+            <p className="text-slate-600 dark:text-slate-300 text-lg mb-2">No drivers found</p>
             <p className="text-slate-500 text-sm mb-4">
               {searchTerm || statusFilter !== 'all' || availabilityFilter !== 'all'
                 ? 'Try adjusting your filters'
@@ -664,10 +664,10 @@ const TenantAdminDrivers: React.FC = () => {
             {filteredAndSortedDrivers.map((driver) => (
               <div
                 key={driver.id}
-                className="bg-white rounded-[24px] border border-slate-100 p-6 hover:shadow-xl transition-all group relative overflow-hidden"
+                className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-slate-800 p-6 hover:shadow-xl transition-all group relative overflow-hidden"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="h-12 w-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
                     <User className="w-6 h-6" />
                   </div>
                   <span
@@ -681,7 +681,7 @@ const TenantAdminDrivers: React.FC = () => {
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight mb-1">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight mb-1">
                     {driver.firstName} {driver.lastName}
                   </h3>
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -691,15 +691,15 @@ const TenantAdminDrivers: React.FC = () => {
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                     <Mail className="w-4 h-4 text-blue-400" />
                     <span className="truncate">{driver.email}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                     <Phone className="w-4 h-4 text-blue-400" />
                     <span>{driver.phone || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
+                  <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                     <Truck className="w-4 h-4 text-blue-400" />
                     <span className="truncate">
                       {driver.currentTruckId ? 'Assigned to Truck' : 'Unassigned'}
@@ -710,19 +710,19 @@ const TenantAdminDrivers: React.FC = () => {
                 <div className="flex items-center pt-4 border-t border-slate-50 gap-2">
                   <button
                     onClick={() => openDetailsModal(driver)}
-                    className="flex-1 h-9 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
+                    className="flex-1 h-9 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
                   >
                     View
                   </button>
                   <button
                     onClick={() => openEditModal(driver)}
-                    className="h-9 w-9 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
+                    className="h-9 w-9 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(driver)}
-                    className="h-9 w-9 flex items-center justify-center bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                    className="h-9 w-9 flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -736,9 +736,9 @@ const TenantAdminDrivers: React.FC = () => {
       {/* Create Driver Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Plus className="text-blue-600" />
                 {driverCreationMode === 'new' ? 'Create New Driver' : 'Add Existing Driver'}
               </h2>
@@ -747,15 +747,15 @@ const TenantAdminDrivers: React.FC = () => {
                   setShowCreateModal(false);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               {/* Mode Selection Toggle */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">
                   Select Option
                 </label>
                 <div className="flex gap-4">
@@ -768,7 +768,7 @@ const TenantAdminDrivers: React.FC = () => {
                       onChange={(e) => setDriverCreationMode(e.target.value as 'new' | 'existing')}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Create New Driver</span>
+                    <span className="ml-2 text-sm text-gray-700 dark:text-slate-300">Create New Driver</span>
                   </label>
                   <label className="flex items-center cursor-pointer">
                     <input
@@ -779,7 +779,7 @@ const TenantAdminDrivers: React.FC = () => {
                       onChange={(e) => setDriverCreationMode(e.target.value as 'new' | 'existing')}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Add Existing Driver</span>
+                    <span className="ml-2 text-sm text-gray-700 dark:text-slate-300">Add Existing Driver</span>
                   </label>
                 </div>
               </div>
@@ -788,7 +788,7 @@ const TenantAdminDrivers: React.FC = () => {
               {driverCreationMode === 'existing' && (
                 <div className="mb-6 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Search for Driver *
                     </label>
                     <div className="relative">
@@ -805,7 +805,7 @@ const TenantAdminDrivers: React.FC = () => {
 
                   {/* Driver Results */}
                   {existingDriverSearch.length > 0 && (
-                    <div className="border border-gray-200 rounded-lg max-h-60 overflow-y-auto">
+                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg max-h-60 overflow-y-auto">
                       {allAvailableDrivers.length === 0 ? (
                         <div className="p-4 text-center text-gray-500 text-sm">
                           No drivers found. Try a different search term.
@@ -824,7 +824,7 @@ const TenantAdminDrivers: React.FC = () => {
                             >
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <div className="font-medium text-gray-900">
+                                  <div className="font-medium text-gray-900 dark:text-white">
                                     {driver.firstName} {driver.lastName}
                                   </div>
                                   <div className="text-sm text-gray-500">
@@ -862,7 +862,7 @@ const TenantAdminDrivers: React.FC = () => {
               {driverCreationMode === 'new' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       First Name *
                     </label>
                     <input
@@ -875,7 +875,7 @@ const TenantAdminDrivers: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Last Name *</label>
                     <input
                       type="text"
                       required
@@ -886,7 +886,7 @@ const TenantAdminDrivers: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Email *</label>
                     <input
                       type="email"
                       required
@@ -897,7 +897,7 @@ const TenantAdminDrivers: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Phone</label>
                     <input
                       type="tel"
                       value={formData.phone}
@@ -907,7 +907,7 @@ const TenantAdminDrivers: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       License Number *
                     </label>
                     <input
@@ -920,7 +920,7 @@ const TenantAdminDrivers: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Status *</label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as Driver['status'] })}
@@ -934,7 +934,7 @@ const TenantAdminDrivers: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                       Availability Status *
                     </label>
                     <select
@@ -949,14 +949,14 @@ const TenantAdminDrivers: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -986,9 +986,9 @@ const TenantAdminDrivers: React.FC = () => {
       {/* Edit Driver Modal */}
       {showEditModal && editingDriver && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Edit2 className="text-blue-600" />
                 Edit Driver
               </h2>
@@ -997,7 +997,7 @@ const TenantAdminDrivers: React.FC = () => {
                   setShowEditModal(false);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1005,7 +1005,7 @@ const TenantAdminDrivers: React.FC = () => {
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     First Name *
                   </label>
                   <input
@@ -1017,7 +1017,7 @@ const TenantAdminDrivers: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Last Name *</label>
                   <input
                     type="text"
                     required
@@ -1027,7 +1027,7 @@ const TenantAdminDrivers: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Email *</label>
                   <input
                     type="email"
                     required
@@ -1037,7 +1037,7 @@ const TenantAdminDrivers: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Phone</label>
                   <input
                     type="tel"
                     value={formData.phone}
@@ -1046,7 +1046,7 @@ const TenantAdminDrivers: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     License Number *
                   </label>
                   <input
@@ -1058,7 +1058,7 @@ const TenantAdminDrivers: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Status *</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as Driver['status'] })}
@@ -1072,7 +1072,7 @@ const TenantAdminDrivers: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                     Availability Status *
                   </label>
                   <select
@@ -1086,14 +1086,14 @@ const TenantAdminDrivers: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => {
                     setShowEditModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1123,15 +1123,15 @@ const TenantAdminDrivers: React.FC = () => {
       {/* Driver Details Modal */}
       {showDetailsModal && selectedDriver && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <User className="text-blue-600" />
                 Driver Details
               </h2>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -1140,7 +1140,7 @@ const TenantAdminDrivers: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Full Name</label>
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
                     {selectedDriver.firstName} {selectedDriver.lastName}
                   </p>
                 </div>
@@ -1157,28 +1157,28 @@ const TenantAdminDrivers: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-400" />
                     {selectedDriver.email}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Phone</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-400" />
                     {selectedDriver.phone || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">License Number</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-gray-400" />
                     {selectedDriver.licenseNumber}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Experience</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-400" />
                     {typeof selectedDriver.experience === 'number'
                       ? `${selectedDriver.experience} years`
@@ -1197,7 +1197,7 @@ const TenantAdminDrivers: React.FC = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Assigned Truck</label>
-                  <p className="text-gray-900 flex items-center gap-2">
+                  <p className="text-gray-900 dark:text-white flex items-center gap-2">
                     <Truck className="w-4 h-4 text-gray-400" />
                     {selectedDriver.currentTruckId ? 'Assigned' : 'Not assigned'}
                   </p>
@@ -1211,22 +1211,22 @@ const TenantAdminDrivers: React.FC = () => {
       {/* Assign Driver to Truck Modal */}
       {showAssignModal && selectedDriver && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Truck className="text-green-600" />
                 Assign Driver to Truck
               </h2>
               <button
                 onClick={() => setShowAssignModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
             <div className="p-6">
               <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-gray-600 dark:text-slate-300 mb-2">
                   Select a truck to assign driver: <strong>{selectedDriver.firstName} {selectedDriver.lastName}</strong>
                 </p>
               </div>
@@ -1243,7 +1243,7 @@ const TenantAdminDrivers: React.FC = () => {
                         key={truck.id}
                         className={`p-4 border rounded-lg transition-colors ${isAssigned
                           ? 'bg-green-50 border-green-200'
-                          : 'bg-white border-gray-200 hover:border-blue-300'
+                          : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 hover:border-blue-300'
                           }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1251,7 +1251,7 @@ const TenantAdminDrivers: React.FC = () => {
                             <div className="flex items-center gap-3">
                               <Truck className="w-5 h-5 text-gray-400" />
                               <div>
-                                <p className="font-medium text-gray-900">
+                                <p className="font-medium text-gray-900 dark:text-white">
                                   {truck.plateNumber} - {truck.make} {truck.model}
                                 </p>
                                 <p className="text-sm text-gray-500">

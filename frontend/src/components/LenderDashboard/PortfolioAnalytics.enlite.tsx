@@ -75,7 +75,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
             label: 'ASSET CLASS',
             render: (_: unknown, row: any) => (
                 <div className="flex flex-col">
-                    <span className="font-black text-slate-900 text-[11px] uppercase tracking-tight">{row.cargoType}</span>
+                    <span className="font-black text-slate-900 dark:text-white text-[11px] uppercase tracking-tight">{row.cargoType}</span>
                     <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{row.loanCount} Active Positions</span>
                 </div>
             )
@@ -84,7 +84,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
             key: 'totalValue',
             label: 'EXPOSURE',
             render: (_: unknown, row: any) => (
-                <span className="font-black text-slate-900 text-[11px]">{formatCurrency(row.totalValue, row.currency)}</span>
+                <span className="font-black text-slate-900 dark:text-white text-[11px]">{formatCurrency(row.totalValue, row.currency)}</span>
             )
         },
         {
@@ -111,7 +111,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
                             style={{ width: `${Math.min(row.defaultRate * 10, 100)}%` }}
                         />
                     </div>
-                    <span className="font-bold text-slate-600 text-[10px]">{row.defaultRate}%</span>
+                    <span className="font-bold text-slate-600 dark:text-slate-300 text-[10px]">{row.defaultRate}%</span>
                 </div>
             )
         }
@@ -131,7 +131,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
                                 <select
                                     value={timeframe}
                                     onChange={(e) => onTimeframeChange(e.target.value)}
-                                    className="bg-slate-50 border-none text-[10px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 outline-none ring-1 ring-slate-200 focus:ring-[#345E85] transition-all text-slate-600 cursor-pointer"
+                                    className="bg-slate-50 dark:bg-slate-800/50 border-none text-[10px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 outline-none ring-1 ring-slate-200 focus:ring-[#345E85] transition-all text-slate-600 dark:text-slate-300 cursor-pointer"
                                 >
                                     <option value="3months">90 Days</option>
                                     <option value="6months">180 Days</option>
@@ -151,32 +151,32 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
                         </div>
 
                         <div className="grid grid-cols-3 gap-4 mt-6">
-                            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md group">
+                            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md group">
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="p-2 bg-blue-50 text-[#345E85] rounded-lg group-hover:scale-110 transition-transform">
                                         <ArrowUpRight size={14} />
                                     </div>
                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Disbursed</span>
                                 </div>
-                                <div className="text-lg font-black text-slate-900">{formatCurrency(performanceData[performanceData.length - 1]?.disbursed || 0)}</div>
+                                <div className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(performanceData[performanceData.length - 1]?.disbursed || 0)}</div>
                             </div>
-                            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md group">
+                            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md group">
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="p-2 bg-[#345E85] text-white rounded-lg group-hover:scale-110 transition-transform">
                                         <ArrowDownLeft size={14} />
                                     </div>
                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Collected</span>
                                 </div>
-                                <div className="text-lg font-black text-slate-900">{formatCurrency(performanceData[performanceData.length - 1]?.collected || 0)}</div>
+                                <div className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(performanceData[performanceData.length - 1]?.collected || 0)}</div>
                             </div>
-                            <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md group">
+                            <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md group">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <div className="p-2 bg-slate-100 text-slate-600 rounded-lg group-hover:scale-110 transition-transform">
+                                    <div className="p-2 bg-slate-100 text-slate-600 dark:text-slate-300 rounded-lg group-hover:scale-110 transition-transform">
                                         <PieChart size={14} />
                                     </div>
                                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Net Alpha</span>
                                 </div>
-                                <div className="text-lg font-black text-slate-900">{formatCurrency(performanceData[performanceData.length - 1]?.netIncome || 0)}</div>
+                                <div className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(performanceData[performanceData.length - 1]?.netIncome || 0)}</div>
                             </div>
                         </div>
                     </DataCard>
@@ -188,7 +188,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
                             <div className="flex items-center justify-between">
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Portfolio Risk Score</span>
-                                    <div className="text-2xl font-black text-slate-900">{portfolioData.riskScore}/10</div>
+                                    <div className="text-2xl font-black text-slate-900 dark:text-white">{portfolioData.riskScore}/10</div>
                                 </div>
                                 <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-sm">
                                     {Math.round((portfolioData.riskScore / 10) * 100)}%
@@ -198,7 +198,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                                     <span className="text-emerald-600">Low Risk Exposure</span>
-                                    <span className="text-slate-900">{formatCurrency(riskMetrics.lowRisk)}</span>
+                                    <span className="text-slate-900 dark:text-white">{formatCurrency(riskMetrics.lowRisk)}</span>
                                 </div>
                                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(riskMetrics.lowRisk / riskMetrics.totalExposure) * 100}%` }} />
@@ -206,7 +206,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
 
                                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest pt-2">
                                     <span className="text-amber-600">Medium Risk Exposure</span>
-                                    <span className="text-slate-900">{formatCurrency(riskMetrics.mediumRisk)}</span>
+                                    <span className="text-slate-900 dark:text-white">{formatCurrency(riskMetrics.mediumRisk)}</span>
                                 </div>
                                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(riskMetrics.mediumRisk / riskMetrics.totalExposure) * 100}%` }} />
@@ -214,7 +214,7 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
 
                                 <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest pt-2">
                                     <span className="text-rose-600">High Risk Exposure</span>
-                                    <span className="text-slate-900">{formatCurrency(riskMetrics.highRisk)}</span>
+                                    <span className="text-slate-900 dark:text-white">{formatCurrency(riskMetrics.highRisk)}</span>
                                 </div>
                                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-rose-500 rounded-full" style={{ width: `${(riskMetrics.highRisk / riskMetrics.totalExposure) * 100}%` }} />
@@ -228,15 +228,15 @@ const PortfolioAnalyticsEnlite: React.FC<PortfolioAnalyticsEnliteProps> = ({
                             {geographicData.slice(0, 4).map((region, idx) => (
                                 <div key={idx} className="flex items-center justify-between group">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 font-black text-[10px] group-hover:bg-blue-50 group-hover:text-[#345E85] transition-all border border-transparent group-hover:border-blue-100">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 font-black text-[10px] group-hover:bg-blue-50 group-hover:text-[#345E85] transition-all border border-transparent group-hover:border-blue-100">
                                             {region.region.charAt(0)}
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{region.region}</span>
+                                            <span className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-tight">{region.region}</span>
                                             <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{region.loanCount} Active Loans</span>
                                         </div>
                                     </div>
-                                    <div className="text-[11px] font-black text-slate-900">{formatCurrency(region.totalValue)}</div>
+                                    <div className="text-[11px] font-black text-slate-900 dark:text-white">{formatCurrency(region.totalValue)}</div>
                                 </div>
                             ))}
                             <button className="w-full mt-2 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-[#345E85] transition-colors flex items-center justify-center gap-2">

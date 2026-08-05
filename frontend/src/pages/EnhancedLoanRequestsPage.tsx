@@ -344,7 +344,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-8 overflow-hidden">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 overflow-hidden flex flex-col max-h-[80vh]">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
         <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Cargo Financing</p>
@@ -371,7 +371,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
               <input type="number" min="1" max="50000" step="0.01" value={form.requested_amount}
                 onChange={e => setForm(p => ({ ...p, requested_amount: e.target.value }))}
                 placeholder="e.g. 5000"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
                 required />
             </div>
             <p className="text-[10px] text-slate-400 mt-1 font-medium">Max 50,000 {requestCurrency} per request</p>
@@ -429,7 +429,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
                 Linked Trip
               </label>
               <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${
-                loadingTrip ? 'bg-slate-50 border-slate-200' :
+                loadingTrip ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' :
                 selectedTrip ? 'bg-emerald-50 border-emerald-200' :
                 'bg-rose-50 border-rose-200'
               }`}>
@@ -457,8 +457,8 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
           )}
 
           {/* Fund Allocation */}
-          <div className="bg-slate-50 rounded-2xl p-4 space-y-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-4 border border-slate-100 dark:border-slate-800">
+            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <Info size={12} /> Fund Allocation
             </p>
             <div>
@@ -480,7 +480,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Beneficiary <span className="text-rose-400">*</span></label>
               {loadingBeneficiary ? (
-                <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl">
                   <Loader2 size={14} className="animate-spin text-slate-400" />
                   <span className="text-sm text-slate-400 font-medium">Resolving beneficiary…</span>
                 </div>
@@ -500,7 +500,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
                 <input type="text" value={form.beneficiary_id}
                   onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
                   placeholder="Enter beneficiary name or reference"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
                   required />
               ) : (
                 // No data found — show warning
@@ -550,14 +550,14 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
                 <CalendarDays size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input type="date" value={form.due_date} min={new Date().toISOString().split('T')[0]}
                   onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
               </div>
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Note <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
               <input type="text" value={form.purpose} onChange={e => setForm(p => ({ ...p, purpose: e.target.value }))}
                 placeholder="e.g. Fuel advance for trip"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
             </div>
           </div>
 
@@ -565,7 +565,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
           {success && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><CheckCircle size={14} className="flex-shrink-0" /> Loan request submitted successfully!</div>}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancel</button>
             <button type="submit" disabled={submitting || success}
               className="flex-1 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 flex items-center justify-center gap-2">
               {submitting ? <><RefreshCw size={12} className="animate-spin" /> Submitting…</> : 'Submit Request'}
@@ -583,7 +583,7 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
 // ══════════════════════════════════════════════════════════════════════════════
 
 const selectCls = (hasIcon = false) =>
-  `w-full ${hasIcon ? 'pl-10' : 'pl-4'} pr-8 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed`;
+  `w-full ${hasIcon ? 'pl-10' : 'pl-4'} pr-8 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed`;
 
 const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, onSuccess, tenantId, userId }) => {
   const { user } = useAuth(); // Get user context to check role
@@ -755,7 +755,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 sm:p-8 overflow-hidden">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 overflow-hidden flex flex-col max-h-[80vh]">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
         <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Fleet Financing</p>
@@ -782,7 +782,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
               <input type="number" min="1" max="50000" step="0.01" value={form.requested_amount}
                 onChange={e => setForm(p => ({ ...p, requested_amount: e.target.value }))}
                 placeholder="e.g. 5000"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
                 required />
             </div>
             <p className="text-[10px] text-slate-400 mt-1 font-medium">Max 50,000 {requestCurrency} per request</p>
@@ -849,8 +849,8 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
           </div>
 
           {/* Fund Allocation */}
-          <div className="bg-slate-50 rounded-2xl p-4 space-y-4 border border-slate-100">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-4 border border-slate-100 dark:border-slate-800">
+            <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <Info size={12} /> Fund Allocation
             </p>
             <div>
@@ -885,7 +885,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
                 <input type="text" value={form.beneficiary_id}
                   onChange={e => setForm(p => ({ ...p, beneficiary_id: e.target.value }))}
                   placeholder={form.beneficiary_type === 'fuel' ? 'Fuel supplier ID or account' : form.beneficiary_type === 'tolls' ? 'Toll account ID' : 'Beneficiary ID or reference'}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all"
                   required />
               )}
             </div>
@@ -920,7 +920,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Note <span className="text-slate-300 normal-case font-medium">(optional)</span></label>
             <input type="text" value={form.purpose} onChange={e => setForm(p => ({ ...p, purpose: e.target.value }))}
               placeholder="e.g. Fuel advance for trip"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-900 dark:text-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all" />
           </div>
 
           {/* Repayment terms notice */}
@@ -935,7 +935,7 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
           {success && <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2"><CheckCircle size={14} className="flex-shrink-0" /> Loan request submitted successfully!</div>}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-3 border border-slate-200 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Cancel</button>
+            <button type="button" onClick={onClose} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">Cancel</button>
             <button type="submit" disabled={submitting || success}
               className="flex-1 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 flex items-center justify-center gap-2">
               {submitting ? <><RefreshCw size={12} className="animate-spin" /> Submitting…</> : 'Submit Request'}
@@ -1005,7 +1005,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
       label: 'Loan ID',
       render: (_v, req) => (
         <>
-          <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}…</p>
+          <p className="text-xs font-black text-slate-900 dark:text-white font-mono">{req.id.slice(0, 8)}…</p>
           <p className="text-[10px] text-slate-400 font-medium mt-0.5">
             {req.trip_id ? `Trip: ${req.trip_id.slice(0, 8)}…` : '—'}
           </p>
@@ -1017,7 +1017,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
       label: 'Amount',
       render: (_v, req) => (
         <>
-          <p className="text-sm font-black text-slate-900">{fmtLoan(req.requested_amount, req.currency)}</p>
+          <p className="text-sm font-black text-slate-900 dark:text-white">{fmtLoan(req.requested_amount, req.currency)}</p>
           {req.approved_amount != null && (
             <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
               ✓ Approved: {fmtLoan(req.approved_amount, req.currency)}
@@ -1030,7 +1030,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
       key: 'purpose',
       label: 'Purpose',
       render: (_v, req) => (
-        <p className="text-sm font-semibold text-slate-700 capitalize">
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize">
           {req.purpose || 'Fleet financing'}
         </p>
       ),
@@ -1043,7 +1043,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
           <div className="space-y-1">
             {req.requested_split.map((s, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 dark:text-slate-300 capitalize">
                   {s.type}
                 </span>
                 <span className="text-xs font-bold text-slate-800">{fmtLoan(s.amount, req.currency)}</span>
@@ -1059,7 +1059,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
       label: 'Lender',
       render: (_v, req) =>
         req.lender?.name ? (
-          <p className="text-xs font-semibold text-slate-700">{req.lender.name}</p>
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{req.lender.name}</p>
         ) : (
           <span className="text-[10px] text-slate-400 italic">Auto-assigned</span>
         ),
@@ -1073,7 +1073,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
       key: 'due_date',
       label: 'Due Date',
       render: (_v, req) => (
-        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+        <p className="text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
           {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
         </p>
       ),
@@ -1082,7 +1082,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
       key: 'created_at',
       label: 'Submitted',
       render: (_v, req) => (
-        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+        <p className="text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
           {new Date(req.created_at).toLocaleDateString()}
         </p>
       ),
@@ -1097,7 +1097,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
           <button
             onClick={() => setSelectedLoan(req)}
             title="View loan details & terms"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-[#345E85] hover:text-white text-slate-500 transition-all"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-[#345E85] hover:text-white text-slate-500 dark:text-slate-400 transition-all"
           >
             <FileText size={13} />
           </button>
@@ -1158,11 +1158,11 @@ const TruckOwnerLoanRequestsView: React.FC<{
   ], [fmtLoan, preferredCurrency, onRefresh]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 transition-colors duration-200">
       {/* Header */}
       <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-gray-50/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
             My Loan <span className="text-[#2c5173]">Requests</span>
           </h2>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
@@ -1170,7 +1170,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={onRefresh} className="h-11 w-11 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all">
+          <button onClick={onRefresh} className="h-11 w-11 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 transition-all">
             <RefreshCw size={16} />
           </button>
           <button onClick={onNewRequest}
@@ -1185,25 +1185,25 @@ const TruckOwnerLoanRequestsView: React.FC<{
         <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4" />
         <input type="text" placeholder="Search by ID, purpose or status..."
           value={search} onChange={e => onSearchChange(e.target.value)}
-          className="w-full bg-white border border-slate-100 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium text-slate-600 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-[#2c5173]/10 focus:border-[#2c5173] transition-all shadow-sm" />
+          className="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-6 text-sm font-medium text-slate-600 dark:text-slate-300 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-[#2c5173]/10 focus:border-[#2c5173] transition-all shadow-sm" />
       </div>
 
       {/* Error */}
       {error && (
-        <div className="bg-rose-50 border border-rose-100 text-rose-700 px-6 py-4 rounded-3xl flex items-center gap-3">
+        <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900 text-rose-700 dark:text-rose-300 px-6 py-4 rounded-3xl flex items-center gap-3">
           <AlertTriangle size={16} /> <span className="text-sm font-semibold">{error}</span>
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="px-8 py-5 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-[#2c5173]/10 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-xl bg-[#2c5173]/10 dark:bg-[#2c5173]/20 flex items-center justify-center">
               <TrendingUp size={14} className="text-[#2c5173]" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Loan History</p>
+              <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Loan History</p>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{filtered.length} records</p>
             </div>
           </div>
@@ -1211,14 +1211,14 @@ const TruckOwnerLoanRequestsView: React.FC<{
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="h-10 w-10 rounded-full border-4 border-slate-100 border-t-[#345E85] animate-spin" />
+            <div className="h-10 w-10 rounded-full border-4 border-slate-100 dark:border-slate-800 border-t-[#345E85] animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
               <FileText size={24} className="text-slate-400" />
             </div>
-            <p className="text-slate-900 font-black text-lg mb-1">No loan requests yet</p>
+            <p className="text-slate-900 dark:text-white font-black text-lg mb-1">No loan requests yet</p>
             <p className="text-slate-400 text-sm mb-6">Submit your first loan request to get started</p>
             <button onClick={onNewRequest}
               className="flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100">
@@ -1775,10 +1775,10 @@ const EnhancedLoanRequestsPage: React.FC = () => {
   };
 
   if (!user) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center p-4">
       <div className="text-center">
-        <h2 className="text-lg font-bold text-gray-900 mb-1.5">Access Required</h2>
-        <p className="text-sm text-gray-600">Please log in to access loan requests.</p>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5">Access Required</h2>
+        <p className="text-sm text-gray-600 dark:text-slate-400">Please log in to access loan requests.</p>
       </div>
     </div>
   );
@@ -1808,7 +1808,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     const refreshFunction = isTruckOwner ? fetchTruckOwnerLoans : fetchCargoOwnerLoans;
     
     return (
-      <div className="min-h-screen bg-slate-50/50 p-6 md:p-8">
+      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-6 md:p-8 transition-colors duration-200">
         <div className="max-w-7xl mx-auto">
           <TruckOwnerLoanRequestsView
             requests={requests}

@@ -104,7 +104,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
   };
 
   return (
-    <div className="flex h-[700px] bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden glassmorphism-effect animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex h-[700px] bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden glassmorphism-effect animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       {/* Thread List Sidebar */}
       <div className={cn(
@@ -123,7 +123,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
             <input 
               type="text"
               placeholder={t('Search conversations...')}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:border-[#345E85] transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#345E85]/10 focus:border-[#345E85] transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -133,7 +133,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loadingThreads ? (
             <div className="p-8 space-y-4">
-              {[1, 2, 3].map(i => <div key={i} className="h-20 bg-slate-50 rounded-2xl animate-pulse" />)}
+              {[1, 2, 3].map(i => <div key={i} className="h-20 bg-slate-50 dark:bg-slate-800/50 rounded-2xl animate-pulse" />)}
             </div>
           ) : filteredThreads?.length === 0 ? (
             <div className="p-8 text-center text-slate-400 italic">
@@ -146,7 +146,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                   key={thread.id}
                   onClick={() => setSelectedThread(thread)}
                   className={cn(
-                    "w-full p-6 text-left transition-all hover:bg-slate-50/50 flex items-start gap-4 group",
+                    "w-full p-6 text-left transition-all hover:bg-slate-50/50 dark:bg-slate-950 flex items-start gap-4 group",
                     selectedThread?.id === thread.id ? "bg-blue-50/30 border-r-4 border-[#345E85]" : ""
                   )}
                 >
@@ -196,11 +196,11 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
         {selectedThread ? (
           <>
             {/* Chat Header */}
-            <div className="px-8 py-6 bg-white border-b border-slate-50 flex items-center justify-between">
+            <div className="px-8 py-6 bg-white dark:bg-slate-900 border-b border-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setSelectedThread(null)}
-                  className="md:hidden p-2 -ml-2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="md:hidden p-2 -ml-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                 >
                   <ChevronLeft size={24} />
                 </button>
@@ -224,7 +224,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <button className="w-10 h-10 rounded-xl hover:bg-slate-50 text-slate-400 transition-colors flex items-center justify-center">
+                <button className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400 transition-colors flex items-center justify-center">
                   <MoreVertical size={18} />
                 </button>
               </div>
@@ -280,7 +280,7 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
                                 "px-6 py-4 rounded-[2rem] text-sm shadow-xl shadow-slate-200/20 relative overflow-hidden",
                                 isMe 
                                   ? "bg-gradient-to-br from-[#345E85] to-blue-800 text-white rounded-tr-none" 
-                                  : "bg-white text-slate-700 border border-slate-100 rounded-tl-none"
+                                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 rounded-tl-none"
                              )}>
                                 <p className="font-medium leading-relaxed italic">{msg.content}</p>
                                 <div className={cn(
@@ -304,9 +304,9 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
             </div>
 
             {/* Message Input */}
-            <div className="p-8 bg-white border-t border-slate-50">
-               <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-[2rem] p-2 focus-within:ring-4 focus-within:ring-[#345E85]/5 focus-within:border-[#345E85] transition-all">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-500 cursor-pointer transition-colors shadow-sm ml-2">
+            <div className="p-8 bg-white dark:bg-slate-900 border-t border-slate-50">
+               <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-2 focus-within:ring-4 focus-within:ring-[#345E85]/5 focus-within:border-[#345E85] transition-all">
+                  <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-500 cursor-pointer transition-colors shadow-sm ml-2">
                      <AlertCircle size={20} />
                   </div>
                   <form onSubmit={handleSendMessage} className="flex-1 flex items-center gap-3 pr-2">
@@ -337,10 +337,10 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-20 text-center bg-slate-50/30">
+          <div className="flex-1 flex flex-col items-center justify-center p-20 text-center bg-slate-50/30 dark:bg-slate-950">
             <div className="relative mb-12">
                <div className="absolute inset-0 bg-blue-500 rounded-full blur-[100px] opacity-10 animate-pulse" />
-               <div className="w-32 h-32 bg-white rounded-[3rem] shadow-2xl flex items-center justify-center text-[#345E85] relative z-10 border border-slate-50">
+               <div className="w-32 h-32 bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl flex items-center justify-center text-[#345E85] relative z-10 border border-slate-50">
                  <MessageSquare size={48} strokeWidth={1.5} />
                </div>
             </div>
@@ -349,14 +349,14 @@ export const DriverMessenger: React.FC<MessengerProps> = ({
               <TranslatedText text="Communicate directly with Shippers, Fleet Managers, and Support Hubs through our encrypted messaging terminal." />
             </p>
             <div className="grid grid-cols-2 gap-4 mt-12 w-full max-w-md">
-               <div className="p-6 bg-white rounded-3xl border border-slate-100 text-left group hover:border-blue-100 transition-all shadow-sm">
+               <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 text-left group hover:border-blue-100 transition-all shadow-sm">
                   <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#345E85] mb-4 group-hover:scale-110 transition-transform">
                      <User size={18} />
                   </div>
                   <h4 className="text-xs font-black text-[#0f172a] uppercase tracking-wider mb-1"><TranslatedText text="Direct Shipper" /></h4>
                   <p className="text-[10px] text-slate-400 font-medium italic"><TranslatedText text="Cargo verified chat" /></p>
                </div>
-               <div className="p-6 bg-white rounded-3xl border border-slate-100 text-left group hover:border-blue-100 transition-all shadow-sm">
+               <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 text-left group hover:border-blue-100 transition-all shadow-sm">
                   <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 mb-4 group-hover:scale-110 transition-transform">
                      <Clock size={18} />
                   </div>

@@ -70,7 +70,7 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({ tenantId 
               <div className="absolute top-0 right-0 mt-4 mr-4">
                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
                     index === 0 ? 'bg-amber-100 text-amber-600' : 
-                    index === 1 ? 'bg-slate-200 text-slate-600' : 
+                    index === 1 ? 'bg-slate-200 text-slate-600 dark:text-slate-300' : 
                     'bg-orange-50 text-orange-600'
                  }`}>
                     #{index + 1}

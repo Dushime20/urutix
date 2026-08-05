@@ -113,7 +113,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                 <div className="relative" ref={userMenuRef}>
                     <button
                         onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+                        className="flex items-center gap-3 pl-2 pr-1 py-1 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group border border-transparent hover:border-slate-100 dark:border-slate-800 dark:hover:border-slate-700"
                     >
                         <div className="text-right hidden sm:block">
                             <p className="text-xs font-black text-slate-800 dark:text-slate-100 leading-none">

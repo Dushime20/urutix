@@ -302,10 +302,10 @@ const LenderTeamManagementPage: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200 dark:border-slate-700';
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'suspended': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:border-slate-700';
     }
   };
 
@@ -315,9 +315,9 @@ const LenderTeamManagementPage: React.FC = () => {
       case 'manager': return <FaUserTie className="h-4 w-4 text-blue-600" />;
       case 'analyst': return <FaUserCheck className="h-4 w-4 text-green-600" />;
       case 'officer': return <FaUsers className="h-4 w-4 text-orange-600" />;
-      case 'assistant': return <FaUsers className="h-4 w-4 text-gray-600" />;
+      case 'assistant': return <FaUsers className="h-4 w-4 text-gray-600 dark:text-slate-300" />;
       case 'crm_specialist': return <FaEnvelope className="h-4 w-4 text-pink-600" />;
-      default: return <FaCog className="h-4 w-4 text-gray-600" />; // Custom roles get gear icon
+      default: return <FaCog className="h-4 w-4 text-gray-600 dark:text-slate-300" />; // Custom roles get gear icon
     }
   };
 
@@ -642,24 +642,24 @@ const LenderTeamManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <FaUsers className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
-                <p className="text-gray-600 mt-1">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Team Management</h1>
+                <p className="text-gray-600 dark:text-slate-300 mt-1">
                   Manage your lending team members and their access permissions
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-slate-300">
                 <span className="font-medium">{users.length}</span> total members
               </div>
               <button
@@ -681,7 +681,7 @@ const LenderTeamManagementPage: React.FC = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
@@ -692,7 +692,7 @@ const LenderTeamManagementPage: React.FC = () => {
                   placeholder="Search team members..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -702,7 +702,7 @@ const LenderTeamManagementPage: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -714,7 +714,7 @@ const LenderTeamManagementPage: React.FC = () => {
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Roles</option>
                 {roles.map(role => (
@@ -722,7 +722,7 @@ const LenderTeamManagementPage: React.FC = () => {
                 ))}
               </select>
 
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800">
                 <FaDownload className="h-4 w-4" />
                 Export
               </button>
@@ -758,19 +758,19 @@ const LenderTeamManagementPage: React.FC = () => {
         </div>
 
         {/* Roles Management Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Role Management</h2>
-            <span className="text-sm text-gray-600">{roles.length} roles available</span>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Role Management</h2>
+            <span className="text-sm text-gray-600 dark:text-slate-300">{roles.length} roles available</span>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {roles.map(role => (
-              <div key={role.id} className="border border-gray-200 rounded-lg p-4">
+              <div key={role.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
                     {getRoleIcon(role.id)}
-                    <h3 className="font-medium text-gray-900">{role.name}</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{role.name}</h3>
                   </div>
                   {role.isCustom && (
                     <button
@@ -782,9 +782,9 @@ const LenderTeamManagementPage: React.FC = () => {
                     </button>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{role.description}</p>
+                <p className="text-sm text-gray-600 dark:text-slate-300 mb-3">{role.description}</p>
                 <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-slate-400">
                     Level {role.level} • {getRolePermissions(role.id).length} permissions
                   </div>
                   {role.isCustom && (
@@ -811,7 +811,7 @@ const LenderTeamManagementPage: React.FC = () => {
               render: (_: string, user: LenderUser) => (
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-sm font-medium text-gray-600 dark:text-slate-300">
                       {user.firstName[0]}{user.lastName[0]}
                     </span>
                   </div>
@@ -819,8 +819,8 @@ const LenderTeamManagementPage: React.FC = () => {
                     <div className="font-medium text-gray-900 dark:text-white">
                       {user.firstName} {user.lastName}
                     </div>
-                    <div className="text-sm text-gray-600">{user.email}</div>
-                    {user.phone && <div className="text-sm text-gray-500">{user.phone}</div>}
+                    <div className="text-sm text-gray-600 dark:text-slate-300">{user.email}</div>
+                    {user.phone && <div className="text-sm text-gray-500 dark:text-slate-400">{user.phone}</div>}
                   </div>
                 </div>
               ),
@@ -882,7 +882,7 @@ const LenderTeamManagementPage: React.FC = () => {
               label: 'Last Login',
               sortable: true,
               render: (lastLogin: Date) => (
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-slate-300">
                   {lastLogin instanceof Date ? lastLogin.toLocaleDateString() : new Date(lastLogin).toLocaleDateString()}
                 </span>
               ),
@@ -929,12 +929,12 @@ const LenderTeamManagementPage: React.FC = () => {
         {/* Add User Modal */}
         {showAddUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Add Team Member</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Team Member</h3>
                 <button
                   onClick={() => setShowAddUser(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
                 >
                   <FaTimes className="h-5 w-5" />
                 </button>
@@ -943,55 +943,55 @@ const LenderTeamManagementPage: React.FC = () => {
               <form onSubmit={(e) => { e.preventDefault(); handleAddUser(); }} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">First Name *</label>
                     <input
                       type="text"
                       required
                       value={newUser.firstName}
                       onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Last Name *</label>
                     <input
                       type="text"
                       required
                       value={newUser.lastName}
                       onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email *</label>
                   <input
                     type="email"
                     required
                     value={newUser.email}
                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Phone</label>
                   <input
                     type="tel"
                     value={newUser.phone}
                     onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Role *</label>
                   <select
                     required
                     value={newUser.roleId}
                     onChange={(e) => setNewUser({ ...newUser, roleId: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select a role</option>
                     {roles.map(role => (
@@ -999,18 +999,18 @@ const LenderTeamManagementPage: React.FC = () => {
                     ))}
                   </select>
                   {newUser.roleId && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">
                       {roles.find(r => r.id === newUser.roleId)?.description}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Department</label>
                   <select
                     value={newUser.department}
                     onChange={(e) => setNewUser({ ...newUser, department: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select department</option>
                     <option value="Executive">Executive</option>
@@ -1027,7 +1027,7 @@ const LenderTeamManagementPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowAddUser(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
                   >
                     Cancel
                   </button>
@@ -1046,8 +1046,8 @@ const LenderTeamManagementPage: React.FC = () => {
         {/* Edit User Modal */}
         {editingUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Team Member</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Edit Team Member</h3>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 try {
@@ -1083,51 +1083,51 @@ const LenderTeamManagementPage: React.FC = () => {
               }}>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">First Name</label>
                     <input
                       type="text"
                       value={editingUser.firstName}
                       onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Last Name</label>
                     <input
                       type="text"
                       value={editingUser.lastName}
                       onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Email</label>
                   <input
                     type="email"
                     value={editingUser.email}
                     onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Phone</label>
                   <input
                     type="tel"
                     value={editingUser.phone}
                     onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Role</label>
                   <select
                     value={editingUser.role.id}
                     onChange={(e) => {
@@ -1136,7 +1136,7 @@ const LenderTeamManagementPage: React.FC = () => {
                         setEditingUser({ ...editingUser, role: selectedRole });
                       }
                     }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     {roles.map(role => (
                       <option key={role.id} value={role.id}>{role.name}</option>
@@ -1145,11 +1145,11 @@ const LenderTeamManagementPage: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Status</label>
                   <select
                     value={editingUser.status}
                     onChange={(e) => setEditingUser({ ...editingUser, status: e.target.value as 'active' | 'inactive' | 'pending' | 'suspended' })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -1159,11 +1159,11 @@ const LenderTeamManagementPage: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Department</label>
                   <select
                     value={editingUser.department}
                     onChange={(e) => setEditingUser({ ...editingUser, department: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select department</option>
                     <option value="Executive">Executive</option>
@@ -1180,7 +1180,7 @@ const LenderTeamManagementPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setEditingUser(null)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
                   >
                     Cancel
                   </button>
@@ -1199,27 +1199,27 @@ const LenderTeamManagementPage: React.FC = () => {
         {/* Create Role Modal */}
         {showCreateRole && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Create Custom Role</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Create Custom Role</h3>
               <form onSubmit={handleCreateRole}>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Role Name</label>
                   <input
                     type="text"
                     value={newRole.name}
                     onChange={(e) => setNewRole({ ...newRole, name: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., CRM Specialist"
                     required
                   />
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Description</label>
                   <textarea
                     value={newRole.description}
                     onChange={(e) => setNewRole({ ...newRole, description: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     rows={3}
                     placeholder="Brief description of this role's responsibilities"
                     required
@@ -1227,11 +1227,11 @@ const LenderTeamManagementPage: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Access Level</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Access Level</label>
                   <select
                     value={newRole.level}
                     onChange={(e) => setNewRole({ ...newRole, level: parseInt(e.target.value) })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value={1}>Level 1 - Assistant Level</option>
                     <option value={2}>Level 2 - Officer Level</option>
@@ -1241,8 +1241,8 @@ const LenderTeamManagementPage: React.FC = () => {
                 </div>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Select Permissions</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-3">Select Permissions</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                     {Object.entries(
                       permissions.reduce((acc, permission) => {
                         if (!acc[permission.category]) acc[permission.category] = [];
@@ -1251,7 +1251,7 @@ const LenderTeamManagementPage: React.FC = () => {
                       }, {} as Record<string, typeof permissions>)
                     ).map(([category, categoryPermissions]) => (
                       <div key={category} className="mb-4">
-                        <h4 className="font-medium text-gray-900 mb-2 capitalize">{category}</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2 capitalize">{category}</h4>
                         {categoryPermissions.map(permission => (
                           <label key={permission.id} className="flex items-start gap-2 mb-2">
                             <input
@@ -1270,11 +1270,11 @@ const LenderTeamManagementPage: React.FC = () => {
                                   });
                                 }
                               }}
-                              className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="mt-1 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                             />
                             <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">{permission.name}</div>
-                              <div className="text-xs text-gray-500">{permission.description}</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">{permission.name}</div>
+                              <div className="text-xs text-gray-500 dark:text-slate-400">{permission.description}</div>
                               <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
                                 permission.level === 'read' ? 'bg-green-100 text-green-800' :
                                 permission.level === 'write' ? 'bg-yellow-100 text-yellow-800' :
@@ -1297,7 +1297,7 @@ const LenderTeamManagementPage: React.FC = () => {
                       setShowCreateRole(false);
                       setNewRole({ name: '', description: '', level: 2, selectedPermissions: [] });
                     }}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
                   >
                     Cancel
                   </button>

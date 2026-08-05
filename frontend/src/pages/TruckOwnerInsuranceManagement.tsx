@@ -31,21 +31,21 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white dark:bg-slate-900 shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Insurance Management</h1>
-              <p className="text-sm text-gray-600">Manage your truck insurance policies, claims, and renewals</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Insurance Management</h1>
+              <p className="text-sm text-gray-600 dark:text-slate-300">Manage your truck insurance policies, claims, and renewals</p>
             </div>
             <div className="flex space-x-3">
               <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <FaPlus className="mr-2" />
                 New Policy
               </button>
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <FaDownload className="mr-2" />
                 Export
               </button>
@@ -55,7 +55,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
       </div>
 
       {/* Quick Stats Bar */}
-      <div className="bg-white border-b">
+      <div className="bg-white dark:bg-slate-900 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-4">
             <div className="flex items-center">
@@ -64,7 +64,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Active Policies</p>
-                <p className="text-lg font-semibold text-gray-900">12</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">12</p>
               </div>
             </div>
             <div className="flex items-center">
@@ -73,7 +73,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Open Claims</p>
-                <p className="text-lg font-semibold text-gray-900">3</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">3</p>
               </div>
             </div>
             <div className="flex items-center">
@@ -82,7 +82,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Due Renewals</p>
-                <p className="text-lg font-semibold text-gray-900">2</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">2</p>
               </div>
             </div>
             <div className="flex items-center">
@@ -91,7 +91,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Total Coverage</p>
-                <p className="text-lg font-semibold text-gray-900">$2.5M (static demo)</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">$2.5M (static demo)</p>
               </div>
             </div>
           </div>
@@ -101,7 +101,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 mb-8">
+        <div className="border-b border-gray-200 dark:border-slate-700 mb-8">
           <nav className="-mb-px flex space-x-8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -112,7 +112,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
                   }`}
                 >
                   <Icon className="inline-block mr-2" />
@@ -124,7 +124,7 @@ const TruckOwnerInsuranceManagement: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
           {renderTabContent()}
         </div>
       </div>

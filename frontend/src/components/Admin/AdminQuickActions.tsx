@@ -93,7 +93,7 @@ const AdminQuickActions: React.FC = () => {
                             <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                                 <Plus size={12} /> <TranslatedText text="Direct Access" />
                             </h3>
-                            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                                 <ArrowRight size={14} className="rotate-90" />
                             </button>
                         </div>

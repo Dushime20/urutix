@@ -134,7 +134,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
 
   if (!selectedTripId && !tripId) {
     return (
-      <div className="bg-white rounded-md border border-gray-200 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-4">
         <div className="text-center py-8">
           <FaCalculator className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-sm text-gray-500 mb-4">Select a trip to analyze costs</p>
@@ -162,8 +162,8 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
     <div className="space-y-4">
       {/* Trip Selection */}
       {!tripId && (
-        <div className="bg-white rounded-md border border-gray-200 p-3">
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
+          <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1.5">
             Select Trip
           </label>
           <select
@@ -186,16 +186,16 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
       )}
 
       {isLoading ? (
-        <div className="bg-white rounded-md border border-gray-200 p-8 text-center">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-8 text-center">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600 mx-auto"></div>
           <p className="text-xs text-gray-500 mt-2">Loading trip data...</p>
         </div>
       ) : trip ? (
         <>
           {/* Trip Info */}
-          <div className="bg-white rounded-md border border-gray-200 p-3">
+          <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-3">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-900">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                 {trip.tripNumber}
               </h3>
               <span className="text-xs text-gray-500">
@@ -205,13 +205,13 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-gray-500">Distance:</span>{' '}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-gray-900 dark:text-white">
                   {trip.totalDistance?.toFixed(0) || 'N/A'} km
                 </span>
               </div>
               <div>
                 <span className="text-gray-500">Agreed Price:</span>{' '}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-gray-900 dark:text-white">
                   {formatCurrency(trip.agreedPrice || 0, trip.currencyCode || 'USD')}
                 </span>
               </div>
@@ -219,15 +219,15 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
           </div>
 
           {/* Cost Breakdown */}
-          <div className="bg-white rounded-md border border-gray-200">
-            <div className="p-3 border-b border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900">Cost Breakdown</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700">
+            <div className="p-3 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Cost Breakdown</h3>
             </div>
             <div className="p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FaGasPump className="w-3.5 h-3.5 text-gray-500" />
-                  <span className="text-xs text-gray-600">Fuel Cost</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Fuel Cost</span>
                 </div>
                 <input
                   type="number"
@@ -240,7 +240,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FaRoute className="w-3.5 h-3.5 text-gray-500" />
-                  <span className="text-xs text-gray-600">Tolls</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Tolls</span>
                 </div>
                 <input
                   type="number"
@@ -253,7 +253,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FaUser className="w-3.5 h-3.5 text-gray-500" />
-                  <span className="text-xs text-gray-600">Driver Wages</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Driver Wages</span>
                 </div>
                 <input
                   type="number"
@@ -266,7 +266,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FaTools className="w-3.5 h-3.5 text-gray-500" />
-                  <span className="text-xs text-gray-600">Maintenance</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Maintenance</span>
                 </div>
                 <input
                   type="number"
@@ -279,7 +279,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FaDollarSign className="w-3.5 h-3.5 text-gray-500" />
-                  <span className="text-xs text-gray-600">Insurance</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Insurance</span>
                 </div>
                 <input
                   type="number"
@@ -292,7 +292,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <FaDollarSign className="w-3.5 h-3.5 text-gray-500" />
-                  <span className="text-xs text-gray-600">Other Expenses</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Other Expenses</span>
                 </div>
                 <input
                   type="number"
@@ -302,9 +302,9 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
                   className="w-24 px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 text-right"
                 />
               </div>
-              <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-900">Total Cost</span>
-                <span className="text-sm font-bold text-gray-900">
+              <div className="pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-900 dark:text-white">Total Cost</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">
                   {formatCurrency(totalCost, trip.currencyCode || 'USD')}
                 </span>
               </div>
@@ -312,27 +312,27 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
           </div>
 
           {/* Profitability Analysis */}
-          <div className="bg-white rounded-md border border-gray-200">
-            <div className="p-3 border-b border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900">Profitability Analysis</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700">
+            <div className="p-3 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Profitability Analysis</h3>
             </div>
             <div className="p-3 space-y-3">
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Revenue</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(profitability.revenue, trip.currencyCode || 'USD')}</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Revenue</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(profitability.revenue, trip.currencyCode || 'USD')}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Total Cost</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(profitability.totalCost, trip.currencyCode || 'USD')}</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Total Cost</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(profitability.totalCost, trip.currencyCode || 'USD')}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-600">Profit</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(profitability.profit, trip.currencyCode || 'USD')}</span>
+                  <span className="text-xs text-gray-600 dark:text-slate-300">Profit</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(profitability.profit, trip.currencyCode || 'USD')}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">Profit Margin</span>
+                <span className="text-xs text-gray-600 dark:text-slate-300">Profit Margin</span>
                 <div className="flex items-center space-x-2">
                   <div className="w-24 bg-gray-200 rounded-full h-2">
                     <div
@@ -345,22 +345,22 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
                     />
                   </div>
                   <span className={`text-xs font-semibold ${
-                    profitability.profitMargin >= 0 ? 'text-gray-900' : 'text-red-600'
+                    profitability.profitMargin >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-600'
                   }`}>
                     {profitability.profitMargin}%
                   </span>
                 </div>
               </div>
-              <div className="pt-2 border-t border-gray-200 space-y-2">
+              <div className="pt-2 border-t border-gray-200 dark:border-slate-700 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Break-Even Revenue</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="text-gray-600 dark:text-slate-300">Break-Even Revenue</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {formatCurrency(profitability.breakEvenRevenue, trip.currencyCode || 'USD')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Recommended Bid (15% margin)</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="text-gray-600 dark:text-slate-300">Recommended Bid (15% margin)</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {formatCurrency(profitability.recommendedBid, trip.currencyCode || 'USD')}
                   </span>
                 </div>
@@ -369,7 +369,7 @@ const TripCostAnalysis: React.FC<TripCostAnalysisProps> = ({ tripId, onTripSelec
           </div>
         </>
       ) : (
-        <div className="bg-white rounded-md border border-gray-200 p-8 text-center">
+        <div className="bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 p-8 text-center">
           <FaCalculator className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-sm text-gray-500">Trip not found</p>
         </div>

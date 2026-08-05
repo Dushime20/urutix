@@ -79,11 +79,11 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
   const center = liveLocation || trip?.currentLocation || trip?.origin?.coordinates || [0.3476, 32.5825];
 
   return (
-    <div className="relative h-[650px] w-full bg-slate-100 rounded-[3rem] overflow-hidden border border-slate-200 shadow-2xl animate-in fade-in duration-700 group">
+    <div className="relative h-[650px] w-full bg-slate-100 rounded-[3rem] overflow-hidden border border-slate-200 dark:border-slate-700 shadow-2xl animate-in fade-in duration-700 group">
       
       {/* Live GPS Indicator */}
       <div className="absolute top-32 left-8 z-10">
-         <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-slate-100 shadow-lg">
+         <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-slate-100 dark:border-slate-800 shadow-lg">
             <div className={cn(
               "w-2 h-2 rounded-full animate-pulse",
               liveLocation ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-rose-500"
@@ -159,7 +159,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                      "px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
                      activeLayer === layer.id 
                         ? "bg-[#345E85] text-white shadow-lg" 
-                        : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                        : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                   )}
                >
                   <layer.icon size={14} />
@@ -172,7 +172,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
          <button
             onClick={() => setFollowGPS(!followGPS)}
             className={cn(
-               "w-fit px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 bg-white border border-slate-100 shadow-xl",
+               "w-fit px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl",
                followGPS ? "text-blue-600 border-blue-100" : "text-slate-400"
             )}
          >
@@ -188,7 +188,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                initial={{ opacity: 0, x: 40 }}
                animate={{ opacity: 1, x: 0 }}
                exit={{ opacity: 0, x: 40 }}
-               className="absolute top-8 right-8 z-10 w-96 bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl overflow-hidden glassmorphism-effect"
+               className="absolute top-8 right-8 z-10 w-96 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden glassmorphism-effect"
             >
                <div className="p-8 space-y-8">
                   <div className="flex items-center justify-between">
@@ -210,13 +210,13 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                     <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
                            <Clock size={10} /> <TranslatedText text="Estimated Time" />
                         </p>
                         <p className="text-sm font-black text-[#0f172a] italic">{insight.estimatedTime} <TranslatedText text="Hours" /></p>
                      </div>
-                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                     <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
                            <Navigation size={10} /> <TranslatedText text="Distance" />
                         </p>
@@ -297,7 +297,7 @@ export const DriverRouteMap: React.FC<DriverRouteMapProps> = ({ trip }) => {
       {!showIntel && (
          <button 
             onClick={() => setShowIntel(true)}
-            className="absolute top-8 right-8 z-10 w-12 h-12 bg-white rounded-xl shadow-2xl flex items-center justify-center text-[#345E85] hover:bg-slate-50 transition-colors"
+            className="absolute top-8 right-8 z-10 w-12 h-12 bg-white dark:bg-slate-900 rounded-xl shadow-2xl flex items-center justify-center text-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
          >
             <Maximize2 size={18} />
          </button>

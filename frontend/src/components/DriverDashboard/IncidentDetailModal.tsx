@@ -115,7 +115,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+          className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-rose-500 to-rose-600 p-6 text-white">
@@ -151,7 +151,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
             {/* Description */}
             <div className="mb-6">
               <h3 className="text-sm font-black text-slate-400 uppercase tracking-wider mb-2"><TranslatedText text="Description" /></h3>
-              <p className="text-slate-900">{incident.description}</p>
+              <p className="text-slate-900 dark:text-white">{incident.description}</p>
             </div>
 
             {/* Key Information Grid */}
@@ -162,7 +162,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                     <Calendar className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider"><TranslatedText text="Date & Time" /></span>
                   </div>
-                  <p className="text-slate-900 font-bold">{formatDate(incident.date)}</p>
+                  <p className="text-slate-900 dark:text-white font-bold">{formatDate(incident.date)}</p>
                 </div>
 
                 <div>
@@ -170,7 +170,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                     <MapPin className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider"><TranslatedText text="Location" /></span>
                   </div>
-                  <p className="text-slate-900 font-bold">{incident.location}</p>
+                  <p className="text-slate-900 dark:text-white font-bold">{incident.location}</p>
                 </div>
 
                 <div>
@@ -178,7 +178,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                     <Truck className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider"><TranslatedText text="Truck" /></span>
                   </div>
-                  <p className="text-slate-900 font-bold">{incident.truckPlate || t('N/A')}</p>
+                  <p className="text-slate-900 dark:text-white font-bold">{incident.truckPlate || t('N/A')}</p>
                 </div>
               </div>
 
@@ -188,7 +188,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                     <Shield className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider"><TranslatedText text="Police Report" /></span>
                   </div>
-                  <p className="text-slate-900 font-bold">{incident.policeReport ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
+                  <p className="text-slate-900 dark:text-white font-bold">{incident.policeReport ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
                   {incident.policeReport && incident.reportNumber && (
                     <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Report #:" /> {incident.reportNumber}</p>
                   )}
@@ -199,7 +199,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                     <FileText className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider"><TranslatedText text="Insurance Claim" /></span>
                   </div>
-                  <p className="text-slate-900 font-bold">{incident.insuranceClaim ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
+                  <p className="text-slate-900 dark:text-white font-bold">{incident.insuranceClaim ? <TranslatedText text="Yes" /> : <TranslatedText text="No" />}</p>
                   {incident.insuranceClaim && incident.claimNumber && (
                     <p className="text-xs text-slate-500 mt-1"><TranslatedText text="Claim #:" /> {incident.claimNumber}</p>
                   )}
@@ -210,7 +210,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                     <div className="flex items-center gap-2 text-slate-400 mb-1">
                       <span className="text-xs font-bold uppercase tracking-wider"><TranslatedText text="Estimated Cost" /></span>
                     </div>
-                    <p className="text-slate-900 font-bold">${Number(incident.cost).toFixed(2)}</p>
+                    <p className="text-slate-900 dark:text-white font-bold">${Number(incident.cost).toFixed(2)}</p>
                   </div>
                 )}
               </div>
@@ -224,13 +224,13 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                   {incident.weatherConditions && (
                     <div className="p-4 bg-blue-50 rounded-xl">
                       <p className="text-xs font-bold text-slate-400 uppercase mb-1"><TranslatedText text="Weather" /></p>
-                      <p className="text-slate-900">{incident.weatherConditions}</p>
+                      <p className="text-slate-900 dark:text-white">{incident.weatherConditions}</p>
                     </div>
                   )}
                   {incident.roadConditions && (
-                    <div className="p-4 bg-slate-50 rounded-xl">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                       <p className="text-xs font-bold text-slate-400 uppercase mb-1"><TranslatedText text="Road Conditions" /></p>
-                      <p className="text-slate-900">{incident.roadConditions}</p>
+                      <p className="text-slate-900 dark:text-white">{incident.roadConditions}</p>
                     </div>
                   )}
                 </div>
@@ -242,7 +242,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
               <div className="mb-6">
                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-wider mb-2"><TranslatedText text="Injuries" /></h3>
                 <div className="p-4 bg-rose-50 rounded-xl">
-                  <p className="text-slate-900">{incident.injuries}</p>
+                  <p className="text-slate-900 dark:text-white">{incident.injuries}</p>
                 </div>
               </div>
             )}
@@ -255,7 +255,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                   {incident.correctiveActions.map((action: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl">
                       <span className="text-emerald-600 mt-0.5 font-bold">✓</span>
-                      <span className="text-slate-900">{action}</span>
+                      <span className="text-slate-900 dark:text-white">{action}</span>
                     </li>
                   ))}
                 </ul>
@@ -266,20 +266,20 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
             {incident.assignedTo && (
               <div className="mb-6">
                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-wider mb-2"><TranslatedText text="Assigned To" /></h3>
-                <p className="text-slate-900 font-bold">{incident.assignedTo}</p>
+                <p className="text-slate-900 dark:text-white font-bold">{incident.assignedTo}</p>
               </div>
             )}
           </div>
 
           {/* Footer Actions */}
-          <div className="border-t border-slate-100 p-6 bg-slate-50">
+          <div className="border-t border-slate-100 dark:border-slate-800 p-6 bg-slate-50 dark:bg-slate-800/50">
             {showDeleteConfirm ? (
               <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-600"><TranslatedText text="Are you sure you want to delete this incident?" /></p>
+                <p className="text-sm text-slate-600 dark:text-slate-300"><TranslatedText text="Are you sure you want to delete this incident?" /></p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
-                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-bold transition-colors"
+                    className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold transition-colors"
                   >
                     <TranslatedText text="Cancel" />
                   </button>
@@ -295,7 +295,7 @@ export const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
               <div className="flex items-center justify-between">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-bold transition-colors"
+                  className="px-6 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-bold transition-colors"
                 >
                   <TranslatedText text="Close" />
                 </button>

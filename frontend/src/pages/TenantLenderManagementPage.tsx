@@ -98,7 +98,7 @@ const TenantLenderManagementPage: React.FC = () => {
             <Building2 className="w-5 h-5 text-primary-600" />
           </div>
           <div>
-            <p className="text-base font-black text-slate-900 tracking-tight">{row.name}</p>
+            <p className="text-base font-black text-slate-900 dark:text-white tracking-tight">{row.name}</p>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
               Node ID: {row.id.substring(0, 8)}
             </p>
@@ -119,7 +119,7 @@ const TenantLenderManagementPage: React.FC = () => {
       label: 'Created On',
       sortable: true,
       render: (_v, row) => (
-        <span className="text-xs font-black text-slate-700">
+        <span className="text-xs font-black text-slate-700 dark:text-slate-300">
           {row.created_at ? new Date(row.created_at).toLocaleDateString() : '-'}
         </span>
       ),
@@ -160,11 +160,11 @@ const TenantLenderManagementPage: React.FC = () => {
             transition={{ delay: i * 0.1 }}
             className="flex items-center space-x-6 transition-transform duration-300 hover:translate-x-1 cursor-default group"
           >
-            <div className="relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white border border-slate-100 shadow-xl shadow-slate-100/20 overflow-hidden transition-all duration-500 group-hover:scale-110">
+            <div className="relative flex-shrink-0 flex items-center justify-center w-20 h-20 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/20 overflow-hidden transition-all duration-500 group-hover:scale-110">
               <stat.icon size={28} className="text-primary-600" />
             </div>
             <div className="flex flex-col">
-              <span className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1.5">
+              <span className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none mb-1.5">
                 {stat.value}
               </span>
               <span className="text-[11px] font-black text-slate-400 whitespace-nowrap uppercase tracking-[0.2em]">
@@ -200,7 +200,7 @@ const TenantLenderManagementPage: React.FC = () => {
         onRefresh={fetchLenders}
         headerActions={
           <div className="flex items-center gap-3">
-            <button className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-400 hover:text-primary-600 transition-all">
+            <button className="p-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-400 hover:text-primary-600 transition-all">
               <Download className="w-4 h-4" />
             </button>
             <button
@@ -229,7 +229,7 @@ const TenantLenderManagementPage: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden border border-white/20"
+              className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden border border-white/20"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="bg-primary-600 p-12 text-white relative overflow-hidden">
@@ -248,7 +248,7 @@ const TenantLenderManagementPage: React.FC = () => {
                 <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-10 space-y-8 bg-slate-50/50">
+              <form onSubmit={handleSubmit} className="p-10 space-y-8 bg-slate-50/50 dark:bg-slate-950">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Company Name</label>
                   <input
@@ -257,7 +257,7 @@ const TenantLenderManagementPage: React.FC = () => {
                     name="name"
                     value={form.name}
                     onChange={handleChange}
-                    className="w-full px-6 py-5 bg-white border border-slate-100 rounded-[24px] font-black text-sm focus:border-primary-600 focus:ring-4 focus:ring-primary-500/5 outline-none transition-all shadow-sm"
+                    className="w-full px-6 py-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] font-black text-sm focus:border-primary-600 focus:ring-4 focus:ring-primary-500/5 outline-none transition-all shadow-sm"
                     placeholder="Enter lender name"
                   />
                 </div>
@@ -273,7 +273,7 @@ const TenantLenderManagementPage: React.FC = () => {
                         name="email"
                         value={form.email}
                         onChange={handleChange}
-                        className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-[24px] font-black text-sm focus:border-primary-600 outline-none transition-all shadow-sm"
+                        className="w-full pl-14 pr-6 py-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] font-black text-sm focus:border-primary-600 outline-none transition-all shadow-sm"
                         placeholder="lender@bank.com"
                       />
                     </div>
@@ -288,7 +288,7 @@ const TenantLenderManagementPage: React.FC = () => {
                         name="phone"
                         value={form.phone}
                         onChange={handleChange}
-                        className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-[24px] font-black text-sm focus:border-primary-600 outline-none transition-all shadow-sm"
+                        className="w-full pl-14 pr-6 py-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] font-black text-sm focus:border-primary-600 outline-none transition-all shadow-sm"
                         placeholder="+1 (555) 000-0000"
                       />
                     </div>

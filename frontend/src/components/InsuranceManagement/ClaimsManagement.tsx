@@ -246,46 +246,46 @@ const ClaimsManagement: React.FC = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaExclamationTriangle className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Claims</p>
-              <p className="text-2xl font-bold text-gray-900">{claims.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{claims.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaDollarSign className="h-8 w-8 text-green-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Approved</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 ${claims.reduce((sum, c) => sum + c.approvedAmount, 0).toLocaleString()}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaClock className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Pending Claims</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {claims.filter((c) => c.status === 'pending').length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
           <div className="flex items-center">
             <FaCheckCircle className="h-8 w-8 text-green-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Closed Claims</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {claims.filter((c) => c.status === 'closed').length}
               </p>
             </div>
@@ -293,20 +293,20 @@ const ClaimsManagement: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border p-6 mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Claim Activity</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-lg border p-6 mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Claim Activity</h3>
         <div className="space-y-4">
           {claims.slice(0, 3).map((claim) => {
             const StatusIcon = getStatusIcon(claim.status);
             return (
-              <div key={claim.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+              <div key={claim.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
                 <div className="flex-shrink-0">
                   <div className="p-2 rounded-full bg-slate-100">
                     <StatusIcon className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
                     {claim.claimType} claim {claim.id} {claim.status}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -324,9 +324,9 @@ const ClaimsManagement: React.FC = () => {
 
       {showAddModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-slate-900">
             <div className="mt-3 text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">File New Claim</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">File New Claim</h3>
               <p className="text-sm text-gray-500 mb-4">Claim submission form would go here</p>
               <button
                 onClick={() => setShowAddModal(false)}

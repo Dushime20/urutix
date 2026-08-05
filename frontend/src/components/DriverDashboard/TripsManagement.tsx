@@ -158,8 +158,8 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
       className={cn(
         'px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300',
         activeTab === id
-          ? 'bg-white text-primary-500 shadow-md shadow-slate-200/50 border border-slate-200/50'
-          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+          ? 'bg-white dark:bg-slate-900 text-primary-500 shadow-md shadow-slate-200/50 border border-slate-200 dark:border-slate-700/50'
+          : 'text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-200/50'
       )}
     >
       <TranslatedText text={label} />
@@ -185,14 +185,14 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             )}
           </span>
         </div>
-        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
           <TranslatedText text="Trip Management" />
         </h2>
         <p className="text-slate-400 font-medium mt-1 mb-8">
           <TranslatedText text="Execute your assignments and monitor trip metrics in real-time" />
         </p>
 
-        <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit border border-slate-200/60 shadow-inner">
+        <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit border border-slate-200 dark:border-slate-700/60 shadow-inner">
           {tabBtn('active', 'Active Mission')}
           {tabBtn('upcoming', 'Upcoming Assignments')}
           {tabBtn('previous', 'Previous Missions')}
@@ -201,9 +201,9 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
 
       {/* Assigned Truck Banner */}
       {truckLoading && driverProfile?.currentTruckId ? (
-        <div className="h-16 bg-white border border-slate-100 rounded-2xl animate-pulse" />
+        <div className="h-16 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse" />
       ) : assignedTruck ? (
-        <div className="flex items-center gap-4 px-5 py-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-4 px-5 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm">
           <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
             <Truck size={18} className="text-primary-500" />
           </div>
@@ -211,7 +211,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">
               <TranslatedText text="Your Assigned Vehicle" />
             </p>
-            <p className="text-sm font-black text-slate-900 uppercase tracking-tight truncate">
+            <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
               {[assignedTruck.make, assignedTruck.model].filter(Boolean).join(' ') || 'Vehicle'}
             </p>
           </div>
@@ -220,7 +220,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                 <TranslatedText text="Plate" />
               </p>
-              <p className="text-xs font-black text-slate-700 uppercase tracking-widest">
+              <p className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">
                 {assignedTruck.plateNumber}
               </p>
             </div>
@@ -230,9 +230,9 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
           </div>
         </div>
       ) : driverProfile && !driverProfile.currentTruckId ? (
-        <div className="flex items-center gap-3 px-5 py-4 bg-white border border-slate-200 rounded-2xl">
+        <div className="flex items-center gap-3 px-5 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl">
           <AlertCircle size={16} className="text-slate-400 shrink-0" />
-          <p className="text-xs font-bold text-slate-600">
+          <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
             <TranslatedText text="No truck has been assigned to you yet. Contact your fleet manager." />
           </p>
         </div>
@@ -250,7 +250,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             className="space-y-4"
           >
             {activeLoading ? (
-              <div className="h-40 bg-white border border-slate-100 rounded-2xl animate-pulse" />
+              <div className="h-40 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse" />
             ) : activeTrips.length > 0 ? (
               <StandardDataTable<Trip>
                 embedded
@@ -271,11 +271,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     label: 'Route',
                     render: (_: any, trip: Trip) => (
                       <div className="flex items-center gap-2 min-w-[160px]">
-                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate max-w-[100px]">
                           {trip.origin.city}
                         </span>
                         <ArrowRight size={12} className="text-slate-300 shrink-0" />
-                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate max-w-[100px]">
                           {trip.destination.city}
                         </span>
                       </div>
@@ -316,7 +316,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     sortable: true,
                     align: 'right',
                     render: (value: number) => (
-                      <span className="text-sm font-bold text-slate-700">{value} km</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{value} km</span>
                     ),
                   },
                   {
@@ -324,7 +324,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     label: 'ETA',
                     align: 'right',
                     render: (_: any, trip: Trip) => (
-                      <span className="text-sm font-medium text-slate-600">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                         {formatShortDateTime(trip.estimatedArrival || trip.deliveryTime)}
                       </span>
                     ),
@@ -334,7 +334,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     label: 'Cargo',
                     align: 'right',
                     render: (_: any, trip: Trip) => (
-                      <span className="text-sm font-bold text-slate-700">
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                         {trip.cargo.weight.toLocaleString()} kg
                       </span>
                     ),
@@ -345,7 +345,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     sortable: true,
                     align: 'right',
                     render: (value: number) => (
-                      <span className="text-sm font-black text-slate-900">{formatCurrency(value)}</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">{formatCurrency(value)}</span>
                     ),
                   },
                 ] as Column<Trip>[]}
@@ -379,11 +379,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 ariaLabel="Active trips"
               />
             ) : (
-              <div className="bg-white rounded-2xl border border-dashed border-slate-200 py-12 px-6 text-center">
-                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-100">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 py-12 px-6 text-center">
+                <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-100 dark:border-slate-800">
                   <Route size={22} className="text-slate-300" />
                 </div>
-                <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-1">
+                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight mb-1">
                   <TranslatedText text="No Active Trip" />
                 </h4>
                 <p className="text-xs text-slate-400 mb-4">
@@ -420,7 +420,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             {upcomingLoading ? (
               <div className="grid gap-4">
                 {[1, 2].map((i) => (
-                  <div key={i} className="h-32 bg-white border border-slate-100 rounded-3xl animate-pulse" />
+                  <div key={i} className="h-32 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl animate-pulse" />
                 ))}
               </div>
             ) : upcomingTrips && upcomingTrips.length > 0 ? (
@@ -452,11 +452,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     label: 'Route',
                     render: (_: any, trip: Trip) => (
                       <div className="flex items-center gap-2 min-w-[160px]">
-                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate max-w-[100px]">
                           {trip.origin.city}
                         </span>
                         <ArrowRight size={12} className="text-slate-300 shrink-0" />
-                        <span className="text-sm font-bold text-slate-800 uppercase tracking-tight truncate max-w-[100px]">
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate max-w-[100px]">
                           {trip.destination.city}
                         </span>
                       </div>
@@ -466,7 +466,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     key: 'scheduledDeparture',
                     label: 'Pickup',
                     render: (_: any, trip: Trip) => (
-                      <span className="text-sm font-medium text-slate-600">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                         {formatShortDateTime((trip as any).pickupTime || trip.scheduledDeparture)}
                       </span>
                     ),
@@ -475,7 +475,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     key: 'estimatedArrival',
                     label: 'Delivery',
                     render: (_: any, trip: Trip) => (
-                      <span className="text-sm font-medium text-slate-600">
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                         {formatShortDateTime((trip as any).deliveryTime || trip.estimatedArrival)}
                       </span>
                     ),
@@ -486,7 +486,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     sortable: true,
                     align: 'right',
                     render: (value: number) => (
-                      <span className="text-sm font-bold text-slate-700">{value} km</span>
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{value} km</span>
                     ),
                   },
                   {
@@ -494,7 +494,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     label: 'Cargo',
                     align: 'right',
                     render: (_: any, trip: Trip) => (
-                      <span className="text-sm font-bold text-slate-700">
+                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                         {trip.cargo.weight.toLocaleString()} kg
                       </span>
                     ),
@@ -530,11 +530,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 ariaLabel="Upcoming trips"
               />
             ) : (
-              <div className="p-12 text-center bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
                   <Calendar className="text-slate-300" size={32} />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
                   <TranslatedText text="No Upcoming Assignments" />
                 </h4>
                 <p className="text-sm font-medium text-slate-400 mt-1">
@@ -564,7 +564,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
             {historyLoading ? (
               <div className="grid gap-4">
                 {[1, 2].map((i) => (
-                  <div key={i} className="h-16 bg-white border border-slate-100 rounded-2xl animate-pulse" />
+                  <div key={i} className="h-16 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse" />
                 ))}
               </div>
             ) : tripHistory && tripHistory.length > 0 ? (
@@ -595,11 +595,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     label: 'Route',
                     render: (_: any, trip: Trip) => (
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
+                        <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
                           {trip.origin.city}
                         </span>
                         <ArrowRight size={14} className="text-slate-300" />
-                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">
+                        <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
                           {trip.destination.city}
                         </span>
                       </div>
@@ -611,7 +611,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     sortable: true,
                     align: 'right',
                     render: (_: any, trip: Trip) => (
-                      <span className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                      <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                         {new Date(trip.actualArrival || trip.estimatedArrival).toLocaleDateString()}
                       </span>
                     ),
@@ -632,11 +632,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 ariaLabel="Previous missions"
               />
             ) : (
-              <div className="p-12 text-center bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
                   <CheckCircle className="text-slate-300" size={32} />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
                   <TranslatedText text="No Trip History" />
                 </h4>
                 <p className="text-sm font-medium text-slate-400 mt-1">
@@ -703,11 +703,11 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 60, opacity: 0 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-                className="relative w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-100"
+                className="relative w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header — white */}
-                <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-6 sm:px-8 py-5 flex items-start justify-between">
+                <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-6 sm:px-8 py-5 flex items-start justify-between">
                   <div className="min-w-0 pr-4">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
@@ -716,20 +716,20 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       <span className="px-2 py-0.5 bg-primary-50 text-primary-600 text-[9px] font-black uppercase rounded border border-primary-100">
                         ORD-{trip.tripNumber}
                       </span>
-                      <span className="px-2 py-0.5 text-[8px] font-black uppercase rounded border bg-slate-50 text-slate-600 border-slate-200">
+                      <span className="px-2 py-0.5 text-[8px] font-black uppercase rounded border bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
                         {priority}
                       </span>
                       <span className="px-2 py-0.5 text-[8px] font-black uppercase rounded border bg-primary-50 text-primary-600 border-primary-100">
                         {String(trip.status || '').replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight truncate">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
                       {trip.origin.city} → {trip.destination.city}
                     </h3>
                   </div>
                   <button
                     onClick={() => setSelectedTripDetail(null)}
-                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-100 transition-all shrink-0"
+                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 text-slate-500 border border-slate-100 dark:border-slate-800 transition-all shrink-0"
                   >
                     <X size={16} />
                   </button>
@@ -742,7 +742,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       <TranslatedText text="Route Details" />
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-white rounded-xl p-5 border border-slate-100">
+                      <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-7 h-7 rounded-lg bg-primary-500 flex items-center justify-center">
                             <MapPin size={13} className="text-white" />
@@ -751,7 +751,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <TranslatedText text="Pickup" />
                           </span>
                         </div>
-                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                        <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                           {trip.origin.city}
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5">{trip.origin.address}</p>
@@ -760,7 +760,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             {trip.origin.state}
                           </p>
                         )}
-                        <div className="mt-3 pt-3 border-t border-slate-100">
+                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                           <div className="flex items-center gap-2 text-slate-400">
                             <Clock size={11} />
                             <span className="text-[9px] font-black uppercase tracking-widest">
@@ -772,16 +772,16 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                         </div>
                       </div>
 
-                      <div className="bg-white rounded-xl p-5 border border-slate-100">
+                      <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-2 mb-3">
                           <div className="w-7 h-7 rounded-lg bg-slate-700 flex items-center justify-center">
                             <MapPin size={13} className="text-white" />
                           </div>
-                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
+                          <span className="text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                             <TranslatedText text="Delivery" />
                           </span>
                         </div>
-                        <p className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                        <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                           {trip.destination.city}
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5">{trip.destination.address}</p>
@@ -790,7 +790,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             {trip.destination.state}
                           </p>
                         )}
-                        <div className="mt-3 pt-3 border-t border-slate-100">
+                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                           <div className="flex items-center gap-2 text-slate-400">
                             <Clock size={11} />
                             <span className="text-[9px] font-black uppercase tracking-widest">
@@ -828,10 +828,10 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       ].map((m) => (
                         <div
                           key={m.label}
-                          className="bg-white rounded-xl p-4 border border-slate-100 text-center"
+                          className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800 text-center"
                         >
                           <m.icon size={18} className="mx-auto mb-2 text-primary-500" />
-                          <p className="text-xs font-black text-slate-800">{m.value}</p>
+                          <p className="text-xs font-black text-slate-800 dark:text-slate-100">{m.value}</p>
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
                             <TranslatedText text={m.label} />
                           </p>
@@ -839,7 +839,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       ))}
                     </div>
                     {isActive && (
-                      <div className="mt-3 p-4 bg-white rounded-xl border border-slate-100">
+                      <div className="mt-3 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                             <TranslatedText text="Progress" />
@@ -863,24 +863,24 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
                       <TranslatedText text="Cargo Information" />
                     </p>
-                    <div className="bg-white rounded-xl p-5 border border-slate-100 space-y-3">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 space-y-3">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                             <TranslatedText text="Description" />
                           </p>
-                          <p className="text-sm font-bold text-slate-800">{trip.cargo.description}</p>
+                          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{trip.cargo.description}</p>
                         </div>
-                        <span className="shrink-0 px-3 py-1 bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-black uppercase rounded-lg">
+                        <span className="shrink-0 px-3 py-1 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase rounded-lg">
                           {trip.cargo.type}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                         <div>
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                             <TranslatedText text="Weight" />
                           </p>
-                          <p className="text-sm font-black text-slate-800">
+                          <p className="text-sm font-black text-slate-800 dark:text-slate-100">
                             {trip.cargo.weight.toLocaleString()} kg
                           </p>
                         </div>
@@ -889,7 +889,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                               <TranslatedText text="Quantity" />
                             </p>
-                            <p className="text-sm font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-100">
                               {[
                                 trip.cargo.numberOfPieces ? `${trip.cargo.numberOfPieces} pcs` : null,
                                 trip.cargo.numberOfPallets ? `${trip.cargo.numberOfPallets} plt` : null,
@@ -904,7 +904,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                               <TranslatedText text="Packaging" />
                             </p>
-                            <p className="text-sm font-black text-slate-800 uppercase">
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase">
                               {trip.cargo.packagingType}
                             </p>
                           </div>
@@ -914,7 +914,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                               <TranslatedText text="Equipment" />
                             </p>
-                            <p className="text-sm font-black text-slate-800 uppercase">
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase">
                               {trip.cargo.equipmentType.replace(/_/g, ' ')}
                             </p>
                           </div>
@@ -924,7 +924,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                               <TranslatedText text="Dimensions" />
                             </p>
-                            <p className="text-sm font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-100">
                               {[trip.cargo.length, trip.cargo.width, trip.cargo.height]
                                 .map((v) => v ?? '—')
                                 .join(' × ')}{' '}
@@ -940,7 +940,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                               <TranslatedText text="Temp Range" />
                             </p>
-                            <p className="text-sm font-black text-slate-800">
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-100">
                               {trip.cargo.temperatureMin != null || trip.cargo.temperatureMax != null
                                 ? `${trip.cargo.temperatureMin ?? '—'}°C – ${trip.cargo.temperatureMax ?? '—'}°C`
                                 : 'Refrigerated'}
@@ -965,7 +965,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                             .map((flag) => (
                               <span
                                 key={String(flag)}
-                                className="px-2 py-0.5 bg-slate-50 border border-slate-200 text-slate-600 text-[8px] font-black uppercase tracking-widest rounded-md"
+                                className="px-2 py-0.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[8px] font-black uppercase tracking-widest rounded-md"
                               >
                                 {flag}
                               </span>
@@ -975,13 +975,13 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       {(trip.cargo.specialInstructions ||
                         trip.cargo.loadingInstructions ||
                         trip.cargo.unloadingInstructions) && (
-                        <div className="space-y-2 pt-3 border-t border-slate-100">
+                        <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                           {trip.cargo.specialInstructions && (
                             <div>
                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                                 <TranslatedText text="Special Instructions" />
                               </p>
-                              <p className="text-xs font-medium text-slate-700">
+                              <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
                                 {trip.cargo.specialInstructions}
                               </p>
                             </div>
@@ -991,7 +991,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                                 <TranslatedText text="Loading" />
                               </p>
-                              <p className="text-xs font-medium text-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
                                 {trip.cargo.loadingInstructions}
                               </p>
                             </div>
@@ -1001,7 +1001,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                                 <TranslatedText text="Unloading" />
                               </p>
-                              <p className="text-xs font-medium text-slate-600">
+                              <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
                                 {trip.cargo.unloadingInstructions}
                               </p>
                             </div>
@@ -1017,12 +1017,12 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
                         <TranslatedText text="Customer" />
                       </p>
-                      <div className="bg-white rounded-xl p-5 border border-slate-100">
+                      <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
                             <User size={18} className="text-primary-500" />
                           </div>
-                          <p className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                          <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                             {trip.customer.name}
                           </p>
                         </div>
@@ -1030,7 +1030,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                           {trip.customer.phone && (
                             <div className="flex items-center gap-3">
                               <Phone size={13} className="text-slate-400 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600">
+                              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                                 {trip.customer.phone}
                               </span>
                             </div>
@@ -1038,7 +1038,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                           {trip.customer.email && (
                             <div className="flex items-center gap-3">
                               <Mail size={13} className="text-slate-400 shrink-0" />
-                              <span className="text-xs font-medium text-slate-600">
+                              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                                 {trip.customer.email}
                               </span>
                             </div>
@@ -1054,13 +1054,13 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
                         <TranslatedText text="Assigned Vehicle" />
                       </p>
-                      <div className="bg-white rounded-xl p-5 border border-slate-100 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                      <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-100 dark:border-slate-800 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex items-center justify-center">
                           <Truck size={18} className="text-slate-500" />
                         </div>
                         <div>
                           {trip.truck.model && (
-                            <p className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                               {trip.truck.model}
                             </p>
                           )}
@@ -1083,9 +1083,9 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
                         <TranslatedText text="Notes" />
                       </p>
-                      <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 flex gap-3">
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800 flex gap-3">
                         <Info size={16} className="text-primary-500 shrink-0 mt-0.5" />
-                        <p className="text-sm font-medium text-slate-700">{trip.notes}</p>
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{trip.notes}</p>
                       </div>
                     </section>
                   )}
@@ -1117,7 +1117,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     )}
                     <button
                       onClick={() => setSelectedTripDetail(null)}
-                      className="px-6 py-4 bg-white border border-slate-200 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95"
+                      className="px-6 py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95"
                     >
                       <TranslatedText text="Close" />
                     </button>
@@ -1151,7 +1151,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 80, opacity: 0, scale: 0.97 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="relative w-full sm:max-w-2xl h-[96vh] sm:h-auto sm:max-h-[92vh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl bg-white"
+              className="relative w-full sm:max-w-2xl h-[96vh] sm:h-auto sm:max-h-[92vh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
             >
               <ProofOfDelivery

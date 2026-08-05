@@ -91,7 +91,7 @@ const UnifiedTrackingManagement = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 relative">
       <img
         src={logoUrutiX}
         alt="UrutiX Logo Background"
@@ -106,7 +106,7 @@ const UnifiedTrackingManagement = () => {
               <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#345E85] flex items-center justify-center shadow-sm">
                 <Navigation className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0f172a] dark:text-white tracking-tight">
                 Live <span className="text-[#345E85]">Tracking</span>
               </h1>
             </div>
@@ -122,7 +122,7 @@ const UnifiedTrackingManagement = () => {
         </div>
 
         {/* Premium Navigation Tabs */}
-        <div className="bg-slate-50 border border-slate-100 rounded-3xl sm:rounded-[2rem] p-1.5 sm:p-2 mb-8 sm:mb-10 shadow-inner max-w-full overflow-hidden">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-3xl sm:rounded-[2rem] p-1.5 sm:p-2 mb-8 sm:mb-10 shadow-inner max-w-full overflow-hidden">
           <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -134,8 +134,8 @@ const UnifiedTrackingManagement = () => {
                   className={cn(
                     "px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl sm:rounded-[1.5rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-2.5 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
                     isActive
-                      ? "bg-white text-[#345E85] shadow-md border border-slate-200"
-                      : "text-slate-400 hover:text-slate-600 hover:bg-white/50"
+                      ? "bg-white dark:bg-slate-900 text-[#345E85] shadow-md border border-slate-200 dark:border-slate-700"
+                      : "text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-white/50"
                   )}
                 >
                   <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -147,7 +147,7 @@ const UnifiedTrackingManagement = () => {
         </div>
 
         {/* Main Content Container */}
-        <div className="bg-white rounded-3xl sm:rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden min-h-[500px] sm:min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="p-4 sm:p-8 md:p-12">
             {activeTab === "tracking" && (
               <Suspense fallback={
@@ -170,7 +170,7 @@ const UnifiedTrackingManagement = () => {
               </Suspense>
             )}
             {activeTab === "routes" && !isCargoOwnerRole && (
-              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-[#345E85]"></div></div>}>
+              <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-4 border-slate-200 dark:border-slate-700 border-t-[#345E85]"></div></div>}>
                 {/* Lazy load RoutesPage only for fleet/carrier roles */}
                 {(() => {
                   const RoutesPage = lazy(() => import("@/pages/Routes"));

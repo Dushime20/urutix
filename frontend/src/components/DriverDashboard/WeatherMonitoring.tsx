@@ -111,7 +111,7 @@ export const WeatherMonitoring: React.FC<WeatherMonitoringProps> = ({ destinatio
 
   if (loading && !weather) {
     return (
-      <div className={cn("bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col items-center justify-center min-h-[300px]", className)}>
+      <div className={cn("bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 flex flex-col items-center justify-center min-h-[300px]", className)}>
         <RefreshCw size={32} className="text-blue-500 animate-spin mb-4" />
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">
           <TranslatedText text="Syncing Weather Intelligence..." />
@@ -121,7 +121,7 @@ export const WeatherMonitoring: React.FC<WeatherMonitoringProps> = ({ destinatio
   }
 
   return (
-    <div className={cn("bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden group", className)}>
+    <div className={cn("bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 overflow-hidden group", className)}>
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -143,7 +143,7 @@ export const WeatherMonitoring: React.FC<WeatherMonitoringProps> = ({ destinatio
           </div>
           <button 
             onClick={fetchWeather}
-            className="w-10 h-10 rounded-xl hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors"
+            className="w-10 h-10 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 transition-colors"
           >
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
           </button>
@@ -154,7 +154,7 @@ export const WeatherMonitoring: React.FC<WeatherMonitoringProps> = ({ destinatio
             {/* Main Temp Row */}
             <div className="flex items-end justify-between">
               <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-3xl bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">
+                <div className="w-20 h-20 rounded-3xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center border border-slate-100 dark:border-slate-800 shadow-inner">
                   {getWeatherIcon(weather.condition, 40)}
                 </div>
                 <div>
@@ -168,11 +168,11 @@ export const WeatherMonitoring: React.FC<WeatherMonitoringProps> = ({ destinatio
               </div>
               
               <div className="flex flex-col items-end gap-3">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-800">
                   <Wind size={12} className="text-blue-400" />
                   {weather.windSpeed} KM/H
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+                <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-800">
                   <Droplets size={12} className="text-sky-400" />
                   {weather.humidity}% HUM
                 </div>
@@ -216,7 +216,7 @@ export const WeatherMonitoring: React.FC<WeatherMonitoringProps> = ({ destinatio
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-700 mb-1">{weather.fuelImpact.reason}</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">{weather.fuelImpact.reason}</p>
                   <p className="text-[10px] text-slate-500 font-medium">
                     <TranslatedText text={weather.fuelImpact.advice} />
                   </p>
@@ -227,7 +227,7 @@ export const WeatherMonitoring: React.FC<WeatherMonitoringProps> = ({ destinatio
             {/* Forecast Row */}
             <div className="grid grid-cols-3 gap-3">
               {weather.forecast.map((item, idx) => (
-                <div key={idx} className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col items-center gap-2 group/item hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 transition-all duration-300">
+                <div key={idx} className="p-4 bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col items-center gap-2 group/item hover:bg-white dark:bg-slate-900 hover:shadow-lg hover:shadow-slate-200/40 transition-all duration-300">
                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{item.day}</span>
                   {getWeatherIcon(item.condition, 20)}
                   <span className="text-sm font-black text-[#0f172a]">{item.temp}°</span>

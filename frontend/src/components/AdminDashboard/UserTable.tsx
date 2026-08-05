@@ -94,7 +94,7 @@ const UserTable: React.FC = () => {
             {user.name.charAt(0)}
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</div>
             <div className="text-sm text-gray-500">{user.email}</div>
           </div>
         </div>
@@ -127,7 +127,7 @@ const UserTable: React.FC = () => {
       label: 'Last Active',
       sortable: true,
       render: (_, user) => (
-        <span className="text-sm text-gray-900">{new Date(user.lastActive).toLocaleDateString()}</span>
+        <span className="text-sm text-gray-900 dark:text-white">{new Date(user.lastActive).toLocaleDateString()}</span>
       ),
     },
     {
@@ -135,7 +135,7 @@ const UserTable: React.FC = () => {
       label: 'Joined',
       sortable: true,
       render: (_, user) => (
-        <span className="text-sm text-gray-900">{new Date(user.joinedAt).toLocaleDateString()}</span>
+        <span className="text-sm text-gray-900 dark:text-white">{new Date(user.joinedAt).toLocaleDateString()}</span>
       ),
     },
   ], []);
@@ -168,7 +168,7 @@ const UserTable: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-          <p className="text-gray-600">Manage platform users and their access</p>
+          <p className="text-gray-600 dark:text-slate-300">Manage platform users and their access</p>
         </div>
         <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
           <FaPlus />
@@ -177,7 +177,7 @@ const UserTable: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -210,7 +210,7 @@ const UserTable: React.FC = () => {
             <option value="INACTIVE">Inactive</option>
             <option value="SUSPENDED">Suspended</option>
           </select>
-          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+          <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:text-slate-300 px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
             <FaDownload />
             <span>Export</span>
           </button>
@@ -219,38 +219,38 @@ const UserTable: React.FC = () => {
 
       {/* User Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-gray-800">{users.length}</p>
-              <p className="text-gray-600">Total Users</p>
+              <p className="text-gray-600 dark:text-slate-300">Total Users</p>
             </div>
             <FaUsers className="text-purple-500 text-3xl" />
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-gray-800">{users.filter(u => u.status === 'ACTIVE').length}</p>
-              <p className="text-gray-600">Active Users</p>
+              <p className="text-gray-600 dark:text-slate-300">Active Users</p>
             </div>
             <FaUserCheck className="text-green-500 text-3xl" />
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-gray-800">{users.filter(u => u.role === 'ADMIN').length}</p>
-              <p className="text-gray-600">Administrators</p>
+              <p className="text-gray-600 dark:text-slate-300">Administrators</p>
             </div>
             <FaShieldAlt className="text-red-500 text-3xl" />
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-gray-800">{users.filter(u => new Date(u.lastActive) > new Date(Date.now() - 24*60*60*1000)).length}</p>
-              <p className="text-gray-600">Active Today</p>
+              <p className="text-gray-600 dark:text-slate-300">Active Today</p>
             </div>
             <FaUsers className="text-blue-500 text-3xl" />
           </div>
@@ -262,7 +262,7 @@ const UserTable: React.FC = () => {
         embedded
         searchable={false}
         columnVisibility={false}
-        className="bg-white rounded-xl shadow-lg overflow-hidden px-4 py-4"
+        className="bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden px-4 py-4"
         columns={userColumns}
         data={filteredUsers}
         getRowId={(row) => row.id}

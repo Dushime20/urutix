@@ -60,7 +60,7 @@ const FinancialWidget: React.FC = () => {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:shadow-md transition-shadow">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -68,7 +68,7 @@ const FinancialWidget: React.FC = () => {
                         <FaDollarSign className="text-emerald-600" size={20} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-slate-800">Financial Overview</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-100">Financial Overview</h3>
                         <p className="text-xs text-slate-500">Revenue & transactions</p>
                     </div>
                 </div>
@@ -83,7 +83,7 @@ const FinancialWidget: React.FC = () => {
             {/* Main Revenue */}
             <div className="mb-6">
                 <div className="flex items-baseline gap-2 mb-1">
-                    <div className="text-3xl font-black text-slate-800">
+                    <div className="text-3xl font-black text-slate-800 dark:text-slate-100">
                         ${(stats.monthRevenue / 1000).toFixed(1)}K
                     </div>
                     <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
@@ -101,8 +101,8 @@ const FinancialWidget: React.FC = () => {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="text-center p-2 bg-slate-50 rounded-lg">
-                    <div className="text-lg font-black text-slate-800">${(stats.todayRevenue / 1000).toFixed(1)}K</div>
+                <div className="text-center p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <div className="text-lg font-black text-slate-800 dark:text-slate-100">${(stats.todayRevenue / 1000).toFixed(1)}K</div>
                     <div className="text-[10px] text-slate-500 font-medium mt-0.5">Today</div>
                 </div>
                 <div className="text-center p-2 bg-blue-50 rounded-lg">
@@ -117,19 +117,19 @@ const FinancialWidget: React.FC = () => {
 
             {/* Quick Stats */}
             <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                     <div className="flex items-center gap-2">
                         <FaWallet className="text-purple-500" size={14} />
-                        <span className="text-sm font-medium text-slate-700">Escrow Balance</span>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Escrow Balance</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-800">${(stats.escrowBalance / 1000).toFixed(1)}K</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">${(stats.escrowBalance / 1000).toFixed(1)}K</span>
                 </div>
-                <div className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
                     <div className="flex items-center gap-2">
                         <FaCreditCard className="text-blue-500" size={14} />
-                        <span className="text-sm font-medium text-slate-700">Avg. Transaction</span>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Avg. Transaction</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-800">${((stats.monthRevenue / stats.transactions)).toFixed(0)}</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">${((stats.monthRevenue / stats.transactions)).toFixed(0)}</span>
                 </div>
             </div>
 

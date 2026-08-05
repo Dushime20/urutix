@@ -41,14 +41,14 @@ function InfoRow({ label, value, icon: Icon }: { label: string; value?: string |
     <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
       {Icon && <Icon size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />}
       <span className="text-xs font-semibold text-gray-500 w-36 flex-shrink-0">{label}</span>
-      <span className="text-sm text-gray-900 font-medium">{value}</span>
+      <span className="text-sm text-gray-900 dark:text-white font-medium">{value}</span>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4">
+    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{title}</p>
       <div>{children}</div>
     </div>
@@ -70,7 +70,7 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl overflow-hidden flex flex-col max-h-[90vh] border border-transparent">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl overflow-hidden flex flex-col max-h-[90vh] border border-transparent">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 text-white bg-primary-600">
@@ -119,15 +119,15 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
             </div>
             <div className="bg-slate-100 rounded-xl p-3 text-center">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</p>
-              <p className="text-sm font-black text-slate-800 mt-1">{cfg.label}</p>
+              <p className="text-sm font-black text-slate-800 dark:text-slate-100 mt-1">{cfg.label}</p>
             </div>
             <div className="bg-slate-100 rounded-xl p-3 text-center">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active</p>
-              <p className="text-sm font-black text-slate-800 mt-1">{truck.isActive ? 'Yes' : 'No'}</p>
+              <p className="text-sm font-black text-slate-800 dark:text-slate-100 mt-1">{truck.isActive ? 'Yes' : 'No'}</p>
             </div>
             <div className="bg-slate-100 rounded-xl p-3 text-center">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Drivers</p>
-              <p className="text-sm font-black text-slate-800 mt-1">{truck.assignedDrivers?.length ?? (truck.currentDriverName ? 1 : 0)}</p>
+              <p className="text-sm font-black text-slate-800 dark:text-slate-100 mt-1">{truck.assignedDrivers?.length ?? (truck.currentDriverName ? 1 : 0)}</p>
             </div>
           </div>
 
@@ -190,10 +190,10 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
             <Section title={`Driver History (${truck.assignedDrivers.length})`}>
               <div className="space-y-2">
                 {truck.assignedDrivers.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-transparent">
+                  <div key={i} className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-lg px-3 py-2 border border-transparent">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
-                        <User size={12} className="text-slate-600" />
+                        <User size={12} className="text-slate-600 dark:text-slate-300" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-800">{d.driverName}</p>
@@ -218,10 +218,10 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
+            className="px-5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-100 transition-colors"
           >
             Close
           </button>
@@ -308,7 +308,7 @@ const AdminTrucks: React.FC = () => {
             </div>
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-sm font-medium text-gray-900 dark:text-white">
               {truck.plateNumber || truck.licensePlate || 'N/A'}
             </div>
             <div className="text-sm text-gray-500">
@@ -333,7 +333,7 @@ const AdminTrucks: React.FC = () => {
       sortable: true,
       render: (_value, truck) => (
         <div>
-          <div className="text-sm text-gray-900">{truck.ownerName || 'No Owner'}</div>
+          <div className="text-sm text-gray-900 dark:text-white">{truck.ownerName || 'No Owner'}</div>
           {truck.ownerEmail && (
             <div className="text-sm text-gray-500">{truck.ownerEmail}</div>
           )}
@@ -346,7 +346,7 @@ const AdminTrucks: React.FC = () => {
       sortable: true,
       render: (_value, truck) => (
         <div>
-          <div className="text-sm text-gray-900">
+          <div className="text-sm text-gray-900 dark:text-white">
             {truck.currentDriverName || 'No Driver Assigned'}
           </div>
           {truck.assignedDrivers && truck.assignedDrivers.length > 0 && (
@@ -374,7 +374,7 @@ const AdminTrucks: React.FC = () => {
       key: 'tenantName',
       label: 'Tenant',
       sortable: true,
-      render: (value) => <div className="text-sm text-gray-900">{value}</div>,
+      render: (value) => <div className="text-sm text-gray-900 dark:text-white">{value}</div>,
     },
   ], []);
 
@@ -452,7 +452,7 @@ const AdminTrucks: React.FC = () => {
 
       <StandardDataTable<AdminTruck>
         embedded
-        className="bg-white rounded-xl p-4 border border-transparent"
+        className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-transparent"
         columns={truckColumns}
         data={trucks}
         getRowId={(row) => row.id}
@@ -477,7 +477,7 @@ const AdminTrucks: React.FC = () => {
         pagination
         onRefresh={fetchTrucks}
         toolbarExtra={
-          <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-xs font-semibold">
+          <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg transition-colors text-xs font-semibold">
             <FaDownload />
             Export
           </button>

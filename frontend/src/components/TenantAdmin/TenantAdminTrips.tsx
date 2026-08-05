@@ -159,7 +159,7 @@ const TenantAdminTrips: React.FC = () => {
   return (
     <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
       {user?.tenantId && (
-        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm p-6 mb-6">
           <ActiveTrips tenantId={user.tenantId} />
         </div>
       )}
@@ -172,7 +172,7 @@ const TenantAdminTrips: React.FC = () => {
         headerActions={
           <button
             onClick={() => refetchTrips()}
-            className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
+            className="px-3 py-1.5 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-sm"
           >
             <FaSync className="w-3.5 h-3.5" />
             Refresh

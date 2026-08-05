@@ -168,7 +168,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
         <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden"
+            className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/40 relative overflow-hidden"
         >
             <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50/40 via-transparent to-transparent pointer-events-none" />
             <div className="relative z-10">
@@ -183,11 +183,11 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                 </div>
 
                 <div className="space-y-4">
-                    <div className="p-5 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white transition-all cursor-default group shadow-inner">
+                    <div className="p-5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:bg-white dark:bg-slate-900 transition-all cursor-default group shadow-inner">
                         <h4 className="text-[9px] font-black text-[#345E85] uppercase tracking-widest mb-2 flex items-center gap-2">
                              <TrendingUp size={12} /> <TranslatedText text="Performance Insight" />
                         </h4>
-                        <p className="text-[11px] font-medium leading-relaxed italic text-slate-600">
+                        <p className="text-[11px] font-medium leading-relaxed italic text-slate-600 dark:text-slate-300">
                             <TranslatedText text={'Your fuel consumption was 5.2% higher on the last Kampala run. Switch to the Bypass route next time to save approx. ' + formatCurrencyFull(42) + '.'} />
                         </p>
                     </div>
@@ -206,7 +206,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
         <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/40"
+            className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/40"
         >
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
@@ -226,19 +226,19 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                <div className="bg-slate-50/50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="CO2 Saved" /></p>
                     <p className="text-2xl font-black text-[#345E85] tracking-tighter italic">{Number(stats.co2Saved).toFixed(1)} KG</p>
                     <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none"><TranslatedText text="Safe Planet Contribution" /></p>
                 </div>
-                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100/50">
+                <div className="bg-slate-50/50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50">
                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><TranslatedText text="Efficiency Rating" /></p>
                     <p className="text-2xl font-black text-[#0f172a] tracking-tighter italic">{Number(stats.efficiencyMpg).toFixed(1)} MPG</p>
                     <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase leading-none"><TranslatedText text="Real-time Performance" /></p>
                 </div>
             </div>
 
-            <div className="space-y-3 pt-6 border-t border-slate-100">
+            <div className="space-y-3 pt-6 border-t border-slate-100 dark:border-slate-800">
                  <div className="flex justify-between items-end text-[9px] font-black uppercase tracking-widest text-slate-400">
                     <span><TranslatedText text="Performance Score Progress" /></span>
                     <span className="text-[#345E85] font-black">{stats.ecoScore}%</span>
@@ -270,7 +270,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]"
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[90vh]"
             >
               <div className="bg-[#345E85] p-6 md:p-10 text-white shrink-0">
                 <h3 className="text-xl md:text-2xl font-black uppercase tracking-tight"><TranslatedText text="Record Fuel Purchase" /></h3>
@@ -287,7 +287,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                         <input 
                           type="text" 
                           readOnly
-                          className="w-full h-14 bg-slate-100 border border-slate-200 rounded-2xl pl-14 pr-6 font-bold text-slate-500 cursor-not-allowed transition-all"
+                          className="w-full h-14 bg-slate-100 border border-slate-200 dark:border-slate-700 rounded-2xl pl-14 pr-6 font-bold text-slate-500 cursor-not-allowed transition-all"
                           value={assignedTruck ? `${assignedTruck.plateNumber} (${assignedTruck.make} ${assignedTruck.model})` : (driverProfile?.currentTruckId || t('No Assigned Truck'))}
                         />
                       </div>
@@ -300,7 +300,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                         <input 
                           type="date" 
                           required
-                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
                           value={formData.fuelDate}
                           onChange={(e) => setFormData({...formData, fuelDate: e.target.value})}
                         />
@@ -315,7 +315,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                           type="number" 
                           step="0.01" 
                           required
-                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
                           placeholder="0.00"
                           value={formData.gallons || ''}
                           onChange={(e) => setFormData({...formData, gallons: parseFloat(e.target.value)})}
@@ -331,7 +331,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                           type="number" 
                           step="0.001" 
                           required
-                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
                           placeholder="0.000"
                           value={formData.pricePerGallon || ''}
                           onChange={(e) => setFormData({...formData, pricePerGallon: parseFloat(e.target.value)})}
@@ -346,7 +346,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                         <input 
                           type="text" 
                           required
-                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                          className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
                           placeholder={t('Enter City, State or Gas Station Name')}
                           value={formData.location || ''}
                           onChange={(e) => setFormData({...formData, location: e.target.value})}
@@ -358,7 +358,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1"><TranslatedText text="Odometer Reading" /></label>
                       <input 
                         type="number" 
-                        className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
+                        className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all"
                         placeholder={t('Current Odometer')}
                         value={formData.odometer || ''}
                         onChange={(e) => setFormData({...formData, odometer: parseInt(e.target.value)})}
@@ -370,7 +370,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                       <div className="relative">
                         <CreditCard className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 pointer-events-none" />
                         <select 
-                          className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl pl-14 pr-6 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all appearance-none"
+                          className="w-full h-14 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-14 pr-6 font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#345E85] transition-all appearance-none"
                           value={formData.paymentMethod}
                           onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
                         >
@@ -400,7 +400,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                             className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all cursor-pointer group ${
                               formData.receiptFile 
                                 ? 'border-[#345E85] bg-blue-50/30' 
-                                : 'border-slate-200 hover:border-[#345E85] hover:bg-slate-50'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                           >
                             <FileText className={`w-8 h-8 mb-2 transition-colors ${
@@ -428,7 +428,7 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                             className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all cursor-pointer group ${
                               formData.odometerVerificationFile 
                                 ? 'border-[#345E85] bg-blue-50/30' 
-                                : 'border-slate-200 hover:border-[#345E85] hover:bg-slate-50'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-[#345E85] hover:bg-slate-50 dark:hover:bg-slate-800'
                             }`}
                           >
                             <Camera className={`w-8 h-8 mb-2 transition-colors ${
@@ -448,11 +448,11 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
                     <button 
                       type="button" 
                       onClick={() => setShowLogForm(false)}
-                      className="order-2 sm:order-1 flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all"
+                      className="order-2 sm:order-1 flex-1 h-16 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-all"
                     >
                       <TranslatedText text="Cancel" />
                     </button>
@@ -486,14 +486,14 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
 
             {logsLoading ? (
               <div className="space-y-4">
-                {[1, 2, 3].map(i => <div key={i} className="h-24 bg-slate-50 rounded-[2rem] animate-pulse" />)}
+                {[1, 2, 3].map(i => <div key={i} className="h-24 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] animate-pulse" />)}
               </div>
             ) : logs && logs.length > 0 ? (
               <div className="grid gap-4">
                 {logs.map((log) => (
                   <div 
                     key={log.id} 
-                    className="bg-white rounded-[2rem] border border-slate-100 p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-blue-100 transition-all duration-300 group"
+                    className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:border-blue-100 transition-all duration-300 group"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-center">
                       <div className="col-span-1">
@@ -536,11 +536,11 @@ export const FuelManagement: React.FC<FuelManagementProps> = ({ driverId }) => {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-[2rem] border border-dashed border-slate-200 p-20 text-center">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+              <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 p-20 text-center">
+                <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-800">
                   <Fuel className="text-slate-300" size={32} />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="No Fuel Data" /></h4>
+                <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="No Fuel Data" /></h4>
                 <p className="text-sm font-medium text-slate-400 mt-1"><TranslatedText text="Record your first fuel purchase to start tracking" /></p>
               </div>
             )}

@@ -134,7 +134,7 @@ export const DriverPerformanceChart: React.FC<DriverPerformanceChartProps> = ({ 
         </div>
 
         <div className={`px-6 py-4 ${performanceLevel.bgColor} flex items-center gap-5 w-fit`}>
-          <div className="w-12 h-12 bg-white flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 bg-white dark:bg-slate-900 flex items-center justify-center shrink-0">
             <Award className={cn(performanceLevel.color)} size={24} />
           </div>
           <div className="text-right">

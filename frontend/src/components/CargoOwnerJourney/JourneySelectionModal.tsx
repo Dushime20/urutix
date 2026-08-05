@@ -68,17 +68,17 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Choose Your Journey</h2>
-              <p className="text-gray-600 mt-1">Select the best approach for your shipment</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Choose Your Journey</h2>
+              <p className="text-gray-600 dark:text-slate-300 mt-1">Select the best approach for your shipment</p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -94,7 +94,7 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
             <div className={`relative rounded-xl border-2 p-6 transition-all duration-200 ${
               recommendation === 'smart-matching' 
                 ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 hover:border-blue-300'
+                : 'border-gray-200 dark:border-slate-700 hover:border-blue-300'
             }`}>
               {recommendation === 'smart-matching' && (
                 <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
@@ -107,8 +107,8 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
                   <FaRocket className="text-blue-600" size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Smart Matching</h3>
-                  <p className="text-sm text-gray-600">Fast, automated matching</p>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Smart Matching</h3>
+                  <p className="text-sm text-gray-600 dark:text-slate-300">Fast, automated matching</p>
                 </div>
               </div>
               
@@ -144,7 +144,7 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
             <div className={`relative rounded-xl border-2 p-6 transition-all duration-200 ${
               recommendation === 'publish-bid' 
                 ? 'border-green-500 bg-green-50' 
-                : 'border-gray-200 hover:border-green-300'
+                : 'border-gray-200 dark:border-slate-700 hover:border-green-300'
             }`}>
               {recommendation === 'publish-bid' && (
                 <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
@@ -157,8 +157,8 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
                   <FaGavel className="text-green-600" size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Publish for Bid</h3>
-                  <p className="text-sm text-gray-600">Competitive pricing, flexible selection</p>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Publish for Bid</h3>
+                  <p className="text-sm text-gray-600 dark:text-slate-300">Competitive pricing, flexible selection</p>
                 </div>
               </div>
               
@@ -211,8 +211,8 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
 
           {/* Cargo Summary */}
           {cargoData && (
-            <div className="bg-gray-50 rounded-lg p-4 mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Your Cargo Summary</h3>
+            <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4 mt-6">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Your Cargo Summary</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center">
                   <FaTruck className="text-blue-500 mr-2" />

@@ -121,7 +121,7 @@ const UnifiedFleetManagement: React.FC = () => {
       render: (_: unknown, truck: any) => (
         <div className="flex items-center gap-2">
           <FaTruck className="w-4 h-4 text-gray-400" />
-          <span className="font-medium text-gray-900">{truck.plateNumber || 'N/A'}</span>
+          <span className="font-medium text-gray-900 dark:text-white">{truck.plateNumber || 'N/A'}</span>
         </div>
       ),
     },
@@ -129,14 +129,14 @@ const UnifiedFleetManagement: React.FC = () => {
       key: 'truckType',
       label: 'Truck Type',
       render: (_: unknown, truck: any) => (
-        <span className="text-gray-700">{truck.truckType ? truck.truckType.replace(/_/g, ' ') : 'N/A'}</span>
+        <span className="text-gray-700 dark:text-slate-300">{truck.truckType ? truck.truckType.replace(/_/g, ' ') : 'N/A'}</span>
       ),
     },
     {
       key: 'capacityWeight',
       label: 'Max Weight',
       render: (_: unknown, truck: any) => (
-        <span className="text-gray-700">
+        <span className="text-gray-700 dark:text-slate-300">
           {truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : 'N/A'}
         </span>
       ),
@@ -147,7 +147,7 @@ const UnifiedFleetManagement: React.FC = () => {
       render: (_: unknown, truck: any) => (
         <div className="flex items-center gap-2">
           <FaMapMarkerAlt className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-700">
+          <span className="text-gray-700 dark:text-slate-300">
             {truck.currentLocation
               ? (typeof truck.currentLocation === 'string'
                 ? truck.currentLocation
@@ -165,8 +165,8 @@ const UnifiedFleetManagement: React.FC = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Truck Management</h1>
-            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Manage your trucks, add new trucks, and assign them to drivers</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Truck Management</h1>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-300 mt-0.5">Manage your trucks, add new trucks, and assign them to drivers</p>
           </div>
           <div className="flex items-center gap-2">
 
@@ -190,7 +190,7 @@ const UnifiedFleetManagement: React.FC = () => {
             <div className="text-center py-12">
               <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="mb-2">Add New Truck</h3>
-              <p className="text-gray-600 mb-6">Click the button below to start adding a new truck to your fleet</p>
+              <p className="text-gray-600 dark:text-slate-300 mb-6">Click the button below to start adding a new truck to your fleet</p>
               <button
                 onClick={handleCreateTruck}
                 className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center gap-2 mx-auto"
@@ -259,10 +259,10 @@ const UnifiedFleetManagement: React.FC = () => {
               <ModernLoader isLoading={true} text="Cataloging_Fleet" containerRelative={true} />
             </div>
           ) : trucks.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <div className="text-center py-12 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
               <FaTruck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Trucks Found</h3>
-              <p className="text-gray-600">You don't have any trucks in your fleet yet</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Trucks Found</h3>
+              <p className="text-gray-600 dark:text-slate-300">You don't have any trucks in your fleet yet</p>
             </div>
           ) : (
             <StandardDataTable
@@ -312,22 +312,22 @@ const UnifiedFleetManagement: React.FC = () => {
               <ModernLoader isLoading={true} text="Synchronizing_Missions" containerRelative={true} />
             </div>
           ) : activeTrips.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <div className="text-center py-12 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
               <FaRoute className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Active Trips</h3>
-              <p className="text-gray-600">You don't have any active trips at the moment</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Active Trips</h3>
+              <p className="text-gray-600 dark:text-slate-300">You don't have any active trips at the moment</p>
             </div>
           ) : (
             <div className="space-y-4">
               {activeTrips.map((trip: any) => (
                 <div
                   key={trip.id}
-                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                  className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-6 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {trip.tripNumber || `Trip ${trip.id?.substring(0, 8)}`}
                         </h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTripStatusColor(trip.status)}`}>
@@ -339,31 +339,31 @@ const UnifiedFleetManagement: React.FC = () => {
                         {formatLocation(trip.origin) && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Origin:</span>
-                            <span className="text-gray-900">{formatLocation(trip.origin)}</span>
+                            <span className="text-gray-900 dark:text-white">{formatLocation(trip.origin)}</span>
                           </div>
                         )}
                         {formatLocation(trip.destination) && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Destination:</span>
-                            <span className="text-gray-900">{formatLocation(trip.destination)}</span>
+                            <span className="text-gray-900 dark:text-white">{formatLocation(trip.destination)}</span>
                           </div>
                         )}
                         {trip.agreedPrice && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Price:</span>
-                            <span className="text-gray-900 font-semibold">{fmtMoney(trip.agreedPrice)}</span>
+                            <span className="text-gray-900 dark:text-white font-semibold">{fmtMoney(trip.agreedPrice)}</span>
                           </div>
                         )}
                         {trip.truckId && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Truck ID:</span>
-                            <span className="text-gray-900">{trip.truckId.substring(0, 8)}...</span>
+                            <span className="text-gray-900 dark:text-white">{trip.truckId.substring(0, 8)}...</span>
                           </div>
                         )}
                         {trip.startDate && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">Start Date:</span>
-                            <span className="text-gray-900">
+                            <span className="text-gray-900 dark:text-white">
                               {new Date(trip.startDate).toLocaleDateString()}
                             </span>
                           </div>
@@ -371,7 +371,7 @@ const UnifiedFleetManagement: React.FC = () => {
                         {trip.estimatedArrival && (
                           <div className="flex items-start gap-2">
                             <span className="text-gray-500 min-w-[80px]">ETA:</span>
-                            <span className="text-gray-900">
+                            <span className="text-gray-900 dark:text-white">
                               {new Date(trip.estimatedArrival).toLocaleDateString()}
                             </span>
                           </div>

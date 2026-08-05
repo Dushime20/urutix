@@ -64,14 +64,14 @@ function InfoRow({ label, value, icon: Icon }: { label: string; value?: string |
     <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
       {Icon && <Icon size={13} className="text-gray-400 mt-0.5 flex-shrink-0" />}
       <span className="text-xs font-semibold text-gray-500 w-40 flex-shrink-0">{label}</span>
-      <span className="text-sm text-gray-900 font-medium">{value}</span>
+      <span className="text-sm text-gray-900 dark:text-white font-medium">{value}</span>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-4">
+    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{title}</p>
       {children}
     </div>
@@ -100,7 +100,7 @@ const LoadDetailModal: React.FC<LoadDetailModalProps> = ({ load, onClose }) => {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 bg-primary-800 text-white">
@@ -203,8 +203,8 @@ const LoadDetailModal: React.FC<LoadDetailModalProps> = ({ load, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-          <button onClick={onClose} className="px-5 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex justify-end">
+          <button onClick={onClose} className="px-5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-100 transition-colors">
             Close
           </button>
         </div>
@@ -225,7 +225,7 @@ interface DeleteConfirmModalProps {
 const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ load, deleting, onConfirm, onCancel }) => (
   <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-    <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
 
       {/* Header */}
       <div className="flex items-center gap-4 px-6 py-5 bg-red-50 border-b border-red-100">
@@ -233,16 +233,16 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ load, deleting,
           <AlertTriangle size={22} className="text-red-600" />
         </div>
         <div>
-          <h2 className="text-base font-black text-gray-900">Delete Load</h2>
+          <h2 className="text-base font-black text-gray-900 dark:text-white">Delete Load</h2>
           <p className="text-sm text-gray-500">This action cannot be undone</p>
         </div>
       </div>
 
       {/* Body */}
       <div className="px-6 py-5">
-        <p className="text-sm text-gray-700 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">
           Are you sure you want to delete{' '}
-          <span className="font-bold text-gray-900">"{load.title || `Load #${load.id.slice(-8)}`}"</span>?
+          <span className="font-bold text-gray-900 dark:text-white">"{load.title || `Load #${load.id.slice(-8)}`}"</span>?
         </p>
         {load.status && !['DRAFT', 'CREATED', 'CANCELLED'].includes(load.status.toUpperCase()) && (
           <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
@@ -255,11 +255,11 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ load, deleting,
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+      <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
         <button
           onClick={onCancel}
           disabled={deleting}
-          className="px-5 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+          className="px-5 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-600 dark:text-slate-300 hover:bg-gray-100 transition-colors disabled:opacity-50"
         >
           Cancel
         </button>
@@ -351,7 +351,7 @@ const AdminLoads: React.FC = () => {
             <FaBox className="text-orange-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">{load.title || `Load #${load.id.slice(-8)}`}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{load.title || `Load #${load.id.slice(-8)}`}</p>
             <p className="text-xs text-gray-400">{load.cargoType?.replace(/_/g, ' ') || '—'}</p>
           </div>
         </div>
@@ -379,7 +379,7 @@ const AdminLoads: React.FC = () => {
       key: 'weight',
       label: 'Weight',
       render: (_v, load) => (
-        <span className="text-sm text-gray-700">{load.weight ? `${fmtNum(load.weight)} kg` : '—'}</span>
+        <span className="text-sm text-gray-700 dark:text-slate-300">{load.weight ? `${fmtNum(load.weight)} kg` : '—'}</span>
       ),
     },
     {
@@ -388,7 +388,7 @@ const AdminLoads: React.FC = () => {
       render: (_v, load) => {
         const currency = load.currencyCode || 'RWF';
         return (
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-gray-700 dark:text-slate-300">
             {(load.loadValue || load.value) ? `${currency} ${fmtNum(load.loadValue ?? load.value)}` : '—'}
           </span>
         );

@@ -116,8 +116,8 @@ const InsuranceDashboard: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Premium vs Claims Chart */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Premium vs Claims Trend</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Premium vs Claims Trend</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={premiumData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -131,8 +131,8 @@ const InsuranceDashboard: React.FC = () => {
         </div>
 
         {/* Coverage Distribution Chart */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Coverage Distribution</h3>
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Coverage Distribution</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -156,18 +156,18 @@ const InsuranceDashboard: React.FC = () => {
       </div>
 
       {/* Recent Activities */}
-      <div className="bg-white rounded-lg border p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activities</h3>
         <div className="space-y-4">
           {recentActivities.map((activity) => {
             const Icon = activity.icon;
             return (
-              <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+              <div key={activity.id} className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
                 <div className={`p-2 rounded-full ${getStatusColor(activity.status)}`}>
                   <Icon className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{activity.message}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.message}</p>
                   <p className="text-xs text-gray-500">{activity.time}</p>
                 </div>
                 <div className="text-xs text-gray-400">
@@ -181,17 +181,17 @@ const InsuranceDashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors">
+        <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
           <FaPlus className="h-6 w-6 text-gray-400 mr-2" />
-          <span className="text-gray-600">Add New Policy</span>
+          <span className="text-gray-600 dark:text-slate-300">Add New Policy</span>
         </button>
-        <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors">
+        <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
           <FaExclamationTriangle className="h-6 w-6 text-gray-400 mr-2" />
-          <span className="text-gray-600">File New Claim</span>
+          <span className="text-gray-600 dark:text-slate-300">File New Claim</span>
         </button>
-        <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors">
+        <button className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
           <FaDownload className="h-6 w-6 text-gray-400 mr-2" />
-          <span className="text-gray-600">Download Report</span>
+          <span className="text-gray-600 dark:text-slate-300">Download Report</span>
         </button>
       </div>
     </div>

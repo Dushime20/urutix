@@ -253,7 +253,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 24, scale: 0.98 }}
-        className="relative w-full sm:max-w-2xl max-h-[96vh] flex flex-col bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl overflow-hidden"
+        className="relative w-full sm:max-w-2xl max-h-[96vh] flex flex-col bg-white dark:bg-slate-900 rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl overflow-hidden"
       >
         <div className="bg-white dark:bg-[#0f172a] border-b border-slate-100 dark:border-transparent px-6 sm:px-8 py-6 shrink-0">
           <div className="flex items-start justify-between gap-4 mb-5">
@@ -356,7 +356,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                     <Truck className="w-5 h-5 text-[#345E85]" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                       <TranslatedText text="Vehicle Pre-Trip Checklist" />
                     </h4>
                     <p className="text-xs text-slate-500">
@@ -381,7 +381,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                       <Package className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                         <TranslatedText text="Cargo Pre-Trip Inspection" />
                       </h4>
                       <p className="text-xs text-slate-500">{trip.cargo.description}</p>
@@ -478,10 +478,10 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                 <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-5">
                   <ShieldCheck className="w-8 h-8 text-emerald-500" />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">
+                <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">
                   <TranslatedText text="Ready to Start Trip" />
                 </h4>
-                <p className="text-sm text-slate-600 max-w-md mx-auto mb-4">
+                <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto mb-4">
                   <TranslatedText text="Inspection is approved. Truck and cargo checks are complete — no further inspection is required." />
                 </p>
                 <div
@@ -503,7 +503,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                 <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto mb-5">
                   <AlertTriangle className="w-8 h-8 text-rose-500" />
                 </div>
-                <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">
+                <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-2">
                   <TranslatedText
                     text={
                       inspectionStatus === 'AWAITING_CARGO_OWNER_APPROVAL'
@@ -512,7 +512,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                     }
                   />
                 </h4>
-                <p className="text-sm text-slate-600 max-w-md mx-auto mb-4">
+                <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto mb-4">
                   <TranslatedText
                     text={
                       inspectionStatus === 'AWAITING_CARGO_OWNER_APPROVAL'
@@ -540,7 +540,7 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
                 className="flex flex-col items-center justify-center py-16 gap-4"
               >
                 <Loader2 className="w-10 h-10 text-[#345E85] animate-spin" />
-                <p className="text-sm font-black text-slate-800 uppercase tracking-widest">
+                <p className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
                   <TranslatedText text="Launching Trip..." />
                 </p>
                 <p className="text-xs text-slate-500">
@@ -552,10 +552,10 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
         </div>
 
         {step === 'vehicle' && (
-          <div className="shrink-0 p-6 sm:p-8 border-t border-slate-100 bg-slate-50/80 flex gap-3">
+          <div className="shrink-0 p-6 sm:p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white transition-all"
+              className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white dark:bg-slate-900 transition-all"
             >
               <TranslatedText text="Cancel" />
             </button>
@@ -577,10 +577,10 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
         )}
 
         {step === 'ready' && (
-          <div className="shrink-0 p-6 sm:p-8 border-t border-slate-100 bg-slate-50/80 flex gap-3">
+          <div className="shrink-0 p-6 sm:p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white transition-all"
+              className="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white dark:bg-slate-900 transition-all"
             >
               <TranslatedText text="Close" />
             </button>
@@ -595,10 +595,10 @@ export const TripStartFlow: React.FC<TripStartFlowProps> = ({
         )}
 
         {step === 'blocked' && (
-          <div className="shrink-0 p-6 sm:p-8 border-t border-slate-100 bg-slate-50/80">
+          <div className="shrink-0 p-6 sm:p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80">
             <button
               onClick={onClose}
-              className="w-full h-12 bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-300 transition-all"
+              className="w-full h-12 bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-300 transition-all"
             >
               <TranslatedText text="Close" />
             </button>

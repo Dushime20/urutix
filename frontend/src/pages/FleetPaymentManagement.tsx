@@ -316,7 +316,7 @@ const FleetPaymentManagement: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
           <div className="flex flex-col gap-4">
             <div className="w-full relative group">
               <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors w-4 h-4" />
@@ -325,7 +325,7 @@ const FleetPaymentManagement: React.FC = () => {
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all placeholder:text-slate-300"
+                className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:bg-slate-900 transition-all placeholder:text-slate-300"
               />
             </div>
             <div className="flex items-center gap-2 w-full">
@@ -334,7 +334,7 @@ const FleetPaymentManagement: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as 'all' | 'paid' | 'unpaid')}
-                  className="w-full md:w-auto px-6 py-3 bg-white border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer hover:bg-slate-50 transition-all"
+                  className="w-full md:w-auto px-6 py-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                 >
                   <option value="all">Status: ALL</option>
                   <option value="paid">Status: PAID</option>
@@ -351,8 +351,8 @@ const FleetPaymentManagement: React.FC = () => {
             <FaSpinner className="w-10 h-10 text-blue-600 animate-spin" />
           </div>
         ) : filteredTrucks.length === 0 ? (
-          <div className="bg-white rounded-[2rem] border border-slate-100 dashed border-2 p-12 text-center shadow-none flex flex-col items-center justify-center">
-            <div className="w-20 h-20 bg-slate-50 rounded-[1.5rem] flex items-center justify-center mb-6">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 dashed border-2 p-12 text-center shadow-none flex flex-col items-center justify-center">
+            <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800/50 rounded-[1.5rem] flex items-center justify-center mb-6">
               <FaTruck className="w-8 h-8 text-slate-300" />
             </div>
             <h3 className="text-xl font-black text-[#0f172a] uppercase tracking-tight mb-2">No Data Detected</h3>
@@ -368,7 +368,7 @@ const FleetPaymentManagement: React.FC = () => {
             <div className="hidden md:block">
               <StandardDataTable<InTransitTruck>
                 embedded
-                className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-2"
+                className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm p-2"
                 columns={paymentColumns}
                 data={filteredTrucks}
                 getRowId={(row) => row.id}
@@ -385,7 +385,7 @@ const FleetPaymentManagement: React.FC = () => {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
               {filteredTrucks.map((truck) => (
-                <div key={truck.id} className="bg-white rounded-[1.5rem] border border-slate-100 p-6 shadow-sm">
+                <div key={truck.id} className="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">

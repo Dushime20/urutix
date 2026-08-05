@@ -206,7 +206,7 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
 
     return createPortal(
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-6 text-white rounded-t-2xl">
             <div className="flex items-center justify-between mb-4">
@@ -226,10 +226,10 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
                   <JourneyIcon className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
                     {recommendation.journey === 'smart-matching' ? 'Smart Matching' : 'Publish for Bid'}
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-slate-300">
                     {recommendation.journey === 'smart-matching' 
                       ? 'AI-powered instant matching' 
                       : 'Competitive bidding from multiple carriers'}
@@ -239,27 +239,27 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
 
               {/* Metrics */}
               <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="bg-white rounded-xl p-3 text-center">
+                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 text-center">
                   <Clock className="w-5 h-5 text-violet-600 mx-auto mb-1" />
-                  <p className="text-xs text-gray-600">Time</p>
-                  <p className="text-sm font-bold text-gray-900">{recommendation.estimatedTime}</p>
+                  <p className="text-xs text-gray-600 dark:text-slate-300">Time</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{recommendation.estimatedTime}</p>
                 </div>
-                <div className="bg-white rounded-xl p-3 text-center">
+                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 text-center">
                   <DollarSign className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
-                  <p className="text-xs text-gray-600">Cost</p>
-                  <p className="text-sm font-bold text-gray-900">{recommendation.estimatedCost}</p>
+                  <p className="text-xs text-gray-600 dark:text-slate-300">Cost</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{recommendation.estimatedCost}</p>
                 </div>
-                <div className="bg-white rounded-xl p-3 text-center">
+                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 text-center">
                   <Target className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                  <p className="text-xs text-gray-600">Success Rate</p>
-                  <p className="text-sm font-bold text-gray-900">{recommendation.successRate}%</p>
+                  <p className="text-xs text-gray-600 dark:text-slate-300">Success Rate</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{recommendation.successRate}%</p>
                 </div>
               </div>
 
               {/* Confidence Bar */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Confidence Level</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Confidence Level</span>
                   <span className="text-sm font-bold text-violet-600">{recommendation.confidence}%</span>
                 </div>
                 <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -273,15 +273,15 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
 
             {/* Reasoning */}
             <div className="mb-6">
-              <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <h4 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-emerald-600" />
                 Why this recommendation?
               </h4>
               <div className="space-y-2">
                 {recommendation.reasoning.map((reason, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl">
                     <span className="text-xl">{reason.split(' ')[0]}</span>
-                    <p className="text-sm text-gray-700 flex-1">{reason.split(' ').slice(1).join(' ')}</p>
+                    <p className="text-sm text-gray-700 dark:text-slate-300 flex-1">{reason.split(' ').slice(1).join(' ')}</p>
                   </div>
                 ))}
               </div>
@@ -291,7 +291,7 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
             <div className="flex gap-3">
               <button
                 onClick={() => setStep(1)}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold transition-all flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Retake Quiz
@@ -307,7 +307,7 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
 
             <button
               onClick={onClose}
-              className="w-full mt-3 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+              className="w-full mt-3 py-2 text-gray-600 dark:text-slate-300 hover:text-gray-800 font-medium transition-colors"
             >
               Choose manually instead
             </button>
@@ -322,22 +322,22 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100">
+        <div className="p-6 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="bg-violet-100 rounded-xl p-2">
                 <HelpCircle className="w-6 h-6 text-violet-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Journey Decision Helper</h2>
-                <p className="text-sm text-gray-600">Answer a few questions to get personalized guidance</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Journey Decision Helper</h2>
+                <p className="text-sm text-gray-600 dark:text-slate-300">Answer a few questions to get personalized guidance</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:text-slate-300 transition-colors"
             >
               <XCircle className="w-6 h-6" />
             </button>
@@ -346,7 +346,7 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Question {step} of {questions.length}</span>
+              <span className="text-gray-600 dark:text-slate-300">Question {step} of {questions.length}</span>
               <span className="text-violet-600 font-semibold">{Math.round(progress)}%</span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -365,7 +365,7 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
               <div className="bg-gradient-to-br from-violet-100 to-purple-100 rounded-xl p-3">
                 <Icon className="w-6 h-6 text-violet-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">{currentQuestion.title}</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{currentQuestion.title}</h3>
             </div>
           </div>
 
@@ -378,14 +378,14 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
                 className={`p-6 rounded-xl border-2 transition-all text-left hover:border-violet-400 hover:bg-violet-50 ${
                   factors[currentQuestion.id as keyof DecisionFactors] === option.value
                     ? 'border-violet-600 bg-violet-50'
-                    : 'border-gray-200'
+                    : 'border-gray-200 dark:border-slate-700'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-3xl">{option.icon}</span>
                   <div className="flex-1">
-                    <h4 className="font-bold text-gray-900 mb-1">{option.label}</h4>
-                    <p className="text-sm text-gray-600">{option.description}</p>
+                    <h4 className="font-bold text-gray-900 dark:text-white mb-1">{option.label}</h4>
+                    <p className="text-sm text-gray-600 dark:text-slate-300">{option.description}</p>
                   </div>
                   {factors[currentQuestion.id as keyof DecisionFactors] === option.value && (
                     <CheckCircle className="w-5 h-5 text-violet-600 flex-shrink-0" />
@@ -400,7 +400,7 @@ export const JourneyDecisionHelper: React.FC<JourneyDecisionHelperProps> = ({
             {step > 1 && (
               <button
                 onClick={() => setStep(step - 1)}
-                className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold transition-all flex items-center gap-2"
+                className="px-6 py-3 border-2 border-gray-300 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold transition-all flex items-center gap-2"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Previous

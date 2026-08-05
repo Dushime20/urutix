@@ -73,7 +73,7 @@ const SubscriptionManagement: React.FC = () => {
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-black uppercase tracking-wider transition-all border-b-2 -mb-px ${
                   isActive
                     ? 'border-primary-600 text-primary-600 bg-primary-50/80 dark:bg-primary-950/30'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <Icon size={16} />

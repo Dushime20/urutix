@@ -58,6 +58,76 @@
     @apply bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-100;
   }
 
+  /*
+   * Dark-mode surface safety net:
+   * Many dashboard cards use bg-white / bg-*-50 without a reliable dark: pair.
+   * Force card-like and page-shell surfaces so dark mode stays consistent across
+   * cargo, fleet, driver, lender, customs, tenant-admin, and super-admin dashboards.
+   * Opacity variants (bg-white/10) and small chips (rounded-full) are left alone.
+   */
+  html.dark .bg-white.rounded-3xl,
+  html.dark .bg-white.rounded-2xl,
+  html.dark .bg-white.rounded-xl,
+  html.dark .bg-white.rounded-lg,
+  html.dark .bg-white.rounded-\[40px\],
+  html.dark .bg-white.rounded-\[32px\],
+  html.dark .bg-white.rounded-\[3rem\],
+  html.dark .bg-white.rounded-\[2\.5rem\],
+  html.dark .bg-white.rounded-\[2rem\],
+  html.dark .bg-white.rounded-\[1\.75rem\] {
+    background-color: rgb(15 23 42) !important; /* slate-900 */
+  }
+
+  html.dark .bg-white\/95 {
+    background-color: rgb(15 23 42 / 0.95) !important;
+  }
+
+  html.dark .bg-white.shadow-sm,
+  html.dark .bg-white.shadow-md,
+  html.dark .bg-white.shadow-lg,
+  html.dark .bg-white.shadow-xl {
+    background-color: rgb(15 23 42) !important;
+  }
+
+  html.dark .min-h-screen.bg-slate-50,
+  html.dark .min-h-screen.bg-gray-50,
+  html.dark .min-h-screen.bg-slate-50\/50,
+  html.dark .min-h-screen.bg-gray-50\/50,
+  html.dark .min-h-screen.bg-slate-50\/30,
+  html.dark .min-h-screen.bg-gray-50\/30 {
+    background-color: rgb(2 6 23) !important; /* slate-950 */
+  }
+
+  html.dark .sticky.bg-slate-50,
+  html.dark .sticky.bg-gray-50,
+  html.dark .sticky.bg-slate-50\/95,
+  html.dark .sticky.bg-gray-50\/95,
+  html.dark .sticky.bg-slate-50\/50,
+  html.dark .sticky.bg-gray-50\/50 {
+    background-color: rgb(2 6 23) !important; /* slate-950 */
+  }
+
+  html.dark .bg-slate-50.rounded-3xl,
+  html.dark .bg-slate-50.rounded-2xl,
+  html.dark .bg-slate-50.rounded-xl,
+  html.dark .bg-slate-50.rounded-lg,
+  html.dark .bg-gray-50.rounded-3xl,
+  html.dark .bg-gray-50.rounded-2xl,
+  html.dark .bg-gray-50.rounded-xl,
+  html.dark .bg-gray-50.rounded-lg,
+  html.dark .bg-\[\#fafafa\].rounded-3xl,
+  html.dark .bg-\[\#fafafa\].rounded-2xl,
+  html.dark .bg-\[\#fafafa\].rounded-xl,
+  html.dark .bg-\[\#fafafa\].rounded-lg {
+    background-color: rgb(30 41 59 / 0.5) !important; /* slate-800/50 */
+  }
+
+  html.dark .fixed.bg-white,
+  html.dark .fixed.top-0.bg-white,
+  html.dark header.bg-white {
+    background-color: rgb(15 23 42) !important;
+  }
+
   /* Checkbox and Radio Dark Mode Styles */
   input[type="checkbox"],
   input[type="radio"] {

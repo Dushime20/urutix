@@ -87,14 +87,14 @@ const InsuranceReports: React.FC = () => {
     <div className="p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Insurance Reports</h1>
-          <p className="text-gray-600">Comprehensive insurance analytics and reporting</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Insurance Reports</h1>
+          <p className="text-gray-600 dark:text-slate-300">Comprehensive insurance analytics and reporting</p>
         </div>
 
         <div className="flex space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800"
           >
             <FaFilter className="mr-2" />
             Filters
@@ -111,10 +111,10 @@ const InsuranceReports: React.FC = () => {
       </div>
 
       {showFilters && (
-        <div className="bg-white rounded-lg border p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Report Type</label>
               <select
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
@@ -129,7 +129,7 @@ const InsuranceReports: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">Date Range</label>
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
@@ -154,7 +154,7 @@ const InsuranceReports: React.FC = () => {
         </div>
       )}
 
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-gray-200 dark:border-slate-700 mb-6">
         <nav className="-mb-px flex space-x-8">
           {['premium', 'claims', 'coverage', 'risk'].map((type) => (
             <button
@@ -163,7 +163,7 @@ const InsuranceReports: React.FC = () => {
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 reportType === type
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
               }`}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)} Reports
@@ -174,9 +174,9 @@ const InsuranceReports: React.FC = () => {
 
       {reportType === 'premium' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Premium vs Claims Trend</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Premium vs Claims Trend</h3>
               <div className="flex space-x-2">
                 <button
                   onClick={() => downloadReport('pdf')}
@@ -208,48 +208,48 @@ const InsuranceReports: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
               <div className="flex items-center">
                 <FaDollarSign className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Total Premium</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     ${premiumData.reduce((sum, p) => sum + p.premium, 0).toLocaleString()}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
               <div className="flex items-center">
                 <FaExclamationTriangle className="h-8 w-8 text-red-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Total Claims</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     ${premiumData.reduce((sum, p) => sum + p.claims, 0).toLocaleString()}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
               <div className="flex items-center">
                 <FaShieldAlt className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Net Cost</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     ${premiumData.reduce((sum, p) => sum + p.netCost, 0).toLocaleString()}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
               <div className="flex items-center">
                 <FaChartBar className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500">Avg Monthly</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     ${Math.round(premiumData.reduce((sum, p) => sum + p.premium, 0) / premiumData.length).toLocaleString()}
                   </p>
                 </div>
@@ -261,9 +261,9 @@ const InsuranceReports: React.FC = () => {
 
       {reportType === 'claims' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Claims by Type</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Claims by Type</h3>
               <div className="flex space-x-2">
                 <button
                   onClick={() => downloadReport('pdf')}
@@ -316,8 +316,8 @@ const InsuranceReports: React.FC = () => {
       {reportType === 'coverage' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Coverage Distribution</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Coverage Distribution</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -339,8 +339,8 @@ const InsuranceReports: React.FC = () => {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-white rounded-lg border p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Coverage Details</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Coverage Details</h3>
               <div className="space-y-4">
                 {coverageData.map((coverage) => (
                   <div key={coverage.name} className="flex items-center justify-between">
@@ -349,7 +349,7 @@ const InsuranceReports: React.FC = () => {
                         className="w-4 h-4 rounded-full mr-3"
                         style={{ backgroundColor: coverage.color }}
                       />
-                      <span className="text-sm font-medium text-gray-900">{coverage.name}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{coverage.name}</span>
                     </div>
                     <span className="text-sm text-gray-500">{coverage.value}%</span>
                   </div>
@@ -362,8 +362,8 @@ const InsuranceReports: React.FC = () => {
 
       {reportType === 'risk' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Assessment</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg border p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Risk Assessment</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={riskAnalysisData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -377,7 +377,7 @@ const InsuranceReports: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {riskAnalysisData.map((risk) => (
-              <div key={risk.risk} className="bg-white rounded-lg border p-6">
+              <div key={risk.risk} className="bg-white dark:bg-slate-900 rounded-lg border p-6">
                 <div className="flex items-center">
                   <div
                     className="w-8 h-8 rounded-full mr-4"
@@ -385,7 +385,7 @@ const InsuranceReports: React.FC = () => {
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-500">{risk.risk}</p>
-                    <p className="text-2xl font-bold text-gray-900">{risk.policies}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{risk.policies}</p>
                     <p className="text-xs text-gray-400">{risk.percentage}% of total</p>
                   </div>
                 </div>
@@ -395,31 +395,31 @@ const InsuranceReports: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border p-6 mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Download Reports</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-lg border p-6 mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Download Reports</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => downloadReport('pdf')}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
           >
             <FaFileAlt className="h-6 w-6 text-red-400 mr-2" />
-            <span className="text-gray-600">PDF Report</span>
+            <span className="text-gray-600 dark:text-slate-300">PDF Report</span>
           </button>
 
           <button
             onClick={() => downloadReport('excel')}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
           >
             <FaChartBar className="h-6 w-6 text-green-400 mr-2" />
-            <span className="text-gray-600">Excel Report</span>
+            <span className="text-gray-600 dark:text-slate-300">Excel Report</span>
           </button>
 
           <button
             onClick={() => downloadReport('csv')}
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
           >
             <FaDownload className="h-6 w-6 text-blue-400 mr-2" />
-            <span className="text-gray-600">CSV Data</span>
+            <span className="text-gray-600 dark:text-slate-300">CSV Data</span>
           </button>
         </div>
       </div>

@@ -93,9 +93,9 @@ const SystemHealthWidget: React.FC = () => {
                             const Icon = item.icon;
                             const statusStyle = getStatusColor(item.status);
                             return (
-                                <div key={i} className="p-3 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-100 transition-all group">
+                                <div key={i} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-transparent hover:border-slate-100 dark:border-slate-800 transition-all group">
                                     <div className="flex items-center justify-between mb-2">
-                                        <div className="w-8 h-8 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-400 group-hover:text-primary-600 transition-colors">
+                                        <div className="w-8 h-8 bg-white dark:bg-slate-900 rounded-xl shadow-sm flex items-center justify-center text-slate-400 group-hover:text-primary-600 transition-colors">
                                             <Icon size={14} />
                                         </div>
                                         <div className={`p-1.5 rounded-lg ${statusStyle}`}>
@@ -119,9 +119,9 @@ const SystemHealthWidget: React.FC = () => {
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
                                         <res.icon size={12} className="text-slate-400" />
-                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{res.label}</span>
+                                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">{res.label}</span>
                                     </div>
-                                    <span className="text-xs font-black text-slate-900">{res.usage}%</span>
+                                    <span className="text-xs font-black text-slate-900 dark:text-white">{res.usage}%</span>
                                 </div>
                                 <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                     <div

@@ -435,7 +435,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading truck records...</p>
+          <p className="text-gray-600 dark:text-slate-300">Loading truck records...</p>
         </div>
       </div>
     );
@@ -445,7 +445,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
     return (
       <div className="p-6 text-center">
         <FaTruck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Truck Not Found</h3>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Truck Not Found</h3>
         <p className="text-gray-500">The requested truck could not be found.</p>
       </div>
     );
@@ -492,8 +492,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{truck.plateNumber || truck.licensePlate || truck.name} - Complete Records</h1>
-            <p className="text-gray-600">VIN: {truck.vin || 'N/A'}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{truck.plateNumber || truck.licensePlate || truck.name} - Complete Records</h1>
+            <p className="text-gray-600 dark:text-slate-300">VIN: {truck.vin || 'N/A'}</p>
           </div>
           <div className="flex items-center gap-2">
             <button className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 flex items-center gap-2">
@@ -510,46 +510,46 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
           <div className="flex items-center">
             <FaFileAlt className="w-8 h-8 text-primary-500" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Documents</p>
-              <p className="text-2xl font-bold text-gray-900">{truck.documents?.length || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{truck.documents?.length || 0}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
           <div className="flex items-center">
             <FaTools className="w-8 h-8 text-orange-600" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Maintenance</p>
-              <p className="text-2xl font-bold text-gray-900">{truck.maintenance?.length || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{truck.maintenance?.length || 0}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
           <div className="flex items-center">
             <FaShieldAlt className="w-8 h-8 text-green-600" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Inspections</p>
-              <p className="text-2xl font-bold text-gray-900">{truck.inspections?.length || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{truck.inspections?.length || 0}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4">
           <div className="flex items-center">
             <FaExclamationTriangle className="w-8 h-8 text-red-600" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Alerts</p>
-              <p className="text-2xl font-bold text-gray-900">3</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-b border-gray-200 mb-6">
+      <div className="border-b border-gray-200 dark:border-slate-700 mb-6">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'overview', label: 'Overview', icon: FaTruck },
@@ -565,7 +565,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               onClick={() => setActiveTab(tab.id)}
               className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${activeTab === tab.id
                 ? 'border-primary-500 text-primary-500'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-slate-300 hover:border-gray-300'
                 }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -576,10 +576,10 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700">
         {activeTab === 'overview' && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Records Dashboard</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Records Dashboard</h2>
 
             {/* Alerts Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -629,11 +629,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             {/* Records Status Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Insurance Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <FaFileAlt className="w-5 h-5 text-primary-500" />
-                    <h3 className="font-medium text-gray-900">Insurance</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">Insurance</h3>
                   </div>
                   {truck.insuranceExpiry && (
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -658,11 +658,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               </div>
 
               {/* Registration Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <FaFileAlt className="w-5 h-5 text-purple-600" />
-                    <h3 className="font-medium text-gray-900">Registration</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">Registration</h3>
                   </div>
                   {truck.registrationExpiry && (
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -685,11 +685,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               </div>
 
               {/* Maintenance Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <FaTools className="w-5 h-5 text-orange-600" />
-                    <h3 className="font-medium text-gray-900">Maintenance</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">Maintenance</h3>
                   </div>
                   {truck.nextMaintenanceDate && (
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -712,11 +712,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
               </div>
 
               {/* Inspection Card */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <FaShieldAlt className="w-5 h-5 text-green-600" />
-                    <h3 className="font-medium text-gray-900">Safety & Inspection</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">Safety & Inspection</h3>
                   </div>
                   {truck.roadworthyCertExpiry && (
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -740,7 +740,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {activeTab === 'documents' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Documents</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Documents</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -775,12 +775,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             ) : (
               <div className="space-y-4">
                 {documents.map(doc => (
-                  <div key={doc.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={doc.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FaFileAlt className="w-6 h-6 text-primary-500" />
                         <div>
-                          <h3 className="font-medium text-gray-900">{doc.title}</h3>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{doc.title}</h3>
                           <p className="text-sm text-gray-500">
                             {doc.documentNumber ? `#${doc.documentNumber} • ` : ''}
                             {doc.documentType} • {doc.fileName}
@@ -813,11 +813,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                                   setLoadingDocumentView(false);
                                 }
                               }}
-                              className="text-gray-400 hover:text-gray-600"
+                              className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                             >
                               <FaEye className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               View Document
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                             </div>
@@ -838,7 +838,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           >
                             <FaTrash className="w-4 h-4" />
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             Delete Document
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                           </div>
@@ -846,7 +846,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                       </div>
                     </div>
                     {doc.description && (
-                      <p className="text-sm text-gray-600 mt-2">{doc.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-slate-300 mt-2">{doc.description}</p>
                     )}
                     <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                       {doc.issueDate && (
@@ -880,7 +880,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {activeTab === 'maintenance' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Maintenance Records</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Maintenance Records</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -913,12 +913,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </div>
               ) : (
                 (maintenanceRecords.length > 0 ? maintenanceRecords : truck.maintenance || []).map(record => (
-                  <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={record.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FaTools className="w-6 h-6 text-orange-600" />
                         <div>
-                          <h3 className="font-medium text-gray-900">{record.title}</h3>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{record.title}</h3>
                           <p className="text-sm text-gray-500">{record.description}</p>
                         </div>
                       </div>
@@ -932,11 +932,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         <div className="relative group">
                           <button
                             onClick={() => setEditingMaintenance(record)}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                           >
                             <FaEdit className="w-4 h-4" />
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             Edit Maintenance
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                           </div>
@@ -965,7 +965,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           >
                             <FaTrash className="w-4 h-4" />
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             Delete Maintenance
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                           </div>
@@ -1004,7 +1004,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {activeTab === 'inspections' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Inspection Records</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Inspection Records</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -1037,12 +1037,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </div>
               ) : (
                 (inspectionRecords.length > 0 ? inspectionRecords : truck.inspections || []).map(record => (
-                  <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={record.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FaShieldAlt className="w-6 h-6 text-green-600" />
                         <div>
-                          <h3 className="font-medium text-gray-900">{record.title}</h3>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{record.title}</h3>
                           <p className="text-sm text-gray-500">Inspector: {record.inspector}</p>
                         </div>
                       </div>
@@ -1058,11 +1058,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         <div className="relative group">
                           <button
                             onClick={() => setEditingInspection(record)}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                           >
                             <FaEdit className="w-4 h-4" />
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             Edit Inspection
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                           </div>
@@ -1091,7 +1091,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           >
                             <FaTrash className="w-4 h-4" />
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             Delete Inspection
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                           </div>
@@ -1132,7 +1132,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {activeTab === 'insurance' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Insurance Records</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Insurance Records</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -1165,12 +1165,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </div>
               ) : (
                 (insuranceRecords.length > 0 ? insuranceRecords : truck.insurance || []).map(record => (
-                  <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={record.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <FaShieldAlt className="w-6 h-6 text-primary-500" />
                         <div>
-                          <h3 className="font-medium text-gray-900">{record.policyType} Insurance</h3>
+                          <h3 className="font-medium text-gray-900 dark:text-white">{record.policyType} Insurance</h3>
                           <p className="text-sm text-gray-500">Policy: {record.policyNumber}</p>
                         </div>
                       </div>
@@ -1181,11 +1181,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         <div className="relative group">
                           <button
                             onClick={() => setEditingInsurance(record)}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                           >
                             <FaEdit className="w-4 h-4" />
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             Edit Insurance
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                           </div>
@@ -1214,7 +1214,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           >
                             <FaTrash className="w-4 h-4" />
                           </button>
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                             Delete Insurance
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                           </div>
@@ -1265,7 +1265,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {activeTab === 'fuel' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Fuel Records</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Fuel Records</h2>
               <button
                 onClick={() => setShowAddFuel(true)}
                 className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
@@ -1288,12 +1288,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 {fuelRecords.map(record => {
                   const costPerGallon = record.quantity > 0 ? (record.cost / record.quantity).toFixed(2) : '0.00';
                   return (
-                    <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={record.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <FaGasPump className="w-6 h-6 text-green-600" />
                           <div>
-                            <h3 className="font-medium text-gray-900">Fuel Purchase</h3>
+                            <h3 className="font-medium text-gray-900 dark:text-white">Fuel Purchase</h3>
                             <p className="text-sm text-gray-500">
                               {record.quantity} {record.fuelType === 'electric' ? 'kWh' : 'gallons'} • ${costPerGallon}/{record.fuelType === 'electric' ? 'kWh' : 'gallon'}
                             </p>
@@ -1301,16 +1301,16 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <span className="text-lg font-bold text-gray-900">${record.cost.toFixed(2)}</span>
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">${record.cost.toFixed(2)}</span>
                           </div>
                           <div className="relative group">
                             <button
                               onClick={() => setEditingFuel(record)}
-                              className="text-gray-400 hover:text-gray-600"
+                              className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                             >
                               <FaEdit className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               Edit Fuel Record
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                             </div>
@@ -1339,7 +1339,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                             >
                               <FaTrash className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               Delete Fuel Record
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                             </div>
@@ -1377,8 +1377,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         </div>
                       </div>
                       {record.notes && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <p className="text-sm text-gray-600">{record.notes}</p>
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                          <p className="text-sm text-gray-600 dark:text-slate-300">{record.notes}</p>
                         </div>
                       )}
                     </div>
@@ -1392,7 +1392,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {activeTab === 'tires' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Tire Records</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Tire Records</h2>
               <button
                 onClick={() => setShowAddTire(true)}
                 className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
@@ -1428,12 +1428,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                     }
                   };
                   return (
-                    <div key={tire.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={tire.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <FaTachometerAlt className="w-6 h-6 text-purple-600" />
                           <div>
-                            <h3 className="font-medium text-gray-900">{tire.brand} {tire.model}</h3>
+                            <h3 className="font-medium text-gray-900 dark:text-white">{tire.brand} {tire.model}</h3>
                             <p className="text-sm text-gray-500">
                               {tire.position.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} • {tire.size}
                             </p>
@@ -1446,11 +1446,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           <div className="relative group">
                             <button
                               onClick={() => setEditingTire(tire)}
-                              className="text-gray-400 hover:text-gray-600"
+                              className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                             >
                               <FaEdit className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               Edit Tire Record
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                             </div>
@@ -1479,7 +1479,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                             >
                               <FaTrash className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               Delete Tire Record
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                             </div>
@@ -1523,8 +1523,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         )}
                       </div>
                       {tire.notes && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <p className="text-sm text-gray-600">{tire.notes}</p>
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                          <p className="text-sm text-gray-600 dark:text-slate-300">{tire.notes}</p>
                         </div>
                       )}
                     </div>
@@ -1539,7 +1539,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {false && activeTab === 'compliance' && (
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Compliance Records</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Compliance Records</h2>
               <button
                 onClick={() => setShowAddCompliance(true)}
                 className="px-3 py-1 bg-primary-500 text-white rounded text-sm hover:bg-primary-600 flex items-center gap-1"
@@ -1577,12 +1577,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                     }
                   };
                   return (
-                    <div key={record.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={record.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <FaCertificate className="w-6 h-6 text-primary-500" />
                           <div>
-                            <h3 className="font-medium text-gray-900">{record.requirement}</h3>
+                            <h3 className="font-medium text-gray-900 dark:text-white">{record.requirement}</h3>
                             <p className="text-sm text-gray-500">{record.regulation}</p>
                           </div>
                         </div>
@@ -1593,11 +1593,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                           <div className="relative group">
                             <button
                               onClick={() => setEditingCompliance(record)}
-                              className="text-gray-400 hover:text-gray-600"
+                              className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                             >
                               <FaEdit className="w-4 h-4" />
                             </button>
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                               Edit Compliance Record
                               <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                             </div>
@@ -1627,8 +1627,8 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                         )}
                       </div>
                       {record.notes && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <p className="text-sm text-gray-600">{record.notes}</p>
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                          <p className="text-sm text-gray-600 dark:text-slate-300">{record.notes}</p>
                         </div>
                       )}
                     </div>
@@ -1643,7 +1643,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       {/* OCR Upload Modal */}
       {showOcrUpload && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <OcrDocumentUpload
               documentType={ocrDocumentType}
               onExtractionComplete={async (result) => {
@@ -1714,11 +1714,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
       {/* Document Viewer Modal */}
       {viewingDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[10000]">
-          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{viewingDocument.title}</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{viewingDocument.title}</h2>
                 <p className="text-sm text-gray-500 mt-1">
                   {viewingDocument.fileName} • {viewingDocument.documentType}
                 </p>
@@ -1746,7 +1746,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                     <FaDownload className="w-4 h-4" />
                     Download
                   </button>
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     Download Document
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                   </div>
@@ -1760,11 +1760,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                       setViewingDocument(null);
                       setDocumentViewUrl(null);
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
                   >
                     <FaTimesCircle className="w-6 h-6" />
                   </button>
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-gray-900 text-xs font-medium rounded-md shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white text-xs font-medium rounded-md shadow-lg border border-gray-200 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
                     Close
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
                   </div>
@@ -1773,12 +1773,12 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
             </div>
 
             {/* Document Content */}
-            <div className="flex-1 overflow-auto p-6 bg-gray-50">
+            <div className="flex-1 overflow-auto p-6 bg-gray-50 dark:bg-slate-800/50">
               {loadingDocumentView ? (
                 <div className="flex items-center justify-center min-h-[400px]">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading document...</p>
+                    <p className="text-gray-600 dark:text-slate-300">Loading document...</p>
                   </div>
                 </div>
               ) : documentViewUrl ? (
@@ -1803,7 +1803,7 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                   ) : (
                     <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
                       <FaFileAlt className="w-16 h-16 text-gray-400 mb-4" />
-                      <p className="text-gray-600 mb-4">Preview not available for this file type</p>
+                      <p className="text-gray-600 dark:text-slate-300 mb-4">Preview not available for this file type</p>
                       <button
                         onClick={async () => {
                           try {
@@ -1830,15 +1830,15 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
                 </>
               ) : (
                 <div className="flex items-center justify-center min-h-[400px]">
-                  <p className="text-gray-600">Failed to load document</p>
+                  <p className="text-gray-600 dark:text-slate-300">Failed to load document</p>
                 </div>
               )}
             </div>
 
             {/* Footer with document info */}
             {viewingDocument.description && (
-              <div className="p-4 border-t border-gray-200 bg-white">
-                <p className="text-sm text-gray-600">{viewingDocument.description}</p>
+              <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                <p className="text-sm text-gray-600 dark:text-slate-300">{viewingDocument.description}</p>
               </div>
             )}
           </div>
@@ -2133,17 +2133,17 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <FaTools className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? 'Edit Maintenance Record' : 'Schedule Maintenance'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
@@ -2153,7 +2153,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Maintenance Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Maintenance Type <span className="text-red-500">*</span>
               </label>
               <select
@@ -2173,7 +2173,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
 
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -2189,7 +2189,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Description <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -2206,7 +2206,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
             {/* Date and Cost Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -2219,7 +2219,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Cost ($) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -2239,7 +2239,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
             {/* Status and Priority Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Status <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -2257,7 +2257,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Priority <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -2279,7 +2279,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
             {/* Next Due Date and Mileage Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Next Due Date
                 </label>
                 <input
@@ -2291,7 +2291,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Mileage
                 </label>
                 <input
@@ -2309,7 +2309,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
             {/* Assigned Technician and Location Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Assigned Technician
                 </label>
                 <input
@@ -2322,7 +2322,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Location
                 </label>
                 <input
@@ -2338,7 +2338,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
 
             {/* Labor Hours */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Labor Hours
               </label>
               <input
@@ -2355,7 +2355,7 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Notes
               </label>
               <textarea
@@ -2369,12 +2369,12 @@ const ScheduleMaintenanceModal: React.FC<ScheduleMaintenanceModalProps> = ({ tru
             </div>
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -2530,17 +2530,17 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <FaClipboardCheck className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? 'Edit Inspection Record' : 'Schedule Inspection'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
@@ -2549,7 +2549,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Inspection Type <span className="text-red-500">*</span>
               </label>
               <select
@@ -2568,7 +2568,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -2583,7 +2583,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Inspector <span className="text-red-500">*</span>
               </label>
               <input
@@ -2599,7 +2599,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Inspection Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -2612,7 +2612,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Next Inspection Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -2628,7 +2628,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Status <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -2646,7 +2646,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Score (0-100)
                 </label>
                 <input
@@ -2664,7 +2664,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Cost ($)
                 </label>
                 <input
@@ -2679,7 +2679,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Mileage
                 </label>
                 <input
@@ -2695,7 +2695,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Location
               </label>
               <input
@@ -2709,7 +2709,7 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Notes
               </label>
               <textarea
@@ -2731,17 +2731,17 @@ const ScheduleInspectionModal: React.FC<ScheduleInspectionModalProps> = ({ truck
                 onChange={handleChange}
                 className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
               />
-              <label htmlFor="isRequired" className="ml-2 text-sm font-medium text-gray-700">
+              <label htmlFor="isRequired" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                 Required Inspection
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -2963,17 +2963,17 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <FaShieldAlt className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? 'Edit Insurance Record' : 'Add Insurance'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
@@ -2983,7 +2983,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Policy Number <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -2997,7 +2997,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Insurance Company <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3014,7 +3014,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Policy Type <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -3032,7 +3032,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Status <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -3053,7 +3053,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Coverage Amount ($) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3069,7 +3069,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Deductible ($)
                 </label>
                 <input
@@ -3086,7 +3086,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Premium ($)
               </label>
               <input
@@ -3103,7 +3103,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Start Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3116,7 +3116,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   End Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3132,7 +3132,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Agent Name
                 </label>
                 <input
@@ -3145,7 +3145,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Agent Contact
                 </label>
                 <input
@@ -3160,7 +3160,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Insurance Document
               </label>
               <div className="mt-1">
@@ -3170,7 +3170,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                     className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary-500 transition-colors"
                   >
                     <FaUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-slate-300">
                       Click to upload or drag and drop
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
@@ -3201,10 +3201,10 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                   </div>
                 )}
                 {file && !preview && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-300 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <FaFileAlt className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm text-gray-700">{file.name}</span>
+                      <span className="text-sm text-gray-700 dark:text-slate-300">{file.name}</span>
                     </div>
                     <button
                       type="button"
@@ -3221,10 +3221,10 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                   </div>
                 )}
                 {formData.documentUrl && !file && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-300 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <FaFileAlt className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm text-gray-700">Existing document attached</span>
+                      <span className="text-sm text-gray-700 dark:text-slate-300">Existing document attached</span>
                     </div>
                     <button
                       type="button"
@@ -3249,7 +3249,7 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Notes
               </label>
               <textarea
@@ -3271,17 +3271,17 @@ const AddInsuranceModal: React.FC<AddInsuranceModalProps> = ({ truckId, insuranc
                 onChange={handleChange}
                 className="w-4 h-4 text-primary-500 border-gray-300 rounded focus:ring-primary-500"
               />
-              <label htmlFor="autoRenewal" className="ml-2 text-sm font-medium text-gray-700">
+              <label htmlFor="autoRenewal" className="ml-2 text-sm font-medium text-gray-700 dark:text-slate-300">
                 Auto Renewal
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting || uploadingDocument}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -3393,17 +3393,17 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <FaGasPump className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? 'Edit Fuel Record' : 'Add Fuel Record'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
@@ -3412,7 +3412,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3425,7 +3425,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Fuel Type <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -3446,7 +3446,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Quantity ({formData.fuelType === 'electric' ? 'kWh' : 'gallons'}) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3462,7 +3462,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Total Cost ($) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3481,7 +3481,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Mileage <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3496,7 +3496,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Location <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3513,7 +3513,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Fuel Efficiency (mpg)
                 </label>
                 <input
@@ -3528,7 +3528,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Driver
                 </label>
                 <input
@@ -3543,7 +3543,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Receipt URL or Reference
               </label>
               <input
@@ -3557,7 +3557,7 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Notes
               </label>
               <textarea
@@ -3570,12 +3570,12 @@ const AddFuelRecordModal: React.FC<AddFuelRecordModalProps> = ({ truckId, fuel, 
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -3703,17 +3703,17 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <FaTachometerAlt className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? 'Edit Tire Record' : 'Add Tire Record'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
@@ -3722,7 +3722,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Position <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -3740,7 +3740,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Status <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -3761,7 +3761,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Brand <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3775,7 +3775,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Model <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3792,7 +3792,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Size <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3806,7 +3806,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Serial Number
                 </label>
                 <input
@@ -3822,7 +3822,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Installation Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3835,7 +3835,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Replacement Date
                 </label>
                 <input
@@ -3850,7 +3850,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Expected Lifespan (miles) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3865,7 +3865,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Current Mileage <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3883,7 +3883,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Tread Depth (32nds) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3899,7 +3899,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Pressure (PSI) <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -3917,7 +3917,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Cost ($)
               </label>
               <input
@@ -3933,7 +3933,7 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Notes
               </label>
               <textarea
@@ -3946,12 +3946,12 @@ const AddTireRecordModal: React.FC<AddTireRecordModalProps> = ({ truckId, tire, 
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -4058,17 +4058,17 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <FaCertificate className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isEditMode ? 'Edit Compliance Record' : 'Add Compliance Record'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
@@ -4076,7 +4076,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
         <div className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Regulation <span className="text-red-500">*</span>
               </label>
               <input
@@ -4091,7 +4091,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Requirement <span className="text-red-500">*</span>
               </label>
               <input
@@ -4107,7 +4107,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Status <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -4125,7 +4125,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Due Date <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -4141,7 +4141,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Last Checked <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -4154,7 +4154,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Next Check <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -4169,7 +4169,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Responsible Party <span className="text-red-500">*</span>
               </label>
               <input
@@ -4184,7 +4184,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Documentation URLs (comma-separated)
               </label>
               <input
@@ -4198,7 +4198,7 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Notes
               </label>
               <textarea
@@ -4211,12 +4211,12 @@ const AddComplianceRecordModal: React.FC<AddComplianceRecordModalProps> = ({ tru
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -4359,14 +4359,14 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
           <DialogTitle>Add Document</DialogTitle>
           <DialogDescription>Upload a new document for this truck</DialogDescription>
         </DialogHeader>
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <FaFileAlt className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-gray-900">Add Document</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Add Document</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="w-5 h-5" />
           </button>
@@ -4376,7 +4376,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Document Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Document Type <span className="text-red-500">*</span>
               </label>
               <select
@@ -4393,7 +4393,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
 
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Document Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -4408,7 +4408,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Description
               </label>
               <textarea
@@ -4422,7 +4422,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
 
             {/* Document Number */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Document Number
               </label>
               <input
@@ -4437,7 +4437,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
             {/* Issue Date and Expiry Date */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Issue Date
                 </label>
                 <input
@@ -4448,7 +4448,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Expiry Date
                 </label>
                 <input
@@ -4462,7 +4462,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
 
             {/* Priority */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Priority
               </label>
               <select
@@ -4479,7 +4479,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
 
             {/* File Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Document File *
               </label>
               <div
@@ -4499,7 +4499,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
                 {!file ? (
                   <div>
                     <FaUpload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-lg font-medium text-gray-900 mb-2">
+                    <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                       Upload Document
                     </p>
                     <p className="text-gray-500 mb-4">
@@ -4519,7 +4519,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
                 ) : (
                   <div>
                     <FaFileAlt className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                    <p className="text-lg font-medium text-gray-900 mb-2">{file.name}</p>
+                    <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">{file.name}</p>
                     <p className="text-sm text-gray-500 mb-4">
                       {(file.size / 1024).toFixed(2)} KB
                     </p>
@@ -4535,7 +4535,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
                           fileInputRef.current.value = '';
                         }
                       }}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                      className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300"
                     >
                       Remove File
                     </button>
@@ -4545,12 +4545,12 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({ truckId, onClose, o
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={uploading}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancel
               </button>

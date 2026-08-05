@@ -101,7 +101,7 @@ const AdminActivityFeed: React.FC = () => {
                 return (
                     <div
                         key={activity.id}
-                        className="flex gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-all group cursor-pointer border border-transparent hover:border-slate-100"
+                        className="flex gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group cursor-pointer border border-transparent hover:border-slate-100 dark:border-slate-800"
                     >
                         <div className="relative">
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-100 text-slate-500 transition-colors group-hover:bg-primary-500 group-hover:text-white">
@@ -113,7 +113,7 @@ const AdminActivityFeed: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                                <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-tight truncate group-hover:text-primary-600 transition-colors">
+                                <h4 className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight truncate group-hover:text-primary-600 transition-colors">
                                     {activity.title}
                                 </h4>
                                 <span className="text-[9px] font-black text-slate-400 whitespace-nowrap bg-slate-100 px-2 py-0.5 rounded-lg uppercase tracking-widest">
@@ -122,7 +122,7 @@ const AdminActivityFeed: React.FC = () => {
                             </div>
                             <p className="text-[10px] font-black text-slate-400 mt-1 line-clamp-1 uppercase tracking-widest opacity-80">{activity.description}</p>
                             <div className="mt-2 flex items-center justify-between">
-                                <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-[0.2em] bg-slate-100 text-slate-500 border border-slate-200">
+                                <span className="text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-[0.2em] bg-slate-100 text-slate-500 border border-slate-200 dark:border-slate-700">
                                     <TranslatedText text={activity.type} />
                                 </span>
                                 <button className="text-[9px] font-black text-slate-400 hover:text-primary-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all uppercase tracking-widest">

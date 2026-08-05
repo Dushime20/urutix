@@ -219,7 +219,7 @@ const AdminDashboardEnlite: React.FC = () => {
           icon={<FaChartLine />}
           headerColor="primary"
           actions={
-            <button className="px-4 py-2 border border-slate-200 text-[#2c5173] rounded-lg hover:bg-slate-50 transition-colors font-semibold text-sm">
+            <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-[#2c5173] rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors font-semibold text-sm">
               <TranslatedText text="View All" />
             </button>
           }

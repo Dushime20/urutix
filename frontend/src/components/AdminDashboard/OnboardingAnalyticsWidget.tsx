@@ -36,7 +36,7 @@ const OnboardingAnalyticsWidget: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded shadow p-4">
+    <div className="bg-white dark:bg-slate-900 rounded shadow p-4">
       <div className="font-bold mb-2">Onboarding Analytics</div>
       <Bar data={chartData} />
     </div>

@@ -40,7 +40,7 @@ const KPIWidget: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded shadow p-4 flex flex-col items-center justify-center min-h-[120px]">
+    <div className="bg-white dark:bg-slate-900 rounded shadow p-4 flex flex-col items-center justify-center min-h-[120px]">
       {isLoading ? (
         <div className="mt-4 text-gray-400">Loading...</div>
       ) : error ? (

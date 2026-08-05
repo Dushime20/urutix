@@ -7,7 +7,7 @@ const triggerWorkflow = (type: string, payload?: any) => {
 };
 
 const QuickActions: React.FC = () => (
-  <div className="bg-white rounded shadow p-4 min-h-[120px]">
+  <div className="bg-white dark:bg-slate-900 rounded shadow p-4 min-h-[120px]">
     <div className="text-xl font-bold mb-2">Quick Actions</div>
     <div className="flex gap-2">
       <button className="bg-blue-600 text-white px-3 py-1 rounded" onClick={() => triggerWorkflow('create-user')}>Create User</button>

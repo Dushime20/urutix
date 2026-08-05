@@ -529,7 +529,7 @@ const CurrencyFormModal: React.FC<CurrencyFormModalProps> = ({
             <button type="button" disabled={isBase}
               onClick={() => onChange('isActive', !form.isActive)}
               className={`relative w-11 h-6 rounded-full transition-colors ${form.isActive ? 'bg-[#2c5173]' : 'bg-slate-300 dark:bg-slate-700'} ${isBase ? 'opacity-50 cursor-not-allowed' : ''}`}>
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isActive ? 'translate-x-5' : ''}`} />
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white dark:bg-slate-900 rounded-full shadow transition-transform ${form.isActive ? 'translate-x-5' : ''}`} />
             </button>
           </div>
         </div>

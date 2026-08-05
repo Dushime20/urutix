@@ -105,32 +105,32 @@ const UserPermissionsModal: React.FC<{ user: User; onClose: () => void }> = ({ u
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#2c5173] flex items-center justify-center text-white font-black text-sm">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-base font-black text-slate-800">{user.name}</h2>
+              <h2 className="text-base font-black text-slate-800 dark:text-slate-100">{user.name}</h2>
               <p className="text-xs text-slate-400 font-semibold">{user.email} · <span className="text-[#2c5173]">{user.role}</span></p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl transition-all">
             <FaTimes />
           </button>
         </div>
 
         {/* Optional reason + expiry fields */}
-        <div className="px-6 py-3 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-3 items-end">
+        <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-[180px]">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Reason (optional)</label>
             <input
               value={reason}
               onChange={e => setReason(e.target.value)}
               placeholder="e.g. Temporary access for audit"
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+              className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
             />
           </div>
           <div>
@@ -139,12 +139,12 @@ const UserPermissionsModal: React.FC<{ user: User; onClose: () => void }> = ({ u
               type="date"
               value={expiresAt}
               onChange={e => setExpiresAt(e.target.value)}
-              className="px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+              className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
             />
           </div>
           <p className="text-[10px] text-slate-400 self-center">
             <FaKey className="inline mr-1" />
-            Click <span className="font-black text-emerald-600">Grant</span>, <span className="font-black text-red-600">Deny</span>, or <span className="font-black text-slate-600">Reset</span> to manage overrides.
+            Click <span className="font-black text-emerald-600">Grant</span>, <span className="font-black text-red-600">Deny</span>, or <span className="font-black text-slate-600 dark:text-slate-300">Reset</span> to manage overrides.
           </p>
         </div>
 
@@ -167,11 +167,11 @@ const UserPermissionsModal: React.FC<{ user: User; onClose: () => void }> = ({ u
                   </p>
                   <div className="space-y-1.5">
                     {(perms as any[]).map((p: any) => (
-                      <div key={p.id || p.code} className="flex items-center justify-between gap-3 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors">
+                      <div key={p.id || p.code} className="flex items-center justify-between gap-3 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 rounded-xl transition-colors">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${p.effective ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                           <div>
-                            <p className="text-xs font-bold text-slate-700 font-mono">{p.action || p.code}</p>
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">{p.action || p.code}</p>
                             {p.description && <p className="text-[10px] text-slate-400">{p.description}</p>}
                           </div>
                         </div>
@@ -203,7 +203,7 @@ const UserPermissionsModal: React.FC<{ user: User; onClose: () => void }> = ({ u
                               onClick={() => revokePerm({ permission: p.name || p.code })}
                               disabled={revoking}
                               title="Reset to role default"
-                              className="px-2.5 py-1.5 bg-slate-200 text-slate-600 text-[10px] font-black rounded-lg hover:bg-slate-300 transition-colors disabled:opacity-50"
+                              className="px-2.5 py-1.5 bg-slate-200 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg hover:bg-slate-300 transition-colors disabled:opacity-50"
                             >
                               Reset
                             </button>
@@ -219,8 +219,8 @@ const UserPermissionsModal: React.FC<{ user: User; onClose: () => void }> = ({ u
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 flex justify-end">
-          <button onClick={onClose} className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+          <button onClick={onClose} className="px-6 py-2.5 bg-slate-100 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-200 transition-colors">
             Close
           </button>
         </div>
@@ -278,13 +278,13 @@ const AddPermissionPanel: React.FC = () => {
           <FaPlus size={11} /> Add New Permission
         </button>
       ) : (
-        <div className="bg-white border border-[#2c5173]/20 rounded-2xl p-5 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-[#2c5173]/20 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <FaShieldAlt className="text-[#2c5173]" size={14} />
               Add New Permission
             </h3>
-            <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700">
+            <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 dark:text-slate-300">
               <FaTimes size={14} />
             </button>
           </div>
@@ -295,7 +295,7 @@ const AddPermissionPanel: React.FC = () => {
                 value={resource}
                 onChange={e => setResource(e.target.value)}
                 placeholder="e.g. cargo, fleet, users"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
+                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
               />
             </div>
             <div>
@@ -304,7 +304,7 @@ const AddPermissionPanel: React.FC = () => {
                 value={action}
                 onChange={e => setAction(e.target.value)}
                 placeholder="e.g. view, create, edit"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
+                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
               />
             </div>
             <div>
@@ -312,7 +312,7 @@ const AddPermissionPanel: React.FC = () => {
               <select
                 value={category}
                 onChange={e => { setCategory(e.target.value); setCustomCategory(''); }}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
               >
                 <option value="">Select category…</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -323,7 +323,7 @@ const AddPermissionPanel: React.FC = () => {
                   value={customCategory}
                   onChange={e => setCustomCategory(e.target.value)}
                   placeholder="custom_category"
-                  className="mt-1 w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
+                  className="mt-1 w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2c5173] outline-none"
                 />
               )}
             </div>
@@ -333,7 +333,7 @@ const AddPermissionPanel: React.FC = () => {
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder="What this permission allows"
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
+                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2c5173] focus:border-transparent outline-none"
               />
             </div>
           </div>
@@ -342,7 +342,7 @@ const AddPermissionPanel: React.FC = () => {
               Permission will be created as <code className="font-mono text-[#2c5173]">{resource || 'resource'}.{action || 'action'}</code>
             </p>
             <div className="flex gap-2">
-              <button onClick={() => setOpen(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-black hover:bg-slate-200 transition-colors">
+              <button onClick={() => setOpen(false)} className="px-4 py-2 bg-slate-100 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-black hover:bg-slate-200 transition-colors">
                 Cancel
               </button>
               <button
@@ -484,7 +484,7 @@ const UserManagement: React.FC = () => {
             {user.name.charAt(0)}
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">{user.name}</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</div>
             <div className="text-sm text-gray-500">{user.email}</div>
             {user.company && (
               <div className="text-xs text-gray-400">{user.company}</div>
@@ -520,7 +520,7 @@ const UserManagement: React.FC = () => {
       key: 'joinDate',
       label: tSync('Join Date'),
       render: (_v, user) => (
-        <span className="text-sm text-gray-900">
+        <span className="text-sm text-gray-900 dark:text-white">
           {new Date(user.joinDate).toLocaleDateString()}
         </span>
       ),
@@ -603,7 +603,7 @@ const UserManagement: React.FC = () => {
       description={<TranslatedText text="Manage all platform users and their permissions" />}
       actions={
         <>
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition-all">
+          <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg font-bold transition-all">
             <FaDownload size={14} />
             <span className="hidden sm:inline"><TranslatedText text="Export" /></span>
           </button>
@@ -618,12 +618,12 @@ const UserManagement: React.FC = () => {
     >
       <div className="safe-bottom">
       {/* ── Tab Navigation ──────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-100 mb-6 overflow-hidden">
-        <div className="border-b border-slate-100 bg-slate-50/50">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 mb-6 overflow-hidden">
+        <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950">
           <nav className="flex gap-1 px-6">
             <button
               onClick={() => setActiveTab('users')}
-              className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2 ${activeTab === 'users' ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+              className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2 ${activeTab === 'users' ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               <FaUsers size={12} />
               <TranslatedText text="Users" />
@@ -632,7 +632,7 @@ const UserManagement: React.FC = () => {
             {isSuperAdmin && (
               <button
                 onClick={() => setActiveTab('role-permissions')}
-                className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2 ${activeTab === 'role-permissions' ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                className={`py-4 px-4 border-b-2 font-black text-xs uppercase tracking-widest transition-colors flex items-center gap-2 ${activeTab === 'role-permissions' ? 'border-[#2c5173] text-[#2c5173]' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
               >
                 <FaShieldAlt size={12} />
                 <TranslatedText text="Role Permissions" />
@@ -653,7 +653,7 @@ const UserManagement: React.FC = () => {
 
       {/* ── Users Tab ───────────────────────────────────────────────────── */}
       {activeTab === 'users' && (<>
-      <div className="bg-white rounded-lg p-4 lg:p-6 border border-transparent">
+      <div className="bg-white dark:bg-slate-900 rounded-lg p-4 lg:p-6 border border-transparent">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div className="relative lg:col-span-2">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -748,7 +748,7 @@ const UserManagement: React.FC = () => {
       )}
 
       {/* Enhanced User Table */}
-      <div className="bg-white rounded-lg overflow-hidden border border-transparent p-4 lg:p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg overflow-hidden border border-transparent p-4 lg:p-6">
         <StandardDataTable
           embedded
           columns={userColumns}
@@ -770,12 +770,12 @@ const UserManagement: React.FC = () => {
       {/* User Details Modal */}
       {showUserModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-800"><TranslatedText text="User Details" /></h3>
               <button
                 onClick={closeUserModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:text-slate-300"
               >
                 <FaTimes />
               </button>
@@ -789,7 +789,7 @@ const UserManagement: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="text-xl font-semibold text-gray-800">{selectedUser.name}</h4>
-                  <p className="text-gray-600">{selectedUser.email}</p>
+                  <p className="text-gray-600 dark:text-slate-300">{selectedUser.email}</p>
                   <p className="text-sm text-gray-500">{selectedUser.company}</p>
                 </div>
               </div>
@@ -798,26 +798,26 @@ const UserManagement: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
                   <FaPhone className="text-gray-400" />
-                  <span className="text-gray-700">{selectedUser.phone || 'N/A'}</span>
+                  <span className="text-gray-700 dark:text-slate-300">{selectedUser.phone || 'N/A'}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <FaMapMarkerAlt className="text-gray-400" />
-                  <span className="text-gray-700">{selectedUser.location || 'N/A'}</span>
+                  <span className="text-gray-700 dark:text-slate-300">{selectedUser.location || 'N/A'}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <FaCalendarAlt className="text-gray-400" />
-                  <span className="text-gray-700"><TranslatedText text="Joined" /> {new Date(selectedUser.joinDate).toLocaleDateString()}</span>
+                  <span className="text-gray-700 dark:text-slate-300"><TranslatedText text="Joined" /> {new Date(selectedUser.joinDate).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <FaEnvelope className="text-gray-400" />
-                  <span className="text-gray-700"><TranslatedText text="Last login" />: {selectedUser.lastLogin}</span>
+                  <span className="text-gray-700 dark:text-slate-300"><TranslatedText text="Last login" />: {selectedUser.lastLogin}</span>
                 </div>
               </div>
 
               {/* Status & Actions */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2"><TranslatedText text="Status" /></label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"><TranslatedText text="Status" /></label>
                   <select
                     value={selectedUser.status}
                     onChange={(e) => handleStatusChange(selectedUser.id, e.target.value as User['status'])}
@@ -830,13 +830,13 @@ const UserManagement: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2"><TranslatedText text="Role" /></label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"><TranslatedText text="Role" /></label>
                   <span className={`inline-flex px-3 py-2 text-sm font-semibold rounded-lg ${getRoleColor(selectedUser.role)}`}>
                     {selectedUser.role.replace('_', ' ')}
                   </span>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2"><TranslatedText text="Verification" /></label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2"><TranslatedText text="Verification" /></label>
                   <StatusBadge status={selectedUser.verificationStatus} label={selectedUser.verificationStatus} />
                 </div>
               </div>
@@ -845,14 +845,14 @@ const UserManagement: React.FC = () => {
               {(selectedUser.totalShipments !== undefined || selectedUser.totalRevenue !== undefined) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedUser.totalShipments !== undefined && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600"><TranslatedText text="Total Shipments" /></p>
+                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 dark:text-slate-300"><TranslatedText text="Total Shipments" /></p>
                       <p className="text-2xl font-bold text-gray-800">{selectedUser.totalShipments}</p>
                     </div>
                   )}
                   {selectedUser.totalRevenue !== undefined && (
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600"><TranslatedText text="Total Revenue" /></p>
+                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 dark:text-slate-300"><TranslatedText text="Total Revenue" /></p>
                       <p className="text-2xl font-bold text-gray-800">RWF {selectedUser.totalRevenue?.toLocaleString()}</p>
                     </div>
                   )}
@@ -867,7 +867,7 @@ const UserManagement: React.FC = () => {
                   </button>
                 )}
                 <button
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:text-slate-300 px-4 py-2 rounded-lg transition-colors"
                   onClick={() => {
                     closeUserModal();
                     if (isSuperAdmin && selectedUser) openPermModal(selectedUser);

@@ -181,13 +181,13 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
 
   return createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl border border-slate-100 flex flex-col max-h-[95vh] overflow-hidden my-4">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl border border-slate-100 dark:border-slate-800 flex flex-col max-h-[95vh] overflow-hidden my-4">
 
         {step === 'processing' && (
           <div className="flex flex-col items-center justify-center py-24 px-8">
             <Loader2 className="w-12 h-12 text-[#345E85] animate-spin mb-6" />
-            <h3 className="text-xl font-black text-slate-900 mb-2">Processing Disbursement</h3>
-            <p className="text-sm text-slate-500 text-center">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Processing Disbursement</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
               {paymentMethod === 'mobile_money'
                 ? `Sending ${fmt(lockedAmount, lockedCurrency)} to ${beneficiaryName} — check ${payerPhone.trim()} for the MoMo PIN…`
                 : `Processing ${fmt(lockedAmount, lockedCurrency)} to ${beneficiaryName}…`}
@@ -198,8 +198,8 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
         {step === 'success' && (
           <div className="flex flex-col items-center justify-center py-24 px-8">
             <CheckCircle className="w-16 h-16 text-emerald-600 mb-6" />
-            <h3 className="text-xl font-black text-slate-900 mb-2">Disbursement Initiated</h3>
-            <p className="text-sm text-slate-500 mb-8 text-center">{successMsg}</p>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Disbursement Initiated</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 text-center">{successMsg}</p>
             <button onClick={onClose}
               className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest">
               Done
@@ -210,7 +210,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
         {step === 'error' && (
           <div className="flex flex-col items-center justify-center py-24 px-8">
             <AlertCircle className="w-16 h-16 text-rose-600 mb-6" />
-            <h3 className="text-xl font-black text-slate-900 mb-2">Disbursement Failed</h3>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Disbursement Failed</h3>
             <p className="text-sm text-rose-600 text-center mb-8">{errorMsg}</p>
             <button onClick={() => setStep('review')}
               className="px-8 py-4 bg-[#345E85] text-white rounded-xl font-black text-xs uppercase tracking-widest">
@@ -221,18 +221,18 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
 
         {step === 'review' && (
           <>
-            <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-blue-50 shrink-0 flex items-center justify-between">
+            <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-emerald-50 to-blue-50 shrink-0 flex items-center justify-between">
               <div>
                 <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-1">
                   Step 3 of 3 — Disburse Funds
                 </p>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Execute Disbursement</h2>
-                <p className="text-sm text-slate-500 mt-0.5">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Execute Disbursement</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                   {loan.borrower_name || 'Borrower'} · Ref #{loan.loan_number || loan.id?.slice(0, 8)}
                 </p>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/60 rounded-full">
-                <X className="w-5 h-5 text-slate-500" />
+                <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               </button>
             </div>
 
@@ -264,20 +264,20 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
               )}
 
               {canDisburse && beneficiaryConfigured && (
-                <div className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border-2 border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2 mb-3">
-                    <User className="w-4 h-4 text-slate-500" />
-                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <User className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                       Receiving Account (from truck owner profile)
                     </h3>
                   </div>
-                  <p className="text-sm font-bold text-slate-900 mb-3">{beneficiaryName}</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white mb-3">{beneficiaryName}</p>
                   <div className="space-y-2 text-sm">
                     {beneficiaryPhone && (
                       <div className="flex items-center gap-2">
                         <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-slate-500">MoMo:</span>
-                        <span className="font-bold text-slate-900">{beneficiaryPhone}</span>
+                        <span className="text-slate-500 dark:text-slate-400">MoMo:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{beneficiaryPhone}</span>
                         {beneficiaryMomoCode && (
                           <span className="text-xs text-slate-400">({beneficiaryMomoCode})</span>
                         )}
@@ -286,8 +286,8 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                     {beneficiaryAccount && (
                       <div className="flex items-center gap-2">
                         <Building2 className="w-3.5 h-3.5 text-blue-600" />
-                        <span className="text-slate-500">Bank account:</span>
-                        <span className="font-bold text-slate-900">{beneficiaryAccount}</span>
+                        <span className="text-slate-500 dark:text-slate-400">Bank account:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{beneficiaryAccount}</span>
                       </div>
                     )}
                   </div>
@@ -297,10 +297,10 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                 </div>
               )}
 
-              <div className="bg-slate-50 rounded-2xl p-6 border-2 border-slate-200">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-700">
                 <div className="flex items-center gap-2 mb-4">
-                  <Lock className="w-4 h-4 text-slate-500" />
-                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <Lock className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                     Agreed Terms (Locked)
                   </h3>
                 </div>
@@ -310,7 +310,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-[9px] font-black text-slate-400 uppercase">Principal</p>
-                      <p className="text-lg font-black text-slate-900">{fmt(lockedAmount, lockedCurrency)}</p>
+                      <p className="text-lg font-black text-slate-900 dark:text-white">{fmt(lockedAmount, lockedCurrency)}</p>
                     </div>
                     <div>
                       <p className="text-[9px] font-black text-slate-400 uppercase">Total Repayable</p>
@@ -349,7 +349,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                             paymentMethod === m.id
                               ? 'border-[#345E85] bg-blue-50 text-[#345E85]'
                               : m.enabled
-                              ? 'border-slate-100 text-slate-500 hover:border-slate-200'
+                              ? 'border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-200 dark:border-slate-700'
                               : 'border-slate-50 text-slate-300 cursor-not-allowed'
                           }`}
                         >
@@ -364,13 +364,13 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
 
                   {paymentMethod === 'mobile_money' && (
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                         <Phone className="w-3.5 h-3.5" /> Your MoMo Number (Payer)
                       </label>
                       <input type="tel" value={payerPhone} onChange={e => setPayerPhone(e.target.value)}
                         placeholder="0788123456 — receives PIN prompt"
-                        className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
-                      <p className="text-xs text-slate-500 mt-2">
+                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                         Ishema sends the PIN to this number. Funds are sent to{' '}
                         <strong>{beneficiaryPhone || 'truck owner MoMo'}</strong> on file.
                       </p>
@@ -389,28 +389,28 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                   {paymentMethod === 'card' && (
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                           <CreditCard className="w-3.5 h-3.5" /> Card Number
                         </label>
                         <input type="text" value={cardDetails.cardNumber}
                           onChange={e => setCardDetails(d => ({ ...d, cardNumber: e.target.value }))}
                           placeholder="4111 1111 1111 1111"
-                          className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Expiry</label>
+                          <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">Expiry</label>
                           <input type="text" value={cardDetails.expiryDate}
                             onChange={e => setCardDetails(d => ({ ...d, expiryDate: e.target.value }))}
                             placeholder="MM/YY"
-                            className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">CVV</label>
+                          <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">CVV</label>
                           <input type="password" value={cardDetails.cvv}
                             onChange={e => setCardDetails(d => ({ ...d, cvv: e.target.value }))}
                             placeholder="123"
-                            className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
                         </div>
                       </div>
                     </div>
@@ -427,7 +427,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
               )}
             </div>
 
-            <div className="px-8 py-5 border-t-2 border-slate-100 bg-slate-50 flex justify-between gap-4 shrink-0">
+            <div className="px-8 py-5 border-t-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between gap-4 shrink-0">
               <button onClick={onClose}
                 className="px-6 py-3.5 text-xs font-black text-slate-400 uppercase tracking-widest hover:bg-slate-200 rounded-2xl">
                 Cancel

@@ -308,7 +308,7 @@ const TruckOwnerProfilePage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12 w-full">
       {/* Profile Header Block */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 md:p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 text-center md:text-left">
               {/* Avatar */}
               <div className="relative">
@@ -322,7 +322,7 @@ const TruckOwnerProfilePage: React.FC = () => {
                 <motion.div 
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="w-24 h-24 md:w-32 md:h-32 bg-slate-50 rounded-[28px] flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden relative group"
+                  className="w-24 h-24 md:w-32 md:h-32 bg-slate-50 dark:bg-slate-800/50 rounded-[28px] flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden relative group"
                 >
                   {profile.personal.avatarUrl ? (
                     <img src={profile.personal.avatarUrl} alt="Avatar" className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
@@ -343,7 +343,7 @@ const TruckOwnerProfilePage: React.FC = () => {
                       size="small" 
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingAvatar}
-                      className="bg-white hover:bg-slate-50 text-slate-600 rounded-lg p-1.5 shadow-md border border-slate-200 opacity-80 hover:opacity-100 transition-opacity"
+                      className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg p-1.5 shadow-md border border-slate-200 dark:border-slate-700 opacity-80 hover:opacity-100 transition-opacity"
                     >
                       <Camera size={14} />
                     </IconButton>
@@ -353,7 +353,7 @@ const TruckOwnerProfilePage: React.FC = () => {
           
           <div>
             <div className="flex items-center justify-center md:justify-start gap-3 mb-1">
-              <Typography variant="h3" className="font-black text-slate-900 tracking-tight text-2xl md:text-3xl" sx={{ color: '#0f172a' }}>
+              <Typography variant="h3" className="font-black text-slate-900 dark:text-white tracking-tight text-2xl md:text-3xl" sx={{ color: '#0f172a' }}>
                 {profile.personal.firstName} {profile.personal.lastName}
               </Typography>
               <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 border border-emerald-200">
@@ -367,13 +367,13 @@ const TruckOwnerProfilePage: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full">
                 <Star size={14} className="text-amber-500" fill="currentColor" />
-                <Typography className="text-[10px] font-black text-slate-700 tracking-widest uppercase">4.85 Trust Score</Typography>
+                <Typography className="text-[10px] font-black text-slate-700 dark:text-slate-300 tracking-widest uppercase">4.85 Trust Score</Typography>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full">
+              <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full">
                 <Activity size={14} className="text-primary-600" />
-                <Typography className="text-[10px] font-black text-slate-700 tracking-widest uppercase">{profile.fleet.totalTrucks} Total Ops</Typography>
+                <Typography className="text-[10px] font-black text-slate-700 dark:text-slate-300 tracking-widest uppercase">{profile.fleet.totalTrucks} Total Ops</Typography>
               </div>
             </div>
           </div>
@@ -390,7 +390,7 @@ const TruckOwnerProfilePage: React.FC = () => {
       </div>
 
       {/* Navigation Sub-Surface */}
-      <div className="bg-white rounded-[32px] border border-slate-100 p-2 flex flex-wrap items-center gap-1 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-2 flex flex-wrap items-center gap-1 shadow-sm">
         {[
           { id: 0, icon: User, label: "PERSONAL" },
           { id: 1, icon: Building, label: "BUSINESS" },
@@ -403,7 +403,7 @@ const TruckOwnerProfilePage: React.FC = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === tab.id
               ? 'bg-primary-500 text-white shadow-xl shadow-primary-500/20'
-              : 'text-slate-400 hover:text-primary-500 hover:bg-slate-50'
+              : 'text-slate-400 hover:text-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
           >
             <tab.icon size={14} />
@@ -423,13 +423,13 @@ const TruckOwnerProfilePage: React.FC = () => {
             transition={{ duration: 0.2 }}
           >
             {activeTab === 0 && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm space-y-10">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm space-y-10">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 shadow-inner">
                     <User size={24} />
                   </div>
                   <div>
-                    <Typography className="font-black text-slate-900 text-xl tracking-tight">Identity Details</Typography>
+                    <Typography className="font-black text-slate-900 dark:text-white text-xl tracking-tight">Identity Details</Typography>
                     <Typography className="text-sm font-bold text-slate-500">Manage your primary contact information</Typography>
                   </div>
                 </div>
@@ -500,13 +500,13 @@ const TruckOwnerProfilePage: React.FC = () => {
             )}
 
             {activeTab === 1 && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm space-y-10">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm space-y-10">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner">
                     <Building size={24} />
                   </div>
                   <div>
-                    <Typography className="font-black text-slate-900 text-xl tracking-tight">Corporate Record</Typography>
+                    <Typography className="font-black text-slate-900 dark:text-white text-xl tracking-tight">Corporate Record</Typography>
                     <Typography className="text-sm font-bold text-slate-500">Official business registration details</Typography>
                   </div>
                 </div>
@@ -573,7 +573,7 @@ const TruckOwnerProfilePage: React.FC = () => {
                       }}
                     >
                       {AFRICAN_COUNTRIES.map((country) => (
-                        <MenuItem key={country.code} value={country.code} className="font-bold text-slate-700">
+                        <MenuItem key={country.code} value={country.code} className="font-bold text-slate-700 dark:text-slate-300">
                           {country.name}
                         </MenuItem>
                       ))}
@@ -598,7 +598,7 @@ const TruckOwnerProfilePage: React.FC = () => {
             )}
 
             {activeTab === 2 && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm space-y-10">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm space-y-10">
                 <Box className="p-8 md:p-10 rounded-[32px] bg-emerald-500/5 border border-emerald-500/10 flex flex-col md:flex-row items-center gap-6 shadow-sm">
                    <div className="w-20 h-20 rounded-[28px] bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-xl shadow-emerald-600/30 shrink-0">
                      <Shield size={40} />
@@ -661,7 +661,7 @@ const TruckOwnerProfilePage: React.FC = () => {
 
                   {/* Document Uploader */}
                   <Grid size={{ xs: 12 }}>
-                    <div className="mt-8 p-10 border-2 border-dashed border-slate-200 rounded-[32px] bg-slate-50 flex flex-col items-center justify-center text-center transition-all hover:bg-white hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/10 group relative">
+                    <div className="mt-8 p-10 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[32px] bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center text-center transition-all hover:bg-white dark:bg-slate-900 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-500/10 group relative">
                       <input 
                         type="file" 
                         ref={kycInputRef} 
@@ -671,14 +671,14 @@ const TruckOwnerProfilePage: React.FC = () => {
                         title="Click to upload KYC document"
                         disabled={uploadingKyc}
                       />
-                      <div className="w-16 h-16 rounded-[24px] bg-white flex items-center justify-center text-emerald-500 shadow-sm mb-5 group-hover:scale-110 transition-transform duration-300 border border-slate-100 group-hover:bg-emerald-50">
+                      <div className="w-16 h-16 rounded-[24px] bg-white dark:bg-slate-900 flex items-center justify-center text-emerald-500 shadow-sm mb-5 group-hover:scale-110 transition-transform duration-300 border border-slate-100 dark:border-slate-800 group-hover:bg-emerald-50">
                         {uploadingKyc ? (
                           <div className="w-8 h-8 border-4 border-emerald-100 border-t-emerald-500 rounded-full animate-spin"></div>
                         ) : (
                           <UploadCloud size={28} />
                         )}
                       </div>
-                      <Typography className="text-lg font-black text-slate-800 tracking-tight mb-2">Upload KYC Document</Typography>
+                      <Typography className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight mb-2">Upload KYC Document</Typography>
                       <Typography className="text-sm font-medium text-slate-500 max-w-md mx-auto leading-relaxed">
                         Submit your Business License, Tax Registration, or National Identity documents to upgrade your verification tier. 
                         Support for PDF, JPG, and PNG formats.
@@ -691,13 +691,13 @@ const TruckOwnerProfilePage: React.FC = () => {
             )}
 
             {activeTab === 3 && (
-              <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm space-y-10">
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm space-y-10">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600 shadow-inner">
                     <CreditCard size={24} />
                   </div>
                   <div>
-                    <Typography className="font-black text-slate-900 text-xl tracking-tight">Financial Routing</Typography>
+                    <Typography className="font-black text-slate-900 dark:text-white text-xl tracking-tight">Financial Routing</Typography>
                     <Typography className="text-sm font-bold text-slate-500">Secure banking information for payouts</Typography>
                   </div>
                 </div>
@@ -763,7 +763,7 @@ const TruckOwnerProfilePage: React.FC = () => {
             )}
 
             {activeTab === 4 && (
-               <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm space-y-8">
+               <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 p-8 shadow-sm space-y-8">
                  <div className="flex items-center gap-4 mb-4">
                    <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center text-primary-600 shadow-inner">
                      <Target size={24} />
@@ -775,10 +775,10 @@ const TruckOwnerProfilePage: React.FC = () => {
                    <Typography className="text-[10px] font-black text-slate-400 tracking-[0.2em] mb-4 ml-4">SERVICE DOMAINS</Typography>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      {profile.fleet.serviceRegions.map(region => (
-                       <div key={region} className="flex items-center justify-between p-5 rounded-3xl bg-slate-50 border border-slate-100/80 hover:bg-slate-100 hover:shadow-md transition-all cursor-default">
+                       <div key={region} className="flex items-center justify-between p-5 rounded-3xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 hover:bg-slate-100 hover:shadow-md transition-all cursor-default">
                           <div className="flex items-center gap-3">
                             <MapPin size={16} className="text-primary-500" />
-                            <Typography className="text-sm font-black text-slate-800">{region}</Typography>
+                            <Typography className="text-sm font-black text-slate-800 dark:text-slate-100">{region}</Typography>
                           </div>
                           <ChevronRight size={16} className="text-slate-300" />
                        </div>
@@ -790,7 +790,7 @@ const TruckOwnerProfilePage: React.FC = () => {
                    <Typography className="text-[10px] font-black text-slate-400 tracking-[0.2em] mb-4 ml-4">SPECIALIZATIONS</Typography>
                    <div className="flex flex-wrap gap-2">
                      {profile.fleet.specializations.map(spec => (
-                       <div key={spec} className="px-5 py-3 rounded-2xl bg-slate-50 text-slate-800 text-xs font-black uppercase border border-slate-200 shadow-sm flex items-center gap-2">
+                       <div key={spec} className="px-5 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 text-slate-800 dark:text-slate-100 text-xs font-black uppercase border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-2">
                          <Shield size={14} className="text-primary-500" />
                          {spec}
                        </div>
@@ -819,7 +819,7 @@ const inputStyles = {
       borderColor: 'rgba(12, 74, 110, 0.05)'
     },
     '&.Mui-focused': {
-      backgroundColor: '#fff',
+      backgroundColor: undefined,
       boxShadow: '0 0 0 4px rgba(2, 132, 199, 0.1)',
       border: '2px solid #0284c7',
       '& .lucide': {

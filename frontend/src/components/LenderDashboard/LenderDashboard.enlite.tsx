@@ -10,24 +10,53 @@ import {
   RefreshCw, ChevronRight, Banknote, BarChart3,
   CheckCircle, Coins, CircleDollarSign,
 } from 'lucide-react';
-import { StatCard as SharedStatCard } from '@/components/EnliteUI/Cards/StatCard';
 import { TranslatedText } from '../translated-text';
 import { StandardDataTable, StatusBadge, type Column } from '../EnliteUI/Tables';
 
-// ── Stat card ── uses shared EnliteUI StatCard ────────────────────────────────
+// ── Stat card ── sized for long currency strings (RWF / multi-digit amounts) ──
 const StatCard: React.FC<{
-  title: string; value: string | number; icon: React.ReactNode;
-  sub?: string; color?: string; loading?: boolean;
-}> = ({ title, value, icon, sub, loading }) => (
-  <SharedStatCard
-    title={title}
-    value={value}
-    icon={icon}
-    subtitle={sub}
-    loading={loading}
-    variant="classic"
-  />
-);
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  iconBg?: string;
+  sub?: string;
+  loading?: boolean;
+}> = ({ title, value, icon, iconBg = 'bg-[#345E85]/10', sub, loading }) => {
+  const valueStr = String(value);
+  const isLongValue = valueStr.length > 10;
+
+  return (
+    <div className="min-w-0 bg-white dark:!bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm p-5 flex flex-col gap-3 h-full transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={`h-10 w-10 shrink-0 rounded-xl ${iconBg} dark:bg-slate-800 flex items-center justify-center`}>
+          {icon}
+        </div>
+        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-tight min-w-0">
+          <TranslatedText text={title} />
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="h-8 w-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+      ) : (
+        <p
+          className={`font-black text-slate-900 dark:text-white tracking-tight break-words leading-tight ${
+            isLongValue ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
+          }`}
+          title={valueStr}
+        >
+          {value}
+        </p>
+      )}
+
+      {sub && (
+        <p className="mt-auto text-[10px] font-bold text-slate-400 uppercase tracking-wider break-words leading-snug">
+          {sub}
+        </p>
+      )}
+    </div>
+  );
+};
 
 // ── Main component ────────────────────────────────────────────────────────────
 const LenderDashboardEnlite: React.FC = () => {
@@ -113,7 +142,7 @@ const LenderDashboardEnlite: React.FC = () => {
       label: <TranslatedText text="Loan ID" /> as unknown as string,
       render: (_v, req) => (
         <>
-          <p className="text-xs font-black text-slate-900 font-mono">{req.id.slice(0, 8)}…</p>
+          <p className="text-xs font-black text-slate-900 dark:text-white font-mono">{req.id.slice(0, 8)}…</p>
           <p className="text-[10px] text-slate-400 mt-0.5">{new Date(req.created_at).toLocaleDateString()}</p>
         </>
       ),
@@ -129,7 +158,7 @@ const LenderDashboardEnlite: React.FC = () => {
               {borrowerName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-800">{borrowerName}</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{borrowerName}</p>
               <p className="text-[10px] text-slate-400">{req.borrower?.email || ''}</p>
             </div>
           </div>
@@ -145,7 +174,7 @@ const LenderDashboardEnlite: React.FC = () => {
         const loanCurrency: string = req.currency || serverCurrency;
         return (
           <>
-            <p className="text-sm font-black text-slate-900">{formatCurrency(amount, loanCurrency)}</p>
+            <p className="text-sm font-black text-slate-900 dark:text-white">{formatCurrency(amount, loanCurrency)}</p>
             {approvedAmt != null && (
               <p className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ {formatCurrency(approvedAmt, loanCurrency)}</p>
             )}
@@ -158,7 +187,7 @@ const LenderDashboardEnlite: React.FC = () => {
       label: <TranslatedText text="Purpose" /> as unknown as string,
       render: (_v, req) => {
         const purpose = req.metadata?.purpose || req.metadata?.note || '—';
-        return <p className="text-sm font-semibold text-slate-700 capitalize">{purpose}</p>;
+        return <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize">{purpose}</p>;
       },
     },
     {
@@ -171,8 +200,8 @@ const LenderDashboardEnlite: React.FC = () => {
           <div className="space-y-1">
             {split.map((s, i) => (
               <div key={i} className="flex items-center gap-1.5">
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{s.type}</span>
-                <span className="text-xs font-bold text-slate-700">{formatCurrency(s.amount, loanCurrency)}</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize">{s.type}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{formatCurrency(s.amount, loanCurrency)}</span>
               </div>
             ))}
           </div>
@@ -190,7 +219,7 @@ const LenderDashboardEnlite: React.FC = () => {
       key: 'due_date',
       label: <TranslatedText text="Due Date" /> as unknown as string,
       render: (_v, req) => (
-        <p className="text-sm text-slate-600 font-medium whitespace-nowrap">
+        <p className="text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
           {req.due_date ? new Date(req.due_date).toLocaleDateString() : '—'}
         </p>
       ),
@@ -204,7 +233,7 @@ const LenderDashboardEnlite: React.FC = () => {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => navigate('/lender/requests')}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors"
             title="View details"
           >
             <Eye size={14} />
@@ -278,18 +307,18 @@ const LenderDashboardEnlite: React.FC = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/50 dark:!bg-slate-950 p-6 md:p-8 space-y-8 transition-colors duration-200">
 
       {/* ── Header ── */}
-      <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="sticky top-16 sm:top-[4.5rem] lg:top-20 z-40 -mx-4 px-4 py-4 bg-slate-50 dark:!bg-slate-950 backdrop-blur-md flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-black text-[#345E85] uppercase tracking-[0.2em] mb-1">
+          <p className="text-[10px] font-black text-[#345E85] dark:text-blue-400 uppercase tracking-[0.2em] mb-1">
             <TranslatedText text="Lending Dashboard" />
           </p>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             <TranslatedText text={greeting()} />, {displayName}
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             {hasStats ? (
               <>
                 {totalLoansRequested} <TranslatedText text="loan requests" /> · {pendingCount} <TranslatedText text="pending approval" />
@@ -305,13 +334,13 @@ const LenderDashboardEnlite: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={load}
-            className="h-11 w-11 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all shadow-sm"
+            className="h-11 w-11 rounded-2xl bg-white dark:!bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
             <button
             onClick={() => navigate('/lender/requests')}
-            className="flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100"
+            className="flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100 dark:shadow-none"
           >
             <Briefcase size={14} /> <TranslatedText text="View All Requests" />
           </button>
@@ -320,7 +349,7 @@ const LenderDashboardEnlite: React.FC = () => {
 
       {/* ── Error ── */}
       {error && (
-        <div className="bg-rose-50 border border-rose-100 text-rose-700 px-6 py-4 rounded-3xl flex items-center gap-3">
+        <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900 text-rose-700 dark:text-rose-300 px-6 py-4 rounded-3xl flex items-center gap-3">
           <AlertTriangle size={16} />
           <span className="text-sm font-semibold">{error}</span>
           <button onClick={load} className="ml-auto text-xs underline"><TranslatedText text="Retry" /></button>
@@ -328,37 +357,43 @@ const LenderDashboardEnlite: React.FC = () => {
       )}
 
       {/* ── Stats grid (live from GET /lending/dashboard/:lenderId) ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
           title="Loans Requested"
           value={displayCount(totalLoansRequested)}
           icon={<Briefcase size={18} className="text-[#345E85]" />}
+          iconBg="bg-[#345E85]/10"
+          sub={hasStats ? `${displayCount(pendingCount)} pending approval` : undefined}
           loading={loading}
         />
         <StatCard
           title="Amount Requested"
           value={displayMoney(totalAmountRequested)}
           icon={<Banknote size={18} className="text-blue-600" />}
+          iconBg="bg-blue-50 dark:bg-blue-950/40"
           loading={loading}
         />
         <StatCard
           title="Loans Approved"
           value={displayCount(totalLoansApproved)}
           icon={<CheckCircle size={18} className="text-emerald-600" />}
+          iconBg="bg-emerald-50 dark:bg-emerald-950/40"
           sub={hasStats ? `${displayMoney(totalAmountApproved)} approved` : undefined}
           loading={loading}
         />
         <StatCard
           title="Funds Provided"
-          value={displayCount(totalLoansProvided)}
+          value={displayMoney(totalAmountProvided)}
           icon={<Coins size={18} className="text-purple-600" />}
-          sub={hasStats ? `${displayMoney(totalAmountProvided)} disbursed` : undefined}
+          iconBg="bg-purple-50 dark:bg-purple-950/40"
+          sub={hasStats ? `${displayCount(totalLoansProvided)} loans disbursed` : undefined}
           loading={loading}
         />
         <StatCard
           title="Loans Repaid"
           value={displayCount(totalLoansRepaid)}
           icon={<CircleDollarSign size={18} className="text-teal-600" />}
+          iconBg="bg-teal-50 dark:bg-teal-950/40"
           sub="Fully repaid loans"
           loading={loading}
         />
@@ -366,6 +401,7 @@ const LenderDashboardEnlite: React.FC = () => {
           title="Amount Repaid"
           value={displayMoney(totalAmountRepaid)}
           icon={<DollarSign size={18} className="text-emerald-600" />}
+          iconBg="bg-emerald-50 dark:bg-emerald-950/40"
           sub={hasStats ? `${displayPct(recoveryRate)} recovery` : undefined}
           loading={loading}
         />
@@ -373,13 +409,13 @@ const LenderDashboardEnlite: React.FC = () => {
 
       {/* ── Portfolio summary bar ── */}
       {hasStats && (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+        <div className="bg-white dark:!bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-6 transition-colors">
           <div className="flex items-center gap-3 mb-5">
-            <div className="h-8 w-8 rounded-xl bg-[#345E85]/10 flex items-center justify-center">
-              <BarChart3 size={14} className="text-[#345E85]" />
+            <div className="h-8 w-8 rounded-xl bg-[#345E85]/10 dark:bg-[#345E85]/20 flex items-center justify-center">
+              <BarChart3 size={14} className="text-[#345E85] dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Portfolio Overview" /></p>
+              <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Portfolio Overview" /></p>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                 <TranslatedText text="Live from database" />
                 {dashboardData.computedAt
@@ -395,8 +431,8 @@ const LenderDashboardEnlite: React.FC = () => {
               { label: 'Awaiting Disbursement', value: displayCount(awaitingDisbursement) },
               { label: 'Recovery Rate', value: displayPct(recoveryRate) },
             ].map(({ label, value }) => (
-              <div key={label} className="text-center">
-                <p className="text-2xl font-black text-slate-900">{value}</p>
+              <div key={label} className="text-center min-w-0 px-1">
+                <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white break-words leading-tight">{value}</p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1"><TranslatedText text={label} /></p>
               </div>
             ))}
@@ -405,14 +441,14 @@ const LenderDashboardEnlite: React.FC = () => {
       )}
 
       {/* ── Recent loan requests table ── */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
+      <div className="bg-white dark:!bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+        <div className="px-8 py-5 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-[#345E85]/10 flex items-center justify-center">
-              <Activity size={14} className="text-[#345E85]" />
+            <div className="h-8 w-8 rounded-xl bg-[#345E85]/10 dark:bg-[#345E85]/20 flex items-center justify-center">
+              <Activity size={14} className="text-[#345E85] dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 uppercase tracking-tight"><TranslatedText text="Recent Loan Requests" /></p>
+              <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight"><TranslatedText text="Recent Loan Requests" /></p>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                 {recentRequests.length} <TranslatedText text="records" /> · {pendingCount} <TranslatedText text="pending" />
               </p>
@@ -420,7 +456,7 @@ const LenderDashboardEnlite: React.FC = () => {
           </div>
             <button
             onClick={() => navigate('/lender/requests')}
-            className="flex items-center gap-1 text-[10px] font-black text-[#345E85] uppercase tracking-widest hover:opacity-70 transition-opacity"
+            className="flex items-center gap-1 text-[10px] font-black text-[#345E85] dark:text-blue-400 uppercase tracking-widest hover:opacity-70 transition-opacity"
           >
             <TranslatedText text="View All" /> <ChevronRight size={12} />
           </button>
@@ -428,14 +464,14 @@ const LenderDashboardEnlite: React.FC = () => {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="h-10 w-10 rounded-full border-4 border-slate-100 border-t-[#345E85] animate-spin" />
+            <div className="h-10 w-10 rounded-full border-4 border-slate-100 dark:border-slate-800 border-t-[#345E85] animate-spin" />
           </div>
         ) : recentRequests.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <div className="h-14 w-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
               <Briefcase size={22} className="text-slate-400" />
             </div>
-            <p className="text-slate-900 font-black text-base mb-1"><TranslatedText text="No loan requests yet" /></p>
+            <p className="text-slate-900 dark:text-white font-black text-base mb-1"><TranslatedText text="No loan requests yet" /></p>
             <p className="text-slate-400 text-sm"><TranslatedText text="Requests from truck owners will appear here" /></p>
           </div>
         ) : (
@@ -455,22 +491,22 @@ const LenderDashboardEnlite: React.FC = () => {
       {/* ── Quick links ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'All Requests',   path: '/lender/requests',      icon: <Briefcase size={18} />,    color: 'bg-blue-50 text-[#345E85]' },
-          { label: 'Active Loans',   path: '/lender/active',        icon: <Activity size={18} />,     color: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Disbursements',  path: '/lender/disbursements', icon: <DollarSign size={18} />,   color: 'bg-purple-50 text-purple-600' },
-          { label: 'Analytics',      path: '/lender/analytics',     icon: <TrendingUp size={18} />,   color: 'bg-amber-50 text-amber-600' },
+          { label: 'All Requests',   path: '/lender/requests',      icon: <Briefcase size={18} />,    color: 'bg-blue-50 dark:bg-blue-950/40 text-[#345E85] dark:text-blue-400' },
+          { label: 'Active Loans',   path: '/lender/active',        icon: <Activity size={18} />,     color: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' },
+          { label: 'Disbursements',  path: '/lender/disbursements', icon: <DollarSign size={18} />,   color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400' },
+          { label: 'Analytics',      path: '/lender/analytics',     icon: <TrendingUp size={18} />,   color: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400' },
         ].map(({ label, path, icon, color }) => (
           <button
             key={path}
             onClick={() => navigate(path)}
-            className="bg-white rounded-3xl border border-slate-100 p-5 flex items-center gap-4 hover:shadow-md transition-all text-left group"
+            className="bg-white dark:!bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-5 flex items-center gap-4 hover:shadow-md dark:hover:bg-slate-800/80 transition-all text-left group"
           >
             <div className={`h-10 w-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${color}`}>
               {icon}
             </div>
             <div>
-              <p className="text-sm font-black text-slate-900 group-hover:text-[#345E85] transition-colors"><TranslatedText text={label} /></p>
-              <ChevronRight size={12} className="text-slate-300 mt-0.5 group-hover:translate-x-1 transition-transform" />
+              <p className="text-sm font-black text-slate-900 dark:text-white group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors"><TranslatedText text={label} /></p>
+              <ChevronRight size={12} className="text-slate-300 dark:text-slate-600 mt-0.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
         ))}

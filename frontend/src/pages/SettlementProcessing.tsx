@@ -4,7 +4,7 @@ import { FaDollarSign, FaCheckCircle } from 'react-icons/fa';
 
 const SettlementProcessing: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
         <div className="text-center">
           <FaDollarSign className="text-green-500 text-4xl mx-auto mb-4" />

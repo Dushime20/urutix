@@ -140,10 +140,10 @@ const DeliveryConfirmation: React.FC = () => {
 
   if (epodLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">Loading delivery details...</p>
+          <p className="text-slate-600 dark:text-slate-300 font-medium">Loading delivery details...</p>
         </div>
       </div>
     );
@@ -151,13 +151,13 @@ const DeliveryConfirmation: React.FC = () => {
 
   if (epodError || !epodRes?.data) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <Package className="w-8 h-8 text-slate-400" />
           </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">No Delivery Found</h2>
-          <p className="text-slate-600 mb-6">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">No Delivery Found</h2>
+          <p className="text-slate-600 dark:text-slate-300 mb-6">
             The driver hasn't submitted proof of delivery yet, or this delivery doesn't exist.
           </p>
           <button
@@ -174,18 +174,18 @@ const DeliveryConfirmation: React.FC = () => {
   const epod = epodRes.data;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard')}
             className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
           >
-            <ArrowLeft size={20} className="text-slate-600" />
+            <ArrowLeft size={20} className="text-slate-600 dark:text-slate-300" />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-slate-800">Confirm Delivery</h1>
+            <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">Confirm Delivery</h1>
             <p className="text-sm text-slate-500">Trip #{tripId?.slice(0, 8)}</p>
           </div>
         </div>
@@ -193,9 +193,9 @@ const DeliveryConfirmation: React.FC = () => {
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Driver's ePOD */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-slate-200">
-            <h2 className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest flex items-center gap-2">
               <FileText size={16} />
               Driver's Proof of Delivery
             </h2>
@@ -205,23 +205,23 @@ const DeliveryConfirmation: React.FC = () => {
             {/* Recipient Info */}
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                <User size={18} className="text-slate-600" />
+                <User size={18} className="text-slate-600 dark:text-slate-300" />
               </div>
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Recipient</p>
-                <p className="text-base font-bold text-slate-800">{epod.recipientName}</p>
-                {epod.recipientPhone && <p className="text-sm text-slate-600">{epod.recipientPhone}</p>}
+                <p className="text-base font-bold text-slate-800 dark:text-slate-100">{epod.recipientName}</p>
+                {epod.recipientPhone && <p className="text-sm text-slate-600 dark:text-slate-300">{epod.recipientPhone}</p>}
               </div>
             </div>
 
             {/* Delivery Time */}
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                <Clock size={18} className="text-slate-600" />
+                <Clock size={18} className="text-slate-600 dark:text-slate-300" />
               </div>
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Delivered At</p>
-                <p className="text-base font-bold text-slate-800">
+                <p className="text-base font-bold text-slate-800 dark:text-slate-100">
                   {new Date(epod.submittedAt).toLocaleString('en-US', { 
                     dateStyle: 'medium', 
                     timeStyle: 'short' 
@@ -234,11 +234,11 @@ const DeliveryConfirmation: React.FC = () => {
             {epod.deliveryCoordinates && (
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                  <MapPin size={18} className="text-slate-600" />
+                  <MapPin size={18} className="text-slate-600 dark:text-slate-300" />
                 </div>
                 <div>
                   <p className="text-xs font-black text-slate-400 uppercase tracking-widest">GPS Location</p>
-                  <p className="text-base font-bold text-slate-800">
+                  <p className="text-base font-bold text-slate-800 dark:text-slate-100">
                     {epod.deliveryCoordinates.latitude.toFixed(5)}, {epod.deliveryCoordinates.longitude.toFixed(5)}
                   </p>
                   <a
@@ -255,9 +255,9 @@ const DeliveryConfirmation: React.FC = () => {
 
             {/* Delivery Notes */}
             {epod.deliveryNotes && (
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Driver's Notes</p>
-                <p className="text-sm text-slate-700">{epod.deliveryNotes}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{epod.deliveryNotes}</p>
               </div>
             )}
 
@@ -267,7 +267,7 @@ const DeliveryConfirmation: React.FC = () => {
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                   <PenTool size={12} /> Recipient Signature
                 </p>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 inline-block">
+                <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4 inline-block">
                   <img
                     src={`${apiBase}${epod.signatureFileUrl}`}
                     alt="Signature"
@@ -288,7 +288,7 @@ const DeliveryConfirmation: React.FC = () => {
                     <button
                       key={i}
                       onClick={() => setPhotoPreview(`${apiBase}${url}`)}
-                      className="w-24 h-24 rounded-xl overflow-hidden border-2 border-slate-200 hover:border-blue-400 transition-colors"
+                      className="w-24 h-24 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 transition-colors"
                     >
                       <img src={`${apiBase}${url}`} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
                     </button>
@@ -300,9 +300,9 @@ const DeliveryConfirmation: React.FC = () => {
         </div>
 
         {/* Cargo Inspection Form */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-slate-200">
-            <h2 className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest flex items-center gap-2">
               <Package size={16} />
               Inspect Cargo
             </h2>
@@ -327,7 +327,7 @@ const DeliveryConfirmation: React.FC = () => {
                     className={`h-14 rounded-xl border-2 font-bold text-sm transition-all ${
                       inspection.condition === value
                         ? `border-${color}-500 bg-${color}-50 text-${color}-700`
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-slate-300'
                     }`}
                   >
                     {label}
@@ -342,9 +342,9 @@ const DeliveryConfirmation: React.FC = () => {
                 Take Photos (Optional)
               </label>
               <div className="space-y-3">
-                <label className="flex items-center justify-center gap-2 h-14 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors">
+                <label className="flex items-center justify-center gap-2 h-14 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 cursor-pointer transition-colors">
                   <Camera size={20} className="text-slate-500" />
-                  <span className="text-sm font-bold text-slate-600">Add Photo</span>
+                  <span className="text-sm font-bold text-slate-600 dark:text-slate-300">Add Photo</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -358,7 +358,7 @@ const DeliveryConfirmation: React.FC = () => {
                 {inspection.photos.length > 0 && (
                   <div className="flex gap-2 flex-wrap">
                     {inspection.photos.map((photo, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200">
+                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700">
                         <img
                           src={URL.createObjectURL(photo)}
                           alt={`Upload ${i + 1}`}
@@ -387,7 +387,7 @@ const DeliveryConfirmation: React.FC = () => {
                 onChange={e => setInspection(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Add any additional notes about the delivery..."
                 rows={3}
-                className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none text-sm"
+                className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:outline-none text-sm"
               />
             </div>
           </div>
@@ -415,7 +415,7 @@ const DeliveryConfirmation: React.FC = () => {
 
           <button
             onClick={() => setShowIssueModal(true)}
-            className="w-full h-14 rounded-xl bg-white border-2 border-red-200 text-red-600 font-bold text-base hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-xl bg-white dark:bg-slate-900 border-2 border-red-200 text-red-600 font-bold text-base hover:bg-red-50 transition-all flex items-center justify-center gap-2"
           >
             <AlertTriangle size={20} />
             Report Issue
@@ -426,9 +426,9 @@ const DeliveryConfirmation: React.FC = () => {
       {/* Issue Report Modal */}
       {showIssueModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-800">Report Issue</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto pb-24 lg:pb-8">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Report Issue</h3>
               <button
                 onClick={() => setShowIssueModal(false)}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
@@ -446,7 +446,7 @@ const DeliveryConfirmation: React.FC = () => {
                 <select
                   value={issue.issueType}
                   onChange={e => setIssue(prev => ({ ...prev, issueType: e.target.value }))}
-                  className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none text-sm font-medium"
+                  className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:outline-none text-sm font-medium"
                 >
                   <option value="">Select issue type</option>
                   <option value="DAMAGED_CARGO">Damaged Cargo</option>
@@ -468,7 +468,7 @@ const DeliveryConfirmation: React.FC = () => {
                   onChange={e => setIssue(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe the issue in detail..."
                   rows={4}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:outline-none text-sm"
                 />
               </div>
 
@@ -477,9 +477,9 @@ const DeliveryConfirmation: React.FC = () => {
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">
                   Evidence Photos
                 </label>
-                <label className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors">
+                <label className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 cursor-pointer transition-colors">
                   <Camera size={18} className="text-slate-500" />
-                  <span className="text-sm font-bold text-slate-600">Add Photo</span>
+                  <span className="text-sm font-bold text-slate-600 dark:text-slate-300">Add Photo</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -493,7 +493,7 @@ const DeliveryConfirmation: React.FC = () => {
                 {issue.photos.length > 0 && (
                   <div className="flex gap-2 flex-wrap mt-3">
                     {issue.photos.map((photo, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200">
+                      <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700">
                         <img
                           src={URL.createObjectURL(photo)}
                           alt={`Evidence ${i + 1}`}

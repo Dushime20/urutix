@@ -138,7 +138,7 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                             )}
                             <button
                                 onClick={onClose}
-                                className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-all"
+                                className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-gray-800 rounded-lg transition-all"
                             >
                                 <X className="w-6 h-6" />
                             </button>
@@ -439,20 +439,20 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                     <div className="p-2 bg-emerald-50 rounded-xl"><Activity className="w-4 h-4 text-emerald-500" /></div>
                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Odometer</span>
                                                 </div>
-                                                <p className="text-lg font-black text-slate-900">{truck.mileage ? `${Number(truck.mileage).toLocaleString()} km` : 'N/A'}</p>
+                                                <p className="text-lg font-black text-slate-900 dark:text-white">{truck.mileage ? `${Number(truck.mileage).toLocaleString()} km` : 'N/A'}</p>
                                             </div>
                                         </div>
 
                                         {Array.isArray(truck.maintenance) && truck.maintenance.length > 0 ? (
                                             <div className="space-y-3">
                                                 {truck.maintenance.map((record: any, idx: number) => (
-                                                    <div key={record.id || idx} className="bg-white rounded-2xl border border-slate-100 p-5 flex items-start gap-4">
+                                                    <div key={record.id || idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 flex items-start gap-4">
                                                         <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
                                                             <Wrench className="w-5 h-5" />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-start justify-between mb-1">
-                                                                <p className="text-sm font-bold text-slate-900">{record.title || record.type || 'Maintenance'}</p>
+                                                                <p className="text-sm font-bold text-slate-900 dark:text-white">{record.title || record.type || 'Maintenance'}</p>
                                                                 <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${record.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                                                                     {record.status}
                                                                 </span>
@@ -468,9 +468,9 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center">
+                                            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-12 text-center">
                                                 <Wrench className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                                                <h4 className="text-lg font-black text-slate-900 tracking-tight mb-2">No Maintenance Records</h4>
+                                                <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-2">No Maintenance Records</h4>
                                                 <p className="text-sm text-slate-400">Maintenance history will appear here once records are added.</p>
                                             </div>
                                         )}
@@ -488,12 +488,12 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                         {Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0 ? (
                                             <div className="space-y-4">
                                                 {truck.assignedDrivers.map((driver: any, idx: number) => (
-                                                    <div key={idx} className="bg-white rounded-2xl border border-slate-100 p-6 flex items-center gap-5">
+                                                    <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-6 flex items-center gap-5">
                                                         <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center text-xl font-black shrink-0">
                                                             {driver.driverName?.charAt(0)?.toUpperCase() || 'D'}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-base font-black text-slate-900 mb-1">{driver.driverName}</p>
+                                                            <p className="text-base font-black text-slate-900 dark:text-white mb-1">{driver.driverName}</p>
                                                             <div className="flex items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                                                 <span className="flex items-center gap-1">
                                                                     <Calendar className="w-3 h-3" /> Assigned: {formatDate(driver.assignmentDate)}
@@ -510,9 +510,9 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center">
+                                            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-12 text-center">
                                                 <Users className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                                                <h4 className="text-lg font-black text-slate-900 tracking-tight mb-2">No Drivers Assigned</h4>
+                                                <h4 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-2">No Drivers Assigned</h4>
                                                 <p className="text-sm text-slate-400">Drivers assigned to this truck will appear here.</p>
                                             </div>
                                         )}
@@ -523,12 +523,12 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                 <h3 className="text-lg font-black text-[#0f172a] tracking-tight mt-8">Route Assignments</h3>
                                                 <div className="space-y-3">
                                                     {truck.assignedRoutes.map((route: any, idx: number) => (
-                                                        <div key={idx} className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4">
+                                                        <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 flex items-center gap-4">
                                                             <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-500 flex items-center justify-center shrink-0">
                                                                 <Route className="w-5 h-5" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="text-sm font-bold text-slate-900">{route.routeName}</p>
+                                                                <p className="text-sm font-bold text-slate-900 dark:text-white">{route.routeName}</p>
                                                                 <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
                                                                     <span>{formatDate(route.assignmentDate)}</span>
                                                                     <span className={`px-2 py-0.5 rounded-full ${route.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
@@ -588,15 +588,15 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: any; label: string; valu
         </div>
         <div className="min-w-0">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-            <p className="text-sm font-bold text-slate-900 truncate">{value}</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{value}</p>
         </div>
     </div>
 );
 
 const MiniStat = ({ label, value, icon: Icon }: { label: string; value: string; icon: any }) => (
-    <div className="bg-slate-50 rounded-2xl p-4 text-center">
+    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 text-center">
         <Icon className="w-5 h-5 text-primary-400 mx-auto mb-2" />
-        <p className="text-lg font-black text-slate-900 tracking-tight">{value}</p>
+        <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{value}</p>
         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{label}</p>
     </div>
 );

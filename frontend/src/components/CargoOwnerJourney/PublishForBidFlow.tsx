@@ -231,11 +231,11 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
   const renderSettingsStep = () => (
     <div className="auction-settings">
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           <FaGavel className="inline mr-2 text-blue-500" />
           Auction Settings
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-slate-300">
           Configure your auction parameters to attract the best bids
         </p>
       </div>
@@ -243,7 +243,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Auction Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
             Auction Type
           </label>
           <select
@@ -263,7 +263,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
 
         {/* Duration */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
             Auction Duration (hours)
           </label>
           <input
@@ -281,7 +281,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
 
         {/* Reserve Price */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
             Reserve Price ($)
           </label>
           <input
@@ -298,7 +298,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
 
         {/* Minimum Bid Increment */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
             Minimum Bid Increment ($)
           </label>
           <input
@@ -316,7 +316,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
 
       {/* Advanced Settings */}
       <div className="mt-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Advanced Settings</h4>
+        <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Advanced Settings</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center">
             <input
@@ -328,7 +328,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
               })}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label className="ml-2 text-sm text-gray-700">Allow Counter Offers</label>
+            <label className="ml-2 text-sm text-gray-700 dark:text-slate-300">Allow Counter Offers</label>
           </div>
           <div className="flex items-center">
             <input
@@ -340,7 +340,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
               })}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label className="ml-2 text-sm text-gray-700">Allow Bid Modifications</label>
+            <label className="ml-2 text-sm text-gray-700 dark:text-slate-300">Allow Bid Modifications</label>
           </div>
           <div className="flex items-center">
             <input
@@ -352,7 +352,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
               })}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label className="ml-2 text-sm text-gray-700">Auto-extend on Last-Minute Bids</label>
+            <label className="ml-2 text-sm text-gray-700 dark:text-slate-300">Auto-extend on Last-Minute Bids</label>
           </div>
           <div className="flex items-center">
             <input
@@ -364,7 +364,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
               })}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label className="ml-2 text-sm text-gray-700">Require Pre-approval</label>
+            <label className="ml-2 text-sm text-gray-700 dark:text-slate-300">Require Pre-approval</label>
           </div>
         </div>
       </div>
@@ -388,11 +388,11 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
   const renderPreviewStep = () => (
     <div className="auction-preview">
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           <FaEye className="inline mr-2 text-blue-500" />
           Auction Preview
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-slate-300">
           Review your auction settings before publishing
         </p>
       </div>
@@ -414,8 +414,8 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
       </div>
 
       {/* Cargo Details */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-3">Cargo Details</h4>
+      <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-4 mb-6">
+        <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Cargo Details</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="font-medium">Title:</span> {cargoDetails.title}
@@ -435,7 +435,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
       <div className="flex justify-end space-x-4">
         <button
           onClick={() => setCurrentStep('settings')}
-          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
         >
           <FaEdit className="inline mr-2" />
           Edit Settings
@@ -454,37 +454,37 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
   const renderActiveStep = () => (
     <div className="active-auction">
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           <FaGavel className="inline mr-2 text-green-500" />
           Active Auction
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-slate-300">
           Your auction is live and receiving bids
         </p>
       </div>
 
       {/* Auction Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white border rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{bids.length}</div>
-          <div className="text-sm text-gray-600">Total Bids</div>
+          <div className="text-sm text-gray-600 dark:text-slate-300">Total Bids</div>
         </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-green-600">
             {bids.length > 0 
               ? `$${Math.min(...bids.map(bid => bid.bidAmount)).toLocaleString()}`
               : 'No bids yet'
             }
           </div>
-          <div className="text-sm text-gray-600">Lowest Bid</div>
+          <div className="text-sm text-gray-600 dark:text-slate-300">Lowest Bid</div>
         </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-orange-600">
             {new Set(bids.map(bid => bid.truckOwner.id)).size}
           </div>
-          <div className="text-sm text-gray-600">Unique Bidders</div>
+          <div className="text-sm text-gray-600 dark:text-slate-300">Unique Bidders</div>
         </div>
-        <div className="bg-white border rounded-lg p-4 text-center">
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-purple-600">
             {auctionId ? (
               (() => {
@@ -496,19 +496,19 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
               `${auctionSettings.duration}h`
             )}
           </div>
-          <div className="text-sm text-gray-600">Time Remaining</div>
+          <div className="text-sm text-gray-600 dark:text-slate-300">Time Remaining</div>
         </div>
       </div>
 
       {/* Bids List */}
       <div className="space-y-4">
-        <h4 className="text-lg font-medium text-gray-900">Received Bids</h4>
+        <h4 className="text-lg font-medium text-gray-900 dark:text-white">Received Bids</h4>
         {bids.map((bid) => (
-          <div key={bid.id} className="border rounded-lg p-4 hover:bg-gray-50">
+          <div key={bid.id} className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h5 className="font-medium text-gray-900">{bid.truckOwner.name}</h5>
-                <p className="text-sm text-gray-600">{bid.truckSpecifications.truckType}</p>
+                <h5 className="font-medium text-gray-900 dark:text-white">{bid.truckOwner.name}</h5>
+                <p className="text-sm text-gray-600 dark:text-slate-300">{bid.truckSpecifications.truckType}</p>
               </div>
               <div className="text-right">
                 <div className="text-xl font-bold text-green-600">
@@ -532,7 +532,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 mb-3">{bid.bidNotes}</p>
+            <p className="text-sm text-gray-600 dark:text-slate-300 mb-3">{bid.bidNotes}</p>
 
             <div className="flex justify-end space-x-2">
               <button
@@ -553,7 +553,7 @@ const PublishForBidFlow: React.FC<PublishForBidFlowProps> = ({ cargoDetails, onC
     return (
       <div className="text-center py-12">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <p className="mt-3 text-gray-600">Creating auction...</p>
+        <p className="mt-3 text-gray-600 dark:text-slate-300">Creating auction...</p>
       </div>
     );
   }

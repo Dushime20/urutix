@@ -77,16 +77,16 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-md shadow-lg max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-slate-900 rounded-md shadow-lg max-w-md w-full mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Request Advance Payment</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Request Advance Payment</h3>
             <p className="text-xs text-gray-500 mt-0.5">Trip: {tripNumber}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-md transition-colors"
           >
             <FaTimes className="w-4 h-4" />
           </button>
@@ -96,7 +96,7 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Amount */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
               Requested Amount *
             </label>
             <div className="relative">
@@ -120,7 +120,7 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
 
           {/* Urgency */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
               Urgency Level
             </label>
             <select
@@ -136,7 +136,7 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
 
           {/* Reason */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
               Reason for Advance Payment *
             </label>
             <textarea
@@ -150,10 +150,10 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
           </div>
 
           {/* Info Box */}
-          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+          <div className="bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 rounded-md p-3">
             <div className="flex items-start space-x-2">
               <FaInfoCircle className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-gray-600">
+              <div className="text-xs text-gray-600 dark:text-slate-300">
                 <p className="font-medium mb-1">Advance Payment Information:</p>
                 <ul className="list-disc list-inside space-y-0.5 text-gray-500">
                   <li>Advance payments are typically processed within 1-3 business days</li>
@@ -166,11 +166,11 @@ const AdvancePaymentRequestModal: React.FC<AdvancePaymentRequestModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-200">
+          <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-200 dark:border-slate-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >
               Cancel
             </button>

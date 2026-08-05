@@ -81,7 +81,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
                   onTripAction?.(protocol.id as any);
                 }
               }}
-              className="group relative overflow-hidden rounded-[1.5rem] p-5 text-left transition-all bg-white border border-slate-100 shadow-lg shadow-slate-200/40 hover:border-blue-100"
+              className="group relative overflow-hidden rounded-[1.5rem] p-5 text-left transition-all bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-lg shadow-slate-200/40 hover:border-blue-100"
             >
               <div className="absolute -top-2 -right-2 p-4 opacity-5 group-hover:opacity-10 group-hover:scale-125 transition-all duration-700">
                 <protocol.icon size={50} className="text-[#345E85]" />
@@ -122,7 +122,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
           {intelligenceAccess.map((item) => (
             <motion.button
               key={item.id}
-              whileHover={{ scale: 1.05, backgroundColor: '#fff' }}
+              whileHover={{ scale: 1.05, backgroundColor: undefined }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
                 const tabMap: Record<string, string> = {
@@ -140,7 +140,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
                    onTabChange?.(tabMap[item.id] || 'overview');
                 }
               }}
-              className="bg-slate-50/50 border border-slate-100 rounded-xl p-4 text-center transition-all hover:shadow-lg hover:shadow-slate-200/40 group hover:border-blue-100"
+              className="bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl p-4 text-center transition-all hover:shadow-lg hover:shadow-slate-200/40 group hover:border-blue-100"
             >
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#345E85] shadow-sm flex items-center justify-center mx-auto mb-3 group-hover:rotate-6 transition-transform border border-blue-100">
                 <item.icon size={18} />
@@ -182,7 +182,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
                 </button>
                 <button 
                     onClick={() => onEmergency?.('accident')}
-                    className="flex-1 py-3.5 bg-white border border-rose-100 text-rose-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-95"
+                    className="flex-1 py-3.5 bg-white dark:bg-slate-900 border border-rose-100 text-rose-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 transition-all active:scale-95"
                 >
                     <TranslatedText text="Report Accident" />
                 </button>
@@ -190,7 +190,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
         </motion.div>
 
         {/* Audit Trail - Compact */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 p-6 opacity-5">
                 <Clock size={60} />
             </div>

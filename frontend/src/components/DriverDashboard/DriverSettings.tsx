@@ -41,7 +41,7 @@ export const DriverSettings: React.FC = () => {
       <motion.div
         initial={false}
         animate={{ x: checked ? 22 : 2 }}
-        className="absolute top-1 left-0 w-5 h-5 bg-white rounded-full shadow-sm flex items-center justify-center"
+        className="absolute top-1 left-0 w-5 h-5 bg-white dark:bg-slate-900 rounded-full shadow-sm flex items-center justify-center"
       >
         {checked && <Check className="w-3 h-3 text-[#345E85]" strokeWidth={3} />}
       </motion.div>
@@ -55,13 +55,13 @@ export const DriverSettings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* Notifications Card */}
-        <section className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <section className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow duration-300">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#345E85]">
               <Bell className="w-6 h-6" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Notifications</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Notifications</h3>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Manage Alerts</p>
             </div>
           </div>
@@ -70,7 +70,7 @@ export const DriverSettings: React.FC = () => {
             {Object.entries(notifications).map(([key, value]) => (
               <div key={key} className="flex items-center justify-between group">
                 <div>
-                  <p className="text-sm font-bold text-slate-700 capitalize group-hover:text-[#345E85] transition-colors">{key} Notifications</p>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300 capitalize group-hover:text-[#345E85] transition-colors">{key} Notifications</p>
                   <p className="text-xs text-slate-400 font-medium">Receive {key} alerts about your tasks</p>
                 </div>
                 <Toggle
@@ -83,20 +83,20 @@ export const DriverSettings: React.FC = () => {
         </section>
 
         {/* Preferences Card */}
-        <section className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <section className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow duration-300">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
               <Globe className="w-6 h-6" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">App Preferences</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">App Preferences</h3>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Localization & Theme</p>
             </div>
           </div>
 
           <div className="space-y-8">
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-slate-700">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
                 <Languages className="w-4 h-4 text-indigo-500" />
                 <span className="text-sm font-bold">Display Language</span>
               </div>
@@ -104,7 +104,7 @@ export const DriverSettings: React.FC = () => {
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full h-12 pl-4 pr-10 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-slate-100"
+                  className="w-full h-12 pl-4 pr-10 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-slate-100"
                 >
                   <option value="en">English (US)</option>
                   <option value="sw">Swahili</option>
@@ -120,7 +120,7 @@ export const DriverSettings: React.FC = () => {
                   <Moon className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900">Dark Mode</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">Dark Mode</p>
                   <p className="text-xs text-slate-400 font-medium">Coming soon</p>
                 </div>
               </div>
@@ -137,38 +137,38 @@ export const DriverSettings: React.FC = () => {
         </section>
 
         {/* Security Card */}
-        <section className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <section className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow duration-300">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
               <Lock className="w-6 h-6" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Security</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Security</h3>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Protection</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-transparent hover:bg-emerald-50 hover:border-emerald-100 group transition-all duration-200">
+            <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:bg-emerald-50 hover:border-emerald-100 group transition-all duration-200">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">Change Password</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 transition-colors">Change Password</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide group-hover:text-emerald-600/70">Update credentials</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all" />
             </button>
 
-            <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-transparent hover:bg-emerald-50 hover:border-emerald-100 group transition-all duration-200">
+            <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:bg-emerald-50 hover:border-emerald-100 group transition-all duration-200">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
                   <Smartphone className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">Two-Factor Auth</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-700 transition-colors">Two-Factor Auth</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide group-hover:text-emerald-600/70">Secure login</p>
                 </div>
               </div>
@@ -178,25 +178,25 @@ export const DriverSettings: React.FC = () => {
         </section>
 
         {/* Support & Account Card */}
-        <section className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <section className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow duration-300">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
               <HelpCircle className="w-6 h-6" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">Support & Account</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Support & Account</h3>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Help & Actions</p>
             </div>
           </div>
 
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-transparent hover:bg-blue-50 hover:border-blue-100 group transition-all duration-200">
+            <button className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:bg-blue-50 hover:border-blue-100 group transition-all duration-200">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-600 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-slate-600 dark:text-slate-300 group-hover:scale-110 transition-transform">
                   <Shield className="w-5 h-5" />
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Privacy Policy</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-700 transition-colors">Privacy Policy</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide group-hover:text-blue-600/70">Terms & Conditions</p>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export const DriverSettings: React.FC = () => {
               className="w-full flex items-center justify-between p-4 rounded-2xl bg-rose-50 border border-transparent hover:bg-rose-100 hover:border-rose-200 group transition-all duration-200"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-rose-600 group-hover:scale-110 transition-transform">
                   <LogOut className="w-5 h-5" />
                 </div>
                 <div className="text-left">

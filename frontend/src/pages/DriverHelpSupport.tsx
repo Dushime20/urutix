@@ -91,7 +91,7 @@ const DriverHelpSupport: React.FC = () => {
         <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10 animate-in fade-in duration-700">
             <div className="max-w-7xl mx-auto space-y-12">
                 {/* Driver-Centric Header */}
-                <div className="relative bg-white rounded-[40px] border border-slate-100 p-12 overflow-hidden shadow-sm group">
+                <div className="relative bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 p-12 overflow-hidden shadow-sm group">
                     <div className="absolute top-0 right-0 p-12 opacity-5 scale-[2] group-hover:rotate-12 transition-transform duration-1000">
                         <Truck size={180} className="text-[#345E85]" />
                     </div>
@@ -104,7 +104,7 @@ const DriverHelpSupport: React.FC = () => {
                             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85]">Personnel Assistance Paradigm</h2>
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none mb-6">
+                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-none mb-6">
                             Driver <span className="text-[#345E85]">Support</span> Hub
                         </h1>
                         <p className="text-slate-500 font-medium text-lg leading-relaxed mb-10">
@@ -118,7 +118,7 @@ const DriverHelpSupport: React.FC = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Query the repository for trip logic..."
-                                className="w-full bg-slate-50 border border-slate-100 rounded-3xl py-6 pl-16 pr-8 text-slate-900 font-bold placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner"
+                                className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-3xl py-6 pl-16 pr-8 text-slate-900 dark:text-white font-bold placeholder:text-slate-300 focus:bg-white dark:bg-slate-900 focus:ring-4 focus:ring-blue-50 focus:border-[#345E85] outline-none transition-all shadow-inner"
                             />
                         </div>
                     </div>
@@ -131,14 +131,14 @@ const DriverHelpSupport: React.FC = () => {
                         { icon: Phone, label: 'Voice Link', detail: '+254 700 000 000', action: 'Call Support' },
                         { icon: MessageSquare, label: 'Pulse Chat', detail: 'Real-time Assistant', action: 'Initialize Chat' }
                     ].map((vector, idx) => (
-                        <div key={idx} className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all group cursor-pointer">
+                        <div key={idx} className="bg-white dark:bg-slate-900 p-8 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group cursor-pointer">
                             <div className="flex items-center gap-4 mb-6">
-                                <div className={`h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#345E85] group-hover:text-white transition-all`}>
+                                <div className={`h-12 w-12 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 group-hover:bg-[#345E85] group-hover:text-white transition-all`}>
                                     <vector.icon size={24} />
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{vector.label}</p>
-                                    <p className="text-sm font-bold text-slate-900">{vector.detail}</p>
+                                    <p className="text-sm font-bold text-slate-900 dark:text-white">{vector.detail}</p>
                                 </div>
                             </div>
                             <button className="text-[10px] font-black uppercase tracking-widest text-[#345E85] flex items-center gap-2 group-hover:translate-x-2 transition-transform">
@@ -162,7 +162,7 @@ const DriverHelpSupport: React.FC = () => {
                                 onClick={() => setSelectedCategory(cat.id)}
                                 className={`flex flex-col items-center justify-center p-6 rounded-3xl border transition-all ${selectedCategory === cat.id
                                     ? 'bg-[#345E85] text-white border-transparent shadow-xl shadow-blue-100 scale-105'
-                                    : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'
+                                    : 'bg-white dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800 hover:border-slate-300'
                                     }`}
                             >
                                 <cat.icon size={20} className="mb-3" />
@@ -173,10 +173,10 @@ const DriverHelpSupport: React.FC = () => {
                 </div>
 
                 {/* Intelligence Repository */}
-                <div className="bg-white p-10 rounded-[40px] border border-slate-100 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-10 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center justify-between mb-10 pb-6 border-b border-slate-50">
                         <div>
-                            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Driver Knowledge Base</h3>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Driver Knowledge Base</h3>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Foundational knowledge synchronization</p>
                         </div>
                         <Zap className="text-[#345E85] animate-pulse" />
@@ -186,14 +186,14 @@ const DriverHelpSupport: React.FC = () => {
                         {filteredFAQs.map(faq => (
                             <div
                                 key={faq.id}
-                                className={`border rounded-3xl transition-all duration-300 ${expandedFAQ === faq.id ? 'border-[#345E85] bg-blue-50/20' : 'border-slate-100 bg-white hover:border-slate-200'
+                                className={`border rounded-3xl transition-all duration-300 ${expandedFAQ === faq.id ? 'border-[#345E85] bg-blue-50/20' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-200 dark:border-slate-700'
                                     }`}
                             >
                                 <button
                                     onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
                                     className="w-full px-8 py-6 text-left flex items-center justify-between"
                                 >
-                                    <span className="text-sm font-bold text-slate-800">{faq.question}</span>
+                                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{faq.question}</span>
                                     {expandedFAQ === faq.id ? <ChevronUp size={18} className="text-[#345E85]" /> : <ChevronDown size={18} className="text-slate-400" />}
                                 </button>
                                 <AnimatePresence>
@@ -205,7 +205,7 @@ const DriverHelpSupport: React.FC = () => {
                                             className="overflow-hidden"
                                         >
                                             <div className="px-8 pb-8 pt-2">
-                                                <p className="text-sm text-slate-600 leading-relaxed italic border-l-4 border-[#345E85] pl-6">{faq.answer}</p>
+                                                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic border-l-4 border-[#345E85] pl-6">{faq.answer}</p>
                                                 <div className="flex gap-4 mt-8 pt-6 border-t border-slate-50">
                                                     <button className="text-[9px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg active:scale-95 transition-all">
                                                         Efficient Logic <ThumbsUp size={12} />
