@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { fleetApi } from '../services/fleetApi';
 import type { Route } from '../services/fleetApi';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
@@ -18,6 +18,18 @@ import {
 import { cn } from '@/utils/cn';
 import MapLocationPicker from '@/components/FleetDashboard/MapLocationPicker';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+  const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(d);
+}
 
 const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const { confirm, DialogComponent } = useConfirmDialog();
@@ -48,7 +60,7 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     description: '',
   });
 
-  const loadRoutes = async () => {
+  const loadRoutes = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -60,13 +72,13 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadRoutes();
-  }, []);
+  }, [loadRoutes]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setEditing(null);
     setOriginCoords(null);
     setDestinationCoords(null);
@@ -86,14 +98,14 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
       isActive: true,
       description: '',
     });
-  };
+  }, []);
 
   const openCreate = () => {
     resetForm();
     setShowForm(true);
   };
 
-  const openEdit = (route: Route) => {
+  const openEdit = useCallback((route: Route) => {
     setEditing(route);
     setFormData({
       name: route.name,
@@ -107,9 +119,9 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
       description: route.description ?? '',
     });
     setShowForm(true);
-  };
+  }, []);
 
-  const handleDelete = async (route: Route) => {
+  const handleDelete = useCallback(async (route: Route) => {
     const confirmed = await confirm({
       title: 'Delete Route',
       message: `Are you sure you want to delete route "${route.name}"? This action cannot be undone.`,
@@ -125,7 +137,7 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
       console.error('Delete route failed', e);
       setError('Failed to delete route');
     }
-  };
+  }, [confirm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,48 +173,6 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
       setError('Failed to save route');
     }
   };
-
-  if (loading) {
-    return (
-      <div className={cn("flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500", isEmbedded ? "py-10" : "h-64")}>
-        <Loader2 className="animate-spin text-[#345E85]" size={32} />
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Optimizing Strategic Pathways...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        {!isEmbedded && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="mb-2">Routes</h1>
-                <p className="text-sm text-gray-600">Manage and monitor your routes</p>
-              </div>
-            </div>
-          </div>
-        )}
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <strong className="font-bold">Error:</strong>
-          <span className="block sm:inline"> {error}</span>
-        </div>
-      </div>
-    );
-  }
-
-  function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng / 2) ** 2;
-    const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(d);
-  }
 
   const routeColumns = useMemo<Column<Route>[]>(() => [
     {
@@ -283,7 +253,46 @@ const RoutesPage: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
       variant: 'danger',
       onClick: (route) => handleDelete(route),
     },
-  ], []);
+  ], [openEdit, handleDelete]);
+
+  if (loading) {
+    return (
+      <div className={cn("flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500", isEmbedded ? "py-10" : "h-64")}>
+        <Loader2 className="animate-spin text-[#345E85]" size={32} />
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Optimizing Strategic Pathways...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        {!isEmbedded && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="mb-2">Routes</h1>
+                <p className="text-sm text-gray-600">Manage and monitor your routes</p>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <strong className="font-bold">Error:</strong>
+          <span className="block sm:inline"> {error}</span>
+          <button
+            type="button"
+            onClick={loadRoutes}
+            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold underline"
+          >
+            <RefreshCcw size={14} />
+            Retry
+          </button>
+        </div>
+        {DialogComponent}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-12 animate-in fade-in duration-700", isEmbedded ? "p-0" : "p-0")}>
