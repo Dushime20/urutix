@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bid, BidStatus } from '../../../entities/bid.entity';
@@ -24,23 +24,16 @@ export class PaymentCalculationService {
     private readonly tripRepository: Repository<Trip>,
   ) {}
 
-  /**
-   * Calculate advance payment amounts based on transportation fee and bid preferences
-   * @param tripId - Trip ID to get transportation fee and bid information
-   * @param tenantId - Optional tenant ID for multi-tenant filtering
-   * @returns Calculation result with advance and final amounts
-   */
   async calculateAdvancePaymentForTrip(
     tripId: string,
     tenantId?: string,
   ): Promise<AdvancePaymentCalculation | null> {
     try {
-      // Get trip to find transportation fee
       const whereClause: any = { id: tripId };
       if (tenantId) {
         whereClause.tenantId = tenantId;
       }
-      
+
       const trip = await this.tripRepository.findOne({
         where: whereClause,
       });
@@ -50,10 +43,20 @@ export class PaymentCalculationService {
         return null;
       }
 
-      const transportationFee = trip.agreedPrice || 0;
-      const currency = trip.currencyCode || 'USD';
+      const transportationFee = Number(trip.agreedPrice);
+      if (!Number.isFinite(transportationFee) || transportationFee <= 0) {
+        throw new BadRequestException(
+          `Trip ${tripId} has no valid agreedPrice for advance calculation.`,
+        );
+      }
 
-      // Get accepted bid for this trip's load
+      const currency = String(trip.currencyCode || '').trim().toUpperCase();
+      if (!/^[A-Z]{3}$/.test(currency)) {
+        throw new BadRequestException(
+          `Trip ${tripId} is missing a valid ISO 4217 currencyCode.`,
+        );
+      }
+
       const acceptedBid = await this.bidRepository.findOne({
         where: {
           loadId: trip.loadId,
@@ -62,16 +65,9 @@ export class PaymentCalculationService {
         order: { updatedAt: 'DESC' },
       });
 
-      // If no bid found, use default values
       if (!acceptedBid) {
-        this.logger.warn(
-          `No accepted bid found for trip ${tripId}, using default advance payment settings`,
-        );
-        return this.calculateAdvancePayment(
-          transportationFee,
-          null,
-          true,
-          currency,
+        throw new BadRequestException(
+          `No accepted bid found for trip ${tripId}; cannot calculate advance payment.`,
         );
       }
 
@@ -84,6 +80,9 @@ export class PaymentCalculationService {
         currency,
       );
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       this.logger.error(
         `Error calculating advance payment for trip ${tripId}:`,
         error,
@@ -92,21 +91,19 @@ export class PaymentCalculationService {
     }
   }
 
-  /**
-   * Calculate advance payment amounts based on transportation fee and percentage
-   * @param transportationFee - The total transportation fee
-   * @param advancePaymentPercentage - Percentage of advance payment (0-100)
-   * @param requireAdvancePayment - Whether advance payment is required
-   * @param currency - Currency code
-   * @returns Calculation result with advance and final amounts
-   */
   calculateAdvancePayment(
     transportationFee: number,
     advancePaymentPercentage: number | null | undefined,
     requireAdvancePayment: boolean = true,
-    currency: string = 'USD',
+    currency?: string,
   ): AdvancePaymentCalculation {
-    // If advance payment is not required, return full amount as final
+    const resolvedCurrency = String(currency || '').trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(resolvedCurrency)) {
+      throw new BadRequestException(
+        'A valid ISO 4217 currency code is required for advance payment calculation.',
+      );
+    }
+
     if (!requireAdvancePayment) {
       return {
         transportationFee,
@@ -114,28 +111,32 @@ export class PaymentCalculationService {
         advanceAmount: 0,
         finalAmount: transportationFee,
         requireAdvancePayment: false,
-        currency,
+        currency: resolvedCurrency,
       };
     }
 
-    // Use provided percentage or default to 70%
-    const percentage =
-      advancePaymentPercentage !== undefined && advancePaymentPercentage !== null
-        ? advancePaymentPercentage
-        : 70;
-
-    // Validate percentage
-    if (percentage < 0 || percentage > 100) {
-      throw new Error('Advance payment percentage must be between 0 and 100');
+    if (
+      advancePaymentPercentage === undefined ||
+      advancePaymentPercentage === null ||
+      !Number.isFinite(Number(advancePaymentPercentage))
+    ) {
+      throw new BadRequestException(
+        'advancePaymentPercentage is required when advance payment is required.',
+      );
     }
 
-    // Calculate amounts with proper rounding to avoid floating point issues
+    const percentage = Number(advancePaymentPercentage);
+    if (percentage <= 0 || percentage > 100) {
+      throw new BadRequestException(
+        'Advance payment percentage must be between 0 (exclusive) and 100.',
+      );
+    }
+
     const advanceAmount =
       Math.round(transportationFee * (percentage / 100) * 100) / 100;
     const finalAmount =
       Math.round((transportationFee - advanceAmount) * 100) / 100;
 
-    // Ensure total adds up correctly (adjust final if needed due to rounding)
     const total = Math.round((advanceAmount + finalAmount) * 100) / 100;
     const adjustedFinal =
       Math.abs(total - transportationFee) > 0.01
@@ -148,8 +149,7 @@ export class PaymentCalculationService {
       advanceAmount,
       finalAmount: adjustedFinal,
       requireAdvancePayment: true,
-      currency,
+      currency: resolvedCurrency,
     };
   }
 }
-

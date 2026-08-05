@@ -58,6 +58,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { Borrower } from '../../entities/borrower.entity';
 import { PasswordResetToken } from '../../entities/password-reset-token.entity';
 import { Trip } from '../../entities/trip.entity';
+import { Load } from '../../entities/load.entity';
 import { EmailService } from '../auth/services/email.service';
 import { UrutiLendingIntegrationService } from './services/uruti-lending-integration.service';
 import { LendingPoliciesService } from './services/lending-policies.service';
@@ -204,30 +205,77 @@ export class LendingService {
 
   // Credit and Risk Management
   /**
-   * Validate borrower-level credit exposure.
-   * If a lender is specified, use their policy limits. Otherwise, apply safe platform defaults.
+   * Resolve ISO 4217 currency from loan → policy → trip → load. Never invent one.
+   */
+  private requireCurrency(
+    value: string | null | undefined,
+    context: string,
+  ): string {
+    const currency = String(value || '').trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      throw new BadRequestException(
+        `Missing or invalid ISO 4217 currency for ${context}.`,
+      );
+    }
+    return currency;
+  }
+
+  /**
+   * Validate borrower-level credit exposure against the lender's active policy.
+   * Platform env caps are optional secondary guards — never invented loan amounts.
    */
   private async validateCreditLimit(
     tenantId: string,
     requestedAmount: number,
     lenderId?: string,
   ): Promise<void> {
-    let maxPerLoan = 50_000_000;  // Platform-wide safety cap (RWF 50M)
-    let creditLimit = 500_000_000; // Platform-wide borrower total cap
+    if (!requestedAmount || requestedAmount <= 0) {
+      throw new BadRequestException('Requested loan amount must be greater than zero.');
+    }
+
+    let maxPerLoan: number | null = null;
+    let creditLimit: number | null = null;
 
     if (lenderId) {
       const policy = await this.lenderPolicyRepository.findOne({
         where: { lender_id: lenderId, is_active: true },
         order: { created_at: 'DESC' },
       });
-      if (policy) {
-        maxPerLoan  = Number(policy.max_advance_per_trip);
-        creditLimit = Number(policy.max_exposure);
+      if (!policy) {
+        throw new BadRequestException(
+          `Lender ${lenderId} has no active policy. Configure max_advance_per_trip and max_exposure before originating loans.`,
+        );
       }
+      maxPerLoan = Number(policy.max_advance_per_trip);
+      creditLimit = Number(policy.max_exposure);
+      if (!maxPerLoan || maxPerLoan <= 0 || !creditLimit || creditLimit <= 0) {
+        throw new BadRequestException(
+          `Lender policy ${policy.id} has invalid credit limits (max_advance_per_trip / max_exposure).`,
+        );
+      }
+    } else {
+      const platformMaxPerLoan = Number(
+        this.configService.get<string>('PLATFORM_MAX_LOAN_AMOUNT'),
+      );
+      const platformCreditLimit = Number(
+        this.configService.get<string>('PLATFORM_MAX_BORROWER_EXPOSURE'),
+      );
+      if (
+        !Number.isFinite(platformMaxPerLoan) ||
+        platformMaxPerLoan <= 0 ||
+        !Number.isFinite(platformCreditLimit) ||
+        platformCreditLimit <= 0
+      ) {
+        throw new BadRequestException(
+          'No lender specified and PLATFORM_MAX_LOAN_AMOUNT / PLATFORM_MAX_BORROWER_EXPOSURE are not configured.',
+        );
+      }
+      maxPerLoan = platformMaxPerLoan;
+      creditLimit = platformCreditLimit;
     }
 
-    if (requestedAmount > maxPerLoan) {
-      throw new LoanLimitExceededException(tenantId, requestedAmount, maxPerLoan);
+    if (requestedAmount > maxPerLoan!) {
+      throw new LoanLimitExceededException(tenantId, requestedAmount, maxPerLoan!);
     }
 
     const outstandingLoans = await this.loanRequestRepository
@@ -240,7 +288,7 @@ export class LendingService {
     const totalOutstanding = outstandingLoans.reduce(
       (sum, loan) => sum + Number(loan.approved_amount || 0), 0,
     );
-    const availableCredit = creditLimit - totalOutstanding;
+    const availableCredit = creditLimit! - totalOutstanding;
 
     if (requestedAmount > availableCredit) {
       throw new InsufficientCreditException(tenantId, requestedAmount, availableCredit);
@@ -773,11 +821,25 @@ export class LendingService {
     const policy = createLoanDto.lender_id
       ? await this.lenderPolicyRepository.findOne({ where: { lender_id: createLoanDto.lender_id, is_active: true }, order: { created_at: 'DESC' } })
       : null;
-    const gracePeriodDays = policy?.grace_period_days ?? 3;
+    const gracePeriodDays = policy?.grace_period_days ?? null;
+    if (gracePeriodDays == null && createLoanDto.lender_id) {
+      throw new BadRequestException(
+        'Active lender policy is missing grace_period_days.',
+      );
+    }
+    const effectiveGraceDays = gracePeriodDays ?? 0;
     const dueDate = createLoanDto.due_date ? new Date(createLoanDto.due_date) : null;
-    const gracePeriodEnd = dueDate ? new Date(dueDate.getTime() + gracePeriodDays * 86400_000) : null;
+    const gracePeriodEnd = dueDate
+      ? new Date(dueDate.getTime() + effectiveGraceDays * 86400_000)
+      : null;
     const originationFeeRate = Number(policy?.origination_fee_rate ?? 0);
     const originationFeeAmount = Math.round(createLoanDto.requested_amount * originationFeeRate * 100) / 100;
+
+    // Currency always comes from the frontend request body and is persisted as-is.
+    const loanCurrency = this.requireCurrency(
+      createLoanDto.currency,
+      'loan request body (currency from frontend)',
+    );
 
     const loanRequest = this.loanRequestRepository.create({
       ...createLoanDto,
@@ -787,7 +849,7 @@ export class LendingService {
       due_date: dueDate,
       loan_number: loanNumber,
       purpose: (createLoanDto as any).purpose ?? 'cargo_financing',
-      currency: (createLoanDto as any).currency ?? policy?.currency ?? 'RWF',
+      currency: loanCurrency,
       kyc_verified: (createLoanDto as any).kyc_verified ?? false,
       grace_period_end: gracePeriodEnd,
       origination_fee_rate: originationFeeRate,
@@ -891,7 +953,7 @@ export class LendingService {
       loanId: savedLoan.id,
       actorId: createdBy,
       amount: Number(savedLoan.requested_amount || 0),
-      currency: (savedLoan as any).currency || 'USD',
+      currency: this.requireCurrency(savedLoan.currency, `loan ${savedLoan.id}`),
       cargoId: savedLoan.cargo_id,
     });
 
@@ -904,8 +966,15 @@ export class LendingService {
     tenantId: string,
     createdBy: string,
     lenderId?: string,
+    /** ISO 4217 from frontend — source of truth for loan.currency */
+    currencyFromFrontend: string,
   ): Promise<LoanRequest> {
     this.logger.log(`Creating loan request for loaded cargo: ${cargoId}`);
+
+    const loanCurrency = this.requireCurrency(
+      currencyFromFrontend,
+      'cargo loan request body (currency from frontend)',
+    );
 
     // If trip_id is not provided, try to find it from the load
     let actualTripId = tripId;
@@ -949,10 +1018,7 @@ export class LendingService {
       return existingLoan;
     }
 
-    // Calculate loan amount (this could be enhanced with more sophisticated logic)
-    const requestedAmount = await this.calculateLoanAmountForCargo(cargoId);
-
-    // Resolve lender_id before creating the loan request
+    // Resolve lender first when provided so LTV / advance % come from real policy
     let resolvedLenderId: string | undefined = undefined;
     
     if (lenderId) {
@@ -995,8 +1061,6 @@ export class LendingService {
       }
       
       if (lender) {
-        // Validate lender and use its ID
-        await this.validateLenderAvailability(lender.id, requestedAmount);
         resolvedLenderId = lender.id;
         this.logger.log(`Resolved lender_id ${resolvedLenderId} for loan request`);
       } else {
@@ -1004,11 +1068,21 @@ export class LendingService {
       }
     }
 
+    const { amount: requestedAmount } =
+      await this.calculateLoanAmountForCargo(cargoId, resolvedLenderId);
+
+    if (resolvedLenderId) {
+      await this.validateLenderAvailability(resolvedLenderId, requestedAmount, {
+        currency: loanCurrency,
+      });
+    }
+
     const loanRequest = this.loanRequestRepository.create({
       tenant_id: tenantId,
       cargo_id: cargoId,
       trip_id: actualTripId,
       requested_amount: requestedAmount,
+      currency: loanCurrency,
       lender_id: resolvedLenderId, // Only set if we have a valid Lender entity ID
       idempotency_key: idempotencyKey,
       created_by: createdBy,
@@ -1018,12 +1092,14 @@ export class LendingService {
         trigger: 'cargo_loaded',
         created_at: new Date().toISOString(),
         selected_lender: lenderId || null, // Store original ID (could be User ID) in metadata
+        financing_basis: 'trip_or_load_value',
       },
     });
 
     const savedLoan = await this.loanRequestRepository.save(loanRequest);
     this.logger.log(
-      `Created loan request for cargo ${cargoId}: ${savedLoan.id}${resolvedLenderId ? ` with lender ${resolvedLenderId}` : ''}`,
+      `Created loan request for cargo ${cargoId}: ${savedLoan.id}${resolvedLenderId ? ` with lender ${resolvedLenderId}` : ''} ` +
+        `(${requestedAmount} ${loanCurrency})`,
     );
 
     // If no lender was specified, attempt to process with available lenders
@@ -1036,25 +1112,92 @@ export class LendingService {
       loanId: savedLoan.id,
       actorId: createdBy,
       amount: Number(savedLoan.requested_amount || 0),
-      currency: (savedLoan as any).currency || 'USD',
+      currency: this.requireCurrency(savedLoan.currency, `loan ${savedLoan.id}`),
       cargoId: savedLoan.cargo_id,
     });
 
     return savedLoan;
   }
 
-  private async calculateLoanAmountForCargo(cargoId: string): Promise<number> {
-    // For MVP, we'll use a simple calculation
-    // In production, this would consider cargo value, risk factors, etc.
+  /**
+   * Derive principal from real trip/load economics + lender LTV / advance policy.
+   * Currency is supplied by the frontend on the loan request — not derived here.
+   */
+  private async calculateLoanAmountForCargo(
+    cargoId: string,
+    lenderId?: string,
+  ): Promise<{ amount: number }> {
+    const load = await this.dataSource.getRepository(Load).findOne({
+      where: { id: cargoId },
+    });
+    if (!load) {
+      throw new NotFoundException(`Load/cargo ${cargoId} not found`);
+    }
 
-    // TODO: Fetch cargo details from loads service
-    // For now, return a default amount
-    const defaultLoanAmount = 100000; // RWF 100,000
+    const trip = await this.dataSource.getRepository(Trip).findOne({
+      where: { loadId: cargoId },
+      order: { createdAt: 'DESC' },
+    });
 
-    this.logger.log(
-      `Calculated loan amount for cargo ${cargoId}: ${defaultLoanAmount}`,
+    const tripPrice =
+      trip?.agreedPrice != null ? Number(trip.agreedPrice) : NaN;
+    const offered =
+      load.offeredPrice != null ? Number(load.offeredPrice) : NaN;
+    const loadValue =
+      load.loadValue != null ? Number(load.loadValue) : NaN;
+
+    const collateralBase = [tripPrice, offered, loadValue].find(
+      (v) => Number.isFinite(v) && v > 0,
     );
-    return defaultLoanAmount;
+    if (!collateralBase) {
+      throw new BadRequestException(
+        `Cannot calculate loan amount for load ${cargoId}: no agreed trip price, offered price, or load value.`,
+      );
+    }
+
+    let financingRatio = 1;
+    if (lenderId) {
+      const policy = await this.lenderPolicyRepository.findOne({
+        where: { lender_id: lenderId, is_active: true },
+        order: { created_at: 'DESC' },
+      });
+      if (!policy) {
+        throw new BadRequestException(
+          `Lender ${lenderId} has no active policy to determine advance/LTV ratio.`,
+        );
+      }
+      const advancePct = Number(policy.advance_percentage);
+      const maxLtv =
+        policy.max_ltv_ratio != null ? Number(policy.max_ltv_ratio) : advancePct;
+      if (!Number.isFinite(advancePct) || advancePct <= 0 || advancePct > 1) {
+        throw new BadRequestException(
+          `Lender policy ${policy.id} has invalid advance_percentage (expected 0 < value ≤ 1).`,
+        );
+      }
+      financingRatio = Math.min(
+        advancePct,
+        Number.isFinite(maxLtv) && maxLtv > 0 ? maxLtv : advancePct,
+      );
+
+      const maxAdvance = Number(policy.max_advance_per_trip);
+      const rawAmount = Math.round(collateralBase * financingRatio * 100) / 100;
+      const amount =
+        Number.isFinite(maxAdvance) && maxAdvance > 0
+          ? Math.min(rawAmount, maxAdvance)
+          : rawAmount;
+
+      this.logger.log(
+        `Loan amount for cargo ${cargoId}: ${amount} ` +
+          `(basis=${collateralBase}, ratio=${financingRatio}, max_advance=${maxAdvance || 'n/a'})`,
+      );
+      return { amount };
+    }
+
+    const amount = Math.round(collateralBase * 100) / 100;
+    this.logger.log(
+      `Loan amount for cargo ${cargoId}: ${amount} (full collateral basis, no lender policy)`,
+    );
+    return { amount };
   }
 
   async processLoanRequest(loanId: string): Promise<void> {
@@ -1125,19 +1268,32 @@ export class LendingService {
 
     this.logger.log(`findSuitableLender: Found ${lenders.length} active lenders to evaluate`);
 
-    // Default limits used when a lender has no policy configured
-    const DEFAULT_MAX_ADVANCE = 100_000;
-    const DEFAULT_MAX_EXPOSURE = 1_000_000;
-
     for (const lender of lenders) {
       const policy = lender.policies?.[0];
+      if (!policy) {
+        this.logger.log(
+          `findSuitableLender: Lender ${lender.id} (${lender.name}) skipped — no active policy`,
+        );
+        continue;
+      }
 
-      const maxAdvance  = policy ? Number(policy.max_advance_per_trip) : DEFAULT_MAX_ADVANCE;
-      const maxExposure = policy ? Number(policy.max_exposure)         : DEFAULT_MAX_EXPOSURE;
+      const maxAdvance = Number(policy.max_advance_per_trip);
+      const maxExposure = Number(policy.max_exposure);
+      if (
+        !Number.isFinite(maxAdvance) ||
+        maxAdvance <= 0 ||
+        !Number.isFinite(maxExposure) ||
+        maxExposure <= 0
+      ) {
+        this.logger.log(
+          `findSuitableLender: Lender ${lender.name} skipped — invalid policy limits`,
+        );
+        continue;
+      }
 
       this.logger.log(
         `findSuitableLender: Evaluating lender ${lender.id} (${lender.name}) - ` +
-        `maxAdvance: ${maxAdvance}, maxExposure: ${maxExposure}${policy ? '' : ' [defaults]'}`
+        `maxAdvance: ${maxAdvance}, maxExposure: ${maxExposure}`,
       );
 
       // Check if loan amount is within per-trip limit
@@ -1208,26 +1364,25 @@ export class LendingService {
     lender: Lender,
   ): Promise<void> {
     if (!lender.callback_url) {
-      // For MVP, auto-approve loans
-      await this.approveLoanRequest(loan.id, {
-        status: 'approved',
-        approved_amount: loan.requested_amount,
-        external_loan_ref: `AUTO-${Date.now()}`,
-        interest_amount: await this.calculateInterest(loan, lender),
-        disbursement_instruction: {
-          mode: 'platform_initiated',
-        },
-      });
+      // Production: never auto-approve. Leave pending for human / in-app review.
+      this.logger.warn(
+        `Lender ${lender.id} has no callback_url — loan ${loan.id} left PENDING for manual review.`,
+      );
+      loan.metadata = {
+        ...(loan.metadata || {}),
+        awaiting_lender_review: true,
+        awaiting_lender_review_reason: 'Lender has no outbound callback_url configured',
+        awaiting_lender_review_at: new Date().toISOString(),
+      };
+      await this.loanRequestRepository.save(loan);
       return;
     }
 
-    // Check if this is a Uruti Lending Platform integration
-    // We can detect this by checking if the callback_url contains the Uruti Lending Platform domain
-    // or by checking metadata for integration type
+    // Prefer explicit integration metadata; never treat localhost as production integrator
     const isUrutiLendingPlatform =
       lender.metadata?.integrationType === 'uruti_lending_platform' ||
-      lender.callback_url.includes('urutilending.com') ||
-      lender.callback_url.includes('localhost:3000');
+      (typeof lender.callback_url === 'string' &&
+        lender.callback_url.includes('urutilending.com'));
 
     if (isUrutiLendingPlatform && lender.outbound_api_key_encrypted) {
       // Use Uruti Lending Platform integration
@@ -1934,14 +2089,17 @@ export class LendingService {
     };
   }
 
-  /** Convert loan amount to MoMo provider currency when needed. */
+  /** Convert loan amount to MoMo provider currency when needed. Fail hard on FX errors. */
   private async resolveDisbursementAmount(
     amount: number,
     loanCurrency: string,
   ): Promise<{ amount: number; currency: string; exchangeRate?: number }> {
-    const momoCurrency =
-      this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
-    const fromCurrency = loanCurrency || 'RWF';
+    const fromCurrency = this.requireCurrency(loanCurrency, 'loan disbursement');
+    const momoCurrencyRaw = this.configService.get<string>('MOBILE_MONEY_CURRENCY');
+    const momoCurrency = this.requireCurrency(
+      momoCurrencyRaw,
+      'MOBILE_MONEY_CURRENCY env',
+    );
 
     if (fromCurrency === momoCurrency) {
       return { amount: Math.round(amount), currency: momoCurrency };
@@ -1953,14 +2111,25 @@ export class LendingService {
         fromCurrency,
         momoCurrency,
       );
+      if (
+        !converted ||
+        !Number.isFinite(converted.convertedAmount) ||
+        converted.convertedAmount <= 0
+      ) {
+        throw new BadRequestException(
+          `Currency conversion returned an invalid amount (${fromCurrency} → ${momoCurrency}).`,
+        );
+      }
       return {
         amount: Math.round(converted.convertedAmount),
         currency: momoCurrency,
         exchangeRate: converted.exchangeRate,
       };
-    } catch (err) {
-      this.logger.warn(`Currency conversion failed, using original amount: ${err.message}`);
-      return { amount: Math.round(amount), currency: fromCurrency };
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException(
+        `Currency conversion failed (${fromCurrency} → ${momoCurrency}): ${err.message}. Disbursement aborted.`,
+      );
     }
   }
 
@@ -2133,20 +2302,47 @@ export class LendingService {
 
       this.assertReadyForDisbursement(loan);
 
-      // Provide default beneficiaries if requested_split is null
-      const beneficiaries = loan.requested_split && Array.isArray(loan.requested_split) && loan.requested_split.length > 0
-        ? loan.requested_split
-        : [{
-            recipientId: loan.cargo_id || null,
-            recipientType: 'cargo_owner',
-            amount: loan.approved_amount || loan.requested_amount,
-            percentage: 100,
-          }];
+      const truckOwnerPayment = await this.resolveTruckOwnerPaymentInfo(
+        loan.trip_id,
+        manager,
+      );
+      if (!truckOwnerPayment.ownerId) {
+        throw new BadRequestException(
+          'Cannot initiate disbursement: truck owner could not be resolved for this trip. Use disburse-with-payment instead.',
+        );
+      }
+
+      const lockedAmount = Number(loan.approved_amount);
+      if (!lockedAmount || lockedAmount <= 0) {
+        throw new BadRequestException('Approved amount is not set.');
+      }
+      const loanCurrency = this.requireCurrency(
+        loan.currency,
+        `loan ${loan.id}`,
+      );
+
+      const beneficiaries =
+        loan.requested_split &&
+        Array.isArray(loan.requested_split) &&
+        loan.requested_split.length > 0
+          ? loan.requested_split
+          : [
+              {
+                recipientId: truckOwnerPayment.ownerId,
+                recipientType: 'truck_owner',
+                amount: lockedAmount,
+                percentage: 100,
+                phoneNumber: truckOwnerPayment.paymentInfo.phoneNumber || null,
+                accountNumber:
+                  truckOwnerPayment.paymentInfo.accountNumber || null,
+              },
+            ];
 
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
         beneficiaries: beneficiaries,
-        amount: loan.approved_amount || loan.requested_amount,
+        amount: lockedAmount,
+        currency: loanCurrency,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
         interest_rate: loan.metadata?.interest_rate ?? null,
@@ -2160,28 +2356,24 @@ export class LendingService {
       );
 
       try {
+        // Queue for settlement only — does not mark loan DISBURSED.
+        // Real funds movement requires disburse-with-payment (MoMo) or
+        // confirmDisbursement / updateDisbursementStatus (bank).
         await this.processDisbursementToBeneficiaries(savedDisbursement);
-        loan.status = LoanRequestStatus.DISBURSED;
+        loan.metadata = {
+          ...(loan.metadata || {}),
+          disbursement: {
+            method: 'initiated_pending_settlement',
+            amount: lockedAmount,
+            currency: loanCurrency,
+            truck_owner_id: truckOwnerPayment.ownerId,
+            pending_confirmation: true,
+          },
+        };
         await manager.save(LoanRequest, loan);
-
-        // Notify truck owner that lender paid on their behalf
-        try {
-          const lender = await this.lenderRepository.findOne({ where: { id: loan.lender_id } });
-          // Notify each beneficiary (truck owner)
-          for (const ben of savedDisbursement.beneficiaries || []) {
-            if (ben.recipientId && ben.recipientType !== 'cargo_owner') {
-              await this.loanNotificationService.notifyTruckOwnerLenderPaid(
-                ben.recipientId,
-                loan.tenant_id,
-                loan.id,
-                ben.amount || loan.approved_amount || loan.requested_amount,
-                lender?.name || 'Lender',
-              );
-            }
-          }
-        } catch (notifErr) {
-          this.logger.warn(`Could not send disbursement notification: ${notifErr.message}`);
-        }
+        this.logger.log(
+          `Disbursement ${savedDisbursement.id} queued as PENDING for loan ${loanId}; awaiting settlement confirmation.`,
+        );
       } catch (error) {
         this.logger.error(
           `Disbursement failed for loan ${loanId}: ${error.message}`,
@@ -2189,6 +2381,7 @@ export class LendingService {
         savedDisbursement.status = DisbursementStatus.FAILED;
         savedDisbursement.failure_reason = error.message;
         await manager.save(LoanDisbursement, savedDisbursement);
+        throw error;
       }
 
       return savedDisbursement;
@@ -2278,8 +2471,14 @@ export class LendingService {
             phoneNumber: truckOwnerPhone || null,
           }];
       
-      // If the disbursement modal overrides the currency, honour that choice
-      const disburseChosenCurrency = paymentDto.currency || loan.currency || 'RWF';
+      // Currency from frontend disbursement modal, else the currency saved on the loan
+      // (which itself came from the frontend when the loan was created).
+      const disburseChosenCurrency = this.requireCurrency(
+        paymentDto.currency || loan.currency,
+        paymentDto.currency
+          ? 'disbursement request body (currency from frontend)'
+          : `loan ${loan.id} (persisted currency from frontend)`,
+      );
 
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
@@ -2315,6 +2514,14 @@ export class LendingService {
 
       // Process payment via mobile money if requested
       if (paymentDto.paymentMethod === 'mobile_money' && truckOwnerPhone) {
+        let processedPayment: any = null;
+        const {
+          Payment: PaymentEntity,
+          PaymentStatus: PmtStatus,
+          PaymentType: PmtType,
+          PaymentMethod: PmtMethod,
+        } = await import('../../entities/payment.entity');
+
         try {
           const MobileMoneyModule = await import('../payments/services/mobile-money-payment.service');
           const MobileMoneyClass = MobileMoneyModule.MobileMoneyPaymentService;
@@ -2346,6 +2553,94 @@ export class LendingService {
             throw new BadRequestException(
               `Invalid disbursement amount for mobile money (${disburseAmount} ${disburseCurrency}).`,
             );
+          }
+
+          const PaymentsServiceModule = await import('../payments/payments.service');
+          const PaymentsServiceClass = PaymentsServiceModule.PaymentsService;
+          const paymentsService = this.moduleRef.get(PaymentsServiceClass, { strict: false });
+
+          // Idempotency guard BEFORE calling MoMo — avoids double-charging on retry
+          // when a prior attempt already created an active lender payment row.
+          const existingLenderPayment = await manager
+            .createQueryBuilder(PaymentEntity, 'p')
+            .where('p.tripId = :tripId', { tripId: trip.id })
+            .andWhere('p.payerId = :payerId', { payerId: lenderUserId })
+            .andWhere('p.status IN (:...statuses)', {
+              statuses: [PmtStatus.PENDING, PmtStatus.PROCESSING, PmtStatus.COMPLETED],
+            })
+            .andWhere(`(p.metadata->>'isLenderPayment') = 'true'`)
+            .andWhere(`(p.metadata->>'loanId') = :loanId`, { loanId: loan.id })
+            .andWhere('p.deleted_at IS NULL')
+            .orderBy('p.createdAt', 'DESC')
+            .getOne();
+
+          if (existingLenderPayment?.status === PmtStatus.COMPLETED) {
+            this.logger.log(
+              `Loan ${loan.id} already has completed lender payment ${existingLenderPayment.id} — skipping MoMo`,
+            );
+            processedPayment = existingLenderPayment;
+            disbursement.status = DisbursementStatus.DISBURSED;
+            disbursement.disbursement_date = new Date();
+            disbursement.external_txn_ref =
+              existingLenderPayment.transactionId || existingLenderPayment.referenceNumber;
+            loan.status = LoanRequestStatus.DISBURSED;
+            await manager.save(LoanDisbursement, savedDisbursement);
+            await manager.save(LoanRequest, loan);
+
+            return {
+              success: true,
+              pendingConfirmation: false,
+              disbursement: savedDisbursement,
+              payment: {
+                id: existingLenderPayment.id,
+                status: existingLenderPayment.status,
+                transactionId: existingLenderPayment.transactionId,
+                pendingConfirmation: false,
+              },
+              disbursedAmount: lockedAmount,
+              disbursedCurrency: loan.currency,
+              momoAmount: disburseAmount,
+              momoCurrency: disburseCurrency,
+              alreadyDisbursed: true,
+            };
+          }
+
+          if (
+            existingLenderPayment &&
+            (existingLenderPayment.status === PmtStatus.PENDING ||
+              existingLenderPayment.status === PmtStatus.PROCESSING) &&
+            (existingLenderPayment.transactionId ||
+              (existingLenderPayment.metadata as any)?.momoTransactionId)
+          ) {
+            // Prior MoMo request still awaiting PIN — reuse, do not create a new MoMo txn
+            const existingTxnId =
+              existingLenderPayment.transactionId ||
+              (existingLenderPayment.metadata as any)?.momoTransactionId;
+            this.logger.log(
+              `Loan ${loan.id} has in-flight lender payment ${existingLenderPayment.id} ` +
+                `(txn ${existingTxnId}) — returning pending confirmation without new MoMo call`,
+            );
+            processedPayment = existingLenderPayment;
+            disbursement.status = DisbursementStatus.PENDING;
+            disbursement.external_txn_ref = existingTxnId;
+            await manager.save(LoanDisbursement, savedDisbursement);
+
+            return {
+              success: true,
+              pendingConfirmation: true,
+              disbursement: savedDisbursement,
+              payment: {
+                id: existingLenderPayment.id,
+                status: existingLenderPayment.status,
+                transactionId: existingTxnId,
+                pendingConfirmation: true,
+              },
+              disbursedAmount: 0,
+              disbursedCurrency: loan.currency,
+              momoAmount: disburseAmount,
+              momoCurrency: disburseCurrency,
+              awaitingPriorConfirmation: true,
+            };
           }
 
           const referenceNumber = `LOAN-${loan.id.slice(0, 8).toUpperCase()}-DISB-${Date.now()}`;
@@ -2396,19 +2691,13 @@ export class LendingService {
           const pendingConfirmation = !paymentConfirmed;
 
           // Record payment via PaymentsService for audit trail
-          const PaymentsServiceModule = await import('../payments/payments.service');
-          const PaymentsServiceClass = PaymentsServiceModule.PaymentsService;
-          const paymentsService = this.moduleRef.get(PaymentsServiceClass, { strict: false });
-
-          let processedPayment: any = null;
           if (paymentsService) {
-            const { PaymentMethod, PaymentType } = await import('../../entities/payment.entity');
             const createPaymentDto = {
               tripId: trip.id,
               amount: lockedAmount,
-              currency: loan.currency || 'RWF',
-              paymentMethod: PaymentMethod.DIGITAL_WALLET,
-              paymentType: PaymentType.TRIP_PAYMENT,
+              currency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
+              paymentMethod: PmtMethod.DIGITAL_WALLET,
+              paymentType: PmtType.TRIP_PAYMENT,
               description: paymentMessage,
               referenceNumber,
               metadata: {
@@ -2434,18 +2723,26 @@ export class LendingService {
               lenderUserId,
             );
 
-            processedPayment = await paymentsService.updatePaymentStatus(
-              payment.id,
-              {
-                status: (paymentConfirmed ? 'completed' : 'processing') as any,
-                transactionId,
-                gatewayResponse: paymentConfirmed
-                  ? 'Loan disbursement completed via Mobile Money.'
-                  : 'Awaiting MoMo PIN approval on payer phone.',
-                processedAt: paymentConfirmed ? new Date() : undefined,
-              },
-              tenantId,
-            );
+            // Only transition status when the reused/created row is still pending
+            if (
+              payment.status === PmtStatus.PENDING ||
+              payment.status === PmtStatus.PROCESSING
+            ) {
+              processedPayment = await paymentsService.updatePaymentStatus(
+                payment.id,
+                {
+                  status: (paymentConfirmed ? 'completed' : 'processing') as any,
+                  transactionId,
+                  gatewayResponse: paymentConfirmed
+                    ? 'Loan disbursement completed via Mobile Money.'
+                    : 'Awaiting MoMo PIN approval on payer phone.',
+                  processedAt: paymentConfirmed ? new Date() : undefined,
+                },
+                tenantId,
+              );
+            } else {
+              processedPayment = payment;
+            }
           }
 
           if (paymentConfirmed) {
@@ -2504,7 +2801,6 @@ export class LendingService {
           }
 
           const cargoOwnerId: string = loan.created_by;
-          const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } = await import('../../entities/payment.entity');
 
           if (paymentConfirmed) {
             const existingTripPayment = await manager.findOne(PaymentEntity, {
@@ -2526,9 +2822,12 @@ export class LendingService {
               await manager.save(PaymentEntity, existingTripPayment);
             }
 
-            const dueDate = loan.due_date
-              ? new Date(loan.due_date)
-              : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
+            const dueDate = loan.due_date ? new Date(loan.due_date) : null;
+            if (!dueDate) {
+              throw new BadRequestException(
+                `Loan ${loan.id} has no due_date; cannot create repayment obligation.`,
+              );
+            }
             const obligationAmount =
               Number(loan.approved_amount) + Number(loan.interest_amount || 0);
             const obligationPayment = manager.create(PaymentEntity, {
@@ -2537,7 +2836,7 @@ export class LendingService {
               payerId: cargoOwnerId,
               payeeId: lenderUserId,
               amount: obligationAmount,
-              currency: loan.currency || 'RWF',
+              currency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
               paymentMethod: PmtMethod.BANK_TRANSFER,
               paymentType: PmtType.TRIP_PAYMENT,
               status: PmtStatus.PENDING,
@@ -2580,6 +2879,34 @@ export class LendingService {
           savedDisbursement.status = DisbursementStatus.FAILED;
           savedDisbursement.failure_reason = error.message;
           await manager.save(LoanDisbursement, savedDisbursement);
+
+          // Release the payment row so a retry is not blocked by unique indexes
+          if (
+            processedPayment?.id &&
+            (processedPayment.status === PmtStatus.PENDING ||
+              processedPayment.status === PmtStatus.PROCESSING)
+          ) {
+            try {
+              await manager.update(
+                PaymentEntity,
+                { id: processedPayment.id },
+                {
+                  status: PmtStatus.CANCELLED,
+                  failureReason: `Disbursement failed: ${error.message}`,
+                  metadata: {
+                    ...(processedPayment.metadata || {}),
+                    cancelledReason: 'Disbursement attempt failed',
+                    cancelledAt: new Date().toISOString(),
+                  },
+                } as any,
+              );
+            } catch (cancelErr: any) {
+              this.logger.warn(
+                `Could not cancel payment ${processedPayment.id} after failed disbursement: ${cancelErr.message}`,
+              );
+            }
+          }
+
           this.logger.error(`Mobile money disbursement failed: ${error.message}`, error.stack);
           if (error instanceof BadRequestException || error instanceof NotFoundException) {
             throw error;
@@ -2604,95 +2931,53 @@ export class LendingService {
         },
       };
       await this.processDisbursementToBeneficiaries(savedDisbursement);
-      loan.status = LoanRequestStatus.DISBURSED;
+      // Keep loan APPROVED until confirmDisbursement / updateDisbursementStatus
       await manager.save(LoanRequest, loan);
 
-      // ── Cargo owner obligation (fallback / non-MoMo path) ─────────────────
-      try {
-        const cargoOwnerId: string = loan.created_by;
-        const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } = await import('../../entities/payment.entity');
-
-        // Cancel old trip-payment obligation if exists
-        const existingTripPayment = await manager.findOne(PaymentEntity, {
-          where: {
-            tripId: trip.id,
-            payerId: cargoOwnerId,
-            paymentType: PmtType.TRIP_PAYMENT,
-            status: PmtStatus.PENDING,
-          } as any,
-        });
-        if (existingTripPayment) {
-          existingTripPayment.status = PmtStatus.CANCELLED;
-          (existingTripPayment.metadata as any) = {
-            ...(existingTripPayment.metadata || {}),
-            cancelledReason: 'Replaced by lender disbursement obligation',
-            loanId: loan.id,
-            cancelledAt: new Date().toISOString(),
-          };
-          await manager.save(PaymentEntity, existingTripPayment);
-        }
-
-        // Create cargo owner → lender obligation
-        const dueDate = loan.due_date ? new Date(loan.due_date) : (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d; })();
-        const obligationAmount = Number(loan.approved_amount || loan.requested_amount) + Number(loan.interest_amount || 0);
-        const obligationPayment = manager.create(PaymentEntity, {
-          tripId: trip.id,
-          tenantId: loan.tenant_id,
-          payerId: cargoOwnerId,
-          payeeId: lenderUserId,
-          amount: obligationAmount,
-          currency: loan.currency || 'RWF',
-          paymentMethod: PmtMethod.BANK_TRANSFER,
-          paymentType: PmtType.TRIP_PAYMENT,
-          status: PmtStatus.PENDING,
-          dueDate,
-          description: `Loan repayment to lender — ${loan.loan_number || loan.id.slice(0, 8)}`,
-          referenceNumber: `LREP-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
-          metadata: {
-            isLoanRepaymentObligation: true,
-            isLenderPayment: false,
-            loanId: loan.id,
-            lenderName: loan.lender?.name ?? null,
-            lenderId: loan.lender_id,
-            cargoOwnerId,
-            paymentSource: 'lender_disbursement',
-            automaticallyCreated: true,
-          },
-        } as any);
-        await manager.save(PaymentEntity, obligationPayment);
-        this.logger.log(`Created cargo owner obligation payment ${obligationPayment.id} for loan ${loan.id} (fallback path)`);
-      } catch (err: any) {
-        // Non-fatal — disbursement already succeeded
-        this.logger.error(`Failed to create cargo owner obligation (fallback): ${err.message}`);
-      }
-      // ──────────────────────────────────────────────────────────────────────
+      this.logger.log(
+        `Bank transfer disbursement ${savedDisbursement.id} queued as PENDING for loan ${loan.id}`,
+      );
 
       return {
         success: true,
+        pendingConfirmation: true,
         disbursement: savedDisbursement,
+        disbursedAmount: 0,
+        disbursedCurrency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
       };
     });
   }
 
+  /**
+   * Prepare a bank / off-platform disbursement for settlement.
+   * Never marks DISBURSED — confirmation must come via confirmDisbursement
+   * or updateDisbursementStatus after real funds movement.
+   */
   private async processDisbursementToBeneficiaries(
     disbursement: LoanDisbursement,
   ): Promise<void> {
-    // This would integrate with your payment service
-    // For now, we'll simulate successful disbursement
-
-    for (const beneficiary of disbursement.beneficiaries) {
-      this.logger.log(
-        `Disbursing ${beneficiary.amount} to ${beneficiary.type} ${beneficiary.id}`,
+    if (!disbursement.beneficiaries?.length) {
+      throw new BadRequestException(
+        'Disbursement has no beneficiaries. Configure loan requested_split or resolve truck owner payment info.',
       );
-
-      // Here you would call your wallet/payment service
-      // await this.walletService.credit(beneficiary.id, beneficiary.amount);
     }
 
-    disbursement.status = DisbursementStatus.DISBURSED;
-    disbursement.disbursement_date = new Date();
-    disbursement.external_txn_ref = `DISB-${Date.now()}`;
+    for (const beneficiary of disbursement.beneficiaries) {
+      const amount = Number(beneficiary.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new BadRequestException(
+          'Each disbursement beneficiary must have a positive amount.',
+        );
+      }
+      this.logger.log(
+        `Queued disbursement of ${amount} to ${beneficiary.recipientType || beneficiary.type || 'beneficiary'} ` +
+          `${beneficiary.recipientId || beneficiary.id || 'unknown'} ` +
+          `(disbursement ${disbursement.id})`,
+      );
+    }
 
+    disbursement.status = DisbursementStatus.PENDING;
+    disbursement.disbursement_date = null as any;
     await this.loanDisbursementRepository.save(disbursement);
   }
 
@@ -2919,7 +3204,10 @@ export class LendingService {
         );
       }
 
-      const loanCurrency = loan.currency || 'RWF';
+      const loanCurrency = this.requireCurrency(
+        loan.currency,
+        `loan ${loan.id} repayment`,
+      );
       const { amount: momoAmount, currency: momoCurrency, exchangeRate } =
         await this.resolveDisbursementAmount(appliedAmount, loanCurrency);
 
@@ -2994,7 +3282,12 @@ export class LendingService {
       paymentStatus,
       paymentDetails,
       interestAmount,
-      currency: paymentMeta?.currency || loan.currency || 'RWF',
+      currency: this.requireCurrency(
+        paymentMeta?.currency || loan.currency,
+        paymentMeta?.currency
+          ? 'repayment request body (currency from frontend)'
+          : `loan ${loan.id} (persisted currency from frontend)`,
+      ),
     });
 
     const { saved, fullyRepaid, freshLoan } = savedRepayment;
@@ -3216,7 +3509,10 @@ export class LendingService {
     },
   ): Promise<void> {
     try {
-      const currency = loan.currency || 'RWF';
+      const currency = this.requireCurrency(
+        loan.currency,
+        `loan ${loan.id} repayment notification`,
+      );
       const amount = Number(repayment.amount || 0);
       const notifiedUserIds = new Set<string>();
 
@@ -3382,9 +3678,26 @@ export class LendingService {
   }
 
   private async buildOutboundAuthHeader(lenderId: string): Promise<string> {
-    // For now, fall back to env token until key provisioning is in place
-    const token = process.env.LENDER_API_KEY || '';
-    return `Bearer ${token}`;
+    const lender = await this.lenderRepository.findOne({ where: { id: lenderId } });
+    if (!lender?.outbound_api_key_encrypted) {
+      throw new BadRequestException(
+        `Lender ${lenderId} has no outbound API key configured. Provision outbound_api_key before calling external lender APIs.`,
+      );
+    }
+    try {
+      const token = decryptString(lender.outbound_api_key_encrypted);
+      if (!token?.trim()) {
+        throw new BadRequestException(
+          `Lender ${lenderId} outbound API key decrypted to an empty value.`,
+        );
+      }
+      return `Bearer ${token.trim()}`;
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException(
+        `Failed to decrypt outbound API key for lender ${lenderId}: ${err.message}`,
+      );
+    }
   }
 
   private async calculateInterest(
@@ -3950,25 +4263,25 @@ export class LendingService {
               address: undefined,
               description: 'Leading commercial lending firm specializing in logistics and transportation financing.',
               operationalCountries: [],
-              supportedCurrencies: ['USD'],
+              supportedCurrencies: [],
               lendingCapacity: {
-                minLoanAmount: 10000,
-                maxLoanAmount: 1000000,
-                totalCapacity: 10000000,
-                availableCapacity: 8000000,
+                minLoanAmount: null,
+                maxLoanAmount: null,
+                totalCapacity: null,
+                availableCapacity: null,
               },
               specializations: [],
               certifications: [],
             },
             banking: undefined,
             preferences: {
-              language: 'English',
-              timezone: 'America/New_York',
-              currency: 'USD',
-              dateFormat: 'MM/DD/YYYY',
+              language: undefined,
+              timezone: undefined,
+              currency: undefined,
+              dateFormat: undefined,
               emailNotifications: true,
               smsNotifications: false,
-              marketingEmails: true,
+              marketingEmails: false,
               twoFactorAuth: false,
             },
             security: {

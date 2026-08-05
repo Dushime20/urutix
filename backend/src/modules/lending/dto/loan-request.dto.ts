@@ -78,11 +78,12 @@ export class CreateLoanRequestDto {
   @IsOptional()
   due_date?: string;
 
+  /** ISO 4217 currency from frontend — persisted on the loan; never invented server-side */
   @IsString()
+  @IsNotEmpty({ message: 'currency is required from the frontend (ISO 4217)' })
   @IsUppercase()
   @Length(3, 3, { message: 'currency must be a 3-letter ISO 4217 code (e.g. RWF, USD)' })
-  @IsOptional()
-  currency?: string;
+  currency: string;
 
   @IsOptional()
   metadata?: Record<string, any>;

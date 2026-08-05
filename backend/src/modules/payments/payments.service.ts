@@ -86,19 +86,93 @@ export class PaymentsService {
     private readonly eventEmitter?: EventEmitter2,
   ) {}
 
+  /**
+   * Find active lender-disbursement payments for a trip+payer.
+   * Used for idempotent retries (avoids uq_payment_trip_payer_* violations).
+   */
+  private async findActiveLenderPayments(
+    tripId: string,
+    payerId: string,
+    loanId?: string,
+  ): Promise<Payment[]> {
+    const qb = this.paymentRepository
+      .createQueryBuilder('p')
+      .where('p.tripId = :tripId', { tripId })
+      .andWhere('p.payerId = :payerId', { payerId })
+      .andWhere('p.status IN (:...statuses)', {
+        statuses: [
+          PaymentStatus.PENDING,
+          PaymentStatus.PROCESSING,
+          PaymentStatus.COMPLETED,
+        ],
+      })
+      .andWhere(`(p.metadata->>'isLenderPayment') = 'true'`)
+      .andWhere('p.deleted_at IS NULL')
+      .orderBy('p.createdAt', 'DESC');
+
+    if (loanId) {
+      qb.andWhere(`(p.metadata->>'loanId') = :loanId`, { loanId });
+    }
+
+    return qb.getMany();
+  }
+
+  /**
+   * Cancel stale in-flight payments that would block a new insert under
+   * uq_payment_trip_payer_advance_active / trip_payment_active.
+   */
+  private async cancelStalePaymentsForRetry(
+    payments: Payment[],
+    reason: string,
+  ): Promise<void> {
+    for (const stale of payments) {
+      if (
+        stale.status !== PaymentStatus.PENDING &&
+        stale.status !== PaymentStatus.PROCESSING
+      ) {
+        continue;
+      }
+      stale.status = PaymentStatus.CANCELLED;
+      stale.failureReason = reason;
+      stale.metadata = {
+        ...(stale.metadata || {}),
+        cancelledReason: reason,
+        cancelledAt: new Date().toISOString(),
+      };
+      await this.paymentRepository.save(stale);
+      await this.auditService.log('CANCEL_STALE_PAYMENT', stale, { reason });
+      this.logger.warn(
+        `Cancelled stale payment ${stale.id} (${stale.paymentType}) — ${reason}`,
+      );
+    }
+  }
+
   async createPayment(
     createPaymentDto: CreatePaymentDto & { idempotencyKey?: string },
     tenantId: string,
     userId: string,
   ): Promise<Payment> {
+    const requestedType = createPaymentDto.paymentType as PaymentType;
+    if (!requestedType || !Object.values(PaymentType).includes(requestedType)) {
+      throw new BadRequestException(
+        'paymentType is required and must be a valid PaymentType.',
+      );
+    }
+    const metadata =
+      createPaymentDto.metadata &&
+      typeof createPaymentDto.metadata === 'object' &&
+      createPaymentDto.metadata !== null
+        ? typeof createPaymentDto.metadata === 'string'
+          ? JSON.parse(createPaymentDto.metadata as unknown as string)
+          : { ...createPaymentDto.metadata }
+        : {};
+    const isLenderPayment = metadata.isLenderPayment === true;
+    const loanId =
+      typeof metadata.loanId === 'string' ? metadata.loanId : undefined;
+
     // Verify trip exists and user has permission (only if tripId is provided and valid)
     let trip = null;
     if (createPaymentDto.tripId && typeof createPaymentDto.tripId === 'string' && createPaymentDto.tripId.trim() !== '') {
-      // Check isLenderPayment BEFORE the trip lookup so we can use the right query
-      const isLenderPayment = createPaymentDto.metadata && 
-        (typeof createPaymentDto.metadata === 'object' && createPaymentDto.metadata !== null) &&
-        (createPaymentDto.metadata as any).isLenderPayment === true;
-
       if (isLenderPayment) {
         // Lender disbursement: the trip belongs to the borrower's tenant, not the lender's.
         // Look up without tenant scoping — the lender already authorised the loan.
@@ -106,7 +180,93 @@ export class PaymentsService {
           where: { id: createPaymentDto.tripId },
           relations: ['load'],
         });
-        // Trip not existing is non-fatal for a lender payment — the loan record is the source of truth
+
+        // Idempotent retry: reuse completed/in-flight lender payment for this loan,
+        // or cancel stale rows that would violate unique partial indexes.
+        const existingLender = await this.findActiveLenderPayments(
+          createPaymentDto.tripId,
+          userId,
+          loanId,
+        );
+
+        const completed = existingLender.find(
+          (p) => p.status === PaymentStatus.COMPLETED,
+        );
+        if (completed) {
+          this.logger.log(
+            `Reusing completed lender payment ${completed.id} for trip ${createPaymentDto.tripId} loan ${loanId || 'n/a'}`,
+          );
+          return completed;
+        }
+
+        const inFlight = existingLender.find(
+          (p) =>
+            p.status === PaymentStatus.PENDING ||
+            p.status === PaymentStatus.PROCESSING,
+        );
+        if (inFlight) {
+          // Reuse the row: update fields and correct historical ADVANCE mis-types.
+          const priorStatus = inFlight.status;
+          inFlight.amount = createPaymentDto.amount;
+          inFlight.currency = createPaymentDto.currency;
+          inFlight.paymentMethod = createPaymentDto.paymentMethod;
+          inFlight.paymentType = requestedType;
+          inFlight.description = createPaymentDto.description;
+          inFlight.referenceNumber = createPaymentDto.referenceNumber;
+          inFlight.metadata = {
+            ...(inFlight.metadata || {}),
+            ...metadata,
+            reusedAt: new Date().toISOString(),
+          };
+          const reused = await this.paymentRepository.save(inFlight);
+          await this.auditService.log('REUSE_LENDER_PAYMENT', reused);
+          this.logger.log(
+            `Reusing in-flight lender payment ${reused.id} (was ${priorStatus}) for loan ${loanId || 'n/a'}`,
+          );
+          return reused;
+        }
+
+        // Cancel any active ADVANCE/TRIP_PAYMENT for this trip+payer that would
+        // block insert (e.g. prior bug that stored lender disbursements as ADVANCE).
+        const blockStatuses = [
+          PaymentStatus.PENDING,
+          PaymentStatus.PROCESSING,
+          PaymentStatus.COMPLETED,
+        ];
+        const blocking = await this.paymentRepository.find({
+          where: [
+            ...blockStatuses.map((s) => ({
+              tripId: createPaymentDto.tripId,
+              payerId: userId,
+              paymentType: PaymentType.ADVANCE,
+              status: s,
+            })),
+            ...blockStatuses.map((s) => ({
+              tripId: createPaymentDto.tripId,
+              payerId: userId,
+              paymentType: PaymentType.TRIP_PAYMENT,
+              status: s,
+            })),
+          ] as any,
+        });
+        const cancellable = blocking.filter(
+          (p) =>
+            p.status === PaymentStatus.PENDING ||
+            p.status === PaymentStatus.PROCESSING,
+        );
+        const blockingCompleted = blocking.filter(
+          (p) => p.status === PaymentStatus.COMPLETED,
+        );
+        if (blockingCompleted.length > 0) {
+          // Non-lender completed payment for same payer+trip — surface clearly
+          throw new ConflictException(
+            `An active payment already exists for this trip (id: ${blockingCompleted[0].id}, type: ${blockingCompleted[0].paymentType}). Duplicate lender disbursement payments are not allowed.`,
+          );
+        }
+        await this.cancelStalePaymentsForRetry(
+          cancellable,
+          'Superseded by new lender disbursement attempt',
+        );
       } else {
         trip = await this.tripRepository.findOne({
           where: { id: createPaymentDto.tripId, tenantId },
@@ -128,7 +288,7 @@ export class PaymentsService {
         //  - FINAL is allowed alongside a COMPLETED ADVANCE (split scenario).
         //  - FAILED/CANCELLED may be retried (excluded from block list).
         const blockStatuses = [PaymentStatus.PENDING, PaymentStatus.PROCESSING, PaymentStatus.COMPLETED];
-        const incomingType = createPaymentDto.paymentType as PaymentType;
+        const incomingType = requestedType;
 
         if (incomingType === PaymentType.FINAL) {
           // FINAL payment is allowed as long as there isn't already a FINAL active
@@ -203,39 +363,40 @@ export class PaymentsService {
       }
     }
 
-    // Escrow split (using bid percentage or default 70/30) if required and advance payment is enabled
-    let advance = createPaymentDto.amount,
-      final = 0;
-    if (createPaymentDto.paymentType === PaymentType.ADVANCE && requireAdvancePayment) {
+    // Escrow split only for cargo-owner ADVANCE payments (never for lender disbursements)
+    let paymentAmount = createPaymentDto.amount;
+    let final = 0;
+    const shouldEscrowSplit =
+      requestedType === PaymentType.ADVANCE &&
+      requireAdvancePayment &&
+      !isLenderPayment;
+
+    if (shouldEscrowSplit) {
       const split = await this.escrowService.splitAdvanceFinal(
         createPaymentDto.amount,
         advancePaymentPercentage,
       );
-      advance = split.advance;
+      paymentAmount = split.advance;
       final = split.final;
-    } else if (createPaymentDto.paymentType === PaymentType.ADVANCE && !requireAdvancePayment) {
-      // If advance payment is not required, don't split - just create a single payment
+    } else if (
+      requestedType === PaymentType.ADVANCE &&
+      !requireAdvancePayment
+    ) {
       this.logger.log(
         `Advance payment not required for this trip. Creating single payment without split.`,
       );
-      advance = createPaymentDto.amount;
-      final = 0;
     }
 
-    // Create advance payment
-    // Only include tripId if it's provided
+    // Honour the caller's paymentType (historical bug hardcoded ADVANCE and
+    // caused lender disbursements to hit uq_payment_trip_payer_advance_active).
     const paymentData: any = {
-      amount: advance,
+      amount: paymentAmount,
       tenantId,
       payerId: userId,
       status: PaymentStatus.PENDING,
-      metadata: createPaymentDto.metadata
-        ? typeof createPaymentDto.metadata === 'string'
-          ? JSON.parse(createPaymentDto.metadata)
-          : createPaymentDto.metadata
-        : {},
+      metadata,
       idempotencyKey: createPaymentDto.idempotencyKey,
-      paymentType: PaymentType.ADVANCE,
+      paymentType: requestedType,
       currency: createPaymentDto.currency,
       paymentMethod: createPaymentDto.paymentMethod,
       description: createPaymentDto.description,
@@ -248,9 +409,41 @@ export class PaymentsService {
     }
     
     const payment = this.paymentRepository.create(paymentData);
-    const savedPaymentResult = await this.paymentRepository.save(payment);
-    // Handle case where save might return array (shouldn't happen, but TypeScript thinks it might)
-    const savedPayment = Array.isArray(savedPaymentResult) ? savedPaymentResult[0] : savedPaymentResult;
+
+    let savedPayment: Payment;
+    try {
+      const savedPaymentResult = await this.paymentRepository.save(payment);
+      savedPayment = Array.isArray(savedPaymentResult)
+        ? savedPaymentResult[0]
+        : savedPaymentResult;
+    } catch (err: any) {
+      // Race: unique partial index fired between check and insert.
+      const isUniqueViolation =
+        err?.code === '23505' ||
+        /uq_payment_trip_payer_(advance|trip_payment|final)_active/i.test(
+          err?.message || '',
+        );
+      if (isUniqueViolation && isLenderPayment && createPaymentDto.tripId) {
+        const raced = await this.findActiveLenderPayments(
+          createPaymentDto.tripId,
+          userId,
+          loanId,
+        );
+        if (raced[0]) {
+          this.logger.warn(
+            `Unique constraint race on lender payment — reusing ${raced[0].id}`,
+          );
+          return raced[0];
+        }
+      }
+      if (isUniqueViolation) {
+        throw new ConflictException(
+          `An active payment already exists for this trip/payer. Duplicate payments are not allowed.`,
+        );
+      }
+      throw err;
+    }
+
     await this.auditService.log('CREATE_PAYMENT', savedPayment);
 
     // Stamp the idempotency key onto the saved row (check already passed above).
@@ -272,11 +465,7 @@ export class PaymentsService {
         paymentMethod: createPaymentDto.paymentMethod,
         description: createPaymentDto.description,
         referenceNumber: createPaymentDto.referenceNumber,
-        metadata: createPaymentDto.metadata
-          ? typeof createPaymentDto.metadata === 'string'
-            ? JSON.parse(createPaymentDto.metadata)
-            : createPaymentDto.metadata
-          : {},
+        metadata,
         idempotencyKey: createPaymentDto.idempotencyKey,
       };
       
@@ -610,14 +799,13 @@ export class PaymentsService {
 
       if (processingResult.success) {
         const isMobileMoney = provider === PaymentProvider.MOBILE_MONEY;
-        // Lender disbursements and direct trip payments are intentional — mark COMPLETED
-        // immediately so the truck owner's Received Payments tab shows them right away.
-        // Regular cargo-owner mobile money stays PROCESSING until webhook confirms.
-        const isIntentionalTripPayment =
-          (payment.metadata as any)?.isLenderPayment === true ||
-          payment.paymentType === PaymentType.TRIP_PAYMENT;
+        // Mobile money always stays PROCESSING until provider webhook confirms.
+        // Non-MoMo providers may complete immediately when the provider reports success.
+        const providerCompleted =
+          (processingResult as any).status === 'completed' ||
+          (processingResult as any).status === 'success';
         const finalStatus =
-          isMobileMoney && !isIntentionalTripPayment
+          isMobileMoney || !providerCompleted
             ? PaymentStatus.PROCESSING
             : PaymentStatus.COMPLETED;
 
@@ -785,28 +973,13 @@ export class PaymentsService {
       [PaymentMethod.CHECK]: PaymentProvider.BANK_TRANSFER,
       [PaymentMethod.WIRE_TRANSFER]: PaymentProvider.BANK_TRANSFER,
     };
-    return mapping[method] || PaymentProvider.BANK_TRANSFER;
-  }
-
-  private async simulatePaymentProcessing(payment: Payment): Promise<any> {
-    // Simulate payment gateway processing
-    // In production, replace with actual payment gateway integration
-    const success = Math.random() > 0.1; // 90% success rate for demo
-
-    if (success) {
-      return {
-        success: true,
-        transactionId: `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        response: 'Payment processed successfully',
-        processingFee: payment.amount * 0.029 + 0.3, // 2.9% + $0.30
-      };
-    } else {
-      return {
-        success: false,
-        error: 'Insufficient funds or card declined',
-        response: 'Payment failed',
-      };
+    const provider = mapping[method];
+    if (!provider) {
+      throw new BadRequestException(
+        `Unsupported payment method: ${method}`,
+      );
     }
+    return provider;
   }
 
   async getPaymentAnalytics(
@@ -972,11 +1145,37 @@ export class PaymentsService {
       );
     }
 
-    // Calculate maximum advance amount (70% of trip value)
-    const maxAdvance = trip.agreedPrice * 0.7;
+    // Max advance from accepted bid percentage (never invent 70%)
+    const acceptedBid = await this.bidRepository.findOne({
+      where: { loadId: trip.loadId, status: BidStatus.ACCEPTED },
+      order: { updatedAt: 'DESC' },
+    });
+    if (
+      !acceptedBid ||
+      acceptedBid.advancePaymentPercentage == null ||
+      !Number.isFinite(Number(acceptedBid.advancePaymentPercentage))
+    ) {
+      throw new BadRequestException(
+        'Cannot request advance: accepted bid must define advancePaymentPercentage.',
+      );
+    }
+    const currency = String(trip.currencyCode || '').trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      throw new BadRequestException(
+        `Trip ${trip.id} is missing a valid ISO 4217 currencyCode.`,
+      );
+    }
+    const pct = Number(acceptedBid.advancePaymentPercentage);
+    if (pct <= 0 || pct > 100) {
+      throw new BadRequestException(
+        `Invalid advancePaymentPercentage ${pct} on bid ${acceptedBid.id}.`,
+      );
+    }
+    const maxAdvance =
+      Math.round(Number(trip.agreedPrice) * (pct / 100) * 100) / 100;
     if (advanceRequestDto.amount > maxAdvance) {
       throw new BadRequestException(
-        `Advance amount cannot exceed ${maxAdvance} ${trip.currencyCode || 'USD'}`,
+        `Advance amount cannot exceed ${maxAdvance} ${currency} (${pct}% of trip value).`,
       );
     }
 
@@ -986,7 +1185,7 @@ export class PaymentsService {
       tenantId,
       payerId: trip.load.cargoOwnerId, // Cargo owner pays
       amount: advanceRequestDto.amount,
-      currency: trip.currencyCode || 'USD',
+      currency,
       paymentMethod: PaymentMethod.BANK_TRANSFER,
       paymentType: PaymentType.ADVANCE,
       status: PaymentStatus.PENDING,
@@ -994,6 +1193,8 @@ export class PaymentsService {
       notes: `Urgency: ${advanceRequestDto.urgency}`,
       metadata: {
         advanceRequest: true,
+        advancePaymentPercentage: pct,
+        bidId: acceptedBid.id,
         urgency: advanceRequestDto.urgency,
         reason: advanceRequestDto.reason,
         requestedBy: userId,

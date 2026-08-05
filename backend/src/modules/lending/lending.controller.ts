@@ -201,7 +201,7 @@ export class LendingController {
   @UseGuards(JwtAuthGuard)
   async createLoanRequestForCargo(
     @Param('cargoId', ParseUUIDPipe) cargoId: string,
-    @Body() body: { trip_id?: string; lender_id?: string },
+    @Body() body: { trip_id?: string; lender_id?: string; currency: string },
     @Request() req: any,
   ) {
     return await this.lendingService.createLoanRequestForLoadedCargo(
@@ -210,6 +210,7 @@ export class LendingController {
       req.user.tenantId,
       req?.user?.userId,
       body.lender_id,
+      body.currency,
     );
   }
 
@@ -975,7 +976,8 @@ export class LendingController {
       final_payment_amount: number;
       paymentMethod?: string;
       paymentDetails?: Record<string, unknown>;
-      currency?: string;
+      /** Required ISO 4217 from frontend when converting / displaying repayment */
+      currency: string;
     },
   ) {
     return await this.lendingService.processRepayment(

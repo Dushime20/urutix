@@ -436,22 +436,7 @@ export class PaymentProcessingService {
    * Get tenant-specific payment configuration
    */
   async getTenantPaymentConfig(tenant: Tenant): Promise<any> {
-    try {
-      return await this.tenantPaymentConfigService.getConfig(tenant);
-    } catch (error) {
-      this.logger.error(`Failed to get tenant config for ${tenant.id}:`, error);
-      // Return default config
-      return {
-        escrowEnabled: true,
-        advancePercentage: 0.7,
-        finalPercentage: 0.3,
-        fraudCheckEnabled: true,
-        microLendingEnabled: false,
-        allowedPaymentMethods: Object.values(PaymentMethod),
-        maxAmount: 100000,
-        minAmount: 0.01,
-      };
-    }
+    return this.tenantPaymentConfigService.getConfig(tenant);
   }
 
   /**

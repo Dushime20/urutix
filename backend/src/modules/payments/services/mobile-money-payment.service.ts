@@ -100,8 +100,13 @@ export class MobileMoneyPaymentService {
     const apiKey = this.configService.get<string>('MOBILE_MONEY_API_KEY');
     const callbackUrl =
       this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL') || '';
-    const currency =
-      this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
+    const currencyRaw = this.configService.get<string>('MOBILE_MONEY_CURRENCY');
+    if (!currencyRaw || !/^[A-Z]{3}$/i.test(currencyRaw)) {
+      throw new BadRequestException(
+        'MOBILE_MONEY_CURRENCY must be configured as a valid ISO 4217 code.',
+      );
+    }
+    const currency = currencyRaw.toUpperCase();
     const accountPhoneNumber = this.configService.get<string>(
       'MOBILE_MONEY_ACCOUNT_PHONE',
     );

@@ -122,34 +122,44 @@ export class EscrowService {
   }
 
   /**
-   * Split payment into advance (70%) and final (30%) amounts
+   * Split payment into advance and final amounts using an explicit percentage.
+   * @param advancePaymentPercentage percentage on 0–100 scale from bid/policy (required)
    */
   async splitAdvanceFinal(
     totalAmount: number,
-    advancePaymentPercentage?: number,
+    advancePaymentPercentage?: number | null,
   ): Promise<EscrowSplit> {
     if (totalAmount <= 0) {
       throw new BadRequestException('Total amount must be greater than 0');
     }
 
-    // Use provided percentage or default to 70%
-    // If percentage is provided, convert from 0-100 scale to 0-1 scale
-    const advancePercentageDecimal =
-      advancePaymentPercentage !== undefined && advancePaymentPercentage !== null
-        ? advancePaymentPercentage / 100
-        : 0.7;
-    const finalPercentage = 1 - advancePercentageDecimal;
+    if (
+      advancePaymentPercentage === undefined ||
+      advancePaymentPercentage === null ||
+      !Number.isFinite(Number(advancePaymentPercentage))
+    ) {
+      throw new BadRequestException(
+        'Advance payment percentage is required for escrow split (from accepted bid or tenant policy).',
+      );
+    }
 
-    // Round to 2 decimal places to avoid floating point issues
+    const pct = Number(advancePaymentPercentage);
+    if (pct <= 0 || pct > 100) {
+      throw new BadRequestException(
+        `Invalid advance payment percentage ${pct}. Expected 0 < value ≤ 100.`,
+      );
+    }
+
+    const advancePercentageDecimal = pct / 100;
     const advance = Math.round(totalAmount * advancePercentageDecimal * 100) / 100;
     const final = Math.round((totalAmount - advance) * 100) / 100;
 
-    // Validate split adds up to total
     const total = Math.round((advance + final) * 100) / 100;
     if (Math.abs(total - totalAmount) > 0.01) {
-      // Adjust final amount to match total
-      const adjustedFinal = Math.round((totalAmount - advance) * 100) / 100;
-      return { advance, final: adjustedFinal };
+      return {
+        advance,
+        final: Math.round((totalAmount - advance) * 100) / 100,
+      };
     }
 
     return { advance, final };
@@ -167,11 +177,7 @@ export class EscrowService {
   ): Promise<{ advance: Payment; final: Payment }> {
     const split = await this.splitAdvanceFinal(totalAmount, advancePaymentPercentage);
     
-    // Calculate the actual percentage used (convert back to 0-100 scale for metadata)
-    const actualAdvancePercentage =
-      advancePaymentPercentage !== undefined && advancePaymentPercentage !== null
-        ? advancePaymentPercentage
-        : 70;
+    const actualAdvancePercentage = Number(advancePaymentPercentage);
     const actualFinalPercentage = 100 - actualAdvancePercentage;
 
     // Create advance payment

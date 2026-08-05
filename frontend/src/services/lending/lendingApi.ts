@@ -92,8 +92,8 @@ export interface CreateLoanRequestDto {
   lender_id?: string;
   created_by?: string;
   due_date?: string;
-  /** ISO 4217 currency code for the loan amounts (e.g. 'RWF', 'USD'). Defaults to lender policy currency or 'RWF' on the backend. */
-  currency?: string;
+  /** ISO 4217 currency code for the loan amounts — always sent from the frontend and persisted. */
+  currency: string;
   metadata?: any;
 }
 
@@ -814,7 +814,7 @@ export const lendingApi = {
   createLoanLimitPolicy: async (lenderId: string, policyData: any) => {
     const response = await api.post(`/lending/policies/${lenderId}/loan-limits`, {
       name: policyData.name,
-      currency: policyData.currency || 'RWF',
+      currency: policyData.currency,
       business_type: policyData.businessType || policyData.business_type,
       min_amount: policyData.minAmount ?? policyData.min_amount,
       max_amount: policyData.maxAmount ?? policyData.max_amount,
