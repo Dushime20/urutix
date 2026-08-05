@@ -209,8 +209,8 @@ export class LendingController {
       body.trip_id,
       req.user.tenantId,
       req?.user?.userId,
-      body.lender_id,
       body.currency,
+      body.lender_id,
     );
   }
 

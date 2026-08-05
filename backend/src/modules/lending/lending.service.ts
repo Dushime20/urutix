@@ -965,9 +965,9 @@ export class LendingService {
     tripId: string | undefined,
     tenantId: string,
     createdBy: string,
-    lenderId?: string,
     /** ISO 4217 from frontend — source of truth for loan.currency */
     currencyFromFrontend: string,
+    lenderId?: string,
   ): Promise<LoanRequest> {
     this.logger.log(`Creating loan request for loaded cargo: ${cargoId}`);
 
