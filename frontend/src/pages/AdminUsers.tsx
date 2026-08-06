@@ -570,7 +570,7 @@ const AdminUsers: React.FC = () => {
       {/* Create User Modal */}
       {
         showCreateModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[400]">
             <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-transparent pb-24 lg:pb-8">
               <div className="p-6 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center justify-between">
