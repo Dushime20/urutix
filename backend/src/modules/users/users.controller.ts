@@ -252,7 +252,9 @@ export class UsersController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update user by ID' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user by ID (tenant-scoped for TENANT_ADMIN)' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'User updated successfully',
@@ -261,7 +263,48 @@ export class UsersController {
     status: HttpStatus.NOT_FOUND,
     description: 'User not found',
   })
-  async updateUser(@Param('id') id: string, @Body() updateData: any) {
+  async updateUser(
+    @Param('id') id: string,
+    @Body() updateData: any,
+    @Request() req: any,
+  ) {
+    const caller = req.user;
+    const isPlatformAdmin =
+      caller.role === UserRole.SUPER_ADMIN || caller.role === UserRole.ADMIN;
+
+    const existing = await this.usersService.findById(id);
+    if (!existing) {
+      return {
+        success: false,
+        message: 'User not found',
+        data: null,
+      };
+    }
+
+    // TENANT_ADMIN may only update users in their own tenant
+    if (!isPlatformAdmin) {
+      if (caller.role !== UserRole.TENANT_ADMIN) {
+        throw new ForbiddenException('Access denied.');
+      }
+      if (caller.tenantId !== existing.tenantId) {
+        throw new ForbiddenException(
+          'You can only update users within your own tenant.',
+        );
+      }
+      if (
+        caller.id === id &&
+        updateData.status &&
+        updateData.status !== 'ACTIVE'
+      ) {
+        throw new ForbiddenException('You cannot disable your own account.');
+      }
+      if (existing.role === UserRole.TENANT_ADMIN && caller.id !== id) {
+        throw new ForbiddenException(
+          'You cannot modify another tenant admin.',
+        );
+      }
+    }
+
     const user = await this.usersService.updateUser(id, updateData);
     if (!user) {
       return {

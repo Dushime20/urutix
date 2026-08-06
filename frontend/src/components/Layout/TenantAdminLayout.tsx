@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AdminLayoutProvider } from '../../contexts/AdminLayoutContext';
 import DashboardLayout from './DashboardLayout';
-import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
 import MobileBottomNav from './MobileBottomNav';
 import ModernLoader from '../common/ModernLoader';
@@ -46,7 +45,7 @@ const TenantAdminLayoutContent: React.FC = () => {
     return <ModernLoader isLoading={isLoading || !user} text="Initializing_Tenant_Space" />;
   }
 
-  // Tenant dashboard views render their own TenantHeader + content; still show global DashboardHeader above
+  // Tenant dashboard views render their own TenantHeader — do not nest DashboardHeader (avoids double header)
   const isDashboardIndex = location.pathname.startsWith('/tenant-admin') && (
     location.pathname === '/tenant-admin' ||
     location.pathname === '/tenant-admin/' ||
@@ -71,7 +70,6 @@ const TenantAdminLayoutContent: React.FC = () => {
     <>
       {isDashboardIndex ? (
         <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950 flex flex-col pb-20 lg:pb-0">
-          <DashboardHeader />
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>

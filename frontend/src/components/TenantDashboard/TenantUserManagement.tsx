@@ -12,6 +12,8 @@ import {
   Gavel,
   Navigation,
   DollarSign,
+  Unlock,
+  Ban,
 } from 'lucide-react';
 import PartnerDetailView from './PartnerDetailView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,6 +82,28 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
         onError: (error: any) => {
             toast.error(error.response?.data?.message || tSync('Failed to onboard partner'));
         }
+    });
+
+    const enableUserMutation = useMutation({
+        mutationFn: (userId: string) => tenantApi.updateTenantUser(userId, { status: 'ACTIVE' }),
+        onSuccess: () => {
+            toast.success(tSync('User enabled successfully'));
+            queryClient.invalidateQueries({ queryKey: ['tenantUsers', scopedTenantId] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || tSync('Failed to enable user'));
+        },
+    });
+
+    const disableUserMutation = useMutation({
+        mutationFn: (userId: string) => tenantApi.updateTenantUser(userId, { status: 'DEACTIVATED' }),
+        onSuccess: () => {
+            toast.success(tSync('User disabled successfully'));
+            queryClient.invalidateQueries({ queryKey: ['tenantUsers', scopedTenantId] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || tSync('Failed to disable user'));
+        },
     });
 
     const roleFilteredUsers = useMemo(() => {
@@ -171,7 +195,38 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
             icon: <ArrowRight className="w-3.5 h-3.5" />,
             onClick: (user) => setSelectedPartner(user),
         },
-    ], []);
+        {
+            key: 'enable',
+            label: 'Enable',
+            icon: <Unlock className="w-3.5 h-3.5" />,
+            variant: 'success',
+            // Show for disabled/suspended users; never for self or other tenant admins
+            hidden: (user) =>
+                user.id === authUser?.id ||
+                (user as any).role === 'TENANT_ADMIN' ||
+                (user.status !== 'SUSPENDED' && user.status !== 'DEACTIVATED'),
+            onClick: (user) => {
+                if (!window.confirm(tSync('Enable this user account?'))) return;
+                enableUserMutation.mutate(user.id);
+            },
+        },
+        {
+            key: 'disable',
+            label: 'Disable',
+            icon: <Ban className="w-3.5 h-3.5" />,
+            variant: 'warning',
+            // Hide for already disabled/suspended users, self, and tenant admins
+            hidden: (user) =>
+                user.id === authUser?.id ||
+                (user as any).role === 'TENANT_ADMIN' ||
+                user.status === 'SUSPENDED' ||
+                user.status === 'DEACTIVATED',
+            onClick: (user) => {
+                if (!window.confirm(tSync('Disable this user account? They will no longer be able to sign in.'))) return;
+                disableUserMutation.mutate(user.id);
+            },
+        },
+    ], [authUser?.id, enableUserMutation, disableUserMutation, tSync]);
 
     const handleOnboardSubmit = (e: React.FormEvent) => {
         e.preventDefault();
