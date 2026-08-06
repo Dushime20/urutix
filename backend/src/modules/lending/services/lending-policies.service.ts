@@ -175,11 +175,14 @@ export class LendingPoliciesService {
   ): Promise<LendingPolicyInterestRate> {
     const policy = await this.getInterestRatePolicy(lenderId, policyId);
 
-    // Validate rate ranges
-    if (dto.min_rate > dto.max_rate) {
+    const minRate = dto.min_rate ?? policy.min_rate;
+    const maxRate = dto.max_rate ?? policy.max_rate;
+    const baseRate = dto.base_rate ?? policy.base_rate;
+
+    if (minRate > maxRate) {
       throw new BadRequestException('Minimum rate cannot be greater than maximum rate');
     }
-    if (dto.base_rate < dto.min_rate || dto.base_rate > dto.max_rate) {
+    if (baseRate < minRate || baseRate > maxRate) {
       throw new BadRequestException('Base rate must be between minimum and maximum rates');
     }
 
@@ -276,7 +279,10 @@ export class LendingPoliciesService {
   ): Promise<LendingPolicyLoanLimit> {
     const policy = await this.getLoanLimitPolicy(lenderId, policyId);
 
-    if (dto.min_amount > dto.max_amount) {
+    const minAmount = dto.min_amount ?? policy.min_amount;
+    const maxAmount = dto.max_amount ?? policy.max_amount;
+
+    if (minAmount > maxAmount) {
       throw new BadRequestException('Minimum amount cannot be greater than maximum amount');
     }
 
