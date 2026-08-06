@@ -28,6 +28,9 @@ import { NotificationType, EntityType, NotificationCategory, NotificationChannel
 import { BiddingIntelligenceService } from './bidding-intelligence.service';
 import { BidValidationService } from './services/bid-validation.service';
 import { CreditService } from '../../services/credit.service';
+import {
+  resolveAdvancePaymentPercentage,
+} from '../payments/utils/advance-payment-policy.util';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { TenantSubscription, SubscriptionStatus } from '../../entities/tenant-subscription.entity';
 import { AvailabilityService } from '../availability/availability.service';
@@ -352,15 +355,25 @@ export class BiddingService {
     }
 
     // Create bid
+    const requireAdvancePayment =
+      createBidDto.requireAdvancePayment !== undefined
+        ? createBidDto.requireAdvancePayment
+        : true;
+    const resolvedAdvance = resolveAdvancePaymentPercentage(
+      createBidDto.advancePaymentPercentage,
+      requireAdvancePayment,
+    );
+
     const bid = this.bidRepository.create({
       ...createBidDto,
       tenantId,
       truckOwnerId,
       status: BidStatus.PENDING,
       bidCurrency: createBidDto.bidCurrency || 'USD',
-      requireAdvancePayment: createBidDto.requireAdvancePayment !== undefined
-        ? createBidDto.requireAdvancePayment
-        : true, // Default to true if not specified
+      requireAdvancePayment,
+      advancePaymentPercentage: requireAdvancePayment
+        ? resolvedAdvance.percentage
+        : createBidDto.advancePaymentPercentage ?? 0,
       // Store validation metadata in bid details
       bidDetails: {
         ...createBidDto.bidDetails,

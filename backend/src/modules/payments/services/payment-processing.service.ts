@@ -23,6 +23,7 @@ import { FraudDetectionService } from './fraud-detection.service';
 import { WebhookService } from './webhook.service';
 import { MicroLendingService } from './micro-lending.service';
 import { TenantPaymentConfigService } from './tenant-payment-config.service';
+import { resolveAdvancePaymentPercentage } from '../utils/advance-payment-policy.util';
 import { TransactionStateService } from './transaction-state.service';
 
 export interface PaymentProcessingRequest {
@@ -170,11 +171,25 @@ export class PaymentProcessingService {
             },
             order: { updatedAt: 'DESC' }, // Get the most recently accepted bid
           });
-          if (acceptedBid?.advancePaymentPercentage !== undefined && acceptedBid.advancePaymentPercentage !== null) {
-            advancePaymentPercentage = acceptedBid.advancePaymentPercentage;
-            this.logger.log(
-              `Using advance payment percentage ${advancePaymentPercentage}% from bid ${acceptedBid.id} for payment ${payment.id}`,
+          if (acceptedBid) {
+            const requireAdvance =
+              acceptedBid.requireAdvancePayment !== undefined
+                ? acceptedBid.requireAdvancePayment
+                : true;
+            const resolved = resolveAdvancePaymentPercentage(
+              acceptedBid.advancePaymentPercentage,
+              requireAdvance,
             );
+            advancePaymentPercentage = resolved.percentage;
+            if (resolved.usedDefault) {
+              this.logger.warn(
+                `Bid ${acceptedBid.id} missing advancePaymentPercentage — using default ${resolved.percentage}% for payment ${payment.id}`,
+              );
+            } else {
+              this.logger.log(
+                `Using advance payment percentage ${advancePaymentPercentage}% from bid ${acceptedBid.id} for payment ${payment.id}`,
+              );
+            }
           }
         }
       } catch (error) {

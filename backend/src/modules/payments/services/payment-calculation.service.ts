@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Bid, BidStatus } from '../../../entities/bid.entity';
 import { Trip } from '../../../entities/trip.entity';
+import { resolveAdvancePaymentPercentage } from '../utils/advance-payment-policy.util';
 
 export interface AdvancePaymentCalculation {
   transportationFee: number;
@@ -71,12 +72,27 @@ export class PaymentCalculationService {
         );
       }
 
-      return this.calculateAdvancePayment(
-        transportationFee,
-        acceptedBid.advancePaymentPercentage,
+      const requireAdvancePayment =
         acceptedBid.requireAdvancePayment !== undefined
           ? acceptedBid.requireAdvancePayment
-          : true,
+          : true;
+
+      const { percentage, usedDefault } = resolveAdvancePaymentPercentage(
+        acceptedBid.advancePaymentPercentage,
+        requireAdvancePayment,
+      );
+
+      if (usedDefault) {
+        this.logger.warn(
+          `Trip ${tripId}: accepted bid ${acceptedBid.id} requires advance payment but ` +
+            `advancePaymentPercentage is missing — using platform default ${percentage}%`,
+        );
+      }
+
+      return this.calculateAdvancePayment(
+        transportationFee,
+        percentage,
+        requireAdvancePayment,
         currency,
       );
     } catch (error) {
@@ -115,17 +131,17 @@ export class PaymentCalculationService {
       };
     }
 
-    if (
-      advancePaymentPercentage === undefined ||
-      advancePaymentPercentage === null ||
-      !Number.isFinite(Number(advancePaymentPercentage))
-    ) {
-      throw new BadRequestException(
-        'advancePaymentPercentage is required when advance payment is required.',
+    const { percentage, usedDefault } = resolveAdvancePaymentPercentage(
+      advancePaymentPercentage,
+      requireAdvancePayment,
+    );
+
+    if (usedDefault) {
+      this.logger.warn(
+        `Advance payment calculation using platform default ${percentage}% (bid percentage missing)`,
       );
     }
 
-    const percentage = Number(advancePaymentPercentage);
     if (percentage <= 0 || percentage > 100) {
       throw new BadRequestException(
         'Advance payment percentage must be between 0 (exclusive) and 100.',

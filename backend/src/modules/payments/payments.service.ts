@@ -37,6 +37,7 @@ import { ReconciliationService } from './services/reconciliation.service';
 import { InvoiceReceiptService } from './services/invoice-receipt.service';
 import { TripsService } from '../trips/trips.service';
 import { assertValidTransition } from './types/payment-state-machine';
+import { resolveAdvancePaymentPercentage } from './utils/advance-payment-policy.util';
 
 @Injectable()
 export class PaymentsService {
@@ -532,11 +533,20 @@ export class PaymentsService {
           order: { updatedAt: 'DESC' }, // Get the most recently accepted bid
         });
         if (acceptedBid) {
-          requireAdvancePayment = acceptedBid.requireAdvancePayment !== undefined 
-            ? acceptedBid.requireAdvancePayment 
-            : true; // Default to true if not specified
-          if (acceptedBid.advancePaymentPercentage !== undefined && acceptedBid.advancePaymentPercentage !== null) {
-            advancePaymentPercentage = acceptedBid.advancePaymentPercentage;
+          requireAdvancePayment =
+            acceptedBid.requireAdvancePayment !== undefined
+              ? acceptedBid.requireAdvancePayment
+              : true;
+          const resolved = resolveAdvancePaymentPercentage(
+            acceptedBid.advancePaymentPercentage,
+            requireAdvancePayment,
+          );
+          advancePaymentPercentage = resolved.percentage;
+          if (resolved.usedDefault) {
+            this.logger.warn(
+              `Bid ${acceptedBid.id} missing advancePaymentPercentage — using default ${resolved.percentage}%`,
+            );
+          } else {
             this.logger.log(
               `Using advance payment percentage ${advancePaymentPercentage}% from bid ${acceptedBid.id}`,
             );
@@ -1334,18 +1344,14 @@ export class PaymentsService {
       );
     }
 
-    // Max advance from accepted bid percentage (never invent 70%)
+    // Max advance from accepted bid percentage (platform default when bid omits %)
     const acceptedBid = await this.bidRepository.findOne({
       where: { loadId: trip.loadId, status: BidStatus.ACCEPTED },
       order: { updatedAt: 'DESC' },
     });
-    if (
-      !acceptedBid ||
-      acceptedBid.advancePaymentPercentage == null ||
-      !Number.isFinite(Number(acceptedBid.advancePaymentPercentage))
-    ) {
+    if (!acceptedBid) {
       throw new BadRequestException(
-        'Cannot request advance: accepted bid must define advancePaymentPercentage.',
+        'Cannot request advance: no accepted bid found for this trip.',
       );
     }
     const currency = String(trip.currencyCode || '').trim().toUpperCase();
@@ -1354,8 +1360,25 @@ export class PaymentsService {
         `Trip ${trip.id} is missing a valid ISO 4217 currencyCode.`,
       );
     }
-    const pct = Number(acceptedBid.advancePaymentPercentage);
-    if (pct <= 0 || pct > 100) {
+    const requireAdvancePayment =
+      acceptedBid.requireAdvancePayment !== undefined
+        ? acceptedBid.requireAdvancePayment
+        : true;
+    const { percentage: pct, usedDefault } = resolveAdvancePaymentPercentage(
+      acceptedBid.advancePaymentPercentage,
+      requireAdvancePayment,
+    );
+    if (usedDefault) {
+      this.logger.warn(
+        `Bid ${acceptedBid.id} missing advancePaymentPercentage — using default ${pct}% for advance request`,
+      );
+    }
+    if (!requireAdvancePayment || pct <= 0) {
+      throw new BadRequestException(
+        'This trip does not require an advance payment.',
+      );
+    }
+    if (pct > 100) {
       throw new BadRequestException(
         `Invalid advancePaymentPercentage ${pct} on bid ${acceptedBid.id}.`,
       );
