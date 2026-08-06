@@ -11,6 +11,9 @@ interface AdminPageLayoutProps {
 }
 
 const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
+    title,
+    description,
+    actions,
     children,
     showSidebar = true,
 }) => {
@@ -29,6 +32,27 @@ const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
                 {/* Content Area */}
                 <main className="flex-1 lg:overflow-y-auto bg-[#fafafa] dark:bg-slate-900">
                     <div className="max-w-[1536px] mx-auto px-6 md:px-10 lg:px-14 xl:px-20 py-8 min-h-screen">
+                        {(title || description || actions) && (
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+                                <div>
+                                    {title && (
+                                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                            {title}
+                                        </h1>
+                                    )}
+                                    {description && (
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 normal-case">
+                                            {description}
+                                        </p>
+                                    )}
+                                </div>
+                                {actions && (
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        {actions}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                             {children}
                         </div>

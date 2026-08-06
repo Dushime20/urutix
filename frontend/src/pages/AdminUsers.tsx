@@ -28,6 +28,7 @@ import {
 import { UserPermissionEditor } from '../components/Admin/Permissions/UserPermissionEditor';
 import { RolePermissionsMatrix } from '../components/Admin/Permissions/RolePermissionsMatrix';
 import AdminPageLayout from '../components/Admin/AdminPageLayout';
+import { useAuth } from '../contexts/AuthContext';
 import { TranslatedText } from '../components/translated-text';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
@@ -68,8 +69,29 @@ interface Tenant {
   status: string;
 }
 
+const CREATE_USER_ROLES = [
+  'ADMIN',
+  'TENANT_ADMIN',
+  'CARGO_OWNER',
+  'CARGO_RECEIVER',
+  'TRUCK_OWNER',
+  'DRIVER',
+  'BROKER',
+  'AGENT',
+  'LENDER',
+  'CUSTOMS_OFFICER',
+  'FLEET_MANAGER',
+  'FLEET_DISPATCHER',
+  'FLEET_ACCOUNTANT',
+  'FLEET_SAFETY_OFFICER',
+] as const;
+
+type CreateUserRole = typeof CREATE_USER_ROLES[number] | 'SUPER_ADMIN';
+
 const AdminUsers: React.FC = () => {
   const qc = useQueryClient();
+  const { user: authUser } = useAuth();
+  const isSuperAdmin = authUser?.role === 'SUPER_ADMIN';
 
   // Fetch data
   const { data: usersData, isLoading: isLoadingUsers } = useQuery({
@@ -88,7 +110,7 @@ const AdminUsers: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [role, setRole] = useState<'ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'AGENT' | 'LENDER' | 'TENANT_ADMIN' | 'BROKER' | 'CARGO_RECEIVER' | 'FLEET_MANAGER' | 'FLEET_DISPATCHER' | 'FLEET_ACCOUNTANT' | 'FLEET_SAFETY_OFFICER' | 'CUSTOMS_OFFICER'>('CARGO_OWNER');
+  const [role, setRole] = useState<CreateUserRole>('ADMIN');
 
   // Edit form state
   const [editEmail, setEditEmail] = useState('');
@@ -161,7 +183,6 @@ const AdminUsers: React.FC = () => {
         lastName: lastName.trim(),
         role: role,
         phoneNumber: phoneNumber.trim() || undefined,
-        companyName: tenantId
       });
     },
     onSuccess: () => {
@@ -238,7 +259,7 @@ const AdminUsers: React.FC = () => {
     setFirstName('');
     setLastName('');
     setPhoneNumber('');
-    setRole('CARGO_OWNER');
+    setRole('ADMIN');
   };
 
   const handleEditUser = (user: User) => {
@@ -454,20 +475,10 @@ const AdminUsers: React.FC = () => {
   ], [activateUserMutation, suspendUserMutation]);
 
   return (
-    <AdminPageLayout
-      title={<TranslatedText text="User Management" />}
-      description={<TranslatedText text="Monitor, manage, and audit user accounts, roles, and permissions across the platform." />}
-      actions={
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold transition-all"
-        >
-          <Plus size={16} /> <TranslatedText text="Create New User" />
-        </button>
-      }
-    >
+    <AdminPageLayout>
 
-      <div className="flex items-center gap-6 mb-8 border-b border-gray-100 dark:border-slate-800">
+      <div className="flex items-center justify-between gap-4 mb-8 border-b border-gray-100 dark:border-slate-800">
+        <div className="flex items-center gap-6">
         <button
           onClick={() => setActiveTab('users')}
           className={`pb-4 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all relative ${activeTab === 'users'
@@ -487,6 +498,13 @@ const AdminUsers: React.FC = () => {
         >
           <ShieldCheck size={14} /> <TranslatedText text="Role Permissions" />
           {activeTab === 'roles' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full" />}
+        </button>
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 px-4 py-2 mb-4 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold transition-all shrink-0"
+        >
+          <Plus size={16} /> <TranslatedText text="Create New User" />
         </button>
       </div>
 
@@ -594,22 +612,14 @@ const AdminUsers: React.FC = () => {
                     <select
                       className="w-full px-4 py-2.5 text-sm font-bold border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all"
                       value={role}
-                      onChange={(e) => setRole(e.target.value as any)}
+                      onChange={(e) => setRole(e.target.value as CreateUserRole)}
                     >
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="TENANT_ADMIN">TENANT ADMIN</option>
-                      <option value="CARGO_OWNER">CARGO OWNER</option>
-                      <option value="CARGO_RECEIVER">CARGO RECEIVER</option>
-                      <option value="TRUCK_OWNER">TRUCK OWNER</option>
-                      <option value="DRIVER">DRIVER</option>
-                      <option value="BROKER">BROKER</option>
-                      <option value="AGENT">AGENT</option>
-                      <option value="LENDER">LENDER</option>
-                      <option value="CUSTOMS_OFFICER">CUSTOMS OFFICER</option>
-                      <option value="FLEET_MANAGER">FLEET MANAGER</option>
-                      <option value="FLEET_DISPATCHER">FLEET DISPATCHER</option>
-                      <option value="FLEET_ACCOUNTANT">FLEET ACCOUNTANT</option>
-                      <option value="FLEET_SAFETY_OFFICER">FLEET SAFETY OFFICER</option>
+                      {isSuperAdmin && <option value="SUPER_ADMIN">SUPER ADMIN</option>}
+                      {CREATE_USER_ROLES.map((roleOption) => (
+                        <option key={roleOption} value={roleOption}>
+                          {formatRole(roleOption)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -810,14 +820,12 @@ const AdminUsers: React.FC = () => {
                       value={editRole}
                       onChange={(e) => setEditRole(e.target.value)}
                     >
-                      <option value="SUPER_ADMIN">SUPER ADMIN</option>
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="TENANT_ADMIN">TENANT ADMIN</option>
-                      <option value="CARGO_OWNER">CARGO OWNER</option>
-                      <option value="TRUCK_OWNER">TRUCK OWNER</option>
-                      <option value="DRIVER">DRIVER</option>
-                      <option value="AGENT">AGENT</option>
-                      <option value="LENDER">LENDER</option>
+                      {isSuperAdmin && <option value="SUPER_ADMIN">SUPER ADMIN</option>}
+                      {CREATE_USER_ROLES.map((roleOption) => (
+                        <option key={roleOption} value={roleOption}>
+                          {formatRole(roleOption)}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

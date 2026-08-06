@@ -139,9 +139,12 @@ export class UsersController {
       }
     }
 
-    // Prevent anyone but TENANT_ADMIN from creating TENANT_ADIMN or CARGO_RECEIVER
-    // unless they are PLATFORM ADMIN/SUPER_ADMIN
+    // Only SUPER_ADMIN may create SUPER_ADMIN accounts
     const isPlatformAdmin = caller.role === UserRole.ADMIN || caller.role === UserRole.SUPER_ADMIN;
+
+    if (createUserDto.role === UserRole.SUPER_ADMIN && caller.role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException('Only SUPER_ADMIN users can create SUPER_ADMIN accounts.');
+    }
     
     if (caller.role !== UserRole.TENANT_ADMIN && !isPlatformAdmin) {
       const restrictedRoles = [UserRole.TENANT_ADMIN, UserRole.CARGO_RECEIVER, UserRole.CARGO_OWNER, UserRole.BROKER, UserRole.LENDER];

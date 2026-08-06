@@ -50,6 +50,7 @@ export class UsersService {
   async checkTenantRoleExists(role: UserRole): Promise<boolean> {
     // Check if the role is a valid tenant role
     const validTenantRoles = [
+      UserRole.SUPER_ADMIN,
       UserRole.ADMIN,
       UserRole.TENANT_ADMIN,
       UserRole.CARGO_OWNER,

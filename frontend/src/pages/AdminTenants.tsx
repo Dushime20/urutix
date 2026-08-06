@@ -573,19 +573,17 @@ const AdminTenants: React.FC = () => {
   const stats = getStatsData();
 
   return (
-    <AdminPageLayout
-      title={<TranslatedText text="Tenant Management" />}
-      description={<TranslatedText text="Manage platform tenants and their configurations" />}
-      actions={
+    <AdminPageLayout>
+
+      <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-primary-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary-700 transition-all duration-200 text-sm font-bold shadow-md shadow-primary-500/10"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold transition-all shrink-0"
         >
           <Plus size={16} />
-          <span><TranslatedText text="Add Tenant" /></span>
+          <span><TranslatedText text="Create New Tenant" /></span>
         </button>
-      }
-    >
+      </div>
 
       {/* Tenants Table */}
       <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden border border-transparent p-4">
