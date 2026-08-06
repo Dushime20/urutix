@@ -11,7 +11,7 @@ const TenantDashboardPage: React.FC<TenantDashboardPageProps> = ({ defaultView =
   const tenantId = user?.tenantId || 'default-tenant';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950">
       <TenantDashboard tenantId={tenantId} defaultView={defaultView} />
     </div>
   );

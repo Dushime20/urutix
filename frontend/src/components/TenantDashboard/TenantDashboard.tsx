@@ -310,8 +310,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   // Revenue Gradient Helper
   const revenueGradient = (ctx: CanvasRenderingContext2D) => {
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
-    gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+    gradient.addColorStop(0, 'rgba(52, 94, 133, 0.2)');
+    gradient.addColorStop(1, 'rgba(52, 94, 133, 0)');
     return gradient;
   };
 
@@ -347,22 +347,22 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
       {
         label: 'Revenue',
         data: data.trends.revenue,
-        borderColor: '#1e40af',
+        borderColor: '#345E85',
         backgroundColor: (context: any) => {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
-          if (!chartArea) return 'rgba(99, 102, 241, 0.1)';
+          if (!chartArea) return 'rgba(52, 94, 133, 0.1)';
           return revenueGradient(ctx);
         },
-        borderWidth: 3,
+        borderWidth: 2,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#1e40af',
+        pointBackgroundColor: '#345E85',
         pointBorderColor: 'white',
         pointBorderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#1e40af',
+        pointHoverBackgroundColor: '#345E85',
         pointHoverBorderColor: 'white',
         pointHoverBorderWidth: 3,
       }
@@ -398,8 +398,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   };
 
   return (
-    <div className={`min-h-screen bg-white dark:bg-slate-950 ${className}`}>
-      {/* Header */}
+    <div className={`min-h-screen bg-[#fafafa] dark:bg-slate-950 ${className}`}>
       <TenantHeader
         tenant={currentTenant}
         onRefresh={handleRefresh}
@@ -408,16 +407,13 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
         setSelectedView={setSelectedView}
       />
 
-
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
         {/* Loading State - Premium Skeleton */}
         {isLoading && <SkeletonDashboard />}
 
         {/* Error State */}
         {error && (
-          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-[20px] p-6 mb-8 flex items-center">
+          <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/20 rounded-xl p-4 mb-5 flex items-center">
             <div className="p-3 bg-amber-100 dark:bg-amber-900/20 rounded-xl mr-4">
               <FaExclamationTriangle className="text-amber-600 dark:text-amber-500 w-5 h-5" />
             </div>
@@ -436,7 +432,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="space-y-10"
+              className="space-y-5"
             >
               {/* Quick Stats */}
               <QuickStats metrics={data.metrics} />
@@ -450,18 +446,18 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
               )}
 
               {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Revenue Chart */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8"
+                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 sm:p-5"
                 >
-                  <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Financial Momentum" /></h3>
-                      <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Weekly Revenue" /></h4>
+                      <h3 className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5"><TranslatedText text="Financial Momentum" /></h3>
+                      <h4 className="text-base font-bold text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Weekly Revenue" /></h4>
                     </div>
                     <div className="flex items-center space-x-3">
                       <select
@@ -482,13 +478,13 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                       </button>
                     </div>
                   </div>
-                  <div className="h-72 relative">
+                  <div className="h-52 relative">
                     {(!data.trends.revenue || data.trends.revenue.length === 0) ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
-                          <Download className="w-5 h-5 text-slate-300" />
+                        <div className="w-8 h-8 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
+                          <Download className="w-4 h-4 text-slate-300" />
                         </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No revenue data yet</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">No revenue data yet</p>
                         <p className="text-xs text-slate-300 mt-1">Complete trips to see revenue trends</p>
                       </div>
                     ) : (
@@ -502,24 +498,24 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8"
+                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 sm:p-5"
                 >
-                  <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Asset Optimization" /></h3>
-                      <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Fleet Utilization" /></h4>
+                      <h3 className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5"><TranslatedText text="Asset Optimization" /></h3>
+                      <h4 className="text-base font-bold text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Fleet Utilization" /></h4>
                     </div>
                     <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
                       <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider"><TranslatedText text="Avg:" /> {data.metrics.averageLoadUtilization}%</span>
                     </div>
                   </div>
-                  <div className="h-72 relative">
+                  <div className="h-52 relative">
                     {(!data.trends.fleetUtilization || data.trends.fleetUtilization.length === 0) ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
-                          <Activity className="w-5 h-5 text-slate-300" />
+                        <div className="w-8 h-8 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
+                          <Activity className="w-4 h-4 text-slate-300" />
                         </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No fleet data yet</p>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">No fleet data yet</p>
                         <p className="text-xs text-slate-300 mt-1">Assign trucks to trips to see utilization</p>
                       </div>
                     ) : (

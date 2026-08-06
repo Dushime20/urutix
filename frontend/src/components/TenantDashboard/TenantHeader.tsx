@@ -6,11 +6,8 @@ import {
   LayoutDashboard,
   Truck,
   DollarSign,
-  Route,
   Settings as FaCog,
   User as FaUser,
-  Clock as FaClock,
-  Bell as FaBell,
   Navigation,
   Users,
   ChevronDown,
@@ -20,6 +17,7 @@ import {
   Menu,
   X,
   AlertTriangle,
+  Building2,
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -46,12 +44,52 @@ interface TenantHeaderProps {
   setSelectedView: (view: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports') => void;
 }
 
+const routeMap: Record<string, string> = {
+  overview: '/tenant-admin',
+  financial: '/tenant-admin/financial',
+  'purchase-credits': '/tenant-admin/subscription-plans',
+  'subscription-plans': '/tenant-admin/subscription-plans',
+  billing: '/tenant-admin/billing',
+  communicate: '/tenant-admin/communication',
+  fleet: '/tenant-admin/fleet',
+  cargo: '/tenant-admin/cargo',
+  drivers: '/tenant-admin/drivers',
+  trips: '/tenant-admin/trips',
+  users: '/tenant-admin/users',
+  'truck-owners': '/tenant-admin/truck-owners',
+  lenders: '/tenant-admin/lenders',
+  settings: '/tenant-admin/settings',
+  profile: '/tenant-admin/profile',
+  reports: '/tenant-admin/reports',
+};
+
+const groupedTabs = [
+  {
+    id: 'logistics',
+    label: 'Asset Hub',
+    icon: Truck,
+    items: [
+      { id: 'trips', label: 'Monitor Trips', icon: Navigation, description: 'Real-time shipment tracking' },
+      { id: 'fleet', label: 'Fleet Systems', icon: Truck, description: 'Internal asset management' },
+      { id: 'reports', label: 'Reports & Disputes', icon: AlertTriangle, description: 'Issues & disputes raised by users' },
+      { id: 'users', label: 'Internal Staff', icon: Users, description: 'Access control & permissions' },
+      { id: 'communicate', label: 'Partner Comms', icon: Mail, description: 'Send bulk emails to partners' },
+    ],
+  },
+  {
+    id: 'financial',
+    label: 'Financials',
+    icon: DollarSign,
+    items: [
+      { id: 'purchase-credits', label: 'Subscription Plans', icon: DollarSign, description: 'Plans, marketplace & credit history' },
+    ],
+  },
+];
+
 const TenantHeader: React.FC<TenantHeaderProps> = ({
   tenant,
-  onRefresh,
-  isRefreshing,
   selectedView,
-  setSelectedView
+  setSelectedView,
 }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -62,33 +100,10 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
 
-  const groupedTabs = [
-    {
-      id: 'logistics',
-      label: 'Asset Hub',
-      icon: Truck,
-      items: [
-        { id: 'trips', label: 'Monitor Trips', icon: Navigation, description: 'Real-time shipment tracking' },
-        { id: 'fleet', label: 'Fleet Systems', icon: Truck, description: 'Internal asset management' },
-        { id: 'reports', label: 'Reports & Disputes', icon: AlertTriangle, description: 'Issues & disputes raised by users' },
-        { id: 'users', label: 'Internal Staff', icon: Users, description: 'Access control & permissions' },
-        { id: 'communicate', label: 'Partner Comms', icon: Mail, description: 'Send bulk emails to partners' },
-      ]
-    },
-    {
-      id: 'financial',
-      label: 'Financials',
-      icon: DollarSign,
-      items: [
-        { id: 'purchase-credits', label: 'Subscription Plans', icon: DollarSign, description: 'Plans, marketplace & credit history' },
-      ]
-    }
-  ];
-
   const { data: balanceData } = useQuery({
     queryKey: ['tenant-credit-balance', tenant?.id],
     queryFn: () => tenantApi.getCreditBalance(),
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
   });
 
   const currentBalance = balanceData?.currentBalance || 0;
@@ -104,231 +119,237 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleLogout = () => {
-    if (logout) {
-      logout();
-    }
+    logout?.();
     navigate('/auth');
   };
 
+  const navigateToTab = (tabId: string) => {
+    const targetRoute = routeMap[tabId];
+    if (targetRoute) navigate(targetRoute);
+    else setSelectedView(tabId as TenantHeaderProps['selectedView']);
+    setActiveGroup(null);
+    setShowMobileMenu(false);
+  };
+
+  const tenantName =
+    user?.tenantName && user.tenantName !== user?.tenantId ? user.tenantName : 'Default Tenant';
+
   return (
     <>
-    <div className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 pt-6 pb-3 sm:pt-8 sm:pb-4 px-4 md:px-8 lg:px-12 xl:px-20 z-[300] fixed top-0 left-0 right-0 isolate">
-      <div className="max-w-[1920px] mx-auto flex items-center justify-between min-w-0">
-        {/* Left side - Logo and Navigation */}
-        <div className="flex items-center gap-4 lg:gap-10 min-w-0 flex-1">
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setShowMobileMenu(true)}
-            className="lg:hidden p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-
-          {/* Logo */}
-          <div className="flex items-center flex-shrink-0 cursor-pointer" onClick={() => setSelectedView('overview')}>
-            <img
-              src={logoUrutiX}
-              alt="urutiX Logistics Logo"
-              className="h-10 sm:h-12 md:h-16 lg:h-20 w-auto object-contain max-w-none"
-            />
-          </div>
-
-
-          <nav className="hidden lg:flex items-center gap-2" ref={navRef}>
-            {/* Direct Link: Monitor */}
+      <header className="sticky top-0 z-[300] shrink-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 sm:px-6 lg:px-8 h-14 flex items-center">
+        <div className="max-w-[1536px] mx-auto w-full flex items-center justify-between gap-3 min-w-0">
+          {/* Left: brand + nav */}
+          <div className="flex items-center gap-3 lg:gap-6 min-w-0 flex-1">
             <button
-              onClick={() => { navigate('/tenant-admin'); setSelectedView('overview'); setActiveGroup(null); }}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black transition-all duration-300 ${selectedView === 'overview'
-                ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
-                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white border border-transparent'
-                }`}
+              onClick={() => setShowMobileMenu(true)}
+              className="lg:hidden p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+              aria-label="Open menu"
             >
-              <LayoutDashboard className="w-4 h-4" />
-              <span><TranslatedText text="DASHBOARD" /></span>
+              <Menu className="w-4 h-4" />
             </button>
 
-            <div className="w-[1px] h-6 bg-slate-100 dark:bg-slate-800 mx-2" />
+            <button
+              onClick={() => navigateToTab('overview')}
+              className="flex items-center gap-2.5 shrink-0"
+            >
+              <img src={logoUrutiX} alt="UrutiX" className="h-7 w-auto object-contain" />
+              <div className="hidden sm:block text-left">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                  Tenant Admin
+                </p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[120px] lg:max-w-[160px] leading-tight mt-0.5">
+                  {tenantName}
+                </p>
+              </div>
+            </button>
 
-            {/* Grouped Dropdowns */}
-            {groupedTabs.map((group) => {
-              const isGroupActive = group.items.some(item => item.id === selectedView);
-              const isOpen = activeGroup === group.id;
+            <nav className="hidden lg:flex items-center gap-1 ml-2" ref={navRef}>
+              <button
+                onClick={() => navigateToTab('overview')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  selectedView === 'overview'
+                    ? 'bg-primary-600 text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <TranslatedText text="Dashboard" />
+              </button>
 
-              return (
-                <div key={group.id} className="relative">
-                  <button
-                    onClick={() => setActiveGroup(isOpen ? null : group.id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black tracking-wider transition-all duration-300 ${isGroupActive
-                      ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-lg'
-                      : isOpen ? 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1" />
+
+              {groupedTabs.map((group) => {
+                const isGroupActive = group.items.some((item) => item.id === selectedView);
+                const isOpen = activeGroup === group.id;
+
+                return (
+                  <div key={group.id} className="relative">
+                    <button
+                      onClick={() => setActiveGroup(isOpen ? null : group.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        isGroupActive
+                          ? 'bg-slate-800 dark:bg-slate-700 text-white'
+                          : isOpen
+                            ? 'bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white'
+                            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                       }`}
-                  >
-                    <group.icon className="w-4 h-4" />
-                    <span><TranslatedText text={group.label} /></span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                    >
+                      <group.icon className="w-3.5 h-3.5" />
+                      <TranslatedText text={group.label} />
+                      <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
 
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute left-0 mt-3 w-72 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 p-3 z-[100] origin-top-left"
-                      >
-                        <div className="mb-2 px-3 pt-2">
-                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">
-                            <TranslatedText text="System Category:" /> <TranslatedText text={group.label} />
-                          </span>
-                        </div>
-                        <div className="grid gap-1">
-                          {group.items.map((tab) => {
-                            const TabIcon = tab.icon;
-                            const isTabActive = selectedView === tab.id;
+                    <AnimatePresence>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                          className="absolute left-0 mt-1.5 w-64 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 p-2 z-[100]"
+                        >
+                          <p className="px-2 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                            <TranslatedText text={group.label} />
+                          </p>
+                          <div className="space-y-0.5">
+                            {group.items.map((tab) => {
+                              const TabIcon = tab.icon;
+                              const isTabActive = selectedView === tab.id;
 
-                            return (
-                              <button
-                                key={tab.id}
-                                onClick={() => {
-                                  // Map tab IDs to their respective routes
-                                  const routeMap: Record<string, string> = {
-                                    'overview': '/tenant-admin',
-                                    'financial': '/tenant-admin/financial',
-                                    'purchase-credits': '/tenant-admin/subscription-plans',
-                                    'subscription-plans': '/tenant-admin/subscription-plans',
-                                    'billing': '/tenant-admin/billing',
-                                    'communicate': '/tenant-admin/communication',
-                                    'fleet': '/tenant-admin/fleet',
-                                    'cargo': '/tenant-admin/cargo',
-                                    'drivers': '/tenant-admin/drivers',
-                                    'trips': '/tenant-admin/trips',
-                                    'users': '/tenant-admin/users',
-                                    'truck-owners': '/tenant-admin/truck-owners',
-                                    'lenders': '/tenant-admin/lenders',
-                                    'settings': '/tenant-admin/settings',
-                                    'profile': '/tenant-admin/profile'
-                                  };
-
-                                  const targetRoute = routeMap[tab.id];
-                                  if (targetRoute) {
-                                    navigate(targetRoute);
-                                  } else {
-                                    setSelectedView(tab.id as any);
-                                  }
-                                  setActiveGroup(null);
-                                }}
-                                className={`w-full text-left p-3 rounded-2xl transition-all duration-300 flex items-start gap-3 group/item ${isTabActive
-                                  ? 'bg-primary-50/50 dark:bg-primary-900/20'
-                                  : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                              return (
+                                <button
+                                  key={tab.id}
+                                  onClick={() => navigateToTab(tab.id)}
+                                  className={`w-full text-left px-2.5 py-2 rounded-lg transition-colors flex items-center gap-2.5 group/item ${
+                                    isTabActive
+                                      ? 'bg-primary-50 dark:bg-primary-950/40'
+                                      : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                                   }`}
-                              >
-                                <div className={`p-2 rounded-xl shrink-0 transition-colors ${isTabActive ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover/item:bg-primary-600 group-hover/item:text-white'}`}>
-                                  <TabIcon className="w-4 h-4" />
-                                </div>
-                                <div className="flex-1">
-                                  <p className={`text-xs font-black ${isTabActive ? 'text-primary-600' : 'text-slate-800 dark:text-slate-100'}`}>
-                                    <TranslatedText text={tab.label} />
-                                  </p>
-                                  <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
-                                    <TranslatedText text={tab.description} />
-                                  </p>
-                                </div>
-                                <ArrowRight className={`ml-auto w-3.5 h-3.5 text-slate-300 group-hover/item:text-primary-600 transition-all ${isTabActive ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`} />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </nav>
-        </div>
+                                >
+                                  <div
+                                    className={`p-1.5 rounded-md shrink-0 ${
+                                      isTabActive
+                                        ? 'bg-primary-600 text-white'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover/item:bg-primary-600 group-hover/item:text-white'
+                                    }`}
+                                  >
+                                    <TabIcon className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p
+                                      className={`text-xs font-semibold truncate ${
+                                        isTabActive ? 'text-primary-600' : 'text-slate-700 dark:text-slate-200'
+                                      }`}
+                                    >
+                                      <TranslatedText text={tab.label} />
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 truncate">
+                                      <TranslatedText text={tab.description} />
+                                    </p>
+                                  </div>
+                                  <ArrowRight
+                                    className={`w-3 h-3 shrink-0 ${
+                                      isTabActive ? 'text-primary-400' : 'text-slate-300 opacity-0 group-hover/item:opacity-100'
+                                    }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
 
-        <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Right: actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary-50 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/40">
+              <Building2 className="w-3 h-3 text-primary-600 dark:text-primary-400" />
+              <span className="text-[10px] font-medium text-primary-700 dark:text-primary-300 max-w-[100px] truncate">
+                {tenantName}
+              </span>
+            </div>
 
             <LanguageSwitcher />
 
-            {/* Notification Bell - Hidden on mobile as it's in the mobile bottom nav */}
             <div className="hidden lg:block">
               <CargoOwnerNotificationDropdown />
             </div>
 
-            {/* Credit Balance Badge */}
-            <div
-              onClick={() => { navigate('/tenant-admin/subscription-plans'); setSelectedView('subscription-plans'); }}
-              className="hidden xl:flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all group"
+            <button
+              onClick={() => navigateToTab('subscription-plans')}
+              className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary-50 dark:bg-primary-950/30 border border-primary-100 dark:border-primary-900/40 hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors"
             >
-              <div className="p-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                <DollarSign className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-0.5"><TranslatedText text="Available Credits" /></span>
-                <span className="text-sm font-black text-indigo-900 dark:text-indigo-100 leading-none tabular-nums">
-                  {currentBalance.toLocaleString()}
-                  <span className="text-[10px] ml-1 text-indigo-400 lowercase italic">TRX</span>
-                </span>
-              </div>
-            </div>
+              <DollarSign className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />
+              <span className="text-xs font-bold text-primary-700 dark:text-primary-300 tabular-nums">
+                {currentBalance.toLocaleString()}
+              </span>
+              <span className="text-[9px] text-primary-400 font-medium">TRX</span>
+            </button>
 
-            {/* User Profile */}
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center justify-center size-9 rounded-full bg-[#1e293b] text-white hover:opacity-90 transition-opacity"
+                className="flex items-center justify-center size-8 rounded-full bg-primary-600 text-white hover:bg-primary-700 transition-colors"
+                aria-label="User menu"
               >
-                <FaUser size={18} />
+                <FaUser size={14} />
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-800 z-[9999] overflow-hidden text-slate-900 dark:text-white">
-                  <div className="p-2">
-                    <div className="px-3 py-2 border-b border-gray-50 dark:border-slate-800 text-left">
-                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{user?.firstName || user?.email || tSync('Administrator')}</p>
-                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5 truncate"><TranslatedText text="Tenant Admin" /></p>
-                    </div>
+                <div className="absolute top-full right-0 mt-1.5 w-52 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 z-[9999] overflow-hidden">
+                  <div className="px-3 py-2.5 border-b border-slate-50 dark:border-slate-800">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                      {user?.firstName || user?.email || tSync('Administrator')}
+                    </p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">
+                      <TranslatedText text="Tenant Admin" />
+                    </p>
+                  </div>
+                  <div className="p-1.5">
                     <button
-                      onClick={() => { setShowUserMenu(false); setSelectedView('profile'); }}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2 mt-1"
+                      onClick={() => { setShowUserMenu(false); navigateToTab('profile'); }}
+                      className="w-full text-left px-2.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-2"
                     >
-                      <FaUser size={14} className="text-slate-400" /> <TranslatedText text="My Profile" />
+                      <FaUser size={13} className="text-slate-400" />
+                      <TranslatedText text="My Profile" />
                     </button>
                     <button
                       onClick={() => { setShowUserMenu(false); setSelectedView('kyc'); }}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2"
+                      className="w-full text-left px-2.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-2"
                     >
-                      <FileCheck size={14} className="text-slate-400" /> <TranslatedText text="KYC Center" />
+                      <FileCheck size={13} className="text-slate-400" />
+                      <TranslatedText text="KYC Center" />
                     </button>
                     <button
-                      onClick={() => { setShowUserMenu(false); setSelectedView('settings'); }}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-2"
+                      onClick={() => { setShowUserMenu(false); navigateToTab('settings'); }}
+                      className="w-full text-left px-2.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg flex items-center gap-2"
                     >
-                      <FaCog size={14} className="text-slate-400" /> <TranslatedText text="Settings" />
+                      <FaCog size={13} className="text-slate-400" />
+                      <TranslatedText text="Settings" />
                     </button>
-                    <div className="border-t border-gray-50 dark:border-slate-800 my-1"></div>
-                    <div className="px-3 py-2.5">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <div className="border-t border-slate-50 dark:border-slate-800 my-1 px-2.5 py-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                           <TranslatedText text="Theme" />
                         </span>
                       </div>
                       <ThemeToggle />
                     </div>
-                    <div className="border-t border-gray-50 dark:border-slate-800 my-1"></div>
+                    <div className="border-t border-slate-50 dark:border-slate-800 my-1" />
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-3 py-2.5 text-xs font-bold text-rose-500 uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors flex items-center gap-2"
+                      className="w-full text-left px-2.5 py-2 text-xs font-medium text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg flex items-center gap-2"
                     >
-                      <LogOut size={14} /> <TranslatedText text="Logout" />
+                      <LogOut size={13} />
+                      <TranslatedText text="Logout" />
                     </button>
                   </div>
                 </div>
@@ -336,9 +357,9 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile drawer */}
       <AnimatePresence>
         {showMobileMenu && (
           <>
@@ -347,106 +368,90 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowMobileMenu(false)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] lg:hidden"
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] lg:hidden"
             />
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white dark:bg-slate-900 z-[101] lg:hidden overflow-y-auto shadow-2xl"
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="fixed top-0 left-0 bottom-0 w-[260px] bg-white dark:bg-slate-900 z-[101] lg:hidden overflow-y-auto shadow-xl border-r border-slate-100 dark:border-slate-800"
             >
-              <div className="p-6 space-y-8">
+              <div className="p-4 space-y-5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <img src={logoUrutiX} alt="Logo" className="h-8 w-auto" />
-                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Portal</span>
-                  </div>
+                  <img src={logoUrutiX} alt="Logo" className="h-7 w-auto" />
                   <button
                     onClick={() => setShowMobileMenu(false)}
-                    className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400"
+                    className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="space-y-6">
-                  {/* Direct Link: Dashboard */}
-                  <button
-                    onClick={() => { navigate('/tenant-admin'); setSelectedView('overview'); setShowMobileMenu(false); }}
-                    className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all ${selectedView === 'overview'
-                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
+                <button
+                  onClick={() => navigateToTab('overview')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold ${
+                    selectedView === 'overview'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400'
-                      }`}
-                  >
-                    <LayoutDashboard className="w-5 h-5" />
-                    <span className="text-xs font-black uppercase tracking-widest"><TranslatedText text="DASHBOARD" /></span>
-                  </button>
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <TranslatedText text="Dashboard" />
+                </button>
 
-                  {/* Grouped Menus */}
-                  {groupedTabs.map((group) => (
-                    <div key={group.id} className="space-y-3">
-                      <div className="px-2">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                          <TranslatedText text={group.label} />
-                        </span>
-                      </div>
-                      <div className="grid gap-2">
-                        {group.items.map((tab) => {
-                          const Icon = tab.icon;
-                          const active = selectedView === tab.id;
-                          return (
-                            <button
-                              key={tab.id}
-                              onClick={() => {
-                                // Map tab IDs to their respective routes
-                                const routeMap: Record<string, string> = {
-                                  'overview': '/tenant-admin',
-                                  'financial': '/tenant-admin/financial',
-                                  'purchase-credits': '/tenant-admin/subscription-plans',
-                                  'subscription-plans': '/tenant-admin/subscription-plans',
-                                  'billing': '/tenant-admin/billing',
-                                  'communicate': '/tenant-admin/communication',
-                                  'fleet': '/tenant-admin/fleet',
-                                  'cargo': '/tenant-admin/cargo',
-                                  'drivers': '/tenant-admin/drivers',
-                                  'trips': '/tenant-admin/trips',
-                                  'users': '/tenant-admin/users',
-                                  'truck-owners': '/tenant-admin/truck-owners',
-                                  'lenders': '/tenant-admin/lenders',
-                                  'settings': '/tenant-admin/settings'
-                                };
-                                const targetRoute = routeMap[tab.id];
-                                if (targetRoute) navigate(targetRoute);
-                                else setSelectedView(tab.id as any);
-                                setShowMobileMenu(false);
-                              }}
-                              className={`flex items-center gap-3 p-3.5 rounded-2xl transition-all ${active
-                                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-                                : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500'
-                                }`}
+                {groupedTabs.map((group) => (
+                  <div key={group.id} className="space-y-2">
+                    <p className="px-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      <TranslatedText text={group.label} />
+                    </p>
+                    <div className="space-y-1">
+                      {group.items.map((tab) => {
+                        const Icon = tab.icon;
+                        const active = selectedView === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            onClick={() => navigateToTab(tab.id)}
+                            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium ${
+                              active
+                                ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-600'
+                                : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            <div
+                              className={`p-1.5 rounded-md ${
+                                active ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                              }`}
                             >
-                              <div className={`p-2 rounded-xl ${active ? 'bg-primary-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
-                                <Icon className="w-4 h-4" />
-                              </div>
-                              <span className="text-xs font-bold uppercase tracking-wide"><TranslatedText text={tab.label} /></span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                            <TranslatedText text={tab.label} />
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
+                  </div>
+                ))}
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 dark:bg-primary-950/30">
+                    <DollarSign className="w-4 h-4 text-primary-600" />
+                    <div>
+                      <p className="text-[10px] text-primary-400 font-medium">Credits</p>
+                      <p className="text-sm font-bold text-primary-700 dark:text-primary-300 tabular-nums">
+                        {currentBalance.toLocaleString()} TRX
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
-    </div>
-    <div className="h-[76px] sm:h-[88px] lg:h-[100px]" aria-hidden="true" />
     </>
   );
 };
 
 export default TenantHeader;
-
