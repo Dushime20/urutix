@@ -5,6 +5,7 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, Between } from 'typeorm';
@@ -38,6 +39,8 @@ import { InvoiceReceiptService } from './services/invoice-receipt.service';
 import { TripsService } from '../trips/trips.service';
 import { assertValidTransition } from './types/payment-state-machine';
 import { resolveAdvancePaymentPercentage } from './utils/advance-payment-policy.util';
+import { LenderDisbursementAttemptService } from './services/lender-disbursement-attempt.service';
+import type { LenderDisbursementPreflight } from './services/lender-disbursement-attempt.service';
 
 @Injectable()
 export class PaymentsService {
@@ -85,6 +88,8 @@ export class PaymentsService {
     private readonly invoiceReceiptService?: InvoiceReceiptService,
     private readonly tripsService?: TripsService,
     private readonly eventEmitter?: EventEmitter2,
+    @Optional()
+    private readonly lenderDisbursementAttemptService?: LenderDisbursementAttemptService,
   ) {}
 
   /** Repayment obligations are cargo-owner → lender, not disbursements. */
@@ -190,39 +195,56 @@ export class PaymentsService {
   }
 
   /**
-   * Pre-flight check before initiating MoMo — prevents duplicate charges and
-   * reconciles loans stuck when a completed payment exists without isLenderPayment.
+   * Pre-flight before initiating MoMo for a lender disbursement.
    *
-   * Stale / legacy in-flight rows (no PIN ever arrives) are cancelled so the
-   * lender can retry with a fresh MoMo collection.
+   * Delegates to LenderDisbursementAttemptService which:
+   * - reuses completed settlements
+   * - reconciles in-flight attempts against the MoMo provider
+   * - closes timed-out / failed / legacy attempts with audit reason codes
+   * - only then allows a new charge (new referenceId)
    */
   async preflightLenderDisbursement(
     tripId: string,
     payerId: string,
     loanId: string,
-  ): Promise<
-    | { outcome: 'already_completed'; payment: Payment }
-    | { outcome: 'awaiting_confirmation'; payment: Payment }
-    | { outcome: 'proceed' }
-  > {
+  ): Promise<LenderDisbursementPreflight> {
+    if (!this.lenderDisbursementAttemptService) {
+      this.logger.warn(
+        'LenderDisbursementAttemptService unavailable — falling back to basic preflight',
+      );
+      return this.basicPreflightLenderDisbursement(tripId, payerId, loanId);
+    }
+
+    return this.lenderDisbursementAttemptService.resolve({
+      tripId,
+      payerId,
+      loanId,
+      findPayments: () =>
+        this.findDisbursementPaymentsForLoan(tripId, payerId, loanId),
+      ensureLenderMetadata: (payment, id) =>
+        this.ensureLenderDisbursementMetadata(payment, id),
+      preferLoanLinked: (payments, id) =>
+        this.preferLoanLinkedPayment(payments, id),
+    });
+  }
+
+  /** Minimal fallback if attempt service is not wired (should not happen in prod). */
+  private async basicPreflightLenderDisbursement(
+    tripId: string,
+    payerId: string,
+    loanId: string,
+  ): Promise<LenderDisbursementPreflight> {
     const existing = await this.findDisbursementPaymentsForLoan(
       tripId,
       payerId,
       loanId,
     );
-
-    const completed = existing.filter(
-      (p) => p.status === PaymentStatus.COMPLETED,
-    );
+    const completed = existing.filter((p) => p.status === PaymentStatus.COMPLETED);
     if (completed.length > 0) {
       const match = this.preferLoanLinkedPayment(completed, loanId)!;
       const patched = await this.ensureLenderDisbursementMetadata(match, loanId);
-      this.logger.log(
-        `Preflight: reusing completed disbursement payment ${patched.id} for loan ${loanId}`,
-      );
       return { outcome: 'already_completed', payment: patched };
     }
-
     const inFlight = existing.find(
       (p) =>
         (p.status === PaymentStatus.PENDING ||
@@ -230,48 +252,13 @@ export class PaymentsService {
         (p.transactionId || (p.metadata as any)?.momoTransactionId),
     );
     if (inFlight) {
-      if (this.shouldAbandonInFlightDisbursement(inFlight)) {
-        await this.cancelStalePaymentsForRetry(
-          [inFlight],
-          'Abandoned stale/legacy MoMo disbursement so lender can retry PIN prompt',
-        );
-        this.logger.warn(
-          `Preflight: abandoned in-flight payment ${inFlight.id} ` +
-            `(txn ${inFlight.transactionId}) for loan ${loanId} — allowing new MoMo call`,
-        );
-        return { outcome: 'proceed' };
-      }
-      return { outcome: 'awaiting_confirmation', payment: inFlight };
+      return {
+        outcome: 'awaiting_confirmation',
+        payment: inFlight,
+        reasonCode: 'AWAITING_CUSTOMER_AUTHORIZATION',
+      };
     }
-
     return { outcome: 'proceed' };
-  }
-
-  /**
-   * Abandon in-flight MoMo when:
-   * - legacy P2P (no momoPhase) — never pushed USSD reliably
-   * - or pending longer than MOMO_DISBURSEMENT_STALE_MS (default 3 min)
-   */
-  private shouldAbandonInFlightDisbursement(payment: Payment): boolean {
-    const meta = (payment.metadata || {}) as Record<string, any>;
-    const phase = meta.momoPhase as string | undefined;
-    const activePhases = new Set([
-      'collection',
-      'payout',
-      'payout_initiating',
-    ]);
-    if (!phase || !activePhases.has(phase)) {
-      return true;
-    }
-
-    const stamp = new Date(
-      (payment as any).updatedAt || (payment as any).createdAt || 0,
-    ).getTime();
-    if (!Number.isFinite(stamp) || stamp <= 0) {
-      return true;
-    }
-    const staleMs = Number(process.env.MOMO_DISBURSEMENT_STALE_MS || 3 * 60 * 1000);
-    return Date.now() - stamp >= staleMs;
   }
 
   /**

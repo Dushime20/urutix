@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Payment } from '../../entities/payment.entity';
@@ -25,6 +25,7 @@ import { TransactionStateService } from './services/transaction-state.service';
 import { ProviderIntegrationService } from './services/provider-integration.service';
 import { MobileMoneyPaymentService } from './services/mobile-money-payment.service';
 import { MobileMoneyWebhookSettlementService } from './services/mobile-money-webhook-settlement.service';
+import { LenderDisbursementAttemptService } from './services/lender-disbursement-attempt.service';
 import { InvoiceReceiptService } from './services/invoice-receipt.service';
 import { IdempotencyService } from './services/idempotency.service';
 import { ReconciliationService } from './services/reconciliation.service';
@@ -56,6 +57,7 @@ import { TripsModule } from '../trips/trips.module';
     ProviderIntegrationService,
     MobileMoneyPaymentService,
     MobileMoneyWebhookSettlementService,
+    LenderDisbursementAttemptService,
     InvoiceReceiptService,
     IdempotencyService,
     ReconciliationService,
@@ -77,6 +79,7 @@ import { TripsModule } from '../trips/trips.module';
     ProviderIntegrationService,
     MobileMoneyPaymentService,
     MobileMoneyWebhookSettlementService,
+    LenderDisbursementAttemptService,
     InvoiceReceiptService,
     IdempotencyService,
     ReconciliationService,

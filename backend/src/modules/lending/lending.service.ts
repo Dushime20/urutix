@@ -3436,14 +3436,67 @@ export class LendingService {
             };
           }
 
+          // Provider already settled funds but local loan not DISBURSED — finish via webhook path
+          if (preflight.outcome === 'provider_settled') {
+            const existingLenderPayment = preflight.payment;
+            const ref =
+              (existingLenderPayment.metadata as any)?.referenceId ||
+              existingLenderPayment.referenceNumber ||
+              existingLenderPayment.transactionId;
+            this.logger.log(
+              `Loan ${loan.id}: provider settled payment ${existingLenderPayment.id} ` +
+                `(${preflight.reasonCode}) — reconciling without new MoMo charge`,
+            );
+            disbursement.status = DisbursementStatus.PENDING;
+            disbursement.external_txn_ref =
+              existingLenderPayment.transactionId || String(ref);
+            await manager.save(LoanDisbursement, disbursement);
+
+            // Settlement runs in its own transaction after local pending state is saved.
+            await this.confirmDisbursementFromWebhook({
+              referenceId: String(ref),
+              transactionId:
+                existingLenderPayment.transactionId || String(ref),
+              paymentId: existingLenderPayment.id,
+            });
+
+            const refreshedLoan = await manager.findOne(LoanRequest, {
+              where: { id: loan.id },
+            });
+            const settled =
+              refreshedLoan?.status === LoanRequestStatus.DISBURSED;
+
+            return {
+              success: true,
+              pendingConfirmation: !settled,
+              disbursement: savedDisbursement,
+              payment: {
+                id: existingLenderPayment.id,
+                status: existingLenderPayment.status,
+                transactionId: existingLenderPayment.transactionId,
+                pendingConfirmation: !settled,
+              },
+              disbursedAmount: settled ? lockedAmount : 0,
+              disbursedCurrency: loan.currency,
+              momoAmount: disburseAmount,
+              momoCurrency: disburseCurrency,
+              reconcilingProviderSettlement: true,
+              reasonCode: preflight.reasonCode,
+            };
+          }
+
           if (preflight.outcome === 'awaiting_confirmation') {
             const existingLenderPayment = preflight.payment;
             const existingTxnId =
               existingLenderPayment.transactionId ||
               (existingLenderPayment.metadata as any)?.momoTransactionId;
             this.logger.log(
-              `Loan ${loan.id} has in-flight disbursement payment ${existingLenderPayment.id} ` +
-                `(txn ${existingTxnId}) — returning pending confirmation without new MoMo call`,
+              `Loan ${loan.id} awaiting MoMo authorization on payment ${existingLenderPayment.id} ` +
+                `(txn ${existingTxnId}, reason=${preflight.reasonCode}` +
+                (preflight.retryAfterSeconds != null
+                  ? `, retryAfter=${preflight.retryAfterSeconds}s`
+                  : '') +
+                `) — no new charge`,
             );
             processedPayment = existingLenderPayment;
             disbursement.status = DisbursementStatus.PENDING;
@@ -3465,7 +3518,16 @@ export class LendingService {
               momoAmount: disburseAmount,
               momoCurrency: disburseCurrency,
               awaitingPriorConfirmation: true,
+              reasonCode: preflight.reasonCode,
+              retryAfterSeconds: preflight.retryAfterSeconds,
             };
+          }
+
+          if (preflight.outcome === 'proceed' && preflight.closedPaymentId) {
+            this.logger.log(
+              `Loan ${loan.id}: closed prior attempt ${preflight.closedPaymentId} ` +
+                `(${preflight.reasonCode}) — starting new MoMo collection`,
+            );
           }
 
           const referenceNumber = `LOAN-${loan.id.slice(0, 8).toUpperCase()}-DISB-${Date.now()}`;
