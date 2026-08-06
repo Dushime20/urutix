@@ -29,13 +29,16 @@ export interface MobileMoneyTransfer {
  *   phoneNumber  – the PAYER (the phone that gets the PIN popup and is charged)
  *   transfers[]  – the RECEIVER(S) of the money (REQUIRED by the API)
  *
- * Collection pattern  (user pays platform):
+ * Collection pattern  (user pays platform) — USSD reliably fires:
  *   phoneNumber  = user's phone         ← charged
  *   transfers[0] = MOBILE_MONEY_ACCOUNT_PHONE  ← receives funds
  *
- * Disbursement pattern (lender pays truck owner):
- *   phoneNumber  = lender-entered MoMo phone  ← charged (PIN popup)
- *   transfers[0] = truck owner phone         ← receives funds
+ * Disbursement / payout (platform pays beneficiary):
+ *   phoneNumber  = MOBILE_MONEY_ACCOUNT_PHONE  ← charged (PIN on merchant SIM)
+ *   transfers[0] = beneficiary phone           ← receives funds
+ *
+ * IMPORTANT: lender → truck-owner direct (P2P) does NOT reliably push USSD on Ishema.
+ * Loan disbursement uses collection then payout (two legs).
  */
 export interface MobileMoneyCreateTransactionRequest {
   amount: number;

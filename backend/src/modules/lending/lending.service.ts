@@ -2335,16 +2335,30 @@ export class LendingService {
   }
 
   /**
-   * Called ONLY from Ishema webhook after provider confirms success.
-   * Marks loan DISBURSED and creates repayment obligation — never call on API initiate.
+   * Called from Ishema webhook after provider confirms success.
+   *
+   * Two-phase MoMo (Ishema requires merchant as collection receiver for USSD):
+   *   collection → lender paid platform (PIN on lender) → start payout
+   *   payout     → platform paid truck owner → mark loan DISBURSED
    */
   async confirmDisbursementFromWebhook(input: {
     referenceId: string;
     transactionId?: string;
     paymentId?: string;
   }): Promise<void> {
-    const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } =
+    const { Payment: PaymentEntity, PaymentStatus: PmtStatus } =
       await import('../../entities/payment.entity');
+
+    let payoutJob: {
+      paymentId: string;
+      tenantId: string;
+      loanId: string;
+      amount: number;
+      beneficiaryPhone: string;
+      platformPhone: string;
+      collectionReferenceId: string;
+      paymentMessage: string;
+    } | null = null;
 
     await this.dataSource.transaction(async (manager) => {
       let payment: any = null;
@@ -2356,6 +2370,8 @@ export class LendingService {
           .createQueryBuilder(PaymentEntity, 'p')
           .where('p.referenceNumber = :ref OR p.transactionId = :ref', { ref: input.referenceId })
           .orWhere(`(p.metadata->>'referenceId') = :ref`, { ref: input.referenceId })
+          .orWhere(`(p.metadata->>'payoutReferenceId') = :ref`, { ref: input.referenceId })
+          .orWhere(`(p.metadata->>'collectionReferenceId') = :ref`, { ref: input.referenceId })
           .getOne();
       }
       if (!payment) {
@@ -2378,53 +2394,335 @@ export class LendingService {
         return;
       }
 
-      const disbursement = meta.disbursementId
-        ? await manager.findOne(LoanDisbursement, { where: { id: meta.disbursementId } })
-        : await manager.findOne(LoanDisbursement, {
-            where: { loan_request_id: loanId },
-            order: { created_at: 'DESC' } as any,
-          });
+      const phase = meta.momoPhase || 'collection';
 
-      if (!disbursement) {
-        this.logger.error(`confirmDisbursementFromWebhook: no disbursement for loan ${loanId}`);
+      // ── Phase 2: payout to truck owner confirmed ──────────────────────────
+      if (phase === 'payout') {
+        const disbursement = meta.disbursementId
+          ? await manager.findOne(LoanDisbursement, { where: { id: meta.disbursementId } })
+          : await manager.findOne(LoanDisbursement, {
+              where: { loan_request_id: loanId },
+              order: { created_at: 'DESC' } as any,
+            });
+
+        if (!disbursement) {
+          this.logger.error(`confirmDisbursementFromWebhook: no disbursement for loan ${loanId}`);
+          return;
+        }
+
+        const lockedAmount = Number(loan.approved_amount);
+        const txnId = input.transactionId || input.referenceId;
+
+        disbursement.status = DisbursementStatus.DISBURSED;
+        disbursement.disbursement_date = new Date();
+        disbursement.external_txn_ref = txnId;
+        loan.status = LoanRequestStatus.DISBURSED;
+        loan.metadata = {
+          ...(loan.metadata || {}),
+          disbursement: {
+            ...(loan.metadata?.disbursement || {}),
+            disbursed_at: new Date().toISOString(),
+            pending_confirmation: false,
+            momo_phase: 'completed',
+            amount: lockedAmount,
+            currency: loan.currency,
+            transaction_id: txnId,
+            confirmed_via: 'ishema_webhook',
+          },
+        };
+
+        payment.metadata = {
+          ...meta,
+          momoPhase: 'completed',
+          payoutConfirmedAt: new Date().toISOString(),
+        };
+        await manager.save(PaymentEntity, payment);
+        await manager.save(LoanDisbursement, disbursement);
+        await manager.save(LoanRequest, loan);
+
+        await this.finalizeDisbursementSideEffects(manager, {
+          loan,
+          disbursement,
+          lockedAmount,
+          processedPaymentId: payment.id,
+          tripId: payment.tripId,
+          lenderUserId: payment.payerId,
+          beneficiaries: disbursement.beneficiaries || [],
+        });
+
+        this.logger.log(
+          `Loan ${loanId} marked DISBURSED via Ishema payout webhook (${input.referenceId})`,
+        );
         return;
       }
 
-      const lockedAmount = Number(loan.approved_amount);
-      const txnId = input.transactionId || input.referenceId;
+      // ── Phase 1: collection confirmed — queue payout to truck owner ───────
+      if (phase === 'payout_initiating' || phase === 'payout') {
+        this.logger.log(
+          `Loan ${loanId} collection webhook ignored — payout already ${phase}`,
+        );
+        return;
+      }
 
-      disbursement.status = DisbursementStatus.DISBURSED;
-      disbursement.disbursement_date = new Date();
-      disbursement.external_txn_ref = txnId;
-      loan.status = LoanRequestStatus.DISBURSED;
+      const beneficiaryPhone =
+        meta.beneficiaryPhoneNumber || meta.receiverPhoneNumber;
+      const platformPhone = meta.platformPhoneNumber;
+      const momoAmount = Number(meta.momoAmount || payment.amount);
+
+      // Legacy single-shot disbursements (no platform collection leg)
+      if (!meta.momoPhase && !platformPhone) {
+        const disbursement = meta.disbursementId
+          ? await manager.findOne(LoanDisbursement, { where: { id: meta.disbursementId } })
+          : await manager.findOne(LoanDisbursement, {
+              where: { loan_request_id: loanId },
+              order: { created_at: 'DESC' } as any,
+            });
+        if (!disbursement) {
+          this.logger.error(`confirmDisbursementFromWebhook: no disbursement for loan ${loanId}`);
+          return;
+        }
+        const lockedAmount = Number(loan.approved_amount);
+        const txnId = input.transactionId || input.referenceId;
+        disbursement.status = DisbursementStatus.DISBURSED;
+        disbursement.disbursement_date = new Date();
+        disbursement.external_txn_ref = txnId;
+        loan.status = LoanRequestStatus.DISBURSED;
+        loan.metadata = {
+          ...(loan.metadata || {}),
+          disbursement: {
+            ...(loan.metadata?.disbursement || {}),
+            disbursed_at: new Date().toISOString(),
+            pending_confirmation: false,
+            amount: lockedAmount,
+            currency: loan.currency,
+            transaction_id: txnId,
+            confirmed_via: 'ishema_webhook',
+          },
+        };
+        await manager.save(LoanDisbursement, disbursement);
+        await manager.save(LoanRequest, loan);
+        await this.finalizeDisbursementSideEffects(manager, {
+          loan,
+          disbursement,
+          lockedAmount,
+          processedPaymentId: payment.id,
+          tripId: payment.tripId,
+          lenderUserId: payment.payerId,
+          beneficiaries: disbursement.beneficiaries || [],
+        });
+        this.logger.log(
+          `Loan ${loanId} marked DISBURSED via legacy single-shot webhook (${input.referenceId})`,
+        );
+        return;
+      }
+
+      if (!beneficiaryPhone || !platformPhone || !momoAmount) {
+        this.logger.error(
+          `confirmDisbursementFromWebhook: missing payout fields for loan ${loanId} ` +
+            `(beneficiary=${beneficiaryPhone}, platform=${platformPhone}, amount=${momoAmount})`,
+        );
+        return;
+      }
+
+      payment.metadata = {
+        ...meta,
+        momoPhase: 'payout_initiating',
+        collectionConfirmedAt: new Date().toISOString(),
+        collectionReferenceId: meta.referenceId || payment.referenceNumber,
+        collectionTransactionId: payment.transactionId || input.transactionId,
+      };
+      payment.status = PmtStatus.PROCESSING;
+      await manager.save(PaymentEntity, payment);
+
       loan.metadata = {
         ...(loan.metadata || {}),
         disbursement: {
           ...(loan.metadata?.disbursement || {}),
-          disbursed_at: new Date().toISOString(),
-          pending_confirmation: false,
-          amount: lockedAmount,
-          currency: loan.currency,
-          transaction_id: txnId,
-          confirmed_via: 'ishema_webhook',
+          momo_phase: 'payout_initiating',
+          pending_confirmation: true,
+          collection_confirmed_at: new Date().toISOString(),
         },
       };
-
-      await manager.save(LoanDisbursement, disbursement);
       await manager.save(LoanRequest, loan);
 
-      await this.finalizeDisbursementSideEffects(manager, {
-        loan,
-        disbursement,
-        lockedAmount,
-        processedPaymentId: payment.id,
-        tripId: payment.tripId,
-        lenderUserId: payment.payerId,
-        beneficiaries: disbursement.beneficiaries || [],
+      payoutJob = {
+        paymentId: payment.id,
+        tenantId: payment.tenantId,
+        loanId,
+        amount: momoAmount,
+        beneficiaryPhone,
+        platformPhone,
+        collectionReferenceId:
+          meta.referenceId || payment.referenceNumber || input.referenceId,
+        paymentMessage:
+          payment.description ||
+          `Loan disbursement payout #${loan.loan_number || loan.id.slice(0, 8)}`,
+      };
+
+      this.logger.log(
+        `Loan ${loanId} collection confirmed — initiating payout to ${beneficiaryPhone}`,
+      );
+    });
+
+    if (payoutJob) {
+      await this.initiateDisbursementPayout(payoutJob);
+    }
+  }
+
+  /**
+   * Leg 2: after lender collection succeeds, pay truck owner from platform MoMo account.
+   * PIN goes to MOBILE_MONEY_ACCOUNT_PHONE (merchant SIM). Loan stays pending until this webhook.
+   */
+  private async initiateDisbursementPayout(job: {
+    paymentId: string;
+    tenantId: string;
+    loanId: string;
+    amount: number;
+    beneficiaryPhone: string;
+    platformPhone: string;
+    collectionReferenceId: string;
+    paymentMessage: string;
+  }): Promise<void> {
+    const { Payment: PaymentEntity, PaymentStatus: PmtStatus } =
+      await import('../../entities/payment.entity');
+
+    try {
+      const MobileMoneyModule = await import(
+        '../payments/services/mobile-money-payment.service'
+      );
+      const mobileMoneyService = this.moduleRef.get(
+        MobileMoneyModule.MobileMoneyPaymentService,
+        { strict: false },
+      );
+      if (!mobileMoneyService) {
+        throw new Error('Mobile Money payment service is not available for payout');
+      }
+
+      const payoutReferenceId = `${job.collectionReferenceId}-PAYOUT`;
+      const transfers = [
+        {
+          percentage: 100,
+          phoneNumber: job.beneficiaryPhone,
+          receiverMessage: job.paymentMessage.substring(0, 160),
+        },
+      ];
+
+      this.logger.log(
+        `Initiating MoMo payout for loan ${job.loanId}: ${job.amount} RWF ` +
+          `| PIN → platform ${job.platformPhone} → beneficiary ${job.beneficiaryPhone} ` +
+          `| ref ${payoutReferenceId}`,
+      );
+
+      const momoResponse = await mobileMoneyService.createTransaction(
+        job.amount,
+        job.platformPhone,
+        payoutReferenceId,
+        job.paymentMessage.substring(0, 160),
+        transfers,
+        this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL'),
+      );
+
+      const transaction =
+        momoResponse.savedTransaction || momoResponse.transaction;
+      const transactionId =
+        transaction?.externalId || transaction?.id || payoutReferenceId;
+      const txnStatus = transaction?.status || 'pending';
+
+      if (txnStatus === 'failed') {
+        throw new Error('Ishema rejected platform → beneficiary payout');
+      }
+
+      await this.dataSource.transaction(async (manager) => {
+        const payment = await manager.findOne(PaymentEntity, {
+          where: { id: job.paymentId },
+        });
+        if (!payment) return;
+
+        const meta = (payment.metadata || {}) as Record<string, any>;
+        payment.transactionId = transactionId;
+        payment.status = PmtStatus.PROCESSING;
+        payment.metadata = {
+          ...meta,
+          momoPhase: 'payout',
+          referenceId: payoutReferenceId,
+          payoutReferenceId,
+          payoutTransactionId: transactionId,
+          payoutInitiatedAt: new Date().toISOString(),
+        };
+        await manager.save(PaymentEntity, payment);
+
+        const loan = await manager.findOne(LoanRequest, {
+          where: { id: job.loanId },
+        });
+        if (loan) {
+          loan.metadata = {
+            ...(loan.metadata || {}),
+            disbursement: {
+              ...(loan.metadata?.disbursement || {}),
+              momo_phase: 'payout',
+              pending_confirmation: true,
+              payout_transaction_id: transactionId,
+              payout_reference_id: payoutReferenceId,
+            },
+          };
+          await manager.save(LoanRequest, loan);
+        }
+
+        const disbursement = meta.disbursementId
+          ? await manager.findOne(LoanDisbursement, {
+              where: { id: meta.disbursementId },
+            })
+          : null;
+        if (disbursement) {
+          disbursement.external_txn_ref = transactionId;
+          disbursement.status = DisbursementStatus.PENDING;
+          await manager.save(LoanDisbursement, disbursement);
+        }
       });
 
-      this.logger.log(`Loan ${loanId} marked DISBURSED via Ishema webhook (${input.referenceId})`);
-    });
+      this.logger.log(
+        `MoMo payout initiated for loan ${job.loanId}: externalId=${transactionId}, status=${txnStatus}`,
+      );
+    } catch (err: any) {
+      this.logger.error(
+        `initiateDisbursementPayout failed for loan ${job.loanId}: ${err.message}`,
+        err.stack,
+      );
+
+      await this.dataSource.transaction(async (manager) => {
+        const payment = await manager.findOne(PaymentEntity, {
+          where: { id: job.paymentId },
+        });
+        if (payment) {
+          const meta = (payment.metadata || {}) as Record<string, any>;
+          payment.metadata = {
+            ...meta,
+            momoPhase: 'payout_failed',
+            payoutFailureReason: err.message,
+            payoutFailedAt: new Date().toISOString(),
+          };
+          // Collection succeeded — keep PROCESSING so ops can retry payout; do not mark COMPLETED
+          payment.status = PmtStatus.PROCESSING;
+          await manager.save(PaymentEntity, payment);
+        }
+
+        const loan = await manager.findOne(LoanRequest, {
+          where: { id: job.loanId },
+        });
+        if (loan) {
+          loan.metadata = {
+            ...(loan.metadata || {}),
+            disbursement: {
+              ...(loan.metadata?.disbursement || {}),
+              momo_phase: 'payout_failed',
+              pending_confirmation: true,
+              payout_failure_reason: err.message,
+            },
+          };
+          await manager.save(LoanRequest, loan);
+        }
+      });
+    }
   }
 
   async failDisbursementFromWebhook(input: {
@@ -2439,7 +2737,13 @@ export class LendingService {
         ? await manager.findOne(PaymentEntity, { where: { id: input.paymentId } })
         : await manager
             .createQueryBuilder(PaymentEntity, 'p')
-            .where('p.referenceNumber = :ref', { ref: input.referenceId })
+            .where('p.referenceNumber = :ref OR p.transactionId = :ref', {
+              ref: input.referenceId,
+            })
+            .orWhere(`(p.metadata->>'referenceId') = :ref`, { ref: input.referenceId })
+            .orWhere(`(p.metadata->>'payoutReferenceId') = :ref`, {
+              ref: input.referenceId,
+            })
             .getOne();
 
       const loanId = (payment?.metadata as any)?.loanId;
@@ -2448,13 +2752,18 @@ export class LendingService {
       const loan = await manager.findOne(LoanRequest, { where: { id: loanId } });
       if (!loan || loan.status === LoanRequestStatus.DISBURSED) return;
 
+      const phase = (payment?.metadata as any)?.momoPhase || 'collection';
       const disbursement = await manager.findOne(LoanDisbursement, {
         where: { loan_request_id: loanId },
         order: { created_at: 'DESC' } as any,
       });
       if (disbursement && disbursement.status !== DisbursementStatus.DISBURSED) {
         disbursement.status = DisbursementStatus.FAILED;
-        disbursement.failure_reason = input.reason || 'MoMo payment failed';
+        disbursement.failure_reason =
+          input.reason ||
+          (phase === 'payout'
+            ? 'MoMo payout to truck owner failed'
+            : 'MoMo collection from lender failed');
         await manager.save(LoanDisbursement, disbursement);
       }
 
@@ -2465,10 +2774,13 @@ export class LendingService {
           pending_confirmation: false,
           failed_at: new Date().toISOString(),
           failure_reason: input.reason,
+          momo_phase: phase === 'payout' ? 'payout_failed' : 'collection_failed',
         },
       };
       await manager.save(LoanRequest, loan);
-      this.logger.warn(`Disbursement failed for loan ${loanId}: ${input.reason}`);
+      this.logger.warn(
+        `Disbursement failed for loan ${loanId} (phase=${phase}): ${input.reason}`,
+      );
     });
   }
 
@@ -3162,9 +3474,26 @@ export class LendingService {
               ? `Loan disbursement #${loan.loan_number || loan.id.slice(0, 8)} — ${disburseAmount} ${disburseCurrency} (${lockedAmount} ${loan.currency})`
               : `Loan disbursement #${loan.loan_number || loan.id.slice(0, 8)} — ${disburseAmount} ${disburseCurrency}`;
 
+          // Ishema only reliably pushes USSD when collecting into the merchant account.
+          // Leg 1 (now): lender → MOBILE_MONEY_ACCOUNT_PHONE (PIN on lender).
+          // Leg 2 (webhook): platform → truck owner (PIN on merchant SIM).
+          const platformPhoneRaw = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+          if (!platformPhoneRaw) {
+            throw new BadRequestException(
+              'MOBILE_MONEY_ACCOUNT_PHONE is not configured. Required to collect lender payment before paying the truck owner.',
+            );
+          }
+          const platformPhone = mobileMoneyService.formatPhoneNumber(platformPhoneRaw);
+
+          if (payerPhone === platformPhone) {
+            throw new BadRequestException(
+              'Payer number cannot be the platform Mobile Money account. Enter the lender MoMo number that should receive the PIN.',
+            );
+          }
+
           const transfers = [{
             percentage: 100,
-            phoneNumber: formattedBeneficiary,
+            phoneNumber: platformPhone,
             receiverMessage: paymentMessage.substring(0, 160),
           }];
 
@@ -3186,6 +3515,9 @@ export class LendingService {
                 isLenderPayment: true,
                 payerPhoneNumber: payerPhone,
                 receiverPhoneNumber: formattedBeneficiary,
+                platformPhoneNumber: platformPhone,
+                beneficiaryPhoneNumber: formattedBeneficiary,
+                momoPhase: 'collection',
                 loanId: loan.id,
                 loanNumber: loan.loan_number,
                 disbursementId: savedDisbursement.id,
@@ -3307,7 +3639,8 @@ export class LendingService {
               : '') +
             `) ` +
             `| PIN popup → payer ${payerPhone} (entered: ${rawPayerPhone}) ` +
-            `| receiver ${formattedBeneficiary}`,
+            `| collect → platform ${platformPhone} ` +
+            `| later payout → ${formattedBeneficiary}`,
           );
 
           const momoResponse = await mobileMoneyService.createTransaction(
@@ -3345,7 +3678,7 @@ export class LendingService {
                 status: 'processing' as any,
                 transactionId,
                 gatewayResponse:
-                  'Awaiting Ishema confirmation — loan will disburse after receiver gets funds.',
+                  'Awaiting lender MoMo PIN — funds collect to platform, then payout to truck owner.',
               },
               tenantId,
             );
@@ -3358,11 +3691,13 @@ export class LendingService {
             disbursement: {
               disbursed_at: null,
               pending_confirmation: true,
+              momo_phase: 'collection',
               amount: lockedAmount,
               currency: loan.currency,
               momo_amount: disburseAmount,
               momo_currency: disburseCurrency,
               payer_phone: payerPhone,
+              platform_phone: platformPhone,
               beneficiary_phone: formattedBeneficiary,
               transaction_id: transactionId,
             },

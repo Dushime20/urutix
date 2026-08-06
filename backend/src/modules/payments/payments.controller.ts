@@ -1618,10 +1618,12 @@ export class PaymentsController {
         return { message: 'Payment not found', received: true };
       }
 
-      // Skip duplicate webhook processing
+      // Skip duplicate webhook only when fully settled
       if (
         callbackData.status === 'success' &&
-        payment.status === PaymentStatus.COMPLETED
+        payment.status === PaymentStatus.COMPLETED &&
+        (payment.metadata as any)?.momoPhase !== 'collection' &&
+        (payment.metadata as any)?.momoPhase !== 'payout_initiating'
       ) {
         this.logger.log(`Payment ${payment.id} already COMPLETED — webhook idempotent`);
         return {
@@ -1633,10 +1635,17 @@ export class PaymentsController {
 
       // Update payment status based on callback
       if (callbackData.status === 'success') {
+        const isLenderCollection =
+          !!(payment.metadata as any)?.isLenderPayment &&
+          (payment.metadata as any)?.momoPhase === 'collection';
+
+        // Lender leg-1 collection: keep PROCESSING until payout webhook completes
         await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
-            status: PaymentStatus.COMPLETED,
+            status: isLenderCollection
+              ? PaymentStatus.PROCESSING
+              : PaymentStatus.COMPLETED,
             transactionId: payment.transactionId || callbackData.referenceId,
             gatewayResponse: callbackData.message || 'Mobile Money payment confirmed',
             processedAt: new Date(),
