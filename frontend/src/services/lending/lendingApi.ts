@@ -379,6 +379,16 @@ export const lendingApi = {
     return response.data;
   },
 
+  getDisbursementQuote: async (
+    loanId: string,
+    params: { paymentMethod: string; currency?: string },
+  ) => {
+    const response = await api.get(`/lending/loan-requests/${loanId}/disbursement-quote`, {
+      params,
+    });
+    return response.data;
+  },
+
   acceptLoanTerms: async (loanId: string, data?: { consent_reference?: string }) => {
     const response = await api.post(`/lending/loan-requests/${loanId}/accept-terms`, data ?? {});
     return response.data;

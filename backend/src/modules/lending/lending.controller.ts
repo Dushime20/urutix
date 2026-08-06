@@ -748,6 +748,24 @@ export class LendingController {
     return await this.lendingService.getLoanOfferDisclosure(loanId);
   }
 
+  @Get('lending/loan-requests/:loanId/disbursement-quote')
+  @ApiOperation({
+    summary: 'Preview disbursement FX before payment',
+    description:
+      'Returns the settlement amount the lender will pay given the loan principal currency and chosen payment method/currency.',
+  })
+  async getDisbursementQuote(
+    @Param('loanId', ParseUUIDPipe) loanId: string,
+    @Query('paymentMethod') paymentMethod?: string,
+    @Query('currency') currency?: string,
+  ) {
+    return await this.lendingService.getDisbursementQuote(
+      loanId,
+      paymentMethod || 'mobile_money',
+      currency,
+    );
+  }
+
   // ===== DISBURSEMENT ENDPOINTS =====
 
   @Post('lending/loan-requests/:loanId/disburse')

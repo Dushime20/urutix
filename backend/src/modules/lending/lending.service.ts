@@ -2089,27 +2089,46 @@ export class LendingService {
     };
   }
 
-  /** Convert loan amount to MoMo provider currency when needed. Fail hard on FX errors. */
-  private async resolveDisbursementAmount(
-    amount: number,
-    loanCurrency: string,
-  ): Promise<{ amount: number; currency: string; exchangeRate?: number }> {
-    const fromCurrency = this.requireCurrency(loanCurrency, 'loan disbursement');
-    const momoCurrencyRaw = this.configService.get<string>('MOBILE_MONEY_CURRENCY');
-    const momoCurrency = this.requireCurrency(
-      momoCurrencyRaw,
-      'MOBILE_MONEY_CURRENCY env',
-    );
+  /** Rwanda Ishema MoMo only settles in RWF. */
+  private isIshemaMobileMoneyProvider(): boolean {
+    const apiUrl =
+      this.configService.get<string>('MOBILE_MONEY_API_URL') ||
+      'https://api.payment.ishema.rw';
+    return apiUrl.includes('ishema.rw');
+  }
 
-    if (fromCurrency === momoCurrency) {
-      return { amount: Math.round(amount), currency: momoCurrency };
+  /**
+   * Loan principal stays in DB as stored (amount + currency).
+   * Convert to RWF only when calling the Ishema MoMo API.
+   */
+  private async convertToRwfForIshema(
+    amount: number,
+    currency: string,
+  ): Promise<{
+    originalAmount: number;
+    originalCurrency: string;
+    rwfAmount: number;
+    exchangeRate: number | null;
+    conversionApplied: boolean;
+  }> {
+    const originalCurrency = this.requireCurrency(currency, 'loan currency');
+    const originalAmount = amount;
+
+    if (originalCurrency === 'RWF') {
+      return {
+        originalAmount,
+        originalCurrency,
+        rwfAmount: Math.round(originalAmount),
+        exchangeRate: null,
+        conversionApplied: false,
+      };
     }
 
     try {
       const converted = await this.currencyService.convert(
-        amount,
-        fromCurrency,
-        momoCurrency,
+        originalAmount,
+        originalCurrency,
+        'RWF',
       );
       if (
         !converted ||
@@ -2117,20 +2136,196 @@ export class LendingService {
         converted.convertedAmount <= 0
       ) {
         throw new BadRequestException(
-          `Currency conversion returned an invalid amount (${fromCurrency} → ${momoCurrency}).`,
+          `Currency conversion returned an invalid RWF amount (${originalCurrency} → RWF).`,
         );
       }
       return {
-        amount: Math.round(converted.convertedAmount),
-        currency: momoCurrency,
+        originalAmount,
+        originalCurrency,
+        rwfAmount: Math.round(converted.convertedAmount),
         exchangeRate: converted.exchangeRate,
+        conversionApplied: true,
       };
     } catch (err: any) {
       if (err instanceof BadRequestException) throw err;
       throw new BadRequestException(
-        `Currency conversion failed (${fromCurrency} → ${momoCurrency}): ${err.message}. Disbursement aborted.`,
+        `Failed to convert ${originalAmount} ${originalCurrency} to RWF for Ishema: ${err.message}`,
       );
     }
+  }
+
+  /** Settlement currency for the active MoMo provider (Ishema → RWF). */
+  private getMobileMoneySettlementCurrency(): string {
+    if (this.isIshemaMobileMoneyProvider()) {
+      return 'RWF';
+    }
+    return this.requireCurrency(
+      this.configService.get<string>('MOBILE_MONEY_CURRENCY'),
+      'MOBILE_MONEY_CURRENCY env',
+    );
+  }
+
+  /**
+   * Resolve how much the lender actually pays on the chosen rail.
+   *
+   * - principal*  = locked loan amount in loan.currency (cargo owner's denomination)
+   * - payer*      = lender's chosen payment currency (from modal)
+   * - settlement* = amount/currency sent to the payment provider
+   *
+   * MoMo (Ishema) always settles in RWF. Bank/card settle in payerCurrency.
+   */
+  private async resolveSettlementAmount(params: {
+    principalAmount: number;
+    principalCurrency: string;
+    paymentMethod: string;
+    payerCurrency?: string;
+  }): Promise<{
+    principalAmount: number;
+    principalCurrency: string;
+    payerCurrency: string;
+    settlementAmount: number;
+    settlementCurrency: string;
+    exchangeRate: number | null;
+    conversionApplied: boolean;
+  }> {
+    const principalCurrency = this.requireCurrency(
+      params.principalCurrency,
+      'loan principal currency',
+    );
+    const principalAmount = params.principalAmount;
+
+    let settlementCurrency: string;
+    if (params.paymentMethod === 'mobile_money') {
+      // Ishema: always convert loan principal → RWF at payment time
+      const rwf = await this.convertToRwfForIshema(
+        principalAmount,
+        principalCurrency,
+      );
+      return {
+        principalAmount: rwf.originalAmount,
+        principalCurrency: rwf.originalCurrency,
+        payerCurrency: 'RWF',
+        settlementAmount: rwf.rwfAmount,
+        settlementCurrency: 'RWF',
+        exchangeRate: rwf.exchangeRate,
+        conversionApplied: rwf.conversionApplied,
+      };
+    }
+
+    settlementCurrency = this.requireCurrency(
+      params.payerCurrency || principalCurrency,
+      params.payerCurrency ? 'payer currency' : 'loan principal currency',
+    );
+
+    const payerCurrency = settlementCurrency;
+
+    if (principalCurrency === settlementCurrency) {
+      return {
+        principalAmount,
+        principalCurrency,
+        payerCurrency,
+        settlementAmount: Math.round(principalAmount),
+        settlementCurrency,
+        exchangeRate: null,
+        conversionApplied: false,
+      };
+    }
+
+    try {
+      const converted = await this.currencyService.convert(
+        principalAmount,
+        principalCurrency,
+        settlementCurrency,
+      );
+      if (
+        !converted ||
+        !Number.isFinite(converted.convertedAmount) ||
+        converted.convertedAmount <= 0
+      ) {
+        throw new BadRequestException(
+          `Currency conversion returned an invalid amount (${principalCurrency} → ${settlementCurrency}).`,
+        );
+      }
+      return {
+        principalAmount,
+        principalCurrency,
+        payerCurrency,
+        settlementAmount: Math.round(converted.convertedAmount),
+        settlementCurrency,
+        exchangeRate: converted.exchangeRate,
+        conversionApplied: true,
+      };
+    } catch (err: any) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException(
+        `Currency conversion failed (${principalCurrency} → ${settlementCurrency}): ${err.message}. Disbursement aborted.`,
+      );
+    }
+  }
+
+  /** @deprecated Use resolveSettlementAmount — kept as alias for repayments. */
+  private async resolveDisbursementAmount(
+    amount: number,
+    loanCurrency: string,
+    paymentMethod = 'mobile_money',
+    payerCurrency?: string,
+  ): Promise<{ amount: number; currency: string; exchangeRate?: number }> {
+    const quote = await this.resolveSettlementAmount({
+      principalAmount: amount,
+      principalCurrency: loanCurrency,
+      paymentMethod,
+      payerCurrency,
+    });
+    return {
+      amount: quote.settlementAmount,
+      currency: quote.settlementCurrency,
+      exchangeRate: quote.exchangeRate ?? undefined,
+    };
+  }
+
+  /** Preview FX for the disbursement modal before the lender confirms payment. */
+  async getDisbursementQuote(
+    loanId: string,
+    paymentMethod: string,
+    payerCurrency?: string,
+  ): Promise<{
+    principal_amount: number;
+    principal_currency: string;
+    payer_currency: string;
+    settlement_amount: number;
+    settlement_currency: string;
+    exchange_rate: number | null;
+    conversion_applied: boolean;
+    payment_method: string;
+  }> {
+    const loan = await this.loanRequestRepository.findOne({ where: { id: loanId } });
+    if (!loan) {
+      throw new NotFoundException('Loan request not found');
+    }
+
+    const principalAmount = Number(loan.approved_amount ?? loan.requested_amount);
+    const principalCurrency = this.requireCurrency(
+      loan.currency,
+      `loan ${loan.id} currency`,
+    );
+
+    const quote = await this.resolveSettlementAmount({
+      principalAmount,
+      principalCurrency,
+      paymentMethod: paymentMethod || 'mobile_money',
+      payerCurrency,
+    });
+
+    return {
+      principal_amount: quote.principalAmount,
+      principal_currency: quote.principalCurrency,
+      payer_currency: quote.payerCurrency,
+      settlement_amount: quote.settlementAmount,
+      settlement_currency: quote.settlementCurrency,
+      exchange_rate: quote.exchangeRate,
+      conversion_applied: quote.conversionApplied,
+      payment_method: paymentMethod || 'mobile_money',
+    };
   }
 
   async rejectLoanRequest(
@@ -2471,20 +2666,16 @@ export class LendingService {
             phoneNumber: truckOwnerPhone || null,
           }];
       
-      // Currency from frontend disbursement modal, else the currency saved on the loan
-      // (which itself came from the frontend when the loan was created).
-      const disburseChosenCurrency = this.requireCurrency(
-        paymentDto.currency || loan.currency,
-        paymentDto.currency
-          ? 'disbursement request body (currency from frontend)'
-          : `loan ${loan.id} (persisted currency from frontend)`,
+      const loanCurrency = this.requireCurrency(
+        loan.currency,
+        `loan ${loan.id} currency`,
       );
 
       const disbursement = manager.create(LoanDisbursement, {
         loan_request_id: loanId,
         beneficiaries: beneficiaries,
         amount: lockedAmount,
-        currency: disburseChosenCurrency,
+        currency: loanCurrency,
         status: DisbursementStatus.INITIATED,
         attempts: 1,
         interest_rate: loan.metadata?.interest_rate ?? null,
@@ -2494,8 +2685,16 @@ export class LendingService {
 
       const savedDisbursement = await manager.save(LoanDisbursement, disbursement);
 
-      const { amount: disburseAmount, currency: disburseCurrency, exchangeRate } =
-        await this.resolveDisbursementAmount(lockedAmount, disburseChosenCurrency);
+      const settlementQuote = await this.resolveSettlementAmount({
+        principalAmount: lockedAmount,
+        principalCurrency: loanCurrency,
+        paymentMethod: paymentDto.paymentMethod,
+        payerCurrency: paymentDto.currency,
+      });
+
+      const disburseAmount = settlementQuote.settlementAmount;
+      const disburseCurrency = settlementQuote.settlementCurrency;
+      const exchangeRate = settlementQuote.exchangeRate ?? undefined;
 
       if (paymentDto.paymentMethod === 'card') {
         throw new BadRequestException(
@@ -2645,7 +2844,9 @@ export class LendingService {
 
           const referenceNumber = `LOAN-${loan.id.slice(0, 8).toUpperCase()}-DISB-${Date.now()}`;
           const paymentMessage =
-            `Loan disbursement #${loan.loan_number || loan.id.slice(0, 8)} — ${disburseAmount} ${disburseCurrency}`;
+            settlementQuote.conversionApplied
+              ? `Loan disbursement #${loan.loan_number || loan.id.slice(0, 8)} — ${disburseAmount} ${disburseCurrency} (${lockedAmount} ${loan.currency})`
+              : `Loan disbursement #${loan.loan_number || loan.id.slice(0, 8)} — ${disburseAmount} ${disburseCurrency}`;
 
           const transfers = [{
             percentage: 100,
@@ -2655,13 +2856,18 @@ export class LendingService {
 
           this.logger.log(
             `Disbursing loan ${loan.id}: ${disburseAmount} ${disburseCurrency} ` +
-            `(locked principal: ${lockedAmount} ${loan.currency}) ` +
+            `(principal: ${lockedAmount} ${loan.currency}` +
+            (settlementQuote.conversionApplied
+              ? `, rate: ${exchangeRate}, payer currency: ${settlementQuote.payerCurrency}`
+              : '') +
+            `) ` +
             `| PIN popup → payer ${payerPhone} (entered: ${rawPayerPhone}) ` +
             `| receiver ${formattedBeneficiary}`,
           );
 
+          // DB keeps lockedAmount + loanCurrency; convert to RWF for Ishema only here
           const momoResponse = await mobileMoneyService.createTransaction(
-            disburseAmount,
+            disburseAmount, // RWF equivalent of loan principal
             payerPhone,
             referenceNumber,
             paymentMessage,
@@ -2714,6 +2920,10 @@ export class LendingService {
                 momoAmount: disburseAmount,
                 momoCurrency: disburseCurrency,
                 exchangeRate: exchangeRate ?? null,
+                principalAmount: lockedAmount,
+                principalCurrency: loan.currency,
+                payerCurrency: settlementQuote.payerCurrency,
+                conversionApplied: settlementQuote.conversionApplied,
               },
             };
 

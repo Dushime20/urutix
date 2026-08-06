@@ -106,7 +106,10 @@ export class MobileMoneyPaymentService {
         'MOBILE_MONEY_CURRENCY must be configured as a valid ISO 4217 code.',
       );
     }
-    const currency = currencyRaw.toUpperCase();
+    // Ishema Rwanda only supports RWF regardless of env default
+    const currency = apiUrl.includes('ishema.rw')
+      ? 'RWF'
+      : currencyRaw.toUpperCase();
     const accountPhoneNumber = this.configService.get<string>(
       'MOBILE_MONEY_ACCOUNT_PHONE',
     );

@@ -41,7 +41,11 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
   const [loadingDisclosure, setLoadingDisclosure] = useState(true);
   const [payerPhone, setPayerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
-  const [disburseCurrency, setDisburseCurrency] = useState<string>(loan?.currency || 'RWF');
+  const [disburseCurrency, setDisburseCurrency] = useState<string>(
+    loan?.currency || 'RWF',
+  );
+  const [settlementQuote, setSettlementQuote] = useState<any>(null);
+  const [loadingQuote, setLoadingQuote] = useState(false);
   const [cardDetails, setCardDetails] = useState({
     cardNumber: '',
     cardName: '',
@@ -56,9 +60,37 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
       .finally(() => setLoadingDisclosure(false));
   }, [loan.id]);
 
+  // MoMo (Ishema) settles in RWF — lock payer currency when that rail is selected
+  useEffect(() => {
+    if (paymentMethod === 'mobile_money') {
+      setDisburseCurrency('RWF');
+    }
+  }, [paymentMethod]);
+
+  useEffect(() => {
+    if (!loan?.id || loadingDisclosure) return;
+    setLoadingQuote(true);
+    lendingApi
+      .getDisbursementQuote(loan.id, {
+        paymentMethod,
+        currency: disburseCurrency,
+      })
+      .then(setSettlementQuote)
+      .catch(() => setSettlementQuote(null))
+      .finally(() => setLoadingQuote(false));
+  }, [loan.id, paymentMethod, disburseCurrency, loadingDisclosure]);
+
   const lockedAmount = disclosure?.approved_amount ?? loan.approved_amount ?? loan.requested_amount;
   const lockedCurrency = disclosure?.currency ?? loan.currency ?? 'RWF';
   const canDisburse = disclosure?.can_disburse ?? !!loan.borrower_accepted_at;
+
+  const settlementAmount = settlementQuote?.settlement_amount ?? lockedAmount;
+  const settlementCurrency =
+    settlementQuote?.settlement_currency ?? disburseCurrency ?? lockedCurrency;
+  const conversionApplied = settlementQuote?.conversion_applied ?? false;
+  const chargeLabel = conversionApplied
+    ? fmt(settlementAmount, settlementCurrency)
+    : fmt(lockedAmount, lockedCurrency);
 
   const beneficiary = disclosure?.beneficiary_payment;
   const beneficiaryPhone = beneficiary?.payment_info?.phoneNumber;
@@ -157,7 +189,9 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
 
       if (pending) {
         setSuccessMsg(
-          `Mobile money request sent! Approve the PIN prompt on ${payerPhone.trim()} to complete disbursement to ${beneficiaryName}.`,
+          `Mobile money request sent! Approve the PIN prompt on ${payerPhone.trim()} for ${chargeLabel}` +
+            (conversionApplied ? ` (loan principal: ${fmt(lockedAmount, lockedCurrency)})` : '') +
+            ` to complete disbursement to ${beneficiaryName}.`,
         );
         toast.success('Approve the MoMo prompt on your phone to complete disbursement.', { duration: 6000 });
       } else {
@@ -189,8 +223,8 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
             <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Processing Disbursement</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
               {paymentMethod === 'mobile_money'
-                ? `Sending ${fmt(lockedAmount, lockedCurrency)} to ${beneficiaryName} — check ${payerPhone.trim()} for the MoMo PIN…`
-                : `Processing ${fmt(lockedAmount, lockedCurrency)} to ${beneficiaryName}…`}
+                ? `Sending ${chargeLabel} to ${beneficiaryName} — check ${payerPhone.trim()} for the MoMo PIN…`
+                : `Processing ${chargeLabel} to ${beneficiaryName}…`}
             </p>
           </div>
         )}
@@ -324,12 +358,54 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
 
               {canDisburse && beneficiaryConfigured && (
                 <>
-                  {/* Disbursement Currency */}
-                  <PaymentCurrencySelect
-                    value={disburseCurrency}
-                    onChange={setDisburseCurrency}
-                    label="Disbursement Currency"
-                  />
+                  {paymentMethod !== 'mobile_money' ? (
+                    <PaymentCurrencySelect
+                      value={disburseCurrency}
+                      onChange={setDisburseCurrency}
+                      label="Pay In Currency"
+                    />
+                  ) : (
+                    <div className="bg-blue-50 dark:bg-blue-950/30 rounded-2xl p-4 border border-blue-100 dark:border-blue-900">
+                      <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1">
+                        Mobile Money Settlement
+                      </p>
+                      <p className="text-xs text-blue-800 dark:text-blue-200">
+                        Loan amount stays in <strong>{lockedCurrency}</strong> in the database.
+                        We convert it to <strong>RWF</strong> at payment time before calling Ishema — that RWF amount appears on your PIN prompt.
+                      </p>
+                    </div>
+                  )}
+
+                  {conversionApplied && (
+                    <div className="bg-amber-50 dark:bg-amber-950/30 rounded-2xl p-5 border-2 border-amber-200 dark:border-amber-800">
+                      <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-2">
+                        Currency Conversion
+                      </p>
+                      {loadingQuote ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+                      ) : (
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-500">Loan principal</span>
+                            <span className="font-black text-slate-900 dark:text-white">
+                              {fmt(lockedAmount, lockedCurrency)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-500">You pay</span>
+                            <span className="font-black text-[#345E85]">
+                              {fmt(settlementAmount, settlementCurrency)}
+                            </span>
+                          </div>
+                          {settlementQuote?.exchange_rate && (
+                            <p className="text-[10px] text-amber-700">
+                              Rate: 1 {lockedCurrency} = {Number(settlementQuote.exchange_rate).toFixed(4)} {settlementCurrency}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
@@ -380,8 +456,11 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                   {paymentMethod === 'bank_transfer' && (
                     <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100">
                       <p className="text-xs text-blue-800 font-semibold">
-                        Transfer {fmt(lockedAmount, lockedCurrency)} to the truck owner&apos;s registered bank account{' '}
+                        Transfer {chargeLabel} to the truck owner&apos;s registered bank account{' '}
                         <strong>{beneficiaryAccount}</strong>. Manual bank processing will be recorded after confirmation.
+                        {conversionApplied && (
+                          <> Loan principal: {fmt(lockedAmount, lockedCurrency)}.</>
+                        )}
                       </p>
                     </div>
                   )}
@@ -419,8 +498,12 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                   <div className="flex items-start gap-4 bg-emerald-50 rounded-2xl p-5 border-2 border-emerald-100">
                     <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] font-bold text-emerald-700 leading-relaxed">
-                      Disbursing <strong>{fmt(lockedAmount, lockedCurrency)}</strong> to{' '}
-                      <strong>{beneficiaryName}</strong> using their registered payment details.
+                      Disbursing loan principal <strong>{fmt(lockedAmount, lockedCurrency)}</strong> to{' '}
+                      <strong>{beneficiaryName}</strong>
+                      {conversionApplied && (
+                        <> — you pay <strong>{fmt(settlementAmount, settlementCurrency)}</strong> via {paymentMethod === 'mobile_money' ? 'MoMo' : paymentMethod.replace('_', ' ')}</>
+                      )}
+                      .
                     </p>
                   </div>
                 </>
@@ -437,7 +520,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                   onClick={handleDisburse}
                   disabled={!beneficiaryConfigured || !beneficiaryReady}
                   className="flex items-center gap-2 flex-1 justify-center px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-xs font-black uppercase tracking-widest border-b-4 border-emerald-800/20">
-                  Disburse {fmt(lockedAmount, lockedCurrency)} <ArrowRight className="w-4 h-4" />
+                  Disburse {chargeLabel} <ArrowRight className="w-4 h-4" />
                 </button>
               )}
             </div>

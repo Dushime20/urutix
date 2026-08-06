@@ -67,5 +67,16 @@ export class DisburseWithPaymentDto {
   @IsOptional()
   @IsString()
   cvv?: string;
+
+  @ApiProperty({
+    description:
+      'ISO 4217 currency the lender pays in (e.g. RWF when paying via MoMo, USD for bank). ' +
+      'Loan principal stays in loan.currency; FX converts at settlement time.',
+    required: false,
+    example: 'RWF',
+  })
+  @IsOptional()
+  @IsString()
+  currency?: string;
 }
 
