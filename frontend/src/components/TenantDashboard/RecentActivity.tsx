@@ -21,12 +21,14 @@ interface RecentActivityProps {
   activities: Activity[];
   maxItems?: number;
   onTrackEvent?: (activity: Activity) => void;
+  className?: string;
 }
 
 const RecentActivity: React.FC<RecentActivityProps> = ({
   activities,
   maxItems = 10,
-  onTrackEvent
+  onTrackEvent,
+  className = '',
 }) => {
   const { tSync } = useTranslation();
   const getStatusIcon = (status: string) => {
@@ -47,20 +49,20 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800';
+        return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800';
       case 'warning':
-        return 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800';
+        return 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800';
       case 'error':
-        return 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800';
+        return 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800';
       case 'info':
-        return 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 border-primary-100 dark:border-primary-800';
+        return 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border-primary-100 dark:border-primary-800';
       default:
         return 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700';
     }
   };
 
   const getTypeIcon = (type: string) => {
-    const iconClass = "w-4 h-4 text-[#1e40af] dark:text-primary-400";
+    const iconClass = 'w-4 h-4 text-primary-700 dark:text-primary-400';
     switch (type) {
       case 'shipment':
         return <Package className={iconClass} />;
@@ -85,80 +87,76 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.05 }
+      transition: { staggerChildren: 0.04 }
     }
   };
 
   const item = {
-    hidden: { opacity: 0, x: -10 },
+    hidden: { opacity: 0, x: -8 },
     show: { opacity: 1, x: 0 }
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div className="px-8 py-6 border-b border-gray-50 dark:border-slate-800 flex items-center justify-between">
+    <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col ${className}`}>
+      <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
         <div>
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1"><TranslatedText text="History" /></h3>
-          <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Recent Updates" /></h4>
+          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+            <TranslatedText text="Activity" />
+          </p>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+            <TranslatedText text="Recent updates" />
+          </h3>
         </div>
-        <div className="px-3 py-1 bg-gray-50 dark:bg-slate-800 rounded-full border border-gray-100 dark:border-slate-700">
-          <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-            {displayedActivities.length} <TranslatedText text="Operations" />
-          </span>
-        </div>
+        <span className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+          {displayedActivities.length} <TranslatedText text="items" />
+        </span>
       </div>
 
-      <div className="px-2 py-4">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {displayedActivities.length > 0 ? (
           <motion.div
             variants={container}
             initial="hidden"
             animate="show"
-            className="divide-y divide-gray-50 dark:divide-slate-800"
+            className="divide-y divide-slate-100 dark:divide-slate-800"
           >
             {displayedActivities.map((activity) => (
               <motion.div
                 key={activity.id}
                 variants={item}
-                className="px-6 py-5 hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-all duration-300 rounded-[20px] my-1 group"
+                className="px-5 py-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group"
               >
-                <div className="flex items-start space-x-4">
-                  <div className="p-2.5 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 mt-0.5 group-hover:scale-110 transition-transform duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shrink-0">
                     {getTypeIcon(activity.type)}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-black text-slate-800 dark:text-slate-100">
-                          <TranslatedText text={activity.action} />
-                        </span>
-                        <span className="text-[10px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest">•</span>
-                        <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">
-                          <TranslatedText text={activity.type} />
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-3 text-slate-300 dark:text-slate-600">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                        <TranslatedText text={activity.action} />
+                      </p>
+                      <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 shrink-0">
                         {getStatusIcon(activity.status)}
-                        <span className="text-[11px] font-bold uppercase tracking-wider">{tSync(activity.timestamp)}</span>
+                        <span className="text-[11px] font-medium">{tSync(activity.timestamp)}</span>
                       </div>
                     </div>
 
-                    <p className="text-[13px] text-slate-500 dark:text-slate-400 font-medium">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
                       <TranslatedText text={activity.description} />
                     </p>
 
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.1em] border ${getStatusColor(activity.status)}`}>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${getStatusColor(activity.status)}`}>
                         <TranslatedText text={activity.status} />
                       </span>
-                      <button 
+                      <button
                         onClick={() => onTrackEvent?.(activity)}
-                        className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest flex items-center hover:opacity-70 transition-opacity"
+                        className="text-[11px] font-medium text-primary-600 dark:text-primary-400 inline-flex items-center hover:opacity-70 transition-opacity"
                         aria-label={tSync('View details for activity')}
                       >
-                        <TranslatedText text="View Details" />
-                        <ArrowRight className="ml-1.5 w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                        <TranslatedText text="Details" />
+                        <ArrowRight className="ml-1 w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                       </button>
                     </div>
                   </div>
@@ -167,20 +165,24 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
             ))}
           </motion.div>
         ) : (
-          <div className="px-8 py-12 text-center">
-            <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-[20px] flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-slate-700">
-              <Clock className="h-8 w-8 text-slate-200 dark:text-slate-700" />
+          <div className="px-5 py-12 text-center">
+            <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-100 dark:border-slate-700">
+              <Clock className="h-5 w-5 text-slate-300 dark:text-slate-600" />
             </div>
-            <h5 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight"><TranslatedText text="No activity found" /></h5>
-            <p className="text-[13px] text-slate-400 dark:text-slate-500 mt-1 font-medium italic"><TranslatedText text="There is no recent activity to show right now." /></p>
+            <h5 className="text-sm font-semibold text-slate-800 dark:text-white">
+              <TranslatedText text="No activity found" />
+            </h5>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+              <TranslatedText text="There is no recent activity to show right now." />
+            </p>
           </div>
         )}
       </div>
 
       {activities.length > maxItems && (
-        <div className="px-8 py-5 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-50 dark:border-slate-800 flex justify-center">
-          <button className="text-xs font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] hover:opacity-70 transition-opacity">
-            <TranslatedText text="View All History" /> ({activities.length} <TranslatedText text="entries" />)
+        <div className="px-5 py-3 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex justify-center shrink-0">
+          <button className="text-xs font-semibold text-primary-600 dark:text-primary-400 hover:opacity-70 transition-opacity">
+            <TranslatedText text="View all" /> ({activities.length})
           </button>
         </div>
       )}
@@ -189,4 +191,3 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
 };
 
 export default RecentActivity;
-

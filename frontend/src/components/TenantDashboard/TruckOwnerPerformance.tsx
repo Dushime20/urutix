@@ -7,9 +7,13 @@ import { TranslatedText } from '../translated-text';
 
 interface TruckOwnerPerformanceProps {
   tenantId?: string;
+  compact?: boolean;
 }
 
-const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({ tenantId }) => {
+const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({
+  tenantId,
+  compact = false,
+}) => {
   const { data: performanceData, isLoading } = useQuery({
     queryKey: ['tenant-truck-owner-performance', tenantId],
     queryFn: () => tenantApi.getTruckOwnerPerformance(tenantId || 'default-tenant'),
@@ -18,124 +22,163 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({ tenantId 
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8 animate-pulse">
-        <div className="h-8 bg-gray-100 dark:bg-slate-800 rounded-xl w-48 mb-6" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-48 bg-gray-50 dark:bg-slate-800/50 rounded-2xl w-full" />
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5 animate-pulse">
+        <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded-lg w-44 mb-4" />
+        <div className={compact ? 'space-y-3' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className={`bg-slate-50 dark:bg-slate-800/50 rounded-xl w-full ${compact ? 'h-16' : 'h-40'}`} />
           ))}
         </div>
       </div>
     );
   }
 
-  const partners = performanceData || [];
+  const partners = (performanceData || []).slice(0, compact ? 5 : 6);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm p-8"
+      className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div>
-          <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">
-            <TranslatedText text="Partner Ecosystem" />
+          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+            <TranslatedText text="Partners" />
+          </p>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+            <TranslatedText text="Top truck owners" />
           </h3>
-          <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
-            <TranslatedText text="Top Performing Truck Owners" />
-          </h4>
         </div>
-        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl">
-          <Award className="text-amber-500 w-5 h-5" />
+        <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100/60 dark:border-amber-900/40">
+          <Award className="text-amber-500 w-4 h-4" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={compact ? 'p-3 space-y-2' : 'p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'}>
         {partners.length === 0 ? (
-          <div className="col-span-full py-12 text-center">
-            <Truck className="w-12 h-12 text-slate-200 dark:text-slate-800 mx-auto mb-4" />
-            <p className="text-slate-500 dark:text-slate-400 font-medium">
+          <div className={`${compact ? '' : 'col-span-full'} py-10 text-center`}>
+            <Truck className="w-10 h-10 text-slate-200 dark:text-slate-700 mx-auto mb-3" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               <TranslatedText text="No partner performance data available." />
             </p>
           </div>
+        ) : compact ? (
+          partners.map((partner: any, index: number) => {
+            const successRate =
+              partner.totalTrips > 0
+                ? Math.round((partner.completedTrips / partner.totalTrips) * 100)
+                : 0;
+            return (
+              <div
+                key={partner.email || index}
+                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+              >
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0 ${
+                    index === 0
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                      : index === 1
+                        ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                        : 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                  }`}
+                >
+                  {index + 1}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
+                    {partner.companyName || partner.email?.split('@')[0]}
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {successRate}% · {partner.totalTrips} <TranslatedText text="trips" />
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                    {Number(partner.totalRevenue || 0).toLocaleString()}
+                  </p>
+                  <div className="flex items-center justify-end gap-0.5 text-[11px] text-slate-500">
+                    <Star size={10} className="text-amber-400 fill-amber-400" />
+                    {partner.averageRating > 0 ? partner.averageRating.toFixed(1) : '5.0'}
+                  </div>
+                </div>
+              </div>
+            );
+          })
         ) : (
           partners.map((partner: any, index: number) => (
             <motion.div
               key={partner.email || index}
-              whileHover={{ y: -5 }}
-              className="relative p-6 bg-slate-50/50 dark:bg-slate-800/30 rounded-[24px] border border-transparent hover:border-primary-100 dark:hover:border-primary-900/30 hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl transition-all duration-300 overflow-hidden"
+              whileHover={{ y: -2 }}
+              className="relative p-4 bg-slate-50/70 dark:bg-slate-800/30 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800 transition-all duration-200"
             >
-              {/* Rank Badge */}
-              <div className="absolute top-0 right-0 mt-4 mr-4">
-                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
-                    index === 0 ? 'bg-amber-100 text-amber-600' : 
-                    index === 1 ? 'bg-slate-200 text-slate-600 dark:text-slate-300' : 
-                    'bg-orange-50 text-orange-600'
-                 }`}>
-                    #{index + 1}
-                 </div>
+              <div className="absolute top-3 right-3">
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-semibold ${
+                    index === 0
+                      ? 'bg-amber-100 text-amber-700'
+                      : index === 1
+                        ? 'bg-slate-200 text-slate-600 dark:text-slate-300'
+                        : 'bg-orange-50 text-orange-600'
+                  }`}
+                >
+                  #{index + 1}
+                </div>
               </div>
 
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 bg-white dark:bg-slate-700 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 dark:border-slate-600">
-                  <Briefcase size={24} className="text-primary-500" />
+              <div className="flex items-center gap-3 mb-4 pr-8">
+                <div className="w-10 h-10 bg-white dark:bg-slate-700 rounded-xl flex items-center justify-center border border-slate-100 dark:border-slate-600">
+                  <Briefcase size={18} className="text-primary-500" />
                 </div>
-                <div className="pr-8">
-                  <h5 className="text-sm font-black text-slate-800 dark:text-white truncate max-w-[140px]">
+                <div className="min-w-0">
+                  <h5 className="text-sm font-semibold text-slate-800 dark:text-white truncate">
                     {partner.companyName || partner.email.split('@')[0]}
                   </h5>
-                  <p className="text-[10px] font-bold text-slate-400 truncate max-w-[140px]">
-                    {partner.email}
-                  </p>
+                  <p className="text-[11px] text-slate-400 truncate">{partner.email}</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-50 dark:border-slate-700">
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                      <TranslatedText text="Success Rate" />
-                   </span>
-                   <div className="flex items-center gap-1.5">
-                      <CheckCircle size={12} className="text-emerald-500" />
-                      <span className="text-sm font-black text-slate-800 dark:text-white">
-                         {partner.totalTrips > 0 ? Math.round((partner.completedTrips / partner.totalTrips) * 100) : 0}%
-                      </span>
-                   </div>
+              <div className="grid grid-cols-2 gap-2.5 mb-3">
+                <div className="p-2.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+                    <TranslatedText text="Success Rate" />
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle size={12} className="text-emerald-500" />
+                    <span className="text-sm font-semibold text-slate-800 dark:text-white">
+                      {partner.totalTrips > 0
+                        ? Math.round((partner.completedTrips / partner.totalTrips) * 100)
+                        : 0}
+                      %
+                    </span>
+                  </div>
                 </div>
-                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-gray-50 dark:border-slate-700">
-                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">
-                      <TranslatedText text="Trips" />
-                   </span>
-                   <div className="flex items-center gap-1.5">
-                      <Truck size={12} className="text-primary-500" />
-                      <span className="text-sm font-black text-slate-800 dark:text-white">
-                         {partner.totalTrips}
-                      </span>
-                   </div>
+                <div className="p-2.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+                    <TranslatedText text="Trips" />
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Truck size={12} className="text-primary-500" />
+                    <span className="text-sm font-semibold text-slate-800 dark:text-white">
+                      {partner.totalTrips}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                 <div className="flex items-baseline gap-1">
-                    <DollarSign size={12} className="text-emerald-500" />
-                    <span className="text-base font-black text-slate-800 dark:text-white">
-                       {Number(partner.totalRevenue).toLocaleString()}
-                    </span>
-                    <span className="text-[9px] font-bold text-slate-400">RWF</span>
-                 </div>
-                 <div className="flex items-center gap-1">
-                    <Star size={12} className="text-amber-400 fill-amber-400" />
-                    <span className="text-sm font-black text-slate-700 dark:text-slate-300">
-                       {partner.averageRating > 0 ? partner.averageRating.toFixed(1) : '5.0'}
-                    </span>
-                 </div>
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-center">
-                 <button className="text-[10px] font-black text-primary-500 uppercase tracking-widest hover:text-primary-600 transition-colors">
-                    <TranslatedText text="Partner Details" />
-                 </button>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+                <div className="flex items-baseline gap-1">
+                  <DollarSign size={12} className="text-emerald-500" />
+                  <span className="text-sm font-semibold text-slate-800 dark:text-white">
+                    {Number(partner.totalRevenue).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star size={12} className="text-amber-400 fill-amber-400" />
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    {partner.averageRating > 0 ? partner.averageRating.toFixed(1) : '5.0'}
+                  </span>
+                </div>
               </div>
             </motion.div>
           ))

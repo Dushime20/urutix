@@ -79,27 +79,32 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
-            {/* Header section... */}
-            <div className="px-8 py-6 border-b border-gray-50 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                    <h3 className="text-xs font-black text-rose-400 dark:text-rose-500 uppercase tracking-widest mb-1"><TranslatedText text="Alerts" /></h3>
-                    <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Low Balance Alerts" /></h4>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <div className="px-3 py-1 bg-rose-50 dark:bg-rose-900/20 rounded-full border border-rose-100 dark:border-rose-800 flex items-center space-x-2">
-                        <AlertTriangle className="w-3 h-3 text-rose-500" />
-                        <span className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">
-                            {partners.length} <TranslatedText text="Critical" />
-                        </span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-rose-200/70 dark:border-rose-900/40 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-rose-100/80 dark:border-rose-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-rose-50/40 dark:bg-rose-950/20">
+                <div className="flex items-start gap-3">
+                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-rose-100 dark:border-rose-900/40 shrink-0">
+                        <AlertTriangle className="w-4 h-4 text-rose-500" />
                     </div>
+                    <div>
+                        <p className="text-[11px] font-semibold text-rose-500 uppercase tracking-wider mb-0.5">
+                            <TranslatedText text="Attention needed" />
+                        </p>
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+                            <TranslatedText text="Low credit balances" />
+                        </h3>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-3 pl-11 sm:pl-0">
+                    <span className="px-2.5 py-1 bg-white dark:bg-slate-900 rounded-lg border border-rose-100 dark:border-rose-900/40 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                        {partners.length} <TranslatedText text="at risk" />
+                    </span>
                     {partners.length > 0 && (
                         <button
                             onClick={onNotifyAll}
-                            className="flex items-center space-x-2 px-4 py-2 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-xs font-semibold hover:opacity-90 transition-opacity"
                         >
-                            <Send className="w-3 h-3" />
-                            <span><TranslatedText text="Notify All" /></span>
+                            <Send className="w-3.5 h-3.5" />
+                            <TranslatedText text="Notify all" />
                         </button>
                     )}
                 </div>
@@ -111,7 +116,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                         variants={container}
                         initial="hidden"
                         animate="show"
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
                     >
                         {partners.map((partner) => (
                             <motion.div
@@ -121,59 +126,66 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                     setSelectedPartner(partner);
                                     setActiveTab('insights');
                                 }}
-                                className="bg-slate-50/50 dark:bg-slate-800/30 border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md transition-all duration-300 group cursor-pointer"
+                                className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-800 rounded-xl p-4 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200 group cursor-pointer"
                             >
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 group-hover:scale-110 transition-transform duration-300">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
                                         {partner.user.profile?.avatarUrl ? (
-                                            <img src={partner.user.profile.avatarUrl} className="w-5 h-5 rounded-full" alt="" />
+                                            <img src={partner.user.profile.avatarUrl} className="w-4 h-4 rounded-full" alt="" />
                                         ) : (
-                                            <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                                            <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                                         )}
                                     </div>
-                                    <div className={`px-2 py-1 rounded-lg border flex items-center space-x-1.5 ${partner.currentBalance < 500
+                                    <div className={`px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${partner.currentBalance < 500
                                         ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-900/30 text-rose-600 dark:text-rose-400'
                                         : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400'
                                         }`}>
                                         <TrendingDown className="w-3 h-3" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">
+                                        <span className="text-[10px] font-semibold">
                                             {getStatusLabel(partner.currentBalance)}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="mb-4">
-                                    <h5 className="text-[14px] font-black text-slate-800 dark:text-slate-100 truncate">
+                                <div className="mb-3">
+                                    <h5 className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                                         {partner.user.profile?.companyName ||
                                             `${partner.user.profile?.firstName} ${partner.user.profile?.lastName}` ||
                                             tSync('Partner')}
                                     </h5>
-                                    <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
-                                        <TranslatedText text="Partner ID" />: {partner.user.id.substring(0, 8)}
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                        ID {partner.user.id.substring(0, 8)}
                                     </p>
                                 </div>
 
                                 <div className="flex items-end justify-between">
                                     <div>
-                                        <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1"><TranslatedText text="Available" /></span>
-                                        <span className={`text-2xl font-black tracking-tight leading-none ${partner.currentBalance < 500 ? 'text-rose-500' : 'text-amber-500'}`}>
-                                            {formatCurrency(partner.currentBalance)} <span className="text-xs italic lowercase">TRX</span>
+                                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">
+                                            <TranslatedText text="Available" />
+                                        </span>
+                                        <span className={`text-xl font-semibold tracking-tight leading-none ${partner.currentBalance < 500 ? 'text-rose-500' : 'text-amber-500'}`}>
+                                            {formatCurrency(partner.currentBalance)}{' '}
+                                            <span className="text-[11px] font-medium text-slate-400">TRX</span>
                                         </span>
                                     </div>
-                                    <div className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 group-hover:text-primary-600 group-hover:border-primary-100 transition-all shadow-sm">
-                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800 text-slate-400 group-hover:text-primary-600 group-hover:border-primary-200 dark:group-hover:border-primary-800 transition-all">
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                                     </div>
                                 </div>
                             </motion.div>
                         ))}
                     </motion.div>
                 ) : (
-                    <div className="py-12 text-center">
-                        <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-[20px] flex items-center justify-center mx-auto mb-4 border border-emerald-100 dark:border-emerald-800">
-                            <RefreshCw className="h-8 w-8 text-emerald-400 dark:text-emerald-500" />
+                    <div className="py-10 text-center">
+                        <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center mx-auto mb-3 border border-emerald-100 dark:border-emerald-800">
+                            <RefreshCw className="h-5 w-5 text-emerald-500" />
                         </div>
-                        <h5 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight"><TranslatedText text="All Accounts Healthy" /></h5>
-                        <p className="text-[13px] text-slate-400 dark:text-slate-500 mt-1 font-medium italic"><TranslatedText text="No partners below the risk threshold detected." /></p>
+                        <h5 className="text-sm font-semibold text-slate-800 dark:text-white">
+                            <TranslatedText text="All Accounts Healthy" />
+                        </h5>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                            <TranslatedText text="No partners below the risk threshold detected." />
+                        </p>
                     </div>
                 )}
             </div>

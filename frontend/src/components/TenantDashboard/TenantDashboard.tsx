@@ -407,7 +407,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
         setSelectedView={setSelectedView}
       />
 
-      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Loading State - Premium Skeleton */}
         {isLoading && <SkeletonDashboard />}
 
@@ -428,114 +428,148 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           {!isLoading && selectedView === 'overview' && (
             <motion.div
               key="overview"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="space-y-5"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="space-y-6"
             >
-              {/* Quick Stats */}
-              <QuickStats metrics={data.metrics} />
+              {/* 1. KPI strip */}
+              <section>
+                <div className="flex items-end justify-between mb-3">
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      <TranslatedText text="At a glance" />
+                    </p>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
+                      <TranslatedText text="Operations summary" />
+                    </h2>
+                  </div>
+                </div>
+                <QuickStats metrics={data.metrics} />
+              </section>
 
-              {/* Low Credit Alerts */}
+              {/* 2. Priority alerts */}
               {data.lowCreditPartners && data.lowCreditPartners.length > 0 && (
-                <LowCreditPartners
-                  partners={data.lowCreditPartners}
-                  onNotifyAll={handleNotifyLowCredit}
-                />
+                <section>
+                  <LowCreditPartners
+                    partners={data.lowCreditPartners}
+                    onNotifyAll={handleNotifyLowCredit}
+                  />
+                </section>
               )}
 
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Revenue Chart */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 sm:p-5"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5"><TranslatedText text="Financial Momentum" /></h3>
-                      <h4 className="text-base font-bold text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Weekly Revenue" /></h4>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <select
-                        value={timeRange}
-                        onChange={(e) => handleTimeRangeChange(e.target.value)}
-                        className="text-[11px] font-bold text-slate-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 border-none rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500/20 transition-colors"
-                      >
-                        <option value="7d"><TranslatedText text="Last 7d" /></option>
-                        <option value="30d"><TranslatedText text="Last 30d" /></option>
-                        <option value="90d"><TranslatedText text="Last 90d" /></option>
-                      </select>
-                      <button
-                        onClick={() => handleExportData('csv')}
-                        className="p-2 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
-                        title={tSync("Export Data")}
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="h-52 relative">
-                    {(!data.trends.revenue || data.trends.revenue.length === 0) ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <div className="w-8 h-8 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
-                          <Download className="w-4 h-4 text-slate-300" />
+              {/* 3. Trends + live feed */}
+              <section className="grid grid-cols-1 xl:grid-cols-12 gap-4 lg:gap-5">
+                <div className="xl:col-span-8 space-y-4 lg:space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5">
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.08 }}
+                      className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-5">
+                        <div>
+                          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+                            <TranslatedText text="Revenue" />
+                          </p>
+                          <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+                            <TranslatedText text="Weekly trend" />
+                          </h3>
                         </div>
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">No revenue data yet</p>
-                        <p className="text-xs text-slate-300 mt-1">Complete trips to see revenue trends</p>
-                      </div>
-                    ) : (
-                      <Line data={revenueData} options={chartOptions} />
-                    )}
-                  </div>
-                </motion.div>
-
-                {/* Fleet Utilization Chart */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm p-4 sm:p-5"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5"><TranslatedText text="Asset Optimization" /></h3>
-                      <h4 className="text-base font-bold text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Fleet Utilization" /></h4>
-                    </div>
-                    <div className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">
-                      <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider"><TranslatedText text="Avg:" /> {data.metrics.averageLoadUtilization}%</span>
-                    </div>
-                  </div>
-                  <div className="h-52 relative">
-                    {(!data.trends.fleetUtilization || data.trends.fleetUtilization.length === 0) ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <div className="w-8 h-8 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
-                          <Activity className="w-4 h-4 text-slate-300" />
+                        <div className="flex items-center gap-2 shrink-0">
+                          <select
+                            value={timeRange}
+                            onChange={(e) => handleTimeRangeChange(e.target.value)}
+                            className="text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                          >
+                            <option value="7d"><TranslatedText text="Last 7d" /></option>
+                            <option value="30d"><TranslatedText text="Last 30d" /></option>
+                            <option value="90d"><TranslatedText text="Last 90d" /></option>
+                          </select>
+                          <button
+                            onClick={() => handleExportData('csv')}
+                            className="p-1.5 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                            title={tSync('Export Data')}
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
                         </div>
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">No fleet data yet</p>
-                        <p className="text-xs text-slate-300 mt-1">Assign trucks to trips to see utilization</p>
                       </div>
-                    ) : (
-                      <Line data={fleetUtilizationData} options={chartOptions} />
-                    )}
+                      <div className="h-52 relative">
+                        {(!data.trends.revenue || data.trends.revenue.length === 0) ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                            <div className="w-9 h-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-2.5 border border-slate-100 dark:border-slate-700">
+                              <Download className="w-4 h-4 text-slate-300" />
+                            </div>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <TranslatedText text="No revenue data yet" />
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-1">
+                              <TranslatedText text="Complete trips to see revenue trends" />
+                            </p>
+                          </div>
+                        ) : (
+                          <Line data={revenueData} options={chartOptions} />
+                        )}
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.12 }}
+                      className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-5"
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-5">
+                        <div>
+                          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+                            <TranslatedText text="Fleet" />
+                          </p>
+                          <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+                            <TranslatedText text="Utilization" />
+                          </h3>
+                        </div>
+                        <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
+                          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                            <TranslatedText text="Avg" /> {data.metrics.averageLoadUtilization}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-52 relative">
+                        {(!data.trends.fleetUtilization || data.trends.fleetUtilization.length === 0) ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                            <div className="w-9 h-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-2.5 border border-slate-100 dark:border-slate-700">
+                              <Activity className="w-4 h-4 text-slate-300" />
+                            </div>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                              <TranslatedText text="No fleet data yet" />
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-1">
+                              <TranslatedText text="Assign trucks to trips to see utilization" />
+                            </p>
+                          </div>
+                        ) : (
+                          <Line data={fleetUtilizationData} options={chartOptions} />
+                        )}
+                      </div>
+                    </motion.div>
                   </div>
-                </motion.div>
-              </div>
 
-              {/* Route Performance Intelligence */}
-              <RoutePerformance tenantId={tenantId} />
+                  <RoutePerformance tenantId={tenantId} />
+                </div>
 
-              {/* Truck Owner Performance Highlights */}
-              <TruckOwnerPerformance tenantId={tenantId} />
-
-              {/* Recent Activity */}
-              <RecentActivity 
-                activities={data.activity} 
-                onTrackEvent={handleTrackEvent}
-              />
+                <div className="xl:col-span-4 flex flex-col gap-4 lg:gap-5">
+                  <RecentActivity
+                    activities={data.activity}
+                    onTrackEvent={handleTrackEvent}
+                    maxItems={6}
+                    className="h-full min-h-[28rem] xl:min-h-0"
+                  />
+                  <TruckOwnerPerformance tenantId={tenantId} compact />
+                </div>
+              </section>
             </motion.div>
           )}
 
