@@ -356,10 +356,9 @@ export class CreateLoadDto {
   @MaxLength(2000)
   description?: string;
 
-  @ApiProperty({ description: 'Weight in kg' })
+  @ApiProperty({ description: 'Weight in kg', minimum: 100 })
   @IsNumber()
-  @IsPositive()
-  @Max(100000) // 100 tons max
+  @Min(100)
   weight: number;
 
   @ApiPropertyOptional({ description: 'Volume in cubic meters' })

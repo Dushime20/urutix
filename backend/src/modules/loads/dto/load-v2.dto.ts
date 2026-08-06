@@ -95,9 +95,9 @@ export class CreateLoadV2Dto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ description: 'Weight in kg', minimum: 0 })
+  @ApiProperty({ description: 'Weight in kg', minimum: 100 })
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Min(100)
   weight: number;
 
   @ApiPropertyOptional({ description: 'Volume in cubic meters', minimum: 0 })
@@ -431,10 +431,10 @@ export class UpdateLoadV2Dto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Weight in kg', minimum: 0 })
+  @ApiPropertyOptional({ description: 'Weight in kg', minimum: 100 })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Min(100)
   weight?: number;
 
   @ApiPropertyOptional({ description: 'Volume in cubic meters', minimum: 0 })

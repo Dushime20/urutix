@@ -548,8 +548,8 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         setLoading(false);
         return;
       }
-      if (!formData.weight || formData.weight <= 0) {
-        setError("Weight must be greater than 0. Please go back to Cargo Details.");
+      if (!formData.weight || formData.weight < 100) {
+        setError("Weight must be at least 100 kg. Please go back to Cargo Details.");
         setActiveSection("cargo");
         setLoading(false);
         return;
@@ -599,14 +599,6 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
           setLoading(false);
           return;
         }
-      }
-
-      // weight max 100 t (backend @Max(100000 kg), stored as tonnes on frontend)
-      if (formData.weight > 100) {
-        setError("Weight must be at most 100 t (100,000 kg). Please go back to Cargo Details.");
-        setActiveSection("cargo");
-        setLoading(false);
-        return;
       }
 
       // volume max 1000 m³ (backend @Max(1000))
@@ -783,7 +775,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         return (
           !!formData.title &&
           !!formData.cargoType &&
-          formData.weight > 0 &&
+          formData.weight >= 100 &&
           formData.loadValue > 0
         );
       case "schedule":
@@ -892,8 +884,8 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
         setError(null);
       }
       if (activeSection === "cargo") {
-        if (!formData.title?.trim() || !formData.weight || formData.weight <= 0 || !formData.loadValue || formData.loadValue <= 0) {
-          setError("Please fill in title, weight, and load value before continuing.");
+        if (!formData.title?.trim() || !formData.weight || formData.weight < 100 || !formData.loadValue || formData.loadValue <= 0) {
+          setError("Please fill in title, weight (min 100 kg), and load value before continuing.");
           return;
         }
         setError(null);
@@ -965,7 +957,7 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
       <ReviewSection title="Basic Information" icon={FaBox}>
         <ReviewRow label="Title" value={formData.title} />
         <ReviewRow label="Cargo Type" value={formData.cargoType} />
-        <ReviewRow label="Weight" value={formData.weight ? `${formData.weight} t` : null} />
+        <ReviewRow label="Weight" value={formData.weight ? `${formData.weight} kg` : null} />
         <ReviewRow label="Volume" value={formData.volume ? `${formData.volume} m³` : null} />
         <ReviewRow label="Load Value" value={formData.loadValue ? `$${formData.loadValue.toLocaleString()}` : null} />
         <ReviewRow label="Offered Price" value={formData.offeredPrice ? `$${formData.offeredPrice.toLocaleString()}` : null} />
@@ -1222,9 +1214,9 @@ const EnhancedCargoForm: React.FC<EnhancedCargoFormProps> = ({
                   </div>
 
                   <div className="min-w-0">
-                    <Label htmlFor="weight" className="block text-xs font-medium text-gray-700 mb-1">Weight (t) *</Label>
-                    <Input id="weight" type="number" name="weight" value={formData.weight || ""} onChange={handleNumberChange} required min="0.001" max="100" step="0.001" placeholder="e.g. 1.5 (= 1,500 kg)" className="text-sm w-full" />
-                    <p className="text-[10px] text-slate-400 mt-0.5">Enter in tonnes — 1 t = 1,000 kg. Max: 100 t</p>
+                    <Label htmlFor="weight" className="block text-xs font-medium text-gray-700 mb-1">Weight (kg) *</Label>
+                    <Input id="weight" type="number" name="weight" value={formData.weight || ""} onChange={handleNumberChange} required min="100" step="1" placeholder="e.g. 1500" className="text-sm w-full" />
+                    <p className="text-[10px] text-slate-400 mt-0.5">Minimum: 100 kg</p>
                   </div>
 
                   <div className="min-w-0">

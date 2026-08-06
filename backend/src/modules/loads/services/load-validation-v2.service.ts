@@ -346,8 +346,8 @@ export class LoadValidationV2Service {
       errors.push('Load title is required');
     }
 
-    if (createLoadDto.weight <= 0) {
-      errors.push('Weight must be greater than 0');
+    if (createLoadDto.weight < 100) {
+      errors.push('Weight must be at least 100 kg');
     }
 
     if (createLoadDto.volume !== undefined && createLoadDto.volume <= 0) {

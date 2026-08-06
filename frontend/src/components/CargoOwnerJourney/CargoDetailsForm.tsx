@@ -326,7 +326,7 @@ const CargoDetailsForm: React.FC<CargoDetailsFormProps> = ({ onSubmit, loading, 
     if (!formData.cargoType) errors.push('Cargo type is required.');
 
     const weight = Number(formData.weight);
-    if (!weight || weight <= 0) errors.push('Weight must be greater than 0.');
+    if (!weight || weight < 100) errors.push('Weight must be at least 100 kg.');
     if (weight > 99999999.99) errors.push('Weight is too large (max 99,999,999 kg).');
 
     const value = Number(formData.estimatedValue);

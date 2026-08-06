@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // ─── Backend constraint reference ────────────────────────────────────────────
-// weight      : @Max(100000) kg — entered directly in kg
+// weight      : @Min(100) kg — no maximum
 // volume      : @Max(1000) m³
 // title       : @MaxLength(200)
 // description : @MaxLength(2000)
@@ -31,11 +31,10 @@ export const cargoFormSchema = z.object({
     .optional(),
 
   // ── Physical ───────────────────────────────────────────────────────────────
-  // Stored as kg in DB; displayed in kg. @Max(100000 kg)
+  // Stored as kg in DB; displayed in kg. @Min(100 kg), no maximum
   weight: z
     .number()
-    .min(1, { message: 'Weight must be at least 1 kg' })
-    .max(100000, { message: 'Weight must be at most 100,000 kg' }),
+    .min(100, { message: 'Weight must be at least 100 kg' }),
 
   volume: z
     .number()
