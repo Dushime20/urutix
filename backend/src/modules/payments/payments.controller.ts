@@ -1618,6 +1618,20 @@ export class PaymentsController {
         return { message: 'Payment not found', received: true };
       }
 
+      if (
+        payment.status === PaymentStatus.CANCELLED ||
+        payment.status === PaymentStatus.FAILED
+      ) {
+        this.logger.warn(
+          `Ignoring Mobile Money webhook for ${callbackData.referenceId} — payment ${payment.id} is ${payment.status}`,
+        );
+        return {
+          message: `Payment already ${payment.status}`,
+          referenceId: callbackData.referenceId,
+          received: true,
+        };
+      }
+
       // Skip duplicate webhook only when fully settled
       if (
         callbackData.status === 'success' &&

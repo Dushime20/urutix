@@ -475,8 +475,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   return (
     <>
-    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-1.5 sm:px-6 sm:py-3 lg:py-4 fixed top-0 left-0 right-0 z-[300] transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
+    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-3 sm:px-6 sm:py-4 lg:py-5 fixed top-0 left-0 right-0 z-[300] transition-colors duration-300 min-h-[64px] sm:min-h-[80px] lg:min-h-[96px] flex items-center">
+      <div className="max-w-7xl mx-auto w-full px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-1.5 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
@@ -842,7 +842,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
     </div>
   </div>
   {/* Spacer keeps page content below the fixed header */}
-  <div className="h-[60px] sm:h-[72px] lg:h-[88px]" aria-hidden="true" />
+  <div className="h-[64px] sm:h-[80px] lg:h-[96px]" aria-hidden="true" />
   </>
 );
 };

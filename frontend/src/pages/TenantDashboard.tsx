@@ -3,7 +3,7 @@ import TenantDashboard from '../components/TenantDashboard/TenantDashboard';
 import { useAuth } from '../contexts/AuthContext';
 
 interface TenantDashboardPageProps {
-  defaultView?: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'drivers' | 'profile' | 'lenders' | 'kyc';
+  defaultView?: 'overview' | 'fleet' | 'cargo' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'drivers' | 'profile' | 'lenders' | 'kyc' | 'reports';
 }
 
 const TenantDashboardPage: React.FC<TenantDashboardPageProps> = ({ defaultView = 'overview' }) => {

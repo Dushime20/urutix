@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AdminLayoutProvider } from '../../contexts/AdminLayoutContext';
 import DashboardLayout from './DashboardLayout';
+import DashboardHeader from './DashboardHeader';
 import DashboardFooter from './DashboardFooter';
 import MobileBottomNav from './MobileBottomNav';
 import ModernLoader from '../common/ModernLoader';
@@ -45,9 +46,9 @@ const TenantAdminLayoutContent: React.FC = () => {
     return <ModernLoader isLoading={isLoading || !user} text="Initializing_Tenant_Space" />;
   }
 
-  // Check if we're on the index dashboard route
+  // Tenant dashboard views render their own TenantHeader + content; still show global DashboardHeader above
   const isDashboardIndex = location.pathname.startsWith('/tenant-admin') && (
-    location.pathname === '/tenant-admin' || 
+    location.pathname === '/tenant-admin' ||
     location.pathname === '/tenant-admin/' ||
     location.pathname === '/tenant-admin/financial' ||
     location.pathname === '/tenant-admin/purchase-credits' ||
@@ -62,14 +63,15 @@ const TenantAdminLayoutContent: React.FC = () => {
     location.pathname === '/tenant-admin/truck-owners' ||
     location.pathname === '/tenant-admin/lenders' ||
     location.pathname === '/tenant-admin/settings' ||
-    location.pathname === '/tenant-admin/profile'
+    location.pathname === '/tenant-admin/profile' ||
+    location.pathname === '/tenant-admin/reports'
   );
 
   return (
     <>
       {isDashboardIndex ? (
-        // Dashboard index route has its own layout with welcome section (includes header/footer)
         <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950 flex flex-col pb-20 lg:pb-0">
+          <DashboardHeader />
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>
@@ -77,7 +79,6 @@ const TenantAdminLayoutContent: React.FC = () => {
           <DashboardFooter />
         </div>
       ) : (
-        // All other routes use the shared DashboardLayout (includes header/footer)
         <DashboardLayout>
           <Outlet />
         </DashboardLayout>

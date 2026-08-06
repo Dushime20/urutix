@@ -192,6 +192,9 @@ export class PaymentsService {
   /**
    * Pre-flight check before initiating MoMo — prevents duplicate charges and
    * reconciles loans stuck when a completed payment exists without isLenderPayment.
+   *
+   * Stale / legacy in-flight rows (no PIN ever arrives) are cancelled so the
+   * lender can retry with a fresh MoMo collection.
    */
   async preflightLenderDisbursement(
     tripId: string,
@@ -227,10 +230,48 @@ export class PaymentsService {
         (p.transactionId || (p.metadata as any)?.momoTransactionId),
     );
     if (inFlight) {
+      if (this.shouldAbandonInFlightDisbursement(inFlight)) {
+        await this.cancelStalePaymentsForRetry(
+          [inFlight],
+          'Abandoned stale/legacy MoMo disbursement so lender can retry PIN prompt',
+        );
+        this.logger.warn(
+          `Preflight: abandoned in-flight payment ${inFlight.id} ` +
+            `(txn ${inFlight.transactionId}) for loan ${loanId} — allowing new MoMo call`,
+        );
+        return { outcome: 'proceed' };
+      }
       return { outcome: 'awaiting_confirmation', payment: inFlight };
     }
 
     return { outcome: 'proceed' };
+  }
+
+  /**
+   * Abandon in-flight MoMo when:
+   * - legacy P2P (no momoPhase) — never pushed USSD reliably
+   * - or pending longer than MOMO_DISBURSEMENT_STALE_MS (default 3 min)
+   */
+  private shouldAbandonInFlightDisbursement(payment: Payment): boolean {
+    const meta = (payment.metadata || {}) as Record<string, any>;
+    const phase = meta.momoPhase as string | undefined;
+    const activePhases = new Set([
+      'collection',
+      'payout',
+      'payout_initiating',
+    ]);
+    if (!phase || !activePhases.has(phase)) {
+      return true;
+    }
+
+    const stamp = new Date(
+      (payment as any).updatedAt || (payment as any).createdAt || 0,
+    ).getTime();
+    if (!Number.isFinite(stamp) || stamp <= 0) {
+      return true;
+    }
+    const staleMs = Number(process.env.MOMO_DISBURSEMENT_STALE_MS || 3 * 60 * 1000);
+    return Date.now() - stamp >= staleMs;
   }
 
   /**

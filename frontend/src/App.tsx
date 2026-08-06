@@ -628,7 +628,7 @@ function App() {
                       <Route path="partner-billing" element={<PartnerBillingManager />} />
                        <Route path="communication" element={<TenantDashboardPage defaultView="communicate" />} />
                       <Route path="analytics" element={<TenantDashboardPage />} />
-                      <Route path="reports" element={<TenantDashboardPage />} />
+                      <Route path="reports" element={<TenantDashboardPage defaultView="reports" />} />
                       <Route path="profile" element={<TenantDashboardPage defaultView="profile" />} />
                       <Route path="settings" element={<TenantDashboardPage defaultView="settings" />} />
                       <Route path="compliance" element={<ComplianceDashboard />} />
