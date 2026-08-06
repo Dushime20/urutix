@@ -91,7 +91,15 @@ const AcceptedMatches: React.FC = () => {
     try {
       const res = await api.get('/matching/cargo-owner/matches');
       const body = res.data;
-      setMatches(Array.isArray(body?.data) ? body.data : []);
+      // Backend already scopes to smart-matching loads; keep a client-side guard
+      const rows = Array.isArray(body?.data) ? body.data : [];
+      setMatches(
+        rows.filter(
+          (m: any) =>
+            m?.load?.autoMatchEnabled !== false &&
+            (m.status === 'REQUESTED' || m.status === 'ACCEPTED'),
+        ),
+      );
     } catch {
       toast.error('Failed to load accepted matches');
     } finally {

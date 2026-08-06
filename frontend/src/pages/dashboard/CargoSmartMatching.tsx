@@ -43,8 +43,11 @@ const CargoSmartMatching: React.FC = () => {
       setCargosLoading(true);
       try {
         const data = await fetchCargos(1, '', { limit: 50 });
+        // Only cargos using Smart Matching (exclude bidding / matching-disabled)
         const eligible = (Array.isArray(data) ? data : []).filter(
-          (c: any) => c.status === 'CREATED' || c.status === 'PUBLISHED'
+          (c: any) =>
+            (c.status === 'CREATED' || c.status === 'PUBLISHED') &&
+            c.autoMatchEnabled !== false
         );
         setCargos(eligible);
         // Auto-run if cargoId was passed in URL

@@ -203,6 +203,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           subItems: [
             { label: 'Active Trips', path: '/dashboard/trips' },
             { label: '🔴 Live Tracking', path: '/dashboard/fleet/tracking' },
+            { label: 'Smart Matching', path: '/dashboard/fleet?tab=matches' },
             { label: 'Freight Bidding', path: '/dashboard/fleet/bids' },
             { label: 'Route Planning', path: '/dashboard/fleet/routes' },
             { label: 'Financial', path: '/dashboard/fleet/financial' },

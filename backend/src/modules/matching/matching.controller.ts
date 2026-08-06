@@ -321,8 +321,10 @@ export class MatchingController {
   @Get('cargo-owner/matches')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Get all matches for cargo owner (POTENTIAL + REQUESTED + ACCEPTED)',
-    description: 'Returns all matches across all statuses so cargo owner can review candidates and track progress.',
+    summary: 'Get smart-matching truck responses for cargo owner (REQUESTED + ACCEPTED)',
+    description:
+      'Returns REQUESTED and ACCEPTED matches only for loads using Smart Matching ' +
+      '(autoMatchEnabled, no auction). Bidding/auction cargo is excluded.',
   })
   async getMatchesForCargoOwner(@Request() req) {
     try {

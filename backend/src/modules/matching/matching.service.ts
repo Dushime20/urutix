@@ -28,6 +28,7 @@ import { UserProfile } from '../../entities/user-profile.entity';
 import { Location } from '../../entities/location.entity';
 import { LoadMatch, MatchStatus } from '../../entities/load-match.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
+import { Auction } from '../../entities/auction.entity';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchResultDto } from './dto/match-result.dto';
 import { User, UserRole } from '../../entities/user.entity';
@@ -647,22 +648,32 @@ export class MatchingService {
    */
   async getMatchesForCargoOwner(cargoOwnerId: string, tenantId: string): Promise<any[]> {
     try {
-      // Find all loads belonging to this cargo owner
+      // Only smart-matching loads — exclude bidding/auction cargo and loads with matching disabled
       const loads = await this.loadRepository.find({
-        where: { cargoOwnerId, tenantId },
+        where: { cargoOwnerId, tenantId, autoMatchEnabled: true },
         select: ['id'],
       });
       if (loads.length === 0) return [];
 
-      const loadIds = loads.map(l => l.id);
+      let loadIds = loads.map(l => l.id);
 
-      // Return ALL relevant statuses so cargo owner can see:
-      //   POTENTIAL  — candidates waiting for the owner to pick one
-      //   REQUESTED  — owner has sent a request, waiting for truck owner to respond
-      //   ACCEPTED   — truck owner accepted
+      // Publish-for-bid journey creates auctions; those loads must not appear on Accepted Matches
+      const auctionRepo = this.loadRepository.manager.getRepository(Auction);
+      const auctioned = await auctionRepo.find({
+        where: { loadId: In(loadIds) },
+        select: ['id', 'loadId'],
+      });
+      if (auctioned.length > 0) {
+        const auctionedIds = new Set(auctioned.map(a => a.loadId));
+        loadIds = loadIds.filter(id => !auctionedIds.has(id));
+      }
+      if (loadIds.length === 0) return [];
+
+      // Truck responses only (Accepted Matches page):
+      //   REQUESTED — cargo owner sent a request, waiting for truck owner
+      //   ACCEPTED  — truck owner accepted
       const matches = await this.loadMatchRepository.find({
         where: [
-          { loadId: In(loadIds), status: MatchStatus.POTENTIAL },
           { loadId: In(loadIds), status: MatchStatus.REQUESTED },
           { loadId: In(loadIds), status: MatchStatus.ACCEPTED },
         ],
