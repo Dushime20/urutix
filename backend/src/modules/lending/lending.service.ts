@@ -221,8 +221,9 @@ export class LendingService {
   }
 
   /**
-   * Validate borrower-level credit exposure against the lender's active policy.
-   * Platform env caps are optional secondary guards — never invented loan amounts.
+   * Validate borrower-level credit exposure against /lender/policies
+   * (loan limits max_amount + system config total_exposure_limit).
+   * Platform env caps are optional secondary guards when no lender is specified.
    */
   private async validateCreditLimit(
     tenantId: string,
@@ -237,20 +238,17 @@ export class LendingService {
     let creditLimit: number | null = null;
 
     if (lenderId) {
-      const policy = await this.lenderPolicyRepository.findOne({
-        where: { lender_id: lenderId, is_active: true },
-        order: { created_at: 'DESC' },
-      });
+      const policy = await this.lendingPoliciesService.getOriginationPolicy(lenderId);
       if (!policy) {
         throw new BadRequestException(
-          `Lender ${lenderId} has no active policy. Configure max_advance_per_trip and max_exposure before originating loans.`,
+          `Lender ${lenderId} has no active Loan Limit policy. Configure Loan Limits under Lending Policies before originating loans.`,
         );
       }
-      maxPerLoan = Number(policy.max_advance_per_trip);
-      creditLimit = Number(policy.max_exposure);
+      maxPerLoan = policy.maxAdvancePerTrip;
+      creditLimit = policy.maxExposure;
       if (!maxPerLoan || maxPerLoan <= 0 || !creditLimit || creditLimit <= 0) {
         throw new BadRequestException(
-          `Lender policy ${policy.id} has invalid credit limits (max_advance_per_trip / max_exposure).`,
+          `Lender ${lenderId} Lending Policies have invalid credit limits (Loan Limits max amount / System Config total exposure).`,
         );
       }
     } else {
@@ -346,27 +344,40 @@ export class LendingService {
       );
     }
 
-    if (!requestedAmount || !lender.policies?.length) return;
+    if (!requestedAmount) return;
 
-    const policy = lender.policies.find((p: any) => p.is_active !== false) ?? lender.policies[0];
-
-    // ── 1. Per-trip advance limit ───────────────────────────────────────────
-    const maxAdvance = Number(policy.max_advance_per_trip);
-    if (requestedAmount > maxAdvance) {
+    // Primary source: /lender/policies (loan limits + system config)
+    const originationPolicy =
+      await this.lendingPoliciesService.getOriginationPolicy(lenderId);
+    if (!originationPolicy) {
       throw new BadRequestException(
-        `Requested amount (${requestedAmount}) exceeds lender's max advance per trip (${maxAdvance}).`,
+        `Lender ${lenderId} has no active Loan Limit policy. Configure Loan Limits under Lending Policies before originating loans.`,
       );
     }
 
-    // ── 2. Total exposure limit ─────────────────────────────────────────────
-    const currentExposure = await this.getCurrentExposure(lenderId);
-    if (currentExposure + requestedAmount > Number(policy.max_exposure)) {
+    // ── 1. Per-trip advance limit (loan-limit max_amount) ───────────────────
+    const maxAdvance = originationPolicy.maxAdvancePerTrip;
+    if (requestedAmount > maxAdvance) {
       throw new BadRequestException(
-        `Lender has reached maximum portfolio exposure limit (${policy.max_exposure}). Current: ${currentExposure}.`,
+        `Requested amount (${requestedAmount}) exceeds lender's max loan amount (${maxAdvance}).`,
+      );
+    }
+
+    // ── 2. Total exposure limit (system-config total_exposure_limit) ────────
+    const currentExposure = await this.getCurrentExposure(lenderId);
+    if (currentExposure + requestedAmount > originationPolicy.maxExposure) {
+      throw new BadRequestException(
+        `Lender has reached maximum portfolio exposure limit (${originationPolicy.maxExposure}). Current: ${currentExposure}.`,
       );
     }
 
     if (!loanContext) return;
+
+    // Optional legacy lender_policies checks (currency / purpose / KYC / LTV)
+    const policy =
+      lender.policies?.find((p: any) => p.is_active !== false) ??
+      lender.policies?.[0];
+    if (!policy) return;
 
     // ── 3. Currency match ───────────────────────────────────────────────────
     if (loanContext.currency && policy.currency && loanContext.currency !== policy.currency) {
@@ -818,21 +829,26 @@ export class LendingService {
 
     // Generate loan-level standard fields
     const loanNumber = await this.generateLoanNumber(createLoanDto.tenant_id);
-    const policy = createLoanDto.lender_id
-      ? await this.lenderPolicyRepository.findOne({ where: { lender_id: createLoanDto.lender_id, is_active: true }, order: { created_at: 'DESC' } })
+    const originationPolicy = createLoanDto.lender_id
+      ? await this.lendingPoliciesService.getOriginationPolicy(createLoanDto.lender_id)
       : null;
-    const gracePeriodDays = policy?.grace_period_days ?? null;
-    if (gracePeriodDays == null && createLoanDto.lender_id) {
-      throw new BadRequestException(
-        'Active lender policy is missing grace_period_days.',
-      );
-    }
-    const effectiveGraceDays = gracePeriodDays ?? 0;
+    // Prefer /lender/policies repayment grace; legacy lender_policies is optional fallback
+    const legacyPolicy = createLoanDto.lender_id
+      ? await this.lenderPolicyRepository.findOne({
+          where: { lender_id: createLoanDto.lender_id, is_active: true },
+          order: { created_at: 'DESC' },
+        })
+      : null;
+    const gracePeriodDays =
+      originationPolicy?.gracePeriodDays ??
+      legacyPolicy?.grace_period_days ??
+      0;
+    const effectiveGraceDays = gracePeriodDays;
     const dueDate = createLoanDto.due_date ? new Date(createLoanDto.due_date) : null;
     const gracePeriodEnd = dueDate
       ? new Date(dueDate.getTime() + effectiveGraceDays * 86400_000)
       : null;
-    const originationFeeRate = Number(policy?.origination_fee_rate ?? 0);
+    const originationFeeRate = Number(legacyPolicy?.origination_fee_rate ?? 0);
     const originationFeeAmount = Math.round(createLoanDto.requested_amount * originationFeeRate * 100) / 100;
 
     // Currency always comes from the frontend request body and is persisted as-is.
@@ -1157,29 +1173,21 @@ export class LendingService {
 
     let financingRatio = 1;
     if (lenderId) {
-      const policy = await this.lenderPolicyRepository.findOne({
-        where: { lender_id: lenderId, is_active: true },
-        order: { created_at: 'DESC' },
-      });
+      const policy = await this.lendingPoliciesService.getOriginationPolicy(lenderId);
       if (!policy) {
         throw new BadRequestException(
-          `Lender ${lenderId} has no active policy to determine advance/LTV ratio.`,
+          `Lender ${lenderId} has no active Loan Limit policy to determine advance/LTV ratio. Configure Loan Limits under Lending Policies.`,
         );
       }
-      const advancePct = Number(policy.advance_percentage);
-      const maxLtv =
-        policy.max_ltv_ratio != null ? Number(policy.max_ltv_ratio) : advancePct;
+      const advancePct = policy.advancePercentage;
       if (!Number.isFinite(advancePct) || advancePct <= 0 || advancePct > 1) {
         throw new BadRequestException(
-          `Lender policy ${policy.id} has invalid advance_percentage (expected 0 < value ≤ 1).`,
+          `Lender ${lenderId} System Config has invalid default advance percentage.`,
         );
       }
-      financingRatio = Math.min(
-        advancePct,
-        Number.isFinite(maxLtv) && maxLtv > 0 ? maxLtv : advancePct,
-      );
+      financingRatio = advancePct;
 
-      const maxAdvance = Number(policy.max_advance_per_trip);
+      const maxAdvance = policy.maxAdvancePerTrip;
       const rawAmount = Math.round(collateralBase * financingRatio * 100) / 100;
       const amount =
         Number.isFinite(maxAdvance) && maxAdvance > 0
@@ -1263,22 +1271,21 @@ export class LendingService {
   private async findSuitableLender(loan: LoanRequest): Promise<Lender | null> {
     const lenders = await this.lenderRepository.find({
       where: { status: LenderStatus.ACTIVE },
-      relations: ['policies'],
     });
 
     this.logger.log(`findSuitableLender: Found ${lenders.length} active lenders to evaluate`);
 
     for (const lender of lenders) {
-      const policy = lender.policies?.[0];
+      const policy = await this.lendingPoliciesService.getOriginationPolicy(lender.id);
       if (!policy) {
         this.logger.log(
-          `findSuitableLender: Lender ${lender.id} (${lender.name}) skipped — no active policy`,
+          `findSuitableLender: Lender ${lender.id} (${lender.name}) skipped — no active Loan Limit policy`,
         );
         continue;
       }
 
-      const maxAdvance = Number(policy.max_advance_per_trip);
-      const maxExposure = Number(policy.max_exposure);
+      const maxAdvance = policy.maxAdvancePerTrip;
+      const maxExposure = policy.maxExposure;
       if (
         !Number.isFinite(maxAdvance) ||
         maxAdvance <= 0 ||
@@ -1286,7 +1293,7 @@ export class LendingService {
         maxExposure <= 0
       ) {
         this.logger.log(
-          `findSuitableLender: Lender ${lender.name} skipped — invalid policy limits`,
+          `findSuitableLender: Lender ${lender.name} skipped — invalid Lending Policies limits`,
         );
         continue;
       }
@@ -1313,8 +1320,7 @@ export class LendingService {
 
       if (newExposure <= maxExposure) {
         this.logger.log(
-          `findSuitableLender: ✓ Selected lender ${lender.id} (${lender.name}) for loan ${loan.id}` +
-          (policy ? '' : ' [using default limits — no policy configured]'),
+          `findSuitableLender: ✓ Selected lender ${lender.id} (${lender.name}) for loan ${loan.id}`,
         );
         return lender;
       } else {
@@ -7411,14 +7417,26 @@ export class LendingService {
       dueDate.setHours(0, 0, 0, 0);
       if (today <= dueDate) continue; // Not yet due
 
-      // Fetch lender policy for thresholds
-      const policy = loan.lender_id
-        ? await this.lenderPolicyRepository.findOne({ where: { lender_id: loan.lender_id, is_active: true }, order: { created_at: 'DESC' } })
+      // Prefer /lender/policies repayment thresholds; legacy lender_policies as fallback
+      const originationPolicy = loan.lender_id
+        ? await this.lendingPoliciesService.getOriginationPolicy(loan.lender_id)
         : null;
-      const delinquencyDays = policy?.delinquency_threshold_days ?? 30;
-      const defaultDays     = policy?.default_threshold_days     ?? 90;
-      const gracePeriodDays = policy?.grace_period_days          ?? 3;
-      const penaltyRate     = Number(policy?.penalty_rate ?? 0);
+      const legacyPolicy = loan.lender_id
+        ? await this.lenderPolicyRepository.findOne({
+            where: { lender_id: loan.lender_id, is_active: true },
+            order: { created_at: 'DESC' },
+          })
+        : null;
+      const delinquencyDays = legacyPolicy?.delinquency_threshold_days ?? 30;
+      const defaultDays =
+        originationPolicy?.defaultThresholdDays ??
+        legacyPolicy?.default_threshold_days ??
+        90;
+      const gracePeriodDays =
+        originationPolicy?.gracePeriodDays ??
+        legacyPolicy?.grace_period_days ??
+        3;
+      const penaltyRate = Number(legacyPolicy?.penalty_rate ?? 0);
 
       const gracePeriodEnd = new Date(dueDate.getTime() + gracePeriodDays * 86400_000);
       if (today <= gracePeriodEnd) continue; // Still within grace period

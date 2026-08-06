@@ -724,6 +724,92 @@ export class LendingPoliciesService {
     this.logger.log(`Deleted system config policy for lender ${lenderId}`);
   }
 
+  /**
+   * Origination credit limits from the /lender/policies dashboard
+   * (lending_policy_loan_limits + lending_policy_system_config + repayment).
+   *
+   * Mapping used by loan creation:
+   *   max_advance_per_trip ← highest active loan-limit max_amount
+   *   max_exposure         ← system-config total_exposure_limit
+   *                          (fallback: max_advance × max_concurrent_loans)
+   *   advance_percentage   ← system-config default_advance_percentage (normalized 0–1)
+   *   grace_period_days    ← active repayment policy (else 0)
+   */
+  async getOriginationPolicy(lenderId: string): Promise<{
+    maxAdvancePerTrip: number;
+    maxExposure: number;
+    advancePercentage: number;
+    gracePeriodDays: number;
+    defaultThresholdDays: number;
+    currency: string | null;
+    loanLimitIds: string[];
+  } | null> {
+    let resolvedId: string;
+    try {
+      resolvedId = await this.resolveLenderId(lenderId);
+    } catch {
+      return null;
+    }
+
+    const [loanLimits, systemConfig, repaymentPolicies] = await Promise.all([
+      this.getLoanLimitPolicies(resolvedId, true),
+      this.getSystemConfigPolicy(resolvedId),
+      this.getRepaymentPolicies(resolvedId, true),
+    ]);
+
+    if (!loanLimits.length) {
+      this.logger.warn(
+        `getOriginationPolicy: lender ${resolvedId} has no active loan-limit policies under /lender/policies`,
+      );
+      return null;
+    }
+
+    const maxAdvancePerTrip = Math.max(
+      ...loanLimits.map((l) => Number(l.max_amount) || 0),
+    );
+    if (!Number.isFinite(maxAdvancePerTrip) || maxAdvancePerTrip <= 0) {
+      return null;
+    }
+
+    const exposureFromConfig = Number(systemConfig?.total_exposure_limit);
+    const concurrent = Number(systemConfig?.max_concurrent_loans) || 5;
+    const maxExposure =
+      Number.isFinite(exposureFromConfig) && exposureFromConfig > 0
+        ? exposureFromConfig
+        : maxAdvancePerTrip * concurrent;
+
+    let advancePercentage = Number(systemConfig?.default_advance_percentage);
+    if (!Number.isFinite(advancePercentage) || advancePercentage <= 0) {
+      advancePercentage = 70;
+    }
+    // Stored as percent (e.g. 70) in system config — normalize to 0–1
+    if (advancePercentage > 1) {
+      advancePercentage = advancePercentage / 100;
+    }
+
+    const repayment = repaymentPolicies[0];
+    const gracePeriodDays =
+      repayment?.grace_period_days != null
+        ? Number(repayment.grace_period_days)
+        : 0;
+    const defaultThresholdDays =
+      repayment?.default_threshold_days != null
+        ? Number(repayment.default_threshold_days)
+        : 90;
+
+    return {
+      maxAdvancePerTrip,
+      maxExposure,
+      advancePercentage,
+      gracePeriodDays: Number.isFinite(gracePeriodDays) ? gracePeriodDays : 0,
+      defaultThresholdDays: Number.isFinite(defaultThresholdDays)
+        ? defaultThresholdDays
+        : 90,
+      currency: loanLimits[0]?.currency ?? null,
+      loanLimitIds: loanLimits.map((l) => l.id),
+    };
+  }
+
   // ===== COMPREHENSIVE POLICY RETRIEVAL =====
 
   async getAllPoliciesForLender(lenderId: string, activeOnly: boolean = false) {
