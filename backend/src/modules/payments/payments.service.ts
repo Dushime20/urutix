@@ -86,6 +86,111 @@ export class PaymentsService {
     private readonly eventEmitter?: EventEmitter2,
   ) {}
 
+  /** Whether a payment row represents a lender disbursement for a specific loan. */
+  private paymentBelongsToLoanDisbursement(
+    payment: Payment,
+    loanId: string,
+  ): boolean {
+    const meta = (payment.metadata || {}) as Record<string, any>;
+    if (meta.isLoanRepaymentObligation === true) return false;
+    if (meta.loanId === loanId) return true;
+    const prefix = loanId.slice(0, 8).toUpperCase();
+    return !!payment.referenceNumber?.startsWith(`LOAN-${prefix}-DISB-`);
+  }
+
+  /** Backfill metadata on legacy disbursement rows missing isLenderPayment. */
+  private async ensureLenderDisbursementMetadata(
+    payment: Payment,
+    loanId: string,
+  ): Promise<Payment> {
+    const meta = (payment.metadata || {}) as Record<string, any>;
+    if (meta.isLenderPayment === true && meta.loanId === loanId) {
+      return payment;
+    }
+    payment.metadata = {
+      ...meta,
+      isLenderPayment: true,
+      loanId,
+      metadataBackfilledAt: new Date().toISOString(),
+    };
+    return this.paymentRepository.save(payment);
+  }
+
+  /**
+   * Find active lender-disbursement payments for a trip+payer+loan.
+   * Matches by metadata.loanId, LOAN-*-DISB reference, or isLenderPayment flag.
+   */
+  async findDisbursementPaymentsForLoan(
+    tripId: string,
+    payerId: string,
+    loanId: string,
+  ): Promise<Payment[]> {
+    const candidates = await this.paymentRepository
+      .createQueryBuilder('p')
+      .where('p.tripId = :tripId', { tripId })
+      .andWhere('p.payerId = :payerId', { payerId })
+      .andWhere('p.status IN (:...statuses)', {
+        statuses: [
+          PaymentStatus.PENDING,
+          PaymentStatus.PROCESSING,
+          PaymentStatus.COMPLETED,
+        ],
+      })
+      .andWhere('p.paymentType IN (:...types)', {
+        types: [PaymentType.ADVANCE, PaymentType.TRIP_PAYMENT],
+      })
+      .andWhere('p.deleted_at IS NULL')
+      .orderBy('p.createdAt', 'DESC')
+      .getMany();
+
+    return candidates.filter((p) =>
+      this.paymentBelongsToLoanDisbursement(p, loanId),
+    );
+  }
+
+  /**
+   * Pre-flight check before initiating MoMo — prevents duplicate charges and
+   * reconciles loans stuck when a completed payment exists without isLenderPayment.
+   */
+  async preflightLenderDisbursement(
+    tripId: string,
+    payerId: string,
+    loanId: string,
+  ): Promise<
+    | { outcome: 'already_completed'; payment: Payment }
+    | { outcome: 'awaiting_confirmation'; payment: Payment }
+    | { outcome: 'proceed' }
+  > {
+    const existing = await this.findDisbursementPaymentsForLoan(
+      tripId,
+      payerId,
+      loanId,
+    );
+
+    const completed = existing.find(
+      (p) => p.status === PaymentStatus.COMPLETED,
+    );
+    if (completed) {
+      const patched = await this.ensureLenderDisbursementMetadata(
+        completed,
+        loanId,
+      );
+      return { outcome: 'already_completed', payment: patched };
+    }
+
+    const inFlight = existing.find(
+      (p) =>
+        (p.status === PaymentStatus.PENDING ||
+          p.status === PaymentStatus.PROCESSING) &&
+        (p.transactionId || (p.metadata as any)?.momoTransactionId),
+    );
+    if (inFlight) {
+      return { outcome: 'awaiting_confirmation', payment: inFlight };
+    }
+
+    return { outcome: 'proceed' };
+  }
+
   /**
    * Find active lender-disbursement payments for a trip+payer.
    * Used for idempotent retries (avoids uq_payment_trip_payer_* violations).
@@ -95,6 +200,10 @@ export class PaymentsService {
     payerId: string,
     loanId?: string,
   ): Promise<Payment[]> {
+    if (loanId) {
+      return this.findDisbursementPaymentsForLoan(tripId, payerId, loanId);
+    }
+
     const qb = this.paymentRepository
       .createQueryBuilder('p')
       .where('p.tripId = :tripId', { tripId })
@@ -109,10 +218,6 @@ export class PaymentsService {
       .andWhere(`(p.metadata->>'isLenderPayment') = 'true'`)
       .andWhere('p.deleted_at IS NULL')
       .orderBy('p.createdAt', 'DESC');
-
-    if (loanId) {
-      qb.andWhere(`(p.metadata->>'loanId') = :loanId`, { loanId });
-    }
 
     return qb.getMany();
   }
@@ -258,7 +363,21 @@ export class PaymentsService {
           (p) => p.status === PaymentStatus.COMPLETED,
         );
         if (blockingCompleted.length > 0) {
-          // Non-lender completed payment for same payer+trip — surface clearly
+          const forThisLoan = loanId
+            ? blockingCompleted.find((p) =>
+                this.paymentBelongsToLoanDisbursement(p, loanId),
+              )
+            : undefined;
+          if (forThisLoan) {
+            const reused = await this.ensureLenderDisbursementMetadata(
+              forThisLoan,
+              loanId!,
+            );
+            this.logger.log(
+              `Reusing completed disbursement payment ${reused.id} for loan ${loanId}`,
+            );
+            return reused;
+          }
           throw new ConflictException(
             `An active payment already exists for this trip (id: ${blockingCompleted[0].id}, type: ${blockingCompleted[0].paymentType}). Duplicate lender disbursement payments are not allowed.`,
           );

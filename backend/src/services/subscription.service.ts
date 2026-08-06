@@ -409,6 +409,7 @@ export class SubscriptionService {
     const currency = data.currency || this.configService.get<string>('MOBILE_MONEY_CURRENCY') || 'RWF';
 
     let externalTransactionId: string | null = null;
+    let momoReferenceId: string | null = null;
 
     // ── Real payment via ishema (mobile money) ────────────────────────────
     if (totalAmount > 0 && data.paymentMethod === 'mobile_money') {
@@ -421,7 +422,7 @@ export class SubscriptionService {
 
       const platformPhone = await this.resolveSubscriptionCollectionPhone();
 
-      const referenceId = `SUB-${data.tenantId.slice(-8).toUpperCase()}-${Date.now()}`;
+      momoReferenceId = `SUB-${data.tenantId.slice(-8).toUpperCase()}-${Date.now()}`;
       const senderMessage =
         `Subscription: ${plan.name} — ${creditsToGrant} credits (${currency} ${totalAmount})`.substring(0, 160);
       const callbackUrl = this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL');
@@ -436,24 +437,23 @@ export class SubscriptionService {
 
       this.logger.log(
         `Initiating subscription payment: ${totalAmount} ${currency} from ${payerPhone} ` +
-        `to platform ${platformPhone} | plan: ${plan.name} | ref: ${referenceId}`,
+        `to platform ${platformPhone} | plan: ${plan.name} | ref: ${momoReferenceId}`,
       );
 
-      // This throws on failure — no subscription or credits are activated on error
       const mmResponse = await this.mobileMoneyPaymentService.createTransaction(
         totalAmount,
         payerPhone,
-        referenceId,
+        momoReferenceId,
         senderMessage,
         transfers,
         callbackUrl,
       );
 
       const txn = mmResponse.savedTransaction || mmResponse.transaction;
-      externalTransactionId = txn?.externalId || txn?.id || referenceId;
+      externalTransactionId = txn?.externalId || txn?.id || momoReferenceId;
 
       this.logger.log(
-        `Subscription payment accepted by ishema: externalId=${externalTransactionId}, status=${txn?.status}`,
+        `Subscription MoMo initiated: externalId=${externalTransactionId}, status=${txn?.status}`,
       );
     }
 
@@ -464,57 +464,36 @@ export class SubscriptionService {
       );
     }
 
-    // ── Activate subscription & credits (payment confirmed or free plan) ──
-    const subscription = await this.createSubscription({
-      tenantId: data.tenantId,
-      userId: null,
-      planId: data.planId,
-      billingCycle: BillingCycle.MONTHLY,
-      paymentMethodId: externalTransactionId || undefined,
-      startTrial: false,
-    });
-
-    // Persist payer phone in subscription metadata for auto-renewal
-    if (data.paymentDetails?.phoneNumber) {
-      await this.tenantSubscriptionRepository.update(subscription.id, {
-        metadata: {
-          ...(subscription.metadata || {}),
-          payerPhone: data.paymentDetails.phoneNumber,
-          paymentMethod: data.paymentMethod,
-        } as any,
+    // Free plans activate immediately; paid MoMo waits for Ishema webhook
+    let subscription: TenantSubscription | null = null;
+    if (totalAmount === 0) {
+      subscription = await this.createSubscription({
+        tenantId: data.tenantId,
+        userId: null,
+        planId: data.planId,
+        billingCycle: BillingCycle.MONTHLY,
+        paymentMethodId: externalTransactionId || undefined,
+        startTrial: false,
       });
+
+      if (creditsToGrant > 0) {
+        await this.creditService.grantSubscriptionCredits(
+          data.tenantId,
+          creditsToGrant,
+          subscription.id,
+          subscription.currentPeriodEnd,
+          undefined,
+        );
+      }
     }
 
-    if (creditsToGrant > 0) {
-      await this.creditService.grantSubscriptionCredits(
-        data.tenantId,
-        creditsToGrant,
-        subscription.id,
-        subscription.currentPeriodEnd,
-        undefined,
-      );
-    }
-
-    if (plan.parentSubscriptionId && plan.creditCostPerPartner) {
-      await this.creditService.trackPartnerPlanRevenue(
-        data.tenantId,
-        totalAmount,
-        creditsToGrant,
-      );
-    }
-
-    // ── Record payment in payments table ─────────────────────────────────
+    // ── Record payment — subscription/credits activate on webhook success ──
     if (totalAmount > 0) {
       try {
         const methodMap: Record<string, PaymentMethod> = {
           card: PaymentMethod.CREDIT_CARD,
           mobile_money: PaymentMethod.DIGITAL_WALLET,
         };
-        // Store as PROCESSING for mobile money (webhook confirms); COMPLETED for card (not used yet)
-        const paymentStatus =
-          data.paymentMethod === 'mobile_money'
-            ? PaymentStatus.PROCESSING
-            : PaymentStatus.COMPLETED;
 
         const payment = this.paymentRepository.create({
           tenantId: data.tenantId,
@@ -523,23 +502,30 @@ export class SubscriptionService {
           currency,
           paymentMethod: methodMap[data.paymentMethod] ?? PaymentMethod.DIGITAL_WALLET,
           paymentType: PaymentType.SUBSCRIPTION,
-          status: paymentStatus,
+          status: PaymentStatus.PROCESSING,
           transactionId: externalTransactionId,
-          referenceNumber: externalTransactionId,
+          referenceNumber: momoReferenceId || externalTransactionId,
           description: `Subscription: ${plan.name} (${creditsToGrant} credits)`,
-          processedAt: paymentStatus === PaymentStatus.COMPLETED ? new Date() : undefined,
           metadata: {
+            referenceId: momoReferenceId,
+            pendingSubscriptionActivation: true,
             planId: data.planId,
             planName: plan.name,
-            subscriptionId: subscription.id,
-            creditsGranted: creditsToGrant,
+            tenantId: data.tenantId,
+            userId: data.userId,
+            creditsToGrant,
+            totalAmount,
+            currency,
+            paymentMethod: data.paymentMethod,
             payerPhone: data.paymentDetails?.phoneNumber,
+            parentSubscriptionId: plan.parentSubscriptionId,
+            creditCostPerPartner: plan.creditCostPerPartner,
           },
         });
         await this.paymentRepository.save(payment);
-      } catch (e) {
-        // Non-fatal — payment already accepted by ishema; don't fail the whole request
+      } catch (e: any) {
         this.logger.error('[SubscriptionService] Failed to save payment record:', e.message);
+        throw new BadRequestException('Could not initiate subscription payment');
       }
     }
 
@@ -548,22 +534,107 @@ export class SubscriptionService {
       payment: {
         success: true,
         transactionId: externalTransactionId,
+        referenceId: momoReferenceId,
         amount: totalAmount,
         currency,
         paymentMethod: data.paymentMethod,
         status: totalAmount === 0 ? 'completed' : 'processing',
+        pendingConfirmation: totalAmount > 0,
         message:
           totalAmount === 0
             ? 'Free plan activated'
-            : 'Payment initiated — awaiting PIN confirmation on your mobile phone.',
+            : 'Payment initiated — subscription activates after Ishema confirms delivery.',
       },
-      creditsAdded: creditsToGrant,
+      creditsAdded: totalAmount === 0 ? creditsToGrant : 0,
       plan: {
         name: plan.name,
         pricePerCredit: plan.pricePerCredit,
         totalCredits: creditsToGrant,
       },
     };
+  }
+
+  /** Activate subscription + credits only after Ishema webhook confirms success. */
+  async confirmSubscriptionFromWebhook(input: {
+    referenceId: string;
+    transactionId?: string;
+    paymentId?: string;
+  }): Promise<void> {
+    const payment = input.paymentId
+      ? await this.paymentRepository.findOne({ where: { id: input.paymentId } })
+      : await this.paymentRepository.findOne({
+          where: [{ referenceNumber: input.referenceId }, { transactionId: input.referenceId }],
+        });
+
+    if (!payment) {
+      this.logger.warn(`confirmSubscriptionFromWebhook: no payment ${input.referenceId}`);
+      return;
+    }
+
+    const meta = (payment.metadata || {}) as Record<string, any>;
+    if (meta.subscriptionActivated) {
+      this.logger.log(`Subscription already activated for ${input.referenceId}`);
+      return;
+    }
+
+    const subscription = await this.createSubscription({
+      tenantId: meta.tenantId,
+      userId: meta.userId ?? null,
+      planId: meta.planId,
+      billingCycle: BillingCycle.MONTHLY,
+      paymentMethodId: input.transactionId || input.referenceId,
+      startTrial: false,
+    });
+
+    if (meta.payerPhone) {
+      await this.tenantSubscriptionRepository.update(subscription.id, {
+        metadata: {
+          ...(subscription.metadata || {}),
+          payerPhone: meta.payerPhone,
+          paymentMethod: meta.paymentMethod,
+        } as any,
+      });
+    }
+
+    const creditsToGrant = Number(meta.creditsToGrant || 0);
+    if (creditsToGrant > 0) {
+      await this.creditService.grantSubscriptionCredits(
+        meta.tenantId,
+        creditsToGrant,
+        subscription.id,
+        subscription.currentPeriodEnd,
+        undefined,
+      );
+    }
+
+    if (meta.parentSubscriptionId && meta.creditCostPerPartner) {
+      await this.creditService.trackPartnerPlanRevenue(
+        meta.tenantId,
+        Number(meta.totalAmount || payment.amount),
+        creditsToGrant,
+      );
+    }
+
+    payment.metadata = {
+      ...meta,
+      subscriptionActivated: true,
+      subscriptionId: subscription.id,
+    };
+    await this.paymentRepository.save(payment);
+
+    this.logger.log(
+      `Subscription ${subscription.id} activated via webhook (${input.referenceId})`,
+    );
+  }
+
+  async failSubscriptionFromWebhook(input: {
+    referenceId: string;
+    reason?: string;
+    paymentId?: string;
+  }): Promise<void> {
+    this.logger.warn(
+      `Subscription payment failed (${input.referenceId}): ${input.reason}`,
+    );
   }
 
   /**

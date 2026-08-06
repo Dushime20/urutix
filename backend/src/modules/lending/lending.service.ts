@@ -2328,6 +2328,314 @@ export class LendingService {
     };
   }
 
+  /**
+   * Called ONLY from Ishema webhook after provider confirms success.
+   * Marks loan DISBURSED and creates repayment obligation — never call on API initiate.
+   */
+  async confirmDisbursementFromWebhook(input: {
+    referenceId: string;
+    transactionId?: string;
+    paymentId?: string;
+  }): Promise<void> {
+    const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } =
+      await import('../../entities/payment.entity');
+
+    await this.dataSource.transaction(async (manager) => {
+      let payment: any = null;
+      if (input.paymentId) {
+        payment = await manager.findOne(PaymentEntity, { where: { id: input.paymentId } });
+      }
+      if (!payment) {
+        payment = await manager
+          .createQueryBuilder(PaymentEntity, 'p')
+          .where('p.referenceNumber = :ref OR p.transactionId = :ref', { ref: input.referenceId })
+          .orWhere(`(p.metadata->>'referenceId') = :ref`, { ref: input.referenceId })
+          .getOne();
+      }
+      if (!payment) {
+        this.logger.warn(`confirmDisbursementFromWebhook: no payment for ${input.referenceId}`);
+        return;
+      }
+
+      const meta = (payment.metadata || {}) as Record<string, any>;
+      const loanId = meta.loanId as string;
+      if (!loanId) return;
+
+      const loan = await manager.findOne(LoanRequest, {
+        where: { id: loanId },
+        relations: ['lender'],
+      });
+      if (!loan) return;
+
+      if (loan.status === LoanRequestStatus.DISBURSED) {
+        this.logger.log(`Loan ${loanId} already DISBURSED — webhook idempotent skip`);
+        return;
+      }
+
+      const disbursement = meta.disbursementId
+        ? await manager.findOne(LoanDisbursement, { where: { id: meta.disbursementId } })
+        : await manager.findOne(LoanDisbursement, {
+            where: { loan_request_id: loanId },
+            order: { created_at: 'DESC' } as any,
+          });
+
+      if (!disbursement) {
+        this.logger.error(`confirmDisbursementFromWebhook: no disbursement for loan ${loanId}`);
+        return;
+      }
+
+      const lockedAmount = Number(loan.approved_amount);
+      const txnId = input.transactionId || input.referenceId;
+
+      disbursement.status = DisbursementStatus.DISBURSED;
+      disbursement.disbursement_date = new Date();
+      disbursement.external_txn_ref = txnId;
+      loan.status = LoanRequestStatus.DISBURSED;
+      loan.metadata = {
+        ...(loan.metadata || {}),
+        disbursement: {
+          ...(loan.metadata?.disbursement || {}),
+          disbursed_at: new Date().toISOString(),
+          pending_confirmation: false,
+          amount: lockedAmount,
+          currency: loan.currency,
+          transaction_id: txnId,
+          confirmed_via: 'ishema_webhook',
+        },
+      };
+
+      await manager.save(LoanDisbursement, disbursement);
+      await manager.save(LoanRequest, loan);
+
+      await this.finalizeDisbursementSideEffects(manager, {
+        loan,
+        disbursement,
+        lockedAmount,
+        processedPaymentId: payment.id,
+        tripId: payment.tripId,
+        lenderUserId: payment.payerId,
+        beneficiaries: disbursement.beneficiaries || [],
+      });
+
+      this.logger.log(`Loan ${loanId} marked DISBURSED via Ishema webhook (${input.referenceId})`);
+    });
+  }
+
+  async failDisbursementFromWebhook(input: {
+    referenceId: string;
+    reason?: string;
+    paymentId?: string;
+  }): Promise<void> {
+    const { Payment: PaymentEntity } = await import('../../entities/payment.entity');
+
+    await this.dataSource.transaction(async (manager) => {
+      const payment = input.paymentId
+        ? await manager.findOne(PaymentEntity, { where: { id: input.paymentId } })
+        : await manager
+            .createQueryBuilder(PaymentEntity, 'p')
+            .where('p.referenceNumber = :ref', { ref: input.referenceId })
+            .getOne();
+
+      const loanId = (payment?.metadata as any)?.loanId;
+      if (!loanId) return;
+
+      const loan = await manager.findOne(LoanRequest, { where: { id: loanId } });
+      if (!loan || loan.status === LoanRequestStatus.DISBURSED) return;
+
+      const disbursement = await manager.findOne(LoanDisbursement, {
+        where: { loan_request_id: loanId },
+        order: { created_at: 'DESC' } as any,
+      });
+      if (disbursement && disbursement.status !== DisbursementStatus.DISBURSED) {
+        disbursement.status = DisbursementStatus.FAILED;
+        disbursement.failure_reason = input.reason || 'MoMo payment failed';
+        await manager.save(LoanDisbursement, disbursement);
+      }
+
+      loan.metadata = {
+        ...(loan.metadata || {}),
+        disbursement: {
+          ...(loan.metadata?.disbursement || {}),
+          pending_confirmation: false,
+          failed_at: new Date().toISOString(),
+          failure_reason: input.reason,
+        },
+      };
+      await manager.save(LoanRequest, loan);
+      this.logger.warn(`Disbursement failed for loan ${loanId}: ${input.reason}`);
+    });
+  }
+
+  async confirmRepaymentFromWebhook(input: {
+    referenceId: string;
+    transactionId?: string;
+    paymentId?: string;
+  }): Promise<void> {
+    const { Payment: PaymentEntity } = await import('../../entities/payment.entity');
+
+    const payment = await this.dataSource.transaction(async (manager) => {
+      if (input.paymentId) {
+        return manager.findOne(PaymentEntity, { where: { id: input.paymentId } });
+      }
+      return manager
+        .createQueryBuilder(PaymentEntity, 'p')
+        .where('p.referenceNumber = :ref OR p.transactionId = :ref', { ref: input.referenceId })
+        .getOne();
+    });
+
+    if (!payment) {
+      this.logger.warn(`confirmRepaymentFromWebhook: no payment ${input.referenceId}`);
+      return;
+    }
+
+    const meta = (payment.metadata || {}) as Record<string, any>;
+    if (meta.repaymentRecorded) {
+      this.logger.log(`Repayment already recorded for ${input.referenceId} — skip`);
+      return;
+    }
+
+    const loanId = meta.loanId as string;
+    if (!loanId) return;
+
+    const result = await this.recordLoanRepayment({
+      loanId,
+      finalPaymentAmount: Number(meta.finalPaymentAmount || payment.amount),
+      externalTxnRef: input.transactionId || input.referenceId,
+      paymentMethod: meta.paymentMethod || 'mobile_money',
+      paymentStatus: 'completed',
+      paymentDetails: meta.paymentDetails || {},
+      interestAmount: Number(meta.interestAmount || 0),
+      currency: this.requireCurrency(meta.currency || payment.currency, 'repayment webhook'),
+    });
+
+    await this.dataSource
+      .createQueryBuilder()
+      .update(PaymentEntity)
+      .set({
+        metadata: { ...meta, repaymentRecorded: true, repaymentId: result.saved.id } as any,
+      })
+      .where('id = :id', { id: payment.id })
+      .execute();
+
+    await this.notifyRepaymentParties(result.freshLoan, result.saved, {
+      fullyRepaid: result.fullyRepaid,
+      paymentMethod: meta.paymentMethod || 'mobile_money',
+      pendingConfirmation: false,
+    });
+
+    if (result.freshLoan.lender?.callback_url) {
+      await this.notifyLenderRepayment(result.freshLoan, result.saved);
+    }
+
+    this.logger.log(`Loan repayment confirmed via webhook for loan ${loanId}`);
+  }
+
+  async failRepaymentFromWebhook(input: {
+    referenceId: string;
+    reason?: string;
+    paymentId?: string;
+  }): Promise<void> {
+    this.logger.warn(`Loan repayment failed (${input.referenceId}): ${input.reason}`);
+  }
+
+  /** Notifications + repayment obligation after funds are confirmed delivered. */
+  private async finalizeDisbursementSideEffects(
+    manager: any,
+    ctx: {
+      loan: LoanRequest;
+      disbursement: LoanDisbursement;
+      lockedAmount: number;
+      processedPaymentId?: string;
+      tripId?: string;
+      lenderUserId?: string;
+      beneficiaries: any[];
+    },
+  ): Promise<void> {
+    const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentType: PmtType, PaymentMethod: PmtMethod } =
+      await import('../../entities/payment.entity');
+
+    const { loan, lockedAmount, beneficiaries, tripId, lenderUserId, processedPaymentId } = ctx;
+
+    try {
+      await this.loanNotificationService.notifyCargoOwnerLoanDisbursed(
+        loan.created_by,
+        loan.tenant_id,
+        loan.id,
+        lockedAmount,
+        loan.lender?.name || 'Lender',
+        loan.currency,
+      );
+      const truckOwnerId =
+        beneficiaries.find((b: any) => b.recipientId)?.recipientId ??
+        beneficiaries.find((b: any) => b.id)?.id;
+      if (truckOwnerId) {
+        await this.loanNotificationService.notifyTruckOwnerLenderPaid(
+          truckOwnerId,
+          loan.tenant_id,
+          loan.id,
+          lockedAmount,
+          loan.lender?.name || 'Lender',
+        );
+      }
+    } catch (notifErr: any) {
+      this.logger.warn(`Disbursement notifications failed: ${notifErr.message}`);
+    }
+
+    if (!tripId) return;
+
+    const cargoOwnerId = loan.created_by;
+    const existingTripPayment = await manager.findOne(PaymentEntity, {
+      where: {
+        tripId,
+        payerId: cargoOwnerId,
+        paymentType: PmtType.TRIP_PAYMENT,
+        status: PmtStatus.PENDING,
+      } as any,
+    });
+    if (existingTripPayment) {
+      existingTripPayment.status = PmtStatus.CANCELLED;
+      (existingTripPayment.metadata as any) = {
+        ...(existingTripPayment.metadata || {}),
+        cancelledReason: 'Replaced by lender disbursement obligation',
+        loanId: loan.id,
+        cancelledAt: new Date().toISOString(),
+      };
+      await manager.save(PaymentEntity, existingTripPayment);
+    }
+
+    const dueDate = loan.due_date ? new Date(loan.due_date) : null;
+    if (!dueDate) return;
+
+    const obligationAmount =
+      Number(loan.approved_amount) + Number(loan.interest_amount || 0);
+    const obligationPayment = manager.create(PaymentEntity, {
+      tripId,
+      tenantId: loan.tenant_id,
+      payerId: cargoOwnerId,
+      payeeId: lenderUserId,
+      amount: obligationAmount,
+      currency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
+      paymentMethod: PmtMethod.BANK_TRANSFER,
+      paymentType: PmtType.TRIP_PAYMENT,
+      status: PmtStatus.PENDING,
+      dueDate,
+      description: `Loan repayment to lender — ${loan.loan_number || loan.id.slice(0, 8)}`,
+      referenceNumber: `LREP-OBL-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
+      metadata: {
+        isLoanRepaymentObligation: true,
+        isLenderPayment: false,
+        loanId: loan.id,
+        lenderName: loan.lender?.name ?? null,
+        lenderId: loan.lender_id,
+        cargoOwnerId,
+        originalDisbursementPaymentId: processedPaymentId,
+        paymentSource: 'lender_disbursement',
+        automaticallyCreated: true,
+      },
+    } as any);
+    await manager.save(PaymentEntity, obligationPayment);
+  }
+
   async rejectLoanRequest(
     loanId: string,
     reason: string,
@@ -2758,33 +3066,39 @@ export class LendingService {
           const PaymentsServiceClass = PaymentsServiceModule.PaymentsService;
           const paymentsService = this.moduleRef.get(PaymentsServiceClass, { strict: false });
 
-          // Idempotency guard BEFORE calling MoMo — avoids double-charging on retry
-          // when a prior attempt already created an active lender payment row.
-          const existingLenderPayment = await manager
-            .createQueryBuilder(PaymentEntity, 'p')
-            .where('p.tripId = :tripId', { tripId: trip.id })
-            .andWhere('p.payerId = :payerId', { payerId: lenderUserId })
-            .andWhere('p.status IN (:...statuses)', {
-              statuses: [PmtStatus.PENDING, PmtStatus.PROCESSING, PmtStatus.COMPLETED],
-            })
-            .andWhere(`(p.metadata->>'isLenderPayment') = 'true'`)
-            .andWhere(`(p.metadata->>'loanId') = :loanId`, { loanId: loan.id })
-            .andWhere('p.deleted_at IS NULL')
-            .orderBy('p.createdAt', 'DESC')
-            .getOne();
+          // Pre-flight BEFORE MoMo — same rules as PaymentsService.createPayment
+          const preflight = paymentsService
+            ? await paymentsService.preflightLenderDisbursement(
+                trip.id,
+                lenderUserId,
+                loan.id,
+              )
+            : { outcome: 'proceed' as const };
 
-          if (existingLenderPayment?.status === PmtStatus.COMPLETED) {
+          if (preflight.outcome === 'already_completed') {
+            const existingLenderPayment = preflight.payment;
             this.logger.log(
-              `Loan ${loan.id} already has completed lender payment ${existingLenderPayment.id} — skipping MoMo`,
+              `Loan ${loan.id} already has completed disbursement payment ${existingLenderPayment.id} — reconciling`,
             );
             processedPayment = existingLenderPayment;
             disbursement.status = DisbursementStatus.DISBURSED;
             disbursement.disbursement_date = new Date();
             disbursement.external_txn_ref =
-              existingLenderPayment.transactionId || existingLenderPayment.referenceNumber;
+              existingLenderPayment.transactionId ||
+              existingLenderPayment.referenceNumber;
             loan.status = LoanRequestStatus.DISBURSED;
-            await manager.save(LoanDisbursement, savedDisbursement);
+            await manager.save(LoanDisbursement, disbursement);
             await manager.save(LoanRequest, loan);
+
+            await this.finalizeDisbursementSideEffects(manager, {
+              loan,
+              disbursement,
+              lockedAmount,
+              processedPaymentId: existingLenderPayment.id,
+              tripId: trip.id,
+              lenderUserId,
+              beneficiaries,
+            });
 
             return {
               success: true,
@@ -2804,19 +3118,13 @@ export class LendingService {
             };
           }
 
-          if (
-            existingLenderPayment &&
-            (existingLenderPayment.status === PmtStatus.PENDING ||
-              existingLenderPayment.status === PmtStatus.PROCESSING) &&
-            (existingLenderPayment.transactionId ||
-              (existingLenderPayment.metadata as any)?.momoTransactionId)
-          ) {
-            // Prior MoMo request still awaiting PIN — reuse, do not create a new MoMo txn
+          if (preflight.outcome === 'awaiting_confirmation') {
+            const existingLenderPayment = preflight.payment;
             const existingTxnId =
               existingLenderPayment.transactionId ||
               (existingLenderPayment.metadata as any)?.momoTransactionId;
             this.logger.log(
-              `Loan ${loan.id} has in-flight lender payment ${existingLenderPayment.id} ` +
+              `Loan ${loan.id} has in-flight disbursement payment ${existingLenderPayment.id} ` +
                 `(txn ${existingTxnId}) — returning pending confirmation without new MoMo call`,
             );
             processedPayment = existingLenderPayment;
@@ -2854,6 +3162,44 @@ export class LendingService {
             receiverMessage: paymentMessage.substring(0, 160),
           }];
 
+          // Reserve payment row BEFORE MoMo — never charge if DB slot cannot be created
+          if (paymentsService) {
+            const createPaymentDto = {
+              tripId: trip.id,
+              amount: lockedAmount,
+              currency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
+              paymentMethod: PmtMethod.DIGITAL_WALLET,
+              paymentType: PmtType.TRIP_PAYMENT,
+              description: paymentMessage,
+              referenceNumber,
+              metadata: {
+                referenceId: referenceNumber,
+                lenderId: loan.lender_id,
+                lenderName: loan.lender?.name,
+                financedAmount: lockedAmount,
+                isLenderPayment: true,
+                payerPhoneNumber: payerPhone,
+                receiverPhoneNumber: formattedBeneficiary,
+                loanId: loan.id,
+                loanNumber: loan.loan_number,
+                disbursementId: savedDisbursement.id,
+                momoAmount: disburseAmount,
+                momoCurrency: disburseCurrency,
+                exchangeRate: exchangeRate ?? null,
+                principalAmount: lockedAmount,
+                principalCurrency: loan.currency,
+                payerCurrency: settlementQuote.payerCurrency,
+                conversionApplied: settlementQuote.conversionApplied,
+              },
+            };
+
+            processedPayment = await paymentsService.createPayment(
+              createPaymentDto,
+              tenantId,
+              lenderUserId,
+            );
+          }
+
           this.logger.log(
             `Disbursing loan ${loan.id}: ${disburseAmount} ${disburseCurrency} ` +
             `(principal: ${lockedAmount} ${loan.currency}` +
@@ -2865,9 +3211,8 @@ export class LendingService {
             `| receiver ${formattedBeneficiary}`,
           );
 
-          // DB keeps lockedAmount + loanCurrency; convert to RWF for Ishema only here
           const momoResponse = await mobileMoneyService.createTransaction(
-            disburseAmount, // RWF equivalent of loan principal
+            disburseAmount,
             payerPhone,
             referenceNumber,
             paymentMessage,
@@ -2892,84 +3237,28 @@ export class LendingService {
             );
           }
 
-          const paymentConfirmed =
-            txnStatus === 'success' || txnStatus === 'completed';
-          const pendingConfirmation = !paymentConfirmed;
+          const pendingConfirmation = true;
 
-          // Record payment via PaymentsService for audit trail
-          if (paymentsService) {
-            const createPaymentDto = {
-              tripId: trip.id,
-              amount: lockedAmount,
-              currency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
-              paymentMethod: PmtMethod.DIGITAL_WALLET,
-              paymentType: PmtType.TRIP_PAYMENT,
-              description: paymentMessage,
-              referenceNumber,
-              metadata: {
-                lenderId: loan.lender_id,
-                lenderName: loan.lender?.name,
-                financedAmount: lockedAmount,
-                isLenderPayment: true,
-                payerPhoneNumber: payerPhone,
-                receiverPhoneNumber: formattedBeneficiary,
-                loanId: loan.id,
-                loanNumber: loan.loan_number,
-                disbursementId: savedDisbursement.id,
-                momoTransactionId: transactionId,
-                momoAmount: disburseAmount,
-                momoCurrency: disburseCurrency,
-                exchangeRate: exchangeRate ?? null,
-                principalAmount: lockedAmount,
-                principalCurrency: loan.currency,
-                payerCurrency: settlementQuote.payerCurrency,
-                conversionApplied: settlementQuote.conversionApplied,
+          if (paymentsService && processedPayment?.id) {
+            processedPayment = await paymentsService.updatePaymentStatus(
+              processedPayment.id,
+              {
+                status: 'processing' as any,
+                transactionId,
+                gatewayResponse:
+                  'Awaiting Ishema confirmation — loan will disburse after receiver gets funds.',
               },
-            };
-
-            const payment = await paymentsService.createPayment(
-              createPaymentDto,
               tenantId,
-              lenderUserId,
             );
-
-            // Only transition status when the reused/created row is still pending
-            if (
-              payment.status === PmtStatus.PENDING ||
-              payment.status === PmtStatus.PROCESSING
-            ) {
-              processedPayment = await paymentsService.updatePaymentStatus(
-                payment.id,
-                {
-                  status: (paymentConfirmed ? 'completed' : 'processing') as any,
-                  transactionId,
-                  gatewayResponse: paymentConfirmed
-                    ? 'Loan disbursement completed via Mobile Money.'
-                    : 'Awaiting MoMo PIN approval on payer phone.',
-                  processedAt: paymentConfirmed ? new Date() : undefined,
-                },
-                tenantId,
-              );
-            } else {
-              processedPayment = payment;
-            }
           }
 
-          if (paymentConfirmed) {
-            disbursement.status = DisbursementStatus.DISBURSED;
-            disbursement.disbursement_date = new Date();
-            disbursement.external_txn_ref = transactionId;
-            loan.status = LoanRequestStatus.DISBURSED;
-          } else {
-            disbursement.status = DisbursementStatus.PENDING;
-            disbursement.external_txn_ref = transactionId;
-          }
-
+          disbursement.status = DisbursementStatus.PENDING;
+          disbursement.external_txn_ref = transactionId;
           loan.metadata = {
             ...(loan.metadata || {}),
             disbursement: {
-              disbursed_at: paymentConfirmed ? new Date().toISOString() : null,
-              pending_confirmation: pendingConfirmation,
+              disbursed_at: null,
+              pending_confirmation: true,
               amount: lockedAmount,
               currency: loan.currency,
               momo_amount: disburseAmount,
@@ -2981,92 +3270,6 @@ export class LendingService {
           };
           await manager.save(LoanDisbursement, disbursement);
           await manager.save(LoanRequest, loan);
-
-          if (paymentConfirmed) {
-            // Notify borrower (cargo owner) and beneficiary (truck owner)
-            try {
-              await this.loanNotificationService.notifyCargoOwnerLoanDisbursed(
-                loan.created_by,
-                loan.tenant_id,
-                loan.id,
-                lockedAmount,
-                loan.lender?.name || 'Lender',
-                loan.currency,
-              );
-              const truckOwnerId =
-                beneficiaries.find((b: any) => b.recipientId)?.recipientId ??
-                beneficiaries.find((b: any) => b.id)?.id;
-              if (truckOwnerId) {
-                await this.loanNotificationService.notifyTruckOwnerLenderPaid(
-                  truckOwnerId,
-                  loan.tenant_id,
-                  loan.id,
-                  lockedAmount,
-                  loan.lender?.name || 'Lender',
-                );
-              }
-            } catch (notifErr) {
-              this.logger.warn(`Disbursement notifications failed: ${notifErr.message}`);
-            }
-          }
-
-          const cargoOwnerId: string = loan.created_by;
-
-          if (paymentConfirmed) {
-            const existingTripPayment = await manager.findOne(PaymentEntity, {
-              where: {
-                tripId: trip.id,
-                payerId: cargoOwnerId,
-                paymentType: PmtType.TRIP_PAYMENT,
-                status: PmtStatus.PENDING,
-              } as any,
-            });
-            if (existingTripPayment) {
-              existingTripPayment.status = PmtStatus.CANCELLED;
-              (existingTripPayment.metadata as any) = {
-                ...(existingTripPayment.metadata || {}),
-                cancelledReason: 'Replaced by lender disbursement obligation',
-                loanId: loan.id,
-                cancelledAt: new Date().toISOString(),
-              };
-              await manager.save(PaymentEntity, existingTripPayment);
-            }
-
-            const dueDate = loan.due_date ? new Date(loan.due_date) : null;
-            if (!dueDate) {
-              throw new BadRequestException(
-                `Loan ${loan.id} has no due_date; cannot create repayment obligation.`,
-              );
-            }
-            const obligationAmount =
-              Number(loan.approved_amount) + Number(loan.interest_amount || 0);
-            const obligationPayment = manager.create(PaymentEntity, {
-              tripId: trip.id,
-              tenantId: loan.tenant_id,
-              payerId: cargoOwnerId,
-              payeeId: lenderUserId,
-              amount: obligationAmount,
-              currency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
-              paymentMethod: PmtMethod.BANK_TRANSFER,
-              paymentType: PmtType.TRIP_PAYMENT,
-              status: PmtStatus.PENDING,
-              dueDate,
-              description: `Loan repayment to lender — ${loan.loan_number || loan.id.slice(0, 8)}`,
-              referenceNumber: `LREP-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
-              metadata: {
-                isLoanRepaymentObligation: true,
-                isLenderPayment: false,
-                loanId: loan.id,
-                lenderName: loan.lender?.name ?? null,
-                lenderId: loan.lender_id,
-                cargoOwnerId,
-                originalDisbursementPaymentId: processedPayment?.id,
-                paymentSource: 'lender_disbursement',
-                automaticallyCreated: true,
-              },
-            } as any);
-            await manager.save(PaymentEntity, obligationPayment);
-          }
 
           return {
             success: true,
@@ -3080,7 +3283,7 @@ export class LendingService {
                   pendingConfirmation,
                 }
               : { transactionId, pendingConfirmation },
-            disbursedAmount: paymentConfirmed ? lockedAmount : 0,
+            disbursedAmount: 0,
             disbursedCurrency: loan.currency,
             momoAmount: disburseAmount,
             momoCurrency: disburseCurrency,
@@ -3482,6 +3685,52 @@ export class LendingService {
           ? 'completed'
           : 'processing';
       pendingConfirmation = paymentStatus === 'processing';
+
+      // Never record repayment ledger until Ishema webhook confirms delivery
+      if (pendingConfirmation) {
+        const { Payment: PaymentEntity, PaymentStatus: PmtStatus, PaymentMethod: PmtMethod, PaymentType: PmtType } =
+          await import('../../entities/payment.entity');
+
+        const pendingPayment = this.dataSource.manager.create(PaymentEntity, {
+          tenantId: loan.tenant_id,
+          payerId: loan.created_by,
+          payeeId: loan.lender_id,
+          tripId: loan.trip_id,
+          amount: appliedAmount,
+          currency: loanCurrency,
+          paymentMethod: PmtMethod.DIGITAL_WALLET,
+          paymentType: PmtType.SERVICE_FEE,
+          status: PmtStatus.PROCESSING,
+          referenceNumber: referenceId,
+          transactionId: externalTxnRef,
+          description: senderMessage,
+          metadata: {
+            referenceId,
+            pendingLoanRepayment: true,
+            isLoanRepayment: true,
+            loanId: loan.id,
+            finalPaymentAmount,
+            appliedAmount,
+            interestAmount,
+            currency: loanCurrency,
+            paymentMethod,
+            paymentDetails,
+          },
+        } as any);
+        await this.dataSource.manager.save(PaymentEntity, pendingPayment);
+
+        return Object.assign({} as LoanRepayment, {
+          id: pendingPayment.id,
+          loan_request_id: loanId,
+          amount: appliedAmount,
+          payment: {
+            status: 'processing',
+            transactionId: externalTxnRef,
+            pendingConfirmation: true,
+            referenceId,
+          },
+        });
+      }
     }
 
     const savedRepayment = await this.recordLoanRepayment({
@@ -3689,8 +3938,8 @@ export class LendingService {
       });
       const saved = await manager.save(LoanRepayment, repayment);
 
-      // 6) Close loan via column update only (never save entity graph)
-      if (allocation.fullyRepaid) {
+      // 6) Close loan only when payment is confirmed delivered
+      if (allocation.fullyRepaid && paymentStatus === 'completed') {
         const repaidAt = new Date();
         await manager.update(LoanRequest, { id: loanId }, {
           status: LoanRequestStatus.REPAID,

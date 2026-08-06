@@ -24,6 +24,7 @@ import { TenantPaymentConfigService } from './services/tenant-payment-config.ser
 import { TransactionStateService } from './services/transaction-state.service';
 import { ProviderIntegrationService } from './services/provider-integration.service';
 import { MobileMoneyPaymentService } from './services/mobile-money-payment.service';
+import { MobileMoneyWebhookSettlementService } from './services/mobile-money-webhook-settlement.service';
 import { InvoiceReceiptService } from './services/invoice-receipt.service';
 import { IdempotencyService } from './services/idempotency.service';
 import { ReconciliationService } from './services/reconciliation.service';
@@ -54,6 +55,7 @@ import { TripsModule } from '../trips/trips.module';
     TransactionStateService,
     ProviderIntegrationService,
     MobileMoneyPaymentService,
+    MobileMoneyWebhookSettlementService,
     InvoiceReceiptService,
     IdempotencyService,
     ReconciliationService,
@@ -74,6 +76,7 @@ import { TripsModule } from '../trips/trips.module';
     TransactionStateService,
     ProviderIntegrationService,
     MobileMoneyPaymentService,
+    MobileMoneyWebhookSettlementService,
     InvoiceReceiptService,
     IdempotencyService,
     ReconciliationService,

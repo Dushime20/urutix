@@ -20,6 +20,7 @@ import { PaymentsService } from './payments.service';
 import { PaymentAnalyticsService } from './services/payment-analytics.service';
 import { PaymentCalculationService } from './services/payment-calculation.service';
 import { MobileMoneyPaymentService } from './services/mobile-money-payment.service';
+import { MobileMoneyWebhookSettlementService } from './services/mobile-money-webhook-settlement.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Payment, PaymentMethod, PaymentType, PaymentStatus } from '../../entities/payment.entity';
@@ -69,6 +70,7 @@ export class PaymentsController {
     private readonly paymentAnalyticsService: PaymentAnalyticsService,
     private readonly paymentCalculationService: PaymentCalculationService,
     private readonly mobileMoneyPaymentService: MobileMoneyPaymentService,
+    private readonly mobileMoneyWebhookSettlement: MobileMoneyWebhookSettlementService,
     private readonly configService: ConfigService,
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
@@ -443,16 +445,28 @@ export class PaymentsController {
 
         const transaction = mobileMoneyResponse.savedTransaction || mobileMoneyResponse.transaction;
         const transactionId = transaction?.externalId || transaction?.id || referenceNumber;
+        const txnStatus = transaction?.status || 'pending';
 
-        // Update payment with transaction ID and mark COMPLETED — the mobile money
-        // API confirms the transfer synchronously; marking COMPLETED triggers
-        // handleTripPaymentCompletion so the truck owner sees the received payment.
+        if (txnStatus === 'failed') {
+          await this.paymentsService.updatePaymentStatus(
+            payment.id,
+            {
+              status: PaymentStatus.FAILED,
+              failureReason: 'Mobile Money payment rejected by provider',
+            },
+            req.user.tenantId,
+          );
+          throw new BadRequestException('Mobile Money payment was rejected by the provider.');
+        }
+
+        // Await Ishema webhook — never mark COMPLETED until receiver confirms
         const updatedPayment = await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
-            status: PaymentStatus.COMPLETED,
+            status: PaymentStatus.PROCESSING,
             transactionId: transactionId,
-            gatewayResponse: 'Mobile money payment completed successfully.',
+            gatewayResponse:
+              'Mobile money initiated. Awaiting PIN confirmation and delivery to receiver.',
           },
           req.user.tenantId,
         );
@@ -467,12 +481,13 @@ export class PaymentsController {
         }
 
         this.logger.log(
-          `Mobile Money payment initiated successfully. Transaction ID: ${transactionId}, Reference: ${referenceNumber}. Popup sent to API account: ${apiAccountPhone}, Receiver: ${dto.receiverPhoneNumber}`,
+          `Mobile Money payment initiated. Transaction ID: ${transactionId}, Reference: ${referenceNumber}. Awaiting webhook confirmation.`,
         );
 
         return {
           success: true,
-          message: 'Mobile Money payment completed successfully.',
+          message:
+            'Mobile Money payment initiated. Approve the PIN prompt — funds will be sent after confirmation.',
           data: {
             payment: {
               id: updatedPayment.id,
@@ -485,9 +500,10 @@ export class PaymentsController {
             },
             payerPhoneNumber: apiAccountPhone,
             receiverPhoneNumber: dto.receiverPhoneNumber,
-            transactionStatus: 'completed',
-            transactionId: transactionId,
-            message: 'Payment has been sent to the receiver.',
+            transactionStatus: 'pending',
+            pendingConfirmation: true,
+            message:
+              'Awaiting MoMo PIN approval. Payment completes when the receiver gets the funds.',
           },
         };
       } catch (apiError: any) {
@@ -1593,7 +1609,7 @@ export class PaymentsController {
         )
         .getMany();
 
-      const payment = allPayments[0] || paymentsWithMetadata[0];
+      const payment = allPayments[0] || paymentsWithMetadata[0] || await this.mobileMoneyWebhookSettlement.findPaymentForCallback(callbackData.referenceId);
 
       if (!payment) {
         this.logger.warn(
@@ -1602,9 +1618,21 @@ export class PaymentsController {
         return { message: 'Payment not found', received: true };
       }
 
+      // Skip duplicate webhook processing
+      if (
+        callbackData.status === 'success' &&
+        payment.status === PaymentStatus.COMPLETED
+      ) {
+        this.logger.log(`Payment ${payment.id} already COMPLETED — webhook idempotent`);
+        return {
+          message: 'Already processed',
+          referenceId: callbackData.referenceId,
+          status: callbackData.status,
+        };
+      }
+
       // Update payment status based on callback
       if (callbackData.status === 'success') {
-        // Update payment status to completed
         await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
@@ -1616,20 +1644,7 @@ export class PaymentsController {
           payment.tenantId,
         );
 
-        // Generate invoice and receipt if payment is from lender
-        try {
-          const updatedPayment = await this.paymentsService.findOnePayment(
-            payment.id,
-            payment.tenantId,
-          );
-          // Check if this is a lender payment and generate invoice/receipt
-          if (updatedPayment.metadata?.isLenderPayment) {
-            // This will be handled by the invoice receipt service if needed
-            this.logger.log(`Lender payment completed: ${payment.id}`);
-          }
-        } catch (error) {
-          this.logger.warn('Failed to process payment completion:', error);
-        }
+        await this.mobileMoneyWebhookSettlement.settleSuccessfulPayment(payment, callbackData);
       } else if (callbackData.status === 'failed') {
         await this.paymentsService.updatePaymentStatus(
           payment.id,
@@ -1640,6 +1655,8 @@ export class PaymentsController {
           },
           payment.tenantId,
         );
+
+        await this.mobileMoneyWebhookSettlement.settleFailedPayment(payment, callbackData);
       }
 
       return {

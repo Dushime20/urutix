@@ -592,7 +592,15 @@ const CargoOwnerPayment: React.FC = () => {
 
         toast.dismiss();
         if (response.data?.success) {
-          toast.success(response.data.message || 'Payment completed! The truck owner has received the funds.');
+          const pending =
+            response.data?.data?.pendingConfirmation ||
+            response.data?.data?.transactionStatus === 'pending' ||
+            response.data?.data?.payment?.status === 'processing';
+          toast.success(
+            pending
+              ? (response.data.message || 'PIN prompt sent — payment completes when the truck owner receives funds.')
+              : (response.data.message || 'Payment completed! The truck owner has received the funds.'),
+          );
           setShowPaymentModal(false);
           setSelectedLoad(null);
           setReceiverPhoneNumber('');

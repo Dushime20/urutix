@@ -235,7 +235,9 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
         (paymentInfo?.pendingConfirmation ||
           paymentInfo?.status === 'processing');
 
-      setRepaid(true);
+      if (!pending) {
+        setRepaid(true);
+      }
       setShowPaymentModal(false);
       toast.success(
         pending
@@ -243,7 +245,9 @@ const EnhancedRepayButton: React.FC<EnhancedRepayButtonProps> = ({
           : 'Loan repaid successfully!',
         { duration: 5000 },
       );
-      onRepaymentSuccess?.();
+      if (!pending) {
+        onRepaymentSuccess?.();
+      }
     } catch (err: any) {
       const errorMessage =
         err?.response?.data?.message || 'Repayment failed. Please try again.';
