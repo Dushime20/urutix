@@ -3193,11 +3193,104 @@ export class LendingService {
               },
             };
 
-            processedPayment = await paymentsService.createPayment(
-              createPaymentDto,
-              tenantId,
-              lenderUserId,
-            );
+            try {
+              processedPayment = await paymentsService.createPayment(
+                createPaymentDto,
+                tenantId,
+                lenderUserId,
+              );
+            } catch (paymentErr: any) {
+              if (
+                paymentErr instanceof ConflictException ||
+                paymentErr?.status === 409
+              ) {
+                const reused =
+                  await paymentsService.reuseBlockingLenderDisbursementPayment(
+                    trip.id,
+                    lenderUserId,
+                    loan.id,
+                  );
+                if (reused) {
+                  processedPayment = reused;
+                } else {
+                  throw paymentErr;
+                }
+              } else {
+                throw paymentErr;
+              }
+            }
+
+            // createPayment may return a reused completed row (legacy disbursement)
+            if (processedPayment?.status === PmtStatus.COMPLETED) {
+              this.logger.log(
+                `Loan ${loan.id}: reusing completed payment ${processedPayment.id} — skipping MoMo`,
+              );
+              disbursement.status = DisbursementStatus.DISBURSED;
+              disbursement.disbursement_date = new Date();
+              disbursement.external_txn_ref =
+                processedPayment.transactionId ||
+                processedPayment.referenceNumber;
+              loan.status = LoanRequestStatus.DISBURSED;
+              await manager.save(LoanDisbursement, disbursement);
+              await manager.save(LoanRequest, loan);
+
+              await this.finalizeDisbursementSideEffects(manager, {
+                loan,
+                disbursement,
+                lockedAmount,
+                processedPaymentId: processedPayment.id,
+                tripId: trip.id,
+                lenderUserId,
+                beneficiaries,
+              });
+
+              return {
+                success: true,
+                pendingConfirmation: false,
+                disbursement: savedDisbursement,
+                payment: {
+                  id: processedPayment.id,
+                  status: processedPayment.status,
+                  transactionId: processedPayment.transactionId,
+                  pendingConfirmation: false,
+                },
+                disbursedAmount: lockedAmount,
+                disbursedCurrency: loan.currency,
+                momoAmount: disburseAmount,
+                momoCurrency: disburseCurrency,
+                alreadyDisbursed: true,
+              };
+            }
+
+            const existingTxn =
+              processedPayment?.transactionId ||
+              (processedPayment?.metadata as any)?.momoTransactionId;
+            if (
+              existingTxn &&
+              (processedPayment?.status === PmtStatus.PENDING ||
+                processedPayment?.status === PmtStatus.PROCESSING)
+            ) {
+              disbursement.status = DisbursementStatus.PENDING;
+              disbursement.external_txn_ref = existingTxn;
+              await manager.save(LoanDisbursement, disbursement);
+
+              return {
+                success: true,
+                pendingConfirmation: true,
+                disbursement: savedDisbursement,
+                payment: {
+                  id: processedPayment.id,
+                  status: processedPayment.status,
+                  transactionId: existingTxn,
+                  pendingConfirmation: true,
+                },
+                disbursedAmount: 0,
+                disbursedCurrency: loan.currency,
+                momoAmount: disburseAmount,
+                momoCurrency: disburseCurrency,
+                awaitingPriorConfirmation: true,
+              };
+            }
           }
 
           this.logger.log(

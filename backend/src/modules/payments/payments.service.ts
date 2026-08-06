@@ -86,16 +86,72 @@ export class PaymentsService {
     private readonly eventEmitter?: EventEmitter2,
   ) {}
 
-  /** Whether a payment row represents a lender disbursement for a specific loan. */
-  private paymentBelongsToLoanDisbursement(
-    payment: Payment,
-    loanId: string,
-  ): boolean {
+  /** Repayment obligations are cargo-owner → lender, not disbursements. */
+  private isRepaymentObligation(payment: Payment): boolean {
+    return (payment.metadata as any)?.isLoanRepaymentObligation === true;
+  }
+
+  /** Cargo-owner direct trip settlement — not a lender disbursement. */
+  private isCargoOwnerDirectPayment(payment: Payment): boolean {
     const meta = (payment.metadata || {}) as Record<string, any>;
-    if (meta.isLoanRepaymentObligation === true) return false;
-    if (meta.loanId === loanId) return true;
+    if (meta.isLenderPayment === true) return false;
+    if (meta.isLoanRepaymentObligation) return false;
+    return (
+      meta.senderType === 'cargo_owner' ||
+      meta.paymentSource === 'direct_payment' ||
+      meta.customFields?.paymentSource === 'direct_payment'
+    );
+  }
+
+  /**
+   * Can this (tripId, payerId) row be reused for a lender disbursement?
+   * DB allows only one active trip_payment per payer per trip — if the lender
+   * already has a completed row, it must be a prior disbursement attempt.
+   */
+  private canReuseAsLenderDisbursement(payment: Payment): boolean {
+    if (this.isRepaymentObligation(payment)) return false;
+    if (this.isCargoOwnerDirectPayment(payment)) return false;
+    return true;
+  }
+
+  /** Prefer a row explicitly tied to this loan when multiple exist. */
+  private preferLoanLinkedPayment(
+    payments: Payment[],
+    loanId: string,
+  ): Payment | undefined {
     const prefix = loanId.slice(0, 8).toUpperCase();
-    return !!payment.referenceNumber?.startsWith(`LOAN-${prefix}-DISB-`);
+    return (
+      payments.find((p) => (p.metadata as any)?.loanId === loanId) ??
+      payments.find((p) => p.referenceNumber?.startsWith(`LOAN-${prefix}`)) ??
+      payments.find((p) =>
+        p.description?.toLowerCase().includes('loan disbursement'),
+      ) ??
+      payments[0]
+    );
+  }
+
+  /** All active trip/advance payments for a payer on a trip, newest first. */
+  private async findActivePaymentsForTripPayer(
+    tripId: string,
+    payerId: string,
+  ): Promise<Payment[]> {
+    return this.paymentRepository
+      .createQueryBuilder('p')
+      .where('p.tripId = :tripId', { tripId })
+      .andWhere('p.payerId = :payerId', { payerId })
+      .andWhere('p.status IN (:...statuses)', {
+        statuses: [
+          PaymentStatus.PENDING,
+          PaymentStatus.PROCESSING,
+          PaymentStatus.COMPLETED,
+        ],
+      })
+      .andWhere('p.paymentType IN (:...types)', {
+        types: [PaymentType.ADVANCE, PaymentType.TRIP_PAYMENT],
+      })
+      .andWhere('p.deleted_at IS NULL')
+      .orderBy('p.createdAt', 'DESC')
+      .getMany();
   }
 
   /** Backfill metadata on legacy disbursement rows missing isLenderPayment. */
@@ -113,39 +169,23 @@ export class PaymentsService {
       loanId,
       metadataBackfilledAt: new Date().toISOString(),
     };
-    return this.paymentRepository.save(payment);
+    const saved = await this.paymentRepository.save(payment);
+    this.logger.log(
+      `Backfilled lender disbursement metadata on payment ${saved.id} for loan ${loanId}`,
+    );
+    return saved;
   }
 
   /**
-   * Find active lender-disbursement payments for a trip+payer+loan.
-   * Matches by metadata.loanId, LOAN-*-DISB reference, or isLenderPayment flag.
+   * Find reusable lender-disbursement payment rows for a trip+payer+loan.
    */
   async findDisbursementPaymentsForLoan(
     tripId: string,
     payerId: string,
     loanId: string,
   ): Promise<Payment[]> {
-    const candidates = await this.paymentRepository
-      .createQueryBuilder('p')
-      .where('p.tripId = :tripId', { tripId })
-      .andWhere('p.payerId = :payerId', { payerId })
-      .andWhere('p.status IN (:...statuses)', {
-        statuses: [
-          PaymentStatus.PENDING,
-          PaymentStatus.PROCESSING,
-          PaymentStatus.COMPLETED,
-        ],
-      })
-      .andWhere('p.paymentType IN (:...types)', {
-        types: [PaymentType.ADVANCE, PaymentType.TRIP_PAYMENT],
-      })
-      .andWhere('p.deleted_at IS NULL')
-      .orderBy('p.createdAt', 'DESC')
-      .getMany();
-
-    return candidates.filter((p) =>
-      this.paymentBelongsToLoanDisbursement(p, loanId),
-    );
+    const candidates = await this.findActivePaymentsForTripPayer(tripId, payerId);
+    return candidates.filter((p) => this.canReuseAsLenderDisbursement(p));
   }
 
   /**
@@ -167,13 +207,14 @@ export class PaymentsService {
       loanId,
     );
 
-    const completed = existing.find(
+    const completed = existing.filter(
       (p) => p.status === PaymentStatus.COMPLETED,
     );
-    if (completed) {
-      const patched = await this.ensureLenderDisbursementMetadata(
-        completed,
-        loanId,
+    if (completed.length > 0) {
+      const match = this.preferLoanLinkedPayment(completed, loanId)!;
+      const patched = await this.ensureLenderDisbursementMetadata(match, loanId);
+      this.logger.log(
+        `Preflight: reusing completed disbursement payment ${patched.id} for loan ${loanId}`,
       );
       return { outcome: 'already_completed', payment: patched };
     }
@@ -189,6 +230,27 @@ export class PaymentsService {
     }
 
     return { outcome: 'proceed' };
+  }
+
+  /**
+   * Reconcile a stuck loan when createPayment would block on an existing row.
+   */
+  async reuseBlockingLenderDisbursementPayment(
+    tripId: string,
+    payerId: string,
+    loanId: string,
+  ): Promise<Payment | null> {
+    const existing = await this.findDisbursementPaymentsForLoan(
+      tripId,
+      payerId,
+      loanId,
+    );
+    const completed = existing.filter(
+      (p) => p.status === PaymentStatus.COMPLETED,
+    );
+    if (completed.length === 0) return null;
+    const match = this.preferLoanLinkedPayment(completed, loanId)!;
+    return this.ensureLenderDisbursementMetadata(match, loanId);
   }
 
   /**
@@ -298,10 +360,13 @@ export class PaymentsService {
           (p) => p.status === PaymentStatus.COMPLETED,
         );
         if (completed) {
+          const reused = loanId
+            ? await this.ensureLenderDisbursementMetadata(completed, loanId)
+            : completed;
           this.logger.log(
-            `Reusing completed lender payment ${completed.id} for trip ${createPaymentDto.tripId} loan ${loanId || 'n/a'}`,
+            `Reusing completed lender payment ${reused.id} for trip ${createPaymentDto.tripId} loan ${loanId || 'n/a'}`,
           );
-          return completed;
+          return reused;
         }
 
         const inFlight = existingLender.find(
@@ -359,25 +424,30 @@ export class PaymentsService {
             p.status === PaymentStatus.PENDING ||
             p.status === PaymentStatus.PROCESSING,
         );
-        const blockingCompleted = blocking.filter(
-          (p) => p.status === PaymentStatus.COMPLETED,
+        const blockingCompleted = blocking
+          .filter((p) => p.status === PaymentStatus.COMPLETED)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          );
+        const reusableCompleted = blockingCompleted.filter((p) =>
+          this.canReuseAsLenderDisbursement(p),
         );
+        if (reusableCompleted.length > 0) {
+          const toReuse = loanId
+            ? this.preferLoanLinkedPayment(reusableCompleted, loanId)!
+            : reusableCompleted[0];
+          const reused = await this.ensureLenderDisbursementMetadata(
+            toReuse,
+            loanId!,
+          );
+          this.logger.log(
+            `Reusing completed disbursement payment ${reused.id} for loan ${loanId} ` +
+              `(legacy row — only one trip_payment allowed per lender payer)`,
+          );
+          return reused;
+        }
         if (blockingCompleted.length > 0) {
-          const forThisLoan = loanId
-            ? blockingCompleted.find((p) =>
-                this.paymentBelongsToLoanDisbursement(p, loanId),
-              )
-            : undefined;
-          if (forThisLoan) {
-            const reused = await this.ensureLenderDisbursementMetadata(
-              forThisLoan,
-              loanId!,
-            );
-            this.logger.log(
-              `Reusing completed disbursement payment ${reused.id} for loan ${loanId}`,
-            );
-            return reused;
-          }
           throw new ConflictException(
             `An active payment already exists for this trip (id: ${blockingCompleted[0].id}, type: ${blockingCompleted[0].paymentType}). Duplicate lender disbursement payments are not allowed.`,
           );
