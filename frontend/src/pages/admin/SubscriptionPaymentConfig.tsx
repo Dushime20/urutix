@@ -28,7 +28,8 @@ const normalizeMomoPhone = (raw: string): string | null => {
   let cleaned = raw.replace(/\D/g, '');
   while (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
   if (!cleaned.startsWith('250')) cleaned = `250${cleaned}`;
-  return /^2507\d{8}$/.test(cleaned) ? cleaned : null;
+  // Support MTN (078/079) and Airtel (072/073) - 12 digits total
+  return /^250(78|79|72|73)\d{7}$/.test(cleaned) ? cleaned : null;
 };
 
 const SubscriptionPaymentConfig: React.FC = () => {
@@ -87,7 +88,7 @@ const SubscriptionPaymentConfig: React.FC = () => {
         return;
       }
       if (!normalizeMomoPhone(form.momo_phone)) {
-        toast.error('Enter a valid Rwanda MoMo number, e.g. 0788123456');
+        toast.error('Enter a valid Rwanda MoMo number: 0788123456 (MTN), 0791234567 (MTN), 0728123456 (Airtel), or 0738123456 (Airtel)');
         return;
       }
     } else {
@@ -163,7 +164,7 @@ const SubscriptionPaymentConfig: React.FC = () => {
                 type="tel"
                 value={form.momo_phone}
                 onChange={e => setForm(f => ({ ...f, momo_phone: e.target.value }))}
-                placeholder="0788123456"
+                placeholder="0788123456 (MTN) or 0738123456 (Airtel)"
                 className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
               <p className="text-xs text-slate-500 mt-1">

@@ -22,12 +22,13 @@ interface Props {
 
 type PaymentMethod = 'mobile_money' | 'bank_transfer' | 'card';
 
-/** Normalize Rwanda MoMo number to 2507XXXXXXXX (same rules as backend Ishema). */
+/** Normalize Rwanda MoMo number to support both MTN (078/079) and Airtel (072/073). */
 const normalizeMomoPhone = (raw: string): string | null => {
   let cleaned = raw.replace(/\D/g, '');
   while (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
   if (!cleaned.startsWith('250')) cleaned = `250${cleaned}`;
-  return /^2507\d{8}$/.test(cleaned) ? cleaned : null;
+  // Support MTN (078/079) and Airtel (072/073) - 12 digits total
+  return /^250(78|79|72|73)\d{7}$/.test(cleaned) ? cleaned : null;
 };
 
 const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) => {
@@ -129,7 +130,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
         return false;
       }
       if (!normalizeMomoPhone(payerPhone)) {
-        toast.error('Enter a valid Rwanda MoMo payer number, e.g. 0788123456');
+        toast.error('Enter a valid Rwanda MoMo payer number: 0788123456 (MTN), 0791234567 (MTN), 0728123456 (Airtel), or 0738123456 (Airtel)');
         return false;
       }
       const payer = normalizeMomoPhone(payerPhone);
@@ -444,7 +445,7 @@ const LoanDisbursementModal: React.FC<Props> = ({ loan, onClose, onSuccess }) =>
                         <Phone className="w-3.5 h-3.5" /> Your MoMo Number (Payer)
                       </label>
                       <input type="tel" value={payerPhone} onChange={e => setPayerPhone(e.target.value)}
-                        placeholder="0788123456 — receives PIN prompt"
+                        placeholder="0788123456 or 0738123456 — receives PIN prompt"
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl text-sm font-bold focus:border-[#345E85] outline-none" />
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                         Ishema sends the PIN to this number. Funds are sent to{' '}
