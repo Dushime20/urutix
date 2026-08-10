@@ -1585,6 +1585,10 @@ export class PaymentsController {
     }
 
     try {
+      // Enhanced webhook logging
+      this.logger.log(`Mobile Money webhook received: ${payload.referenceId} → ${payload.status}`);
+      this.logger.debug(`Full webhook payload: ${JSON.stringify(payload, null, 2)}`);
+      
       // Process the callback
       const callbackData = await this.mobileMoneyPaymentService.processCallback(payload);
 
@@ -1613,10 +1617,12 @@ export class PaymentsController {
 
       if (!payment) {
         this.logger.warn(
-          `Payment not found for Mobile Money reference: ${callbackData.referenceId}`,
+          `Payment not found for Mobile Money reference: ${callbackData.referenceId}. Searched ${allPayments.length} direct matches, ${paymentsWithMetadata.length} metadata matches.`,
         );
         return { message: 'Payment not found', received: true };
       }
+
+      this.logger.log(`Found payment ${payment.id} for reference ${callbackData.referenceId}, current status: ${payment.status}`);
 
       if (
         payment.status === PaymentStatus.CANCELLED ||
@@ -1649,17 +1655,22 @@ export class PaymentsController {
 
       // Update payment status based on callback
       if (callbackData.status === 'success') {
+        this.logger.log(`Processing successful webhook for payment ${payment.id}, amount: ${callbackData.amount}`);
+        
         const isLenderCollection =
           !!(payment.metadata as any)?.isLenderPayment &&
           (payment.metadata as any)?.momoPhase === 'collection';
 
+        this.logger.log(`Payment type: ${isLenderCollection ? 'Lender Collection' : 'Regular Payment'}`);
+
         // Lender leg-1 collection: keep PROCESSING until payout webhook completes
+        const newStatus = isLenderCollection ? PaymentStatus.PROCESSING : PaymentStatus.COMPLETED;
+        this.logger.log(`Updating payment ${payment.id} status from ${payment.status} to ${newStatus}`);
+
         await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
-            status: isLenderCollection
-              ? PaymentStatus.PROCESSING
-              : PaymentStatus.COMPLETED,
+            status: newStatus,
             transactionId: payment.transactionId || callbackData.referenceId,
             gatewayResponse: callbackData.message || 'Mobile Money payment confirmed',
             processedAt: new Date(),
@@ -1668,7 +1679,10 @@ export class PaymentsController {
         );
 
         await this.mobileMoneyWebhookSettlement.settleSuccessfulPayment(payment, callbackData);
+        this.logger.log(`Successfully processed webhook for payment ${payment.id}`);
       } else if (callbackData.status === 'failed') {
+        this.logger.error(`Processing failed webhook for payment ${payment.id}, reason: ${callbackData.message}`);
+        
         await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
@@ -1680,6 +1694,7 @@ export class PaymentsController {
         );
 
         await this.mobileMoneyWebhookSettlement.settleFailedPayment(payment, callbackData);
+        this.logger.log(`Successfully processed failed webhook for payment ${payment.id}`);
       }
 
       return {

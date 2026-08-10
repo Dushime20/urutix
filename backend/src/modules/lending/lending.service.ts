@@ -3705,14 +3705,35 @@ export class LendingService {
             `| later payout → ${formattedBeneficiary}`,
           );
 
-          const momoResponse = await mobileMoneyService.createTransaction(
-            disburseAmount,
-            payerPhone,
-            referenceNumber,
-            paymentMessage,
-            transfers,
-            this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL'),
-          );
+          let momoResponse;
+          try {
+            this.logger.log(`Calling Ishema API for loan ${loan.id} disbursement...`);
+            momoResponse = await mobileMoneyService.createTransaction(
+              disburseAmount,
+              payerPhone,
+              referenceNumber,
+              paymentMessage,
+              transfers,
+              this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL'),
+            );
+            this.logger.log(`Ishema API call successful for loan ${loan.id}`);
+          } catch (momoError: any) {
+            this.logger.error(`Ishema API call failed for loan ${loan.id}:`, momoError.message);
+            this.logger.error(`Loan details: payer=${payerPhone}, amount=${disburseAmount}, currency=${disburseCurrency}`);
+            
+            // Log specific error details for troubleshooting
+            if (momoError.response?.status === 400) {
+              this.logger.error(`Bad Request (400): Check phone number format or API parameters`);
+            } else if (momoError.response?.status === 401) {
+              this.logger.error(`Unauthorized (401): Check MOBILE_MONEY_API_KEY configuration`);
+            } else if (momoError.response?.status === 404) {
+              this.logger.error(`Not Found (404): Check MOBILE_MONEY_API_URL configuration`);
+            } else if (momoError.response?.status >= 500) {
+              this.logger.error(`Server Error (${momoError.response?.status}): Ishema API server issue`);
+            }
+            
+            throw momoError; // Re-throw to be handled by outer catch block
+          }
 
           const transaction =
             momoResponse.savedTransaction || momoResponse.transaction;
@@ -3785,6 +3806,21 @@ export class LendingService {
             momoCurrency: disburseCurrency,
           };
         } catch (error: any) {
+          // Enhanced error logging for debugging
+          this.logger.error(`Mobile money disbursement failed for loan ${loan.id}:`);
+          this.logger.error(`Error type: ${error.constructor.name}`);
+          this.logger.error(`Error message: ${error.message}`);
+          this.logger.error(`Payer phone: ${payerPhone} (original: ${rawPayerPhone})`);
+          this.logger.error(`Platform phone: ${platformPhone}`);
+          this.logger.error(`Beneficiary phone: ${formattedBeneficiary}`);
+          this.logger.error(`Amount: ${disburseAmount} ${disburseCurrency}`);
+          this.logger.error(`Reference: ${referenceNumber}`);
+          
+          if (error.response) {
+            this.logger.error(`HTTP Status: ${error.response.status}`);
+            this.logger.error(`HTTP Response: ${JSON.stringify(error.response.data, null, 2)}`);
+          }
+
           savedDisbursement.status = DisbursementStatus.FAILED;
           savedDisbursement.failure_reason = error.message;
           await manager.save(LoanDisbursement, savedDisbursement);
@@ -3806,9 +3842,15 @@ export class LendingService {
                     ...(processedPayment.metadata || {}),
                     cancelledReason: 'Disbursement attempt failed',
                     cancelledAt: new Date().toISOString(),
+                    errorDetails: {
+                      errorType: error.constructor.name,
+                      httpStatus: error.response?.status,
+                      apiResponse: error.response?.data,
+                    },
                   },
                 } as any,
               );
+              this.logger.log(`Cancelled payment ${processedPayment.id} due to disbursement failure`);
             } catch (cancelErr: any) {
               this.logger.warn(
                 `Could not cancel payment ${processedPayment.id} after failed disbursement: ${cancelErr.message}`,

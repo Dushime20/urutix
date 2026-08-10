@@ -104,7 +104,16 @@ export class MobileMoneyPaymentService {
     const callbackUrl =
       this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL') || '';
     const currencyRaw = this.configService.get<string>('MOBILE_MONEY_CURRENCY');
+    
+    // Log configuration status (without sensitive values)
+    this.logger.debug(`Mobile Money Config Check:`);
+    this.logger.debug(`API URL: ${apiUrl}`);
+    this.logger.debug(`API Key: ${apiKey ? '[CONFIGURED]' : '[MISSING]'}`);
+    this.logger.debug(`Callback URL: ${callbackUrl || '[EMPTY]'}`);
+    this.logger.debug(`Currency: ${currencyRaw || '[NOT SET]'}`);
+    
     if (!currencyRaw || !/^[A-Z]{3}$/i.test(currencyRaw)) {
+      this.logger.error('MOBILE_MONEY_CURRENCY must be configured as a valid ISO 4217 code.');
       throw new BadRequestException(
         'MOBILE_MONEY_CURRENCY must be configured as a valid ISO 4217 code.',
       );
@@ -116,14 +125,18 @@ export class MobileMoneyPaymentService {
     const accountPhoneNumber = this.configService.get<string>(
       'MOBILE_MONEY_ACCOUNT_PHONE',
     );
+    
+    this.logger.debug(`Account Phone: ${accountPhoneNumber ? '[CONFIGURED]' : '[MISSING]'}`);
 
     if (!apiKey) {
+      this.logger.error('Mobile Money API key is not configured. Set MOBILE_MONEY_API_KEY.');
       throw new BadRequestException(
         'Mobile Money API key is not configured. Set MOBILE_MONEY_API_KEY.',
       );
     }
 
     if (!accountPhoneNumber) {
+      this.logger.error('Mobile Money account phone is not configured. Set MOBILE_MONEY_ACCOUNT_PHONE.');
       throw new BadRequestException(
         'Mobile Money account phone is not configured. Set MOBILE_MONEY_ACCOUNT_PHONE.',
       );
@@ -248,6 +261,9 @@ export class MobileMoneyPaymentService {
           `| reference: ${referenceId}`,
       );
 
+      this.logger.debug(`Mobile Money API payload: ${JSON.stringify(payload, null, 2)}`);
+      this.logger.debug(`API URL: ${config.apiUrl}/api/v3/transaction?apiKey=${config.apiKey ? '[REDACTED]' : '[MISSING]'}`);
+
       const response: any = await firstValueFrom(
         this.httpService.post(
           `${config.apiUrl}/api/v3/transaction?apiKey=${config.apiKey}`,
@@ -267,11 +283,39 @@ export class MobileMoneyPaymentService {
       const externalId =
         transactionData.savedTransaction?.externalId ||
         transactionData.transaction?.externalId;
-      this.logger.log(`Mobile Money transaction created: externalId=${externalId}`);
+      
+      this.logger.log(`Mobile Money transaction created successfully: externalId=${externalId}, status=${transactionData.savedTransaction?.status || transactionData.transaction?.status}`);
+      this.logger.debug(`Full API response: ${JSON.stringify(transactionData, null, 2)}`);
 
       return transactionData;
     } catch (error: any) {
-      this.logger.error('Mobile Money transaction creation failed:', error);
+      this.logger.error(`Mobile Money transaction creation failed for payer ${formattedPayer} (${networkOperator}):`, error.message);
+
+      // Log detailed error information
+      if (error.response) {
+        this.logger.error(`API Error Response Status: ${error.response.status}`);
+        this.logger.error(`API Error Response Headers: ${JSON.stringify(error.response.headers, null, 2)}`);
+        this.logger.error(`API Error Response Data: ${JSON.stringify(error.response.data, null, 2)}`);
+        
+        // Check for specific Ishema API error patterns
+        if (error.response.data?.message) {
+          this.logger.error(`Ishema API Error Message: ${error.response.data.message}`);
+        }
+        
+        if (error.response.data?.error) {
+          this.logger.error(`Ishema API Error Details: ${error.response.data.error}`);
+        }
+
+        // Log potential network operator compatibility issues
+        if (networkOperator === 'AIRTEL' && error.response.status >= 400) {
+          this.logger.warn(`Potential Airtel compatibility issue detected. Status: ${error.response.status}`);
+        }
+      } else if (error.request) {
+        this.logger.error('No response received from Ishema API');
+        this.logger.error(`Request timeout or network error: ${error.code || 'UNKNOWN'}`);
+      } else {
+        this.logger.error(`Request setup error: ${error.message}`);
+      }
 
       // Log the full API error body for debugging
       if (error.response?.data) {
