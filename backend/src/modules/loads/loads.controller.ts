@@ -1885,8 +1885,9 @@ export class LoadsController {
 
   @Get(':loadId/history')
   @ApiOperation({
-    summary: 'Change history (audit log)',
-    description: 'Retrieves the complete audit log for a load',
+    summary: 'Cargo activity history',
+    description:
+      'Retrieves the full cargo activity timeline: broker assignment, bidding/winning, inspections, loading, trip start, unloading, delivery, and other lifecycle events with timestamps',
   })
   @ApiParam({ name: 'loadId', description: 'Load ID' })
   @ApiQuery({

@@ -1072,6 +1072,7 @@ export class BiddingService {
 
       this.eventEmitter.emit('auction.winner.selected', {
         auctionId: auction?.id || bid.loadId,
+        loadId: bid.loadId,
         winnerId: bid.truckOwnerId,
         winnerName,
         cargoOwnerId: bid.load.cargoOwnerId,

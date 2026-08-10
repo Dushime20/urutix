@@ -276,4 +276,6 @@ export const loadsAPI = {
   analyzeCargoRoute: (id: string) => api.get(`/loads/${id}/route-analysis`),
   getLocationSuggestions: (params: any) =>
     api.get("/loads/location-suggestions", { params }),
+  getHistory: (id: string, params?: { page?: number; limit?: number }) =>
+    api.get(`/loads/${id}/history`, { params }),
 };

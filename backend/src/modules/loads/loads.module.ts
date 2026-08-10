@@ -1,10 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoadsController } from './loads.controller';
 import { LoadsService } from './loads.service';
 import { LoadTemplateController } from './load-template.controller';
 import { LoadTemplateService } from './load-template.service';
+import { LoadHistoryService } from './services/load-history.service';
+import { LoadAuditService } from './services/load-audit.service';
+import { CargoHistoryListener } from './listeners/cargo-history.listener';
 import { Load } from '../../entities/load.entity';
 import { LoadTemplate } from '../../entities/load-template.entity';
 import { Document } from '../../entities/document.entity';
@@ -19,6 +22,9 @@ import { Payment } from '../../entities/payment.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Truck } from '../../entities/truck.entity';
 import { UserProfile } from '../../entities/user-profile.entity';
+import { CargoInspection } from '../../entities/cargo-inspection.entity';
+import { BrokerCommission } from '../../entities/broker-commission.entity';
+import { TripEvent } from '../tracking/entities/trip-event.entity';
 import { LocationsModule } from '../locations/locations.module';
 import { FileUploadModule } from '../file-upload/file-upload.module';
 import { MatchingModule } from '../matching/matching.module';
@@ -44,16 +50,32 @@ import { TenantGuard } from '../auth/guards/tenant.guard';
       Trip,
       Truck,
       UserProfile,
+      CargoInspection,
+      BrokerCommission,
+      TripEvent,
     ]),
     ScheduleModule.forRoot(),
     LocationsModule,
     FileUploadModule,
     MatchingModule,
     EnhancedAuthModule,
-    BrokersModule,
+    forwardRef(() => BrokersModule),
   ],
   controllers: [LoadsController, LoadTemplateController],
-  providers: [LoadsService, LoadTemplateService, RolesGuard, TenantGuard],
-  exports: [LoadsService, LoadTemplateService],
+  providers: [
+    LoadsService,
+    LoadTemplateService,
+    LoadHistoryService,
+    LoadAuditService,
+    CargoHistoryListener,
+    RolesGuard,
+    TenantGuard,
+  ],
+  exports: [
+    LoadsService,
+    LoadTemplateService,
+    LoadAuditService,
+    LoadHistoryService,
+  ],
 })
 export class LoadsModule {}

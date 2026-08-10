@@ -838,6 +838,7 @@ export class TripsService {
 
       this.eventEmitter.emit('trip.started', {
         tripId: trip.id,
+        loadId: trip.loadId,
         driverId: trip.driverId,
         driverName,
         cargoOwnerId: load?.cargoOwnerId,
@@ -871,6 +872,7 @@ export class TripsService {
 
       this.eventEmitter.emit('trip.completed', {
         tripId: trip.id,
+        loadId: trip.loadId,
         driverId: trip.driverId,
         driverName,
         cargoOwnerId: load?.cargoOwnerId,

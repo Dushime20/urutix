@@ -68,6 +68,7 @@ interface CargoDetailsModalProps {
 }
 
 import BottomSheet from '@/components/common/BottomSheet';
+import CargoHistoryTab from '@/components/Cargo/CargoHistoryTab';
 
 // Helper: safe date format
 const fmtDate = (d: any) => {
@@ -697,16 +698,11 @@ const CargoDetailsModal = ({ isOpen, onClose, cargoId, cargoData: propCargoData 
                 )}
 
                 {activeTab === 'history' && (
-                  <div className="bg-gradient-to-r from-gray-50 to-purple-50 rounded-lg p-6 border border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <Clock3 className="w-5 h-5 mr-2 text-purple-600" />
-                      History
-                    </h3>
-                    <div className="text-center py-8">
-                      <Clock3 className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                      <p className="text-gray-600 mb-4">Cargo history and audit trail will be implemented here.</p>
-                      <p className="text-sm text-gray-500">This will include status changes, updates, and activity logs.</p>
-                    </div>
+                  <div className="bg-white rounded-lg p-4 md:p-6 border border-gray-200">
+                    <CargoHistoryTab
+                      cargoId={cargoId}
+                      enabled={isOpen && activeTab === 'history'}
+                    />
                   </div>
                 )}
 

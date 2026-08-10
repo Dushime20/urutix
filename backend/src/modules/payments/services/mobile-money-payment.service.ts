@@ -152,14 +152,30 @@ export class MobileMoneyPaymentService {
       cleaned = '250' + cleaned;
     }
 
-    // Rwanda MoMo: 250 + 9-digit local = 12 digits (e.g. 250788123456)
-    if (!/^2507\d{8}$/.test(cleaned)) {
+    // Rwanda Mobile Numbers: 250 + 9 digits = 12 total digits
+    // MTN (078/079), Airtel (072/073)
+    if (!/^250(78|79|72|73)\d{7}$/.test(cleaned)) {
       throw new BadRequestException(
-        `Invalid mobile money phone "${phone}". Use a Rwanda number like 0788123456 or 250788123456.`,
+        `Invalid mobile money phone "${phone}". Rwanda mobile numbers: 250 + 9 digits (12 total). Examples: 250781234567 (MTN), 250791234567 (MTN), 250721234567 (Airtel), 250731234567 (Airtel).`,
       );
     }
 
     return cleaned;
+  }
+
+  /**
+   * Detect mobile network operator from phone number
+   */
+  detectNetworkOperator(phoneNumber: string): 'MTN' | 'AIRTEL' | 'UNKNOWN' {
+    const cleaned = this.formatPhoneNumber(phoneNumber);
+    
+    if (/^250(78|79)\d{7}$/.test(cleaned)) {
+      return 'MTN';
+    } else if (/^250(72|73)\d{7}$/.test(cleaned)) {
+      return 'AIRTEL';
+    }
+    
+    return 'UNKNOWN';
   }
 
   /**
@@ -205,6 +221,7 @@ export class MobileMoneyPaymentService {
     }
 
     const formattedPayer = this.formatPhoneNumber(payerPhone);
+    const networkOperator = this.detectNetworkOperator(payerPhone);
     const truncatedMessage = senderMessage.substring(0, 160);
 
     const formattedTransfers: MobileMoneyTransfer[] = transfers.map((t) => ({
@@ -226,7 +243,7 @@ export class MobileMoneyPaymentService {
     try {
       this.logger.log(
         `Creating Mobile Money transaction: ${payload.amount} ${config.currency} ` +
-          `| payer: ${formattedPayer} ` +
+          `| payer: ${formattedPayer} (${networkOperator}) ` +
           `| receiver(s): ${formattedTransfers.map((t) => t.phoneNumber).join(', ')} ` +
           `| reference: ${referenceId}`,
       );

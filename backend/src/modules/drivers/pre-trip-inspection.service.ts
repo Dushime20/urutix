@@ -44,6 +44,7 @@ import {
   NotificationType,
 } from '../../entities/notification.entity';
 import { EventsGateway } from '../events/events.gateway';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PreTripInspectionService {
@@ -60,6 +61,7 @@ export class PreTripInspectionService {
     private readonly userRepository: Repository<User>,
     private readonly notificationService: NotificationService,
     private readonly eventsGateway: EventsGateway,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async getAssignedLoadsWithInspectionStatus(
@@ -233,6 +235,13 @@ export class PreTripInspectionService {
       nextWorkflow,
       'TRUCK_INSPECTION_COMPLETED',
     );
+
+    this.eventEmitter.emit('cargo.inspection.started', {
+      loadId,
+      actorId: driver.userId,
+      actorName: `${driver.firstName || ''} ${driver.lastName || ''}`.trim(),
+      inspectionType: 'TRUCK',
+    });
 
     return {
       workflowStatus: nextWorkflow.status,
@@ -612,6 +621,16 @@ export class PreTripInspectionService {
       await this.notifyInspectionFailed(load, driver, savedInspection.id, issues);
     }
 
+    this.eventEmitter.emit('cargo.inspection.completed', {
+      loadId,
+      actorId: driver.userId,
+      actorName: `${driver.firstName || ''} ${driver.lastName || ''}`.trim(),
+      inspectionType: 'PRE_TRIP',
+      inspectionId: savedInspection.id,
+      decision: dto.decision,
+      status: savedInspection.status,
+    });
+
     return {
       inspection: savedInspection,
       workflowStatus: nextWorkflow.status,
@@ -694,6 +713,12 @@ export class PreTripInspectionService {
       userId,
       dto.approvalNotes,
     );
+
+    this.eventEmitter.emit('cargo.inspection.approved', {
+      loadId,
+      actorId: userId,
+      notes: dto.approvalNotes,
+    });
 
     return {
       loadId,

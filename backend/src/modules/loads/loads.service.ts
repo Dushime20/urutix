@@ -86,6 +86,7 @@ import { MatchRequestDto } from '../matching/dto/match-request.dto';
 import { BrokersService } from '../brokers/brokers.service';
 import { FileUploadService } from '../file-upload/file-upload.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { LoadHistoryService } from './services/load-history.service';
 
 export interface LoadsQueryOptions {
   page?: number;
@@ -196,6 +197,7 @@ export class LoadsService {
     private readonly truckRepository: Repository<Truck>,
     private readonly dataSource: DataSource,
     private readonly locationEnrichmentService: OSMLocationEnrichmentService,
+    private readonly loadHistoryService: LoadHistoryService,
     @Optional() private readonly matchingService?: MatchingService, // Optional - MatchingService from MatchingModule
     @Optional() private readonly brokersService?: BrokersService, // Optional - BrokersService from BrokersModule
     @Optional() private readonly fileUploadService?: FileUploadService,
@@ -2177,7 +2179,7 @@ export class LoadsService {
   }
 
   /**
-   * Get audit history for a load
+   * Get audit history for a load (composite timeline of all cargo activity)
    */
   async getLoadHistory(
     loadId: string,
@@ -2185,26 +2187,13 @@ export class LoadsService {
     page: number = 1,
     limit: number = 50,
   ): Promise<{
-    items: AuditEvent[];
+    items: any[];
     total: number;
     page: number;
     limit: number;
   }> {
-    await this.findOne(loadId, tenantId, null); // No user check for history
-
-    const [items, total] = await this.auditEventRepository.findAndCount({
-      where: { loadId },
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-    };
+    await this.findOne(loadId, tenantId, null); // ensure load exists / tenant access
+    return this.loadHistoryService.getHistory(loadId, tenantId, page, limit);
   }
 
   /**

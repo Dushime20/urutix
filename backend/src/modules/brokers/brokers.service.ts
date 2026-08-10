@@ -38,6 +38,7 @@ import {
   EntityType,
 } from '../../entities/notification.entity';
 import { MessageRole } from '../../entities/message.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class BrokersService {
@@ -64,6 +65,7 @@ export class BrokersService {
     private readonly notificationsService: NotificationsService,
     private readonly smsService: SmsService,
     private readonly messengerService: MessengerService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   /**
@@ -376,6 +378,7 @@ export class BrokersService {
     loadId: string,
     tenantId: string,
     assignDto: AssignBrokerToLoadDto,
+    actorId?: string,
   ): Promise<Load> {
     // Verify load exists and belongs to tenant
     const load = await this.loadRepository.findOne({
@@ -455,6 +458,21 @@ export class BrokersService {
         err.stack,
       ),
     );
+
+    const brokerName =
+      broker.profile?.firstName ||
+      broker.profile?.companyName ||
+      broker.email ||
+      'Broker';
+
+    this.eventEmitter.emit('cargo.broker.assigned', {
+      loadId,
+      brokerId: broker.id,
+      brokerName,
+      actorId: actorId || load.cargoOwnerId,
+      commissionRate,
+      commissionAmount,
+    });
 
     return this.loadRepository.findOne({
       where: { id: loadId },
@@ -589,7 +607,11 @@ export class BrokersService {
   /**
    * Unassign broker from load
    */
-  async unassignBrokerFromLoad(loadId: string, tenantId: string): Promise<Load> {
+  async unassignBrokerFromLoad(
+    loadId: string,
+    tenantId: string,
+    actorId?: string,
+  ): Promise<Load> {
     const load = await this.loadRepository.findOne({
       where: { id: loadId, tenantId },
     });
@@ -597,6 +619,8 @@ export class BrokersService {
     if (!load) {
       throw new NotFoundException('Load not found or you do not have permission');
     }
+
+    const previousBrokerId = load.brokerId;
 
     load.brokerId = null;
     load.brokerCommissionRate = null;
@@ -611,6 +635,12 @@ export class BrokersService {
       { loadId, status: CommissionStatus.PENDING },
       { status: CommissionStatus.CANCELLED },
     );
+
+    this.eventEmitter.emit('cargo.broker.unassigned', {
+      loadId,
+      previousBrokerId,
+      actorId: actorId || load.cargoOwnerId,
+    });
 
     return this.loadRepository.findOne({
       where: { id: loadId },

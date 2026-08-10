@@ -1274,6 +1274,13 @@ export class DriverService {
         `Driver ${driver.id} (userId: ${driver.userId}) accepted and loaded cargo ${loadId}`,
       );
 
+      this.eventEmitter.emit('cargo.loaded', {
+        loadId,
+        driverId: driver.userId,
+        driverName: `${driver.firstName || ''} ${driver.lastName || ''}`.trim(),
+        actorId: driver.userId,
+      });
+
       // Create notification for Cargo Owner
       try {
         await this.notificationService.createNotification({

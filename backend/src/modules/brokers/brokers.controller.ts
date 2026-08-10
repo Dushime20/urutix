@@ -189,7 +189,12 @@ export class BrokersController {
     @Body() assignDto: AssignBrokerToLoadDto,
   ) {
     const tenantId = req.user.tenantId;
-    return this.brokersService.assignBrokerToLoad(loadId, tenantId, assignDto);
+    return this.brokersService.assignBrokerToLoad(
+      loadId,
+      tenantId,
+      assignDto,
+      req.user.userId || req.user.id,
+    );
   }
 
 
@@ -247,7 +252,11 @@ export class BrokersController {
     @Param('loadId') loadId: string,
   ) {
     const tenantId = req.user.tenantId;
-    return this.brokersService.unassignBrokerFromLoad(loadId, tenantId);
+    return this.brokersService.unassignBrokerFromLoad(
+      loadId,
+      tenantId,
+      req.user.userId || req.user.id,
+    );
   }
 
   /**
