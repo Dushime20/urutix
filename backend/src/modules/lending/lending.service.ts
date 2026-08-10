@@ -3810,11 +3810,7 @@ export class LendingService {
           this.logger.error(`Mobile money disbursement failed for loan ${loan.id}:`);
           this.logger.error(`Error type: ${error.constructor.name}`);
           this.logger.error(`Error message: ${error.message}`);
-          this.logger.error(`Payer phone: ${payerPhone} (original: ${rawPayerPhone})`);
-          this.logger.error(`Platform phone: ${platformPhone}`);
-          this.logger.error(`Beneficiary phone: ${formattedBeneficiary}`);
           this.logger.error(`Amount: ${disburseAmount} ${disburseCurrency}`);
-          this.logger.error(`Reference: ${referenceNumber}`);
           
           if (error.response) {
             this.logger.error(`HTTP Status: ${error.response.status}`);
