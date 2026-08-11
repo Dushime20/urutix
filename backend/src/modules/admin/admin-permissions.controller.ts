@@ -495,10 +495,16 @@ export class AdminPermissionsController {
             return { success: false, message: `Permission "${dto.resource}.${dto.action}" already exists` };
         }
         const result = await this.dataSource.query(
-            `INSERT INTO permissions (resource, action, description, category)
-             VALUES ($1, $2, $3, $4)
-             RETURNING id, resource, action, description, category`,
-            [dto.resource, dto.action, dto.description || null, dto.category || 'other'],
+            `INSERT INTO permissions (name, resource, action, description, category)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, name, resource, action, description, category`,
+            [
+                `${dto.resource}:${dto.action}`,
+                dto.resource,
+                dto.action,
+                dto.description || null,
+                dto.category || 'other',
+            ],
         );
         this.logger.log(`Permission ${dto.resource}.${dto.action} created by ${adminId}`);
         return { success: true, data: result[0], message: 'Permission created successfully' };

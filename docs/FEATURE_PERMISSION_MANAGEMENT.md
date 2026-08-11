@@ -156,7 +156,18 @@ Only `SUPER_ADMIN` can mutate user overrides.
 |-------|------|
 | `backend/src/config/permission-catalog.json` | Version-controlled catalog (add new permissions here) |
 | `permissions` table | Runtime rows used by RBAC, grants/denies, UI |
-| Boot + `POST …/sync-catalog` | Upserts JSON → DB (idempotent) |
+| Boot + `node seed-permissions.js` + `POST …/sync-catalog` | Upserts JSON → DB (idempotent, schema-aware) |
+
+### Production schema note
+
+Live DB (`000_base_schema`) requires:
+
+```text
+permissions.name  VARCHAR UNIQUE NOT NULL   -- value = "resource:action" e.g. cargo:create
+permissions."createdAt" / "updatedAt"
+```
+
+Seeders **must** set `name`. Do not insert only `resource` + `action`.
 
 Why not DB-only? Manual SQL drifts across environments and is hard to review in PRs.  
 Why not JSON-only? Role/user overrides and FKs need DB rows.
@@ -165,7 +176,7 @@ To add a capability (e.g. `cargo:archive`):
 
 1. Add an entry to `permission-catalog.json`
 2. Optionally add it under `roleDefaults` for roles that should inherit it
-3. Redeploy backend (or call sync-catalog)
+3. Redeploy backend (or run `docker compose exec backend node seed-permissions.js`)
 4. Protect the API with `@RequirePermissions('cargo:archive')`
 
 ## How to protect a new feature

@@ -230,53 +230,111 @@ export class PermissionTableInitService implements OnModuleInit {
   async syncPermissionCatalog(): Promise<number> {
     this.loadCatalogFile();
     await this.ensureTables();
-    // Ensure unique index exists so ON CONFLICT works on older DBs
-    await this.dataSource.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS "UQ_permissions_resource_action"
-      ON "permissions" ("resource", "action")
-    `).catch(() => {});
+
+    const columns = await this.getPermissionColumnSet();
+    const hasName = columns.has('name');
+    const updatedAtCol = columns.has('updatedAt')
+      ? 'updatedAt'
+      : columns.has('updated_at')
+        ? 'updated_at'
+        : null;
+    const createdAtCol = columns.has('createdAt')
+      ? 'createdAt'
+      : columns.has('created_at')
+        ? 'created_at'
+        : null;
+
+    if (hasName) {
+      this.logger.log('Permission sync: setting name=resource:action (production schema)');
+    }
 
     let count = 0;
     for (const perm of this.getCatalog()) {
       const { resource, action, category, description } = perm;
+      const name = `${resource}:${action}`;
       try {
-        await this.dataSource.query(
-          `
-          INSERT INTO "permissions" ("resource", "action", "category", "description")
-          VALUES ($1, $2, $3, $4)
-          ON CONFLICT ("resource", "action") DO UPDATE
-            SET "category" = EXCLUDED."category",
-                "description" = EXCLUDED."description"
-          `,
-          [resource, action, category, description],
-        );
-        count += 1;
-      } catch {
-        // Fallback when unique constraint name differs (older DBs)
-        try {
-          const existing = await this.dataSource.query(
+        // Prefer lookup by name (unique in prod), else resource+action
+        let existing: any[] = [];
+        if (hasName) {
+          existing = await this.dataSource.query(
+            `SELECT id FROM permissions WHERE name = $1 LIMIT 1`,
+            [name],
+          );
+        }
+        if (!existing.length) {
+          existing = await this.dataSource.query(
             `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
             [resource, action],
           );
-          if (existing.length) {
-            await this.dataSource.query(
-              `UPDATE permissions SET category = $1, description = $2 WHERE id = $3`,
-              [category, description, existing[0].id],
-            );
-          } else {
-            await this.dataSource.query(
-              `INSERT INTO permissions (resource, action, category, description) VALUES ($1, $2, $3, $4)`,
-              [resource, action, category, description],
-            );
-          }
-          count += 1;
-        } catch (inner: any) {
-          this.logger.warn(`Failed to upsert ${resource}:${action}: ${inner?.message || inner}`);
         }
+
+        if (existing.length) {
+          const sets = [`resource = $1`, `action = $2`, `category = $3`, `description = $4`];
+          const params: any[] = [resource, action, category, description];
+          if (hasName) {
+            sets.push(`name = $${params.length + 1}`);
+            params.push(name);
+          }
+          if (updatedAtCol) {
+            sets.push(`"${updatedAtCol}" = NOW()`);
+          }
+          params.push(existing[0].id);
+          await this.dataSource.query(
+            `UPDATE permissions SET ${sets.join(', ')} WHERE id = $${params.length}`,
+            params,
+          );
+        } else {
+          const cols: string[] = ['resource', 'action'];
+          const vals: string[] = ['$1', '$2'];
+          const params: any[] = [resource, action];
+          if (hasName) {
+            cols.push('name');
+            vals.push(`$${params.length + 1}`);
+            params.push(name);
+          }
+          if (columns.has('category')) {
+            cols.push('category');
+            vals.push(`$${params.length + 1}`);
+            params.push(category);
+          }
+          if (columns.has('description')) {
+            cols.push('description');
+            vals.push(`$${params.length + 1}`);
+            params.push(description);
+          }
+          if (createdAtCol) {
+            cols.push(createdAtCol);
+            vals.push('NOW()');
+          }
+          if (updatedAtCol) {
+            cols.push(updatedAtCol);
+            vals.push('NOW()');
+          }
+          const quoted = cols.map((c) => `"${c}"`).join(', ');
+          await this.dataSource.query(
+            `INSERT INTO permissions (${quoted}) VALUES (${vals.join(', ')})`,
+            params,
+          );
+        }
+        count += 1;
+      } catch (err: any) {
+        this.logger.warn(`Failed to upsert ${name}: ${err?.message || err}`);
       }
     }
     await this.seedRoleOperationalPermissions();
     return count;
+  }
+
+  private async getPermissionColumnSet(): Promise<Set<string>> {
+    try {
+      const rows = await this.dataSource.query(
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_schema = 'public' AND table_name = 'permissions'`,
+      );
+      return new Set(rows.map((r: any) => r.column_name));
+    } catch {
+      return new Set(['resource', 'action', 'category', 'description']);
+    }
   }
 
   async getPermissionCount(): Promise<number> {
@@ -292,21 +350,41 @@ export class PermissionTableInitService implements OnModuleInit {
     await this.dataSource.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).catch(() => {});
     await this.dataSource.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`).catch(() => {});
 
+    // Production-compatible schema (name is required on live DBs from 000_base_schema)
     await this.dataSource.query(`
       CREATE TABLE IF NOT EXISTS "permissions" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
+        "name" varchar(150) NOT NULL,
         "resource" varchar(100) NOT NULL,
-        "action" varchar(50) NOT NULL,
+        "action" varchar(100) NOT NULL,
         "description" text,
-        "category" varchar(50),
-        "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+        "category" varchar(100),
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT "PK_permissions" PRIMARY KEY ("id")
       )
     `);
+
+    // If table already exists without name (legacy), add it safely
+    await this.dataSource.query(`
+      ALTER TABLE permissions
+        ADD COLUMN IF NOT EXISTS name varchar(150)
+    `).catch(() => {});
+    await this.dataSource.query(`
+      UPDATE permissions
+      SET name = resource || ':' || action
+      WHERE name IS NULL OR name = ''
+    `).catch(() => {});
+    await this.dataSource.query(`
+      ALTER TABLE permissions ALTER COLUMN name SET NOT NULL
+    `).catch(() => {});
+    await this.dataSource.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS permissions_name_key ON permissions (name)
+    `).catch(() => {});
     await this.dataSource.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS "UQ_permissions_resource_action"
       ON "permissions" ("resource", "action")
-    `);
+    `).catch(() => {});
 
     await this.dataSource.query(`
       CREATE TABLE IF NOT EXISTS "roles" (
@@ -449,10 +527,16 @@ export class PermissionTableInitService implements OnModuleInit {
     for (const [roleName, permissions] of Object.entries(rolePerms)) {
       for (const permission of permissions) {
         const [resource, action] = permission.split(':');
-        const permRows = await this.dataSource.query(
-          `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
-          [resource, action],
-        );
+        let permRows = await this.dataSource.query(
+          `SELECT id FROM permissions WHERE name = $1 LIMIT 1`,
+          [permission],
+        ).catch(() => []);
+        if (!permRows.length) {
+          permRows = await this.dataSource.query(
+            `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
+            [resource, action],
+          );
+        }
         if (!permRows.length) continue;
         const permissionId = permRows[0].id;
 
