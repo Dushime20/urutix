@@ -17,6 +17,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { BrokersService } from './brokers.service';
 import { ContractService } from './services/contract.service';
 import { ContractStatus } from '../../entities/load-contract.entity';
@@ -183,6 +185,8 @@ export class BrokersController {
    */
   @Post('loads/:loadId/assign')
   @Roles(UserRole.TENANT_ADMIN, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.CARGO_OWNER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('brokers:assign')
   async assignBrokerToLoad(
     @Request() req: any,
     @Param('loadId') loadId: string,

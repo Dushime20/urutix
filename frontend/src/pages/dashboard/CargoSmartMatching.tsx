@@ -13,10 +13,14 @@ import { enhancedMatchingApi } from '../../services/enhancedMatchingApi';
 import toast from 'react-hot-toast';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { StandardDataTable, type Column } from '../../components/EnliteUI/Tables';
+import { usePermission } from '../../contexts/PermissionContext';
 
 const CargoSmartMatching: React.FC = () => {
   const navigate = useNavigate();
   const { format: fmt } = useCurrencyFormat();
+  const { can, isFeatureEnabled } = usePermission();
+  const canUseMatching = can('matching:request') || can('matching:view_results');
+  const matchingEnabled = isFeatureEnabled('matching:request');
   const [searchParams] = useSearchParams();
   const preselectedCargoId = searchParams.get('cargoId') || '';
 
@@ -64,6 +68,10 @@ const CargoSmartMatching: React.FC = () => {
   }, []);
 
   const findMatches = async (cargoId?: string) => {
+    if (!canUseMatching || !matchingEnabled) {
+      toast.error('Smart Matching is currently unavailable. Please contact your administrator for more information.');
+      return;
+    }
     const id = cargoId || selectedCargoId;
     if (!id) { toast.error('Please select a cargo first'); return; }
     setLoading(true);
@@ -314,6 +322,12 @@ const CargoSmartMatching: React.FC = () => {
           </button>
         )}
       </div>
+
+      {(!canUseMatching || !matchingEnabled) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 font-medium">
+          Smart Matching is currently unavailable. Please contact your administrator for more information.
+        </div>
+      )}
 
       {/* Cargo Selector */}
       <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">

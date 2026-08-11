@@ -18,9 +18,11 @@ import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Route } from '../../entities/route.entity';
 import { AdminPermissionsController } from './admin-permissions.controller';
+import { AdminFeatureControlsController } from './admin-feature-controls.controller';
 import { AdminMonitoringController } from './admin-monitoring.controller';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { MonitoringService } from '../../services/monitoring.service';
+import { FeatureControl } from '../../entities/feature-control.entity';
 
 // New imports for advanced admin features
 import { ActivityLog } from '../../entities/activity-log.entity';
@@ -97,6 +99,7 @@ import { TenantManagementController } from './tenant-management.controller';
       Role,
       UserPermissionOverride,
       SystemSettings,
+      FeatureControl,
       // Subscription entities
       SubscriptionPlan,
       TenantSubscription,
@@ -123,6 +126,7 @@ import { TenantManagementController } from './tenant-management.controller';
     AdminController,
     OperationalAdminController,
     AdminPermissionsController,
+    AdminFeatureControlsController,
     AdminMonitoringController,
     // New controllers
     ActivityLogController,

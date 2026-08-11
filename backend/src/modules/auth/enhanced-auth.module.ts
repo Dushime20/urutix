@@ -25,12 +25,14 @@ import { TenantController } from './controllers/tenant.controller';
 import { JwtService } from '@nestjs/jwt';
 import { RolesGuard } from './guards/roles.guard';
 import { PermissionService } from '../../services/raw-permission.service';
+import { CapabilityService } from '../../services/capability.service';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { ActivityLogService } from '../../services/activity-log.service';
 import { EventsModule } from '../events/events.module';
 import { SystemSettingsService } from '../../services/system-settings.service';
 import { TwoFactorService } from './services/two-factor.service';
 import { TwoFactorController } from './controllers/two-factor.controller';
+import { FeatureControl } from '../../entities/feature-control.entity';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { TwoFactorController } from './controllers/two-factor.controller';
       ActivityLog,
       UserSession,
       SystemSettings,
+      FeatureControl,
     ]),
     ConfigModule,
     PassportModule,
@@ -68,6 +71,7 @@ import { TwoFactorController } from './controllers/two-factor.controller';
     TenantService,
     RolesGuard,
     PermissionService,
+    CapabilityService,
     PermissionsGuard,
     ActivityLogService,
     SystemSettingsService,
@@ -84,6 +88,7 @@ import { TwoFactorController } from './controllers/two-factor.controller';
     RolesGuard,
     EmailService,
     PermissionService,
+    CapabilityService,
     PermissionsGuard,
     ActivityLogService,
     TwoFactorService,

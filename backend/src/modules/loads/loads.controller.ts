@@ -69,6 +69,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../auth/guards/tenant.guard';
 import { GetTenant } from '../auth/decorators/tenant.decorator';
 import { CargoOwnerGuard } from '../../guards/cargo-owner.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 
 @ApiTags('Enhanced Loads')
 @Controller('loads')
@@ -81,8 +83,9 @@ export class LoadsController {
   ) { }
 
   @Post()
-  @UseGuards(ThrottlerGuard, RolesGuard)
+  @UseGuards(ThrottlerGuard, RolesGuard, PermissionsGuard)
   @Roles(UserRole.CARGO_OWNER)
+  @RequirePermissions('cargo:create')
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute
   @ApiConsumes('multipart/form-data', 'application/json')
   @UseInterceptors(FilesInterceptor('files', 10))
@@ -1180,7 +1183,8 @@ export class LoadsController {
   }
 
   @Patch(':id')
-  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing update
+  @UseGuards(CargoOwnerGuard, PermissionsGuard) // Verify ownership before allowing update
+  @RequirePermissions('cargo:edit')
   @ApiConsumes('multipart/form-data', 'application/json')
   @UseInterceptors(FilesInterceptor('files', 10))
   @ApiOperation({
@@ -1279,7 +1283,8 @@ export class LoadsController {
   }
 
   @Delete(':id')
-  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing delete
+  @UseGuards(CargoOwnerGuard, PermissionsGuard) // Verify ownership before allowing delete
+  @RequirePermissions('cargo:delete')
   @ApiOperation({
     summary: 'Delete Enhanced Cargo Load',
     description: 'Deletes a cargo load and all its enhanced field data',
@@ -1322,7 +1327,8 @@ export class LoadsController {
   // Workflow Endpoints
 
   @Post(':loadId/publish')
-  @UseGuards(CargoOwnerGuard) // Verify ownership before allowing publish
+  @UseGuards(CargoOwnerGuard, PermissionsGuard) // Verify ownership before allowing publish
+  @RequirePermissions('cargo:publish', 'cargo:edit', 'cargo:create')
   @ApiOperation({
     summary: 'Publish load',
     description: 'Publishes a draft load, making it visible to carriers',
@@ -2411,7 +2417,8 @@ export class LoadsController {
   }
 
   @Post('draft/:id/publish')
-  @UseGuards(ThrottlerGuard, CargoOwnerGuard) // Verify ownership before allowing publish
+  @UseGuards(ThrottlerGuard, CargoOwnerGuard, PermissionsGuard) // Verify ownership before allowing publish
+  @RequirePermissions('cargo:publish', 'cargo:edit', 'cargo:create')
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute for moving to created status
   @ApiOperation({
     summary: 'Move Cargo Draft to Created Status',

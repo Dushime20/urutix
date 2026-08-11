@@ -145,6 +145,7 @@ export class PermissionTableInitService implements OnModuleInit {
       ['cargo', 'edit',    'cargo_management', 'Edit existing cargo loads'],
       ['cargo', 'delete',  'cargo_management', 'Delete cargo loads'],
       ['cargo', 'approve', 'cargo_management', 'Approve or reject cargo loads'],
+      ['cargo', 'publish', 'cargo_management', 'Publish cargo loads for bidding/matching'],
       // Fleet Management
       ['fleet', 'view',   'fleet_management', 'View fleet trucks and vehicles'],
       ['fleet', 'create', 'fleet_management', 'Add new trucks to the fleet'],
@@ -160,12 +161,34 @@ export class PermissionTableInitService implements OnModuleInit {
       ['brokers', 'create', 'broker_management', 'Create broker accounts'],
       ['brokers', 'edit',   'broker_management', 'Edit broker details'],
       ['brokers', 'delete', 'broker_management', 'Remove broker accounts'],
+      ['brokers', 'assign', 'broker_management', 'Assign broker to a load'],
       // Auctions & Bidding
       ['auctions', 'view',   'bidding', 'View active and past auctions'],
       ['auctions', 'create', 'bidding', 'Create new auction events'],
       ['auctions', 'manage', 'bidding', 'Manage auction lifecycle'],
       ['bids',     'view',   'bidding', 'View all bids on auctions'],
+      ['bids',     'view_own', 'bidding', 'View own bids'],
+      ['bids',     'create', 'bidding', 'Place a bid on an auction'],
       ['bids',     'manage', 'bidding', 'Accept, reject or manage bids'],
+      ['bids',     'view_history', 'bidding', 'View full bid history'],
+      // Smart Matching
+      ['matching', 'request', 'matching', 'Request AI smart matching'],
+      ['matching', 'respond', 'matching', 'Respond to a match request'],
+      ['matching', 'view_results', 'matching', 'View match results'],
+      ['matching', 'analytics', 'matching', 'View cargo alignment analytics'],
+      // Trips / Brokers / Lending (capability management)
+      ['trips', 'start', 'trip_management', 'Start a trip'],
+      ['trips', 'complete', 'trip_management', 'Mark a trip as completed'],
+      ['trips', 'assign_driver', 'trip_management', 'Assign a driver to a trip'],
+      ['lending', 'create_request', 'lending', 'Create a new loan request'],
+      ['lending', 'approve', 'lending', 'Approve or reject loan requests'],
+      // Customs & receivers
+      ['customs', 'view', 'customs', 'View customs dashboard and inspections'],
+      ['customs', 'create', 'customs', 'Create customs inspections'],
+      ['customs', 'update', 'customs', 'Update customs inspection status'],
+      ['customs', 'flag', 'customs', 'Flag a shipment for customs inspection'],
+      ['receivers', 'inspect', 'receiver_management', 'Submit cargo inspection on delivery'],
+      ['receivers', 'view', 'receiver_management', 'View receiver profiles'],
       // Orders & Deliveries
       ['orders',     'view',   'orders_deliveries', 'View transport orders'],
       ['orders',     'create', 'orders_deliveries', 'Create new transport orders'],
@@ -229,22 +252,75 @@ export class PermissionTableInitService implements OnModuleInit {
       `, [name, description, isSystem]);
     }
 
-    await this.seedRoleAnalyticsPermissions();
+    await this.ensureFeatureControlsTable();
+    await this.seedRoleOperationalPermissions();
+  }
+
+  /** Idempotent feature_controls table for platform kill-switches */
+  private async ensureFeatureControlsTable() {
+    await this.dataSource.query(`
+      CREATE TABLE IF NOT EXISTS feature_controls (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        permission_id UUID NULL,
+        permission_code VARCHAR(150) NOT NULL,
+        scope VARCHAR(20) NOT NULL DEFAULT 'PLATFORM',
+        tenant_id UUID NULL,
+        enabled BOOLEAN NOT NULL DEFAULT TRUE,
+        updated_by UUID NULL,
+        reason TEXT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await this.dataSource.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_feature_controls_platform_code
+        ON feature_controls (permission_code)
+        WHERE scope = 'PLATFORM' AND tenant_id IS NULL
+    `);
+    await this.dataSource.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_feature_controls_tenant_code
+        ON feature_controls (permission_code, tenant_id)
+        WHERE scope = 'TENANT' AND tenant_id IS NOT NULL
+    `);
   }
 
   /**
-   * Ensure cargo owners (and related roles) can access financial analytics endpoints.
+   * Ensure operational roles have baseline capabilities (idempotent).
+   * Revoking a role_permission is preserved across restarts (ON CONFLICT DO NOTHING).
    * Supports both role_permissions schemas (role varchar vs role_id UUID).
    */
-  private async seedRoleAnalyticsPermissions() {
+  private async seedRoleOperationalPermissions() {
     const rolePerms: Record<string, string[]> = {
-      CARGO_OWNER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
-      TRUCK_OWNER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
-      TENANT_ADMIN: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
-      FLEET_MANAGER: ['analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends'],
+      CARGO_OWNER: [
+        'analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends',
+        'cargo:create', 'cargo:view', 'cargo:edit', 'cargo:delete', 'cargo:publish',
+        'auctions:view', 'auctions:create', 'bids:view', 'bids:manage',
+        'matching:request', 'matching:view_results', 'lending:create_request', 'brokers:assign',
+      ],
+      TRUCK_OWNER: [
+        'analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends',
+        'auctions:view', 'bids:view_own', 'bids:create', 'bids:view_history', 'matching:respond',
+        'fleet:view', 'fleet:create', 'trips:start', 'trips:complete', 'trips:assign_driver',
+      ],
+      TENANT_ADMIN: [
+        'analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends',
+        'brokers:assign', 'bids:manage', 'auctions:manage', 'matching:view_results',
+        'cargo:view', 'trips:assign_driver',
+      ],
+      FLEET_MANAGER: [
+        'analytics:view_own', 'analytics:view_tenant', 'analytics:view_all', 'analytics:financial', 'analytics:cost_trends',
+        'trips:start', 'trips:complete', 'trips:assign_driver',
+      ],
+      FLEET_DISPATCHER: ['trips:start', 'trips:complete', 'trips:assign_driver', 'analytics:view_own', 'analytics:view_tenant'],
       FLEET_ACCOUNTANT: ['analytics:view_own', 'analytics:view_tenant', 'analytics:financial', 'analytics:cost_trends'],
-      BROKER: ['analytics:view_own', 'analytics:view_tenant'],
-      DRIVER: ['analytics:view_own'],
+      BROKER: [
+        'analytics:view_own', 'analytics:view_tenant',
+        'auctions:view', 'bids:view', 'bids:manage', 'matching:request', 'matching:view_results',
+      ],
+      DRIVER: ['analytics:view_own', 'trips:start', 'trips:complete'],
+      LENDER: ['lending:approve', 'lending:create_request'],
+      CARGO_RECEIVER: ['receivers:inspect', 'receivers:view', 'cargo:view'],
+      CUSTOMS_OFFICER: ['customs:view', 'customs:create', 'customs:update', 'customs:flag'],
     };
 
     const columns = await this.dataSource.query(

@@ -10,6 +10,7 @@ import { Notification } from '../../entities/notification.entity';
 import { CustomsService } from './customs.service';
 import { CustomsController } from './customs.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       Notification,
     ]),
     NotificationsModule,
+    EnhancedAuthModule,
   ],
   providers: [CustomsService],
   controllers: [CustomsController],

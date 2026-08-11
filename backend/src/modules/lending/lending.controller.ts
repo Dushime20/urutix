@@ -49,6 +49,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { LenderStatus } from '../../entities/lender.entity';
 import { LendingExceptionFilter } from './filters/lending-exception.filter';
 import { LendingResponseInterceptor } from './interceptors/lending-response.interceptor';
@@ -198,7 +200,8 @@ export class LendingController {
 
   @Post('lending/cargo/:cargoId/loan-request')
   @Roles(UserRole.CARGO_OWNER)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('lending:create_request')
   async createLoanRequestForCargo(
     @Param('cargoId', ParseUUIDPipe) cargoId: string,
     @Body() body: { trip_id?: string; lender_id?: string; currency: string },
@@ -462,6 +465,8 @@ export class LendingController {
 
   @Post('lending/loan-requests')
   @Roles(UserRole.CARGO_OWNER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('lending:create_request')
   @ApiOperation({
     summary: 'Create loan request',
     description: 'Create a new loan request for cargo transportation financing. Only Cargo Owners can request loans.',
@@ -598,6 +603,8 @@ export class LendingController {
   // ===== LOAN APPROVAL ENDPOINTS =====
 
   @Post('lending/loan-requests/:loanId/approve')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('lending:approve')
   @ApiOperation({
     summary: 'Approve loan request',
     description:
@@ -675,6 +682,8 @@ export class LendingController {
   }
 
   @Post('lending/loan-requests/:loanId/reject')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('lending:approve')
   @ApiOperation({
     summary: 'Reject a pending loan request',
     description: 'Hard rejection by the lender — terminates the application.',

@@ -29,6 +29,8 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { CustomsInspectionStatus, CustomsRiskLevel } from '../../entities/customs-inspection.entity';
 
 @ApiTags('Customs')
@@ -79,6 +81,8 @@ export class CustomsController {
   // ─── Inspections ───────────────────────────────────────────────────────────
 
   @Post('inspections')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('customs:create')
   @ApiOperation({ summary: 'Create a new customs inspection' })
   async createInspection(@Request() req, @Body() dto: CreateInspectionDto) {
     const data = await this.customsService.createInspection(
@@ -120,6 +124,8 @@ export class CustomsController {
   }
 
   @Patch('inspections/:id/status')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('customs:update')
   @ApiOperation({ summary: 'Update inspection status (approve/reject/hold/flag)' })
   async updateStatus(
     @Request() req,

@@ -23,6 +23,8 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { MatchingService, MatchingAlgorithm } from './matching.service';
 import { MatchRequestDto } from './dto/match-request.dto';
 import { MatchResultDto } from './dto/match-result.dto';
@@ -49,6 +51,8 @@ export class MatchingController {
   ) { }
 
   @Post('find-matches')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('matching:request', 'matching:view_results')
   @ApiOperation({
     summary: 'Enhanced cargo-truck matching with multiple algorithms',
     description: `
@@ -370,7 +374,8 @@ export class MatchingController {
   }
 
   @Post('request')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('matching:request')
   @ApiOperation({ summary: 'Request a specific truck match (Cargo Owner)' })
   async requestMatch(@Body() body: { loadId: string; truckId: string }, @Request() req) {
     this.logger.log('📥 requestMatch called with:', { loadId: body.loadId, truckId: body.truckId });
@@ -412,7 +417,8 @@ export class MatchingController {
   }
 
   @Patch(':matchId/respond')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('matching:respond')
   @ApiOperation({ summary: 'Accept or Reject a match (Truck Owner)' })
   async respondToMatch(
     @Param('matchId') matchId: string,

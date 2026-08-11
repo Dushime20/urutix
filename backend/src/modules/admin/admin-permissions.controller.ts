@@ -90,20 +90,48 @@ export class AdminPermissionsController {
             ORDER BY category, resource, action
         `);
 
-        const userResult: any[] = await this.dataSource.query(
-            'SELECT role FROM users WHERE id = $1', [userId],
-        );
+        let userResult: any[] = [];
+        try {
+            userResult = await this.dataSource.query(
+                'SELECT role, "tenantId" AS "tenantId" FROM users WHERE id = $1', [userId],
+            );
+        } catch {
+            userResult = await this.dataSource.query(
+                'SELECT role, tenant_id AS "tenantId" FROM users WHERE id = $1', [userId],
+            );
+        }
         if (!userResult.length) {
             return { success: false, message: 'User not found' };
         }
         const userRole: string = userResult[0].role;
+        const tenantId: string | null = userResult[0].tenantId || null;
 
-        const rolePerms: any[] = await this.dataSource.query(
-            'SELECT permission_id FROM role_permissions WHERE role = $1', [userRole],
+        // Support both role_permissions schemas (role varchar vs role_id UUID)
+        const columns: any[] = await this.dataSource.query(
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'role_permissions'
+               AND column_name IN ('role', 'role_id')`,
         );
-        const rolePermIds = new Set<string>(rolePerms.map(r => r.permission_id));
+        const columnNames = new Set(columns.map((c: any) => c.column_name));
 
-        const userPerms: UserPermOverride[] & { permission_id: string }[] =
+        let rolePerms: any[] = [];
+        if (columnNames.has('role_id')) {
+            rolePerms = await this.dataSource.query(
+                `SELECT rp.permission_id
+                 FROM role_permissions rp
+                 INNER JOIN roles r ON r.id = rp.role_id
+                 WHERE r.name = $1`,
+                [userRole],
+            );
+        } else if (columnNames.has('role')) {
+            rolePerms = await this.dataSource.query(
+                'SELECT permission_id FROM role_permissions WHERE role = $1',
+                [userRole],
+            );
+        }
+        const rolePermIds = new Set<string>(rolePerms.map((r) => r.permission_id));
+
+        const userPerms: Array<UserPermOverride & { permission_id: string }> =
             await this.dataSource.query(`
                 SELECT permission_id, is_granted, granted_by, reason, expires_at, granted_at
                 FROM user_permissions
@@ -112,49 +140,97 @@ export class AdminPermissionsController {
 
         type OverrideRow = UserPermOverride & { permission_id: string };
         const userPermMap = new Map<string, OverrideRow>(
-            (userPerms as OverrideRow[]).map(u => [u.permission_id, u]),
+            userPerms.map((u) => [u.permission_id, u]),
         );
 
-        const permissions = allPerms.map(p => {
+        // Platform (+ tenant) disabled features
+        let disabledFeatures: string[] = [];
+        try {
+            const platformDisabled: Array<{ permission_code: string }> = await this.dataSource.query(
+                `SELECT permission_code FROM feature_controls
+                 WHERE scope = 'PLATFORM' AND tenant_id IS NULL AND enabled = FALSE`,
+            );
+            disabledFeatures = platformDisabled.map((r) => r.permission_code);
+            if (tenantId) {
+                const tenantDisabled: Array<{ permission_code: string }> = await this.dataSource.query(
+                    `SELECT permission_code FROM feature_controls
+                     WHERE scope = 'TENANT' AND tenant_id = $1 AND enabled = FALSE`,
+                    [tenantId],
+                );
+                disabledFeatures = Array.from(
+                    new Set([...disabledFeatures, ...tenantDisabled.map((r) => r.permission_code)]),
+                );
+            }
+        } catch (_) {
+            disabledFeatures = [];
+        }
+        const disabledSet = new Set(disabledFeatures);
+
+        const permissions = allPerms.map((p) => {
             const override = userPermMap.get(p.id) as OverrideRow | undefined;
             const fromRole = rolePermIds.has(p.id);
             let effective = fromRole;
-            let source = fromRole ? 'role' : 'none';
+            let source: 'role' | 'user_granted' | 'user_denied' | 'none' = fromRole ? 'role' : 'none';
 
             if (override) {
                 effective = override.is_granted;
                 source = override.is_granted ? 'user_granted' : 'user_denied';
             }
 
+            const codeColon = `${p.resource}:${p.action}`;
+            const globallyDisabled = disabledSet.has(codeColon);
+
             return {
                 id: p.id,
                 code: `${p.resource}.${p.action}`,
+                codeColon,
                 resource: p.resource,
                 action: p.action,
                 description: p.description,
                 category: p.category || 'other',
-                effective,
+                fromRole,
+                effective: globallyDisabled ? false : effective,
                 source,
-                override: override ? {
-                    isGranted: override.is_granted,
-                    grantedBy: override.granted_by,
-                    reason: override.reason,
-                    expiresAt: override.expires_at,
-                    grantedAt: override.granted_at,
-                } : null,
+                globallyDisabled,
+                override: override
+                    ? {
+                        isGranted: override.is_granted,
+                        grantedBy: override.granted_by,
+                        reason: override.reason,
+                        expiresAt: override.expires_at,
+                        grantedAt: override.granted_at,
+                    }
+                    : null,
             };
         });
 
-        return { success: true, data: { userId, userRole, permissions } };
+        const summary = {
+            total: permissions.length,
+            effective: permissions.filter((p) => p.effective).length,
+            roleInherited: permissions.filter((p) => p.source === 'role').length,
+            userGranted: permissions.filter((p) => p.source === 'user_granted').length,
+            userDenied: permissions.filter((p) => p.source === 'user_denied').length,
+            globallyDisabled: permissions.filter((p) => p.globallyDisabled).length,
+        };
+
+        return {
+            success: true,
+            data: { userId, userRole, tenantId, permissions, disabledFeatures, summary },
+        };
     }
 
     // ── PUT /api/admin/permissions/users/:userId — bulk update ────────────────
     @Put('users/:userId')
     @Roles(UserRole.SUPER_ADMIN)
-    @ApiOperation({ summary: 'Bulk grant/revoke user permission overrides' })
+    @ApiOperation({ summary: 'Bulk grant/deny/revoke user permission overrides' })
     async updateUserPermissions(
         @Param('userId') userId: string,
-        @Body() body: { grants: string[]; revokes: string[]; reason?: string },
+        @Body() body: {
+            grants?: string[];
+            denies?: string[];
+            revokes?: string[];
+            reason?: string;
+        },
         @Req() req: Request,
     ) {
         const adminId: string = req['user']?.userId;
@@ -162,48 +238,67 @@ export class AdminPermissionsController {
         const userAgent: string = req.headers['user-agent'] as string;
         const reason = body.reason || 'Bulk update by admin';
 
+        const resolvePermissionId = async (qr: any, permCode: string): Promise<string | null> => {
+            const normalized = String(permCode || '').trim();
+            const sep = normalized.includes(':') ? ':' : '.';
+            const [resource, ...parts] = normalized.split(sep);
+            const action = parts.join(sep);
+            if (!resource || !action) return null;
+            const rows: any[] = await qr.query(
+                'SELECT id FROM permissions WHERE resource = $1 AND action = $2',
+                [resource, action],
+            );
+            return rows[0]?.id || null;
+        };
+
         const qr = this.dataSource.createQueryRunner();
         await qr.connect();
         await qr.startTransaction();
 
         try {
-            for (const permCode of (body.grants || [])) {
-                const [resource, ...parts] = permCode.split('.');
-                const action = parts.join('.');
-                const rows: any[] = await qr.query(
-                    'SELECT id FROM permissions WHERE resource = $1 AND action = $2',
-                    [resource, action],
-                );
-                if (!rows.length) continue;
+            for (const permCode of body.grants || []) {
+                const permissionId = await resolvePermissionId(qr, permCode);
+                if (!permissionId) continue;
                 await qr.query(`
                     INSERT INTO user_permissions (user_id, permission_id, is_granted, granted_by, reason)
                     VALUES ($1,$2,true,$3,$4)
                     ON CONFLICT (user_id,permission_id)
                     DO UPDATE SET is_granted=true, granted_by=$3, reason=$4, granted_at=NOW()
-                `, [userId, rows[0].id, adminId, reason]);
+                `, [userId, permissionId, adminId, reason]);
                 await this.logAudit(qr, 'grant_user_permission', 'user', userId, adminId, { permission: permCode, reason }, ipAddress, userAgent);
             }
 
-            for (const permCode of (body.revokes || [])) {
-                const [resource, ...parts] = permCode.split('.');
-                const action = parts.join('.');
-                const rows: any[] = await qr.query(
-                    'SELECT id FROM permissions WHERE resource = $1 AND action = $2',
-                    [resource, action],
-                );
-                if (!rows.length) continue;
+            for (const permCode of body.denies || []) {
+                const permissionId = await resolvePermissionId(qr, permCode);
+                if (!permissionId) continue;
+                await qr.query(`
+                    INSERT INTO user_permissions (user_id, permission_id, is_granted, granted_by, reason)
+                    VALUES ($1,$2,false,$3,$4)
+                    ON CONFLICT (user_id,permission_id)
+                    DO UPDATE SET is_granted=false, granted_by=$3, reason=$4, granted_at=NOW()
+                `, [userId, permissionId, adminId, reason]);
+                await this.logAudit(qr, 'deny_user_permission', 'user', userId, adminId, { permission: permCode, reason }, ipAddress, userAgent);
+            }
+
+            for (const permCode of body.revokes || []) {
+                const permissionId = await resolvePermissionId(qr, permCode);
+                if (!permissionId) continue;
                 await qr.query(
                     'DELETE FROM user_permissions WHERE user_id=$1 AND permission_id=$2',
-                    [userId, rows[0].id],
+                    [userId, permissionId],
                 );
                 await this.logAudit(qr, 'revoke_user_permission', 'user', userId, adminId, { permission: permCode }, ipAddress, userAgent);
             }
 
             await qr.commitTransaction();
             const g = (body.grants || []).length;
+            const d = (body.denies || []).length;
             const r = (body.revokes || []).length;
-            this.logger.log(`Permissions updated for ${userId} by ${adminId}: +${g} -${r}`);
-            return { success: true, message: `Permissions updated: ${g} granted, ${r} revoked` };
+            this.logger.log(`Permissions updated for ${userId} by ${adminId}: +${g} deny:${d} -${r}`);
+            return {
+                success: true,
+                message: `Permissions updated: ${g} granted, ${d} denied, ${r} restored to role default`,
+            };
         } catch (err) {
             await qr.rollbackTransaction();
             throw err;

@@ -38,6 +38,8 @@ import {
 import { LoadResponseV2Dto } from './dto/load-response-v2.dto';
 import { User } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PreTripInspectionService } from '../drivers/pre-trip-inspection.service';
 import { MarkReadyForReInspectionDto, ApprovePreTripInspectionDto } from '../drivers/dto/pre-trip-inspection.dto';
 
@@ -56,6 +58,8 @@ export class LoadsV2Controller {
   // Test endpoint removed - using the existing test/health endpoint
 
   @Post()
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('cargo:create')
   @ApiOperation({
     summary: 'Create a new load V2',
     description:
@@ -326,7 +330,8 @@ export class LoadsV2Controller {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('cargo:edit')
   @ApiOperation({
     summary: 'Update load V2',
     description: 'Updates an existing load',
@@ -361,6 +366,8 @@ export class LoadsV2Controller {
   }
 
   @Post(':id/publish')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('cargo:publish', 'cargo:edit', 'cargo:create')
   @ApiOperation({
     summary: 'Publish load V2',
     description: 'Publishes a draft load to make it available for matching',
@@ -569,6 +576,8 @@ export class LoadsV2Controller {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('cargo:delete')
   @ApiOperation({
     summary: 'Delete load V2',
     description: 'Deletes a load',

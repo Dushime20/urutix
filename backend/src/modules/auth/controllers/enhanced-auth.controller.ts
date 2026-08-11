@@ -28,6 +28,7 @@ import {
 } from '@nestjs/swagger';
 import { EnhancedAuthService } from '../services/enhanced-auth.service';
 import { PermissionService } from '../../../services/raw-permission.service';
+import { CapabilityService } from '../../../services/capability.service';
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
 import { RegisterDto, RegisterResponseDto } from '../dto/register.dto';
 import {
@@ -66,6 +67,7 @@ export class EnhancedAuthController {
     private readonly authService: EnhancedAuthService,
     private readonly rateLimitGuard: EnhancedRateLimitGuard,
     private readonly permissionService: PermissionService,
+    private readonly capabilityService: CapabilityService,
   ) { }
 
   @Post('login')
@@ -990,6 +992,48 @@ export class EnhancedAuthController {
       };
     } catch (error) {
       this.logger.error(`Failed to fetch permissions: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @Get('capabilities')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get effective capabilities for the current user',
+    description:
+      'Returns role permissions plus platform/tenant disabled feature codes. Permission changes apply without re-login.',
+  })
+  async getCapabilities(@Req() req: Request): Promise<ApiResponseDto> {
+    try {
+      const userId = req['user']?.userId;
+      const tenantId = req['user']?.tenantId;
+      if (!userId) {
+        throw new UnauthorizedException('User not authenticated');
+      }
+
+      const [permissions, disabledFeatures] = await Promise.all([
+        this.permissionService.getUserPermissions(userId),
+        this.capabilityService.getDisabledFeatures(tenantId),
+      ]);
+
+      const effectivePermissions = permissions.filter(
+        (p) => !disabledFeatures.includes(this.capabilityService.normalizeCode(p)),
+      );
+
+      return {
+        success: true,
+        message: 'Capabilities retrieved successfully',
+        data: {
+          permissions: effectivePermissions,
+          allPermissions: permissions,
+          disabledFeatures,
+        },
+        statusCode: 200,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch capabilities: ${error.message}`);
       throw error;
     }
   }

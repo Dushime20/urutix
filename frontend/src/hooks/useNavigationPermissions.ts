@@ -3,7 +3,7 @@ import { usePermission } from '../contexts/PermissionContext';
 import { useAuth } from '../contexts/AuthContext';
 
 export const useNavigationPermissions = () => {
-  const { hasPermission, hasAnyPermission } = usePermission();
+  const { hasPermission, hasAnyPermission, isFeatureEnabled } = usePermission();
   const { user } = useAuth();
 
   return useMemo(() => {
@@ -20,7 +20,9 @@ export const useNavigationPermissions = () => {
       'cargo:create'
     ]) || user?.role === 'CARGO_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
-    const canCreateCargo = hasPermission('cargo:create') || user?.role === 'CARGO_OWNER';
+    const canCreateCargo =
+      (hasPermission('cargo:create') || user?.role === 'CARGO_OWNER') &&
+      isFeatureEnabled('cargo:create');
 
     // Fleet Management
     const canAccessFleetManagement = hasAnyPermission([
@@ -37,12 +39,35 @@ export const useNavigationPermissions = () => {
       'driver:manage'
     ]) || user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
-    // Bidding
-    const canAccessBidding = hasAnyPermission([
-      'bid:view',
-      'bid:create',
-      'bid:manage'
-    ]) || user?.role === 'CARGO_OWNER' || user?.role === 'TRUCK_OWNER' || user?.role === 'BROKER';
+    // Bidding — respect global kill switch even when role fallback applies
+    const canAccessBidding =
+      (hasAnyPermission([
+        'bids:view',
+        'bids:create',
+        'bids:manage',
+        'bid:view',
+        'bid:create',
+        'bid:manage',
+      ]) ||
+        user?.role === 'CARGO_OWNER' ||
+        user?.role === 'TRUCK_OWNER' ||
+        user?.role === 'BROKER') &&
+      (isFeatureEnabled('bids:create') ||
+        isFeatureEnabled('bids:manage') ||
+        isFeatureEnabled('auctions:create'));
+
+    const canCreateBid =
+      (hasPermission('bids:create') || user?.role === 'TRUCK_OWNER') &&
+      isFeatureEnabled('bids:create');
+
+    const canUseSmartMatching =
+      (hasAnyPermission(['matching:request', 'matching:view_results', 'matching:respond']) ||
+        user?.role === 'CARGO_OWNER' ||
+        user?.role === 'TRUCK_OWNER' ||
+        user?.role === 'BROKER') &&
+      (isFeatureEnabled('matching:request') ||
+        isFeatureEnabled('matching:respond') ||
+        isFeatureEnabled('matching:view_results'));
 
     // Tracking
     const canAccessTracking = hasAnyPermission([
@@ -105,10 +130,11 @@ export const useNavigationPermissions = () => {
       'lender:view'
     ]) || user?.role === 'LENDER';
 
-    const canManageLoans = hasAnyPermission([
-      'loan:manage',
-      'loan:view'
-    ]) || user?.role === 'LENDER';
+    const canManageLoans =
+      (hasAnyPermission(['loan:manage', 'loan:view', 'lending:approve', 'lending:create_request']) ||
+        user?.role === 'LENDER' ||
+        user?.role === 'CARGO_OWNER') &&
+      (isFeatureEnabled('lending:approve') || isFeatureEnabled('lending:create_request'));
 
     // Financial Management
     const canAccessFinancial = hasAnyPermission([
@@ -125,8 +151,16 @@ export const useNavigationPermissions = () => {
     // Trip Management
     const canAccessTrips = hasAnyPermission([
       'trip:view',
-      'trip:manage'
+      'trip:manage',
+      'trips:start',
+      'trips:complete'
     ]) || user?.role === 'DRIVER' || user?.role === 'TRUCK_OWNER' || user?.role === 'CARGO_OWNER';
+
+    const canStartTrip =
+      (hasPermission('trips:start') ||
+        user?.role === 'DRIVER' ||
+        user?.role === 'TRUCK_OWNER') &&
+      isFeatureEnabled('trips:start');
 
     // Safety & Compliance
     const canAccessSafety = hasAnyPermission([
@@ -157,6 +191,8 @@ export const useNavigationPermissions = () => {
       canManageFleet,
       canAccessDrivers,
       canAccessBidding,
+      canCreateBid,
+      canUseSmartMatching,
       canAccessTracking,
       canAccessAnalytics,
       canAccessPayments,
@@ -174,10 +210,11 @@ export const useNavigationPermissions = () => {
       canAccessFinancial,
       canAccessRoutes,
       canAccessTrips,
+      canStartTrip,
       canAccessSafety,
       canAccessMaintenance,
       canAccessFuel,
       canAccessSettings,
     };
-  }, [hasPermission, hasAnyPermission, user?.role]);
+  }, [hasPermission, hasAnyPermission, isFeatureEnabled, user?.role]);
 };

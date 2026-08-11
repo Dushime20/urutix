@@ -28,6 +28,8 @@ import {
 import { Bid } from '../../entities/bid.entity';
 import { Auction } from '../../entities/auction.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { errorMessage } from '../../utils/error';
 import { UserRole } from '../../entities/user.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -198,6 +200,8 @@ export class BiddingController {
   // ─────────────────────────────────────────────────────────────────────────────
 
   @Post('bids')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('bids:create')
   @ApiOperation({
     summary: 'Submit a bid for a load',
     description: 'Truck owners can submit bids for published loads with active auctions.',
@@ -467,6 +471,8 @@ export class BiddingController {
   }
 
   @Post('bids/:bidId/accept')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('bids:manage')
   @ApiOperation({
     summary: 'Accept a bid',
     description:
@@ -596,6 +602,8 @@ export class BiddingController {
   }
 
   @Post('auctions')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('auctions:create')
   @ApiOperation({
     summary: 'Create an auction for a load',
     description: 'Cargo owners can create auctions for their published loads.',

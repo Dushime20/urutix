@@ -32,6 +32,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import {
   ApiResponseDto,
   PaginatedResponseDto,
@@ -236,6 +238,8 @@ export class TripsController {
   }
 
   @Patch(':id/assign-driver')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('trips:assign_driver')
   @ApiOperation({ summary: 'Assign a driver to a trip' })
   async assignDriverToTrip(
     @Param('id') id: string,
@@ -309,6 +313,8 @@ export class TripsController {
   }
 
   @Post(':id/complete')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('trips:complete')
   @ApiOperation({ summary: 'Complete a trip', description: 'Mark a trip as COMPLETED' })
   @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
   @ApiOkResponse({ description: 'Trip completed successfully' })
@@ -355,6 +361,8 @@ export class TripsController {
   }
 
   @Post(':id/start')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('trips:start')
   @ApiOperation({ summary: 'Start a trip', description: 'Mark a trip as IN_PROGRESS' })
   @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
   @ApiOkResponse({ description: 'Trip started successfully' })

@@ -6,12 +6,15 @@ import type { Permission, UserPermission, PermissionAuditLog } from '@/types/per
 export interface PermissionItem {
   id: string;
   code: string;          // e.g. "cargo.view"
+  codeColon?: string;    // e.g. "cargo:view"
   resource: string;
   action: string;
   description: string;
   category: string;
   effective: boolean;    // whether user currently has this
   source: 'role' | 'user_granted' | 'user_denied' | 'none';
+  fromRole?: boolean;
+  globallyDisabled?: boolean;
   override: {
     isGranted: boolean;
     grantedBy: string;
@@ -24,7 +27,17 @@ export interface PermissionItem {
 export interface UserPermissionDetail {
   userId: string;
   userRole: string;
+  tenantId?: string | null;
   permissions: PermissionItem[];
+  disabledFeatures?: string[];
+  summary?: {
+    total: number;
+    effective: number;
+    roleInherited: number;
+    userGranted: number;
+    userDenied: number;
+    globallyDisabled: number;
+  };
 }
 
 export const permissionApi = {
@@ -62,9 +75,11 @@ export const permissionApi = {
     grants: string[],
     revokes: string[],
     reason?: string,
+    denies: string[] = [],
   ): Promise<{ success: boolean; message: string }> => {
     const response = await api.put(`/admin/permissions/users/${userId}`, {
       grants,
+      denies,
       revokes,
       reason,
     });

@@ -97,6 +97,7 @@ const OperationalAdminSettings = lazy(() => import('./pages/admin-operational/Se
 const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminDashboard'));
 const TenantAdminDashboard = lazy(() => import('./pages/admin-dashboard/Dashboard'));
 const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions'));
+const FeatureControls = lazy(() => import('./pages/admin/FeatureControls'));
 const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
 const SubscriptionManagement = lazy(() => import('./pages/admin/SubscriptionManagement'));
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
@@ -531,6 +532,7 @@ function App() {
                       <Route path="roles" element={<RoleManagement />} />
                       <Route path="permissions" element={<EnhancedPermissions />} />
                       <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
+                      <Route path="feature-controls" element={<FeatureControls />} />
                       <Route path="activity-logs" element={<ActivityLogs />} />
                       <Route path="advanced-settings" element={<AdvancedSettings />} />
                       <Route path="system-settings" element={<SystemSettings />} />

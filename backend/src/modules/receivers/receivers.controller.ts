@@ -20,6 +20,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { ReceiversService } from './receivers.service';
 import { CreateReceiverDto } from './dto/create-receiver.dto';
 import { AssignCargoDto } from './dto/assign-cargo.dto';
@@ -184,6 +186,8 @@ export class ReceiversController {
   @Post('cargos/:cargoId/inspect')
   @HttpCode(HttpStatus.CREATED)
   @Roles(UserRole.CARGO_RECEIVER)
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('receivers:inspect')
   async submitCargoInspection(
     @Request() req: any,
     @Param('cargoId') cargoId: string,

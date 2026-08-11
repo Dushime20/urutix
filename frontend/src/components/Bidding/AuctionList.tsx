@@ -35,6 +35,7 @@ import {
   useSubmitBidMutation,
 } from '../../hooks/useBiddingQueries';
 import { StandardDataTable, type Column } from '../EnliteUI/Tables';
+import { usePermission } from '../../contexts/PermissionContext';
 
 interface LoadLocation {
   id: string;
@@ -105,6 +106,8 @@ interface AuctionListProps {
 }
 
 const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = false }) => {
+  const { can, isFeatureEnabled } = usePermission();
+  const canCreateBid = can('bids:create') && isFeatureEnabled('bids:create');
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -340,7 +343,13 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       toast.success('Bid submitted successfully!');
       setShowQuickBidModal(false);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || 'Failed to submit bid');
+      const payload = e?.response?.data;
+      const msg =
+        payload?.message ||
+        (payload?.code === 'FEATURE_DISABLED'
+          ? 'Cargo bidding is currently unavailable. Please contact your administrator for more information.'
+          : 'Failed to submit bid');
+      toast.error(typeof msg === 'string' ? msg : 'Failed to submit bid');
     }
   };
 
@@ -380,7 +389,13 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       toast.success('Bid submitted successfully!');
       setShowBidModal(false);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || 'Failed to submit bid');
+      const payload = e?.response?.data;
+      const msg =
+        payload?.message ||
+        (payload?.code === 'FEATURE_DISABLED'
+          ? 'Cargo bidding is currently unavailable. Please contact your administrator for more information.'
+          : 'Failed to submit bid');
+      toast.error(typeof msg === 'string' ? msg : 'Failed to submit bid');
     }
   };
 
@@ -571,8 +586,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
         </div>
 
-        <div className={`grid gap-2 sm:gap-3 ${userRole === 'BROKER' ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          {userRole !== 'BROKER' && (
+        <div className={`grid gap-2 sm:gap-3 ${userRole === 'BROKER' || !canCreateBid ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {userRole !== 'BROKER' && canCreateBid && (
             <button
               onClick={() => openBidModal(auction)}
               disabled={auction.status !== 'ACTIVE'}
@@ -580,6 +595,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
             >
               Custom
             </button>
+          )}
+          {userRole !== 'BROKER' && !canCreateBid && (
+            <p className="col-span-full text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 text-center">
+              Cargo bidding is currently unavailable. Please contact your administrator for more information.
+            </p>
           )}
           <button
             onClick={() => openDetailsModal(auction)}
@@ -764,7 +784,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   align: 'right',
                   render: (_: any, auction: Auction) => (
                     <div className="flex items-center justify-end gap-2">
-                      {userRole !== 'BROKER' && (
+                      {userRole !== 'BROKER' && canCreateBid && (
                         <button
                           onClick={() => openBidModal(auction)}
                           disabled={auction.status !== 'ACTIVE'}
@@ -1320,7 +1340,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
               )}
               {(userRole === 'TRUCK_OWNER' || userRole === 'BROKER') && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                  {userRole !== 'BROKER' && (
+                  {userRole !== 'BROKER' && canCreateBid && (
                     <button
                       type="button"
                       onClick={() => { setShowDetailsModal(false); openBidModal(detailsAuction); }}

@@ -3,6 +3,7 @@ import { FaTruck, FaGavel, FaRocket, FaCheck, FaClock, FaDollarSign, FaUserTie }
 import { HelpCircle, BarChart3 } from 'lucide-react';
 import JourneyDecisionHelper from './JourneyDecisionHelper';
 import JourneyComparison from './JourneyComparison';
+import { usePermission } from '../../contexts/PermissionContext';
 
 interface JourneySelectionModalProps {
   isOpen: boolean;
@@ -19,8 +20,15 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
   cargoData,
   loading = false
 }) => {
+  const { isFeatureEnabled, can } = usePermission();
   const [showDecisionHelper, setShowDecisionHelper] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+
+  const smartMatchingAllowed =
+    (can('matching:request') || isFeatureEnabled('matching:request')) &&
+    isFeatureEnabled('matching:request');
+  const biddingAllowed = isFeatureEnabled('auctions:create') && isFeatureEnabled('bids:manage');
+  const brokerAllowed = isFeatureEnabled('brokers:assign');
 
   if (!isOpen) return null;
 
@@ -133,10 +141,14 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
 
               <button
                 onClick={() => onJourneySelected('smart-matching')}
-                disabled={loading}
+                disabled={loading || !smartMatchingAllowed}
                 className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Processing...' : 'Choose Smart Matching'}
+                {loading
+                  ? 'Processing...'
+                  : !smartMatchingAllowed
+                    ? 'Smart Matching unavailable'
+                    : 'Choose Smart Matching'}
               </button>
             </div>
 
@@ -183,10 +195,14 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
 
               <button
                 onClick={() => onJourneySelected('publish-bid')}
-                disabled={loading}
+                disabled={loading || !biddingAllowed}
                 className="w-full px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Processing...' : 'Choose Publish for Bid'}
+                {loading
+                  ? 'Processing...'
+                  : !biddingAllowed
+                    ? 'Bidding unavailable'
+                    : 'Choose Publish for Bid'}
               </button>
             </div>
           </div>

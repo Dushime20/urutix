@@ -24,6 +24,7 @@ import {
   Mail,
   UserCheck,
   UserX,
+  KeyRound,
 } from 'lucide-react';
 import { UserPermissionEditor } from '../components/Admin/Permissions/UserPermissionEditor';
 import { RolePermissionsMatrix } from '../components/Admin/Permissions/RolePermissionsMatrix';
@@ -31,6 +32,7 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { TranslatedText } from '../components/translated-text';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
+import { Link } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -389,6 +391,25 @@ const AdminUsers: React.FC = () => {
       ),
     },
     {
+      key: 'permissions',
+      label: 'Permissions',
+      alwaysVisible: true,
+      render: (_v, user) => (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setPermissionUser(user);
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest bg-slate-50 hover:bg-[#2c5173] hover:text-white text-[#2c5173] border border-slate-200 hover:border-[#2c5173] transition-all"
+          title="Manage user permissions"
+        >
+          <KeyRound size={12} />
+          Manage
+        </button>
+      ),
+    },
+    {
       key: 'status',
       label: 'Status',
       sortable: true,
@@ -472,7 +493,7 @@ const AdminUsers: React.FC = () => {
       divider: true,
       onClick: (user) => handleDeleteUser(user.id),
     },
-  ], [activateUserMutation, suspendUserMutation]);
+  ], [activateUserMutation, suspendUserMutation, isSuperAdmin]);
 
   return (
     <AdminPageLayout>
@@ -499,6 +520,14 @@ const AdminUsers: React.FC = () => {
           <ShieldCheck size={14} /> <TranslatedText text="Role Permissions" />
           {activeTab === 'roles' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full" />}
         </button>
+        {isSuperAdmin && (
+          <Link
+            to="/admin/feature-controls"
+            className="pb-4 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-all"
+          >
+            <KeyRound size={14} /> <TranslatedText text="Feature Controls" />
+          </Link>
+        )}
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -1050,6 +1079,7 @@ const AdminUsers: React.FC = () => {
             userName={`${permissionUser.firstName || ''} ${permissionUser.lastName || ''}`.trim() || permissionUser.email}
             userRole={permissionUser.role}
             onClose={() => setPermissionUser(null)}
+            readOnly={!isSuperAdmin}
           />
         )}
       </div>
