@@ -1,129 +1,244 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
+import * as fs from 'fs';
+import * as path from 'path';
 
-/** Canonical enterprise capability catalog used for Super Admin grant/deny UI */
-export const ENTERPRISE_PERMISSION_CATALOG: Array<[string, string, string, string]> = [
-  // Cargo
-  ['cargo', 'view', 'cargo', 'View cargo loads'],
-  ['cargo', 'view_own', 'cargo', 'View own cargo loads'],
-  ['cargo', 'create', 'cargo', 'Create new cargo loads'],
-  ['cargo', 'edit', 'cargo', 'Edit cargo loads'],
-  ['cargo', 'delete', 'cargo', 'Delete cargo loads'],
-  ['cargo', 'publish', 'cargo', 'Publish cargo for bidding or matching'],
-  ['cargo', 'approve', 'cargo', 'Approve or reject cargo loads'],
-  ['cargo', 'assign_receiver', 'cargo', 'Assign receiver to cargo'],
-  // Fleet / Truck
-  ['fleet', 'view', 'truck', 'View trucks'],
-  ['fleet', 'view_own', 'truck', 'View own trucks'],
-  ['fleet', 'create', 'truck', 'Register / create trucks'],
-  ['fleet', 'edit', 'truck', 'Edit truck details'],
-  ['fleet', 'delete', 'truck', 'Delete trucks'],
-  ['fleet', 'assign_driver', 'truck', 'Assign driver to truck'],
-  // Drivers
-  ['drivers', 'view', 'driver', 'View drivers'],
-  ['drivers', 'view_own', 'driver', 'View own driver profile'],
-  ['drivers', 'create', 'driver', 'Create drivers'],
-  ['drivers', 'edit', 'driver', 'Edit drivers'],
-  ['drivers', 'delete', 'driver', 'Delete drivers'],
-  // Bidding
-  ['auctions', 'view', 'bidding', 'View auctions'],
-  ['auctions', 'create', 'bidding', 'Create auctions / publish for bid'],
-  ['auctions', 'manage', 'bidding', 'Manage auction lifecycle'],
-  ['bids', 'view', 'bidding', 'View bids'],
-  ['bids', 'view_own', 'bidding', 'View own bids'],
-  ['bids', 'create', 'bidding', 'Place bids on cargo'],
-  ['bids', 'manage', 'bidding', 'Accept or reject bids'],
-  ['bids', 'view_history', 'bidding', 'View bid history'],
-  // Smart Matching
-  ['matching', 'request', 'matching', 'Use Smart Matching (find / request)'],
-  ['matching', 'respond', 'matching', 'Respond to Smart Matching requests'],
-  ['matching', 'view_results', 'matching', 'View Smart Matching results'],
-  ['matching', 'analytics', 'matching', 'View matching analytics'],
-  // Trips
-  ['trips', 'view', 'trip', 'View trips'],
-  ['trips', 'view_assigned', 'trip', 'View assigned trips'],
-  ['trips', 'create', 'trip', 'Create trips'],
-  ['trips', 'start', 'trip', 'Start a trip'],
-  ['trips', 'complete', 'trip', 'Complete a trip'],
-  ['trips', 'pause', 'trip', 'Pause a trip'],
-  ['trips', 'resume', 'trip', 'Resume a trip'],
-  ['trips', 'cancel', 'trip', 'Cancel a trip'],
-  ['trips', 'assign_driver', 'trip', 'Assign driver to trip'],
-  ['trips', 'track', 'trip', 'Track trip location'],
-  ['trips', 'view_epod', 'trip', 'View ePOD'],
-  ['trips', 'confirm_epod', 'trip', 'Confirm ePOD'],
-  // Lending
-  ['lending', 'view', 'lending', 'View lending dashboard'],
-  ['lending', 'view_own', 'lending', 'View own loan requests'],
-  ['lending', 'create_request', 'lending', 'Create loan / financing request'],
-  ['lending', 'approve', 'lending', 'Approve or reject loan requests'],
-  ['lending', 'disburse', 'lending', 'Disburse loans'],
-  ['lending', 'repayment', 'lending', 'Manage repayments'],
-  ['lending', 'policies', 'lending', 'Manage lending policies'],
-  // Brokers
-  ['brokers', 'view', 'broker', 'View brokers'],
-  ['brokers', 'assign', 'broker', 'Assign broker to cargo'],
-  ['brokers', 'create', 'broker', 'Create broker accounts'],
-  // Customs / receivers
-  ['customs', 'view', 'customs', 'View customs inspections'],
-  ['customs', 'create', 'customs', 'Create customs inspections'],
-  ['customs', 'update', 'customs', 'Update customs status'],
-  ['receivers', 'view', 'inspection', 'View receivers'],
-  ['receivers', 'inspect', 'inspection', 'Submit cargo inspection'],
-  // Financial
-  ['payments', 'view', 'financial', 'View payments'],
-  ['payments', 'view_own', 'financial', 'View own payments'],
-  ['payments', 'manage', 'financial', 'Manage payments'],
-  ['invoices', 'view', 'financial', 'View invoices'],
-  ['invoices', 'create', 'financial', 'Create invoices'],
-  // Credits
-  ['credits', 'view', 'credits', 'View credits'],
-  ['credits', 'purchase', 'credits', 'Purchase credits'],
-  ['credits', 'consume', 'credits', 'Consume credits'],
-  // Analytics
-  ['analytics', 'view_own', 'analytics', 'View own analytics'],
-  ['analytics', 'view_tenant', 'analytics', 'View tenant analytics'],
-  ['analytics', 'view_all', 'analytics', 'View platform analytics'],
-  ['analytics', 'financial', 'analytics', 'View financial analytics'],
-  ['analytics', 'cost_trends', 'analytics', 'View cost trends'],
-  ['reports', 'view', 'analytics', 'View reports'],
-  ['reports', 'export', 'analytics', 'Export reports'],
-  // Notifications / users
-  ['notifications', 'view', 'notifications', 'View notifications'],
-  ['users', 'view_own', 'users', 'View own profile'],
-  ['users', 'edit_own', 'users', 'Edit own profile'],
-  ['users', 'permissions.manage', 'users', 'Manage user permissions'],
+export type CatalogPermission = {
+  resource: string;
+  action: string;
+  category: string;
+  description: string;
+};
+
+type PermissionCatalogFile = {
+  version?: number;
+  permissions: CatalogPermission[];
+  roleDefaults?: Record<string, string[]>;
+};
+
+/** Fallback if JSON asset is missing at runtime (dev / misconfigured build) */
+const FALLBACK_CATALOG: CatalogPermission[] = [
+  { resource: 'cargo', action: 'view', category: 'cargo', description: 'View cargo loads' },
+  { resource: 'cargo', action: 'view_own', category: 'cargo', description: 'View own cargo loads' },
+  { resource: 'cargo', action: 'create', category: 'cargo', description: 'Create new cargo loads' },
+  { resource: 'cargo', action: 'edit', category: 'cargo', description: 'Edit cargo loads' },
+  { resource: 'cargo', action: 'delete', category: 'cargo', description: 'Delete cargo loads' },
+  { resource: 'cargo', action: 'publish', category: 'cargo', description: 'Publish cargo for bidding or matching' },
+  { resource: 'cargo', action: 'approve', category: 'cargo', description: 'Approve or reject cargo loads' },
+  { resource: 'cargo', action: 'assign_receiver', category: 'cargo', description: 'Assign receiver to cargo' },
+  { resource: 'fleet', action: 'view', category: 'truck', description: 'View trucks' },
+  { resource: 'fleet', action: 'view_own', category: 'truck', description: 'View own trucks' },
+  { resource: 'fleet', action: 'create', category: 'truck', description: 'Register / create trucks' },
+  { resource: 'fleet', action: 'edit', category: 'truck', description: 'Edit truck details' },
+  { resource: 'fleet', action: 'delete', category: 'truck', description: 'Delete trucks' },
+  { resource: 'fleet', action: 'assign_driver', category: 'truck', description: 'Assign driver to truck' },
+  { resource: 'drivers', action: 'view', category: 'driver', description: 'View drivers' },
+  { resource: 'drivers', action: 'view_own', category: 'driver', description: 'View own driver profile' },
+  { resource: 'drivers', action: 'create', category: 'driver', description: 'Create drivers' },
+  { resource: 'drivers', action: 'edit', category: 'driver', description: 'Edit drivers' },
+  { resource: 'drivers', action: 'delete', category: 'driver', description: 'Delete drivers' },
+  { resource: 'auctions', action: 'view', category: 'bidding', description: 'View auctions' },
+  { resource: 'auctions', action: 'create', category: 'bidding', description: 'Create auctions / publish for bid' },
+  { resource: 'auctions', action: 'manage', category: 'bidding', description: 'Manage auction lifecycle' },
+  { resource: 'bids', action: 'view', category: 'bidding', description: 'View bids' },
+  { resource: 'bids', action: 'view_own', category: 'bidding', description: 'View own bids' },
+  { resource: 'bids', action: 'create', category: 'bidding', description: 'Place bids on cargo' },
+  { resource: 'bids', action: 'manage', category: 'bidding', description: 'Accept or reject bids' },
+  { resource: 'bids', action: 'view_history', category: 'bidding', description: 'View bid history' },
+  { resource: 'matching', action: 'request', category: 'matching', description: 'Use Smart Matching (find / request)' },
+  { resource: 'matching', action: 'respond', category: 'matching', description: 'Respond to Smart Matching requests' },
+  { resource: 'matching', action: 'view_results', category: 'matching', description: 'View Smart Matching results' },
+  { resource: 'matching', action: 'analytics', category: 'matching', description: 'View matching analytics' },
+  { resource: 'trips', action: 'view', category: 'trip', description: 'View trips' },
+  { resource: 'trips', action: 'view_assigned', category: 'trip', description: 'View assigned trips' },
+  { resource: 'trips', action: 'create', category: 'trip', description: 'Create trips' },
+  { resource: 'trips', action: 'start', category: 'trip', description: 'Start a trip' },
+  { resource: 'trips', action: 'complete', category: 'trip', description: 'Complete a trip' },
+  { resource: 'trips', action: 'pause', category: 'trip', description: 'Pause a trip' },
+  { resource: 'trips', action: 'resume', category: 'trip', description: 'Resume a trip' },
+  { resource: 'trips', action: 'cancel', category: 'trip', description: 'Cancel a trip' },
+  { resource: 'trips', action: 'assign_driver', category: 'trip', description: 'Assign driver to trip' },
+  { resource: 'trips', action: 'track', category: 'trip', description: 'Track trip location' },
+  { resource: 'trips', action: 'view_epod', category: 'trip', description: 'View ePOD' },
+  { resource: 'trips', action: 'confirm_epod', category: 'trip', description: 'Confirm ePOD' },
+  { resource: 'lending', action: 'view', category: 'lending', description: 'View lending dashboard' },
+  { resource: 'lending', action: 'view_own', category: 'lending', description: 'View own loan requests' },
+  { resource: 'lending', action: 'create_request', category: 'lending', description: 'Create loan / financing request' },
+  { resource: 'lending', action: 'approve', category: 'lending', description: 'Approve or reject loan requests' },
+  { resource: 'lending', action: 'disburse', category: 'lending', description: 'Disburse loans' },
+  { resource: 'lending', action: 'repayment', category: 'lending', description: 'Manage repayments' },
+  { resource: 'lending', action: 'policies', category: 'lending', description: 'Manage lending policies' },
+  { resource: 'brokers', action: 'view', category: 'broker', description: 'View brokers' },
+  { resource: 'brokers', action: 'assign', category: 'broker', description: 'Assign broker to cargo' },
+  { resource: 'brokers', action: 'create', category: 'broker', description: 'Create broker accounts' },
+  { resource: 'customs', action: 'view', category: 'customs', description: 'View customs inspections' },
+  { resource: 'customs', action: 'create', category: 'customs', description: 'Create customs inspections' },
+  { resource: 'customs', action: 'update', category: 'customs', description: 'Update customs status' },
+  { resource: 'receivers', action: 'view', category: 'inspection', description: 'View receivers' },
+  { resource: 'receivers', action: 'inspect', category: 'inspection', description: 'Submit cargo inspection' },
+  { resource: 'payments', action: 'view', category: 'financial', description: 'View payments' },
+  { resource: 'payments', action: 'view_own', category: 'financial', description: 'View own payments' },
+  { resource: 'payments', action: 'manage', category: 'financial', description: 'Manage payments' },
+  { resource: 'invoices', action: 'view', category: 'financial', description: 'View invoices' },
+  { resource: 'invoices', action: 'create', category: 'financial', description: 'Create invoices' },
+  { resource: 'credits', action: 'view', category: 'credits', description: 'View credits' },
+  { resource: 'credits', action: 'purchase', category: 'credits', description: 'Purchase credits' },
+  { resource: 'credits', action: 'consume', category: 'credits', description: 'Consume credits' },
+  { resource: 'analytics', action: 'view_own', category: 'analytics', description: 'View own analytics' },
+  { resource: 'analytics', action: 'view_tenant', category: 'analytics', description: 'View tenant analytics' },
+  { resource: 'analytics', action: 'view_all', category: 'analytics', description: 'View platform analytics' },
+  { resource: 'analytics', action: 'financial', category: 'analytics', description: 'View financial analytics' },
+  { resource: 'analytics', action: 'cost_trends', category: 'analytics', description: 'View cost trends' },
+  { resource: 'reports', action: 'view', category: 'analytics', description: 'View reports' },
+  { resource: 'reports', action: 'export', category: 'analytics', description: 'Export reports' },
+  { resource: 'notifications', action: 'view', category: 'notifications', description: 'View notifications' },
+  { resource: 'users', action: 'view_own', category: 'users', description: 'View own profile' },
+  { resource: 'users', action: 'edit_own', category: 'users', description: 'Edit own profile' },
+  { resource: 'users', action: 'permissions.manage', category: 'users', description: 'Manage user permissions' },
 ];
+
+const FALLBACK_ROLE_DEFAULTS: Record<string, string[]> = {
+  CARGO_OWNER: [
+    'cargo:view', 'cargo:view_own', 'cargo:create', 'cargo:edit', 'cargo:delete', 'cargo:publish',
+    'auctions:view', 'auctions:create', 'bids:view', 'bids:manage',
+    'matching:request', 'matching:view_results', 'lending:create_request', 'brokers:assign',
+    'trips:view_assigned', 'analytics:view_own', 'analytics:view_tenant',
+  ],
+  TRUCK_OWNER: [
+    'fleet:view', 'fleet:view_own', 'fleet:create', 'fleet:edit', 'fleet:delete', 'fleet:assign_driver',
+    'drivers:view', 'drivers:create', 'drivers:edit',
+    'auctions:view', 'bids:view_own', 'bids:create', 'bids:view_history',
+    'matching:respond', 'trips:view', 'trips:start', 'trips:complete', 'trips:assign_driver',
+    'lending:view_own', 'lending:create_request', 'analytics:view_own',
+  ],
+  DRIVER: [
+    'trips:view_assigned', 'trips:start', 'trips:complete', 'trips:pause', 'trips:resume',
+    'trips:view_epod', 'analytics:view_own',
+  ],
+  LENDER: [
+    'lending:view', 'lending:approve', 'lending:disburse', 'lending:repayment', 'lending:policies',
+    'analytics:view_own',
+  ],
+  BROKER: [
+    'auctions:view', 'bids:view', 'bids:manage', 'matching:request', 'matching:view_results',
+    'brokers:view', 'cargo:view',
+  ],
+  TENANT_ADMIN: [
+    'cargo:view', 'fleet:view', 'bids:manage', 'auctions:manage', 'brokers:assign',
+    'matching:view_results', 'trips:assign_driver', 'analytics:view_tenant',
+  ],
+  CARGO_RECEIVER: ['receivers:inspect', 'receivers:view', 'cargo:view_own', 'trips:confirm_epod'],
+  CUSTOMS_OFFICER: ['customs:view', 'customs:create', 'customs:update'],
+  FLEET_MANAGER: ['fleet:view', 'fleet:edit', 'trips:assign_driver', 'trips:start', 'trips:complete'],
+  FLEET_DISPATCHER: ['trips:assign_driver', 'trips:start', 'trips:complete', 'fleet:view'],
+};
+
+/** @deprecated Use loadPermissionCatalog(). Kept for import compatibility. */
+export const ENTERPRISE_PERMISSION_CATALOG: Array<[string, string, string, string]> =
+  FALLBACK_CATALOG.map((p) => [p.resource, p.action, p.category, p.description]);
 
 /**
  * PermissionTableInitService
  *
- * Ensures RBAC tables + full enterprise permission catalog exist at startup.
+ * Source of truth: backend/src/config/permission-catalog.json
+ * Runtime store: permissions / role_permissions tables (upserted on boot + sync-catalog)
  */
 @Injectable()
 export class PermissionTableInitService implements OnModuleInit {
   private readonly logger = new Logger(PermissionTableInitService.name);
+  private catalog: CatalogPermission[] = FALLBACK_CATALOG;
+  private roleDefaults: Record<string, string[]> = FALLBACK_ROLE_DEFAULTS;
 
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async onModuleInit() {
     try {
+      this.loadCatalogFile();
       await this.ensureTables();
       await this.ensureFeatureControlsTable();
       const synced = await this.syncPermissionCatalog();
       await this.seedRoles();
       this.logger.log(`Permission tables initialized (${synced} catalog permissions upserted)`);
-    } catch (err) {
+    } catch (err: any) {
       this.logger.warn('Permission table init failed (non-critical):', err?.message || err);
+    }
+  }
+
+  /** Load JSON catalog from dist or src (professional source of truth). */
+  loadCatalogFile(): CatalogPermission[] {
+    const candidates = [
+      path.join(__dirname, '..', 'config', 'permission-catalog.json'),
+      path.join(process.cwd(), 'dist', 'config', 'permission-catalog.json'),
+      path.join(process.cwd(), 'src', 'config', 'permission-catalog.json'),
+      path.join(process.cwd(), 'backend', 'src', 'config', 'permission-catalog.json'),
+    ];
+
+    for (const filePath of candidates) {
+      try {
+        if (!fs.existsSync(filePath)) continue;
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const parsed = JSON.parse(raw) as PermissionCatalogFile;
+        if (!Array.isArray(parsed.permissions) || parsed.permissions.length === 0) continue;
+        this.catalog = parsed.permissions.map((p) => ({
+          resource: String(p.resource).trim(),
+          action: String(p.action).trim(),
+          category: String(p.category || 'other').trim(),
+          description: String(p.description || '').trim(),
+        }));
+        if (parsed.roleDefaults && typeof parsed.roleDefaults === 'object') {
+          this.roleDefaults = parsed.roleDefaults;
+        }
+        this.logger.log(`Loaded permission catalog from ${filePath} (${this.catalog.length} entries)`);
+        return this.catalog;
+      } catch (err: any) {
+        this.logger.warn(`Failed reading catalog ${filePath}: ${err?.message || err}`);
+      }
+    }
+
+    this.logger.warn('permission-catalog.json not found — using embedded fallback catalog');
+    this.catalog = FALLBACK_CATALOG;
+    this.roleDefaults = FALLBACK_ROLE_DEFAULTS;
+    return this.catalog;
+  }
+
+  getCatalog(): CatalogPermission[] {
+    if (!this.catalog?.length) this.loadCatalogFile();
+    return this.catalog;
+  }
+
+  /** True when DB is missing key operational permissions (e.g. only analytics seeded). */
+  async isCatalogIncomplete(): Promise<boolean> {
+    try {
+      const required = ['cargo:create', 'bids:create', 'matching:request', 'trips:start', 'fleet:create'];
+      for (const code of required) {
+        const [resource, action] = code.split(':');
+        const rows = await this.dataSource.query(
+          `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
+          [resource, action],
+        );
+        if (!rows.length) return true;
+      }
+      const count = await this.getPermissionCount();
+      return count < Math.min(40, this.getCatalog().length);
+    } catch {
+      return true;
     }
   }
 
   /** Public — Super Admin / detail endpoint can force-refresh the catalog */
   async syncPermissionCatalog(): Promise<number> {
+    this.loadCatalogFile();
     await this.ensureTables();
+    // Ensure unique index exists so ON CONFLICT works on older DBs
+    await this.dataSource.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "UQ_permissions_resource_action"
+      ON "permissions" ("resource", "action")
+    `).catch(() => {});
+
     let count = 0;
-    for (const [resource, action, category, description] of ENTERPRISE_PERMISSION_CATALOG) {
+    for (const perm of this.getCatalog()) {
+      const { resource, action, category, description } = perm;
       try {
         await this.dataSource.query(
           `
@@ -136,7 +251,7 @@ export class PermissionTableInitService implements OnModuleInit {
           [resource, action, category, description],
         );
         count += 1;
-      } catch (err: any) {
+      } catch {
         // Fallback when unique constraint name differs (older DBs)
         try {
           const existing = await this.dataSource.query(
@@ -322,41 +437,7 @@ export class PermissionTableInitService implements OnModuleInit {
   }
 
   private async seedRoleOperationalPermissions() {
-    const rolePerms: Record<string, string[]> = {
-      CARGO_OWNER: [
-        'cargo:view', 'cargo:view_own', 'cargo:create', 'cargo:edit', 'cargo:delete', 'cargo:publish',
-        'auctions:view', 'auctions:create', 'bids:view', 'bids:manage',
-        'matching:request', 'matching:view_results', 'lending:create_request', 'brokers:assign',
-        'trips:view_assigned', 'analytics:view_own', 'analytics:view_tenant',
-      ],
-      TRUCK_OWNER: [
-        'fleet:view', 'fleet:view_own', 'fleet:create', 'fleet:edit', 'fleet:delete', 'fleet:assign_driver',
-        'drivers:view', 'drivers:create', 'drivers:edit',
-        'auctions:view', 'bids:view_own', 'bids:create', 'bids:view_history',
-        'matching:respond', 'trips:view', 'trips:start', 'trips:complete', 'trips:assign_driver',
-        'lending:view_own', 'lending:create_request', 'analytics:view_own',
-      ],
-      DRIVER: [
-        'trips:view_assigned', 'trips:start', 'trips:complete', 'trips:pause', 'trips:resume',
-        'trips:view_epod', 'analytics:view_own',
-      ],
-      LENDER: [
-        'lending:view', 'lending:approve', 'lending:disburse', 'lending:repayment', 'lending:policies',
-        'analytics:view_own',
-      ],
-      BROKER: [
-        'auctions:view', 'bids:view', 'bids:manage', 'matching:request', 'matching:view_results',
-        'brokers:view', 'cargo:view',
-      ],
-      TENANT_ADMIN: [
-        'cargo:view', 'fleet:view', 'bids:manage', 'auctions:manage', 'brokers:assign',
-        'matching:view_results', 'trips:assign_driver', 'analytics:view_tenant',
-      ],
-      CARGO_RECEIVER: ['receivers:inspect', 'receivers:view', 'cargo:view_own', 'trips:confirm_epod'],
-      CUSTOMS_OFFICER: ['customs:view', 'customs:create', 'customs:update'],
-      FLEET_MANAGER: ['fleet:view', 'fleet:edit', 'trips:assign_driver', 'trips:start', 'trips:complete'],
-      FLEET_DISPATCHER: ['trips:assign_driver', 'trips:start', 'trips:complete', 'fleet:view'],
-    };
+    const rolePerms = this.roleDefaults || FALLBACK_ROLE_DEFAULTS;
 
     const columns = await this.dataSource.query(
       `SELECT column_name FROM information_schema.columns

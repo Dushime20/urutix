@@ -135,8 +135,8 @@ You can Grant / Deny / Restore capabilities such as:
 | Trips | `trips:start`, `trips:complete` |
 | Lending | `lending:create_request`, `lending:approve` |
 
-If the drawer only shows Analytics, click **Sync catalog** (or redeploy backend).  
-`POST /api/admin/permissions/sync-catalog` loads the full enterprise catalog.
+If the drawer only shows Analytics, click **Sync catalog**, then **redeploy/restart the backend** so it loads the latest catalog.  
+`POST /api/admin/permissions/sync-catalog` upserts from the JSON catalog into the DB.
 
 API:
 
@@ -148,10 +148,30 @@ PUT  /api/admin/permissions/users/:userId   { grants, denies, revokes, reason }
 
 Only `SUPER_ADMIN` can mutate user overrides.
 
+## Where to define permissions (professional approach)
+
+**Do both — JSON is the source of truth; DB is the runtime store.**
+
+| Layer | Role |
+|-------|------|
+| `backend/src/config/permission-catalog.json` | Version-controlled catalog (add new permissions here) |
+| `permissions` table | Runtime rows used by RBAC, grants/denies, UI |
+| Boot + `POST …/sync-catalog` | Upserts JSON → DB (idempotent) |
+
+Why not DB-only? Manual SQL drifts across environments and is hard to review in PRs.  
+Why not JSON-only? Role/user overrides and FKs need DB rows.
+
+To add a capability (e.g. `cargo:archive`):
+
+1. Add an entry to `permission-catalog.json`
+2. Optionally add it under `roleDefaults` for roles that should inherit it
+3. Redeploy backend (or call sync-catalog)
+4. Protect the API with `@RequirePermissions('cargo:archive')`
+
 ## How to protect a new feature
 
-1. **Register permission** in `permissions` (seed / `PermissionTableInitService` / admin create).
-2. **Assign to roles** via Super Admin Role Permissions (or seed `role_permissions`).
+1. **Register permission** in `permission-catalog.json` (then sync to DB).
+2. **Assign to roles** via Super Admin Role Permissions (or `roleDefaults` in the JSON).
 3. **Protect backend endpoint**:
 
 ```ts

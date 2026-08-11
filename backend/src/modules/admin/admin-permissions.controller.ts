@@ -102,9 +102,8 @@ export class AdminPermissionsController {
     async getUserPermissionsFull(@Param('userId') userId: string) {
         // Ensure cargo/truck/bidding/trip/lending catalog exists (fixes DBs that only have analytics)
         try {
-            const count = await this.permissionTableInit.getPermissionCount();
-            if (count < 40) {
-                this.logger.log(`Permission catalog sparse (${count}) — syncing enterprise catalog`);
+            if (await this.permissionTableInit.isCatalogIncomplete()) {
+                this.logger.log('Permission catalog incomplete — syncing from permission-catalog.json');
                 await this.permissionTableInit.syncPermissionCatalog();
             }
         } catch (err: any) {

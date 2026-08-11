@@ -27,21 +27,29 @@ interface UserPermissionEditorProps {
 }
 
 const ROLE_FOCUS: Record<string, string[]> = {
-  CARGO_OWNER: ['cargo', 'bidding', 'matching', 'lending', 'broker', 'trip', 'analytics'],
-  TRUCK_OWNER: ['truck', 'driver', 'bidding', 'matching', 'trip', 'lending', 'analytics'],
+  CARGO_OWNER: [
+    'cargo', 'cargo_management', 'bidding', 'matching', 'lending', 'broker', 'trip', 'analytics',
+  ],
+  TRUCK_OWNER: [
+    'truck', 'fleet_management', 'driver', 'bidding', 'matching', 'trip', 'lending', 'analytics',
+  ],
   DRIVER: ['trip', 'driver', 'analytics'],
   LENDER: ['lending', 'analytics', 'financial'],
-  BROKER: ['broker', 'bidding', 'matching', 'cargo', 'analytics'],
-  TENANT_ADMIN: ['cargo', 'truck', 'bidding', 'matching', 'trip', 'broker', 'analytics'],
-  CARGO_RECEIVER: ['inspection', 'cargo', 'trip'],
+  BROKER: ['broker', 'bidding', 'matching', 'cargo', 'cargo_management', 'analytics'],
+  TENANT_ADMIN: [
+    'cargo', 'cargo_management', 'truck', 'fleet_management', 'bidding', 'matching', 'trip', 'broker', 'analytics',
+  ],
+  CARGO_RECEIVER: ['inspection', 'cargo', 'cargo_management', 'trip'],
   CUSTOMS_OFFICER: ['customs'],
-  FLEET_MANAGER: ['truck', 'trip', 'driver'],
-  FLEET_DISPATCHER: ['trip', 'truck'],
+  FLEET_MANAGER: ['truck', 'fleet_management', 'trip', 'driver'],
+  FLEET_DISPATCHER: ['trip', 'truck', 'fleet_management'],
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
   cargo: 'Cargo',
+  cargo_management: 'Cargo',
   truck: 'Truck / Fleet',
+  fleet_management: 'Truck / Fleet',
   driver: 'Drivers',
   bidding: 'Bidding',
   matching: 'Smart Matching',
@@ -55,6 +63,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   analytics: 'Analytics',
   notifications: 'Notifications',
   users: 'Users',
+  user_management: 'Users',
 };
 
 const sourceLabel = (item: PermissionItem & { globallyDisabled?: boolean }) => {
@@ -82,7 +91,7 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
   const [activeTab, setActiveTab] = useState<'permissions' | 'audit'>('permissions');
   const [search, setSearch] = useState('');
   const [reason, setReason] = useState('');
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [busyCode, setBusyCode] = useState<string | null>(null);
 
