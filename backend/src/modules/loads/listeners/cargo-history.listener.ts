@@ -312,4 +312,228 @@ export class CargoHistoryListener {
       },
     });
   }
+
+  @OnEvent('load.v2.created')
+  async handleLoadV2Created(event: {
+    loadId: string;
+    userId: string;
+    tenantId?: string;
+  }) {
+    if (!event.loadId || !event.userId) return;
+    await this.loadAuditService.create({
+      loadId: event.loadId,
+      entityType: AuditEntityType.LOAD,
+      entityId: event.loadId,
+      action: AuditAction.CREATE,
+      actorId: event.userId,
+      description: 'Cargo created',
+      metadata: { activityType: 'created', source: 'loads-v2' },
+    });
+  }
+
+  @OnEvent('load.v2.published')
+  async handleLoadV2Published(event: {
+    loadId: string;
+    userId: string;
+    tenantId?: string;
+  }) {
+    if (!event.loadId || !event.userId) return;
+    await this.loadAuditService.create({
+      loadId: event.loadId,
+      entityType: AuditEntityType.LOAD,
+      entityId: event.loadId,
+      action: AuditAction.PUBLISH,
+      actorId: event.userId,
+      description: 'Cargo published and opened for matching',
+      metadata: { activityType: 'published', source: 'loads-v2' },
+    });
+  }
+
+  @OnEvent('load.v2.unpublished')
+  async handleLoadV2Unpublished(event: { loadId: string; userId: string }) {
+    if (!event.loadId || !event.userId) return;
+    await this.loadAuditService.create({
+      loadId: event.loadId,
+      entityType: AuditEntityType.LOAD,
+      entityId: event.loadId,
+      action: AuditAction.STATUS_CHANGE,
+      actorId: event.userId,
+      description: 'Cargo unpublished',
+      metadata: { activityType: 'status_change', status: 'unpublished' },
+    });
+  }
+
+  @OnEvent('load.v2.updated')
+  async handleLoadV2Updated(event: {
+    loadId: string;
+    userId: string;
+    changes?: Record<string, any>;
+  }) {
+    if (!event.loadId || !event.userId) return;
+    const changedFields = event.changes
+      ? Object.keys(event.changes).filter(
+          (k) => event.changes![k] !== undefined,
+        )
+      : [];
+    const isStatusChange = changedFields.includes('status');
+    const fieldChanges = changedFields.map((field) => ({
+      field,
+      oldValue: undefined,
+      newValue: event.changes?.[field],
+      type: 'modified' as const,
+    }));
+
+    await this.loadAuditService.create({
+      loadId: event.loadId,
+      entityType: AuditEntityType.LOAD,
+      entityId: event.loadId,
+      action: isStatusChange ? AuditAction.STATUS_CHANGE : AuditAction.UPDATE,
+      actorId: event.userId,
+      description: isStatusChange
+        ? `Status changed to ${event.changes?.status}`
+        : changedFields.length
+          ? `Cargo updated (${changedFields.join(', ')})`
+          : 'Cargo updated',
+      after: event.changes,
+      changes: fieldChanges.length ? fieldChanges : undefined,
+      metadata: {
+        activityType: isStatusChange ? 'status_change' : 'updated',
+        changedFields,
+        source: 'loads-v2',
+      },
+    });
+  }
+
+  @OnEvent('load.v2.truck_assigned')
+  async handleLoadV2TruckAssigned(event: {
+    loadId: string;
+    truckId: string;
+    userId: string;
+  }) {
+    if (!event.loadId || !event.userId) return;
+    await this.loadAuditService.create({
+      loadId: event.loadId,
+      entityType: AuditEntityType.LOAD,
+      entityId: event.loadId,
+      action: AuditAction.ASSIGN,
+      actorId: event.userId,
+      description: `Truck ${event.truckId} assigned to cargo`,
+      metadata: {
+        activityType: 'carrier_assigned',
+        truckId: event.truckId,
+        source: 'loads-v2',
+      },
+    });
+  }
+
+  @OnEvent('load.v2.truck_unassigned')
+  async handleLoadV2TruckUnassigned(event: {
+    loadId: string;
+    truckId?: string;
+    userId: string;
+  }) {
+    if (!event.loadId || !event.userId) return;
+    await this.loadAuditService.create({
+      loadId: event.loadId,
+      entityType: AuditEntityType.LOAD,
+      entityId: event.loadId,
+      action: AuditAction.UPDATE,
+      actorId: event.userId,
+      description: event.truckId
+        ? `Truck ${event.truckId} unassigned from cargo`
+        : 'Truck unassigned from cargo',
+      metadata: {
+        activityType: 'updated',
+        truckId: event.truckId,
+        source: 'loads-v2',
+      },
+    });
+  }
+
+  @OnEvent('load.v2.deleted')
+  async handleLoadV2Deleted(event: { loadId: string; userId: string }) {
+    if (!event.loadId || !event.userId) return;
+    await this.loadAuditService.create({
+      loadId: event.loadId,
+      entityType: AuditEntityType.LOAD,
+      entityId: event.loadId,
+      action: AuditAction.DELETE,
+      actorId: event.userId,
+      description: 'Cargo deleted',
+      metadata: { activityType: 'other', source: 'loads-v2' },
+    });
+  }
+
+  @OnEvent('bid.withdrawn')
+  async handleBidWithdrawn(event: {
+    bidId: string;
+    cargoId?: string;
+    loadId?: string;
+    truckOwnerId: string;
+  }) {
+    const loadId = event.cargoId || event.loadId;
+    if (!loadId) return;
+    await this.loadAuditService.create({
+      loadId,
+      entityType: AuditEntityType.BID,
+      entityId: event.bidId,
+      action: AuditAction.UPDATE,
+      actorId: event.truckOwnerId,
+      description: 'Bid withdrawn',
+      metadata: { activityType: 'bid_withdrawn', bidId: event.bidId },
+    });
+  }
+
+  @OnEvent('bid.rejected')
+  @OnEvent('bid.auction.lost')
+  async handleBidRejected(event: {
+    bidId: string;
+    cargoId?: string;
+    loadId?: string;
+    truckOwnerId: string;
+    reason?: string;
+  }) {
+    const loadId = event.cargoId || event.loadId;
+    if (!loadId) return;
+    await this.loadAuditService.create({
+      loadId,
+      entityType: AuditEntityType.BID,
+      entityId: event.bidId,
+      action: AuditAction.UPDATE,
+      actorId: event.truckOwnerId,
+      description: event.reason || 'Bid rejected',
+      reason: event.reason,
+      metadata: { activityType: 'bid_rejected', bidId: event.bidId },
+    });
+  }
+
+  @OnEvent('bid.auto-cancelled')
+  async handleBidAutoCancelled(event: {
+    bidId: string;
+    cargoId?: string;
+    loadId?: string;
+    truckOwnerId?: string;
+    actorUserId?: string;
+    reason?: string;
+  }) {
+    const loadId = event.cargoId || event.loadId;
+    const actorId = event.actorUserId || event.truckOwnerId;
+    if (!loadId || !actorId) return;
+    await this.loadAuditService.create({
+      loadId,
+      entityType: AuditEntityType.BID,
+      entityId: event.bidId,
+      action: AuditAction.CANCEL,
+      actorId,
+      description: event.reason || 'Bid auto-cancelled due to schedule conflict',
+      reason: event.reason,
+      metadata: {
+        activityType: 'bid_rejected',
+        bidId: event.bidId,
+        auto: true,
+      },
+      isAutomated: true,
+      automationSource: 'bid-conflict-resolution',
+    });
+  }
 }

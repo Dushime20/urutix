@@ -46,6 +46,7 @@ import CargoDetailsHeader from "../components/CargoDetailsModal/CargoDetailsHead
 import CargoDetailsTabs from "../components/CargoDetailsModal/CargoDetailsTabs";
 import CargoOverviewSection from "../components/CargoDetailsModal/CargoOverviewSection";
 import CargoTrackingSection from "../components/CargoDetailsModal/CargoTrackingSection";
+import CargoHistoryTab from "@/components/Cargo/CargoHistoryTab";
 import {
   formatCurrency,
   formatVolume,
@@ -918,186 +919,11 @@ const CargoDetails = () => {
               )}
 
               {activeTab === "history" && (
-                <div className="space-y-6">
-                  {/* History Overview */}
-                  <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                        <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full mr-3"></div>
-                        Cargo History
-                      </h3>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 px-3 rounded-lg"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Export History
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 px-3 rounded-lg"
-                        >
-                          Filter
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* History Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                      {[
-                        {
-                          icon: "🕒",
-                          label: "Total Events",
-                          value: "24 events",
-                          color: "purple",
-                        },
-                        {
-                          icon: "📊",
-                          label: "Status Changes",
-                          value: "8 changes",
-                          color: "blue",
-                        },
-                        {
-                          icon: "💬",
-                          label: "Comments",
-                          value: "12 comments",
-                          color: "green",
-                        },
-                        {
-                          icon: "👥",
-                          label: "Participants",
-                          value: "6 users",
-                          color: "orange",
-                        },
-                      ].map((stat, index) => (
-                        <div
-                          key={index}
-                          className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200 text-center"
-                        >
-                          <div className="text-2xl mb-2">{stat.icon}</div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {stat.label}
-                          </p>
-                          <p className="text-xs text-gray-500">{stat.value}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Activity Timeline */}
-                    <div className="bg-white rounded-lg border border-gray-200">
-                      <div className="p-4 border-b border-gray-200 bg-gray-50">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-gray-900">
-                            Activity Timeline
-                          </h4>
-                          <div className="flex items-center space-x-2">
-                            <Select value="all" onValueChange={() => { }}>
-                              <SelectTrigger className="h-9 border-gray-200">
-                                <SelectValue placeholder="Select Format" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Events</SelectItem>
-                                <SelectItem value="status">
-                                  Status Changes
-                                </SelectItem>
-                                <SelectItem value="comments">
-                                  Comments
-                                </SelectItem>
-                                <SelectItem value="updates">Updates</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              placeholder="Search events..."
-                              className="w-48 h-9 border-gray-200 focus:border-blue-300 focus:ring-blue-200"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="divide-y divide-gray-200">
-                        {[
-                          {
-                            status: "delivered",
-                            title: "Cargo delivered successfully",
-                            description:
-                              "Cargo was delivered to the final destination in Nairobi, Kenya",
-                            time: "2 hours ago",
-                            type: "Status Change",
-                            user: "John Doe",
-                            color: "emerald",
-                          },
-                          {
-                            status: "comment",
-                            title: "Comment added",
-                            description:
-                              '"Driver reported minor delay due to traffic. ETA updated to 2 hours."',
-                            time: "4 hours ago",
-                            type: "Comment",
-                            user: "Jane Smith",
-                            color: "blue",
-                          },
-                          {
-                            status: "picked",
-                            title: "Cargo picked up",
-                            description:
-                              "Cargo was picked up from the pickup location in Kigali, Rwanda",
-                            time: "6 hours ago",
-                            type: "Status Change",
-                            user: "Driver App",
-                            color: "yellow",
-                          },
-                        ].map((event, index) => (
-                          <div
-                            key={index}
-                            className="p-4 hover:bg-gray-50 transition-colors"
-                          >
-                            <div className="flex items-start space-x-3">
-                              <div
-                                className={`w-3 h-3 bg-${event.color}-500 rounded-full mt-2 flex-shrink-0`}
-                              ></div>
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-1">
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {event.title}
-                                  </p>
-                                  <span className="text-xs text-gray-500">
-                                    {event.time}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-600 mb-2">
-                                  {event.description}
-                                </p>
-                                <div className="flex items-center space-x-2">
-                                  <span
-                                    className={`px-2 py-1 bg-${event.color}-100 text-${event.color}-800 text-xs rounded-full`}
-                                  >
-                                    {event.type}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    by {event.user}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Load More */}
-                      <div className="p-4 border-t border-gray-200 text-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 px-4 rounded-lg"
-                        >
-                          Load More History
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                <div className="bg-white rounded-xl p-4 md:p-6 border border-gray-200 shadow-sm">
+                  <CargoHistoryTab
+                    cargoId={cargoId}
+                    enabled={activeTab === "history"}
+                  />
                 </div>
               )}
 

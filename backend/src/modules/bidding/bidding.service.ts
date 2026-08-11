@@ -595,6 +595,13 @@ export class BiddingService {
 
     bid.status = BidStatus.WITHDRAWN;
     await this.bidRepository.save(bid);
+
+    this.eventEmitter.emit('bid.withdrawn', {
+      bidId: bid.id,
+      loadId: bid.loadId,
+      cargoId: bid.loadId,
+      truckOwnerId,
+    });
   }
 
   /**

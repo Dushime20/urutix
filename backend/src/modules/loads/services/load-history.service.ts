@@ -110,16 +110,10 @@ export class LoadHistoryService {
       items.push(item);
     };
 
-    // 1. Audit events (canonical when present)
+    // 1. Audit events (canonical when present) — never collapse distinct audits
     for (const event of auditEvents) {
       const mapped = this.mapAuditEvent(event);
-      pushUnique(mapped, [
-        `audit:${event.id}`,
-        ...(event.entityId
-          ? [`${event.entityType}:${event.entityId}:${event.action}`]
-          : []),
-        this.activityDedupeKey(mapped),
-      ]);
+      pushUnique(mapped, [`audit:${event.id}`]);
     }
 
     // 2. Load lifecycle timestamps
@@ -576,15 +570,25 @@ export class LoadHistoryService {
     const activityType =
       metaType || this.inferActivityTypeFromAudit(event);
 
+    const changeSummary =
+      event.changes?.length > 0
+        ? event.changes
+            .map((c) => `${c.field}: ${this.stringifyValue(c.oldValue)} → ${this.stringifyValue(c.newValue)}`)
+            .join('; ')
+        : undefined;
+
+    const description =
+      event.description ||
+      changeSummary ||
+      event.getChangeSummary?.() ||
+      this.defaultDescription(activityType);
+
     return {
       id: event.id,
       activityType,
       action: event.action,
       title: this.titleForActivity(activityType, event.description),
-      description:
-        event.description ||
-        event.getChangeSummary?.() ||
-        this.defaultDescription(activityType),
+      description,
       actorId: event.actorId,
       actorName: event.actorName,
       actorRole: event.actorRole,
@@ -592,8 +596,26 @@ export class LoadHistoryService {
       source: 'audit',
       entityType: event.entityType,
       entityId: event.entityId,
-      metadata: event.metadata,
+      metadata: {
+        ...(event.metadata || {}),
+        ...(event.changes?.length ? { changes: event.changes } : {}),
+        ...(event.before ? { before: event.before } : {}),
+        ...(event.after ? { after: event.after } : {}),
+        ...(event.reason ? { reason: event.reason } : {}),
+      },
     };
+  }
+
+  private stringifyValue(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'object') {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    }
+    return String(value);
   }
 
   private mapTripEvent(te: TripEvent): CargoHistoryItemDto | null {

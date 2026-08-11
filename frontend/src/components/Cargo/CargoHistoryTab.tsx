@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Loader2,
   Filter,
+  Route,
 } from 'lucide-react';
 import { loadsAPI } from '@/services/load';
 import { cn } from '@/utils/cn';
@@ -148,6 +149,8 @@ function activityIcon(type: CargoHistoryActivityType) {
     case 'created':
     case 'published':
       return Package;
+    case 'tracking_update':
+      return Route;
     default:
       return Clock3;
   }
@@ -210,6 +213,18 @@ function formatDateTime(iso: string): { date: string; time: string; relative: st
   return { date, time, relative };
 }
 
+function formatChangeValue(value: unknown): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
 interface CargoHistoryTabProps {
   cargoId: string | null;
   enabled?: boolean;
@@ -253,17 +268,28 @@ export default function CargoHistoryTab({
       ),
     ).length;
     const bids = items.filter((i) => i.activityType.startsWith('bid_')).length;
-    const inspections = items.filter((i) =>
-      i.activityType.startsWith('inspection_'),
+    const tripEvents = items.filter((i) =>
+      [
+        'trip_started',
+        'pickup_arrived',
+        'pickup_completed',
+        'in_transit',
+        'delivery_arrived',
+        'delivered',
+        'loaded',
+        'loading_started',
+        'unloading_started',
+        'unloading_completed',
+      ].includes(i.activityType),
     ).length;
-    return { total: items.length, statusChanges, bids, inspections };
+    return { total: items.length, statusChanges, bids, tripEvents };
   }, [items]);
 
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-slate-500">
         <Loader2 className="w-8 h-8 animate-spin mb-3 text-[#345E85]" />
-        <p className="text-sm font-medium">Loading cargo history…</p>
+        <p className="text-sm font-medium">Loading cargo activity trail…</p>
       </div>
     );
   }
@@ -290,11 +316,11 @@ export default function CargoHistoryTab({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <Clock3 className="w-5 h-5 text-[#345E85]" />
-            Activity History
+            <Route className="w-5 h-5 text-[#345E85]" />
+            Cargo Activity Trail
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            Every broker assignment, bid, inspection, loading, and trip event with date &amp; time
+            Full audit of every action on this cargo — create, assign, bid, inspect, load, trip, deliver, and edits
           </p>
         </div>
         <button
@@ -311,9 +337,9 @@ export default function CargoHistoryTab({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: 'Total events', value: stats.total },
-          { label: 'Status / lifecycle', value: stats.statusChanges },
+          { label: 'Lifecycle', value: stats.statusChanges },
           { label: 'Bidding', value: stats.bids },
-          { label: 'Inspections', value: stats.inspections },
+          { label: 'Trip / loading', value: stats.tripEvents },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -362,7 +388,7 @@ export default function CargoHistoryTab({
           <Clock3 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <p className="text-slate-700 font-medium">No activity recorded yet</p>
           <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-            Assignments, bids, inspections, loading, and trip milestones will appear here as they happen.
+            Every action on this cargo will appear here as a chronological trail — assignments, bids, inspections, edits, and trip milestones.
           </p>
         </div>
       ) : (
@@ -373,6 +399,13 @@ export default function CargoHistoryTab({
               const Icon = activityIcon(item.activityType);
               const colors = activityColor(item.activityType);
               const { date, time, relative } = formatDateTime(item.createdAt);
+              const changes = Array.isArray(item.metadata?.changes)
+                ? (item.metadata.changes as Array<{
+                    field: string;
+                    oldValue?: unknown;
+                    newValue?: unknown;
+                  }>)
+                : [];
               return (
                 <li key={item.id} className="relative flex gap-4 py-4">
                   <div
@@ -386,12 +419,44 @@ export default function CargoHistoryTab({
                   <div className="flex-1 min-w-0 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm">
-                          {item.title}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-slate-900 text-sm">
+                            {item.title}
+                          </p>
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">
+                            {item.activityType.replace(/_/g, ' ')}
+                          </span>
+                        </div>
                         <p className="text-sm text-slate-600 mt-0.5">
                           {item.description}
                         </p>
+                        {changes.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {changes.slice(0, 6).map((change) => (
+                              <li
+                                key={`${item.id}-${change.field}`}
+                                className="text-xs text-slate-500 font-mono bg-slate-50 border border-slate-100 rounded px-2 py-1"
+                              >
+                                <span className="font-semibold text-slate-700">
+                                  {change.field}
+                                </span>
+                                {': '}
+                                <span className="text-rose-600/80">
+                                  {formatChangeValue(change.oldValue)}
+                                </span>
+                                {' → '}
+                                <span className="text-emerald-700">
+                                  {formatChangeValue(change.newValue)}
+                                </span>
+                              </li>
+                            ))}
+                            {changes.length > 6 && (
+                              <li className="text-[11px] text-slate-400">
+                                +{changes.length - 6} more fields
+                              </li>
+                            )}
+                          </ul>
+                        )}
                         {(item.actorName || item.actorRole) && (
                           <p className="text-xs text-slate-400 mt-1.5">
                             By {item.actorName || 'Unknown'}

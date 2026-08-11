@@ -608,8 +608,8 @@ export class LoadsV2Service {
 
       const publishedLoad = await this.findLoadEntity(id, user);
 
-      // Emit load created event
-      this.eventEmitter.emit('load.v2.created', {
+      // Emit published event for activity trail / notifications
+      this.eventEmitter.emit('load.v2.published', {
         loadId: id,
         userId: user.id,
         tenantId: load.tenantId,

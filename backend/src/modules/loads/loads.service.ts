@@ -485,6 +485,7 @@ export class LoadsService {
           actorId: userId,
           description: 'Load created',
           after: savedLoad,
+          metadata: { activityType: 'created' },
         });
       } catch (auditError) {
         // Log but don't fail - the load was created successfully
@@ -1215,6 +1216,47 @@ export class LoadsService {
       // We only track loadValue changes to recalculate commission if a broker is already assigned
       const loadValueChanged = updateLoadDto.loadValue !== undefined && updateLoadDto.loadValue !== load.loadValue;
       const oldBrokerId = load.brokerId;
+      const previousStatus = load.status;
+      const trackedFields = [
+        'title',
+        'description',
+        'weight',
+        'volume',
+        'cargoType',
+        'loadValue',
+        'offeredPrice',
+        'currencyCode',
+        'pickupDate',
+        'deliveryDate',
+        'urgencyLevel',
+        'status',
+        'packagingType',
+        'isHazardous',
+        'requiresRefrigeration',
+        'isTimeCritical',
+      ] as const;
+      const beforeSnapshot: Record<string, any> = {};
+      const fieldChanges: Array<{
+        field: string;
+        oldValue: any;
+        newValue: any;
+        type: 'added' | 'removed' | 'modified';
+      }> = [];
+      for (const field of trackedFields) {
+        if ((sanitizedUpdate as any)[field] !== undefined) {
+          const oldValue = (load as any)[field];
+          const newValue = (sanitizedUpdate as any)[field];
+          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+            beforeSnapshot[field] = oldValue;
+            fieldChanges.push({
+              field,
+              oldValue,
+              newValue,
+              type: 'modified',
+            });
+          }
+        }
+      }
 
       // Update load
       Object.assign(load, sanitizedUpdate);
@@ -1224,6 +1266,14 @@ export class LoadsService {
         load.status = LoadStatus.PUBLISHED;
         load.publishedAt = new Date();
         this.logger.log(`Auto-publishing draft ${id} as it now has complete information`);
+        if (previousStatus !== LoadStatus.PUBLISHED) {
+          fieldChanges.push({
+            field: 'status',
+            oldValue: previousStatus,
+            newValue: LoadStatus.PUBLISHED,
+            type: 'modified',
+          });
+        }
       }
 
       const updatedLoad = await this.loadRepository.save(load);
@@ -1240,6 +1290,38 @@ export class LoadsService {
             `Failed to recalculate broker commission for load ${id}: ${brokerError.message}`,
           );
           // Don't fail the update if commission recalculation fails
+        }
+      }
+
+      // Record every meaningful cargo edit on the activity trail
+      if (fieldChanges.length > 0) {
+        try {
+          const statusChanged = fieldChanges.some((c) => c.field === 'status');
+          await this.createAuditEvent({
+            loadId: id,
+            entityType: AuditEntityType.LOAD,
+            entityId: id,
+            action: statusChanged
+              ? AuditAction.STATUS_CHANGE
+              : AuditAction.UPDATE,
+            actorId: userId,
+            description: statusChanged
+              ? `Status changed to ${updatedLoad.status}`
+              : `Cargo updated (${fieldChanges.map((c) => c.field).join(', ')})`,
+            before: beforeSnapshot,
+            after: Object.fromEntries(
+              fieldChanges.map((c) => [c.field, c.newValue]),
+            ),
+            changes: fieldChanges,
+            metadata: {
+              activityType: statusChanged ? 'status_change' : 'updated',
+              changedFields: fieldChanges.map((c) => c.field),
+            },
+          });
+        } catch (auditError) {
+          this.logger.warn(
+            `Failed to create update audit for load ${id}: ${auditError.message}`,
+          );
         }
       }
 
@@ -1330,6 +1412,7 @@ export class LoadsService {
           type: 'modified',
         },
       ],
+      metadata: { activityType: 'published' },
     });
 
     return savedLoad;
