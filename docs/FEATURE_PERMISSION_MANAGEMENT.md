@@ -122,24 +122,31 @@ Feature toggles append to `permission_audit_log` with `entity_type = 'feature_co
 
 ## Per-user permission control (`/admin/users`)
 
-Super Admin can open **Manage** on any user to:
+Open **Manage** on any user (Truck Owner, Cargo Owner, Driver, Lender, …).
 
-- View effective capabilities (role + overrides + global kill-switches)
-- **Grant** a capability to that user only
-- **Deny** a capability even if the role normally allows it
-- **Restore** role defaults (clear override)
-- Review the user permission audit trail
+You can Grant / Deny / Restore capabilities such as:
+
+| Category | Examples |
+|----------|----------|
+| Cargo | `cargo:create`, `cargo:publish`, `cargo:edit` |
+| Truck | `fleet:create`, `fleet:edit` |
+| Bidding | `bids:create`, `bids:manage`, `auctions:create` |
+| Smart Matching | `matching:request`, `matching:respond` |
+| Trips | `trips:start`, `trips:complete` |
+| Lending | `lending:create_request`, `lending:approve` |
+
+If the drawer only shows Analytics, click **Sync catalog** (or redeploy backend).  
+`POST /api/admin/permissions/sync-catalog` loads the full enterprise catalog.
 
 API:
 
 ```text
+POST /api/admin/permissions/sync-catalog
 GET  /api/admin/permissions/users/:userId/detail
 PUT  /api/admin/permissions/users/:userId   { grants, denies, revokes, reason }
 ```
 
-Only `SUPER_ADMIN` can mutate user overrides. Non-super admins can view the matrix read-only.
-
-Globally disabled features appear as **Global OFF** and cannot be granted while the platform kill-switch remains disabled.
+Only `SUPER_ADMIN` can mutate user overrides.
 
 ## How to protect a new feature
 

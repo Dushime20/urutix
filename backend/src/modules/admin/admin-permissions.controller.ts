@@ -8,6 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../../types/permission.types';
 import { PermissionService } from '../../services/raw-permission.service';
+import { PermissionTableInitService } from '../../services/permission-table-init.service';
 import {
     GrantPermissionDto, RevokePermissionDto, DenyPermissionDto,
     GrantRolePermissionDto, RevokeRolePermissionDto,
@@ -33,7 +34,22 @@ export class AdminPermissionsController {
     constructor(
         private readonly permissionService: PermissionService,
         private readonly dataSource: DataSource,
+        private readonly permissionTableInit: PermissionTableInitService,
     ) {}
+
+    // ── POST /api/admin/permissions/sync-catalog ───────────────────────────────
+    @Post('sync-catalog')
+    @Roles(UserRole.SUPER_ADMIN)
+    @ApiOperation({ summary: 'Sync full enterprise permission catalog (cargo, truck, bidding, trips, lending, …)' })
+    async syncPermissionCatalog() {
+        const upserted = await this.permissionTableInit.syncPermissionCatalog();
+        const count = await this.permissionTableInit.getPermissionCount();
+        return {
+            success: true,
+            message: `Permission catalog synced (${upserted} definitions upserted, ${count} total in DB)`,
+            data: { upserted, total: count },
+        };
+    }
 
     // ── GET /api/admin/permissions — grouped by module ─────────────────────────
     @Get()
@@ -84,6 +100,17 @@ export class AdminPermissionsController {
     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @ApiOperation({ summary: 'Full per-user permission status (effective + source)' })
     async getUserPermissionsFull(@Param('userId') userId: string) {
+        // Ensure cargo/truck/bidding/trip/lending catalog exists (fixes DBs that only have analytics)
+        try {
+            const count = await this.permissionTableInit.getPermissionCount();
+            if (count < 40) {
+                this.logger.log(`Permission catalog sparse (${count}) — syncing enterprise catalog`);
+                await this.permissionTableInit.syncPermissionCatalog();
+            }
+        } catch (err: any) {
+            this.logger.warn(`Catalog auto-sync skipped: ${err?.message || err}`);
+        }
+
         const allPerms: any[] = await this.dataSource.query(`
             SELECT id, resource, action, category, description
             FROM permissions

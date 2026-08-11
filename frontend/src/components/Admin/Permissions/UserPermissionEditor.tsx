@@ -12,9 +12,11 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronRight,
+  RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { permissionApi, type PermissionItem } from '../../../services/permissionApi';
+import api from '../../../services/api';
 
 interface UserPermissionEditorProps {
   userId: string;
@@ -24,7 +26,36 @@ interface UserPermissionEditorProps {
   readOnly?: boolean;
 }
 
-type DraftAction = 'grant' | 'deny' | 'revoke' | null;
+const ROLE_FOCUS: Record<string, string[]> = {
+  CARGO_OWNER: ['cargo', 'bidding', 'matching', 'lending', 'broker', 'trip', 'analytics'],
+  TRUCK_OWNER: ['truck', 'driver', 'bidding', 'matching', 'trip', 'lending', 'analytics'],
+  DRIVER: ['trip', 'driver', 'analytics'],
+  LENDER: ['lending', 'analytics', 'financial'],
+  BROKER: ['broker', 'bidding', 'matching', 'cargo', 'analytics'],
+  TENANT_ADMIN: ['cargo', 'truck', 'bidding', 'matching', 'trip', 'broker', 'analytics'],
+  CARGO_RECEIVER: ['inspection', 'cargo', 'trip'],
+  CUSTOMS_OFFICER: ['customs'],
+  FLEET_MANAGER: ['truck', 'trip', 'driver'],
+  FLEET_DISPATCHER: ['trip', 'truck'],
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  cargo: 'Cargo',
+  truck: 'Truck / Fleet',
+  driver: 'Drivers',
+  bidding: 'Bidding',
+  matching: 'Smart Matching',
+  trip: 'Trips',
+  lending: 'Lending / Financing',
+  broker: 'Brokers',
+  customs: 'Customs',
+  inspection: 'Inspections',
+  financial: 'Payments',
+  credits: 'Credits',
+  analytics: 'Analytics',
+  notifications: 'Notifications',
+  users: 'Users',
+};
 
 const sourceLabel = (item: PermissionItem & { globallyDisabled?: boolean }) => {
   if (item.globallyDisabled) return 'Blocked globally';
@@ -32,9 +63,9 @@ const sourceLabel = (item: PermissionItem & { globallyDisabled?: boolean }) => {
     case 'role':
       return 'Inherited from role';
     case 'user_granted':
-      return 'User override: granted';
+      return 'Granted to this user';
     case 'user_denied':
-      return 'User override: denied';
+      return 'Denied for this user';
     default:
       return 'Not granted';
   }
@@ -51,12 +82,23 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
   const [activeTab, setActiveTab] = useState<'permissions' | 'audit'>('permissions');
   const [search, setSearch] = useState('');
   const [reason, setReason] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [drafts, setDrafts] = useState<Record<string, DraftAction>>({});
+  const [busyCode, setBusyCode] = useState<string | null>(null);
 
-  const { data, isLoading, refetch } = useQuery({
+  const focusCategories = ROLE_FOCUS[userRole] || null;
+
+  const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['admin-user-permissions', userId],
-    queryFn: () => permissionApi.getUserPermissionDetail(userId),
+    queryFn: async () => {
+      // Auto-expand catalog if production DB still only has analytics
+      try {
+        await api.post('/admin/permissions/sync-catalog');
+      } catch (_) {
+        // Non-super-admin viewers may lack sync access; detail endpoint also auto-syncs
+      }
+      return permissionApi.getUserPermissionDetail(userId);
+    },
   });
 
   const { data: auditRaw, isLoading: auditLoading } = useQuery({
@@ -72,7 +114,7 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
   }, [auditRaw]);
 
   const permissions = data?.permissions || [];
-  const summary = (data as any)?.summary || {
+  const summary = data?.summary || {
     total: permissions.length,
     effective: permissions.filter((p) => p.effective).length,
     userGranted: permissions.filter((p) => p.source === 'user_granted').length,
@@ -84,55 +126,62 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
     const q = search.trim().toLowerCase();
     const groups: Record<string, Array<PermissionItem & { globallyDisabled?: boolean; codeColon?: string }>> = {};
     permissions.forEach((p: any) => {
+      const category = p.category || p.resource || 'other';
+      if (!showAll && focusCategories && !focusCategories.includes(category)) return;
       if (
         q &&
         !String(p.code || '').toLowerCase().includes(q) &&
         !String(p.codeColon || '').toLowerCase().includes(q) &&
         !String(p.description || '').toLowerCase().includes(q) &&
-        !String(p.category || '').toLowerCase().includes(q) &&
-        !String(p.resource || '').toLowerCase().includes(q)
+        !String(category || '').toLowerCase().includes(q)
       ) {
         return;
       }
-      const key = p.category || p.resource || 'other';
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(p);
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(p);
     });
     return groups;
-  }, [permissions, search]);
+  }, [permissions, search, showAll, focusCategories]);
 
-  const dirtyCount = Object.values(drafts).filter(Boolean).length;
-
-  const setDraft = (code: string, action: DraftAction) => {
-    setDrafts((prev) => {
-      const next = { ...prev };
-      if (!action) delete next[code];
-      else next[code] = action;
-      return next;
-    });
-  };
-
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const grants: string[] = [];
-      const denies: string[] = [];
-      const revokes: string[] = [];
-      Object.entries(drafts).forEach(([code, action]) => {
-        if (action === 'grant') grants.push(code);
-        if (action === 'deny') denies.push(code);
-        if (action === 'revoke') revokes.push(code);
-      });
-      return permissionApi.updateUserPermissions(userId, grants, revokes, reason || undefined, denies);
+  const applyMutation = useMutation({
+    mutationFn: async (payload: {
+      code: string;
+      action: 'grant' | 'deny' | 'revoke';
+    }) => {
+      setBusyCode(payload.code);
+      const grants = payload.action === 'grant' ? [payload.code] : [];
+      const denies = payload.action === 'deny' ? [payload.code] : [];
+      const revokes = payload.action === 'revoke' ? [payload.code] : [];
+      return permissionApi.updateUserPermissions(
+        userId,
+        grants,
+        revokes,
+        reason || `Per-user ${payload.action} by Super Admin`,
+        denies,
+      );
     },
-    onSuccess: (res) => {
-      toast.success(res?.message || 'User permissions updated');
-      setDrafts({});
-      setReason('');
+    onSuccess: (res, vars) => {
+      toast.success(res?.message || `${vars.action} applied`);
       refetch();
       queryClient.invalidateQueries({ queryKey: ['admin-user-permission-audit', userId] });
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to update permissions');
+      toast.error(error?.response?.data?.message || 'Failed to update permission');
+    },
+    onSettled: () => setBusyCode(null),
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/admin/permissions/sync-catalog');
+      return res.data;
+    },
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Permission catalog synced');
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to sync permission catalog');
     },
   });
 
@@ -149,7 +198,9 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
     <div className="bg-white dark:bg-slate-900 h-full flex flex-col">
       <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start gap-3 bg-slate-50 dark:bg-slate-900/80">
         <div className="min-w-0">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">{userName}</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
+            Permissions — {userName}
+          </h2>
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800 border border-blue-200">
               {userRole}
@@ -165,11 +216,6 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
             {summary.userDenied > 0 && (
               <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded-md font-semibold">
                 {summary.userDenied} denies
-              </span>
-            )}
-            {summary.globallyDisabled > 0 && (
-              <span className="text-xs text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
-                <Lock size={10} /> {summary.globallyDisabled} globally off
               </span>
             )}
           </div>
@@ -214,42 +260,55 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 flex gap-2">
               <AlertCircle size={16} className="mt-0.5 shrink-0 text-[#2c5173]" />
               <p>
-                Grant adds a user override. Deny blocks even if the role normally allows it.
-                Restore clears the override and returns to role defaults. Globally disabled
-                features stay blocked for everyone until re-enabled in Feature Controls.
+                Grant or Deny capabilities for <strong>this user only</strong> (e.g. block cargo create
+                or Smart Matching for one truck/cargo owner). Deny overrides role defaults. Restore
+                returns to role defaults.
               </p>
             </div>
 
-            {!readOnly && (
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-                <div className="flex-1">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Change reason</label>
-                  <input
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Optional — recorded in audit log"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                  />
-                </div>
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Change reason</label>
+                <input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Optional — recorded in audit log"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                  disabled={readOnly}
+                />
+              </div>
+              {!readOnly && (
                 <button
                   type="button"
-                  disabled={!dirtyCount || saveMutation.isPending}
-                  onClick={() => saveMutation.mutate()}
-                  className="px-5 py-2.5 rounded-xl bg-[#2c5173] text-white text-xs font-black uppercase tracking-wider disabled:opacity-50"
+                  onClick={() => syncMutation.mutate()}
+                  disabled={syncMutation.isPending || isFetching}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-wider text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
-                  {saveMutation.isPending ? 'Saving…' : `Save ${dirtyCount || ''} change${dirtyCount === 1 ? '' : 's'}`}
+                  <RefreshCw size={14} className={syncMutation.isPending ? 'animate-spin' : ''} />
+                  Sync catalog
                 </button>
-              </div>
-            )}
+              )}
+            </div>
 
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search capabilities…"
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm"
-              />
+            <div className="flex flex-wrap items-center gap-2 justify-between">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search cargo, bidding, trip, lending…"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-sm"
+                />
+              </div>
+              {focusCategories && (
+                <button
+                  type="button"
+                  onClick={() => setShowAll((v) => !v)}
+                  className="text-xs font-bold uppercase tracking-wider text-[#2c5173] px-3 py-2 rounded-lg bg-slate-50 border border-slate-200"
+                >
+                  {showAll ? 'Show role-relevant' : 'Show all categories'}
+                </button>
+              )}
             </div>
 
             {isLoading ? (
@@ -258,8 +317,24 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
               </div>
             ) : (
               <div className="space-y-3">
+                {Object.keys(grouped).length === 0 && (
+                  <div className="text-center py-12 space-y-3">
+                    <p className="text-slate-500">No permissions found in catalog.</p>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => syncMutation.mutate()}
+                        className="px-4 py-2 rounded-xl bg-[#2c5173] text-white text-xs font-black uppercase tracking-wider"
+                      >
+                        Load cargo / truck / bidding / trip permissions
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {Object.entries(grouped).map(([category, items]) => {
                   const isCollapsed = collapsed.has(category);
+                  const label = CATEGORY_LABELS[category] || category.replace(/_/g, ' ');
                   return (
                     <div key={category} className="rounded-2xl border border-slate-200 overflow-hidden">
                       <button
@@ -270,7 +345,7 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
                         <div className="flex items-center gap-2">
                           {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                           <span className="text-xs font-black uppercase tracking-wider text-[#2c5173]">
-                            {category.replace(/_/g, ' ')}
+                            {label}
                           </span>
                           <span className="text-xs text-slate-400">{items.length}</span>
                         </div>
@@ -279,27 +354,20 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
                       {!isCollapsed && (
                         <div className="divide-y divide-slate-100">
                           {items.map((item) => {
-                            const code = item.codeColon || item.code.replace('.', ':');
-                            const draft = drafts[code] || drafts[item.code] || null;
-                            const previewEffective = item.globallyDisabled
-                              ? false
-                              : draft === 'grant'
-                                ? true
-                                : draft === 'deny'
-                                  ? false
-                                  : draft === 'revoke'
-                                    ? !!(item as any).fromRole
-                                    : item.effective;
-
+                            const code = item.codeColon || String(item.code || '').replace('.', ':');
+                            const busy = busyCode === code;
                             return (
-                              <div key={item.id} className="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
+                              <div
+                                key={item.id}
+                                className="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3 justify-between"
+                              >
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span
                                       className={`w-2 h-2 rounded-full ${
                                         item.globallyDisabled
                                           ? 'bg-amber-500'
-                                          : previewEffective
+                                          : item.effective
                                             ? 'bg-emerald-500'
                                             : 'bg-slate-300'
                                       }`}
@@ -310,9 +378,9 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
                                         <Lock size={10} /> Global OFF
                                       </span>
                                     )}
-                                    {draft && (
-                                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                                        Pending {draft}
+                                    {item.effective && !item.globallyDisabled && (
+                                      <span className="text-emerald-600" title="Currently allowed">
+                                        <Check size={14} />
                                       </span>
                                     )}
                                   </div>
@@ -326,51 +394,29 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
                                   <div className="flex items-center gap-2 shrink-0">
                                     <button
                                       type="button"
-                                      title="Grant for this user"
-                                      disabled={!!item.globallyDisabled}
-                                      onClick={() => setDraft(code, draft === 'grant' ? null : 'grant')}
-                                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border disabled:opacity-40 ${
-                                        draft === 'grant'
-                                          ? 'bg-emerald-600 text-white border-emerald-600'
-                                          : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50'
-                                      }`}
+                                      disabled={busy || !!item.globallyDisabled}
+                                      onClick={() => applyMutation.mutate({ code, action: 'grant' })}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50 disabled:opacity-40"
                                     >
                                       <Shield size={12} /> Grant
                                     </button>
                                     <button
                                       type="button"
-                                      title="Deny for this user"
-                                      onClick={() => setDraft(code, draft === 'deny' ? null : 'deny')}
-                                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
-                                        draft === 'deny'
-                                          ? 'bg-red-600 text-white border-red-600'
-                                          : 'bg-white text-red-700 border-red-200 hover:bg-red-50'
-                                      }`}
+                                      disabled={busy}
+                                      onClick={() => applyMutation.mutate({ code, action: 'deny' })}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-white text-red-700 border-red-200 hover:bg-red-50 disabled:opacity-40"
                                     >
                                       <ShieldOff size={12} /> Deny
                                     </button>
-                                    {(item.source === 'user_granted' ||
-                                      item.source === 'user_denied' ||
-                                      draft === 'grant' ||
-                                      draft === 'deny' ||
-                                      draft === 'revoke') && (
+                                    {(item.source === 'user_granted' || item.source === 'user_denied') && (
                                       <button
                                         type="button"
-                                        title="Restore role default"
-                                        onClick={() => setDraft(code, draft === 'revoke' ? null : 'revoke')}
-                                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
-                                          draft === 'revoke'
-                                            ? 'bg-slate-700 text-white border-slate-700'
-                                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                                        }`}
+                                        disabled={busy}
+                                        onClick={() => applyMutation.mutate({ code, action: 'revoke' })}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border bg-white text-slate-600 border-slate-200 hover:bg-slate-50 disabled:opacity-40"
                                       >
                                         <RotateCcw size={12} /> Restore
                                       </button>
-                                    )}
-                                    {item.effective && !item.globallyDisabled && !draft && (
-                                      <span className="text-emerald-600" title="Currently effective">
-                                        <Check size={14} />
-                                      </span>
                                     )}
                                   </div>
                                 )}
@@ -382,10 +428,6 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
                     </div>
                   );
                 })}
-
-                {Object.keys(grouped).length === 0 && (
-                  <div className="text-center py-12 text-slate-500">No permissions match your search.</div>
-                )}
               </div>
             )}
           </>
@@ -408,13 +450,10 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
                     <pre className="mt-2 text-xs bg-slate-50 rounded-lg p-3 overflow-x-auto text-slate-600">
                       {JSON.stringify(log.changes || {}, null, 2)}
                     </pre>
-                    <p className="mt-2 text-xs text-slate-400">
-                      By: {log.performed_by || log.user_id || 'System'}
-                    </p>
                   </div>
                 ))}
                 {auditLog.length === 0 && (
-                  <div className="text-center py-12 text-slate-500">No permission changes recorded for this user.</div>
+                  <div className="text-center py-12 text-slate-500">No permission changes for this user yet.</div>
                 )}
               </div>
             )}

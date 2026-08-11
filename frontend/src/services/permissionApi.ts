@@ -53,6 +53,12 @@ export const permissionApi = {
     return response.data;
   },
 
+  // ── Sync enterprise permission catalog ────────────────────────────────────
+  syncCatalog: async (): Promise<{ success: boolean; message: string; data?: any }> => {
+    const response = await api.post('/admin/permissions/sync-catalog');
+    return response.data;
+  },
+
   // ── Full per-user permission detail with effective status ─────────────────
   getUserPermissionDetail: async (userId: string): Promise<UserPermissionDetail> => {
     const response = await api.get(`/admin/permissions/users/${userId}/detail`);
