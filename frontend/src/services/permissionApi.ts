@@ -62,7 +62,22 @@ export const permissionApi = {
   // ── Full per-user permission detail with effective status ─────────────────
   getUserPermissionDetail: async (userId: string): Promise<UserPermissionDetail> => {
     const response = await api.get(`/admin/permissions/users/${userId}/detail`);
-    return response.data?.data;
+    // Support both { success, data: { permissions } } and nested/interceptor shapes
+    const body = response.data;
+    const detail =
+      body?.data?.permissions ? body.data :
+      body?.permissions ? body :
+      body?.data?.data?.permissions ? body.data.data :
+      body?.data;
+    if (!detail?.permissions) {
+      return {
+        userId,
+        userRole: detail?.userRole || '',
+        permissions: [],
+        summary: { total: 0, effective: 0, roleInherited: 0, userGranted: 0, userDenied: 0, globallyDisabled: 0 },
+      };
+    }
+    return detail;
   },
 
   // ── Get effective permissions for a user (legacy) ─────────────────────────

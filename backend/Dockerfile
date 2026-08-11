@@ -67,6 +67,11 @@ COPY --chown=nestjs:nodejs seed-admin.js           ./seed-admin.js
 COPY --chown=nestjs:nodejs seed-permissions.js     ./seed-permissions.js
 COPY --chown=nestjs:nodejs seed-contact-settings.js ./seed-contact-settings.js
 
+# Permission catalog (source of truth) — ensure present even if nest asset copy misses it
+RUN mkdir -p ./config ./dist/config
+COPY --chown=nestjs:nodejs src/config/permission-catalog.json ./config/permission-catalog.json
+COPY --chown=nestjs:nodejs src/config/permission-catalog.json ./dist/config/permission-catalog.json
+
 # Entrypoint
 COPY --chown=nestjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh

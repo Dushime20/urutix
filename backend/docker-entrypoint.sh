@@ -143,6 +143,18 @@ main() {
   wait_for_db
   run_migrations
 
+  # Always upsert enterprise permission catalog so Super Admin UI shows cargo/bidding/trips/etc.
+  if [[ "${AUTO_SEED_PERMISSIONS:-true}" == "true" ]]; then
+    log_info "Seeding / syncing permission catalog..."
+    if node seed-permissions.js; then
+      log_success "Permission catalog seeded."
+    else
+      log_warn "Permission seed failed (non-fatal) — run: docker compose exec backend node seed-permissions.js"
+    fi
+  else
+    log_info "AUTO_SEED_PERMISSIONS=false — skipping permission catalog seed."
+  fi
+
   log_success "Handing off to application: $*"
   exec "$@"
 }

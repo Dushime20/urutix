@@ -100,12 +100,10 @@ export class AdminPermissionsController {
     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @ApiOperation({ summary: 'Full per-user permission status (effective + source)' })
     async getUserPermissionsFull(@Param('userId') userId: string) {
-        // Ensure cargo/truck/bidding/trip/lending catalog exists (fixes DBs that only have analytics)
+        // Always upsert catalog so production DBs that only have analytics get cargo/bidding/trips/etc.
         try {
-            if (await this.permissionTableInit.isCatalogIncomplete()) {
-                this.logger.log('Permission catalog incomplete — syncing from permission-catalog.json');
-                await this.permissionTableInit.syncPermissionCatalog();
-            }
+            const upserted = await this.permissionTableInit.syncPermissionCatalog();
+            this.logger.log(`Permission catalog sync on user detail: ${upserted} upserted`);
         } catch (err: any) {
             this.logger.warn(`Catalog auto-sync skipped: ${err?.message || err}`);
         }

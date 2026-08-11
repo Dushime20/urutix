@@ -51,11 +51,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   truck: 'Truck / Fleet',
   fleet_management: 'Truck / Fleet',
   driver: 'Drivers',
+  driver_management: 'Drivers',
   bidding: 'Bidding',
   matching: 'Smart Matching',
   trip: 'Trips',
+  trip_management: 'Trips',
   lending: 'Lending / Financing',
   broker: 'Brokers',
+  broker_management: 'Brokers',
   customs: 'Customs',
   inspection: 'Inspections',
   financial: 'Payments',
@@ -64,6 +67,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   notifications: 'Notifications',
   users: 'Users',
   user_management: 'Users',
+  system: 'System',
+  other: 'Other',
 };
 
 const sourceLabel = (item: PermissionItem & { globallyDisabled?: boolean }) => {

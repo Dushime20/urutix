@@ -1,286 +1,302 @@
 #!/usr/bin/env node
 /**
- * Seed permissions and role permissions into the database
- * Run with: node seed-permissions.js
- * Or in Docker: docker-compose exec backend node seed-permissions.js
+ * Seed / upsert enterprise permission catalog into the database.
+ *
+ * Source of truth (preferred):
+ *   /app/config/permission-catalog.json  (Docker)
+ *   dist/config/permission-catalog.json
+ *   src/config/permission-catalog.json
+ *
+ * Run:
+ *   node seed-permissions.js
+ *   docker compose -f docker-compose.production.yml exec backend node seed-permissions.js
  */
 
+const fs = require('fs');
+const path = require('path');
 const { Client } = require('pg');
 
-// Database configuration from environment or defaults
 const config = {
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
+  port: parseInt(process.env.DB_PORT || '5432', 10),
   database: process.env.DB_NAME || 'urutix',
-  user: process.env.DB_USER || 'postgres',
+  user: process.env.DB_USERNAME || process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
 };
 
-console.log('🔌 Connecting to database:', config.database);
-
-const client = new Client(config);
-
-// All system permissions
-const permissions = [
-  // User Management
-  { resource: 'user', action: 'create', description: 'Create new users' },
-  { resource: 'user', action: 'read', description: 'View user details' },
-  { resource: 'user', action: 'update', description: 'Update user information' },
-  { resource: 'user', action: 'delete', description: 'Delete users' },
-  { resource: 'user', action: 'list', description: 'List all users' },
-  { resource: 'user', action: 'suspend', description: 'Suspend user accounts' },
-  { resource: 'user', action: 'activate', description: 'Activate user accounts' },
-
-  // Cargo Management
-  { resource: 'cargo', action: 'create', description: 'Create new cargo' },
-  { resource: 'cargo', action: 'read', description: 'View cargo details' },
-  { resource: 'cargo', action: 'update', description: 'Update cargo information' },
-  { resource: 'cargo', action: 'delete', description: 'Delete cargo' },
-  { resource: 'cargo', action: 'list', description: 'List all cargo' },
-  { resource: 'cargo', action: 'assign', description: 'Assign cargo to trucks' },
-  { resource: 'cargo', action: 'track', description: 'Track cargo location' },
-
-  // Truck Management
-  { resource: 'truck', action: 'create', description: 'Register new trucks' },
-  { resource: 'truck', action: 'read', description: 'View truck details' },
-  { resource: 'truck', action: 'update', description: 'Update truck information' },
-  { resource: 'truck', action: 'delete', description: 'Remove trucks' },
-  { resource: 'truck', action: 'list', description: 'List all trucks' },
-  { resource: 'truck', action: 'assign', description: 'Assign trucks to trips' },
-  { resource: 'truck', action: 'track', description: 'Track truck location' },
-
-  // Trip Management
-  { resource: 'trip', action: 'create', description: 'Create new trips' },
-  { resource: 'trip', action: 'read', description: 'View trip details' },
-  { resource: 'trip', action: 'update', description: 'Update trip information' },
-  { resource: 'trip', action: 'delete', description: 'Cancel trips' },
-  { resource: 'trip', action: 'list', description: 'List all trips' },
-  { resource: 'trip', action: 'start', description: 'Start a trip' },
-  { resource: 'trip', action: 'complete', description: 'Complete a trip' },
-  { resource: 'trip', action: 'track', description: 'Track trip progress' },
-
-  // Driver Management
-  { resource: 'driver', action: 'create', description: 'Register new drivers' },
-  { resource: 'driver', action: 'read', description: 'View driver details' },
-  { resource: 'driver', action: 'update', description: 'Update driver information' },
-  { resource: 'driver', action: 'delete', description: 'Remove drivers' },
-  { resource: 'driver', action: 'list', description: 'List all drivers' },
-  { resource: 'driver', action: 'assign', description: 'Assign drivers to trips' },
-
-  // Payment Management
-  { resource: 'payment', action: 'create', description: 'Initiate payments' },
-  { resource: 'payment', action: 'read', description: 'View payment details' },
-  { resource: 'payment', action: 'update', description: 'Update payment information' },
-  { resource: 'payment', action: 'delete', description: 'Cancel payments' },
-  { resource: 'payment', action: 'list', description: 'List all payments' },
-  { resource: 'payment', action: 'approve', description: 'Approve payments' },
-  { resource: 'payment', action: 'reject', description: 'Reject payments' },
-
-  // Tenant Management
-  { resource: 'tenant', action: 'create', description: 'Create new tenants' },
-  { resource: 'tenant', action: 'read', description: 'View tenant details' },
-  { resource: 'tenant', action: 'update', description: 'Update tenant information' },
-  { resource: 'tenant', action: 'delete', description: 'Delete tenants' },
-  { resource: 'tenant', action: 'list', description: 'List all tenants' },
-  { resource: 'tenant', action: 'suspend', description: 'Suspend tenant accounts' },
-
-  // Subscription Management
-  { resource: 'subscription', action: 'create', description: 'Create subscriptions' },
-  { resource: 'subscription', action: 'read', description: 'View subscription details' },
-  { resource: 'subscription', action: 'update', description: 'Update subscriptions' },
-  { resource: 'subscription', action: 'delete', description: 'Cancel subscriptions' },
-  { resource: 'subscription', action: 'list', description: 'List all subscriptions' },
-
-  // Credit Management
-  { resource: 'credit', action: 'grant', description: 'Grant credits to users' },
-  { resource: 'credit', action: 'revoke', description: 'Revoke credits from users' },
-  { resource: 'credit', action: 'view', description: 'View credit balances' },
-  { resource: 'credit', action: 'manage', description: 'Manage credit system' },
-
-  // Permission Management
-  { resource: 'permission', action: 'create', description: 'Create new permissions' },
-  { resource: 'permission', action: 'read', description: 'View permissions' },
-  { resource: 'permission', action: 'update', description: 'Update permissions' },
-  { resource: 'permission', action: 'delete', description: 'Delete permissions' },
-  { resource: 'permission', action: 'list', description: 'List all permissions' },
-  { resource: 'permission', action: 'assign', description: 'Assign permissions to roles' },
-  { resource: 'permission', action: 'revoke', description: 'Revoke permissions from roles' },
-
-  // Role Management
-  { resource: 'role', action: 'create', description: 'Create new roles' },
-  { resource: 'role', action: 'read', description: 'View role details' },
-  { resource: 'role', action: 'update', description: 'Update roles' },
-  { resource: 'role', action: 'delete', description: 'Delete roles' },
-  { resource: 'role', action: 'list', description: 'List all roles' },
-  { resource: 'role', action: 'assign', description: 'Assign roles to users' },
-  { resource: 'role', action: 'revoke', description: 'Revoke roles from users' },
-
-  // Report Management
-  { resource: 'report', action: 'create', description: 'Generate reports' },
-  { resource: 'report', action: 'read', description: 'View reports' },
-  { resource: 'report', action: 'list', description: 'List all reports' },
-  { resource: 'report', action: 'export', description: 'Export reports' },
-
-  // Settings Management
-  { resource: 'settings', action: 'read', description: 'View system settings' },
-  { resource: 'settings', action: 'update', description: 'Update system settings' },
-
-  // Analytics
-  { resource: 'analytics', action: 'view', description: 'View analytics dashboard' },
-  { resource: 'analytics', action: 'export', description: 'Export analytics data' },
+const FALLBACK_PERMISSIONS = [
+  { resource: 'cargo', action: 'view', category: 'cargo', description: 'View cargo loads' },
+  { resource: 'cargo', action: 'view_own', category: 'cargo', description: 'View own cargo loads' },
+  { resource: 'cargo', action: 'create', category: 'cargo', description: 'Create new cargo loads' },
+  { resource: 'cargo', action: 'edit', category: 'cargo', description: 'Edit cargo loads' },
+  { resource: 'cargo', action: 'delete', category: 'cargo', description: 'Delete cargo loads' },
+  { resource: 'cargo', action: 'publish', category: 'cargo', description: 'Publish cargo for bidding or matching' },
+  { resource: 'fleet', action: 'view', category: 'truck', description: 'View trucks' },
+  { resource: 'fleet', action: 'create', category: 'truck', description: 'Register / create trucks' },
+  { resource: 'fleet', action: 'edit', category: 'truck', description: 'Edit truck details' },
+  { resource: 'auctions', action: 'view', category: 'bidding', description: 'View auctions' },
+  { resource: 'auctions', action: 'create', category: 'bidding', description: 'Create auctions' },
+  { resource: 'bids', action: 'view', category: 'bidding', description: 'View bids' },
+  { resource: 'bids', action: 'create', category: 'bidding', description: 'Place bids' },
+  { resource: 'bids', action: 'manage', category: 'bidding', description: 'Accept or reject bids' },
+  { resource: 'matching', action: 'request', category: 'matching', description: 'Use Smart Matching' },
+  { resource: 'matching', action: 'respond', category: 'matching', description: 'Respond to Smart Matching' },
+  { resource: 'matching', action: 'view_results', category: 'matching', description: 'View Smart Matching results' },
+  { resource: 'trips', action: 'view', category: 'trip', description: 'View trips' },
+  { resource: 'trips', action: 'start', category: 'trip', description: 'Start a trip' },
+  { resource: 'trips', action: 'complete', category: 'trip', description: 'Complete a trip' },
+  { resource: 'lending', action: 'create_request', category: 'lending', description: 'Create loan request' },
+  { resource: 'lending', action: 'approve', category: 'lending', description: 'Approve loans' },
+  { resource: 'analytics', action: 'view_own', category: 'analytics', description: 'View own analytics' },
+  { resource: 'analytics', action: 'view_tenant', category: 'analytics', description: 'View tenant analytics' },
+  { resource: 'analytics', action: 'view_all', category: 'analytics', description: 'View platform analytics' },
+  { resource: 'analytics', action: 'financial', category: 'analytics', description: 'View financial analytics' },
+  { resource: 'analytics', action: 'cost_trends', category: 'analytics', description: 'View cost trends' },
+  { resource: 'reports', action: 'view', category: 'analytics', description: 'View reports' },
+  { resource: 'reports', action: 'export', category: 'analytics', description: 'Export reports' },
+  { resource: 'users', action: 'permissions.manage', category: 'users', description: 'Manage user permissions' },
 ];
 
-// Default roles
-const roles = [
-  { name: 'SUPER_ADMIN', description: 'Super administrator with full system access' },
-  { name: 'ADMIN', description: 'Administrator with operational access' },
-  { name: 'TENANT_ADMIN', description: 'Tenant administrator' },
-  { name: 'CARGO_OWNER', description: 'Cargo owner role' },
-  { name: 'TRUCK_OWNER', description: 'Truck owner role' },
-  { name: 'DRIVER', description: 'Driver role' },
-  { name: 'BROKER', description: 'Broker role' },
-  { name: 'AGENT', description: 'Agent role' },
-  { name: 'LENDER', description: 'Lender role' },
-  { name: 'CARGO_RECEIVER', description: 'Cargo receiver role' },
-  { name: 'CUSTOMS_OFFICER', description: 'Customs officer role' },
-];
+const FALLBACK_ROLE_DEFAULTS = {
+  CARGO_OWNER: [
+    'cargo:view', 'cargo:view_own', 'cargo:create', 'cargo:edit', 'cargo:delete', 'cargo:publish',
+    'auctions:view', 'auctions:create', 'bids:view', 'bids:manage',
+    'matching:request', 'matching:view_results', 'lending:create_request',
+    'trips:view', 'analytics:view_own', 'analytics:view_tenant',
+  ],
+  TRUCK_OWNER: [
+    'fleet:view', 'fleet:create', 'fleet:edit',
+    'auctions:view', 'bids:view', 'bids:create',
+    'matching:respond', 'trips:view', 'trips:start', 'trips:complete',
+    'lending:create_request', 'analytics:view_own',
+  ],
+  DRIVER: ['trips:view', 'trips:start', 'trips:complete', 'analytics:view_own'],
+  LENDER: ['lending:approve', 'analytics:view_own'],
+  BROKER: ['auctions:view', 'bids:view', 'bids:manage', 'matching:request', 'cargo:view'],
+  TENANT_ADMIN: ['cargo:view', 'fleet:view', 'bids:manage', 'matching:view_results', 'analytics:view_tenant'],
+};
 
-async function seedPermissions() {
+function loadCatalog() {
+  const candidates = [
+    path.join(__dirname, 'config', 'permission-catalog.json'),
+    path.join(__dirname, 'dist', 'config', 'permission-catalog.json'),
+    path.join(__dirname, 'src', 'config', 'permission-catalog.json'),
+    path.join(process.cwd(), 'config', 'permission-catalog.json'),
+    path.join(process.cwd(), 'dist', 'config', 'permission-catalog.json'),
+    path.join(process.cwd(), 'src', 'config', 'permission-catalog.json'),
+  ];
+
+  for (const filePath of candidates) {
+    try {
+      if (!fs.existsSync(filePath)) continue;
+      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      if (!Array.isArray(parsed.permissions) || !parsed.permissions.length) continue;
+      console.log(`📄 Loaded catalog from ${filePath} (${parsed.permissions.length} permissions)`);
+      return {
+        permissions: parsed.permissions,
+        roleDefaults: parsed.roleDefaults || FALLBACK_ROLE_DEFAULTS,
+      };
+    } catch (err) {
+      console.warn(`⚠️  Failed reading ${filePath}:`, err.message);
+    }
+  }
+
+  console.warn('⚠️  permission-catalog.json not found — using embedded fallback catalog');
+  return { permissions: FALLBACK_PERMISSIONS, roleDefaults: FALLBACK_ROLE_DEFAULTS };
+}
+
+async function ensureSchema(client) {
+  await client.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).catch(() => {});
+  await client.query(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`).catch(() => {});
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS permissions (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      resource varchar(100) NOT NULL,
+      action varchar(50) NOT NULL,
+      description text,
+      category varchar(50),
+      created_at TIMESTAMP NOT NULL DEFAULT now()
+    )
+  `);
+  await client.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "UQ_permissions_resource_action"
+    ON permissions (resource, action)
+  `).catch(() => {});
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS roles (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name varchar(100) NOT NULL,
+      description text,
+      is_system boolean NOT NULL DEFAULT false,
+      created_at TIMESTAMP NOT NULL DEFAULT now(),
+      updated_at TIMESTAMP NOT NULL DEFAULT now()
+    )
+  `);
+  await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS "UQ_roles_name" ON roles (name)`).catch(() => {});
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS role_permissions (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      role_id uuid,
+      role varchar(100),
+      permission_id uuid NOT NULL,
+      granted_at TIMESTAMP NOT NULL DEFAULT now()
+    )
+  `);
+}
+
+async function seed() {
+  const { permissions, roleDefaults } = loadCatalog();
+  const client = new Client(config);
+
+  console.log('🔌 Connecting to database:', config.host, config.database);
+  await client.connect();
+  console.log('✅ Connected');
+
   try {
-    await client.connect();
-    console.log('✅ Connected to database');
-
-    // Begin transaction
+    await ensureSchema(client);
     await client.query('BEGIN');
 
-    // 1. Seed permissions
-    console.log('\n📝 Seeding permissions...');
-    let permissionCount = 0;
-    const permissionIds = {};
-
+    let upserted = 0;
     for (const perm of permissions) {
-      const permName = `${perm.resource}:${perm.action}`;
-      
-      // Check if permission already exists
-      const existing = await client.query(
-        `SELECT id FROM permissions WHERE resource = $1 AND action = $2`,
-        [perm.resource, perm.action]
-      );
-      
-      if (existing.rows.length > 0) {
-        // Update existing permission
+      const resource = String(perm.resource || '').trim();
+      const action = String(perm.action || '').trim();
+      const category = String(perm.category || 'other').trim();
+      const description = String(perm.description || '').trim();
+      if (!resource || !action) continue;
+
+      try {
         await client.query(
-          `UPDATE permissions SET description = $1 WHERE resource = $2 AND action = $3`,
-          [perm.description, perm.resource, perm.action]
+          `
+          INSERT INTO permissions (resource, action, category, description)
+          VALUES ($1, $2, $3, $4)
+          ON CONFLICT (resource, action) DO UPDATE
+            SET category = EXCLUDED.category,
+                description = EXCLUDED.description
+          `,
+          [resource, action, category, description],
         );
-        permissionIds[permName] = existing.rows[0].id;
-      } else {
-        // Insert new permission
-        const result = await client.query(
-          `INSERT INTO permissions (resource, action, description, category, created_at)
-           VALUES ($1, $2, $3, $4, NOW())
-           RETURNING id`,
-          [perm.resource, perm.action, perm.description, 'system']
+        upserted += 1;
+      } catch {
+        const existing = await client.query(
+          `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
+          [resource, action],
         );
-        permissionIds[permName] = result.rows[0].id;
+        if (existing.rows.length) {
+          await client.query(
+            `UPDATE permissions SET category = $1, description = $2 WHERE id = $3`,
+            [category, description, existing.rows[0].id],
+          );
+        } else {
+          await client.query(
+            `INSERT INTO permissions (resource, action, category, description) VALUES ($1, $2, $3, $4)`,
+            [resource, action, category, description],
+          );
+        }
+        upserted += 1;
       }
-      permissionCount++;
     }
-    console.log(`✅ Seeded ${permissionCount} permissions`);
+    console.log(`✅ Upserted ${upserted} permissions`);
 
-    // 2. Seed roles
-    console.log('\n👥 Seeding roles...');
-    let roleCount = 0;
-    const roleIds = {};
-
-    for (const role of roles) {
-      const result = await client.query(
-        `INSERT INTO roles (name, description, created_at, updated_at)
-         VALUES ($1, $2, NOW(), NOW())
-         ON CONFLICT (name) DO UPDATE 
-         SET description = EXCLUDED.description, updated_at = NOW()
-         RETURNING id`,
-        [role.name, role.description]
-      );
-      roleIds[role.name] = result.rows[0].id;
-      roleCount++;
-    }
-    console.log(`✅ Seeded ${roleCount} roles`);
-
-    // 3. Assign all permissions to SUPER_ADMIN
-    console.log('\n🔐 Assigning all permissions to SUPER_ADMIN...');
-    const superAdminId = roleIds['SUPER_ADMIN'];
-    let assignedCount = 0;
-
-    for (const permId of Object.values(permissionIds)) {
-      await client.query(
-        `INSERT INTO role_permissions (role_id, permission_id)
-         VALUES ($1, $2)
-         ON CONFLICT (role_id, permission_id) DO NOTHING`,
-        [superAdminId, permId]
-      );
-      assignedCount++;
-    }
-    console.log(`✅ Assigned ${assignedCount} permissions to SUPER_ADMIN`);
-
-    // 4. Assign basic permissions to ADMIN
-    console.log('\n🔐 Assigning permissions to ADMIN...');
-    const adminId = roleIds['ADMIN'];
-    const adminPermissions = [
-      'user:read', 'user:list', 'user:update',
-      'cargo:create', 'cargo:read', 'cargo:update', 'cargo:list', 'cargo:assign',
-      'truck:read', 'truck:list', 'truck:assign',
-      'trip:create', 'trip:read', 'trip:update', 'trip:list', 'trip:start', 'trip:complete',
-      'driver:read', 'driver:list', 'driver:assign',
-      'payment:read', 'payment:list', 'payment:approve',
-      'report:create', 'report:read', 'report:list',
-      'analytics:view',
+    const systemRoles = [
+      ['SUPER_ADMIN', 'Full system access across all tenants'],
+      ['ADMIN', 'Tenant-level administrative access'],
+      ['TENANT_ADMIN', 'Tenant workspace administrator access'],
+      ['CARGO_OWNER', 'Cargo owner operational access'],
+      ['CARGO_RECEIVER', 'Cargo receiver access'],
+      ['TRUCK_OWNER', 'Truck fleet management access'],
+      ['DRIVER', 'Driver operational access'],
+      ['BROKER', 'Broker intermediary access'],
+      ['LENDER', 'Financial lending access'],
+      ['AGENT', 'Agent coordination access'],
+      ['CUSTOMS_OFFICER', 'Customs inspection access'],
+      ['FLEET_MANAGER', 'Fleet management operational access'],
+      ['FLEET_DISPATCHER', 'Fleet dispatch operational access'],
     ];
 
-    let adminAssignedCount = 0;
-    for (const permName of adminPermissions) {
-      if (permissionIds[permName]) {
-        await client.query(
-          `INSERT INTO role_permissions (role_id, permission_id)
-           VALUES ($1, $2)
-           ON CONFLICT (role_id, permission_id) DO NOTHING`,
-          [adminId, permissionIds[permName]]
+    for (const [name, description] of systemRoles) {
+      await client.query(
+        `
+        INSERT INTO roles (name, description, is_system)
+        VALUES ($1, $2, true)
+        ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description, updated_at = NOW()
+        `,
+        [name, description],
+      ).catch(async () => {
+        const existing = await client.query(`SELECT id FROM roles WHERE name = $1`, [name]);
+        if (!existing.rows.length) {
+          await client.query(
+            `INSERT INTO roles (name, description, is_system) VALUES ($1, $2, true)`,
+            [name, description],
+          );
+        }
+      });
+    }
+
+    const cols = await client.query(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'role_permissions'
+         AND column_name IN ('role', 'role_id')`,
+    );
+    const colNames = new Set(cols.rows.map((r) => r.column_name));
+
+    let roleLinks = 0;
+    for (const [roleName, codes] of Object.entries(roleDefaults || {})) {
+      for (const code of codes) {
+        const [resource, action] = String(code).split(':');
+        const perm = await client.query(
+          `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
+          [resource, action],
         );
-        adminAssignedCount++;
+        if (!perm.rows.length) continue;
+        const permissionId = perm.rows[0].id;
+
+        if (colNames.has('role_id')) {
+          const role = await client.query(`SELECT id FROM roles WHERE name = $1 LIMIT 1`, [roleName]);
+          if (!role.rows.length) continue;
+          await client.query(
+            `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [role.rows[0].id, permissionId],
+          ).catch(() => {});
+          roleLinks += 1;
+        } else if (colNames.has('role')) {
+          await client.query(
+            `INSERT INTO role_permissions (role, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+            [roleName, permissionId],
+          ).catch(() => {});
+          roleLinks += 1;
+        }
       }
     }
-    console.log(`✅ Assigned ${adminAssignedCount} permissions to ADMIN`);
+    console.log(`✅ Linked ${roleLinks} role-permission defaults`);
 
-    // Commit transaction
     await client.query('COMMIT');
 
-    // Display summary
-    console.log('\n' + '='.repeat(50));
-    console.log('🎉 Permission seeding completed successfully!');
-    console.log('='.repeat(50));
-    console.log(`\n📊 Summary:`);
-    console.log(`   • Total Permissions: ${permissionCount}`);
-    console.log(`   • Total Roles: ${roleCount}`);
-    console.log(`   • SUPER_ADMIN Permissions: ${assignedCount}`);
-    console.log(`   • ADMIN Permissions: ${adminAssignedCount}`);
-    console.log('\n✅ You can now assign permissions to other roles via the Admin UI\n');
+    const count = await client.query(`SELECT COUNT(*)::int AS count FROM permissions`);
+    const byCat = await client.query(
+      `SELECT COALESCE(category, 'null') AS category, COUNT(*)::int AS count
+       FROM permissions GROUP BY 1 ORDER BY 2 DESC`,
+    );
 
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('❌ Error seeding permissions:', error);
-    throw error;
+    console.log('\n========================================');
+    console.log(`🎉 Permission catalog ready — ${count.rows[0].count} total in DB`);
+    console.log('========================================');
+    for (const row of byCat.rows) {
+      console.log(`   • ${row.category}: ${row.count}`);
+    }
+    console.log('');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('❌ Seed failed:', err.message || err);
+    throw err;
   } finally {
     await client.end();
   }
 }
 
-// Run the seed
-seedPermissions()
-  .then(() => {
-    console.log('✅ Done!');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('❌ Failed:', error);
-    process.exit(1);
-  });
+seed()
+  .then(() => process.exit(0))
+  .catch(() => process.exit(1));
