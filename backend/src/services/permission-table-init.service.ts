@@ -518,11 +518,12 @@ export class PermissionTableInitService implements OnModuleInit {
     const rolePerms = this.roleDefaults || FALLBACK_ROLE_DEFAULTS;
 
     const columns = await this.dataSource.query(
-      `SELECT column_name FROM information_schema.columns
+      `SELECT column_name, is_nullable FROM information_schema.columns
        WHERE table_schema = 'public' AND table_name = 'role_permissions'
          AND column_name IN ('role', 'role_id')`,
     );
-    const columnNames = new Set(columns.map((c: any) => c.column_name));
+    const hasRoleId = columns.some((c: any) => c.column_name === 'role_id');
+    const hasRole = columns.some((c: any) => c.column_name === 'role');
 
     for (const [roleName, permissions] of Object.entries(rolePerms)) {
       for (const permission of permissions) {
@@ -540,25 +541,45 @@ export class PermissionTableInitService implements OnModuleInit {
         if (!permRows.length) continue;
         const permissionId = permRows[0].id;
 
-        if (columnNames.has('role_id')) {
-          const roleRows = await this.dataSource.query(
-            `SELECT id FROM roles WHERE name = $1 LIMIT 1`,
-            [roleName],
-          );
-          if (!roleRows.length) continue;
-          await this.dataSource.query(
-            `INSERT INTO role_permissions (role_id, permission_id)
-             VALUES ($1, $2)
-             ON CONFLICT DO NOTHING`,
-            [roleRows[0].id, permissionId],
-          ).catch(() => {});
-        } else if (columnNames.has('role')) {
-          await this.dataSource.query(
-            `INSERT INTO role_permissions (role, permission_id)
-             VALUES ($1, $2)
-             ON CONFLICT DO NOTHING`,
-            [roleName, permissionId],
-          ).catch(() => {});
+        try {
+          let roleId: string | null = null;
+          if (hasRoleId) {
+            const roleRows = await this.dataSource.query(
+              `SELECT id FROM roles WHERE name = $1 LIMIT 1`,
+              [roleName],
+            );
+            roleId = roleRows[0]?.id || null;
+          }
+
+          // Hybrid production schema: role_id + role (varchar NOT NULL)
+          if (hasRoleId && hasRole && roleId) {
+            const existing = await this.dataSource.query(
+              `SELECT 1 FROM role_permissions WHERE role_id = $1 AND permission_id = $2 LIMIT 1`,
+              [roleId, permissionId],
+            );
+            if (existing.length) continue;
+            await this.dataSource.query(
+              `INSERT INTO role_permissions (role_id, role, permission_id) VALUES ($1, $2, $3)`,
+              [roleId, roleName, permissionId],
+            );
+          } else if (hasRoleId && roleId) {
+            await this.dataSource.query(
+              `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+              [roleId, permissionId],
+            );
+          } else if (hasRole) {
+            const existing = await this.dataSource.query(
+              `SELECT 1 FROM role_permissions WHERE role = $1 AND permission_id = $2 LIMIT 1`,
+              [roleName, permissionId],
+            );
+            if (existing.length) continue;
+            await this.dataSource.query(
+              `INSERT INTO role_permissions (role, permission_id) VALUES ($1, $2)`,
+              [roleName, permissionId],
+            );
+          }
+        } catch (err: any) {
+          this.logger.warn(`Role link ${roleName}→${permission}: ${err?.message || err}`);
         }
       }
     }

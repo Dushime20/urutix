@@ -272,16 +272,76 @@ async function upsertRole(client, name, description) {
   }
 }
 
-async function linkRolePermission(client, colNames, roleName, permissionId) {
-  if (colNames.has('role_id')) {
+async function getRolePermissionColumns(client) {
+  const cols = await client.query(
+    `
+    SELECT column_name, is_nullable
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'role_permissions'
+    `,
+  );
+  const map = new Map();
+  for (const r of cols.rows) {
+    map.set(r.column_name, r.is_nullable === 'YES');
+  }
+  return map;
+}
+
+/**
+ * Production DB often has BOTH role_id and role (varchar NOT NULL).
+ * Insert whichever columns exist / are required.
+ */
+async function linkRolePermission(client, rpCols, roleName, permissionId) {
+  const hasRoleId = rpCols.has('role_id');
+  const hasRole = rpCols.has('role');
+  const roleNullable = rpCols.get('role') === true;
+
+  let roleId = null;
+  if (hasRoleId) {
     const role = await client.query(`SELECT id FROM roles WHERE name = $1 LIMIT 1`, [roleName]);
-    if (!role.rows.length) return false;
-    const roleId = role.rows[0].id;
+    if (!role.rows.length) {
+      // Still can link via varchar role if available
+      if (!hasRole) return false;
+    } else {
+      roleId = role.rows[0].id;
+    }
+  }
+
+  // Already linked?
+  if (hasRoleId && roleId) {
     const existing = await client.query(
       `SELECT 1 FROM role_permissions WHERE role_id = $1 AND permission_id = $2 LIMIT 1`,
       [roleId, permissionId],
     );
     if (existing.rows.length) return false;
+  } else if (hasRole) {
+    const existing = await client.query(
+      `SELECT 1 FROM role_permissions WHERE role = $1 AND permission_id = $2 LIMIT 1`,
+      [roleName, permissionId],
+    );
+    if (existing.rows.length) return false;
+  }
+
+  // Build insert for hybrid schema
+  if (hasRoleId && hasRole) {
+    if (!roleId && !roleNullable) {
+      // role required but no roles row — insert varchar only if role_id nullable
+      const roleIdNullable = rpCols.get('role_id') === true;
+      if (!roleIdNullable) return false;
+      await client.query(
+        `INSERT INTO role_permissions (role, permission_id) VALUES ($1, $2)`,
+        [roleName, permissionId],
+      );
+      return true;
+    }
+    await client.query(
+      `INSERT INTO role_permissions (role_id, role, permission_id) VALUES ($1, $2, $3)`,
+      [roleId, roleName, permissionId],
+    );
+    return true;
+  }
+
+  if (hasRoleId && roleId) {
     await client.query(
       `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)`,
       [roleId, permissionId],
@@ -289,12 +349,7 @@ async function linkRolePermission(client, colNames, roleName, permissionId) {
     return true;
   }
 
-  if (colNames.has('role')) {
-    const existing = await client.query(
-      `SELECT 1 FROM role_permissions WHERE role = $1 AND permission_id = $2 LIMIT 1`,
-      [roleName, permissionId],
-    );
-    if (existing.rows.length) return false;
+  if (hasRole) {
     await client.query(
       `INSERT INTO role_permissions (role, permission_id) VALUES ($1, $2)`,
       [roleName, permissionId],
@@ -364,12 +419,10 @@ async function seed() {
       }
     }
 
-    const cols = await client.query(
-      `SELECT column_name FROM information_schema.columns
-       WHERE table_schema = 'public' AND table_name = 'role_permissions'
-         AND column_name IN ('role', 'role_id')`,
+    const rpCols = await getRolePermissionColumns(client);
+    console.log(
+      `🧭 role_permissions columns: ${[...rpCols.keys()].sort().join(', ')}`,
     );
-    const colNames = new Set(cols.rows.map((r) => r.column_name));
 
     let roleLinks = 0;
     for (const [roleName, codes] of Object.entries(roleDefaults || {})) {
@@ -389,7 +442,7 @@ async function seed() {
           if (!perm.rows.length) continue;
           const linked = await linkRolePermission(
             client,
-            colNames,
+            rpCols,
             roleName,
             perm.rows[0].id,
           );
