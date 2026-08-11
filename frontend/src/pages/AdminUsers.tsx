@@ -1069,9 +1069,9 @@ const AdminUsers: React.FC = () => {
       }
 
       {/* Permission Editor Modal */}
-      {/* Permission Drawer */}
+      {/* Permission Drawer — above DashboardHeader (z-[300]) */}
       <div
-        className={`fixed inset-y-0 right-0 w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-transparent dark:border-slate-800 transform transition-transform duration-300 ease-in-out z-50 ${permissionUser ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed inset-y-0 right-0 w-full max-w-2xl bg-white dark:bg-slate-900 border-l border-transparent dark:border-slate-800 transform transition-transform duration-300 ease-in-out z-[401] ${permissionUser ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {permissionUser && (
           <UserPermissionEditor
@@ -1088,7 +1088,7 @@ const AdminUsers: React.FC = () => {
       {
         permissionUser && (
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[400] transition-opacity"
             onClick={() => setPermissionUser(null)}
           ></div>
         )

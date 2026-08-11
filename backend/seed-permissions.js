@@ -2,11 +2,6 @@
 /**
  * Seed / upsert enterprise permission catalog into the database.
  *
- * Source of truth (preferred):
- *   /app/config/permission-catalog.json  (Docker)
- *   dist/config/permission-catalog.json
- *   src/config/permission-catalog.json
- *
  * Run:
  *   node seed-permissions.js
  *   docker compose -f docker-compose.production.yml exec backend node seed-permissions.js
@@ -120,10 +115,24 @@ async function ensureSchema(client) {
       created_at TIMESTAMP NOT NULL DEFAULT now()
     )
   `);
+
+  // Deduplicate before unique index (older DBs may have duplicate resource+action)
+  await client.query(`
+    DELETE FROM permissions a
+    USING permissions b
+    WHERE a.ctid < b.ctid
+      AND a.resource = b.resource
+      AND a.action = b.action
+  `).catch((err) => {
+    console.warn('⚠️  Deduplicate permissions skipped:', err.message);
+  });
+
   await client.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS "UQ_permissions_resource_action"
     ON permissions (resource, action)
-  `).catch(() => {});
+  `).catch((err) => {
+    console.warn('⚠️  Unique index on permissions skipped:', err.message);
+  });
 
   await client.query(`
     CREATE TABLE IF NOT EXISTS roles (
@@ -148,6 +157,82 @@ async function ensureSchema(client) {
   `);
 }
 
+/** Safe upsert without relying on ON CONFLICT (works even if unique constraint is missing). */
+async function upsertPermission(client, perm) {
+  const resource = String(perm.resource || '').trim();
+  const action = String(perm.action || '').trim();
+  const category = String(perm.category || 'other').trim();
+  const description = String(perm.description || '').trim();
+  if (!resource || !action) return false;
+
+  const existing = await client.query(
+    `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
+    [resource, action],
+  );
+
+  if (existing.rows.length) {
+    await client.query(
+      `UPDATE permissions SET category = $1, description = $2 WHERE id = $3`,
+      [category, description, existing.rows[0].id],
+    );
+  } else {
+    await client.query(
+      `INSERT INTO permissions (resource, action, category, description) VALUES ($1, $2, $3, $4)`,
+      [resource, action, category, description],
+    );
+  }
+  return true;
+}
+
+async function upsertRole(client, name, description) {
+  const existing = await client.query(`SELECT id FROM roles WHERE name = $1 LIMIT 1`, [name]);
+  if (existing.rows.length) {
+    await client.query(
+      `UPDATE roles SET description = $1, updated_at = NOW() WHERE id = $2`,
+      [description, existing.rows[0].id],
+    );
+    return existing.rows[0].id;
+  }
+  const inserted = await client.query(
+    `INSERT INTO roles (name, description, is_system) VALUES ($1, $2, true) RETURNING id`,
+    [name, description],
+  );
+  return inserted.rows[0].id;
+}
+
+async function linkRolePermission(client, colNames, roleName, permissionId) {
+  if (colNames.has('role_id')) {
+    const role = await client.query(`SELECT id FROM roles WHERE name = $1 LIMIT 1`, [roleName]);
+    if (!role.rows.length) return false;
+    const roleId = role.rows[0].id;
+    const existing = await client.query(
+      `SELECT 1 FROM role_permissions WHERE role_id = $1 AND permission_id = $2 LIMIT 1`,
+      [roleId, permissionId],
+    );
+    if (existing.rows.length) return false;
+    await client.query(
+      `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)`,
+      [roleId, permissionId],
+    );
+    return true;
+  }
+
+  if (colNames.has('role')) {
+    const existing = await client.query(
+      `SELECT 1 FROM role_permissions WHERE role = $1 AND permission_id = $2 LIMIT 1`,
+      [roleName, permissionId],
+    );
+    if (existing.rows.length) return false;
+    await client.query(
+      `INSERT INTO role_permissions (role, permission_id) VALUES ($1, $2)`,
+      [roleName, permissionId],
+    );
+    return true;
+  }
+
+  return false;
+}
+
 async function seed() {
   const { permissions, roleDefaults } = loadCatalog();
   const client = new Client(config);
@@ -157,49 +242,23 @@ async function seed() {
   console.log('✅ Connected');
 
   try {
+    // No single outer transaction — one failed statement must not abort the rest
     await ensureSchema(client);
-    await client.query('BEGIN');
 
     let upserted = 0;
+    let failed = 0;
     for (const perm of permissions) {
-      const resource = String(perm.resource || '').trim();
-      const action = String(perm.action || '').trim();
-      const category = String(perm.category || 'other').trim();
-      const description = String(perm.description || '').trim();
-      if (!resource || !action) continue;
-
       try {
-        await client.query(
-          `
-          INSERT INTO permissions (resource, action, category, description)
-          VALUES ($1, $2, $3, $4)
-          ON CONFLICT (resource, action) DO UPDATE
-            SET category = EXCLUDED.category,
-                description = EXCLUDED.description
-          `,
-          [resource, action, category, description],
+        const ok = await upsertPermission(client, perm);
+        if (ok) upserted += 1;
+      } catch (err) {
+        failed += 1;
+        console.warn(
+          `⚠️  Failed ${perm.resource}:${perm.action} — ${err.message}`,
         );
-        upserted += 1;
-      } catch {
-        const existing = await client.query(
-          `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
-          [resource, action],
-        );
-        if (existing.rows.length) {
-          await client.query(
-            `UPDATE permissions SET category = $1, description = $2 WHERE id = $3`,
-            [category, description, existing.rows[0].id],
-          );
-        } else {
-          await client.query(
-            `INSERT INTO permissions (resource, action, category, description) VALUES ($1, $2, $3, $4)`,
-            [resource, action, category, description],
-          );
-        }
-        upserted += 1;
       }
     }
-    console.log(`✅ Upserted ${upserted} permissions`);
+    console.log(`✅ Upserted ${upserted} permissions${failed ? ` (${failed} failed)` : ''}`);
 
     const systemRoles = [
       ['SUPER_ADMIN', 'Full system access across all tenants'],
@@ -218,22 +277,11 @@ async function seed() {
     ];
 
     for (const [name, description] of systemRoles) {
-      await client.query(
-        `
-        INSERT INTO roles (name, description, is_system)
-        VALUES ($1, $2, true)
-        ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description, updated_at = NOW()
-        `,
-        [name, description],
-      ).catch(async () => {
-        const existing = await client.query(`SELECT id FROM roles WHERE name = $1`, [name]);
-        if (!existing.rows.length) {
-          await client.query(
-            `INSERT INTO roles (name, description, is_system) VALUES ($1, $2, true)`,
-            [name, description],
-          );
-        }
-      });
+      try {
+        await upsertRole(client, name, description);
+      } catch (err) {
+        console.warn(`⚠️  Role ${name}: ${err.message}`);
+      }
     }
 
     const cols = await client.query(
@@ -246,34 +294,21 @@ async function seed() {
     let roleLinks = 0;
     for (const [roleName, codes] of Object.entries(roleDefaults || {})) {
       for (const code of codes) {
-        const [resource, action] = String(code).split(':');
-        const perm = await client.query(
-          `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
-          [resource, action],
-        );
-        if (!perm.rows.length) continue;
-        const permissionId = perm.rows[0].id;
-
-        if (colNames.has('role_id')) {
-          const role = await client.query(`SELECT id FROM roles WHERE name = $1 LIMIT 1`, [roleName]);
-          if (!role.rows.length) continue;
-          await client.query(
-            `INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-            [role.rows[0].id, permissionId],
-          ).catch(() => {});
-          roleLinks += 1;
-        } else if (colNames.has('role')) {
-          await client.query(
-            `INSERT INTO role_permissions (role, permission_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-            [roleName, permissionId],
-          ).catch(() => {});
-          roleLinks += 1;
+        try {
+          const [resource, action] = String(code).split(':');
+          const perm = await client.query(
+            `SELECT id FROM permissions WHERE resource = $1 AND action = $2 LIMIT 1`,
+            [resource, action],
+          );
+          if (!perm.rows.length) continue;
+          const linked = await linkRolePermission(client, colNames, roleName, perm.rows[0].id);
+          if (linked) roleLinks += 1;
+        } catch (err) {
+          console.warn(`⚠️  Link ${roleName} → ${code}: ${err.message}`);
         }
       }
     }
-    console.log(`✅ Linked ${roleLinks} role-permission defaults`);
-
-    await client.query('COMMIT');
+    console.log(`✅ Linked ${roleLinks} new role-permission defaults`);
 
     const count = await client.query(`SELECT COUNT(*)::int AS count FROM permissions`);
     const byCat = await client.query(
@@ -288,10 +323,10 @@ async function seed() {
       console.log(`   • ${row.category}: ${row.count}`);
     }
     console.log('');
-  } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
-    console.error('❌ Seed failed:', err.message || err);
-    throw err;
+
+    if (count.rows[0].count < 20) {
+      throw new Error(`Only ${count.rows[0].count} permissions in DB — seed incomplete`);
+    }
   } finally {
     await client.end();
   }
@@ -299,4 +334,7 @@ async function seed() {
 
 seed()
   .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+  .catch((err) => {
+    console.error('❌ Seed failed:', err.message || err);
+    process.exit(1);
+  });

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -48,21 +49,23 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
     full: 'lg:max-w-full',
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — above DashboardHeader (z-[300]) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[100]"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[400]"
           />
 
           {/* Sheet/Modal Container */}
-          <div className="fixed inset-0 flex items-end lg:items-center justify-center pointer-events-none z-[101] p-0 lg:p-4">
+          <div className="fixed inset-0 flex items-end lg:items-center justify-center pointer-events-none z-[401] p-0 lg:p-4">
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
@@ -71,7 +74,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
               className={cn(
                 "w-full bg-white dark:bg-slate-900 rounded-t-[2rem] lg:rounded-[2rem] pointer-events-auto",
                 "max-h-[92vh] flex flex-col shadow-2xl overflow-hidden",
-                maxWidthClasses[maxWidth], 
+                maxWidthClasses[maxWidth],
                 "lg:max-h-[85vh]",
                 className
               )}
@@ -108,7 +111,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
           </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
