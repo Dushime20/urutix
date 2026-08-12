@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Check,
@@ -28,21 +28,27 @@ interface UserPermissionEditorProps {
 
 const ROLE_FOCUS: Record<string, string[]> = {
   CARGO_OWNER: [
-    'cargo', 'cargo_management', 'bidding', 'matching', 'lending', 'broker', 'trip', 'analytics',
+    'cargo', 'cargo_management', 'bidding', 'matching', 'lending', 'broker', 'trip', 'analytics', 'financial', 'credits',
   ],
   TRUCK_OWNER: [
-    'truck', 'fleet_management', 'driver', 'bidding', 'matching', 'trip', 'lending', 'analytics',
+    'truck', 'fleet_management', 'driver', 'bidding', 'matching', 'trip', 'lending', 'analytics', 'financial',
   ],
-  DRIVER: ['trip', 'driver', 'analytics'],
+  DRIVER: ['trip', 'trip_management', 'analytics', 'notifications'],
   LENDER: ['lending', 'analytics', 'financial'],
   BROKER: ['broker', 'bidding', 'matching', 'cargo', 'cargo_management', 'analytics'],
   TENANT_ADMIN: [
-    'cargo', 'cargo_management', 'truck', 'fleet_management', 'bidding', 'matching', 'trip', 'broker', 'analytics',
+    'cargo', 'cargo_management', 'truck', 'fleet_management', 'bidding', 'matching', 'trip', 'broker', 'analytics', 'users', 'user_management',
   ],
   CARGO_RECEIVER: ['inspection', 'cargo', 'cargo_management', 'trip'],
   CUSTOMS_OFFICER: ['customs'],
-  FLEET_MANAGER: ['truck', 'fleet_management', 'trip', 'driver'],
-  FLEET_DISPATCHER: ['trip', 'truck', 'fleet_management'],
+  FLEET_MANAGER: ['truck', 'fleet_management', 'trip', 'driver', 'analytics'],
+  FLEET_DISPATCHER: ['trip', 'truck', 'fleet_management', 'driver'],
+  FLEET_OWNER: ['truck', 'fleet_management', 'driver', 'bidding', 'matching', 'trip', 'analytics'],
+  FLEET_ACCOUNTANT: ['financial', 'analytics', 'trip'],
+  FLEET_SAFETY_OFFICER: ['trip', 'driver', 'truck', 'fleet_management', 'analytics'],
+  AGENT: ['broker', 'bidding', 'matching', 'cargo', 'cargo_management'],
+  ADMIN: ['users', 'user_management', 'analytics', 'notifications'],
+  SUPER_ADMIN: ['users', 'user_management', 'analytics', 'system', 'notifications'],
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -96,11 +102,19 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
   const [activeTab, setActiveTab] = useState<'permissions' | 'audit'>('permissions');
   const [search, setSearch] = useState('');
   const [reason, setReason] = useState('');
-  const [showAll, setShowAll] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [busyCode, setBusyCode] = useState<string | null>(null);
 
   const focusCategories = ROLE_FOCUS[userRole] || null;
+
+  useEffect(() => {
+    setShowAll(false);
+    setSearch('');
+    setReason('');
+    setActiveTab('permissions');
+    setCollapsed(new Set());
+  }, [userId, userRole]);
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['admin-user-permissions', userId],
@@ -139,9 +153,19 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
     const groups: Record<string, Array<PermissionItem & { globallyDisabled?: boolean; codeColon?: string }>> = {};
+    const isRoleRelevant = (p: PermissionItem & { fromRole?: boolean }) => {
+      if (!focusCategories) return true;
+      const cat = p.category || p.resource || 'other';
+      return (
+        focusCategories.includes(cat) ||
+        !!p.fromRole ||
+        p.source === 'user_granted' ||
+        p.source === 'user_denied'
+      );
+    };
     permissions.forEach((p: any) => {
       const category = p.category || p.resource || 'other';
-      if (!showAll && focusCategories && !focusCategories.includes(category)) return;
+      if (!showAll && !isRoleRelevant(p)) return;
       if (
         q &&
         !String(p.code || '').toLowerCase().includes(q) &&
@@ -212,12 +236,13 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
     <div className="bg-white dark:bg-slate-900 h-full flex flex-col">
       <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start gap-3 bg-slate-50 dark:bg-slate-900/80">
         <div className="min-w-0">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">
-            Permissions — {userName}
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            Manage user permissions
           </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-0.5">{userName}</p>
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800 border border-blue-200">
-              {userRole}
+              {userRole.replace(/_/g, ' ')}
             </span>
             <span className="text-xs text-slate-500">
               {summary.effective}/{summary.total} effective
@@ -274,9 +299,10 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 flex gap-2">
               <AlertCircle size={16} className="mt-0.5 shrink-0 text-[#2c5173]" />
               <p>
-                Grant or Deny capabilities for <strong>this user only</strong> (e.g. block cargo create
-                or Smart Matching for one truck/cargo owner). Deny overrides role defaults. Restore
-                returns to role defaults.
+                Changes apply to <strong>{userName}</strong> only — not to other users with the{' '}
+                <strong>{userRole.replace(/_/g, ' ')}</strong> role. Grant adds a personal override;
+                Deny blocks a capability for this user; Restore removes the override and falls back to
+                role defaults.
               </p>
             </div>
 
@@ -320,7 +346,7 @@ export const UserPermissionEditor: React.FC<UserPermissionEditorProps> = ({
                   onClick={() => setShowAll((v) => !v)}
                   className="text-xs font-bold uppercase tracking-wider text-[#2c5173] px-3 py-2 rounded-lg bg-slate-50 border border-slate-200"
                 >
-                  {showAll ? 'Show role-relevant' : 'Show all categories'}
+                  {showAll ? 'Show role-relevant only' : 'Show all categories'}
                 </button>
               )}
             </div>
