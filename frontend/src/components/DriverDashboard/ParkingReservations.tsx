@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ParkingSquare, Plus, X, Clock, MapPin } from 'lucide-react';
+import { ParkingSquare, Plus, Clock, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { parkingApi } from '../../services/parkingApi';
 import { PARKING_STATUS_LABELS, type ParkingReservation } from '../../types/parking';
 import { ParkingReservationForm } from '../parking/ParkingReservationForm';
 import { TranslatedText } from '../translated-text';
 import { getApiErrorMessage } from '../../config/errorMessages';
+import { Modal } from '../EnliteUI';
 
 interface ParkingReservationsProps {
   driver?: {
@@ -76,19 +77,25 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
         </div>
         <button
           type="button"
-          onClick={() => setShowForm((open) => !open)}
+          onClick={() => setShowForm(true)}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#2b5271] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#234560] transition-colors"
         >
-          {showForm ? <X size={14} /> : <Plus size={14} />}
-          <TranslatedText text={showForm ? 'Close form' : 'New reservation'} />
+          <Plus size={14} />
+          <TranslatedText text="New reservation" />
         </button>
       </div>
 
-      {showForm && (
-        <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 border border-slate-100 dark:border-slate-700">
-          <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">
-            <TranslatedText text="Submit parking request" />
-          </h2>
+      <Modal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        title="Parking Reservation Request"
+        size="xl"
+        headerColor="default"
+      >
+        <div className="max-h-[70vh] overflow-y-auto pr-1">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">
+            <TranslatedText text="Submit your truck parking reservation request and our parking team will review availability and confirm the next steps." />
+          </p>
           <ParkingReservationForm
             defaultValues={defaults}
             onSuccess={() => {
@@ -97,7 +104,7 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
             }}
           />
         </div>
-      )}
+      </Modal>
 
       <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 border border-slate-100 dark:border-slate-700">
         <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">
