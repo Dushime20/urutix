@@ -438,6 +438,37 @@ export class EmailService {
     });
   }
 
+  // ─── Parking reservation emails ─────────────────────────────────────────────
+
+  async sendParkingReservationEmail(options: {
+    to: string;
+    subject: string;
+    title: string;
+    greeting?: string;
+    body: string;
+    extraHtml?: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+    note?: string;
+    textBody?: string;
+  }) {
+    return this.sendGenericEmail({
+      to: options.to,
+      subject: options.subject,
+      htmlBody: this.renderEmail({
+        title: options.title,
+        greeting: options.greeting,
+        body: options.body,
+        extraHtml: options.extraHtml,
+        ctaLabel: options.ctaLabel,
+        ctaUrl: options.ctaUrl,
+        note: options.note,
+      }),
+      textBody: options.textBody,
+      fromName: 'Nova Parking 365',
+    });
+  }
+
   // ─── HTML template engine ──────────────────────────────────────────────────
 
   /**
@@ -447,13 +478,14 @@ export class EmailService {
     title: string;
     greeting?: string;
     body: string;
+    extraHtml?: string;
     ctaLabel?: string;
     ctaUrl?: string;
     ctaColor?: string;
     note?: string;
     expiryNote?: string;
   }): string {
-    const { title, greeting, body, ctaLabel, ctaUrl, ctaColor = '#345E85', note, expiryNote } = opts;
+    const { title, greeting, body, extraHtml, ctaLabel, ctaUrl, ctaColor = '#345E85', note, expiryNote } = opts;
     const year = new Date().getFullYear();
 
     const ctaBlock = ctaLabel && ctaUrl ? `
@@ -512,6 +544,7 @@ export class EmailService {
           <td style="padding:16px 40px 32px;font-size:15px;line-height:1.7;color:#334155;">
             ${greetingBlock}
             <p style="margin:0 0 16px;">${body}</p>
+            ${extraHtml || ''}
             ${ctaBlock}
             ${noteBlock}
             ${expiryBlock}

@@ -167,7 +167,18 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
         </Card>
         <Card title="Authorization">
           <Info label="Agreement" value={reservation.agreementAccepted ? 'Accepted' : 'Not accepted'} />
-          <Info label="Signature" value={reservation.signature} />
+          <div>
+            <p className="ui-label mb-1"><TranslatedText text="Signature" /></p>
+            {reservation.signature?.startsWith('data:image/') ? (
+              <img
+                src={reservation.signature}
+                alt="Applicant signature"
+                className="max-h-36 w-full max-w-md object-contain bg-white border border-slate-100 rounded-xl"
+              />
+            ) : (
+              <p className="ui-body break-words">{reservation.signature || '—'}</p>
+            )}
+          </div>
         </Card>
         <Card title="Review Information">
           <Info label="Assigned Officer" value={reservation.assignedToName || 'Unassigned'} />

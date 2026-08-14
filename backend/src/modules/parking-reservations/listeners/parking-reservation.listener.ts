@@ -32,7 +32,7 @@ export class ParkingReservationListener {
     private readonly configService: ConfigService,
   ) {
     this.frontendUrl = (
-      this.configService.get<string>('FRONTEND_URL') || ''
+      this.configService.get<string>('FRONTEND_URL') || 'https://urutix.com'
     ).replace(/\/$/, '');
   }
 
@@ -46,9 +46,9 @@ export class ParkingReservationListener {
       actionUrl: `/dashboard/parking/reservations/${reservation.id}`,
     });
     await this.emailApplicant(reservation, {
-      subject: `Reservation submitted — ${reservation.reservationReference}`,
+      subject: `Your parking reservation reference: ${reservation.reservationReference}`,
       title: 'Reservation Request Submitted',
-      body: `Your truck parking reservation request has been successfully submitted. Our parking team will review availability and confirm the next steps.`,
+      body: `Thank you for submitting your truck parking reservation. Save the reference below — you will need it to track status, receive updates, and respond if our parking team needs more information.`,
     });
   }
 
@@ -60,6 +60,23 @@ export class ParkingReservationListener {
       title: 'Parking reservation assigned',
       message: `${reservation.reservationReference} has been assigned to you.`,
       actionUrl: `/dashboard/parking/reservations/${reservation.id}`,
+    });
+  }
+
+  @OnEvent('parking.reservation.changed')
+  async onChanged(payload: { reservation: ParkingReservation; event?: string }) {
+    const { reservation, event } = payload;
+    if (event !== 'review_started') return;
+    await this.notifyApplicantIfKnown(reservation, {
+      type: NotificationType.PARKING_RESERVATION_SUBMITTED,
+      title: 'Parking reservation under review',
+      message: `${reservation.reservationReference} is now under review.`,
+      actionUrl: `/dashboard/parking-reservations/${reservation.id}`,
+    });
+    await this.emailApplicant(reservation, {
+      subject: `Reservation under review — ${reservation.reservationReference}`,
+      title: 'Reservation Under Review',
+      body: `Our parking team has started reviewing reservation ${this.escape(reservation.reservationReference)}. We will email you as soon as there is an update.`,
     });
   }
 
@@ -75,9 +92,23 @@ export class ParkingReservationListener {
     await this.emailApplicant(reservation, {
       subject: `Information needed — ${reservation.reservationReference}`,
       title: 'Additional Information Required',
-      body: `Our parking team needs more information for reservation ${reservation.reservationReference}.<br/><br/><strong>Requested:</strong> ${this.escape(reservation.informationRequested || '')}`,
-      ctaLabel: 'Respond to request',
-      ctaUrl: `${this.frontendUrl}/parking-reservation/lookup`,
+      body: `Our parking team needs more information for reservation ${this.escape(reservation.reservationReference)}.<br/><br/><strong>Requested:</strong> ${this.escape(reservation.informationRequested || '')}`,
+    });
+  }
+
+  @OnEvent('parking.reservation.information_received')
+  async onInfoReceived(payload: { reservation: ParkingReservation }) {
+    const { reservation } = payload;
+    await this.notifyOfficers(reservation, {
+      type: NotificationType.PARKING_RESERVATION_SUBMITTED,
+      title: 'Parking reservation response received',
+      message: `${reservation.reservationReference} received additional information.`,
+      actionUrl: `/dashboard/parking/reservations/${reservation.id}`,
+    });
+    await this.emailApplicant(reservation, {
+      subject: `We received your response — ${reservation.reservationReference}`,
+      title: 'Response Received',
+      body: `Thank you. We received the additional information for reservation ${this.escape(reservation.reservationReference)} and our parking team will continue the review.`,
     });
   }
 
@@ -93,7 +124,7 @@ export class ParkingReservationListener {
     await this.emailApplicant(reservation, {
       subject: `Reservation approved — ${reservation.reservationReference}`,
       title: 'Reservation Approved',
-      body: `Your truck parking reservation ${reservation.reservationReference} has been approved.`,
+      body: `Your truck parking reservation ${this.escape(reservation.reservationReference)} has been approved.`,
     });
   }
 
@@ -109,7 +140,7 @@ export class ParkingReservationListener {
     await this.emailApplicant(reservation, {
       subject: `Reservation update — ${reservation.reservationReference}`,
       title: 'Reservation Rejected',
-      body: `We were unable to approve reservation ${reservation.reservationReference}. ${reservation.rejectionReason ? `Reason: ${this.escape(reservation.rejectionReason)}` : 'Please contact the parking team for next steps.'}`,
+      body: `We were unable to approve reservation ${this.escape(reservation.reservationReference)}. ${reservation.rejectionReason ? `Reason: ${this.escape(reservation.rejectionReason)}` : 'Please contact the parking team for next steps.'}`,
     });
   }
 
@@ -131,16 +162,28 @@ export class ParkingReservationListener {
     await this.emailApplicant(reservation, {
       subject: `Reservation cancelled — ${reservation.reservationReference}`,
       title: 'Reservation Cancelled',
-      body: `Reservation ${reservation.reservationReference} has been cancelled.`,
+      body: `Reservation ${this.escape(reservation.reservationReference)} has been cancelled.`,
     });
+  }
+
+  private lookupUrl() {
+    return `${this.frontendUrl}/parking-reservation/lookup`;
+  }
+
+  private referenceBox(reservation: ParkingReservation): string {
+    return `
+      <div style="background:#EBF1F6;border-radius:12px;padding:18px 16px;text-align:center;margin:8px 0 20px;">
+        <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#64748b;font-weight:700;">Reservation Reference</div>
+        <div style="font-size:22px;font-weight:800;color:#345E85;margin-top:6px;letter-spacing:0.5px;">${this.escape(reservation.reservationReference)}</div>
+      </div>
+    `;
   }
 
   private summary(reservation: ParkingReservation): string {
     return `
-      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0;font-size:14px;color:#334155;">
-        <tr><td style="padding:6px 0;"><strong>Reference</strong></td><td>${this.escape(reservation.reservationReference)}</td></tr>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 8px;font-size:14px;color:#334155;">
         <tr><td style="padding:6px 0;"><strong>Company</strong></td><td>${this.escape(reservation.companyName)}</td></tr>
-        <tr><td style="padding:6px 0;"><strong>Requested date</strong></td><td>${this.escape(String(reservation.requestedStartDate))}</td></tr>
+        <tr><td style="padding:6px 0;"><strong>Requested date</strong></td><td>${this.escape(String(reservation.requestedStartDate).slice(0, 10))}</td></tr>
         <tr><td style="padding:6px 0;"><strong>Truck spaces</strong></td><td>${reservation.truckSpacesRequested}</td></tr>
         <tr><td style="padding:6px 0;"><strong>Contract duration</strong></td><td>${reservation.contractMonths} month(s)</td></tr>
         <tr><td style="padding:6px 0;"><strong>Status</strong></td><td>${this.escape(reservation.status.replace(/_/g, ' '))}</td></tr>
@@ -150,30 +193,41 @@ export class ParkingReservationListener {
 
   private async emailApplicant(
     reservation: ParkingReservation,
-    opts: { subject: string; title: string; body: string; ctaLabel?: string; ctaUrl?: string },
+    opts: { subject: string; title: string; body: string },
   ) {
-    const html = `
-      <div style="font-family:Inter,Arial,sans-serif;color:#0f172a;line-height:1.5;">
-        <h2 style="color:#345E85;font-size:20px;">${opts.title}</h2>
-        <p>${opts.body}</p>
-        ${this.summary(reservation)}
-        ${
-          opts.ctaLabel && opts.ctaUrl
-            ? `<p><a href="${opts.ctaUrl}" style="display:inline-block;background:#345E85;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:700;">${opts.ctaLabel}</a></p>`
-            : ''
-        }
-      </div>
-    `;
-    try {
-      await this.emailService.sendGenericEmail({
-        to: reservation.email,
-        subject: opts.subject,
-        htmlBody: html,
-        textBody: `${opts.title}\n\n${opts.body.replace(/<[^>]+>/g, '')}\n\nReference: ${reservation.reservationReference}`,
-        fromName: 'Nova Parking 365',
-      });
-    } catch (error) {
-      this.logger.warn(`Parking email failed: ${(error as Error).message}`);
+    const greeting = reservation.driverFirstName
+      ? `Hello ${this.escape(reservation.driverFirstName)},`
+      : 'Hello,';
+    const lookupUrl = this.lookupUrl();
+    const result = await this.emailService.sendParkingReservationEmail({
+      to: reservation.email,
+      subject: opts.subject,
+      title: opts.title,
+      greeting,
+      body: opts.body,
+      extraHtml: `${this.referenceBox(reservation)}${this.summary(reservation)}`,
+      ctaLabel: 'Track your reservation',
+      ctaUrl: lookupUrl,
+      note: 'Use your reservation reference and this email address to look up status at any time. We will also email you whenever the status changes.',
+      textBody: [
+        opts.title,
+        '',
+        opts.body.replace(/<[^>]+>/g, ' '),
+        '',
+        `Reservation Reference: ${reservation.reservationReference}`,
+        `Company: ${reservation.companyName}`,
+        `Requested date: ${String(reservation.requestedStartDate).slice(0, 10)}`,
+        `Truck spaces: ${reservation.truckSpacesRequested}`,
+        `Contract duration: ${reservation.contractMonths} month(s)`,
+        `Status: ${reservation.status.replace(/_/g, ' ')}`,
+        '',
+        `Track your reservation: ${lookupUrl}`,
+      ].join('\n'),
+    });
+    if (!result.success) {
+      this.logger.error(
+        `Parking email failed for ${reservation.reservationReference} → ${reservation.email}: ${result.error}`,
+      );
     }
   }
 

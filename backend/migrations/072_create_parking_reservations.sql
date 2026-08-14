@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS parking_reservations (
   "customerNotes" TEXT NULL,
   "internalNotes" TEXT NULL,
   "agreementAccepted" BOOLEAN NOT NULL DEFAULT TRUE,
-  signature VARCHAR(200) NOT NULL,
+  signature TEXT NOT NULL,
   "signedAt" TIMESTAMPTZ NULL,
   "submittedByUserId" UUID NULL,
   "assignedToUserId" UUID NULL,

@@ -110,7 +110,7 @@ export class ParkingReservation {
   @Column({ type: 'boolean', default: true })
   agreementAccepted: boolean;
 
-  @Column({ length: 200 })
+  @Column({ type: 'text' })
   signature: string;
 
   @Column({ type: 'timestamptz', nullable: true })

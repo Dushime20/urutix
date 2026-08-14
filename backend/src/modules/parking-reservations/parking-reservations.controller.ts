@@ -83,7 +83,7 @@ export class ParkingReservationsController {
     return {
       success: true,
       message: result.created
-        ? 'Your truck parking reservation request has been successfully submitted.'
+        ? 'Your truck parking reservation request has been successfully submitted. A confirmation email with your reservation reference is on the way.'
         : 'Your truck parking reservation request was already received.',
       data: result.reservation,
       possibleDuplicate: result.possibleDuplicate,

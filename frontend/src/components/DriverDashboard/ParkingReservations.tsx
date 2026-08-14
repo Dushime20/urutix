@@ -54,7 +54,6 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
     driverLastName: driver?.lastName || '',
     email: driver?.email || driver?.contactInfo?.email || '',
     companyPhone: driver?.phone || driver?.contactInfo?.phone || '',
-    signature: [driver?.firstName, driver?.lastName].filter(Boolean).join(' '),
   }), [driver]);
 
   const items = query.data?.items || [];

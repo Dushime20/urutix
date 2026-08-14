@@ -9,6 +9,7 @@ import { TranslatedText } from '../translated-text';
 import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import type { ParkingReservation } from '../../types/parking';
+import { SignaturePad } from './SignaturePad';
 
 const schema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
@@ -22,7 +23,9 @@ const schema = z.object({
   contractMonths: z.coerce.number().int().min(1, 'At least 1 month is required').max(60),
   requestedStartDate: z.string().min(1, 'Start date is required'),
   agreementAccepted: z.literal(true, { errorMap: () => ({ message: 'You must accept the agreement' }) }),
-  signature: z.string().min(2, 'Digital signature is required'),
+  signature: z
+    .string()
+    .regex(/^data:image\/(png|jpeg);base64,/, 'Please sign in the box using your mouse, finger, or stylus'),
   customerNotes: z.string().optional(),
   website: z.string().optional(),
 });
@@ -83,7 +86,7 @@ export function ParkingReservationForm({
         },
         idempotencyKey,
       );
-      toast.success(response.message || 'Reservation submitted');
+      toast.success(response.message || 'Reservation submitted. A confirmation email with your reference is on the way.');
       onSuccess?.(response.data);
     } catch (error) {
       toast.error(getApiErrorMessage(error) || "We couldn't submit your reservation request. Please review the information and try again.");
@@ -159,8 +162,12 @@ export function ParkingReservationForm({
         {form.formState.errors.agreementAccepted && (
           <p className={errorClass}>{form.formState.errors.agreementAccepted.message}</p>
         )}
-        <Field label="Digital Signature" error={form.formState.errors.signature?.message}>
-          <input className={fieldClass} {...form.register('signature')} placeholder="Type your full name" />
+        <Field label="Digital Signature">
+          <SignaturePad
+            value={form.watch('signature')}
+            onChange={(next) => form.setValue('signature', next, { shouldValidate: true, shouldDirty: true })}
+            error={form.formState.errors.signature?.message}
+          />
         </Field>
       </Section>
 

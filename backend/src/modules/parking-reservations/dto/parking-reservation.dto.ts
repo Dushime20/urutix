@@ -9,6 +9,7 @@ import {
   IsString,
   IsUUID,
   Max,
+  Matches,
   MaxLength,
   Min,
   MinLength,
@@ -79,10 +80,11 @@ export class CreateParkingReservationDto {
   @IsBoolean()
   agreementAccepted: boolean;
 
-  @Transform(trim)
   @IsString()
-  @MinLength(2)
-  @MaxLength(200)
+  @Matches(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/, {
+    message: 'A drawn signature is required',
+  })
+  @MaxLength(400000)
   signature: string;
 
   @IsOptional()
