@@ -34,11 +34,10 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />;
+        return <CheckCircle className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />;
       case 'warning':
-        return <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />;
       case 'error':
-        return <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />;
+        return <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />;
       case 'info':
         return <Info className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" />;
       default:
@@ -48,12 +47,10 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success':
-        return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800';
       case 'warning':
-        return 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800';
       case 'error':
-        return 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800';
+        return 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800';
+      case 'success':
       case 'info':
         return 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 border-primary-100 dark:border-primary-800';
       default:

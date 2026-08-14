@@ -81,7 +81,7 @@ const RoutePerformance: React.FC<RoutePerformanceProps> = ({ tenantId }) => {
                       </span>
                       <span className="text-slate-300 dark:text-slate-600">·</span>
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                        <CheckCircle size={11} className={route.onTimeRate >= 90 ? 'text-emerald-500' : 'text-amber-500'} />
+                        <CheckCircle size={11} className={route.onTimeRate >= 90 ? 'text-primary-500' : 'text-amber-500'} />
                         {Math.round(route.onTimeRate)}% <TranslatedText text="On-Time" />
                       </span>
                     </div>
@@ -94,7 +94,7 @@ const RoutePerformance: React.FC<RoutePerformanceProps> = ({ tenantId }) => {
                       <TranslatedText text="Avg. Revenue" />
                     </p>
                     <div className="flex items-center gap-0.5 text-slate-800 dark:text-white">
-                      <DollarSign size={12} className="text-emerald-500" />
+                      <DollarSign size={12} className="text-primary-500" />
                       <span className="text-sm font-semibold">
                         {route.averageCost ? Number(route.averageCost).toLocaleString() : '0'}
                       </span>
@@ -115,7 +115,7 @@ const RoutePerformance: React.FC<RoutePerformanceProps> = ({ tenantId }) => {
                     <div
                       className={`px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 ${
                         route.onTimeRate >= 90
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                           : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
                       }`}
                     >

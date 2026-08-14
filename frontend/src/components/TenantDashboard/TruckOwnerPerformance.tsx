@@ -50,8 +50,8 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({
             <TranslatedText text="Top truck owners" />
           </h3>
         </div>
-        <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100/60 dark:border-amber-900/40">
-          <Award className="text-amber-500 w-4 h-4" />
+        <div className="p-2 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100/60 dark:border-primary-900/40">
+          <Award className="text-primary-600 dark:text-primary-400 w-4 h-4" />
         </div>
       </div>
 
@@ -77,10 +77,8 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0 ${
                     index === 0
-                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-                      : index === 1
-                        ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
-                        : 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-200'
                   }`}
                 >
                   {index + 1}
@@ -98,7 +96,7 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({
                     {Number(partner.totalRevenue || 0).toLocaleString()}
                   </p>
                   <div className="flex items-center justify-end gap-0.5 text-[11px] text-slate-500">
-                    <Star size={10} className="text-amber-400 fill-amber-400" />
+                    <Star size={10} className="text-primary-400 fill-primary-400" />
                     {partner.averageRating > 0 ? partner.averageRating.toFixed(1) : '5.0'}
                   </div>
                 </div>
@@ -116,10 +114,8 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({
                 <div
                   className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-semibold ${
                     index === 0
-                      ? 'bg-amber-100 text-amber-700'
-                      : index === 1
-                        ? 'bg-slate-200 text-slate-600 dark:text-slate-300'
-                        : 'bg-orange-50 text-orange-600'
+                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
                   }`}
                 >
                   #{index + 1}
@@ -144,7 +140,7 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({
                     <TranslatedText text="Success Rate" />
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <CheckCircle size={12} className="text-emerald-500" />
+                    <CheckCircle size={12} className="text-primary-500" />
                     <span className="text-sm font-semibold text-slate-800 dark:text-white">
                       {partner.totalTrips > 0
                         ? Math.round((partner.completedTrips / partner.totalTrips) * 100)
@@ -168,13 +164,13 @@ const TruckOwnerPerformance: React.FC<TruckOwnerPerformanceProps> = ({
 
               <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
                 <div className="flex items-baseline gap-1">
-                  <DollarSign size={12} className="text-emerald-500" />
+                  <DollarSign size={12} className="text-primary-500" />
                   <span className="text-sm font-semibold text-slate-800 dark:text-white">
                     {Number(partner.totalRevenue).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Star size={12} className="text-amber-400 fill-amber-400" />
+                  <Star size={12} className="text-primary-400 fill-primary-400" />
                   <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {partner.averageRating > 0 ? partner.averageRating.toFixed(1) : '5.0'}
                   </span>

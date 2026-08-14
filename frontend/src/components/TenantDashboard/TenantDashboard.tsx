@@ -94,40 +94,22 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
 
   const getStatusTheme = (status: string) => {
     switch (status) {
-      case 'success':
-        return {
-          bg: 'bg-gradient-to-r from-emerald-500 to-teal-600',
-          lightBg: 'bg-emerald-50',
-          text: 'text-emerald-600',
-          icon: CheckCircle
-        };
       case 'warning':
+      case 'error':
         return {
-          bg: 'bg-gradient-to-r from-amber-500 to-orange-600',
+          bg: 'bg-primary-600',
           lightBg: 'bg-amber-50',
           text: 'text-amber-600',
           icon: FaExclamationTriangle
         };
-      case 'error':
-        return {
-          bg: 'bg-gradient-to-r from-rose-500 to-red-600',
-          lightBg: 'bg-rose-50',
-          text: 'text-rose-600',
-          icon: Shield
-        };
+      case 'success':
       case 'info':
-        return {
-          bg: 'bg-gradient-to-r from-primary-500 to-primary-600',
-          lightBg: 'bg-primary-50',
-          text: 'text-primary-600',
-          icon: Info
-        };
       default:
         return {
-          bg: 'bg-gradient-to-r from-slate-500 to-slate-700',
-          lightBg: 'bg-slate-50',
-          text: 'text-slate-600',
-          icon: Clock
+          bg: 'bg-primary-600',
+          lightBg: 'bg-primary-50',
+          text: 'text-primary-600',
+          icon: status === 'success' ? CheckCircle : status === 'info' ? Info : Clock
         };
     }
   };
@@ -279,8 +261,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   // Fleet Gradient Helper
   const fleetGradient = (ctx: CanvasRenderingContext2D) => {
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
-    gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+    gradient.addColorStop(0, 'rgba(52, 94, 133, 0.2)');
+    gradient.addColorStop(1, 'rgba(52, 94, 133, 0)');
     return gradient;
   };
 
@@ -336,22 +318,22 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
       {
         label: 'Fleet Utilization (%)',
         data: data.trends.fleetUtilization,
-        borderColor: '#10b981',
+        borderColor: '#345E85',
         backgroundColor: (context: any) => {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
-          if (!chartArea) return 'rgba(16, 185, 129, 0.1)';
+          if (!chartArea) return 'rgba(52, 94, 133, 0.1)';
           return fleetGradient(ctx);
         },
-        borderWidth: 3,
+        borderWidth: 2,
         fill: true,
         tension: 0.4,
-        pointBackgroundColor: '#10b981',
+        pointBackgroundColor: '#345E85',
         pointBorderColor: 'white',
         pointBorderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#10b981',
+        pointHoverBackgroundColor: '#345E85',
         pointHoverBorderColor: 'white',
         pointHoverBorderWidth: 3,
       }
@@ -486,8 +468,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                             <TranslatedText text="Utilization" />
                           </h3>
                         </div>
-                        <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
-                          <span className="ui-label mb-0 text-emerald-700 dark:text-emerald-400">
+                        <div className="px-2.5 py-1 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-100 dark:border-primary-900/40">
+                          <span className="ui-label mb-0 text-primary-700 dark:text-primary-400">
                             <TranslatedText text="Avg" /> {data.metrics.averageLoadUtilization}%
                           </span>
                         </div>

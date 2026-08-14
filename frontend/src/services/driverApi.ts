@@ -988,7 +988,20 @@ class DriverApiService {
     status: string;
     color?: string;
     capacityWeight?: number;
+    capacityVolume?: number;
     fuelType?: string;
+    truckType?: string;
+    mileage?: number;
+    vin?: string;
+    registrationExpiry?: string;
+    insuranceExpiry?: string;
+    roadworthyCertExpiry?: string;
+    lastMaintenanceDate?: string;
+    nextMaintenanceDate?: string;
+    hasGps?: boolean;
+    hasRefrigeration?: boolean;
+    hasLiftGate?: boolean;
+    hasHazmatPermit?: boolean;
   } | null> {
     try {
       const response = await api.get(`/fleet/trucks/${truckId}`);
@@ -997,6 +1010,45 @@ class DriverApiService {
       if (error.response?.status === 404) return null;
       console.error('Error fetching assigned truck:', error);
       return null;
+    }
+  }
+
+  async getAssignmentHistory(driverId: string): Promise<{
+    tenureDays: number;
+    vehicleCount: number;
+    totalMissions: number;
+    totalDistance: number;
+    history: Array<{
+      id: string;
+      truckId: string;
+      make: string;
+      model: string;
+      plate: string;
+      year?: number;
+      current: boolean;
+      assignedFrom: string | null;
+      assignedTo: string | null;
+      missions: number;
+      distance: number;
+      missionsList: Array<{
+        id: string;
+        tripNumber: string;
+        status: string;
+        origin: string;
+        destination: string;
+        date: string | null;
+        distance: number;
+      }>;
+    }>;
+  }> {
+    try {
+      const response = await api.get(`/drivers/${driverId}/assignment-history`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return { tenureDays: 0, vehicleCount: 0, totalMissions: 0, totalDistance: 0, history: [] };
+      }
+      throw error;
     }
   }
 

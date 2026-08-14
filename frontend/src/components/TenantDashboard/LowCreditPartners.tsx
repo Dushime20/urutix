@@ -74,19 +74,19 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
     };
 
     const getTransactionIcon = (_type: string, amount: number) => {
-        if (amount > 0) return <TrendingDown className="w-3 h-3 text-emerald-500 rotate-180" />;
-        return <TrendingDown className="w-3 h-3 text-rose-500" />;
+        if (amount > 0) return <TrendingDown className="w-3 h-3 text-primary-500 rotate-180" />;
+        return <TrendingDown className="w-3 h-3 text-amber-500" />;
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-rose-200/70 dark:border-rose-900/40 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-rose-100/80 dark:border-rose-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-rose-50/40 dark:bg-rose-950/20">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
-                    <div className="p-2 bg-white dark:bg-slate-900 rounded-xl border border-rose-100 dark:border-rose-900/40 shrink-0">
-                        <AlertTriangle className="w-4 h-4 text-rose-500" />
+                    <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/40 shrink-0">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
-                        <p className="text-[11px] font-semibold text-rose-500 uppercase tracking-wider mb-0.5">
+                        <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                             <TranslatedText text="Attention needed" />
                         </p>
                         <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
@@ -95,7 +95,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 pl-11 sm:pl-0">
-                    <span className="px-2.5 py-1 bg-white dark:bg-slate-900 rounded-lg border border-rose-100 dark:border-rose-900/40 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                    <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-100 dark:border-amber-900/40 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
                         {partners.length} <TranslatedText text="at risk" />
                     </span>
                     {partners.length > 0 && (
@@ -136,10 +136,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                             <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                                         )}
                                     </div>
-                                    <div className={`px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${partner.currentBalance < 500
-                                        ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-900/30 text-rose-600 dark:text-rose-400'
-                                        : 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400'
-                                        }`}>
+                                    <div className="px-2 py-0.5 rounded-md border inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-600 dark:text-amber-400">
                                         <TrendingDown className="w-3 h-3" />
                                         <span className="text-[10px] font-semibold">
                                             {getStatusLabel(partner.currentBalance)}
@@ -163,7 +160,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                         <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">
                                             <TranslatedText text="Available" />
                                         </span>
-                                        <span className={`text-xl font-semibold tracking-tight leading-none ${partner.currentBalance < 500 ? 'text-rose-500' : 'text-amber-500'}`}>
+                                        <span className="text-xl font-semibold tracking-tight leading-none text-slate-800 dark:text-white">
                                             {formatCurrency(partner.currentBalance)}{' '}
                                             <span className="text-[11px] font-medium text-slate-400">TRX</span>
                                         </span>
@@ -177,8 +174,8 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                     </motion.div>
                 ) : (
                     <div className="py-10 text-center">
-                        <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center mx-auto mb-3 border border-emerald-100 dark:border-emerald-800">
-                            <RefreshCw className="h-5 w-5 text-emerald-500" />
+                        <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-xl flex items-center justify-center mx-auto mb-3 border border-primary-100 dark:border-primary-800">
+                            <RefreshCw className="h-5 w-5 text-primary-500" />
                         </div>
                         <h5 className="text-sm font-semibold text-slate-800 dark:text-white">
                             <TranslatedText text="All Accounts Healthy" />
@@ -202,7 +199,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                         >
                             {/* Modal Header */}
                              <div className="px-10 pt-8 pb-4 bg-slate-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse" />
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full -mr-32 -mt-32 blur-3xl" />
                                 <div className="relative flex items-center justify-between z-10 mb-6">
                                     <div className="flex items-center space-x-5">
                                         <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
@@ -217,14 +214,14 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                                 {selectedPartner.user.profile?.companyName || tSync('Credit Status')}
                                             </h3>
                                             <div className="flex items-center space-x-3 mt-1">
-                                                <span className="px-2 py-0.5 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded text-[10px] font-black uppercase tracking-wider"><TranslatedText text="Low Balance" /></span>
+                                                <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded text-[10px] font-black uppercase tracking-wider"><TranslatedText text="Low Balance" /></span>
                                                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500">{selectedPartner.user.email}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setSelectedPartner(null)}
-                                        className="p-3 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-400 rounded-2xl transition-all shadow-sm border border-gray-100 dark:border-slate-700"
+                                        className="p-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded-2xl transition-all shadow-sm border border-gray-100 dark:border-slate-700"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>
@@ -275,18 +272,18 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                                 </div>
                                                 <div className="flex justify-between items-center text-sm font-bold">
                                                     <span className="text-slate-500 dark:text-slate-400"><TranslatedText text="Bonus & Rewards" /></span>
-                                                    <span className="text-emerald-500 dark:text-emerald-400">{formatCurrency(selectedPartner.bonusCredits)} TRX</span>
+                                                    <span className="text-primary-600 dark:text-primary-400">{formatCurrency(selectedPartner.bonusCredits)} TRX</span>
                                                 </div>
                                                 <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
                                                     <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Total Available" /></span>
-                                                    <span className="text-xl font-black text-rose-500 dark:text-rose-400">{formatCurrency(selectedPartner.currentBalance)} TRX</span>
+                                                    <span className="text-xl font-black text-slate-800 dark:text-white">{formatCurrency(selectedPartner.currentBalance)} TRX</span>
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="bg-slate-50 dark:bg-slate-800/30 rounded-[20px] p-4">
                                                     <div className="flex items-center space-x-2 mb-2">
-                                                        <CreditCard className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+                                                        <CreditCard className="w-3 h-3 text-primary-500 dark:text-primary-400" />
                                                         <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Lifetime Earned" /></span>
                                                     </div>
                                                     <span className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
@@ -295,7 +292,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                                 </div>
                                                 <div className="bg-slate-50 dark:bg-slate-800/30 rounded-[20px] p-4">
                                                     <div className="flex items-center space-x-2 mb-2">
-                                                        <Activity className="w-3 h-3 text-rose-400 dark:text-rose-500" />
+                                                        <Activity className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                                                         <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Lifetime Spent" /></span>
                                                     </div>
                                                     <span className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
@@ -357,7 +354,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                                     <div key={tx.id} className="group bg-slate-50 dark:bg-slate-800/30 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-gray-100 dark:border-slate-800 dark:hover:border-slate-700 rounded-2xl p-4 transition-all duration-200">
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center space-x-4">
-                                                                <div className={`p-2 rounded-xl shrink-0 ${tx.amount > 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-500'}`}>
+                                                                <div className={`p-2 rounded-xl shrink-0 ${tx.amount > 0 ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-500' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-500'}`}>
                                                                     {getTransactionIcon(tx.type, tx.amount)}
                                                                 </div>
                                                                 <div>
@@ -370,7 +367,7 @@ const LowCreditPartners: React.FC<LowCreditPartnersProps> = ({
                                                                 </div>
                                                             </div>
                                                              <div className="text-right shrink-0 ml-4">
-                                                                <div className={`text-sm font-black tracking-tight ${tx.amount > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                                <div className={`text-sm font-black tracking-tight ${tx.amount > 0 ? 'text-primary-600 dark:text-primary-400' : 'text-amber-600 dark:text-amber-400'}`}>
                                                                     {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()} TRX
                                                                 </div>
                                                                 <div className="text-[10px] font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-0.5">

@@ -498,6 +498,22 @@ export class DriverController {
     return this.driverService.predictAccidentRisk(id, req.user.tenantId);
   }
 
+  @Get(':id/assignment-history')
+  @ApiOperation({
+    summary: 'Get truck assignment history',
+    description:
+      'Returns vehicles this driver has been assigned to, with mission counts, distance, and per-truck mission logs reconstructed from trips.',
+  })
+  @ApiParam({ name: 'id', description: 'Driver ID', type: String })
+  @ApiOkResponse({ description: 'Assignment history retrieved successfully' })
+  @ApiNotFoundResponse({ description: 'Driver not found' })
+  async getAssignmentHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Request() req,
+  ) {
+    return this.driverService.getAssignmentHistory(id, req.user.tenantId);
+  }
+
   @Get(':id/stats')
   @ApiOperation({
     summary: 'Get driver statistics',

@@ -1860,4 +1860,170 @@ export class DriverService {
     }
   }
 
+  /**
+   * Truck assignment history for a driver, reconstructed from trips
+   * plus the currently assigned truck (even with no missions yet).
+   */
+  async getAssignmentHistory(
+    driverId: string,
+    tenantId: string,
+  ): Promise<{
+    tenureDays: number;
+    vehicleCount: number;
+    totalMissions: number;
+    totalDistance: number;
+    history: Array<{
+      id: string;
+      truckId: string;
+      make: string;
+      model: string;
+      plate: string;
+      year?: number;
+      current: boolean;
+      assignedFrom: string | null;
+      assignedTo: string | null;
+      missions: number;
+      distance: number;
+      missionsList: Array<{
+        id: string;
+        tripNumber: string;
+        status: string;
+        origin: string;
+        destination: string;
+        date: string | null;
+        distance: number;
+      }>;
+    }>;
+  }> {
+    const driver = await this.getDriverById(driverId, tenantId);
+
+    const trips = await this.tripRepository.find({
+      where: { driverId: driver.id, tenantId },
+      relations: ['truck', 'load'],
+      order: { plannedStartTime: 'DESC' },
+    });
+
+    const byTruck = new Map<string, Trip[]>();
+    for (const trip of trips) {
+      if (!trip.truckId) continue;
+      const list = byTruck.get(trip.truckId) || [];
+      list.push(trip);
+      byTruck.set(trip.truckId, list);
+    }
+
+    if (driver.currentTruckId && !byTruck.has(driver.currentTruckId)) {
+      byTruck.set(driver.currentTruckId, []);
+    }
+
+    const truckIds = [...byTruck.keys()];
+    const trucks = truckIds.length
+      ? await this.truckRepository.find({
+          where: { id: In(truckIds), tenantId },
+        })
+      : [];
+    const truckMap = new Map(trucks.map((t) => [t.id, t]));
+
+    const locLabel = (
+      load: Load | undefined,
+      type: 'PICKUP' | 'DELIVERY',
+    ): string => {
+      const fromLocations = load?.locations?.find((l) => l.type === type)
+        ?.locationData;
+      const fallback = type === 'PICKUP' ? load?.origin : load?.destination;
+      const loc: any = fromLocations || fallback || {};
+      return loc.city || loc.name || loc.address || '—';
+    };
+
+    const history = [...byTruck.entries()].map(([truckId, truckTrips]) => {
+      const truck = truckMap.get(truckId) || truckTrips[0]?.truck;
+      const assignmentMeta = Array.isArray(truck?.assignedDrivers)
+        ? truck.assignedDrivers.find((d: any) => d.driverId === driver.id)
+        : null;
+
+      const dated = truckTrips
+        .map((t) => ({
+          start: t.actualStartTime || t.plannedStartTime,
+          end: t.actualEndTime || t.plannedEndTime,
+        }))
+        .filter((d) => d.start);
+
+      let assignedFrom: Date | null = null;
+      if (assignmentMeta?.assignmentDate) {
+        assignedFrom = new Date(assignmentMeta.assignmentDate);
+      } else if (dated.length) {
+        assignedFrom = new Date(
+          Math.min(...dated.map((d) => new Date(d.start).getTime())),
+        );
+      }
+
+      const assignedTo = dated.length
+        ? new Date(
+            Math.max(
+              ...dated.map((d) => new Date(d.end || d.start).getTime()),
+            ),
+          )
+        : null;
+
+      const isCurrent = driver.currentTruckId === truckId;
+      const countable = truckTrips.filter(
+        (t) => t.status !== TripStatus.CANCELLED,
+      );
+
+      return {
+        id: truckId,
+        truckId,
+        make: truck?.make || '',
+        model: truck?.model || '',
+        plate: truck?.plateNumber || '',
+        year: truck?.year,
+        current: isCurrent,
+        assignedFrom: assignedFrom?.toISOString() || null,
+        assignedTo: isCurrent ? null : assignedTo?.toISOString() || null,
+        missions: countable.length,
+        distance: Math.round(
+          countable.reduce((sum, t) => sum + Number(t.totalDistance || 0), 0),
+        ),
+        missionsList: truckTrips.slice(0, 25).map((t) => {
+          const rawDate = t.plannedStartTime || t.createdAt;
+          const parsed = rawDate ? new Date(rawDate) : null;
+          return {
+            id: t.id,
+            tripNumber: t.tripNumber,
+            status: t.status,
+            origin: locLabel(t.load, 'PICKUP'),
+            destination: locLabel(t.load, 'DELIVERY'),
+            date:
+              parsed && !Number.isNaN(parsed.getTime())
+                ? parsed.toISOString()
+                : null,
+            distance: Math.round(Number(t.totalDistance || 0)),
+          };
+        }),
+      };
+    });
+
+    history.sort((a, b) => {
+      if (a.current !== b.current) return a.current ? -1 : 1;
+      const da = a.assignedFrom ? new Date(a.assignedFrom).getTime() : 0;
+      const db = b.assignedFrom ? new Date(b.assignedFrom).getTime() : 0;
+      return db - da;
+    });
+
+    const earliest = history
+      .map((a) => a.assignedFrom)
+      .filter(Boolean)
+      .map((d) => new Date(d as string).getTime());
+    const tenureDays = earliest.length
+      ? Math.max(1, Math.round((Date.now() - Math.min(...earliest)) / 86_400_000))
+      : 0;
+
+    return {
+      tenureDays,
+      vehicleCount: history.length,
+      totalMissions: history.reduce((sum, a) => sum + a.missions, 0),
+      totalDistance: history.reduce((sum, a) => sum + a.distance, 0),
+      history,
+    };
+  }
+
 }
