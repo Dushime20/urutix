@@ -16,9 +16,10 @@ const schema = z.object({
   mcNumber: z.string().min(5, 'Enter a valid MC number').max(40),
   usdotNumber: z.string().min(5, 'Enter a valid USDOT number').max(40),
   companyPhone: z.string().min(7, 'Enter a valid phone number').max(40),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid company email'),
   driverFirstName: z.string().min(1, 'First name is required'),
   driverLastName: z.string().min(1, 'Last name is required'),
+  driverEmail: z.string().email('Enter a valid driver email'),
   truckSpacesRequested: z.coerce.number().int().min(1, 'At least 1 space is required').max(700),
   contractMonths: z.coerce.number().int().min(1, 'At least 1 month is required').max(60),
   requestedStartDate: z.string().min(1, 'Start date is required'),
@@ -39,7 +40,7 @@ const errorClass = 'mt-2 text-[10px] font-black text-red-600 uppercase tracking-
 
 interface ParkingReservationFormProps {
   defaultValues?: Partial<ParkingReservationFormData>;
-  onSuccess?: (reservation: ParkingReservation) => void;
+  onSuccess?: (reservation: ParkingReservation, meta?: { emailSent?: boolean; emailedTo?: string[] }) => void;
   submitLabel?: string;
 }
 
@@ -64,6 +65,7 @@ export function ParkingReservationForm({
       email: '',
       driverFirstName: '',
       driverLastName: '',
+      driverEmail: '',
       truckSpacesRequested: 1,
       contractMonths: 1,
       requestedStartDate: '',
@@ -86,8 +88,12 @@ export function ParkingReservationForm({
         },
         idempotencyKey,
       );
-      toast.success(response.message || 'Reservation submitted. A confirmation email with your reference is on the way.');
-      onSuccess?.(response.data);
+      toast.success(
+        response.emailSent === false
+          ? `Reservation submitted (${response.data?.reservationReference || 'saved'}). We could not send the confirmation email — save your reference and contact the parking team if you do not receive it.`
+          : response.message || 'Reservation submitted. A confirmation email with your reference was sent to the driver email.',
+      );
+      onSuccess?.(response.data, { emailSent: response.emailSent, emailedTo: response.emailedTo });
     } catch (error) {
       toast.error(getApiErrorMessage(error) || "We couldn't submit your reservation request. Please review the information and try again.");
     } finally {
@@ -115,8 +121,12 @@ export function ParkingReservationForm({
           <Field label="Company Phone" error={form.formState.errors.companyPhone?.message}>
             <input className={fieldClass} {...form.register('companyPhone')} />
           </Field>
-          <Field label="Email" error={form.formState.errors.email?.message}>
-            <input type="email" className={fieldClass} {...form.register('email')} />
+          <Field
+            label="Company Email"
+            hint="For company records. A copy of notifications is also sent here if it is different from the driver email."
+            error={form.formState.errors.email?.message}
+          >
+            <input type="email" autoComplete="organization" className={fieldClass} {...form.register('email')} />
           </Field>
         </div>
       </Section>
@@ -124,12 +134,19 @@ export function ParkingReservationForm({
       <Section title="Driver / Contact Information">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="First Name" error={form.formState.errors.driverFirstName?.message}>
-            <input className={fieldClass} {...form.register('driverFirstName')} />
+            <input className={fieldClass} autoComplete="given-name" {...form.register('driverFirstName')} />
           </Field>
           <Field label="Last Name" error={form.formState.errors.driverLastName?.message}>
-            <input className={fieldClass} {...form.register('driverLastName')} />
+            <input className={fieldClass} autoComplete="family-name" {...form.register('driverLastName')} />
           </Field>
         </div>
+        <Field
+          label="Driver Email"
+          hint="All reservation notifications go here. If this driver already has an UrutiX account, they also receive in-app and message alerts for every status change."
+          error={form.formState.errors.driverEmail?.message}
+        >
+          <input type="email" autoComplete="email" className={fieldClass} placeholder="driver@email.com" {...form.register('driverEmail')} />
+        </Field>
       </Section>
 
       <Section title="Parking Requirements">
@@ -200,10 +217,12 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Field({
   label,
+  hint,
   error,
   children,
 }: {
   label: string;
+  hint?: string;
   error?: string;
   children: ReactNode;
 }) {
@@ -211,6 +230,7 @@ function Field({
     <div>
       <label className={labelClass}><TranslatedText text={label} /></label>
       {children}
+      {hint && <p className="mt-1.5 text-[11px] font-medium text-slate-400 dark:text-slate-500 px-1 leading-relaxed">{hint}</p>}
       {error && <p className={errorClass}>{error}</p>}
     </div>
   );

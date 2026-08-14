@@ -83,10 +83,14 @@ export class ParkingReservationsController {
     return {
       success: true,
       message: result.created
-        ? 'Your truck parking reservation request has been successfully submitted. A confirmation email with your reservation reference is on the way.'
+        ? result.emailSent
+          ? `Your truck parking reservation request has been successfully submitted. A confirmation email with your reservation reference was sent to ${(result.emailedTo || []).join(', ') || 'the driver email'}.`
+          : 'Your truck parking reservation request was submitted, but we could not send the confirmation email. Save your reservation reference and contact the parking team if you do not receive an email.'
         : 'Your truck parking reservation request was already received.',
       data: result.reservation,
       possibleDuplicate: result.possibleDuplicate,
+      emailSent: result.emailSent,
+      emailedTo: result.emailedTo,
     };
   }
 

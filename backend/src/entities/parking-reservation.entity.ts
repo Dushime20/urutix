@@ -42,6 +42,7 @@ export enum ParkingReservationActivityAction {
 @Index(['tenantId', 'status', 'createdAt'])
 @Index(['reservationReference'], { unique: true })
 @Index(['email', 'status'])
+@Index(['driverEmail'])
 @Index(['assignedToUserId', 'status'])
 @Index(['requestedStartDate', 'status'])
 @Index(['submittedByUserId'])
@@ -74,6 +75,9 @@ export class ParkingReservation {
 
   @Column({ length: 180 })
   email: string;
+
+  @Column({ length: 180 })
+  driverEmail: string;
 
   @Column({ length: 80 })
   driverFirstName: string;

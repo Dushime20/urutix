@@ -54,7 +54,7 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
       render: (_v, row) => (
         <div>
           <div className="font-semibold">{row.driverFirstName} {row.driverLastName}</div>
-          <div className="text-xs text-slate-500">{row.email}</div>
+          <div className="text-xs text-slate-500">{row.driverEmail || row.email}</div>
         </div>
       ),
     },

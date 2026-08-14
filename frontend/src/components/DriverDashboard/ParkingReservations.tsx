@@ -53,7 +53,7 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
   const defaults = useMemo(() => ({
     driverFirstName: driver?.firstName || '',
     driverLastName: driver?.lastName || '',
-    email: driver?.email || driver?.contactInfo?.email || '',
+    driverEmail: driver?.email || driver?.contactInfo?.email || '',
     companyPhone: driver?.phone || driver?.contactInfo?.phone || '',
   }), [driver]);
 

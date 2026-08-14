@@ -160,10 +160,11 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
           <Info label="MC Number" value={reservation.mcNumber} />
           <Info label="USDOT Number" value={reservation.usdotNumber} />
           <Info label="Phone" value={reservation.companyPhone} />
-          <Info label="Email" value={reservation.email} />
+          <Info label="Company Email" value={reservation.email} />
         </Card>
         <Card title="Driver Information">
           <Info label="Driver Name" value={`${reservation.driverFirstName} ${reservation.driverLastName}`} />
+          <Info label="Driver Email" value={reservation.driverEmail || reservation.email} />
         </Card>
         <Card title="Authorization">
           <Info label="Agreement" value={reservation.agreementAccepted ? 'Accepted' : 'Not accepted'} />

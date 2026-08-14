@@ -183,6 +183,7 @@ function moduleFallbackForPath(pathname: string, role?: string | null): string {
             : '/dashboard/parking/reservations';
     }
     if (role === 'TRUCK_OWNER') return '/dashboard/fleet/parking-reservations';
+    if (role === 'DRIVER') return '/dashboard/driver/parking-reservations';
     return '/dashboard/parking-reservations';
   }
   if (pathname.includes('/dispute') || pathname.includes('/support')) {

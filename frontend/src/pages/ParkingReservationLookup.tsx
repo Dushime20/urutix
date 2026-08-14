@@ -52,7 +52,11 @@ const ParkingReservationLookupPage = () => {
     }
     try {
       setResponding(true);
-      const data = await parkingApi.guestRespond(reservation.reservationReference, reservation.email, response);
+      const data = await parkingApi.guestRespond(
+        reservation.reservationReference,
+        form.getValues('email') || reservation.driverEmail || reservation.email,
+        response,
+      );
       setReservation(data);
       toast.success('Your response has been submitted.');
     } catch (error) {
@@ -79,7 +83,7 @@ const ParkingReservationLookupPage = () => {
                 <TranslatedText text="Look Up Reservation" />
               </h1>
               <p className="text-sm font-medium text-slate-500">
-                <TranslatedText text="Enter the reservation reference from your confirmation email to view status and respond if more information is needed." />
+                <TranslatedText text="Enter the reservation reference and the driver email from your confirmation. The company email also works." />
               </p>
             </div>
             <form onSubmit={form.handleSubmit(lookup)} className="px-6 sm:px-8 pb-8 space-y-4">
@@ -88,8 +92,8 @@ const ParkingReservationLookupPage = () => {
                 <input className="w-full px-4 py-2.5 text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl" placeholder="PR-2026-000123" {...form.register('reservationReference')} />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</label>
-                <input type="email" className="w-full px-4 py-2.5 text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl" {...form.register('email')} />
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Driver email</label>
+                <input type="email" className="w-full px-4 py-2.5 text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl" placeholder="The email that received the confirmation" {...form.register('email')} />
               </div>
               <button type="submit" disabled={loading} className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 rounded-xl text-[11px] disabled:opacity-50">
                 {loading ? <FaSpinner className="inline animate-spin" /> : <TranslatedText text="Find reservation" />}

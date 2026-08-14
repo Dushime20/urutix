@@ -50,6 +50,11 @@ export class CreateParkingReservationDto {
   @MaxLength(180)
   email: string;
 
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @IsEmail()
+  @MaxLength(180)
+  driverEmail: string;
+
   @Transform(trim)
   @IsString()
   @MinLength(1)

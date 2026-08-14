@@ -13,6 +13,8 @@ type ApiEnvelope<T> = {
   data: T;
   pagination?: { total: number; page: number; limit: number };
   possibleDuplicate?: boolean;
+  emailSent?: boolean;
+  emailedTo?: string[];
 };
 
 export interface ParkingListParams {

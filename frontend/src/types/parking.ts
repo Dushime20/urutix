@@ -16,6 +16,7 @@ export interface ParkingReservation {
   usdotNumber: string;
   companyPhone: string;
   email: string;
+  driverEmail: string;
   driverFirstName: string;
   driverLastName: string;
   truckSpacesRequested: number;
@@ -103,6 +104,7 @@ export interface CreateParkingReservationPayload {
   usdotNumber: string;
   companyPhone: string;
   email: string;
+  driverEmail: string;
   driverFirstName: string;
   driverLastName: string;
   truckSpacesRequested: number;

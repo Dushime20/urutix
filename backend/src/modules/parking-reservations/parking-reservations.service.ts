@@ -243,7 +243,7 @@ export class ParkingReservationsService {
     if (idempotencyKey) {
       const existing = await this.reservationRepo.findOne({ where: { idempotencyKey } });
       if (existing) {
-        return { created: false, reservation: this.toPublicView(existing), possibleDuplicate: existing.possibleDuplicate };
+        return { created: false, reservation: this.toPublicView(existing), possibleDuplicate: existing.possibleDuplicate, emailSent: true, emailedTo: [] };
       }
     }
 
@@ -274,6 +274,7 @@ export class ParkingReservationsService {
         usdotNumber,
         companyPhone: dto.companyPhone.trim(),
         email: dto.email.trim().toLowerCase(),
+        driverEmail: dto.driverEmail.trim().toLowerCase(),
         driverFirstName: dto.driverFirstName,
         driverLastName: dto.driverLastName,
         truckSpacesRequested: dto.truckSpacesRequested,
@@ -299,7 +300,7 @@ export class ParkingReservationsService {
           action: ParkingReservationActivityAction.RESERVATION_CREATED,
           actorUserId: this.actorId(user),
           actorRole: user?.role || 'GUEST',
-          actorLabel: user?.email || dto.email,
+          actorLabel: user?.email || dto.driverEmail || dto.email,
           newStatus: ParkingReservationStatus.PENDING_REVIEW,
           metadata: {
             companyName: saved.companyName,
@@ -311,25 +312,25 @@ export class ParkingReservationsService {
       return saved;
     });
 
-    this.eventEmitter.emit('parking.reservation.created', {
+    const listenerResults = await this.eventEmitter.emitAsync('parking.reservation.created', {
       reservation,
       actorId: this.actorId(user),
     });
+    const emailResult = listenerResults.find(
+      (result) => result && typeof result === 'object' && 'emailSent' in result,
+    ) as { emailSent?: boolean; sentTo?: string[] } | undefined;
 
     return {
       created: true,
       reservation: this.toPublicView(reservation),
       possibleDuplicate: reservation.possibleDuplicate,
+      emailSent: emailResult?.emailSent === true,
+      emailedTo: emailResult?.sentTo || [],
     };
   }
 
   async lookup(dto: LookupParkingReservationDto) {
-    const reservation = await this.reservationRepo.findOne({
-      where: {
-        reservationReference: dto.reservationReference.trim().toUpperCase(),
-        email: dto.email.trim().toLowerCase(),
-      },
-    });
+    const reservation = await this.findByReferenceAndEmail(dto.reservationReference, dto.email);
     if (!reservation) {
       throw new NotFoundException('No reservation was found for that reference and email.');
     }
@@ -337,12 +338,7 @@ export class ParkingReservationsService {
   }
 
   async guestRespond(dto: GuestInformationResponseDto) {
-    const reservation = await this.reservationRepo.findOne({
-      where: {
-        reservationReference: dto.reservationReference.trim().toUpperCase(),
-        email: dto.email.trim().toLowerCase(),
-      },
-    });
+    const reservation = await this.findByReferenceAndEmail(dto.reservationReference, dto.email);
     if (!reservation) {
       throw new NotFoundException('No reservation was found for that reference and email.');
     }
@@ -394,6 +390,7 @@ export class ParkingReservationsService {
             .orWhere('LOWER(r.mcNumber) LIKE :term', { term })
             .orWhere('LOWER(r.usdotNumber) LIKE :term', { term })
             .orWhere('LOWER(r.email) LIKE :term', { term })
+            .orWhere('LOWER(r.driverEmail) LIKE :term', { term })
             .orWhere("LOWER(CONCAT(r.driverFirstName, ' ', r.driverLastName)) LIKE :term", { term });
         }),
       );
@@ -530,7 +527,7 @@ export class ParkingReservationsService {
       previousStatus: ParkingReservationStatus.PENDING_REVIEW,
       newStatus: ParkingReservationStatus.UNDER_REVIEW,
     });
-    this.emitChanged(reservation, user, 'review_started');
+    await this.emitChanged(reservation, user, 'review_started');
     return this.findOne(id, user);
   }
 
@@ -562,7 +559,7 @@ export class ParkingReservationsService {
         },
       },
     );
-    this.eventEmitter.emit('parking.reservation.assigned', {
+    await this.eventEmitter.emitAsync('parking.reservation.assigned', {
       reservation,
       actorId: this.actorId(user),
       assignedToUserId: dto.assignedToUserId,
@@ -594,7 +591,7 @@ export class ParkingReservationsService {
       newStatus: ParkingReservationStatus.APPROVED,
       metadata: { capacity },
     });
-    this.eventEmitter.emit('parking.reservation.approved', {
+    await this.eventEmitter.emitAsync('parking.reservation.approved', {
       reservation,
       actorId: this.actorId(user),
     });
@@ -621,7 +618,7 @@ export class ParkingReservationsService {
       newStatus: ParkingReservationStatus.REJECTED,
       metadata: { reason: dto.reason },
     });
-    this.eventEmitter.emit('parking.reservation.rejected', {
+    await this.eventEmitter.emitAsync('parking.reservation.rejected', {
       reservation,
       actorId: this.actorId(user),
     });
@@ -644,7 +641,7 @@ export class ParkingReservationsService {
       newStatus: ParkingReservationStatus.ADDITIONAL_INFORMATION_REQUIRED,
       metadata: { informationRequired: dto.informationRequired },
     });
-    this.eventEmitter.emit('parking.reservation.information_requested', {
+    await this.eventEmitter.emitAsync('parking.reservation.information_requested', {
       reservation,
       actorId: this.actorId(user),
     });
@@ -685,7 +682,7 @@ export class ParkingReservationsService {
       newStatus: ParkingReservationStatus.CANCELLED,
       metadata: { reason: dto.reason },
     });
-    this.eventEmitter.emit('parking.reservation.cancelled', {
+    await this.eventEmitter.emitAsync('parking.reservation.cancelled', {
       reservation,
       actorId: this.actorId(user),
     });
@@ -737,7 +734,9 @@ export class ParkingReservationsService {
       'Company',
       'MC Number',
       'USDOT',
-      'Contact',
+      'Company Email',
+      'Driver Email',
+      'Driver Name',
       'Spaces',
       'Duration',
       'Requested Date',
@@ -753,6 +752,8 @@ export class ParkingReservationsService {
           row.mcNumber,
           row.usdotNumber,
           row.email,
+          row.driverEmail || row.email,
+          `${row.driverFirstName || ''} ${row.driverLastName || ''}`.trim(),
           row.truckSpacesRequested,
           row.contractMonths,
           row.requestedStartDate,
@@ -776,7 +777,7 @@ export class ParkingReservationsService {
       previousStatus: previous,
       newStatus: ParkingReservationStatus.UNDER_REVIEW,
     });
-    this.emitChanged(reservation, user, 'review_started');
+    await this.emitChanged(reservation, user, 'review_started');
     return this.findOne(reservation.id, user);
   }
 
@@ -794,7 +795,7 @@ export class ParkingReservationsService {
       previousStatus: previous,
       newStatus: ParkingReservationStatus.UNDER_REVIEW,
     });
-    this.eventEmitter.emit('parking.reservation.information_received', {
+    await this.eventEmitter.emitAsync('parking.reservation.information_received', {
       reservation,
       actorId: this.actorId(user),
     });
@@ -843,6 +844,7 @@ export class ParkingReservationsService {
         if (userId) sub.where('r.submittedByUserId = :userId', { userId });
         if (user.email) {
           sub.orWhere('LOWER(r.email) = :email', { email: user.email.toLowerCase() });
+          sub.orWhere('LOWER(r.driverEmail) = :email', { email: user.email.toLowerCase() });
         }
       }),
     );
@@ -879,7 +881,12 @@ export class ParkingReservationsService {
     if (user.role === UserRole.TENANT_ADMIN && reservation.tenantId === user.tenantId) return;
     const userId = this.actorId(user);
     if (userId && reservation.submittedByUserId === userId) return;
-    if (user.email && reservation.email === user.email.toLowerCase()) return;
+    if (
+      user.email &&
+      (reservation.email === user.email.toLowerCase() || reservation.driverEmail === user.email.toLowerCase())
+    ) {
+      return;
+    }
     throw new ForbiddenException("You don't have permission to perform this action.");
   }
 
@@ -914,12 +921,21 @@ export class ParkingReservationsService {
     await this.activityRepo.save(activity);
   }
 
-  private emitChanged(reservation: ParkingReservation, user: AuthUser, event: string) {
-    this.eventEmitter.emit('parking.reservation.changed', {
+  private async emitChanged(reservation: ParkingReservation, user: AuthUser, event: string) {
+    await this.eventEmitter.emitAsync('parking.reservation.changed', {
       reservation,
       actorId: this.actorId(user),
       event,
     });
+  }
+
+  private async findByReferenceAndEmail(reservationReference: string, email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+    return this.reservationRepo
+      .createQueryBuilder('r')
+      .where('r.reservationReference = :ref', { ref: reservationReference.trim().toUpperCase() })
+      .andWhere('(LOWER(r.email) = :email OR LOWER(r.driverEmail) = :email)', { email: normalizedEmail })
+      .getOne();
   }
 
   private officerName(user?: User | null) {
@@ -937,6 +953,7 @@ export class ParkingReservationsService {
       usdotNumber: reservation.usdotNumber,
       companyPhone: reservation.companyPhone,
       email: reservation.email,
+      driverEmail: reservation.driverEmail,
       driverFirstName: reservation.driverFirstName,
       driverLastName: reservation.driverLastName,
       truckSpacesRequested: reservation.truckSpacesRequested,
@@ -962,6 +979,7 @@ export class ParkingReservationsService {
       mcNumber: reservation.mcNumber,
       usdotNumber: reservation.usdotNumber,
       email: reservation.email,
+      driverEmail: reservation.driverEmail,
       companyPhone: reservation.companyPhone,
       driverFirstName: reservation.driverFirstName,
       driverLastName: reservation.driverLastName,

@@ -10,6 +10,7 @@ import { PARKING_STATUS_LABELS, type ParkingReservation } from '../types/parking
 const ParkingReservationPage = () => {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState<ParkingReservation | null>(null);
+  const [emailSent, setEmailSent] = useState(true);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased relative overflow-hidden">
@@ -28,7 +29,7 @@ const ParkingReservationPage = () => {
                 <TranslatedText text="Reserve Truck Parking" />
               </h1>
               <p className="text-sm font-medium text-slate-500">
-                <TranslatedText text="Submit your truck parking reservation request and our parking team will review availability and confirm the next steps. You will receive your reservation reference and all status updates by email." />
+                <TranslatedText text="Submit your truck parking reservation request and our parking team will review availability and confirm the next steps. You will receive your reservation reference and all status updates at the driver email." />
               </p>
             </div>
 
@@ -42,7 +43,13 @@ const ParkingReservationPage = () => {
                     <TranslatedText text="Reservation Request Submitted" />
                   </h2>
                   <p className="text-sm font-medium text-slate-500 mb-6">
-                    <TranslatedText text={`A confirmation email with reference ${submitted.reservationReference} has been sent to ${submitted.email}. Use that reference to track your request.`} />
+                    <TranslatedText
+                      text={
+                        emailSent
+                          ? `A confirmation email with reference ${submitted.reservationReference} was sent to ${submitted.driverEmail || submitted.email}. Use that reference and the driver email to track your request.`
+                          : `Your request was saved with reference ${submitted.reservationReference}, but the confirmation email could not be sent. Save this reference and contact the parking team if you do not receive an email at ${submitted.driverEmail || submitted.email}.`
+                      }
+                    />
                   </p>
                   <div className="text-left bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-2 mb-6">
                     <Row label="Reservation Reference" value={submitted.reservationReference} />
@@ -68,7 +75,12 @@ const ParkingReservationPage = () => {
                   </div>
                 </div>
               ) : (
-                <ParkingReservationForm onSuccess={setSubmitted} />
+                <ParkingReservationForm
+                  onSuccess={(reservation, meta) => {
+                    setEmailSent(meta?.emailSent !== false);
+                    setSubmitted(reservation);
+                  }}
+                />
               )}
             </div>
           </div>
