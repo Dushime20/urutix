@@ -14,7 +14,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ParkingReservationStatus } from '../../entities/parking-reservation.entity';
+import { ParkingReservationStatus } from '../../../entities/parking-reservation.entity';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;

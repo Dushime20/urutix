@@ -412,7 +412,7 @@ export class ParkingReservationsService {
     const sortDir = filter.sortDir === 'ASC' ? 'ASC' : 'DESC';
     qb.orderBy(`r.${sortBy}`, sortDir);
 
-    const [items, total] = await qb.skip((page - 1) * limit).take(limit).getMany();
+    const [items, total] = await qb.skip((page - 1) * limit).take(limit).getManyAndCount();
     const mapper = this.isStaff(user.role) ? this.toOfficerListView : this.toPublicView;
     return {
       items: items.map((item) => mapper.call(this, item)),
