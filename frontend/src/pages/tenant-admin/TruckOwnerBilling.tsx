@@ -127,11 +127,11 @@ const TruckOwnerBilling: React.FC = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between bg-white dark:bg-slate-900 rounded-lg shadow-sm p-6 border border-slate-100 dark:border-slate-800">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3 tracking-tight">
+                    <h1 className="ui-page-title flex items-center gap-3">
                         <FaTruck size={24} className="text-primary-600 dark:text-primary-400" />
                         <TranslatedText text="Truck Owners" />
                     </h1>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="ui-body-small mt-1">
                         <TranslatedText text="Manage your truck owners and easily transfer credits to their accounts." />
                     </p>
                 </div>

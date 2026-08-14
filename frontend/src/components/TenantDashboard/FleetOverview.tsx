@@ -242,10 +242,10 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
             <Truck size={20} />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">{truck.plate}</span>
-            <span className="text-[10px] font-black text-primary-500 dark:text-primary-400 uppercase tracking-widest leading-none mt-1">{truck.id}</span>
+            <span className="ui-table-body">{truck.plate}</span>
+            <span className="ui-label mb-0 text-primary-500 dark:text-primary-400 leading-none mt-1">{truck.id}</span>
             {truck.make && (
-              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-tight">{truck.make} {truck.model}</span>
+              <span className="ui-caption text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-tight">{truck.make} {truck.model}</span>
             )}
           </div>
         </div>
@@ -256,10 +256,10 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       label: tSync('Owner'),
       render: (_: unknown, truck: DisplayTruck) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-400">
+          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center ui-badge text-slate-600 dark:text-slate-400">
             {truck.owner.charAt(0)}
           </div>
-          <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{truck.owner}</span>
+          <span className="ui-table-body text-slate-700 dark:text-slate-300">{truck.owner}</span>
         </div>
       ),
     },
@@ -269,7 +269,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       render: (_: unknown, truck: DisplayTruck) => (
         <div className="flex items-center gap-2">
           <ShieldCheck size={14} className="text-emerald-500" />
-          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">{truck.driver}</span>
+          <span className="ui-body text-slate-600 dark:text-slate-400">{truck.driver}</span>
         </div>
       ),
     },
@@ -291,10 +291,10 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       render: (_: unknown, truck: DisplayTruck) => (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
+            <span className="ui-label mb-0 text-slate-400 dark:text-slate-500 leading-none">
               <TranslatedText text="Usage" /> (%)
             </span>
-            <span className="text-[10px] font-black text-slate-800 dark:text-white italic">
+            <span className="ui-label mb-0 text-slate-800 dark:text-white not-italic">
               {truck.utilization != null ? `${truck.utilization}%` : '—'}
             </span>
           </div>
@@ -314,8 +314,8 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       label: tSync('Maintenance'),
       render: (_: unknown, truck: DisplayTruck) => (
         <div className="flex flex-col">
-          <span className="text-[11px] font-black text-slate-700 dark:text-slate-300 tracking-tight">{new Date(truck.lastMaintenance).toLocaleDateString()}</span>
-          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5"><TranslatedText text="Checked" /></span>
+          <span className="ui-body text-slate-700 dark:text-slate-300 tracking-tight">{new Date(truck.lastMaintenance).toLocaleDateString()}</span>
+          <span className="ui-label mb-0 text-slate-400 dark:text-slate-500 mt-0.5"><TranslatedText text="Checked" /></span>
         </div>
       ),
     },
@@ -365,7 +365,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
         </div>
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-2 text-slate-600 dark:text-slate-400"><TranslatedText text="Loading fleet data..." /></p>
+          <p className="mt-2 ui-body-small"><TranslatedText text="Loading fleet data..." /></p>
         </div>
       </div>
     );
@@ -377,8 +377,8 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       <div className="space-y-10">
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-2"><TranslatedText text="Failed to load fleet data" /></h3>
-          <p className="text-slate-600 dark:text-slate-400 mb-4">
+          <h3 className="ui-section-title text-slate-800 dark:text-white mb-2"><TranslatedText text="Failed to load fleet data" /></h3>
+          <p className="ui-body text-slate-600 dark:text-slate-400 mb-4">
             {trucksError?.message || driversError?.message || tSync('An error occurred while loading fleet data')}
           </p>
           <button 
@@ -386,7 +386,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
               queryClient.invalidateQueries({ queryKey: ['trucks'] });
               queryClient.invalidateQueries({ queryKey: ['drivers'] });
             }}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors ui-button"
           >
             <TranslatedText text="Try Again" />
           </button>
@@ -473,19 +473,19 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm p-10 hover:shadow-xl transition-all duration-500">
           <div className="flex items-center justify-between mb-10">
             <div>
-              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Activity" /></h3>
-              <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Truck Usage Trend" /></h4>
+              <h3 className="ui-label mb-1"><TranslatedText text="Activity" /></h3>
+              <h4 className="ui-page-title"><TranslatedText text="Truck Usage Trend" /></h4>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setTimeRange('7d')}
-                className={`px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all ${timeRange === '7d' ? 'bg-primary-600 text-white' : 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-600 hover:text-white'}`}
+                className={`px-4 py-1.5 rounded-xl ui-tab transition-all ${timeRange === '7d' ? 'bg-primary-600 text-white' : 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-600 hover:text-white'}`}
               >
                 <TranslatedText text="Week" />
               </button>
               <button
                 onClick={() => setTimeRange('30d')}
-                className={`px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all ${timeRange === '30d' ? 'bg-primary-600 text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                className={`px-4 py-1.5 rounded-xl ui-tab transition-all ${timeRange === '30d' ? 'bg-primary-600 text-white' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
               >
                 <TranslatedText text="Month" />
               </button>
@@ -497,10 +497,10 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
                 <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3 border border-slate-100 dark:border-slate-700">
                   <Activity className="w-6 h-6 text-slate-300 dark:text-slate-600" />
                 </div>
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                <p className="ui-label mb-0">
                   <TranslatedText text="No fleet activity yet" />
                 </p>
-                <p className="text-xs text-slate-300 dark:text-slate-600 mt-1 font-medium">
+                <p className="ui-body-small mt-1">
                   <TranslatedText text="Assign trucks to trips to see utilization" />
                 </p>
               </div>
@@ -522,8 +522,8 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
         {/* Status Distribution */}
         <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm p-10 hover:shadow-xl transition-all duration-500 flex flex-col">
           <div className="mb-10">
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Status" /></h3>
-            <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Fleet Distribution" /></h4>
+            <h3 className="ui-label mb-1"><TranslatedText text="Status" /></h3>
+            <h4 className="ui-page-title"><TranslatedText text="Fleet Distribution" /></h4>
           </div>
           <div className="flex-1 relative flex items-center justify-center">
             <div className="h-64 w-full">
@@ -537,8 +537,8 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
               }} />
             </div>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <p className="text-3xl font-black text-slate-800 dark:text-white leading-none">{fleetSummary.totalTrucks}</p>
-              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1"><TranslatedText text="Total Trucks" /></p>
+              <p className="ui-page-title leading-none">{fleetSummary.totalTrucks}</p>
+              <p className="ui-label mb-0 mt-1"><TranslatedText text="Total Trucks" /></p>
             </div>
           </div>
           
@@ -551,9 +551,9 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
                <div key={id} className="flex items-center justify-between">
                  <div className="flex items-center gap-3">
                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
-                   <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{item.label}</span>
+                   <span className="ui-label mb-0 text-slate-500 dark:text-slate-400">{item.label}</span>
                  </div>
-                 <span className="text-sm font-black text-slate-800 dark:text-white">{item.count}</span>
+                 <span className="ui-table-body">{item.count}</span>
                </div>
              ))}
           </div>
@@ -564,13 +564,13 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
       <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
         <div className="px-10 py-8 border-b border-gray-50 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 relative">
           <div>
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 italic"><TranslatedText text="Your Fleet" /></h3>
-            <h4 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Truck List" /></h4>
+            <h3 className="ui-label mb-1"><TranslatedText text="Your Fleet" /></h3>
+            <h4 className="ui-page-title"><TranslatedText text="Truck List" /></h4>
           </div>
           <motion.button 
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="px-8 py-4 bg-primary-600 dark:bg-primary-700 text-white rounded-[20px] transition-all shadow-xl shadow-primary-100 dark:shadow-slate-950/20 flex items-center gap-3 text-xs font-black uppercase tracking-widest group"
+            className="px-8 py-4 bg-primary-600 dark:bg-primary-700 text-white rounded-[20px] transition-all shadow-xl shadow-primary-100 dark:shadow-slate-950/20 flex items-center gap-3 ui-button group"
             onClick={() => setIsAddTruckModalOpen(true)}
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
@@ -588,7 +588,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
               placeholder={tSync('Search assets, plates, owners, or drivers...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-14 pr-6 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] text-sm font-medium focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 shadow-sm transition-all dark:text-slate-100"
+              className="w-full pl-14 pr-6 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[24px] ui-input focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 shadow-sm transition-all dark:text-slate-100"
             />
           </div>
 
@@ -600,7 +600,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
               <select
                 value={selectedFilter}
                 onChange={(e) => setSelectedFilter(e.target.value)}
-                className="w-full pl-10 pr-10 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[20px] text-[10px] font-black uppercase tracking-[0.15em] text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10 shadow-sm appearance-none"
+                className="w-full pl-10 pr-10 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[20px] ui-button text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10 shadow-sm appearance-none"
               >
                 <option value="all">{tSync('Global Fleet')}</option>
                 <option value="active">{tSync('Operational Only')}</option>
@@ -615,7 +615,7 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
           </div>
         </div>
 
-        <div className="px-4 md:px-6 py-4 overflow-x-auto custom-scrollbar">
+        <div className="overflow-x-auto custom-scrollbar">
           <StandardDataTable<DisplayTruck>
             embedded
             columns={truckColumns}
@@ -639,13 +639,13 @@ const FleetOverview: React.FC<FleetOverviewProps> = ({ tenantId }) => {
         {totalPages > 1 && (
           <div className="px-10 py-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"><TranslatedText text="Page" /></span>
+              <span className="ui-label mb-0"><TranslatedText text="Page" /></span>
               <div className="flex items-center gap-1.5">
-                <span className="w-8 h-8 rounded-lg bg-primary-600 dark:bg-primary-700 text-white flex items-center justify-center text-[11px] font-black shadow-lg shadow-primary-100 dark:shadow-slate-950/20">
+                <span className="w-8 h-8 rounded-lg bg-primary-600 dark:bg-primary-700 text-white flex items-center justify-center ui-body shadow-lg shadow-primary-100 dark:shadow-slate-950/20">
                   {currentPage}
                 </span>
-                <span className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase"><TranslatedText text="of" /></span>
-                <span className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center text-[11px] font-black">
+                <span className="ui-label mb-0 text-slate-300 dark:text-slate-600"><TranslatedText text="of" /></span>
+                <span className="w-8 h-8 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center ui-body">
                   {totalPages}
                 </span>
               </div>

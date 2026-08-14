@@ -68,13 +68,13 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
             <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-8">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="Tenant Settings" /></h2>
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1"><TranslatedText text="Manage your organization profile and preferences" /></p>
+                        <h2 className="ui-page-title"><TranslatedText text="Tenant Settings" /></h2>
+                        <p className="ui-body-small mt-1"><TranslatedText text="Manage your organization profile and preferences" /></p>
                     </div>
                     <button
                         onClick={handleSubmit}
                         disabled={updateMutation.isPending}
-                        className="flex items-center px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-xl font-bold text-sm hover:bg-primary-700 dark:hover:bg-primary-600 transition-all shadow-lg shadow-primary-100 dark:shadow-none disabled:opacity-70"
+                        className="flex items-center px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-xl ui-button hover:bg-primary-700 dark:hover:bg-primary-600 transition-all shadow-lg shadow-primary-100 dark:shadow-none disabled:opacity-70"
                     >
                         {updateMutation.isPending ? (
                             <span className="animate-pulse"><TranslatedText text="Saving..." /></span>
@@ -91,7 +91,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                 <div className="flex space-x-6 mt-8 border-b border-gray-100 dark:border-slate-800">
                     <button
                         onClick={() => setActiveTab('profile')}
-                        className={`pb-4 text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'profile'
+                        className={`pb-4 ui-tab transition-all ${activeTab === 'profile'
                             ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                             }`}
@@ -100,7 +100,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                     </button>
                     <button
                         onClick={() => setActiveTab('preferences')}
-                        className={`pb-4 text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'preferences'
+                        className={`pb-4 ui-tab transition-all ${activeTab === 'preferences'
                             ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                             }`}
@@ -128,11 +128,11 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
 
                         <div className="border-t border-gray-50 dark:border-slate-800 pt-6 space-y-4">
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Tenant ID" /></p>
+                                <p className="ui-label mb-1"><TranslatedText text="Tenant ID" /></p>
                                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">{tenant?.id}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Plan" /></p>
+                                <p className="ui-label mb-1"><TranslatedText text="Plan" /></p>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-bold text-primary-600 dark:text-primary-400 uppercase">{tenant?.subscription?.plan || 'Standard'}</span>
                                     <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
@@ -157,7 +157,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Organization Name" /></label>
+                                        <label className="ui-label"><TranslatedText text="Organization Name" /></label>
                                         <div className="relative">
                                             <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
                                             <input
@@ -172,7 +172,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Contact Email" /></label>
+                                        <label className="ui-label"><TranslatedText text="Contact Email" /></label>
                                         <div className="relative">
                                             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
                                             <input
@@ -187,7 +187,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Phone Number" /></label>
+                                        <label className="ui-label"><TranslatedText text="Phone Number" /></label>
                                         <div className="relative">
                                             <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
                                             <input
@@ -204,7 +204,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Address" /></label>
+                                    <label className="ui-label"><TranslatedText text="Address" /></label>
                                     <div className="relative">
                                         <MapPin className="absolute left-4 top-3.5 w-4 h-4 text-slate-300 dark:text-slate-600" />
                                         <textarea
@@ -233,7 +233,7 @@ const TenantSettings: React.FC<TenantSettingsProps> = ({ tenantId }) => {
                                             </p>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2"><TranslatedText text="Timezone" /></label>
+                                            <label className="ui-label"><TranslatedText text="Timezone" /></label>
                                             <div className="relative">
                                                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-slate-600" />
                                                 <select className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary-500/20 appearance-none">

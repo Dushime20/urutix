@@ -69,7 +69,7 @@ const TenantAdminLayoutContent: React.FC = () => {
   return (
     <>
       {isDashboardIndex ? (
-        <div className="min-h-screen bg-[#fafafa] dark:bg-slate-950 flex flex-col pb-20 lg:pb-0">
+        <div data-tenant-admin className="min-h-screen bg-[#fafafa] dark:bg-slate-950 flex flex-col pb-20 lg:pb-0 font-sans not-italic">
           <main className="flex-1 relative z-0">
             <Outlet />
           </main>
@@ -77,9 +77,11 @@ const TenantAdminLayoutContent: React.FC = () => {
           <DashboardFooter />
         </div>
       ) : (
-        <DashboardLayout>
-          <Outlet />
-        </DashboardLayout>
+        <div data-tenant-admin className="font-sans not-italic">
+          <DashboardLayout>
+            <Outlet />
+          </DashboardLayout>
+        </div>
       )}
     </>
   );

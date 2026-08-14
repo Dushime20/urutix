@@ -129,15 +129,15 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
             render: (_v, user) => (
                 <div className="flex items-center gap-5">
                     <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-[18px] flex items-center justify-center border border-primary-100 dark:border-primary-800">
-                        <span className="text-primary-600 dark:text-primary-400 font-black text-sm italic">
+                        <span className="text-primary-600 dark:text-primary-400 ui-table-body">
                             {user.profile?.firstName?.[0] || 'U'}
                         </span>
                     </div>
                     <div>
-                        <p className="text-base font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                        <p className="ui-table-body">
                             {user.profile?.firstName} {user.profile?.lastName}
                         </p>
-                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
+                        <p className="ui-label mb-0 mt-1">
                             {user.id.split('-')[0]}
                         </p>
                     </div>
@@ -240,8 +240,8 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
             <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
                 <div className="px-6 md:px-10 py-6 md:py-10 border-b border-slate-50 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="text-center sm:text-left">
-                        <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1 italic"><TranslatedText text="Users" /></h3>
-                        <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight"><TranslatedText text="User List" /></h4>
+                        <h3 className="ui-label mb-1"><TranslatedText text="Users" /></h3>
+                        <h4 className="ui-page-title"><TranslatedText text="User List" /></h4>
                     </div>
                     <div className="flex items-center gap-3 md:gap-4 w-full sm:w-auto justify-center sm:justify-end">
                         <button className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-[20px] text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-all">
@@ -249,7 +249,7 @@ const TenantUserManagement: React.FC<TenantUserManagementProps> = ({ tenantId })
                         </button>
                         <button
                             onClick={() => setIsOnboardModalOpen(true)}
-                            className="flex-1 sm:flex-none justify-center bg-primary-600 text-white px-8 md:px-10 py-4 rounded-[20px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-100 dark:shadow-none flex items-center text-[11px] font-black uppercase tracking-widest"
+                            className="flex-1 sm:flex-none justify-center bg-primary-600 text-white px-8 md:px-10 py-4 rounded-[20px] hover:bg-primary-700 transition-all shadow-xl shadow-primary-100 dark:shadow-none flex items-center ui-button"
                         >
                             <UserPlus className="w-4 h-4 mr-3" />
                             <TranslatedText text="Add User" />

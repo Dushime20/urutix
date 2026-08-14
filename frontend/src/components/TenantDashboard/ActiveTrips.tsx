@@ -220,7 +220,7 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId, onTrackTrip }) => {
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
+            <h3 className="ui-card-title">
               <TranslatedText text="Active Trips" />
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">

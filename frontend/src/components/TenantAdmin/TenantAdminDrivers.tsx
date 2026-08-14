@@ -501,7 +501,7 @@ const TenantAdminDrivers: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
+    <div className="space-y-6 w-full max-w-full">
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -510,9 +510,9 @@ const TenantAdminDrivers: React.FC = () => {
               <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shadow-inner flex-shrink-0">
                 <Users size={20} />
               </div>
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600">Driver Management</h2>
+              <h2 className="ui-label mb-0 text-blue-600">Driver Management</h2>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Fleet Drivers</h1>
+            <h1 className="ui-page-title">Fleet Drivers</h1>
             <p className="text-gray-500 font-medium mt-1 text-sm sm:text-base">Manage and monitor your tenant drivers</p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">

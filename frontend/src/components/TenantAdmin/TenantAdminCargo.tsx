@@ -482,16 +482,16 @@ const TenantAdminCargo: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
+    <div className="space-y-6 w-full max-w-full">
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <h1 className="ui-page-title flex items-center gap-3">
               <FaBox className="text-blue-600 flex-shrink-0" />
               Cargo Management
             </h1>
-            <p className="text-gray-600 dark:text-slate-300 mt-2 text-sm sm:text-base">Manage and monitor cargo loads in your tenant</p>
+            <p className="ui-body-small mt-2">Manage and monitor cargo loads in your tenant</p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <button

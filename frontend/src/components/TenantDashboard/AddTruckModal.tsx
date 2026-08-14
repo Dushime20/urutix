@@ -162,7 +162,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
             <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl mr-4">
               <Truck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight italic"><TranslatedText text="Add New Truck" /></h2>
+            <h2 className="ui-page-title"><TranslatedText text="Add New Truck" /></h2>
           </div>
           <button
             onClick={onClose}
@@ -186,7 +186,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                 key={id}
                 type="button"
                 onClick={() => setActiveTab(id as any)}
-                className={`flex items-center px-6 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${
+                className={`flex items-center px-6 py-4 ui-tab border-b-2 transition-all ${
                   activeTab === id
                     ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
                     : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
@@ -204,7 +204,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
               <div className="space-y-6">
                 {/* Truck Owner Selection */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                  <label className="ui-label">
                     <User className="w-3.5 h-3.5 inline mr-1" />
                     <TranslatedText text="Truck Owner" /> *
                   </label>
@@ -232,7 +232,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Plate Number" /> *
                     </label>
                     <input
@@ -246,7 +246,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="VIN" /> *
                     </label>
                     <input
@@ -265,7 +265,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                 {/* Vehicle Details */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Make" />
                     </label>
                     <input
@@ -278,7 +278,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Model" />
                     </label>
                     <input
@@ -291,7 +291,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Year" />
                     </label>
                     <input
@@ -309,7 +309,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                 {/* Truck Type and Fuel */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Truck Type" />
                     </label>
                     <select
@@ -329,7 +329,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Fuel Type" />
                     </label>
                     <select
@@ -347,7 +347,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Color" />
                     </label>
                     <input
@@ -364,7 +364,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                 {/* Capacity and Mileage */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Weight Capacity" /> (kg)
                     </label>
                     <input
@@ -378,7 +378,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Volume Capacity" /> (m³)
                     </label>
                     <input
@@ -392,7 +392,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Current Mileage" /> (km)
                     </label>
                     <input
@@ -409,7 +409,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Current Location */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                  <label className="ui-label">
                     <TranslatedText text="Current Location" />
                   </label>
                   <input
@@ -428,10 +428,10 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
               <div className="space-y-6">
                 {/* Registration & Insurance */}
                 <div>
-                  <h3 className="text-base font-black text-slate-800 dark:text-white mb-6 uppercase tracking-tight italic"><TranslatedText text="Registration & Insurance" /></h3>
+                  <h3 className="ui-section-title mb-6"><TranslatedText text="Registration & Insurance" /></h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Registration Number" />
                       </label>
                       <input
@@ -444,7 +444,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Registration Expiry" />
                       </label>
                       <input
@@ -456,7 +456,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Insurance Policy" />
                       </label>
                       <input
@@ -469,7 +469,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Insurance Expiry" />
                       </label>
                       <input
@@ -481,7 +481,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Roadworthy Certificate Expiry" />
                       </label>
                       <input
@@ -497,10 +497,10 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Dimensions */}
                 <div>
-                  <h3 className="text-base font-black text-slate-800 dark:text-white mb-6 uppercase tracking-tight italic"><TranslatedText text="Dimensions" /></h3>
+                  <h3 className="ui-section-title mb-6"><TranslatedText text="Dimensions" /></h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Max Length" /> (m)
                       </label>
                       <input
@@ -515,7 +515,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Max Width" /> (m)
                       </label>
                       <input
@@ -530,7 +530,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                      <label className="ui-label">
                         <TranslatedText text="Max Height" /> (m)
                       </label>
                       <input
@@ -549,7 +549,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Fuel Efficiency */}
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                  <label className="ui-label">
                     <TranslatedText text="Fuel Efficiency" /> (km/L)
                   </label>
                   <input
@@ -568,11 +568,11 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
 
             {activeTab === 'equipment' && (
               <div className="space-y-6">
-                <h3 className="text-base font-black text-slate-800 dark:text-white mb-6 uppercase tracking-tight italic"><TranslatedText text="Equipment Features" /></h3>
+                <h3 className="ui-section-title mb-6"><TranslatedText text="Equipment Features" /></h3>
                 
                 {/* Basic Equipment */}
                 <div>
-                  <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 italic"><TranslatedText text="Basic Equipment" /></h4>
+                  <h4 className="ui-label mb-4"><TranslatedText text="Basic Equipment" /></h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                     {[
                       { name: 'hasRefrigeration', label: 'Refrigeration' },
@@ -605,11 +605,11 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
 
             {activeTab === 'maintenance' && (
               <div className="space-y-8">
-                <h3 className="text-base font-black text-slate-800 dark:text-white mb-6 uppercase tracking-tight italic"><TranslatedText text="Maintenance Information" /></h3>
+                <h3 className="ui-section-title mb-6"><TranslatedText text="Maintenance Information" /></h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Last Maintenance Date" />
                     </label>
                     <input
@@ -621,7 +621,7 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 italic">
+                    <label className="ui-label">
                       <TranslatedText text="Next Maintenance Date" />
                     </label>
                     <input
@@ -642,14 +642,14 @@ const AddTruckModal: React.FC<AddTruckModalProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
+              className="px-6 py-2.5 ui-button text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"
             >
               <TranslatedText text="Cancel" />
             </button>
             <button
               type="submit"
               disabled={createTruckMutation.isPending}
-              className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-100 dark:shadow-slate-950/20 active:scale-95"
+              className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl ui-button transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-100 dark:shadow-slate-950/20 active:scale-95"
             >
               {createTruckMutation.isPending ? tSync('Adding...') : tSync('Add Truck')}
             </button>

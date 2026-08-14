@@ -150,22 +150,22 @@ const BillingDashboard: React.FC = () => {
       <div className="bg-white rounded-[24px] shadow-sm p-8 border border-slate-100 mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Billing & Credits</h1>
-            <p className="text-slate-500 font-medium mt-1">
+            <h1 className="ui-page-title">Billing & Credits</h1>
+            <p className="ui-body-small mt-1">
               Manage your subscription and monitor credit usage
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => refetchSubscription()}
-              className="px-4 py-2 bg-white border border-slate-100 text-slate-600 rounded-xl hover:bg-slate-50 transition-all font-bold text-xs flex items-center gap-2"
+              className="px-4 py-2 bg-white border border-slate-100 text-slate-600 rounded-xl hover:bg-slate-50 transition-all ui-button flex items-center gap-2"
             >
               <RefreshCw size={14} />
               Refresh
             </button>
             <button
               onClick={() => navigate('/tenant-admin/settings')}
-              className="px-4 py-2 bg-white border border-slate-100 text-slate-600 rounded-xl hover:bg-slate-50 transition-all font-bold text-xs flex items-center gap-2"
+              className="px-4 py-2 bg-white border border-slate-100 text-slate-600 rounded-xl hover:bg-slate-50 transition-all ui-button flex items-center gap-2"
             >
               <Cog size={14} />
               Settings

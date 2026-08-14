@@ -83,10 +83,10 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${stat.bar}`} />
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                <p className="ui-label mb-0 text-slate-500 dark:text-slate-400 truncate">
                   <TranslatedText text={stat.title} />
                 </p>
-                <p className="mt-1.5 text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white tracking-tight truncate">
+                <p className="mt-1.5 ui-page-title truncate">
                   {stat.value}
                 </p>
               </div>

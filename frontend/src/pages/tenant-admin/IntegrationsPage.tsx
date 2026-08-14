@@ -114,10 +114,10 @@ const IntegrationsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+        <h1 className="ui-page-title">
           <TranslatedText text="Integrations" />
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p className="ui-body-small mt-1">
           <TranslatedText text="Manage API keys and webhook endpoints to integrate Urutix with your systems." />
         </p>
       </div>
@@ -128,7 +128,7 @@ const IntegrationsPage: React.FC = () => {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${tab === t ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg ui-tab transition-all ${tab === t ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
           >
             {t === 'api-keys' ? <Key size={13} /> : <Webhook size={13} />}
             {t === 'api-keys' ? 'API Keys' : 'Webhooks'}
@@ -141,7 +141,7 @@ const IntegrationsPage: React.FC = () => {
         <div className="space-y-4">
           {/* Generate new key */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
-            <h2 className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-4">
+            <h2 className="ui-section-title mb-4">
               <TranslatedText text="Generate New API Key" />
             </h2>
             <div className="flex gap-3">

@@ -24,7 +24,7 @@ const variantClasses = {
 const sizeClasses = {
   sm: 'px-3 py-1.5 ui-button',
   md: 'px-4 py-2.5 ui-button',
-  lg: 'px-4 py-2 text-sm font-bold normal-case tracking-normal',
+  lg: 'px-4 py-2 ui-button',
 };
 
 export const Button: React.FC<ButtonProps> = ({

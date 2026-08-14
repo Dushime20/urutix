@@ -342,7 +342,7 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
       <div className="px-10 py-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between rounded-t-[32px]">
         <div>
           <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1"><TranslatedText text="Financial Status" /></h3>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white"><TranslatedText text="Balance & Revenue" /></h2>
+          <h2 className="ui-page-title"><TranslatedText text="Balance & Revenue" /></h2>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700">

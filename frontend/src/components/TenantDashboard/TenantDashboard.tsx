@@ -34,6 +34,7 @@ import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 
 import DashboardHeader from '../Layout/DashboardHeader';
+import PageContainer from '../Layout/PageContainer';
 import QuickStats from './QuickStats';
 import FleetOverview from './FleetOverview';
 import CargoAnalytics from './CargoAnalytics';
@@ -361,7 +362,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     <div className={`min-h-screen bg-[#fafafa] dark:bg-slate-950 ${className}`}>
       <DashboardHeader />
 
-      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <PageContainer className="py-6 sm:py-8">
         {/* Loading State - Premium Skeleton */}
         {isLoading && <SkeletonDashboard />}
 
@@ -372,8 +373,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
               <FaExclamationTriangle className="text-amber-600 dark:text-amber-500 w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight"><TranslatedText text="Intelligence Offline" /></h3>
-              <p className="text-[13px] text-amber-700 dark:text-amber-400 mt-0.5 font-medium"><TranslatedText text="Using local backup data. Reconnecting to node..." /></p>
+              <h3 className="ui-label mb-0 text-amber-900 dark:text-amber-100"><TranslatedText text="Intelligence Offline" /></h3>
+              <p className="ui-body-small text-amber-700 dark:text-amber-400 mt-0.5"><TranslatedText text="Using local backup data. Reconnecting to node..." /></p>
             </div>
           </div>
         )}
@@ -392,10 +393,10 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
               <section>
                 <div className="flex items-end justify-between mb-3">
                   <div>
-                    <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <p className="ui-label mb-0">
                       <TranslatedText text="At a glance" />
                     </p>
-                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
+                    <h2 className="ui-section-title normal-case">
                       <TranslatedText text="Operations summary" />
                     </h2>
                   </div>
@@ -425,10 +426,10 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                     >
                       <div className="flex items-start justify-between gap-3 mb-5">
                         <div>
-                          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+                          <p className="ui-label mb-0.5">
                             <TranslatedText text="Revenue" />
                           </p>
-                          <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+                          <h3 className="ui-card-title">
                             <TranslatedText text="Weekly trend" />
                           </h3>
                         </div>
@@ -436,7 +437,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                           <select
                             value={timeRange}
                             onChange={(e) => handleTimeRangeChange(e.target.value)}
-                            className="text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                            className="ui-body text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                           >
                             <option value="7d"><TranslatedText text="Last 7d" /></option>
                             <option value="30d"><TranslatedText text="Last 30d" /></option>
@@ -457,10 +458,10 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                             <div className="w-9 h-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-2.5 border border-slate-100 dark:border-slate-700">
                               <Download className="w-4 h-4 text-slate-300" />
                             </div>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <p className="ui-body-small">
                               <TranslatedText text="No revenue data yet" />
                             </p>
-                            <p className="text-[11px] text-slate-400 mt-1">
+                            <p className="ui-caption text-slate-400 mt-1">
                               <TranslatedText text="Complete trips to see revenue trends" />
                             </p>
                           </div>
@@ -478,15 +479,15 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                     >
                       <div className="flex items-start justify-between gap-3 mb-5">
                         <div>
-                          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+                          <p className="ui-label mb-0.5">
                             <TranslatedText text="Fleet" />
                           </p>
-                          <h3 className="text-base font-semibold text-slate-900 dark:text-white tracking-tight">
+                          <h3 className="ui-card-title">
                             <TranslatedText text="Utilization" />
                           </h3>
                         </div>
                         <div className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
-                          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                          <span className="ui-label mb-0 text-emerald-700 dark:text-emerald-400">
                             <TranslatedText text="Avg" /> {data.metrics.averageLoadUtilization}%
                           </span>
                         </div>
@@ -497,10 +498,10 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                             <div className="w-9 h-9 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-2.5 border border-slate-100 dark:border-slate-700">
                               <Activity className="w-4 h-4 text-slate-300" />
                             </div>
-                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                            <p className="ui-body-small">
                               <TranslatedText text="No fleet data yet" />
                             </p>
-                            <p className="text-[11px] text-slate-400 mt-1">
+                            <p className="ui-caption text-slate-400 mt-1">
                               <TranslatedText text="Assign trucks to trips to see utilization" />
                             </p>
                           </div>
@@ -638,7 +639,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </PageContainer>
 
       {/* Track Event Modal — Enlite Prime Style */}
       <Dialog open={isTrackModalOpen} onOpenChange={setIsTrackModalOpen}>
@@ -662,19 +663,19 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black text-white uppercase tracking-widest border border-white/20">
+                          <span className="px-2.5 py-0.5 bg-white/20 backdrop-blur-md rounded-full ui-badge text-white border border-white/20">
                            <TranslatedText text={trackingActivity?.type} />
                           </span>
-                          <span className="text-white/60 font-black text-[10px] uppercase tracking-widest">•</span>
-                          <span className="flex items-center gap-1.5 text-white font-black text-[10px] uppercase tracking-widest">
+                          <span className="text-white/60 ui-badge">•</span>
+                          <span className="flex items-center gap-1.5 text-white ui-badge">
                             <StatusIcon size={12} />
                             <TranslatedText text={trackingActivity?.status} />
                           </span>
                         </div>
-                        <DialogTitle className="text-3xl font-black text-white tracking-tight">
+                        <DialogTitle className="ui-page-title text-white">
                           <TranslatedText text={trackingActivity?.action} />
                         </DialogTitle>
-                        <p className="text-white/80 text-sm font-medium mt-1">
+                        <p className="text-white/80 ui-body mt-1">
                           <TranslatedText text="Reference" />: <TranslatedText text={trackingActivity?.description} />
                         </p>
                       </div>
@@ -701,8 +702,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                           <div className={`w-24 h-24 ${theme.lightBg} dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6`}>
                             <StatusIcon className={`w-12 h-12 ${theme.text}`} />
                           </div>
-                          <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-3 tracking-tight"><TranslatedText text="Activity Details" /></h3>
-                          <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-10 font-medium leading-relaxed">
+                          <h3 className="ui-page-title mb-3"><TranslatedText text="Activity Details" /></h3>
+                          <p className="ui-body text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-10">
                             <TranslatedText text="We're showing the state of this activity at the time it happened." />
                           </p>
 
@@ -714,8 +715,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                             ].map((item, id) => (
                               <div key={id} className="p-6 bg-slate-50/80 dark:bg-slate-800/50 rounded-[20px] border border-white dark:border-slate-700 flex flex-col items-center text-center group hover:bg-white dark:hover:bg-slate-800 hover:shadow-md transition-all duration-300">
                                 <item.icon className="w-5 h-5 text-slate-400 dark:text-slate-500 mb-3 group-hover:scale-110 transition-transform" />
-                                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text={item.label} /></span>
-                                <span className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight"><TranslatedText text={item.value} /></span>
+                                <span className="ui-label mb-1"><TranslatedText text={item.label} /></span>
+                                <span className="ui-table-body uppercase"><TranslatedText text={item.value} /></span>
                               </div>
                             ))}
                           </div>
@@ -727,9 +728,9 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                           <div className="p-2 bg-white/10 rounded-lg">
                             <MapPin size={18} />
                           </div>
-                          <p className="text-xs font-bold"><TranslatedText text="Need more details about this event?" /></p>
+                          <p className="ui-body text-white"><TranslatedText text="Need more details about this event?" /></p>
                         </div>
-                        <button className="px-4 py-2 bg-white dark:bg-slate-900 text-primary-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-lg">
+                        <button className="px-4 py-2 bg-white dark:bg-slate-900 text-primary-600 rounded-xl ui-button hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-lg">
                           <TranslatedText text="Request Full History" />
                         </button>
                       </div>
@@ -740,11 +741,11 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
                 <div className="px-10 py-6 bg-white dark:bg-slate-950 border-t border-gray-50 dark:border-slate-800 flex items-center justify-between shrink-0">
                    <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
                       <Clock size={14} />
-                      <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-0.5"><TranslatedText text="Logged" />: <TranslatedText text={trackingActivity?.timestamp} /></span>
+                      <span className="ui-label mb-0 leading-none mt-0.5"><TranslatedText text="Logged" />: <TranslatedText text={trackingActivity?.timestamp} /></span>
                    </div>
                    <button 
                      onClick={() => setIsTrackModalOpen(false)}
-                     className="px-8 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-[18px] text-[11px] font-black uppercase tracking-[0.15em] transition-all shadow-inner dark:shadow-none"
+                     className="px-8 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-[18px] ui-button transition-all shadow-inner dark:shadow-none"
                    >
                      <TranslatedText text="Close" />
                    </button>

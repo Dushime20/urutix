@@ -2,8 +2,8 @@ import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
 
 const DashboardFooter = () => {
   return (
-    <footer className="mt-auto py-10 sm:py-16 border-t border-slate-100 bg-white dark:bg-slate-900 px-4 md:px-8 lg:px-12 xl:px-20">
-      <div className="max-w-[1920px] mx-auto">
+    <footer className="mt-auto py-10 sm:py-16 border-t border-slate-100 bg-white dark:bg-slate-900 ui-page-gutter">
+      <div className="ui-page-container">
         <div className="flex flex-col md:flex-row justify-between items-center gap-10 md:gap-4">
           {/* Logo Section */}
           <div className="flex items-center order-1 md:order-1">

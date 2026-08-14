@@ -140,8 +140,8 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-[290] shrink-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center">
-        <div className="max-w-[1536px] mx-auto w-full flex items-center justify-between gap-3 min-w-0">
+      <header className="sticky top-0 z-[290] shrink-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 ui-page-gutter h-14 sm:h-16 flex items-center">
+        <div className="ui-page-container flex items-center justify-between gap-3 min-w-0">
           {/* Left: brand + nav */}
           <div className="flex items-center gap-3 lg:gap-6 min-w-0 flex-1">
             <button
@@ -167,10 +167,10 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
               </div>
             </button>
 
-            <nav className="hidden lg:flex items-center gap-1 ml-2" ref={navRef}>
+            <nav className="hidden lg:flex items-center gap-1 ml-2 ui-nav text-gray-500 dark:text-slate-400" ref={navRef}>
               <button
                 onClick={() => navigateToTab('overview')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ui-nav transition-colors ${
                   selectedView === 'overview'
                     ? 'bg-primary-600 text-white shadow-sm'
                     : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
@@ -190,7 +190,7 @@ const TenantHeader: React.FC<TenantHeaderProps> = ({
                   <div key={group.id} className="relative">
                     <button
                       onClick={() => setActiveGroup(isOpen ? null : group.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ui-nav transition-colors ${
                         isGroupActive
                           ? 'bg-slate-800 dark:bg-slate-700 text-white'
                           : isOpen

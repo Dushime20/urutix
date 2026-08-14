@@ -55,16 +55,16 @@ const BrandingSettingsPage: React.FC = () => {
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+          <h1 className="ui-page-title">
             <TranslatedText text="Branding & White-Label" />
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="ui-body-small mt-1">
             <TranslatedText text="Customise your platform appearance. Changes apply to your tenant's instance and email templates." />
           </p>
         </div>
         <button
           onClick={() => setPreview(!preview)}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-black transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl ui-button transition-all"
         >
           <Eye size={14} /> <TranslatedText text={preview ? 'Hide Preview' : 'Show Preview'} />
         </button>
@@ -75,12 +75,12 @@ const BrandingSettingsPage: React.FC = () => {
         <div className="space-y-5">
           {/* Company Name */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+            <h2 className="ui-label mb-4">
               <TranslatedText text="Company Identity" />
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="ui-label">
                   <TranslatedText text="Company Name" />
                 </label>
                 <input
@@ -92,7 +92,7 @@ const BrandingSettingsPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="ui-label">
                   <TranslatedText text="Logo URL" />
                 </label>
                 <input
@@ -109,7 +109,7 @@ const BrandingSettingsPage: React.FC = () => {
                 )}
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="ui-label">
                   <TranslatedText text="Favicon URL" />
                 </label>
                 <input
@@ -125,12 +125,12 @@ const BrandingSettingsPage: React.FC = () => {
 
           {/* Colors */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+            <h2 className="ui-label mb-4">
               <TranslatedText text="Colour Palette" />
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="ui-label">
                   <TranslatedText text="Primary Colour" />
                 </label>
                 <div className="flex items-center gap-3">
@@ -149,7 +149,7 @@ const BrandingSettingsPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                <label className="ui-label">
                   <TranslatedText text="Secondary Colour" />
                 </label>
                 <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ const BrandingSettingsPage: React.FC = () => {
 
           {/* Font */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+            <h2 className="ui-label mb-4">
               <TranslatedText text="Typography" />
             </h2>
             <div>

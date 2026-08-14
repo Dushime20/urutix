@@ -103,11 +103,11 @@ const PartnerBillingManager: React.FC = () => {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-slate-900 rounded-[32px] shadow-sm p-8 border border-slate-100 dark:border-slate-800">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3 tracking-tight">
+                    <h1 className="ui-page-title flex items-center gap-3">
                         <FaWallet size={24} className="text-primary-600 dark:text-primary-400" />
                         <TranslatedText text="Partner Billing" />
                     </h1>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
+                    <p className="ui-body-small mt-2">
                         <TranslatedText text="Manage your master credit balance and efficiently allocate resources to your network partners." />
                     </p>
                 </div>

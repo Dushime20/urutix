@@ -324,8 +324,8 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
         <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Volume Analysis" /></h3>
-              <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Shipment Trend" /></h4>
+              <h3 className="ui-label mb-1"><TranslatedText text="Volume Analysis" /></h3>
+              <h4 className="ui-card-title"><TranslatedText text="Shipment Trend" /></h4>
             </div>
             <FilterSelect
               value={timeRange}
@@ -348,8 +348,8 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
         {/* Revenue Trend */}
         <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-8">
           <div className="mb-8">
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Financial Performance" /></h3>
-            <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Earnings Trend" /></h4>
+            <h3 className="ui-label mb-1"><TranslatedText text="Financial Performance" /></h3>
+            <h4 className="ui-card-title"><TranslatedText text="Earnings Trend" /></h4>
           </div>
           <div className="h-72">
             <Line data={revenueData} options={chartOptions} />
@@ -361,8 +361,8 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
       <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1"><TranslatedText text="Cargo Breakdown" /></h3>
-            <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Revenue by Category" /></h4>
+            <h3 className="ui-label mb-1"><TranslatedText text="Cargo Breakdown" /></h3>
+            <h4 className="ui-card-title"><TranslatedText text="Revenue by Category" /></h4>
           </div>
           <div className="px-4 py-1.5 bg-gray-50 dark:bg-slate-800 rounded-full border border-gray-100 dark:border-slate-700">
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
@@ -380,10 +380,10 @@ const CargoAnalytics: React.FC<CargoAnalyticsProps> = ({ tenantId }) => {
         <div className="px-8 py-6 border-b border-gray-50 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-800/20">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 italic"><TranslatedText text="Logistics Core" /></h3>
-              <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight"><TranslatedText text="Cargo Loads" /></h4>
+              <h3 className="ui-label mb-1"><TranslatedText text="Logistics Core" /></h3>
+              <h4 className="ui-card-title"><TranslatedText text="Cargo Loads" /></h4>
             </div>
-            <button className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 dark:shadow-slate-950/20 flex items-center text-sm font-black uppercase tracking-widest">
+            <button className="bg-primary-600 text-white px-5 py-2.5 rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 dark:shadow-slate-950/20 flex items-center ui-button">
               <Plus className="w-4 h-4 mr-2" />
               <TranslatedText text="New Shipment" />
             </button>

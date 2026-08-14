@@ -419,6 +419,30 @@
     line-height: var(--ui-leading-body);
   }
 
+  /*
+   * Page content X-axis — copied from DashboardHeader (source of truth):
+   *   outer bar: px-3 sm:px-6
+   *   inner:     max-w-7xl mx-auto px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8
+   * Use both layers together so page content lines up with header content
+   * at every breakpoint (outer gutter changes the centering box).
+   */
+  .ui-page-gutter {
+    @apply px-3 sm:px-6;
+  }
+
+  .ui-page-container {
+    @apply max-w-7xl mx-auto w-full px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8;
+  }
+
+  /* Tenant-admin inherits header font family + normal (non-italic) style */
+  [data-tenant-admin] {
+    font-family: var(--ui-font-sans);
+  }
+
+  [data-tenant-admin] .italic {
+    font-style: normal;
+  }
+
   .ui-helper {
     font-size: var(--ui-text-caption);
     font-weight: var(--ui-weight-caption);

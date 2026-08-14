@@ -157,7 +157,7 @@ const TenantAdminTrips: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 w-full max-w-full">
+    <div className="space-y-6 w-full max-w-full">
       {user?.tenantId && (
         <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm p-6 mb-6">
           <ActiveTrips tenantId={user.tenantId} />

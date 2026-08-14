@@ -383,11 +383,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'All Reports', path: '/tenant-admin/support' },
-            { label: 'Open', path: '/tenant-admin/support?status=OPEN' },
-            { label: 'In Progress', path: '/tenant-admin/support?status=UNDER_REVIEW' },
-            { label: 'Escalated', path: '/tenant-admin/support?status=ESCALATED' },
-            { label: 'Resolved', path: '/tenant-admin/support?status=RESOLVED' },
-            { label: 'Analytics', path: '/tenant-admin/support/analytics' },
           ]
         },
       ];
@@ -561,8 +556,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   return (
     <>
-    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 px-3 py-3 sm:px-6 sm:py-4 lg:py-5 fixed top-0 left-0 right-0 z-[300] transition-colors duration-300 min-h-[64px] sm:min-h-[80px] lg:min-h-[96px] flex items-center">
-      <div className="max-w-7xl mx-auto w-full px-1 sm:px-3 md:px-4 lg:px-6 xl:px-8 relative z-50">
+    <div data-header="dashboard-header" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-gray-50 dark:border-slate-800 text-gray-900 ui-page-gutter py-3 sm:py-4 lg:py-5 fixed top-0 left-0 right-0 z-[300] transition-colors duration-300 min-h-[64px] sm:min-h-[80px] lg:min-h-[96px] flex items-center">
+      <div className="ui-page-container relative z-50">
         <div className="flex justify-between items-center relative z-10 gap-1.5 sm:gap-3 md:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0 flex-1">
             <button
