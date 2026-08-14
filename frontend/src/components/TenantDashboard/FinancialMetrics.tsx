@@ -96,7 +96,11 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({ className = '' }) =
     },
   });
 
-  const transactions = transactionData?.transactions || [];
+  const transactions = (transactionData?.transactions || []).filter((txn: any) => {
+    if (txn.metadata?.role === 'TRUCK_OWNER') return false;
+    if (txn.creditAccount?.userId) return false;
+    return true;
+  });
   const transactionSummary = transactionData?.summary;
 
   const isCreditInflow = (type: string) =>

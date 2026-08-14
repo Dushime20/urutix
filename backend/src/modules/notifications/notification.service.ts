@@ -25,6 +25,11 @@ import { SmsService } from './services/sms.service';
 import { PushNotificationService } from './services/push-notification.service';
 import { WebhookService } from './services/webhook.service';
 
+export type NotificationQueryOptions = {
+  isPlatformAdmin?: boolean;
+  recipientId?: string;
+};
+
 @Injectable()
 export class NotificationService {
   constructor(
@@ -362,18 +367,33 @@ export class NotificationService {
   async getNotifications(
     filterDto: NotificationFilterDto,
     tenantId: string,
+    options?: NotificationQueryOptions,
   ): Promise<{ notifications: Notification[]; total: number }> {
-    const queryBuilder = this.notificationRepository
-      .createQueryBuilder('notification')
-      .where('notification.tenantId = :tenantId', { tenantId });
+    const queryBuilder = this.notificationRepository.createQueryBuilder(
+      'notification',
+    );
 
-    // Apply filters
-    if (filterDto.recipientId) {
-      queryBuilder.andWhere('notification.recipientId = :recipientId', {
-        recipientId: filterDto.recipientId,
-      });
+    if (options?.isPlatformAdmin) {
+      // Super admin inbox spans every tenant; match by recipient, not tenant.
+      const recipientId = filterDto.recipientId || options.recipientId;
+      if (recipientId) {
+        queryBuilder.where('notification.recipientId = :recipientId', {
+          recipientId,
+        });
+      } else {
+        queryBuilder.where('1 = 0');
+      }
+    } else {
+      queryBuilder.where('notification.tenantId = :tenantId', { tenantId });
+
+      if (filterDto.recipientId) {
+        queryBuilder.andWhere('notification.recipientId = :recipientId', {
+          recipientId: filterDto.recipientId,
+        });
+      }
     }
 
+    // Apply filters
     if (filterDto.entityType) {
       queryBuilder.andWhere('notification.entityType = :entityType', {
         entityType: filterDto.entityType,
@@ -565,10 +585,16 @@ export class NotificationService {
   async getNotificationById(
     id: string,
     tenantId: string,
+    options?: NotificationQueryOptions,
   ): Promise<Notification> {
-    const notification = await this.notificationRepository.findOne({
-      where: { id, tenantId },
-    });
+    const where = options?.isPlatformAdmin
+      ? {
+          id,
+          ...(options.recipientId ? { recipientId: options.recipientId } : {}),
+        }
+      : { id, tenantId };
+
+    const notification = await this.notificationRepository.findOne({ where });
 
     if (!notification) {
       throw new NotFoundException(`Notification with ID ${id} not found`);
@@ -605,10 +631,14 @@ export class NotificationService {
     id: string,
     userId: string,
     tenantId: string,
+    options?: NotificationQueryOptions,
   ): Promise<Notification> {
     console.log(`[markAsRead] Attempting to mark notification ${id} as read for user ${userId} in tenant ${tenantId}`);
     
-    const notification = await this.getNotificationById(id, tenantId);
+    const notification = await this.getNotificationById(id, tenantId, {
+      ...options,
+      recipientId: options?.recipientId || userId,
+    });
     console.log(`[markAsRead] Found notification:`, {
       id: notification.id,
       recipientId: notification.recipientId,
@@ -719,10 +749,15 @@ export class NotificationService {
     recipientId: string,
     tenantId: string,
     limit: number = 50,
+    options?: NotificationQueryOptions,
   ): Promise<Notification[]> {
+    const where = options?.isPlatformAdmin
+      ? { recipientId }
+      : { recipientId, tenantId };
+
     try {
       return await this.notificationRepository.find({
-        where: { recipientId, tenantId },
+        where,
         order: { createdAt: 'DESC' },
         take: limit,
       });
@@ -732,11 +767,13 @@ export class NotificationService {
       if (error?.message?.includes('column') || error?.code === '42703') {
         console.warn('Notification query failed, attempting fallback query:', error.message);
         try {
-          // Use query builder to select only existing columns
-          return await this.notificationRepository
+          const qb = this.notificationRepository
             .createQueryBuilder('notification')
-            .where('notification.recipientId = :recipientId', { recipientId })
-            .andWhere('notification.tenantId = :tenantId', { tenantId })
+            .where('notification.recipientId = :recipientId', { recipientId });
+          if (!options?.isPlatformAdmin) {
+            qb.andWhere('notification.tenantId = :tenantId', { tenantId });
+          }
+          return await qb
             .orderBy('notification.createdAt', 'DESC')
             .limit(limit)
             .getMany();
@@ -756,22 +793,30 @@ export class NotificationService {
   /**
    * Get unread notifications count
    */
-  async getUnreadCount(recipientId: string, tenantId: string): Promise<number> {
+  async getUnreadCount(
+    recipientId: string,
+    tenantId: string,
+    options?: NotificationQueryOptions,
+  ): Promise<number> {
+    const where = options?.isPlatformAdmin
+      ? { recipientId, isRead: false }
+      : { recipientId, tenantId, isRead: false };
+
     try {
-      return await this.notificationRepository.count({
-        where: { recipientId, tenantId, isRead: false },
-      });
+      return await this.notificationRepository.count({ where });
     } catch (error: any) {
       // If isRead column doesn't exist, use readAt as fallback
       if (error?.message?.includes('column') || error?.code === '42703') {
         console.warn('isRead column not found, using readAt fallback:', error.message);
         try {
-          return await this.notificationRepository
+          const qb = this.notificationRepository
             .createQueryBuilder('notification')
             .where('notification.recipientId = :recipientId', { recipientId })
-            .andWhere('notification.tenantId = :tenantId', { tenantId })
-            .andWhere('notification.readAt IS NULL')
-            .getCount();
+            .andWhere('notification.readAt IS NULL');
+          if (!options?.isPlatformAdmin) {
+            qb.andWhere('notification.tenantId = :tenantId', { tenantId });
+          }
+          return await qb.getCount();
         } catch (fallbackError: any) {
           console.error('Fallback unread count query also failed:', fallbackError);
           // Return 0 as safe fallback
@@ -832,8 +877,12 @@ export class NotificationService {
     id: string,
     deletedBy: string,
     tenantId: string,
+    options?: NotificationQueryOptions,
   ): Promise<void> {
-    const notification = await this.getNotificationById(id, tenantId);
+    const notification = await this.getNotificationById(id, tenantId, {
+      ...options,
+      recipientId: options?.recipientId || deletedBy,
+    });
 
     // Soft delete
     await this.notificationRepository.softDelete(id);

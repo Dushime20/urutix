@@ -118,9 +118,12 @@ export class CreditController {
     if (limit) filters.limit = parseInt(limit);
     if (offset) filters.offset = parseInt(offset);
 
-    // For TRUCK_OWNER: only their own credit-account transactions (enforced in service)
+    // Truck owners see only their own wallet. Tenant admins see only the company
+    // wallet — truck-owner bid payments must not appear as deductions on their balance.
     if (userRole === 'TRUCK_OWNER') {
       filters.userId = userId;
+    } else {
+      filters.tenantLevelOnly = true;
     }
 
     const result = await this.creditService.getTransactionHistory(tenantId, filters);
@@ -159,8 +162,8 @@ export class CreditController {
       };
     }
 
-    // Get ALL transactions in the tenant (don't filter by userId)
-    const result = await this.creditService.getTransactionHistory(tenantId, {});
+    // Company wallet only — do not mix truck-owner/partner deductions into tenant-admin history
+    const result = await this.creditService.getTransactionHistory(tenantId, { tenantLevelOnly: true });
 
     // Get tenant-level credit balance (userId = undefined)
     const tenantBalance = await this.creditService.getCreditBalance(tenantId, undefined);

@@ -189,17 +189,17 @@ const CreditMarketplace: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 antialiased">
+    <div className="space-y-4 sm:space-y-6 antialiased w-full min-w-0">
       {/* Header strip */}
-      <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#345E85]/10 flex items-center justify-center">
-              <FaStore className="text-2xl text-[#345E85]" />
+      <div className="bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-[#345E85]/10 flex items-center justify-center shrink-0">
+              <FaStore className="text-xl sm:text-2xl text-[#345E85]" />
             </div>
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Credit Marketplace</h2>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Credit Marketplace</h2>
                 <span
                   className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
                     settings?.isEnabled
@@ -215,12 +215,15 @@ const CreditMarketplace: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <CurrencySelector variant="full" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+            <div className="flex justify-center sm:justify-start">
+              <span className="sm:hidden"><CurrencySelector variant="compact" /></span>
+              <span className="hidden sm:inline-flex"><CurrencySelector variant="full" /></span>
+            </div>
             {settings && !isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-5 py-3 bg-[#345E85] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#2a4d6d] transition-all flex items-center gap-2"
+                className="px-5 py-3 bg-[#345E85] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#2a4d6d] transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <FaCog className="text-xs" />
                 Edit Settings
@@ -231,16 +234,16 @@ const CreditMarketplace: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="bg-white rounded-[24px] p-5 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
+            className="bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-5 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] min-w-0"
           >
-            <div className={`w-10 h-10 rounded-xl ${card.tone} flex items-center justify-center mb-4`}>
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${card.tone} flex items-center justify-center mb-3 sm:mb-4`}>
               <card.icon className="text-sm" />
             </div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">{card.value}</div>
+            <div className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight break-all">{card.value}</div>
             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
               {card.label}
             </div>
@@ -250,32 +253,32 @@ const CreditMarketplace: React.FC = () => {
       </div>
 
       {/* Inventory + pricing */}
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-[24px] p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
+      <div className="grid lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] min-w-0">
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                 Available to Sell
               </div>
-              <div className="text-4xl font-black text-[#345E85] tracking-tight">
+              <div className="text-2xl sm:text-4xl font-black text-[#345E85] tracking-tight break-all">
                 {(creditData?.data?.currentBalance ?? 0).toLocaleString()}
-                <span className="text-base font-bold text-slate-400 ml-2">credits</span>
+                <span className="text-sm sm:text-base font-bold text-slate-400 ml-2">credits</span>
               </div>
               <p className="text-xs text-slate-500 mt-2 max-w-md">
                 Credits drawn from your subscription balance when truck owners buy.
               </p>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-sky-50 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-sky-50 flex items-center justify-center shrink-0">
               <FaCoins className="text-sky-600 text-lg" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-[24px] p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+        <div className="bg-white rounded-2xl sm:rounded-[24px] p-4 sm:p-6 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] min-w-0">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
             Price per Credit
           </div>
-          <div className="text-3xl font-black text-slate-900 tracking-tight">
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight break-all">
             {fmtFull(activePricePerCredit)}
           </div>
           {activePlanName ? (
@@ -292,23 +295,23 @@ const CreditMarketplace: React.FC = () => {
       </div>
 
       {/* Configuration */}
-      <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+      <div className="bg-white rounded-2xl sm:rounded-[32px] p-5 sm:p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] min-w-0">
+        <div className="flex items-start sm:items-center gap-3 mb-6 sm:mb-8">
+          <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
             <FaCog className="text-[#345E85]" />
           </div>
-          <div>
-            <h3 className="text-lg font-black text-slate-900 tracking-tight">Marketplace Configuration</h3>
+          <div className="min-w-0">
+            <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">Marketplace Configuration</h3>
             <p className="text-xs text-slate-500 font-medium">Purchase limits and storefront status</p>
           </div>
         </div>
 
         {!settings && !isEditing ? (
-          <div className="text-center py-14 rounded-[24px] border border-dashed border-slate-200 bg-slate-50/50">
+          <div className="text-center py-10 sm:py-14 px-4 rounded-[24px] border border-dashed border-slate-200 bg-slate-50/50">
             <div className="w-16 h-16 rounded-full bg-white border border-slate-100 flex items-center justify-center mx-auto mb-5 shadow-sm">
               <FaStore className="text-2xl text-slate-300" />
             </div>
-            <h4 className="text-lg font-black text-slate-900 mb-2 tracking-tight">
+            <h4 className="text-base sm:text-lg font-black text-slate-900 mb-2 tracking-tight">
               Marketplace Not Configured
             </h4>
             <p className="text-sm text-slate-500 mb-8 max-w-md mx-auto">
@@ -316,7 +319,7 @@ const CreditMarketplace: React.FC = () => {
             </p>
             <button
               onClick={() => setIsEditing(true)}
-              className="px-8 py-3.5 bg-[#345E85] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#2a4d6d] transition-all shadow-lg"
+              className="w-full sm:w-auto px-8 py-3.5 bg-[#345E85] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-[#2a4d6d] transition-all shadow-lg"
             >
               Configure Marketplace
             </button>
@@ -335,7 +338,7 @@ const CreditMarketplace: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, minPurchaseAmount: Number(e.target.value) })
                     }
-                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] outline-none transition-all"
+                    className="w-full px-4 pr-20 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] outline-none transition-all"
                     placeholder="500"
                     min="1"
                     required
@@ -356,7 +359,7 @@ const CreditMarketplace: React.FC = () => {
                     type="number"
                     value={formData.maxPurchaseAmount}
                     onChange={(e) => setFormData({ ...formData, maxPurchaseAmount: e.target.value })}
-                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] outline-none transition-all"
+                    className="w-full px-4 pr-20 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] outline-none transition-all"
                     placeholder="No limit"
                     min="1"
                   />
@@ -376,7 +379,7 @@ const CreditMarketplace: React.FC = () => {
                     type="text"
                     value={fmtFull(activePricePerCredit)}
                     readOnly
-                    className="w-full px-4 py-3.5 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-black text-slate-900 cursor-not-allowed"
+                    className="w-full px-4 pr-24 py-3.5 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-black text-slate-900 cursor-not-allowed"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-[#345E85] uppercase tracking-widest bg-white px-2.5 py-1 rounded-lg border border-slate-200">
                     From Plan
@@ -401,11 +404,12 @@ const CreditMarketplace: React.FC = () => {
                   }`}
                 >
                   {formData.isEnabled ? (
-                    <FaToggleOn className="text-2xl" />
+                    <FaToggleOn className="text-2xl shrink-0" />
                   ) : (
-                    <FaToggleOff className="text-2xl" />
+                    <FaToggleOff className="text-2xl shrink-0" />
                   )}
-                  {formData.isEnabled ? 'Enabled — Accepting Purchases' : 'Disabled — Closed'}
+                  <span className="sm:hidden">{formData.isEnabled ? 'Enabled' : 'Disabled'}</span>
+                  <span className="hidden sm:inline">{formData.isEnabled ? 'Enabled — Accepting Purchases' : 'Disabled — Closed'}</span>
                 </button>
                 <p className="text-[11px] text-slate-400">Toggle storefront availability</p>
               </div>
@@ -499,7 +503,7 @@ const CreditMarketplace: React.FC = () => {
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                   {item.label}
                 </div>
-                <div className={`text-xl font-black tracking-tight ${item.accent || 'text-slate-900'}`}>
+                <div className={`text-base sm:text-xl font-black tracking-tight break-words ${item.accent || 'text-slate-900'}`}>
                   {item.value}
                 </div>
               </div>

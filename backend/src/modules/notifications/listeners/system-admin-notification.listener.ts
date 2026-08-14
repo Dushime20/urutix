@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import {
   EntityType,
   Notification,
@@ -49,7 +49,7 @@ export class SystemAdminNotificationListener {
   private async getSuperAdmins(): Promise<User[]> {
     return this.userRepository.find({
       where: {
-        role: UserRole.SUPER_ADMIN,
+        role: In([UserRole.SUPER_ADMIN, UserRole.ADMIN]),
         status: UserStatus.ACTIVE,
       },
     });
@@ -82,11 +82,15 @@ export class SystemAdminNotificationListener {
       return;
     }
 
+    const now = new Date();
     await Promise.all(
       superAdmins.map(async (admin) => {
         try {
+          // Store on the admin's own tenant so /notifications?tenantId=… finds it,
+          // while sourceTenantId in metadata keeps the originating tenant.
+          const inboxTenantId = admin.tenantId || tenantId;
           const notification = this.notificationRepository.create({
-            tenantId,
+            tenantId: inboxTenantId,
             recipientId: admin.id,
             notificationType,
             category,
@@ -99,11 +103,13 @@ export class SystemAdminNotificationListener {
             channels: [NotificationChannel.IN_APP],
             status: NotificationStatus.SENT,
             isRead: false,
+            sentAt: now,
             requiresAction,
             actionUrl,
             actionText,
             metadata: {
               ...metadata,
+              sourceTenantId: tenantId,
               recipientRole: admin.role,
               audience: 'SUPER_ADMIN',
               eventTitle: title,
@@ -358,6 +364,44 @@ export class SystemAdminNotificationListener {
       requiresAction: false,
       actionUrl: '/admin/payments',
       actionText: 'View Payments',
+    });
+  }
+
+  // ── Bidding ───────────────────────────────────────────────────────────────
+
+  @OnEvent('bid.accepted')
+  async onBidAccepted(payload: {
+    tenantId: string;
+    bidId: string;
+    cargoId: string;
+    cargoOwnerId?: string;
+    truckOwnerId?: string;
+    driverId?: string | null;
+    bidDetails?: {
+      amount?: number;
+      cargoTitle?: string;
+      origin?: string;
+      destination?: string;
+    };
+  }) {
+    const cargoTitle = payload.bidDetails?.cargoTitle || 'cargo';
+    const route =
+      payload.bidDetails?.origin && payload.bidDetails?.destination
+        ? ` (${payload.bidDetails.origin} → ${payload.bidDetails.destination})`
+        : '';
+    const amountLabel =
+      payload.bidDetails?.amount != null ? ` for ${payload.bidDetails.amount}` : '';
+    await this.notifySuperAdmins({
+      tenantId: payload.tenantId,
+      title: 'Bid Accepted',
+      message: `A bid was accepted on "${cargoTitle}"${route}${amountLabel}.`,
+      entityType: EntityType.CARGO,
+      entityId: payload.cargoId || payload.bidId,
+      metadata: payload,
+      category: NotificationCategory.CARGO,
+      notificationType: NotificationType.AUCTION_WON,
+      actionUrl: '/admin/loads',
+      actionText: 'View Loads',
     });
   }
 }

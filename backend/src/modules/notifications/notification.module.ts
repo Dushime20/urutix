@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
 import { Notification } from '../../entities/notification.entity';
@@ -21,8 +20,9 @@ import { EventsModule } from '../events/events.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Notification, User, Driver, Load, Trip]),
-    EventEmitterModule.forRoot(),
-    // Provides EmailService (with ConfigService/SMTP properly initialized)
+    // EventEmitterModule.forRoot() lives in AppModule only — a second forRoot()
+    // here creates a separate EventEmitter2, so system.admin.* events never reach
+    // SystemAdminNotificationListener.
     EnhancedAuthModule,
     MessengerModule,
     EventsModule,

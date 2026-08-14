@@ -41,6 +41,15 @@ import { Notification } from '../../entities/notification.entity';
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) { }
 
+  private platformQuery(user: any) {
+    const role = user?.role;
+    return {
+      userId: user?.userId || user?.id,
+      tenantId: user?.tenantId,
+      isPlatformAdmin: role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN,
+    };
+  }
+
   @Post()
   @Roles(
     UserRole.ADMIN,
@@ -223,7 +232,14 @@ export class NotificationController {
     @Query() filterDto: NotificationFilterDto,
     @CurrentUser() user: any,
   ): Promise<{ notifications: Notification[]; total: number }> {
-    return this.notificationService.getNotifications(filterDto, user.tenantId);
+    const { userId, tenantId, isPlatformAdmin } = this.platformQuery(user);
+    if (isPlatformAdmin && !filterDto.recipientId) {
+      filterDto.recipientId = userId;
+    }
+    return this.notificationService.getNotifications(filterDto, tenantId, {
+      isPlatformAdmin,
+      recipientId: userId,
+    });
   }
 
   @Get('search')
@@ -293,9 +309,10 @@ export class NotificationController {
   ): Promise<Notification[]> {
     try {
       return await this.notificationService.getNotificationsByRecipient(
-        user.userId,
+        user.userId || user.id,
         user.tenantId,
         limit,
+        this.platformQuery(user),
       );
     } catch (error: any) {
       console.error('Error fetching user notifications:', error);
@@ -336,9 +353,11 @@ export class NotificationController {
   })
   async getUnreadCount(@CurrentUser() user: any): Promise<{ count: number }> {
     try {
+      const { userId, tenantId, isPlatformAdmin } = this.platformQuery(user);
       const count = await this.notificationService.getUnreadCount(
-        user.userId,
-        user.tenantId,
+        userId,
+        tenantId,
+        { isPlatformAdmin, recipientId: userId },
       );
       return { count };
     } catch (error: any) {
@@ -443,7 +462,11 @@ export class NotificationController {
     @Param('id') id: string,
     @CurrentUser() user: any,
   ): Promise<Notification> {
-    return this.notificationService.getNotificationById(id, user.tenantId);
+    return this.notificationService.getNotificationById(
+      id,
+      user.tenantId,
+      this.platformQuery(user),
+    );
   }
 
   @Put(':id')
@@ -509,7 +532,11 @@ export class NotificationController {
     @Param('id') id: string,
     @CurrentUser() user: any,
   ): Promise<Notification> {
-    return this.notificationService.markAsRead(id, user.userId, user.tenantId);
+    const { userId, tenantId, isPlatformAdmin } = this.platformQuery(user);
+    return this.notificationService.markAsRead(id, userId, tenantId, {
+      isPlatformAdmin,
+      recipientId: userId,
+    });
   }
 
   @Post('bulk/read')
@@ -605,10 +632,12 @@ export class NotificationController {
     @Param('id') id: string,
     @CurrentUser() user: any,
   ): Promise<void> {
+    const { userId, tenantId, isPlatformAdmin } = this.platformQuery(user);
     return this.notificationService.deleteNotification(
       id,
-      user.userId,
-      user.tenantId,
+      userId,
+      tenantId,
+      { isPlatformAdmin, recipientId: userId },
     );
   }
 

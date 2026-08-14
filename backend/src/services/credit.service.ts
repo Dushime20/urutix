@@ -48,6 +48,8 @@ export interface CreditTransactionFilters {
   limit?: number;
   offset?: number;
   userId?: string;
+  /** Company wallet only (creditAccount.userId IS NULL). Excludes truck-owner/partner accounts. */
+  tenantLevelOnly?: boolean;
 }
 
 @Injectable()
@@ -575,6 +577,8 @@ export class CreditService {
 
   /**
    * Get credit transaction history.
+   * When filters.tenantLevelOnly is set (tenant admin), only the company wallet is returned
+   * so truck-owner bid payments are not mixed into the admin's running balance.
    * When filters.userId is set (truck owners), scope to that user's credit account
    * so they only see their own activity — not the tenant company wallet.
    */
@@ -588,7 +592,9 @@ export class CreditService {
       .leftJoinAndSelect('creditAccount.tenant', 'tenant')
       .where('transaction.tenantId = :tenantId', { tenantId });
 
-    if (filters?.userId !== undefined) {
+    if (filters?.tenantLevelOnly) {
+      query.andWhere('creditAccount.userId IS NULL');
+    } else if (filters?.userId !== undefined) {
       query.addSelect('transaction.userId');
       if (filters.userId) {
         // Ownership is on the credit account; transaction.userId was often left null historically.

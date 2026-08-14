@@ -139,6 +139,16 @@ const SubscriptionPlans: React.FC = () => {
     refetchInterval: 60000,
   });
 
+  // Company wallet only — truck-owner bid payments belong on their own accounts
+  const companyWalletTransactions = useMemo(() => {
+    const txns = creditHistoryData?.data ?? [];
+    return txns.filter((txn: any) => {
+      if (txn.metadata?.role === 'TRUCK_OWNER') return false;
+      if (txn.creditAccount?.userId) return false;
+      return true;
+    });
+  }, [creditHistoryData]);
+
   // Fetch partner plans created by tenant (kept for future use)
   useQuery({
     queryKey: ['partner-plans'],
@@ -354,10 +364,17 @@ const SubscriptionPlans: React.FC = () => {
     return creditsNeeded * Number(plan.pricePerCredit);
   };
 
+  const tabs: { id: typeof activeTab; label: string; short: string; icon?: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'plans', label: 'Available Plans', short: 'Plans' },
+    { id: 'subscriptions', label: 'My Subscriptions', short: 'Subscriptions' },
+    { id: 'marketplace', label: 'Marketplace', short: 'Marketplace', icon: FaStore },
+    { id: 'history', label: 'Transaction History', short: 'History', icon: FaHistory },
+  ];
+
   if (isLoading) {
     return (
-      <div className="space-y-6 animate-pulse p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-6 animate-pulse p-2 sm:p-4 w-full min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[1,2,3].map(i => (
             <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-[24px]" />
           ))}
@@ -368,100 +385,80 @@ const SubscriptionPlans: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 antialiased">
+    <div className="space-y-4 sm:space-y-6 antialiased w-full min-w-0">
       {/* Top Navigation & Actions Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white rounded-[24px] p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        {/* Nav Tabs */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setActiveTab('plans')}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              activeTab === 'plans'
-                ? 'bg-[#345E85] text-white shadow-lg'
-                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-            }`}
-          >
-            Available Plans
-          </button>
-          <button
-            onClick={() => setActiveTab('subscriptions')}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              activeTab === 'subscriptions'
-                ? 'bg-[#345E85] text-white shadow-lg'
-                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-            }`}
-          >
-            My Subscriptions
-          </button>
-          <button
-            onClick={() => setActiveTab('marketplace')}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-              activeTab === 'marketplace'
-                ? 'bg-[#345E85] text-white shadow-lg'
-                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-            }`}
-          >
-            <FaStore className={activeTab === 'marketplace' ? 'text-white' : 'text-slate-400'} />
-            Marketplace
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-              activeTab === 'history'
-                ? 'bg-[#345E85] text-white shadow-lg'
-                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-            }`}
-          >
-            <FaHistory className={activeTab === 'history' ? 'text-white' : 'text-slate-400'} />
-            Transaction History
-          </button>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 bg-white rounded-2xl sm:rounded-[24px] p-3 sm:p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] w-full min-w-0">
+        {/* Nav Tabs — 2×2 on mobile so every tab stays visible */}
+        <div className="grid grid-cols-2 gap-2 w-full md:flex md:flex-wrap md:items-center md:gap-3">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-2.5 sm:px-5 sm:py-3 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all w-full md:w-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#345E85] text-white shadow-lg'
+                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                }`}
+              >
+                {Icon && <Icon className={`shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />}
+                <span className="md:hidden">{tab.short}</span>
+                <span className="hidden md:inline">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Action Items (Pill + Buttons) - Only for Plans Tab */}
         {activeTab === 'plans' && (
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 text-[#345E85] px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">
-              <FaGift className="text-blue-500" />
-              🎉 Instant Activation
+          <div className="flex flex-col gap-3 w-full lg:w-auto">
+            <div className="inline-flex items-center justify-center gap-2 bg-blue-50 border border-blue-100 text-[#345E85] px-3 sm:px-4 py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-sm w-full sm:w-auto">
+              <FaGift className="text-blue-500 shrink-0" />
+              Instant Activation
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-3 w-full">
               <button
                 onClick={() => setShowCalculator(!showCalculator)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-3 sm:px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:bg-slate-50 transition-all font-black text-[9px] sm:text-[10px] uppercase tracking-widest shadow-sm"
               >
-                <FaCalculator className="text-xs" />
+                <FaCalculator className="text-xs shrink-0" />
                 {showCalculator ? 'Hide' : 'Calculator'}
               </button>
               <button
                 onClick={() => setShowComparison(!showComparison)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest shadow-sm"
+                className="inline-flex items-center justify-center gap-2 px-3 sm:px-5 py-2.5 bg-white border border-slate-200 text-[#345E85] rounded-xl hover:bg-slate-50 transition-all font-black text-[9px] sm:text-[10px] uppercase tracking-widest shadow-sm"
               >
-                <FaChartBar className="text-xs" />
+                <FaChartBar className="text-xs shrink-0" />
                 Compare
               </button>
-              <CurrencySelector variant="full" />
+              <div className="col-span-2 sm:col-span-1 flex justify-center sm:justify-start">
+                <span className="sm:hidden"><CurrencySelector variant="compact" /></span>
+                <span className="hidden sm:inline-flex"><CurrencySelector variant="full" /></span>
+              </div>
             </div>
           </div>
         )}
       </div>
 
       {activeTab === 'plans' && (
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         <div className="flex flex-col items-center gap-6">
 
           {/* Credit Calculator */}
           {showCalculator && (
-            <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] max-w-3xl mx-auto w-full">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-10 h-10 rounded-[14px] bg-slate-50 flex items-center justify-center border border-slate-100">
+            <div className="bg-white rounded-2xl sm:rounded-[32px] p-5 sm:p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] max-w-3xl mx-auto w-full min-w-0">
+              <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+                <div className="w-10 h-10 rounded-[14px] bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
                   <FaCalculator className="w-4 h-4 text-slate-400" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                   Estimate Your Credit Needs
                 </h3>
               </div>
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
                     How many tons do you ship per month?
@@ -475,22 +472,22 @@ const SubscriptionPlans: React.FC = () => {
                     onChange={(e) => setEstimatedTons(Number(e.target.value))}
                     className="w-full h-3 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#345E85]"
                   />
-                  <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest mt-4">
+                  <div className="flex justify-between items-center gap-2 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest mt-4">
                     <span>10</span>
-                    <span className="text-[#345E85] scale-125 transform transition-transform">{estimatedTons} tons</span>
+                    <span className="text-[#345E85] text-xs sm:text-sm">{estimatedTons} tons</span>
                     <span>500+</span>
                   </div>
                 </div>
-                <div className="bg-blue-50/50 rounded-[24px] p-6 border border-blue-100/50">
-                  <div className="flex items-center justify-between">
+                <div className="bg-blue-50/50 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 border border-blue-100/50">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Recommended Plan</span>
-                      <div className="text-2xl font-black text-[#345E85] tracking-tight mt-1 capitalize">
+                      <div className="text-xl sm:text-2xl font-black text-[#345E85] tracking-tight mt-1 capitalize">
                         {getRecommendedPlan()}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-black text-[#345E85] tracking-tight">
+                    <div className="sm:text-right">
+                      <div className="text-2xl sm:text-3xl font-black text-[#345E85] tracking-tight">
                         {estimatedTons * 2} credits
                       </div>
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
@@ -505,7 +502,7 @@ const SubscriptionPlans: React.FC = () => {
         </div>
 
         {/* Plans Grid */}
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 xl:gap-8">
           {plans.map((plan) => {
             const isPopular = plan.slug === 'professional';
             const isEnterprise = plan.slug === 'enterprise';
@@ -583,16 +580,16 @@ const SubscriptionPlans: React.FC = () => {
                   </div>
 
                   {/* Credit Consumption */}
-                  <div className="bg-slate-50/50 rounded-[24px] p-6 mb-8 border border-slate-100">
+                  <div className="bg-slate-50/50 rounded-2xl sm:rounded-[24px] p-4 sm:p-6 mb-6 sm:mb-8 border border-slate-100">
                     <div className="space-y-3">
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Credit Consumption</div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600 font-semibold">Per Ton (You):</span>
-                        <span className="font-black text-blue-600">{Number(plan.creditsPerTonTenant).toFixed(1)} credits</span>
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-slate-600 font-semibold min-w-0">Per Ton (You):</span>
+                        <span className="font-black text-blue-600 shrink-0">{Number(plan.creditsPerTonTenant).toFixed(1)} credits</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600 font-semibold">Per Ton (Truck Owner):</span>
-                        <span className="font-black text-indigo-600">{Number(plan.creditsPerTonTruckOwner).toFixed(1)} credits</span>
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-slate-600 font-semibold min-w-0">Per Ton (Truck Owner):</span>
+                        <span className="font-black text-indigo-600 shrink-0">{Number(plan.creditsPerTonTruckOwner).toFixed(1)} credits</span>
                       </div>
                       {showCalculator && (
                         <div className="pt-3 border-t border-slate-200 mt-3">
@@ -728,45 +725,65 @@ const SubscriptionPlans: React.FC = () => {
 
         {/* Feature Comparison Table */}
         {showComparison && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-indigo-100">
-            <h2 className="text-3xl font-bold text-slate-900 mb-6 text-center">
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-2 border-indigo-100 min-w-0 overflow-hidden">
+            <h2 className="text-xl sm:text-3xl font-bold text-slate-900 mb-2 sm:mb-6 text-center">
               Detailed Feature Comparison
             </h2>
-            <StandardDataTable<FeatureComparisonRow>
-              embedded
-              searchable={false}
-              pagination={false}
-              sortable={false}
-              columnVisibility={false}
-              columns={featureComparisonColumns}
-              data={featureComparisonRows}
-              getRowId={(row) => row.id}
-              ariaLabel="Detailed feature comparison"
-            />
+            <p className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center mb-4">
+              Compare each plan side by side
+            </p>
+            <div className="md:hidden space-y-4">
+              {plans.map((plan) => (
+                <div key={plan.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+                  <h3 className="text-base font-black text-slate-900 mb-4">{plan.name}</h3>
+                  <dl className="space-y-3">
+                    {featureComparisonRows.map((row) => (
+                      <div key={row.id} className="flex items-center justify-between gap-3 text-sm">
+                        <dt className="text-slate-500 font-medium min-w-0">{row.feature}</dt>
+                        <dd className="shrink-0 text-right">{row.values[plan.id]}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block">
+              <StandardDataTable<FeatureComparisonRow>
+                embedded
+                searchable={false}
+                pagination={false}
+                sortable={false}
+                columnVisibility={false}
+                columns={featureComparisonColumns}
+                data={featureComparisonRows}
+                getRowId={(row) => row.id}
+                ariaLabel="Detailed feature comparison"
+              />
+            </div>
           </div>
         )}
 
         {/* Trust Indicators */}
-        <div className="grid md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl p-6 shadow-md text-center">
-            <FaShieldAlt className="text-4xl text-indigo-600 mx-auto mb-3" />
-            <h3 className="font-bold text-slate-900 mb-2">Secure & Compliant</h3>
-            <p className="text-sm text-slate-600">Bank-level encryption</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md text-center">
+            <FaShieldAlt className="text-3xl sm:text-4xl text-indigo-600 mx-auto mb-3" />
+            <h3 className="font-bold text-slate-900 mb-2 text-sm sm:text-base">Secure & Compliant</h3>
+            <p className="text-xs sm:text-sm text-slate-600">Bank-level encryption</p>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-md text-center">
-            <FaHeadset className="text-4xl text-green-600 mx-auto mb-3" />
-            <h3 className="font-bold text-slate-900 mb-2">24/7 Support</h3>
-            <p className="text-sm text-slate-600">Always here to help</p>
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md text-center">
+            <FaHeadset className="text-3xl sm:text-4xl text-green-600 mx-auto mb-3" />
+            <h3 className="font-bold text-slate-900 mb-2 text-sm sm:text-base">24/7 Support</h3>
+            <p className="text-xs sm:text-sm text-slate-600">Always here to help</p>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-md text-center">
-            <FaRocket className="text-4xl text-purple-600 mx-auto mb-3" />
-            <h3 className="font-bold text-slate-900 mb-2">Easy Setup</h3>
-            <p className="text-sm text-slate-600">Up and running in minutes</p>
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md text-center">
+            <FaRocket className="text-3xl sm:text-4xl text-purple-600 mx-auto mb-3" />
+            <h3 className="font-bold text-slate-900 mb-2 text-sm sm:text-base">Easy Setup</h3>
+            <p className="text-xs sm:text-sm text-slate-600">Up and running in minutes</p>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-md text-center">
-            <FaLightbulb className="text-4xl text-yellow-600 mx-auto mb-3" />
-            <h3 className="font-bold text-slate-900 mb-2">No Hidden Fees</h3>
-            <p className="text-sm text-slate-600">Transparent pricing</p>
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md text-center">
+            <FaLightbulb className="text-3xl sm:text-4xl text-yellow-600 mx-auto mb-3" />
+            <h3 className="font-bold text-slate-900 mb-2 text-sm sm:text-base">No Hidden Fees</h3>
+            <p className="text-xs sm:text-sm text-slate-600">Transparent pricing</p>
           </div>
         </div>
       </div>
@@ -774,9 +791,9 @@ const SubscriptionPlans: React.FC = () => {
 
       {/* My Subscriptions Tab — shows purchases + credit stats directly, no sub-tabs */}
       {activeTab === 'subscriptions' && (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {isLoadingSubscriptions ? (
-              <div className="space-y-4 p-4 animate-pulse">
+              <div className="space-y-4 p-2 sm:p-4 animate-pulse">
                 {[1,2,3,4].map(i => (
                   <div key={i} className="h-16 bg-slate-100 dark:bg-slate-800 rounded-xl" />
                 ))}
@@ -784,45 +801,45 @@ const SubscriptionPlans: React.FC = () => {
             ) : subscriptionsData?.data?.length > 0 ? (
               <div className="space-y-6">
                 {/* Single instance — stats and chart are global, not per-subscription */}
-                <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                <div className="bg-white rounded-2xl sm:rounded-[32px] p-4 sm:p-8 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] min-w-0">
                     {/* Marketplace Performance Chart */}
-                    <div className="bg-white rounded-[24px] p-6 border border-slate-100">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                    <div className="bg-white rounded-2xl sm:rounded-[24px] p-3 sm:p-6 border border-slate-100 min-w-0">
+                      <div className="flex flex-col gap-4 mb-6">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
                             <FaChartBar className="text-emerald-500" />
                           </div>
-                          <div>
-                            <h4 className="text-base font-black text-slate-900">Marketplace Performance</h4>
+                          <div className="min-w-0">
+                            <h4 className="text-sm sm:text-base font-black text-slate-900">Marketplace Performance</h4>
                             <p className="text-xs text-slate-500 mt-0.5">Credit sales and usage over time</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
+                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 shrink-0"></div>
                             <span className="text-xs font-bold text-slate-600">Sold</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-400 to-red-600"></div>
+                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-400 to-red-600 shrink-0"></div>
                             <span className="text-xs font-bold text-slate-600">Used in Ops</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-600"></div>
+                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 shrink-0"></div>
                             <span className="text-xs font-bold text-slate-600">Earned</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"></div>
+                            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 shrink-0"></div>
                             <span className="text-xs font-bold text-slate-600">Balance</span>
                           </div>
                         </div>
                       </div>
 
                       {/* ── 5 Stat Cards ── */}
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
                         {/* 1. Total Purchased Credits */}
-                        <div className="bg-blue-50 border-2 border-blue-100 rounded-xl p-4">
+                        <div className="bg-blue-50 border-2 border-blue-100 rounded-xl p-3 sm:p-4 min-w-0">
                           <div className="text-[9px] font-black text-[#345E85] uppercase tracking-wider mb-1">Total Purchased</div>
-                          <div className="text-2xl font-black text-slate-900">
+                          <div className="text-xl sm:text-2xl font-black text-slate-900 break-all">
                             {(() => {
                               const bal = creditAccountData?.data;
                               const total = (bal?.subscriptionCredits ?? 0) + (bal?.purchasedCredits ?? 0);
@@ -833,18 +850,18 @@ const SubscriptionPlans: React.FC = () => {
                         </div>
 
                         {/* 2. Sold via Marketplace */}
-                        <div className="bg-emerald-50 border-2 border-emerald-100 rounded-xl p-4">
+                        <div className="bg-emerald-50 border-2 border-emerald-100 rounded-xl p-3 sm:p-4 min-w-0">
                           <div className="text-[9px] font-black text-emerald-600 uppercase tracking-wider mb-1">Sold via Marketplace</div>
-                          <div className="text-2xl font-black text-slate-900">
+                          <div className="text-xl sm:text-2xl font-black text-slate-900 break-all">
                             {(marketplaceStatsData?.data?.totalCreditsSold ?? creditAccountData?.data?.creditsAllocatedToPartners ?? 0).toLocaleString()}
                           </div>
                           <div className="text-[9px] text-slate-500 mt-1">Credits sold to partners</div>
                         </div>
 
                         {/* 3. Used in Operations */}
-                        <div className="bg-red-50 border-2 border-red-100 rounded-xl p-4">
+                        <div className="bg-red-50 border-2 border-red-100 rounded-xl p-3 sm:p-4 min-w-0">
                           <div className="text-[9px] font-black text-red-600 uppercase tracking-wider mb-1">Used in Operations</div>
-                          <div className="text-2xl font-black text-slate-900">
+                          <div className="text-xl sm:text-2xl font-black text-slate-900 break-all">
                             {(() => {
                               const bal = creditAccountData?.data;
                               // Operational usage = lifetime spent minus credits sold to partners
@@ -857,18 +874,18 @@ const SubscriptionPlans: React.FC = () => {
                         </div>
 
                         {/* 4. Earned from Operations */}
-                        <div className="bg-amber-50 border-2 border-amber-100 rounded-xl p-4">
+                        <div className="bg-amber-50 border-2 border-amber-100 rounded-xl p-3 sm:p-4 min-w-0">
                           <div className="text-[9px] font-black text-amber-600 uppercase tracking-wider mb-1">Earned from Operations</div>
-                          <div className="text-2xl font-black text-slate-900">
+                          <div className="text-xl sm:text-2xl font-black text-slate-900 break-all">
                             {(creditAccountData?.data?.bonusCredits ?? 0).toLocaleString()}
                           </div>
                           <div className="text-[9px] text-slate-500 mt-1">Bonus from marketplace & bids</div>
                         </div>
 
                         {/* 5. Current Balance */}
-                        <div className="bg-purple-50 border-2 border-purple-100 rounded-xl p-4">
+                        <div className="bg-purple-50 border-2 border-purple-100 rounded-xl p-3 sm:p-4 min-w-0 col-span-2 lg:col-span-1">
                           <div className="text-[9px] font-black text-purple-600 uppercase tracking-wider mb-1">Current Balance</div>
-                          <div className="text-2xl font-black text-slate-900">
+                          <div className="text-xl sm:text-2xl font-black text-slate-900 break-all">
                             {(creditAccountData?.data?.currentBalance ?? 0).toLocaleString()}
                           </div>
                           <div className="text-[9px] text-slate-500 mt-1">Available to use now</div>
@@ -876,9 +893,9 @@ const SubscriptionPlans: React.FC = () => {
                       </div>
 
                       {/* ── Trend Chart ── */}
-                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        {(creditHistoryData?.data ?? []).length === 0 ? (
-                          <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                      <div className="bg-slate-50 rounded-xl p-2 sm:p-4 border border-slate-200 min-w-0 overflow-hidden">
+                        {companyWalletTransactions.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-[200px] sm:h-[300px] text-center px-4">
                             <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-3">
                               <FaChartBar className="text-slate-300 text-xl" />
                             </div>
@@ -886,11 +903,11 @@ const SubscriptionPlans: React.FC = () => {
                             <p className="text-xs text-slate-300 mt-1">Chart will populate as credits are used</p>
                           </div>
                         ) : (
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={240}>
                           <AreaChart
                             data={(() => {
                               // Use real transaction history only — no simulation
-                              const txns: any[] = creditHistoryData?.data ?? [];
+                              const txns: any[] = companyWalletTransactions;
                               if (txns.length === 0) return [];
                               const sorted = [...txns].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                               return sorted.slice(-30).map((t: any) => ({
@@ -901,7 +918,7 @@ const SubscriptionPlans: React.FC = () => {
                                 balance: t.balanceAfter ?? 0,
                               }));
                             })()}
-                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                            margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
                           >
                             <defs>
                               <linearGradient id="colorSold" x1="0" y1="0" x2="0" y2="1">
@@ -953,10 +970,10 @@ const SubscriptionPlans: React.FC = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-3 pt-6 border-t border-slate-100">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-6 border-t border-slate-100">
                       <button
                         onClick={() => setActiveTab('marketplace')}
-                        className="px-6 py-3.5 bg-slate-50 text-slate-700 rounded-2xl hover:bg-slate-100 transition-all font-bold text-[11px] uppercase tracking-widest flex items-center gap-2"
+                        className="w-full sm:w-auto justify-center px-6 py-3.5 bg-slate-50 text-slate-700 rounded-2xl hover:bg-slate-100 transition-all font-bold text-[11px] uppercase tracking-widest flex items-center gap-2"
                       >
                         <FaStore className="text-xs" />
                         View Marketplace
@@ -965,19 +982,19 @@ const SubscriptionPlans: React.FC = () => {
                   </div>
               </div>
             ) : (
-              <div className="bg-white rounded-[32px] p-12 text-center border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-                <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
-                  <FaCrown className="text-4xl text-slate-300" />
+              <div className="bg-white rounded-2xl sm:rounded-[32px] p-6 sm:p-12 text-center border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
+                  <FaCrown className="text-3xl sm:text-4xl text-slate-300" />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mb-3">
                   No Subscriptions Yet
                 </h3>
-                <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                <p className="text-sm sm:text-base text-slate-600 mb-8 max-w-md mx-auto">
                   You haven't purchased any subscription plans yet. Browse our available plans to get started.
                 </p>
                 <button
                   onClick={() => setActiveTab('plans')}
-                  className="px-8 py-4 bg-[#345E85] text-white rounded-2xl hover:bg-[#2a4d6d] transition-all font-black text-[11px] uppercase tracking-widest shadow-lg"
+                  className="w-full sm:w-auto px-8 py-4 bg-[#345E85] text-white rounded-2xl hover:bg-[#2a4d6d] transition-all font-black text-[11px] uppercase tracking-widest shadow-lg"
                 >
                   View Available Plans
                 </button>
@@ -988,7 +1005,7 @@ const SubscriptionPlans: React.FC = () => {
 
       {/* Marketplace Tab */}
       {activeTab === 'marketplace' && (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-8 min-w-0">
           <CreditMarketplace />
         </div>
       )}
@@ -996,29 +1013,35 @@ const SubscriptionPlans: React.FC = () => {
       {/* Transaction History Tab */}
       {activeTab === 'history' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden">
-            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl sm:rounded-[32px] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] overflow-hidden min-w-0">
+            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
                   <FaHistory className="text-[#345E85]" />
                 </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900">Transaction History</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Credit purchases, sales, and usage</p>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-black text-slate-900">Transaction History</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Activity on your company credit wallet only
+                  </p>
                 </div>
               </div>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                {(creditHistoryData?.data ?? []).length} transactions
+                {companyWalletTransactions.length} transactions
               </span>
             </div>
 
-            {(creditHistoryData?.data ?? []).length > 0 ? (
+            {companyWalletTransactions.length > 0 ? (
+              <>
+              <p className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4 pt-3">
+                Swipe sideways to see all columns
+              </p>
               <StandardDataTable
                 embedded
                 searchable={false}
                 pagination
                 pageSize={10}
-                data={[...(creditHistoryData?.data ?? [])].sort(
+                data={[...companyWalletTransactions].sort(
                   (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
                 )}
                 getRowId={(txn: any) => txn.id}
@@ -1044,8 +1067,7 @@ const SubscriptionPlans: React.FC = () => {
                         txn.amount > 0 ||
                         ['SUBSCRIPTION_GRANT', 'PURCHASE', 'BONUS', 'REFUND'].includes(txn.type);
                       return (
-                        <span
-                          className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                        <span className={`inline-block whitespace-nowrap px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
                             isCredit
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                               : 'bg-rose-50 text-rose-700 border border-rose-100'
@@ -1064,7 +1086,7 @@ const SubscriptionPlans: React.FC = () => {
                         txn.amount > 0 ||
                         ['SUBSCRIPTION_GRANT', 'PURCHASE', 'BONUS', 'REFUND'].includes(txn.type);
                       return (
-                        <span className={`text-sm font-black ${isCredit ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <span className={`text-sm font-black whitespace-nowrap ${isCredit ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {isCredit ? '+' : '-'}
                           {Math.abs(txn.amount || 0).toLocaleString()} credits
                         </span>
@@ -1075,7 +1097,7 @@ const SubscriptionPlans: React.FC = () => {
                     key: 'balanceAfter',
                     label: 'Balance After',
                     render: (v: number) => (
-                      <span className="text-sm font-black text-slate-900">{(v ?? 0).toLocaleString()} credits</span>
+                      <span className="text-sm font-black text-slate-900 whitespace-nowrap">{(v ?? 0).toLocaleString()} credits</span>
                     ),
                   },
                   {
@@ -1102,8 +1124,9 @@ const SubscriptionPlans: React.FC = () => {
                   },
                 ] as Column[]}
               />
+              </>
             ) : (
-              <div className="py-20 text-center">
+              <div className="py-12 sm:py-20 text-center px-4">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FaHistory className="text-2xl text-slate-300" />
                 </div>
@@ -1121,16 +1144,16 @@ const SubscriptionPlans: React.FC = () => {
 
       {/* Payment Modal */}
       {showPaymentModal && selectedPlan && createPortal(
-          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
+          <div className="fixed inset-0 z-[999999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
               {/* Modal Header */}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <div className="flex items-start sm:items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                       Complete Your Purchase
                     </h2>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p className="text-sm text-slate-500 mt-1 truncate">
                       {selectedPlan.name} Plan
                     </p>
                   </div>
@@ -1139,7 +1162,7 @@ const SubscriptionPlans: React.FC = () => {
                       setShowPaymentModal(false);
                       setSelectedPlan(null);
                     }}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors shrink-0"
                   >
                     <FaTimes className="w-5 h-5" />
                   </button>
@@ -1147,33 +1170,33 @@ const SubscriptionPlans: React.FC = () => {
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
                 {/* Order Summary */}
-                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-6 border border-blue-100 dark:border-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 sm:p-6 border border-blue-100 dark:border-blue-800">
                   <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4">
                     Order Summary
                   </h3>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600 dark:text-slate-400">Plan:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">{selectedPlan.name}</span>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-slate-600 dark:text-slate-400 shrink-0">Plan:</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-right break-words">{selectedPlan.name}</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600 dark:text-slate-400">Credits:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-slate-600 dark:text-slate-400 shrink-0">Credits:</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-right">
                         {selectedPlan.totalCredits === -1 ? 'Unlimited' : selectedPlan.totalCredits.toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600 dark:text-slate-400">Price per Credit:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-slate-600 dark:text-slate-400 shrink-0">Price per Credit:</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-right break-all">
                         {fmtFull(Number(selectedPlan.pricePerCredit))}
                       </span>
                     </div>
                     <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                         <span className="text-base font-black text-slate-900 dark:text-white">Total Amount:</span>
-                        <span className="text-2xl font-black text-[#345E85] dark:text-blue-400">
+                        <span className="text-xl sm:text-2xl font-black text-[#345E85] dark:text-blue-400 break-all">
                           {fmtFull(getTotalAmount(selectedPlan))}
                         </span>
                       </div>
@@ -1345,20 +1368,20 @@ const SubscriptionPlans: React.FC = () => {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center gap-4">
+              <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3">
                 <button
                   onClick={() => {
                     setShowPaymentModal(false);
                     setSelectedPlan(null);
                   }}
-                  className="px-6 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-all"
+                  className="px-6 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-all w-full sm:w-auto"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handlePayment}
                   disabled={purchaseSubscription.isPending}
-                  className="px-8 py-3 text-sm font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white shadow-md hover:shadow-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                  className="px-6 sm:px-8 py-3 text-sm font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white shadow-md hover:shadow-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider w-full sm:w-auto text-center"
                 >
                   {purchaseSubscription.isPending ? (
                     <span className="flex items-center gap-2">

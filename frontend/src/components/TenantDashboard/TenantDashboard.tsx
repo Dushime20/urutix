@@ -598,7 +598,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           )}
 
           {!isLoading && selectedView === 'subscription-plans' && (
-            <motion.div key="subscription-plans" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <motion.div key="subscription-plans" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full min-w-0 overflow-x-hidden">
               <SubscriptionPlans />
             </motion.div>
           )}

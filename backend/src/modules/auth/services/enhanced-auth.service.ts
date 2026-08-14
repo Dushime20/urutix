@@ -48,6 +48,7 @@ import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { EmailService } from './email.service';
 import { EnhancedRateLimitGuard } from '../guards/enhanced-rate-limit.guard';
 import { TenantService } from './tenant.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -75,6 +76,7 @@ export class EnhancedAuthService {
     private emailService: EmailService,
     private rateLimitGuard: EnhancedRateLimitGuard,
     private tenantService: TenantService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async onModuleInit() {
@@ -227,6 +229,15 @@ export class EnhancedAuthService {
       });
 
       this.logger.log(`User registered successfully: ${savedUser.email}`);
+
+      this.eventEmitter.emit('system.admin.tenant_user_created', {
+        tenantId: savedUser.tenantId,
+        actorId: savedUser.id,
+        actorRole: savedUser.role,
+        newUserId: savedUser.id,
+        newUserRole: savedUser.role,
+        newUserEmail: savedUser.email,
+      });
 
       return {
         accessToken: tokens.accessToken,
