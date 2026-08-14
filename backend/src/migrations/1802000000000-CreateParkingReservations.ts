@@ -9,6 +9,9 @@ export class CreateParkingReservations1802000000000 implements MigrationInterfac
         IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'users_role_enum') THEN
           ALTER TYPE "public"."users_role_enum" ADD VALUE IF NOT EXISTS 'PARKING_RESERVATION_MANAGER';
         END IF;
+        IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+          ALTER TYPE "public"."user_role" ADD VALUE IF NOT EXISTS 'PARKING_RESERVATION_MANAGER';
+        END IF;
       END $$;
     `);
   }

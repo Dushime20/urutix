@@ -707,7 +707,7 @@ export class ParkingReservationsService {
     const qb = this.userRepo
       .createQueryBuilder('u')
       .leftJoinAndSelect('u.profile', 'profile')
-      .where('u.role IN (:...roles)', {
+      .where('u.role::text IN (:...roles)', {
         roles: [
           UserRole.PARKING_RESERVATION_MANAGER,
           UserRole.ADMIN,

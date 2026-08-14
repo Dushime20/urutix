@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { EventsGateway } from '../../events/events.gateway';
 import { User, UserRole, UserStatus } from '../../../entities/user.entity';
 import { EmailService } from '../../auth/services/email.service';
@@ -235,18 +235,29 @@ export class ParkingReservationListener {
     reservation: ParkingReservation,
     opts: { type: NotificationType; title: string; message: string; actionUrl: string },
   ) {
-    const officers = await this.userRepository.find({
-      where: {
-        role: In([
-          UserRole.PARKING_RESERVATION_MANAGER,
-          UserRole.SUPER_ADMIN,
-          UserRole.ADMIN,
-        ]),
-        status: UserStatus.ACTIVE,
-      },
-    });
-    for (const officer of officers) {
-      await this.notifyUser(officer.id, reservation, opts);
+    try {
+      // Compare as text so a missing PG enum label cannot fail the whole notification batch.
+      const officers = await this.userRepository
+        .createQueryBuilder('u')
+        .where('u.status = :status', { status: UserStatus.ACTIVE })
+        .andWhere('u."deleted_at" IS NULL')
+        .andWhere('u.role::text IN (:...roles)', {
+          roles: [
+            UserRole.PARKING_RESERVATION_MANAGER,
+            UserRole.SUPER_ADMIN,
+            UserRole.ADMIN,
+          ],
+        })
+        .getMany();
+
+      for (const officer of officers) {
+        await this.notifyUser(officer.id, reservation, opts);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed notifying parking officers for ${reservation.reservationReference}`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 

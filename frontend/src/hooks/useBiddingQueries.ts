@@ -185,7 +185,13 @@ export function useBidAnalyticsQuery() {
       const bids: any[] = bidsRes.data?.bids || bidsRes.data?.data || bidsRes.data || [];
       const stats = statsRes.data?.stats || statsRes.data?.data || statsRes.data || {};
 
-      const successfulBids = bids.filter((b: any) => b.status === 'ACCEPTED' || b.status === 'WON');
+      const wonStatuses = new Set(['ACCEPTED', 'WON', 'AWARDED']);
+      const pendingStatuses = new Set(['PENDING', 'SUBMITTED', 'ACTIVE', 'OPEN']);
+      const lostStatuses = new Set(['REJECTED', 'LOST', 'OUTBID', 'DECLINED', 'EXPIRED']);
+
+      const successfulBids = bids.filter((b: any) => wonStatuses.has(String(b.status || '').toUpperCase()));
+      const pendingBids = bids.filter((b: any) => pendingStatuses.has(String(b.status || '').toUpperCase()));
+      const lostBids = bids.filter((b: any) => lostStatuses.has(String(b.status || '').toUpperCase()));
       const totalValue = bids.reduce((sum: number, b: any) => sum + (Number(b.amount) || 0), 0);
       const avgAmount = bids.length > 0 ? totalValue / bids.length : 0;
       const successRate = bids.length > 0 ? Math.round((successfulBids.length / bids.length) * 100) : 0;
@@ -193,6 +199,7 @@ export function useBidAnalyticsQuery() {
       const loadMap: Record<string, any> = {};
       bids.forEach((b: any) => {
         const key = b.loadId || b.auctionId || 'unknown';
+        const status = String(b.status || '').toUpperCase();
         if (!loadMap[key]) {
           loadMap[key] = {
             title: b.load?.title || b.auction?.load?.title || `Load ${String(key).slice(0, 6)}`,
@@ -202,19 +209,26 @@ export function useBidAnalyticsQuery() {
           };
         }
         loadMap[key].totalBids++;
-        if (b.status === 'ACCEPTED' || b.status === 'WON') {
+        if (wonStatuses.has(status)) {
           loadMap[key].finalPrice = Number(b.amount);
+          loadMap[key].status = b.status;
         }
       });
+
+      const topPerformingLoads = Object.values(loadMap)
+        .sort((a: any, b: any) => (b.finalPrice || 0) - (a.finalPrice || 0) || b.totalBids - a.totalBids)
+        .slice(0, 5);
 
       return {
         totalBids: stats.totalBids ?? bids.length,
         successfulBids: stats.wonBids ?? successfulBids.length,
+        pendingBids: stats.pendingBids ?? pendingBids.length,
+        lostBids: stats.lostBids ?? lostBids.length,
         averageBidAmount: stats.averageBidAmount ?? avgAmount,
         totalValue: stats.totalValue ?? totalValue,
         successRate: stats.winRate ?? successRate,
         averageResponseTime: stats.averageResponseTime ?? 0,
-        topPerformingLoads: Object.values(loadMap).slice(0, 5),
+        topPerformingLoads,
         bidTrends: stats.trends || [],
       };
     },

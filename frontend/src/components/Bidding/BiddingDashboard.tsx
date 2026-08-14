@@ -159,7 +159,12 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         </nav>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[400px]">
+      <div className={cn(
+        "min-h-[400px]",
+        activeTab === 'analytics'
+          ? ""
+          : "bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm"
+      )}>
         {activeTab === 'my-auctions' && <MyAuctions />}
         {activeTab === 'create' && canCreateAuction && <CreateAuction />}
         {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
@@ -237,7 +242,12 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         </nav>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[400px]">
+      <div className={cn(
+        "min-h-[400px]",
+        activeTab === 'analytics'
+          ? ""
+          : "bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm"
+      )}>
         {activeTab === 'auctions' && (
           canViewAuctions ? (
             <AuctionList userRole={userRole} />
@@ -287,7 +297,12 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         </nav>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[400px]">
+      <div className={cn(
+        "min-h-[400px]",
+        activeTab === 'analytics'
+          ? ""
+          : "bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm"
+      )}>
         {activeTab === 'all-bids' && <BidHistory userRole={userRole} />}
         {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
       </div>
