@@ -37,6 +37,7 @@ import FleetFormStepper from './FleetFormStepper';
 import { SafetyManagement } from './SafetyManagement';
 import FleetAssignmentManager from './FleetAssignmentManager';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigationPermissions } from '@/hooks/useNavigationPermissions';
 import DashboardHeader from '@/components/Layout/DashboardHeader';
 import DashboardFooter from '@/components/Layout/DashboardFooter';
 import 'leaflet/dist/leaflet.css';
@@ -94,6 +95,7 @@ export const FleetDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoading: authLoading, accessToken } = useAuth();
+  const navPerms = useNavigationPermissions();
   const { tSync } = useTranslation();
   const layoutContext = useCargoOwnerLayout();
   const { setHideHeader } = layoutContext || {};
@@ -133,7 +135,21 @@ export const FleetDashboard: React.FC = () => {
     'FLEET_SAFETY_OFFICER': ['overview', 'trucks', 'drivers', 'safety', 'analytics'],
   };
 
-  const allowedTabs = rolePermissions[user?.role || ''] || ['overview', 'trucks', 'drivers'];
+  const roleTabs = rolePermissions[user?.role || ''] || ['overview', 'trucks', 'drivers'];
+  const allowedTabs = roleTabs.filter((tab) => {
+    if (tab === 'bids') return navPerms.canAccessBidding;
+    if (tab === 'matches') return navPerms.canUseSmartMatching;
+    if (tab === 'trucks') return navPerms.canAccessFleetManagement;
+    if (tab === 'drivers') return navPerms.canAccessDrivers;
+    if (tab === 'financial' || tab === 'expenses' || tab === 'credits' || tab === 'loans') {
+      return navPerms.canAccessFinancial || navPerms.canManageLoans;
+    }
+    if (tab === 'routes') return navPerms.canAccessRoutes;
+    if (tab === 'fuel') return navPerms.canAccessFuel;
+    if (tab === 'analytics') return navPerms.canAccessAnalytics;
+    if (tab === 'safety') return navPerms.canAccessSafety;
+    return true;
+  });
   // ───────────────────────────────────────────────────────────────────────────
 
   // Sync activeTab with URL
@@ -679,7 +695,14 @@ export const FleetDashboard: React.FC = () => {
                   </div>
                 )}
                 {activeTab === 'bids' ? (
-                  <BiddingDashboard userRole={user?.role === 'TRUCK_OWNER' ? 'TRUCK_OWNER' : 'CARGO_OWNER'} />
+                  navPerms.canAccessBidding ? (
+                    <BiddingDashboard userRole={user?.role === 'TRUCK_OWNER' ? 'TRUCK_OWNER' : 'CARGO_OWNER'} />
+                  ) : (
+                    <div className="p-16 text-center space-y-2">
+                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Bidding access denied</p>
+                      <p className="text-xs text-slate-500">You do not have permission to view auctions or place bids.</p>
+                    </div>
+                  )
                 ) : activeTab === 'analytics' ? (
                   <TruckAnalytics 
                     trucks={trucks} 
@@ -737,10 +760,10 @@ export const FleetDashboard: React.FC = () => {
           {/* Sticky Right-Side Quick Actions */}
           <div className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[90]">
             {[
-              { id: 'financial', icon: CreditCard, label: 'Finance', path: '/dashboard/fleet/financial' },
-              { id: 'matches', icon: Zap, label: 'Matches', path: '/dashboard/fleet?tab=matches' },
-              { id: 'bids', icon: ClipboardList, label: 'Bidding', path: '/dashboard/fleet/bids' },
-            ].map((action) => {
+              { id: 'financial', icon: CreditCard, label: 'Finance', path: '/dashboard/fleet/financial', show: navPerms.canAccessFinancial },
+              { id: 'matches', icon: Zap, label: 'Matches', path: '/dashboard/fleet?tab=matches', show: navPerms.canUseSmartMatching },
+              { id: 'bids', icon: ClipboardList, label: 'Bidding', path: '/dashboard/fleet/bids', show: navPerms.canAccessBidding },
+            ].filter((a) => a.show).map((action) => {
               const isActive = (action.id === 'bids' && location.pathname.includes('/fleet/bids')) ||
                                (activeTab === action.id);
               return (

@@ -24,6 +24,7 @@ import receiverService from "@/services/receiverService";
 import EnhancedCargoForm from "../create/components/form";
 import BiddingDashboard from "@/components/Bidding/BiddingDashboard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigationPermissions } from "@/hooks/useNavigationPermissions";
 import LoadItem from "./components/loadItem";
 import { ReceiverAssignmentModal } from "./components/ReceiverAssignmentModal";
 import TemplateSelectionModal from "../create/components/TemplateSelectionModal";
@@ -46,6 +47,7 @@ type TabType = "all" | "active" | "drafts" | "broker-managed" | "create" | "temp
 
 const UnifiedCargoManagement = () => {
   const { user } = useAuth();
+  const navPerms = useNavigationPermissions();
   const { format: formatCurrency } = useCurrencyFormat();
   const location = useLocation();
   const navigate = useNavigate();
@@ -786,7 +788,12 @@ const UnifiedCargoManagement = () => {
       icon: Gavel,
     }] : []),
   // Receivers only see the list — no create/template/bidding tabs
-  ].filter(tab => isReceiver ? (tab.id === 'all' || tab.id === 'active') : true);
+  ].filter(tab => {
+    if (isReceiver) return tab.id === 'all' || tab.id === 'active';
+    if (tab.id === 'create' || tab.id === 'template') return navPerms.canCreateCargo;
+    if (tab.id === 'bidding') return navPerms.canAccessBidding;
+    return true;
+  });
 
   return (
     <>

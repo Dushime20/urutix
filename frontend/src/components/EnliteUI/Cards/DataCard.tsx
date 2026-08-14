@@ -51,11 +51,11 @@ export const DataCard: React.FC<DataCardProps> = ({
               </div>
             )}
             <div>
-              <h3 className={`text-lg font-bold ${isGradient ? 'text-white' : 'text-gray-900 dark:text-slate-100'}`}>
+              <h3 className={`ui-card-title ${isGradient ? 'text-white' : 'text-gray-900 dark:text-slate-100'}`}>
                 {title}
               </h3>
               {subtitle && (
-                <p className={`text-sm mt-1 ${isGradient ? 'text-white/80' : 'text-gray-600 dark:text-slate-400'}`}>
+                <p className={`ui-body-small mt-1 ${isGradient ? 'text-white/80' : 'text-gray-600 dark:text-slate-400'}`}>
                   {subtitle}
                 </p>
               )}

@@ -57,6 +57,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { EnhancedRateLimitGuard } from '../guards/enhanced-rate-limit.guard';
 import { ApiResponseDto } from '../../../common/dto/api-response.dto';
 import { Request } from 'express';
+import { Public } from '../../../common/decorators/public.decorator';
 
 @ApiTags('Enhanced Authentication')
 @Controller('auth')
@@ -70,6 +71,7 @@ export class EnhancedAuthController {
     private readonly capabilityService: CapabilityService,
   ) { }
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(EnhancedRateLimitGuard)
@@ -157,6 +159,7 @@ export class EnhancedAuthController {
     }
   }
 
+  @Public()
   @Post('select-role')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -201,6 +204,7 @@ export class EnhancedAuthController {
     }
   }
 
+  @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

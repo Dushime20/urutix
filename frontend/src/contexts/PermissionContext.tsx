@@ -125,12 +125,24 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
 
     useEffect(() => {
         fetchPermissions();
-        // Poll periodically so Super Admin kill-switches apply without logout
         if (!user) return;
+
         const interval = window.setInterval(() => {
             fetchPermissions();
-        }, 60_000);
-        return () => window.clearInterval(interval);
+        }, 20_000);
+
+        const onFocus = () => {
+            fetchPermissions();
+        };
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') onFocus();
+        });
+
+        return () => {
+            window.clearInterval(interval);
+            window.removeEventListener('focus', onFocus);
+        };
     }, [user?.id]);
 
     const isFeatureEnabled = (permission: string): boolean => {

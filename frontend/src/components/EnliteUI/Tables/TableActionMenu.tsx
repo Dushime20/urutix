@@ -110,7 +110,7 @@ export function TableActionMenu<T = any>({
                     setOpen(false);
                     action.onClick(row);
                   }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${VARIANT_TEXT[action.variant || 'default']}`}
+                  className={`w-full flex items-center gap-2 px-3 py-2 ui-body-small text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${VARIANT_TEXT[action.variant || 'default']}`}
                 >
                   {action.icon && <span className="w-3.5 h-3.5 flex-shrink-0">{action.icon}</span>}
                   {action.label}

@@ -353,7 +353,7 @@ export function StandardDataTable<T = any>({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={searchPlaceholder}
                 aria-label={searchPlaceholder}
-                className="w-full pl-9 pr-9 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-shadow"
+                className="w-full pl-9 pr-9 py-2 ui-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30 focus:border-[#345E85] transition-shadow"
               />
               {search && (
                 <button
@@ -376,7 +376,7 @@ export function StandardDataTable<T = any>({
               type="button"
               onClick={() => setShowFilters((v) => !v)}
               aria-expanded={showFilters}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl ui-button border transition-colors ${
                 showFilters || activeFilterCount > 0
                   ? 'bg-[#345E85]/10 border-[#345E85]/30 text-[#345E85] dark:text-blue-300'
                   : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -398,7 +398,7 @@ export function StandardDataTable<T = any>({
                 onClick={() => setShowColumns((v) => !v)}
                 aria-expanded={showColumns}
                 aria-haspopup="true"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl ui-button border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 <Columns className="w-3.5 h-3.5" />
                 Columns
@@ -410,7 +410,7 @@ export function StandardDataTable<T = any>({
                     role="menu"
                     className="absolute right-0 mt-1.5 z-50 w-56 py-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl"
                   >
-                    <p className="px-3 pb-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <p className="px-3 pb-1.5 ui-label mb-0 text-slate-400">
                       Toggle columns
                     </p>
                     {columns
@@ -420,7 +420,7 @@ export function StandardDataTable<T = any>({
                         return (
                           <label
                             key={col.key}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 ui-body-small text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
                           >
                             <input
                               type="checkbox"
@@ -458,7 +458,7 @@ export function StandardDataTable<T = any>({
             <button
               type="button"
               onClick={onExport}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-[#345E85] hover:bg-[#2c5173] text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl ui-button bg-[#345E85] hover:bg-[#2c5173] text-white transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               {exportLabel}
@@ -471,11 +471,11 @@ export function StandardDataTable<T = any>({
         <div className="flex flex-wrap gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
           {filters.map((f) => (
             <label key={f.key} className="flex flex-col gap-1 min-w-[140px]">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{f.label}</span>
+              <span className="ui-label mb-0 text-slate-400">{f.label}</span>
               <select
                 value={filterState[f.key] ?? f.allValue ?? 'all'}
                 onChange={(e) => setFilter(f.key, e.target.value)}
-                className="px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+                className="px-3 py-2 ui-input bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
               >
                 <option value={f.allValue ?? 'all'}>All</option>
                 {f.options.map((opt) => (
@@ -490,7 +490,7 @@ export function StandardDataTable<T = any>({
               onClick={() => {
                 filters.forEach((f) => setFilter(f.key, f.allValue ?? 'all'));
               }}
-              className="self-end text-xs font-bold text-[#345E85] dark:text-blue-400 hover:underline px-2 py-2"
+              className="self-end ui-button text-[#345E85] dark:text-blue-400 hover:underline px-2 py-2"
             >
               Clear filters
             </button>
@@ -500,13 +500,13 @@ export function StandardDataTable<T = any>({
 
       {selectable && selectedIds.length > 0 && (
         <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[#345E85]/10 border border-[#345E85]/20 text-sm">
-          <span className="text-xs font-bold text-[#345E85] dark:text-blue-300">
+          <span className="ui-button text-[#345E85] dark:text-blue-300">
             {selectedIds.length} selected
           </span>
           <button
             type="button"
             onClick={() => handleSelectionChange([])}
-            className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+            className="ui-body-small text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
           >
             Clear selection
           </button>
@@ -517,13 +517,13 @@ export function StandardDataTable<T = any>({
 
   const paginationBar = pagination && total > 0 && (
     <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+      <div className="flex items-center gap-2 ui-body-small text-slate-500 dark:text-slate-400">
         <span className="font-medium">Rows per page</span>
         <select
           value={pageSize}
           onChange={(e) => setPageSize(Number(e.target.value))}
           aria-label="Rows per page"
-          className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
+          className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 ui-input text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/30"
         >
           {pageSizeOptions.map((n) => (
             <option key={n} value={n}>{n}</option>
@@ -552,7 +552,7 @@ export function StandardDataTable<T = any>({
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="px-3 text-xs font-bold text-slate-600 dark:text-slate-300 tabular-nums">
+        <span className="px-3 ui-button text-slate-600 dark:text-slate-300 tabular-nums">
           {safePage} / {totalPages}
         </span>
         <button

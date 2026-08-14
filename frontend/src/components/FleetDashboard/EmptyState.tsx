@@ -81,16 +81,16 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <div className={`p-6 rounded-full ${colorClasses[config.color as keyof typeof colorClasses]} mb-4`}>
         <IconComponent className="w-12 h-12" />
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+      <h3 className="ui-section-title normal-case text-gray-900 dark:text-white mb-2">
         <TranslatedText text={title || config.defaultTitle} />
       </h3>
-      <p className="text-gray-600 dark:text-slate-300 text-center max-w-md mb-6">
+      <p className="ui-body font-medium text-gray-600 dark:text-slate-300 text-center max-w-md mb-6">
         <TranslatedText text={description || config.defaultDescription} />
       </p>
       {onAction && (
         <button
           onClick={onAction}
-          className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 font-medium shadow-lg"
+          className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2 ui-button shadow-lg"
         >
           <FaPlus className="w-4 h-4" />
           <TranslatedText text={actionLabel || config.defaultActionLabel} />

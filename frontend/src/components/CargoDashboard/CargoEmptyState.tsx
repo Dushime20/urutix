@@ -20,16 +20,16 @@ export const CargoEmptyState: React.FC<EmptyStateProps> = ({ onCreateCargo }) =>
                 </div>
 
                 {/* Welcome Message */}
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                <h2 className="ui-page-title mb-3">
                     Welcome to Your Cargo Dashboard! 📦
                 </h2>
-                <p className="text-lg text-gray-600 mb-8">
+                <p className="ui-body font-medium text-gray-600 mb-8">
                     Get started by creating your first cargo shipment. It only takes a few minutes!
                 </p>
 
                 {/* Quick Start Guide */}
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-8">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-center gap-2">
+                    <h3 className="ui-card-title mb-4 flex items-center justify-center gap-2">
                         <Zap className="w-5 h-5 text-blue-600" />
                         Quick Start Guide
                     </h3>
@@ -38,22 +38,22 @@ export const CargoEmptyState: React.FC<EmptyStateProps> = ({ onCreateCargo }) =>
                             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
                                 <span className="text-xl font-bold text-blue-600">1</span>
                             </div>
-                            <h4 className="font-semibold text-gray-900 mb-1">Create Cargo</h4>
-                            <p className="text-sm text-gray-600">Add cargo details, pickup & delivery locations</p>
+                            <h4 className="ui-body text-gray-900 mb-1">Create Cargo</h4>
+                            <p className="ui-caption text-gray-600">Add cargo details, pickup & delivery locations</p>
                         </div>
                         <div className="bg-white rounded-lg p-4 shadow-sm">
                             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-3">
                                 <span className="text-xl font-bold text-green-600">2</span>
                             </div>
-                            <h4 className="font-semibold text-gray-900 mb-1">Publish & Get Bids</h4>
-                            <p className="text-sm text-gray-600">Publish to marketplace and receive competitive bids</p>
+                            <h4 className="ui-body text-gray-900 mb-1">Publish & Get Bids</h4>
+                            <p className="ui-caption text-gray-600">Publish to marketplace and receive competitive bids</p>
                         </div>
                         <div className="bg-white rounded-lg p-4 shadow-sm">
                             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
                                 <span className="text-xl font-bold text-purple-600">3</span>
                             </div>
-                            <h4 className="font-semibold text-gray-900 mb-1">Track & Deliver</h4>
-                            <p className="text-sm text-gray-600">Monitor shipment progress in real-time</p>
+                            <h4 className="ui-body text-gray-900 mb-1">Track & Deliver</h4>
+                            <p className="ui-caption text-gray-600">Monitor shipment progress in real-time</p>
                         </div>
                     </div>
                 </div>
@@ -62,13 +62,13 @@ export const CargoEmptyState: React.FC<EmptyStateProps> = ({ onCreateCargo }) =>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
                     <button
                         onClick={onCreateCargo}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all transform hover:scale-105"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl ui-button shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all transform hover:scale-105"
                     >
                         <Plus className="w-5 h-5" />
                         CREATE YOUR FIRST CARGO
                     </button>
                     <button
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-all"
+        <p className="ui-caption text-gray-600">{item}</p>
                     >
                         <FileText className="w-5 h-5" />
                         View Documentation
@@ -82,8 +82,8 @@ export const CargoEmptyState: React.FC<EmptyStateProps> = ({ onCreateCargo }) =>
                             <TrendingUp className="w-4 h-4 text-green-600" />
                         </div>
                         <div>
-                            <h4 className="font-semibold text-gray-900 text-sm mb-1">Real-time Tracking</h4>
-                            <p className="text-xs text-gray-600">Monitor your shipments 24/7</p>
+                            <h4 className="ui-body text-gray-900 mb-1">Real-time Tracking</h4>
+                            <p className="ui-caption text-gray-600">Monitor your shipments 24/7</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-3 p-4 bg-white rounded-lg border border-gray-200">
@@ -91,8 +91,8 @@ export const CargoEmptyState: React.FC<EmptyStateProps> = ({ onCreateCargo }) =>
                             <Package className="w-4 h-4 text-blue-600" />
                         </div>
                         <div>
-                            <h4 className="font-semibold text-gray-900 text-sm mb-1">Smart Matching</h4>
-                            <p className="text-xs text-gray-600">AI-powered carrier matching</p>
+                            <h4 className="ui-body text-gray-900 mb-1">Smart Matching</h4>
+                            <p className="ui-caption text-gray-600">AI-powered carrier matching</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-3 p-4 bg-white rounded-lg border border-gray-200">
@@ -100,8 +100,8 @@ export const CargoEmptyState: React.FC<EmptyStateProps> = ({ onCreateCargo }) =>
                             <Zap className="w-4 h-4 text-purple-600" />
                         </div>
                         <div>
-                            <h4 className="font-semibold text-gray-900 text-sm mb-1">Instant Quotes</h4>
-                            <p className="text-xs text-gray-600">Get competitive bids instantly</p>
+                            <h4 className="ui-body text-gray-900 mb-1">Instant Quotes</h4>
+                            <p className="ui-caption text-gray-600">Get competitive bids instantly</p>
                         </div>
                     </div>
                 </div>

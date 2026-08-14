@@ -20,6 +20,7 @@ import InactiveAuctions from './InactiveAuctions';
 import { cn } from '@/utils/cn';
 import { useLocation } from 'react-router-dom';
 import { queryKeys } from '@/lib/queryKeys';
+import { useNavigationPermissions } from '../../hooks/useNavigationPermissions';
 
 interface BiddingDashboardProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN';
@@ -27,6 +28,13 @@ interface BiddingDashboardProps {
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const location = useLocation();
+  const {
+    canAccessBidding,
+    canViewAuctions,
+    canCreateAuction,
+    canManageBids,
+    isLoading: permsLoading,
+  } = useNavigationPermissions();
   const [activeTab, setActiveTab] = useState(
     userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
       ? 'all-bids' 
@@ -64,10 +72,31 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     }
   }, [location.search]);
 
+  useEffect(() => {
+    if (permsLoading) return;
+    if (userRole === 'TRUCK_OWNER' && activeTab === 'auctions' && !canViewAuctions) {
+      setActiveTab('bids');
+    }
+    if (userRole === 'CARGO_OWNER' && activeTab === 'create' && !canCreateAuction) {
+      setActiveTab('my-auctions');
+    }
+  }, [permsLoading, userRole, activeTab, canViewAuctions, canCreateAuction]);
+
+  if (!permsLoading && !canAccessBidding) {
+    return (
+      <div className="rounded-3xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center space-y-2">
+        <AlertCircle className="mx-auto text-slate-400" size={28} />
+        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No bidding permissions</p>
+        <p className="text-xs text-slate-500">Contact an administrator if you need access to auctions or bids.</p>
+      </div>
+    );
+  }
+
   const renderCargoOwnerTabs = () => (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-between items-center bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full overflow-hidden">
         <nav className="flex items-center gap-1 sm:gap-2 p-1 overflow-x-auto scrollbar-hide w-full">
+          {(canManageBids || canCreateAuction || canViewAuctions) && (
           <button
             onClick={() => setActiveTab('my-auctions')}
             className={cn(
@@ -86,6 +115,8 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
               {stats.totalAuctions}
             </span>
           </button>
+          )}
+          {canCreateAuction && (
           <button
             onClick={() => setActiveTab('create')}
             className={cn(
@@ -98,6 +129,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             <PlusCircle size={14} />
             Create
           </button>
+          )}
           <button
             onClick={() => setActiveTab('analytics')}
             className={cn(
@@ -110,6 +142,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             <BarChart3 size={14} />
             Analytics
           </button>
+          {(canManageBids || canCreateAuction) && (
           <button
             onClick={() => setActiveTab('inactive')}
             className={cn(
@@ -122,12 +155,13 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             <HistoryIcon size={14} />
             Inactive
           </button>
+          )}
         </nav>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[400px]">
         {activeTab === 'my-auctions' && <MyAuctions />}
-        {activeTab === 'create' && <CreateAuction />}
+        {activeTab === 'create' && canCreateAuction && <CreateAuction />}
         {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
         {activeTab === 'inactive' && <InactiveAuctions />}
       </div>
@@ -138,6 +172,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-between items-center bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full overflow-hidden">
         <nav className="flex items-center gap-1 sm:gap-2 p-1 overflow-x-auto scrollbar-hide w-full">
+          {canViewAuctions && (
           <button
             onClick={() => setActiveTab('auctions')}
             className={cn(
@@ -156,6 +191,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
               {stats.totalAuctions}
             </span>
           </button>
+          )}
           <button
             onClick={() => setActiveTab('bids')}
             className={cn(
@@ -202,7 +238,17 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[400px]">
-        {activeTab === 'auctions' && <AuctionList userRole={userRole} />}
+        {activeTab === 'auctions' && (
+          canViewAuctions ? (
+            <AuctionList userRole={userRole} />
+          ) : (
+            <div className="py-16 text-center space-y-2">
+              <AlertCircle className="mx-auto text-slate-400" size={28} />
+              <p className="text-sm font-bold text-slate-700">Cannot view auctions</p>
+              <p className="text-xs text-slate-500">Your account does not have the auctions:view permission.</p>
+            </div>
+          )
+        )}
         {activeTab === 'bids' && <BidHistory userRole={userRole} />}
         {activeTab === 'accepted' && <BidHistory userRole={userRole} initialStatusFilter="ACCEPTED" />}
         {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}

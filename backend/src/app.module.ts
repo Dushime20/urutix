@@ -41,6 +41,7 @@ import { DisputesModule }          from './modules/disputes/disputes.module';
 import { DocumentModule }          from './modules/documents/document.module';
 import { DriverModule }            from './modules/drivers/driver.module';
 import { EnhancedAuthModule }      from './modules/auth/enhanced-auth.module';
+import { UserPermissionOverrideInterceptor } from './modules/auth/interceptors/user-permission-override.interceptor';
 import { EventsModule }            from './modules/events/events.module';
 import { FileUploadModule }        from './modules/file-upload/file-upload.module';
 import { FinancialModule }         from './modules/financial/financial.module';
@@ -144,6 +145,10 @@ import { UsersModule }             from './modules/users/users.module';
   providers: [
     AppService,
     ActivityLogService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserPermissionOverrideInterceptor,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: ActivityLoggingInterceptor,

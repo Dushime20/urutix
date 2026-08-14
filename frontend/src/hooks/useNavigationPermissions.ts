@@ -2,188 +2,242 @@ import { useMemo } from 'react';
 import { usePermission } from '../contexts/PermissionContext';
 import { useAuth } from '../contexts/AuthContext';
 
+/**
+ * Navigation / feature access derived from effective capabilities
+ * (role defaults + per-user grants/denies − feature kill-switches).
+ *
+ * After permissions load, role is NOT used as an OR bypass — otherwise
+ * denying auctions:view (etc.) would still show bidding to TRUCK_OWNER.
+ * While loading, role is used only as a temporary UX fallback.
+ */
 export const useNavigationPermissions = () => {
-  const { hasPermission, hasAnyPermission, isFeatureEnabled } = usePermission();
+  const { hasPermission, hasAnyPermission, isFeatureEnabled, isLoading, permissions } =
+    usePermission();
   const { user } = useAuth();
 
   return useMemo(() => {
-    // Dashboard access
-    const canAccessDashboard = hasAnyPermission([
-      'dashboard:view',
-      'dashboard:access'
-    ]) || user?.role !== undefined;
+    const role = user?.role;
+    const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'TENANT_ADMIN';
+    // Trust capability set once fetch finished (even if empty = fully denied)
+    const trustCaps = !isLoading;
 
-    // Cargo Management
-    const canAccessCargoManagement = hasAnyPermission([
-      'cargo:view',
-      'cargo:manage',
-      'cargo:create'
-    ]) || user?.role === 'CARGO_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const allow = (codes: string[], roleFallback: boolean) => {
+      if (trustCaps) return hasAnyPermission(codes);
+      return roleFallback;
+    };
+
+    const allowAndFeature = (
+      codes: string[],
+      featureCodes: string[],
+      roleFallback: boolean,
+    ) => {
+      const capsOk = allow(codes, roleFallback);
+      const featureOk = featureCodes.some((c) => isFeatureEnabled(c));
+      return capsOk && featureOk;
+    };
+
+    const canAccessDashboard =
+      allow(['dashboard:view', 'dashboard:access'], !!role) || !!role;
+
+    const canAccessCargoManagement = allow(
+      ['cargo:view', 'cargo:view_own', 'cargo:create', 'cargo:edit'],
+      role === 'CARGO_OWNER' || isAdmin,
+    );
 
     const canCreateCargo =
-      (hasPermission('cargo:create') || user?.role === 'CARGO_OWNER') &&
-      isFeatureEnabled('cargo:create');
+      (trustCaps
+        ? hasPermission('cargo:create')
+        : role === 'CARGO_OWNER' || isAdmin) && isFeatureEnabled('cargo:create');
 
-    // Fleet Management
-    const canAccessFleetManagement = hasAnyPermission([
-      'fleet:view',
-      'fleet:manage',
-      'truck:view'
-    ]) || user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const canAccessFleetManagement = allow(
+      ['fleet:view', 'fleet:view_own', 'fleet:create', 'fleet:edit'],
+      role === 'TRUCK_OWNER' || role === 'FLEET_OWNER' || isAdmin,
+    );
 
-    const canManageFleet = hasPermission('fleet:manage') || user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER';
+    const canManageFleet = allow(
+      ['fleet:create', 'fleet:edit', 'fleet:delete', 'fleet:assign_driver'],
+      role === 'TRUCK_OWNER' || role === 'FLEET_OWNER' || isAdmin,
+    );
 
-    // Driver Management
-    const canAccessDrivers = hasAnyPermission([
-      'driver:view',
-      'driver:manage'
-    ]) || user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const canAccessDrivers = allow(
+      ['drivers:view', 'drivers:view_own', 'drivers:create', 'drivers:edit'],
+      role === 'TRUCK_OWNER' || role === 'FLEET_OWNER' || isAdmin,
+    );
 
-    // Bidding — respect global kill switch even when role fallback applies
-    const canAccessBidding =
-      (hasAnyPermission([
+    // Bidding hub: need view/manage capability (create alone is not enough to browse auctions)
+    const canAccessBidding = allowAndFeature(
+      [
+        'auctions:view',
+        'auctions:create',
+        'auctions:manage',
         'bids:view',
-        'bids:create',
+        'bids:view_own',
+        'bids:view_history',
         'bids:manage',
-        'bid:view',
-        'bid:create',
-        'bid:manage',
-      ]) ||
-        user?.role === 'CARGO_OWNER' ||
-        user?.role === 'TRUCK_OWNER' ||
-        user?.role === 'BROKER') &&
-      (isFeatureEnabled('bids:create') ||
-        isFeatureEnabled('bids:manage') ||
-        isFeatureEnabled('auctions:create'));
+      ],
+      ['auctions:view', 'auctions:create', 'bids:manage', 'bids:view_own'],
+      role === 'CARGO_OWNER' || role === 'TRUCK_OWNER' || role === 'BROKER' || isAdmin,
+    );
+
+    const canViewAuctions =
+      (trustCaps
+        ? hasPermission('auctions:view')
+        : role === 'TRUCK_OWNER' ||
+          role === 'CARGO_OWNER' ||
+          role === 'BROKER' ||
+          isAdmin) && isFeatureEnabled('auctions:view');
+
+    const canCreateAuction =
+      (trustCaps
+        ? hasPermission('auctions:create')
+        : role === 'CARGO_OWNER' || role === 'BROKER' || isAdmin) &&
+      isFeatureEnabled('auctions:create');
 
     const canCreateBid =
-      (hasPermission('bids:create') || user?.role === 'TRUCK_OWNER') &&
-      isFeatureEnabled('bids:create');
+      (trustCaps
+        ? hasPermission('bids:create')
+        : role === 'TRUCK_OWNER' || isAdmin) && isFeatureEnabled('bids:create');
 
-    const canUseSmartMatching =
-      (hasAnyPermission(['matching:request', 'matching:view_results', 'matching:respond']) ||
-        user?.role === 'CARGO_OWNER' ||
-        user?.role === 'TRUCK_OWNER' ||
-        user?.role === 'BROKER') &&
-      (isFeatureEnabled('matching:request') ||
-        isFeatureEnabled('matching:respond') ||
-        isFeatureEnabled('matching:view_results'));
+    const canManageBids =
+      (trustCaps
+        ? hasPermission('bids:manage')
+        : role === 'CARGO_OWNER' || role === 'BROKER' || isAdmin) &&
+      isFeatureEnabled('bids:manage');
 
-    // Tracking
-    const canAccessTracking = hasAnyPermission([
-      'tracking:view',
-      'location:view'
-    ]) || user?.role === 'CARGO_OWNER' || user?.role === 'TRUCK_OWNER' || user?.role === 'DRIVER';
+    const canUseSmartMatching = allowAndFeature(
+      ['matching:request', 'matching:view_results', 'matching:respond'],
+      ['matching:request', 'matching:respond', 'matching:view_results'],
+      role === 'CARGO_OWNER' || role === 'TRUCK_OWNER' || role === 'BROKER' || isAdmin,
+    );
 
-    // Analytics
-    const canAccessAnalytics = hasAnyPermission([
-      'analytics:view',
-      'reports:view'
-    ]) || user?.role !== 'DRIVER'; // Most roles can access analytics
+    const canAccessTracking = allow(
+      ['trips:track', 'trips:view', 'trips:view_assigned'],
+      role === 'CARGO_OWNER' ||
+        role === 'TRUCK_OWNER' ||
+        role === 'DRIVER' ||
+        role === 'BROKER' ||
+        isAdmin,
+    );
 
-    // Payments
-    const canAccessPayments = hasAnyPermission([
-      'payment:view',
-      'payment:manage'
-    ]) || user?.role === 'CARGO_OWNER' || user?.role === 'TRUCK_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const canAccessAnalytics = allow(
+      [
+        'analytics:view_own',
+        'analytics:view_tenant',
+        'analytics:view_all',
+        'reports:view',
+      ],
+      role !== 'DRIVER',
+    );
 
-    // Documents
-    const canAccessDocuments = hasAnyPermission([
-      'document:view',
-      'document:manage'
-    ]); // Removed redundant || true
+    const canAccessPayments = allow(
+      ['payments:view', 'payments:view_own', 'payments:manage', 'invoices:view'],
+      role === 'CARGO_OWNER' || role === 'TRUCK_OWNER' || isAdmin,
+    );
 
-    // Notifications
-    const canAccessNotifications = true; // All users can access notifications
+    const canAccessDocuments = allow(
+      ['document:view', 'document:manage'],
+      false,
+    );
 
-    // Admin Functions
-    const canAccessAdminPanel = hasAnyPermission([
-      'admin:access',
-      'admin:view'
-    ]) || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN';
+    const canAccessNotifications = true;
 
-    const canManageUsers = hasAnyPermission([
-      'user:manage',
-      'user:update'
-    ]) || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'TENANT_ADMIN';
+    const canAccessAdminPanel = allow(
+      ['admin:access', 'admin:view', 'users:permissions.manage'],
+      isAdmin,
+    );
 
-    const canManageTenants = hasPermission('tenant:manage') || user?.role === 'SUPER_ADMIN';
+    const canManageUsers = allow(
+      ['users:view_own', 'users:permissions.manage', 'user:manage', 'user:update'],
+      isAdmin,
+    );
 
-    const canManagePermissions = hasPermission('permission:manage') || user?.role === 'SUPER_ADMIN';
+    const canManageTenants =
+      trustCaps
+        ? hasPermission('tenant:manage')
+        : role === 'SUPER_ADMIN';
 
-    // Broker Functions
-    const canAccessBrokerPanel = hasAnyPermission([
-      'broker:access',
-      'broker:view'
-    ]) || user?.role === 'BROKER';
+    const canManagePermissions =
+      trustCaps
+        ? hasAnyPermission(['permission:manage', 'users:permissions.manage'])
+        : role === 'SUPER_ADMIN';
 
-    const canAccessMarketIntelligence = hasPermission('market:view') || user?.role === 'BROKER' || user?.role === 'ADMIN';
+    const canAccessBrokerPanel = allow(
+      ['brokers:view', 'brokers:assign', 'bids:manage'],
+      role === 'BROKER',
+    );
 
-    const canManageDisputes = hasAnyPermission([
-      'dispute:manage',
-      'dispute:view'
-    ]) || user?.role === 'BROKER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const canAccessMarketIntelligence = allow(
+      ['market:view', 'analytics:view_own'],
+      role === 'BROKER' || isAdmin,
+    );
 
-    // Lender Functions
-    const canAccessLenderPanel = hasAnyPermission([
-      'lender:access',
-      'lender:view'
-    ]) || user?.role === 'LENDER';
+    const canManageDisputes = allow(
+      ['dispute:manage', 'dispute:view'],
+      role === 'BROKER' || isAdmin,
+    );
 
-    const canManageLoans =
-      (hasAnyPermission(['loan:manage', 'loan:view', 'lending:approve', 'lending:create_request']) ||
-        user?.role === 'LENDER' ||
-        user?.role === 'CARGO_OWNER') &&
-      (isFeatureEnabled('lending:approve') || isFeatureEnabled('lending:create_request'));
+    const canAccessLenderPanel = allow(
+      ['lending:view', 'lending:approve', 'lending:policies'],
+      role === 'LENDER',
+    );
 
-    // Financial Management
-    const canAccessFinancial = hasAnyPermission([
-      'financial:view',
-      'financial:manage'
-    ]) || user?.role === 'TRUCK_OWNER' || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    const canManageLoans = allowAndFeature(
+      ['loan:manage', 'loan:view', 'lending:approve', 'lending:create_request', 'lending:view_own'],
+      ['lending:approve', 'lending:create_request'],
+      role === 'LENDER' || role === 'CARGO_OWNER' || role === 'TRUCK_OWNER',
+    );
 
-    // Route Management
-    const canAccessRoutes = hasAnyPermission([
-      'route:view',
-      'route:manage'
-    ]) || user?.role === 'TRUCK_OWNER' || user?.role === 'ADMIN' || user?.role === 'TENANT_ADMIN';
+    const canAccessFinancial = allow(
+      ['payments:view', 'payments:view_own', 'invoices:view', 'financial:view'],
+      role === 'TRUCK_OWNER' || role === 'CARGO_OWNER' || isAdmin,
+    );
 
-    // Trip Management
-    const canAccessTrips = hasAnyPermission([
-      'trip:view',
-      'trip:manage',
-      'trips:start',
-      'trips:complete'
-    ]) || user?.role === 'DRIVER' || user?.role === 'TRUCK_OWNER' || user?.role === 'CARGO_OWNER';
+    const canAccessRoutes = allow(
+      ['route:view', 'route:manage', 'fleet:view'],
+      role === 'TRUCK_OWNER' || isAdmin,
+    );
+
+    const canAccessTrips = allow(
+      [
+        'trips:view',
+        'trips:view_assigned',
+        'trips:start',
+        'trips:complete',
+        'trips:assign_driver',
+      ],
+      role === 'DRIVER' ||
+        role === 'TRUCK_OWNER' ||
+        role === 'CARGO_OWNER' ||
+        isAdmin,
+    );
 
     const canStartTrip =
-      (hasPermission('trips:start') ||
-        user?.role === 'DRIVER' ||
-        user?.role === 'TRUCK_OWNER') &&
+      (trustCaps
+        ? hasPermission('trips:start')
+        : role === 'DRIVER' || role === 'TRUCK_OWNER') &&
       isFeatureEnabled('trips:start');
 
-    // Safety & Compliance
-    const canAccessSafety = hasAnyPermission([
-      'safety:view',
-      'safety:manage'
-    ]) || user?.role === 'DRIVER' || user?.role === 'TRUCK_OWNER' || user?.role === 'ADMIN';
+    const canAccessSafety = allow(
+      ['safety:view', 'safety:manage'],
+      role === 'DRIVER' || role === 'TRUCK_OWNER' || isAdmin,
+    );
 
-    // Maintenance
-    const canAccessMaintenance = hasAnyPermission([
-      'maintenance:view',
-      'maintenance:manage'
-    ]) || user?.role === 'TRUCK_OWNER' || user?.role === 'DRIVER';
+    const canAccessMaintenance = allow(
+      ['maintenance:view', 'maintenance:manage', 'fleet:edit'],
+      role === 'TRUCK_OWNER' || role === 'DRIVER',
+    );
 
-    // Fuel Management
-    const canAccessFuel = hasAnyPermission([
-      'fuel:view',
-      'fuel:manage'
-    ]) || user?.role === 'TRUCK_OWNER' || user?.role === 'DRIVER';
+    const canAccessFuel = allow(
+      ['fuel:view', 'fuel:manage', 'fleet:view'],
+      role === 'TRUCK_OWNER' || role === 'DRIVER',
+    );
 
-    // Settings
-    const canAccessSettings = true; // All users can access their own settings
+    const canAccessSettings = true;
 
     return {
+      isLoading,
+      permissionsLoaded: trustCaps,
+      permissionCount: permissions.length,
       canAccessDashboard,
       canAccessCargoManagement,
       canCreateCargo,
@@ -191,7 +245,10 @@ export const useNavigationPermissions = () => {
       canManageFleet,
       canAccessDrivers,
       canAccessBidding,
+      canViewAuctions,
+      canCreateAuction,
       canCreateBid,
+      canManageBids,
       canUseSmartMatching,
       canAccessTracking,
       canAccessAnalytics,
@@ -216,5 +273,12 @@ export const useNavigationPermissions = () => {
       canAccessFuel,
       canAccessSettings,
     };
-  }, [hasPermission, hasAnyPermission, isFeatureEnabled, user?.role]);
+  }, [
+    hasPermission,
+    hasAnyPermission,
+    isFeatureEnabled,
+    isLoading,
+    permissions.length,
+    user?.role,
+  ]);
 };

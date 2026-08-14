@@ -36,12 +36,12 @@ const AdminPageLayout: React.FC<AdminPageLayoutProps> = ({
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
                                 <div>
                                     {title && (
-                                        <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                        <h1 className="ui-page-title">
                                             {title}
                                         </h1>
                                     )}
                                     {description && (
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 normal-case">
+                                        <p className="ui-body-small mt-1 normal-case">
                                             {description}
                                         </p>
                                     )}

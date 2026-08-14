@@ -1,7 +1,9 @@
 import { Controller, Get, Logger } from '@nestjs/common';
+import { Public } from '../../common/decorators/public.decorator';
 import { ConfigService } from '@nestjs/config';
 import { SystemSettingsService } from '../../services/system-settings.service';
 
+@Public()
 @Controller('settings/public')
 export class PublicSettingsController {
   private readonly logger = new Logger(PublicSettingsController.name);

@@ -22,9 +22,9 @@ const variantClasses = {
 };
 
 const sizeClasses = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-base',
-  lg: 'px-6 py-3 text-lg',
+  sm: 'px-3 py-1.5 ui-button',
+  md: 'px-4 py-2.5 ui-button',
+  lg: 'px-4 py-2 text-sm font-bold normal-case tracking-normal',
 };
 
 export const Button: React.FC<ButtonProps> = ({
@@ -40,7 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
   onClick,
   ...props
 }) => {
-  const baseClasses = 'font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'rounded-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed';
   const variantClass = variantClasses[variant];
   const sizeClass = sizeClasses[size];
   const widthClass = fullWidth ? 'w-full' : '';

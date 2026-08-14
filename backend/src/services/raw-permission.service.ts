@@ -350,6 +350,37 @@ export class PermissionService {
     }
 
     /**
+     * True when admin set an explicit per-user DENY (is_granted=false) for any listed code.
+     * Role fallback must NOT bypass these.
+     */
+    async hasExplicitDenyForAny(userId: string, permissionCodes: string[]): Promise<string | null> {
+        if (!permissionCodes?.length) return null;
+        const userPerms = await this.getUserSpecificPermissions(userId);
+        const denied = new Set(userPerms.denied.map((p) => this.normalizePermissionCode(p)));
+        for (const raw of permissionCodes) {
+            const code = this.normalizePermissionCode(raw);
+            if (denied.has(code)) return code;
+        }
+        return null;
+    }
+
+    /** True when admin assigned any per-user grant or deny override */
+    async userHasPermissionOverrides(userId: string): Promise<boolean> {
+        const userPerms = await this.getUserSpecificPermissions(userId);
+        return userPerms.granted.length > 0 || userPerms.denied.length > 0;
+    }
+
+    private normalizePermissionCode(permission: string): string {
+        if (!permission) return '';
+        if (permission.includes(':')) return permission.trim();
+        if (permission.includes('.')) {
+            const [resource, ...rest] = permission.split('.');
+            return `${resource.trim()}:${rest.join('.').trim()}`;
+        }
+        return permission.trim();
+    }
+
+    /**
      * Grant a permission to a specific user (override role permissions)
      */
     async grantUserPermission(

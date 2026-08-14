@@ -1,0 +1,60 @@
+/**
+ * Global typography tokens — sourced from Admin → Users computed styles.
+ *
+ * page-title     24px / 900 / tracking-tight
+ * section-title  18px / 900 / uppercase / tracking-tight
+ * card-title     18px / 900 / tracking-tight
+ * body           14px / 700
+ * body-small     12px / 700
+ * label          10px / 900 / uppercase / tracking-widest
+ * caption        10px / 500
+ * table-header   10px / 900 / uppercase / tracking-widest
+ * table-body     14px / 900 / tracking-tight
+ * button         10px / 900 / uppercase / tracking-widest
+ * tab            10px / 900 / uppercase / tracking-widest
+ * badge           9px / 900 / uppercase / tracking-widest
+ * nav            14px / 700
+ * input          14px / 700
+ *
+ * Rem tokens participate in the desktop 90% html font-size scale.
+ */
+
+:root {
+  --ui-font-sans: Inter, "Mona Sans", system-ui, sans-serif;
+
+  --ui-text-page-title: 1.5rem;
+  --ui-text-section-title: 1.125rem;
+  --ui-text-card-title: 1.125rem;
+  --ui-text-body: 0.875rem;
+  --ui-text-body-small: 0.75rem;
+  --ui-text-label: 0.625rem;
+  --ui-text-caption: 0.625rem;
+  --ui-text-table-header: 0.625rem;
+  --ui-text-table-body: 0.875rem;
+  --ui-text-button: 0.625rem;
+  --ui-text-tab: 0.625rem;
+  --ui-text-badge: 0.5625rem;
+  --ui-text-nav: 0.875rem;
+  --ui-text-input: 0.875rem;
+
+  --ui-weight-page-title: 900;
+  --ui-weight-section: 900;
+  --ui-weight-card: 900;
+  --ui-weight-body: 700;
+  --ui-weight-label: 900;
+  --ui-weight-caption: 500;
+  --ui-weight-table-header: 900;
+  --ui-weight-table-body: 900;
+  --ui-weight-button: 900;
+  --ui-weight-tab: 900;
+  --ui-weight-badge: 900;
+  --ui-weight-nav: 700;
+  --ui-weight-input: 700;
+
+  --ui-leading-title: 1.25;
+  --ui-leading-body: 1.5;
+  --ui-leading-label: 1.25;
+
+  --ui-tracking-title: -0.025em;
+  --ui-tracking-label: 0.1em;
+}

@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException, Logger, BadRequestException } from '@ne
 import { DataSource } from 'typeorm';
 import { PermissionService } from './raw-permission.service';
 import { FeatureControlScope } from '../entities/feature-control.entity';
+import { getRoleFallbackForPermissions, userHasAnyRole } from '../config/permission-role-fallback';
 
 export interface CapabilityDenial {
   code: 'FEATURE_DISABLED' | 'PERMISSION_DENIED' | 'CAPABILITY_UNKNOWN';
@@ -203,6 +204,60 @@ export class CapabilityService {
     const featureDenial = denials.find((d) => d.code === 'FEATURE_DISABLED');
     const denial = featureDenial || denials[0];
     throw this.deny(denial);
+  }
+
+  /**
+   * Permission-first with role fallback (legacy safety net).
+   * Order: explicit user DENY → feature kill-switch → effective permission → allowed role.
+   */
+  async assertAnyCapabilityOrRole(
+    userId: string,
+    permissionCodes: string[],
+    options?: {
+      tenantId?: string | null;
+      userRole?: string;
+      decoratorRoles?: string[];
+    },
+  ): Promise<void> {
+    if (!permissionCodes?.length) return;
+
+    const explicitDeny = await this.permissionService.hasExplicitDenyForAny(
+      userId,
+      permissionCodes,
+    );
+    if (explicitDeny) {
+      throw this.deny({
+        code: 'PERMISSION_DENIED',
+        permission: this.normalizeCode(explicitDeny),
+        message: `This capability was denied for your account (${explicitDeny}).`,
+      });
+    }
+
+    try {
+      await this.assertAnyCapability(userId, permissionCodes, { tenantId: options?.tenantId });
+      return;
+    } catch (error) {
+      if (!(error instanceof ForbiddenException)) throw error;
+
+      const payload = error.getResponse() as Record<string, unknown>;
+      const code = payload?.code as string | undefined;
+      if (code === 'FEATURE_DISABLED') throw error;
+
+      const fallbackRoles = [
+        ...(options?.decoratorRoles || []),
+        ...getRoleFallbackForPermissions(permissionCodes),
+      ];
+      const uniqueRoles = [...new Set(fallbackRoles.map((r) => String(r).toUpperCase()))];
+
+      if (userHasAnyRole(options?.userRole, uniqueRoles)) {
+        this.logger.debug(
+          `Role fallback allowed ${options?.userRole} for [${permissionCodes.join(', ')}]`,
+        );
+        return;
+      }
+
+      throw error;
+    }
   }
 
   async getDisabledFeatures(tenantId?: string | null): Promise<string[]> {

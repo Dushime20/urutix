@@ -74,7 +74,7 @@ const Tooltip: React.FC<TooltipProps> = ({
           className={`absolute z-[200] ${positionClasses[position]} animate-in fade-in duration-200`}
           style={{ maxWidth }}
         >
-          <div className="bg-gray-900 text-white text-sm rounded-lg px-3 py-2 shadow-lg">
+          <div className="bg-gray-900 text-white ui-caption rounded-lg px-3 py-2 shadow-lg">
             {content}
             {showArrow && (
               <div
@@ -151,8 +151,8 @@ export const FeatureHighlight: React.FC<FeatureHighlightProps> = ({
             <Lightbulb className="w-4 h-4 text-blue-600" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900">{title}</h3>
-            <p className="text-sm text-gray-600 mt-1">{description}</p>
+            <h3 className="ui-card-title text-gray-900">{title}</h3>
+            <p className="ui-body-small mt-1">{description}</p>
           </div>
           <button onClick={onSkip} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
@@ -161,13 +161,13 @@ export const FeatureHighlight: React.FC<FeatureHighlightProps> = ({
         <div className="flex gap-2">
           <button
             onClick={onSkip}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg ui-button hover:bg-gray-50"
           >
             Skip
           </button>
           <button
             onClick={onComplete}
-            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg ui-button hover:bg-blue-700"
           >
             Got it
           </button>

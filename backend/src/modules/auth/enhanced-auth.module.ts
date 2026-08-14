@@ -26,7 +26,9 @@ import { JwtService } from '@nestjs/jwt';
 import { RolesGuard } from './guards/roles.guard';
 import { PermissionService } from '../../services/raw-permission.service';
 import { CapabilityService } from '../../services/capability.service';
+import { RoutePermissionResolver } from '../../services/route-permission.resolver';
 import { PermissionsGuard } from './guards/permissions.guard';
+import { UserPermissionOverrideInterceptor } from './interceptors/user-permission-override.interceptor';
 import { ActivityLogService } from '../../services/activity-log.service';
 import { EventsModule } from '../events/events.module';
 import { SystemSettingsService } from '../../services/system-settings.service';
@@ -72,7 +74,9 @@ import { FeatureControl } from '../../entities/feature-control.entity';
     RolesGuard,
     PermissionService,
     CapabilityService,
+    RoutePermissionResolver,
     PermissionsGuard,
+    UserPermissionOverrideInterceptor,
     ActivityLogService,
     SystemSettingsService,
     TwoFactorService,
@@ -89,7 +93,9 @@ import { FeatureControl } from '../../entities/feature-control.entity';
     EmailService,
     PermissionService,
     CapabilityService,
+    RoutePermissionResolver,
     PermissionsGuard,
+    UserPermissionOverrideInterceptor,
     ActivityLogService,
     TwoFactorService,
   ],

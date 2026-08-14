@@ -153,7 +153,7 @@ const AdminSidebar: React.FC = () => {
                 {navCategories.map((category, idx) => (
                     <div key={idx} className="space-y-2">
                         {!collapsed && (
-                            <h3 className="px-3 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em]">
+                            <h3 className="px-3 ui-label mb-0">
                                 <TranslatedText text={category.title} />
                             </h3>
                         )}
@@ -180,9 +180,9 @@ const AdminSidebar: React.FC = () => {
                                         />
                                         {!collapsed && (
                                             <>
-                                                <span className="text-sm font-bold flex-1"><TranslatedText text={item.label} /></span>
+                                                <span className="ui-nav flex-1"><TranslatedText text={item.label} /></span>
                                                 {item.badge && (
-                                                    <span className="px-1.5 py-0.5 bg-primary-600 text-white text-[10px] font-black rounded-md">
+                                                    <span className="px-1.5 py-0.5 bg-primary-600 text-white ui-badge rounded-md">
                                                         {item.badge}
                                                     </span>
                                                 )}
@@ -206,7 +206,7 @@ const AdminSidebar: React.FC = () => {
                     {collapsed ? <ChevronRight size={18} /> : (
                         <div className="flex items-center gap-2">
                             <ChevronLeft size={18} />
-                            <span className="text-xs font-bold"><TranslatedText text="Minimize Sidebar" /></span>
+                            <span className="ui-body-small"><TranslatedText text="Minimize Sidebar" /></span>
                         </div>
                     )}
                 </button>

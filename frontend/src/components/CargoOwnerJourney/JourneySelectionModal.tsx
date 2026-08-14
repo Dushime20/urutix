@@ -25,10 +25,12 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
   const [showComparison, setShowComparison] = useState(false);
 
   const smartMatchingAllowed =
-    (can('matching:request') || isFeatureEnabled('matching:request')) &&
-    isFeatureEnabled('matching:request');
-  const biddingAllowed = isFeatureEnabled('auctions:create') && isFeatureEnabled('bids:manage');
-  const brokerAllowed = isFeatureEnabled('brokers:assign');
+    can('matching:request') && isFeatureEnabled('matching:request');
+  const biddingAllowed =
+    can('auctions:create') &&
+    isFeatureEnabled('auctions:create') &&
+    isFeatureEnabled('bids:manage');
+  const brokerAllowed = can('brokers:assign') && isFeatureEnabled('brokers:assign');
 
   if (!isOpen) return null;
 

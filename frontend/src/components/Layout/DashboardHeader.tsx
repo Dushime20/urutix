@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio, Headphones } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigationPermissions } from '../../hooks/useNavigationPermissions';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
 import CurrencySelector from '../common/CurrencySelector';
 import ContextualHelp from '../Help/ContextualHelp';
@@ -31,6 +32,7 @@ interface NavItem {
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   const { user, logout } = useAuth();
+  const navPerms = useNavigationPermissions();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -346,28 +348,33 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
     if (user?.role === 'TENANT_ADMIN') {
       return [
-        { label: 'Command Desk', path: '/tenant-admin', icon: Home },
+        { label: 'Dashboard', path: '/tenant-admin', icon: Home },
         {
-          label: 'Core Ecosystem',
+          label: 'Operations',
           path: '/tenant-admin/fleet',
           icon: Activity,
           subItems: [
-            { label: 'Fleet Intelligence', path: '/tenant-admin/fleet' },
-            { label: 'Logistic Flows', path: '/tenant-admin/routes' },
-            { label: 'Partner Management', path: '/tenant-admin/truck-owners' },
-            { label: 'Operational Insights', path: '/tenant-admin/analytics' },
-            { label: 'Performance Reports', path: '/tenant-admin/reports' },
+            { label: 'Fleet', path: '/tenant-admin/fleet' },
+            { label: 'Trips', path: '/tenant-admin/trips' },
+            { label: 'Cargo', path: '/tenant-admin/cargo' },
+            { label: 'Drivers', path: '/tenant-admin/drivers' },
+            { label: 'Routes', path: '/tenant-admin/routes' },
+            { label: 'Partners', path: '/tenant-admin/truck-owners' },
+            { label: 'Users', path: '/tenant-admin/users' },
+            { label: 'Reports', path: '/tenant-admin/reports' },
           ]
         },
         {
-          label: 'Commercial & Settings',
+          label: 'Commercial',
           path: '/tenant-admin/financial',
           icon: DollarSign,
           subItems: [
-            { label: 'Capital Dashboard', path: '/tenant-admin/financial' },
+            { label: 'Financial', path: '/tenant-admin/financial' },
             { label: 'Purchase Credits', path: '/tenant-admin/purchase-credits' },
-            { label: 'Transaction History', path: '/tenant-admin/billing' },
-            { label: 'General Settings', path: '/tenant-admin/settings' },
+            { label: 'Billing', path: '/tenant-admin/billing' },
+            { label: 'Plans', path: '/tenant-admin/subscription-plans' },
+            { label: 'Communication', path: '/tenant-admin/communication' },
+            { label: 'Settings', path: '/tenant-admin/settings' },
           ]
         },
         {
@@ -394,6 +401,60 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
     ];
   }, [user?.role]);
 
+  // Strip nav links the user no longer has capability for (per-user deny/grant)
+  const filteredNavItems = useMemo(() => {
+    const pathAllowed = (path: string) => {
+      const p = path.toLowerCase();
+      if (p.includes('bidding') || p.includes('/bids') || p.includes('freight bidding')) {
+        return navPerms.canAccessBidding;
+      }
+      if (p.includes('smart-matching') || p.includes('tab=matches') || p.includes('/matches')) {
+        return navPerms.canUseSmartMatching;
+      }
+      if (p.includes('/cargos/create') || p.includes('create payload')) {
+        return navPerms.canCreateCargo;
+      }
+      if (p.includes('/cargos') || p.includes('cargo inventory') || p.includes('my-cargos')) {
+        return navPerms.canAccessCargoManagement;
+      }
+      if (p.includes('/trucks') || p.includes('truck inventory')) {
+        return navPerms.canAccessFleetManagement;
+      }
+      if (p.includes('/drivers') || p.includes('driver directory')) {
+        return navPerms.canAccessDrivers;
+      }
+      if (p.includes('/trips') || p.includes('active trips')) {
+        return navPerms.canAccessTrips;
+      }
+      if (p.includes('/tracking')) {
+        return navPerms.canAccessTracking;
+      }
+      if (p.includes('/financial') || p.includes('/invoices') || p.includes('/payments') || p.includes('commissions')) {
+        return navPerms.canAccessFinancial || navPerms.canAccessPayments;
+      }
+      if (p.includes('/credits') || p.includes('line of credit') || p.includes('lending') || p.includes('/loans') || p.includes('/lender')) {
+        return navPerms.canManageLoans || navPerms.canAccessLenderPanel;
+      }
+      if (p.includes('analytics') || p.includes('/reports')) {
+        return navPerms.canAccessAnalytics;
+      }
+      return true;
+    };
+
+    return navItems
+      .map((item) => {
+        const subItems = item.subItems?.filter((s) => pathAllowed(s.path) && pathAllowed(s.label));
+        if (item.subItems && (!subItems || subItems.length === 0)) {
+          // Keep parent only if its own path is allowed
+          if (!pathAllowed(item.path)) return null;
+          return { ...item, subItems: undefined };
+        }
+        if (!pathAllowed(item.path) && !subItems?.length) return null;
+        return { ...item, subItems };
+      })
+      .filter(Boolean) as NavItem[];
+  }, [navItems, navPerms]);
+
   const handleLogout = () => {
     setShowUserMenu(false);
     setShowMobileMenu(false);
@@ -413,11 +474,35 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
   const getActiveNavItem = () => {
     const path = location.pathname;
-    const item = navItems.find(n =>
-      path === n.path || path.startsWith(n.path + '/') ||
-      (n.subItems?.some(s => path === s.path || path.startsWith(s.path + '/')))
-    );
-    return item?.label || null;
+    const pathOnly = (p: string) => p.split('?')[0];
+    const matchesPath = (candidate: string) => {
+      const base = pathOnly(candidate);
+      return path === base || path.startsWith(`${base}/`);
+    };
+
+    let best: (typeof filteredNavItems)[number] | null = null;
+    let bestScore = -1;
+
+    for (const n of filteredNavItems) {
+      const subMatch = n.subItems?.find((s) => matchesPath(s.path));
+      if (subMatch) {
+        const score = pathOnly(subMatch.path).length + 1000;
+        if (score > bestScore) {
+          best = n;
+          bestScore = score;
+        }
+        continue;
+      }
+      if (path === n.path) {
+        const score = n.path.length + 500;
+        if (score > bestScore) {
+          best = n;
+          bestScore = score;
+        }
+      }
+    }
+
+    return best?.label || null;
   };
 
   const activeNavItem = getActiveNavItem();
@@ -496,7 +581,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                 ref={navRef}
                 className="flex items-center gap-0.5 xl:gap-2 ml-1 xl:ml-4 text-gray-500 dark:text-slate-400 text-sm font-medium flex-nowrap"
               >
-                {navItems.map(item => {
+                {filteredNavItems.map(item => {
                   const hasSubItems = item.subItems && item.subItems.length > 0;
                   const isActive = activeNavItem === item.label;
 
@@ -508,7 +593,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                             e.stopPropagation();
                             setDesktopDropdown(desktopDropdown === item.label ? null : item.label);
                           }}
-                          className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
+                          className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 ui-nav rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
                                               ${isActive
                                                 ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400'
                                                 : 'text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
@@ -523,7 +608,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         <Link
                           to={item.path}
                           onClick={(e) => { e.preventDefault(); handleNavClick(item.path); }}
-                          className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 text-xs xl:text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
+                          className={`group relative flex items-center gap-1 xl:gap-2 px-2.5 xl:px-4 py-2 ui-nav rounded-full transition-all duration-300 whitespace-nowrap shrink-0 overflow-hidden
                                               ${isActive
                                                 ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500 dark:text-primary-400'
                                                 : 'text-slate-500 dark:text-slate-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-slate-50 dark:hover:bg-slate-800'}
@@ -539,7 +624,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
                         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-none border border-slate-100 dark:border-slate-800 z-[120] overflow-hidden py-2 animate-in fade-in slide-in-from-top-4 duration-300">
                           <div className="px-3 py-2 border-b border-slate-50 dark:border-slate-800 mb-1 space-y-2">
                             <div className="text-[10px] font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase"><TranslatedText text="Quick Actions" /></div>
-                            {item.label === 'Commercial & Settings' && user?.role === 'TENANT_ADMIN' && (
+                            {item.label === 'Commercial' && user?.role === 'TENANT_ADMIN' && (
                               <TenantCreditBalance />
                             )}
                           </div>
@@ -704,7 +789,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
 
                 {/* Navigation Items */}
                 <div className="flex-1 overflow-y-auto px-3 custom-scrollbar space-y-1 py-2">
-                  {navItems.map((item, idx) => {
+                  {filteredNavItems.map((item, idx) => {
                     const hasSubItems = item.subItems && item.subItems.length > 0;
                     const isDropdownOpen = mobileExpanded === item.label;
                     const isActive = activeNavItem === item.label;

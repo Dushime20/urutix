@@ -139,7 +139,7 @@ export const StatCard: React.FC<StatCardProps> = ({
                 {icon}
               </div>
               <div className="flex flex-col items-center px-4 w-full overflow-hidden">
-                <span className="text-xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
+                <span className="text-2xl font-black text-[#0f172a] dark:text-white tracking-tight group-hover:scale-110 transition-transform duration-500 truncate w-full text-center">
                   {value}
                 </span>
               </div>
@@ -148,7 +148,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           <div className="absolute inset-4 rounded-full border border-dashed border-slate-100 dark:border-slate-800 opacity-50 group-hover:rotate-90 transition-transform duration-1000" />
         </div>
         <div className="mt-4 text-center px-2">
-          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
+          <p className="ui-badge text-slate-400 dark:text-slate-500 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors duration-300 line-clamp-1">
             {title}
           </p>
         </div>
@@ -178,7 +178,7 @@ export const StatCard: React.FC<StatCardProps> = ({
               </div>
             </div>
             {trend && (
-              <div className={`px-2 py-1 rounded-full text-[9px] font-black flex items-center gap-1 shadow-sm ${getTrendColor()}`}>
+              <div className={`px-2 py-1 rounded-full ui-badge flex items-center gap-1 shadow-sm ${getTrendColor()}`}>
                 <span>{getTrendIcon()}</span>
                 <span>{trend}</span>
               </div>
@@ -186,7 +186,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           </div>
 
           <div className="space-y-0.5">
-            <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">
+            <h3 className="ui-label mb-0 text-slate-400">
               {title}
             </h3>
             <div className="flex items-end gap-2">
@@ -195,7 +195,7 @@ export const StatCard: React.FC<StatCardProps> = ({
               </span>
             </div>
             {subtitle && (
-              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+              <p className="ui-caption font-bold text-slate-400 mt-1 uppercase tracking-tight">
                 {subtitle}
               </p>
             )}
@@ -246,7 +246,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           ) : (
             <>
               <div className="flex items-baseline gap-2">
-                <span className={`text-3xl font-black ${colors.icon}`}>
+                <span className={`text-2xl font-black ${colors.icon}`}>
                   {value}
                 </span>
                 {trend && (
@@ -255,11 +255,11 @@ export const StatCard: React.FC<StatCardProps> = ({
                   </span>
                 )}
               </div>
-              <span className="text-slate-500 text-sm font-medium tracking-tight">
+              <span className="text-slate-500 ui-body-small tracking-tight">
                 {title}
               </span>
               {subtitle && (
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">
+                <span className="ui-label mb-0 mt-0.5">
                   {subtitle}
                 </span>
               )}
@@ -306,7 +306,7 @@ export const StatCard: React.FC<StatCardProps> = ({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring' }}
-              className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${getTrendColor()}`}
+              className={`px-3 py-1 rounded-full ui-badge flex items-center gap-1 ${getTrendColor()}`}
             >
               <span>{getTrendIcon()}</span>
               <span>{trend}</span>
@@ -315,7 +315,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         </div>
 
         {/* Title */}
-        <h3 className="text-gray-600 dark:text-slate-400 text-sm font-medium mb-2 uppercase tracking-wide">
+        <h3 className="ui-label text-gray-600 dark:text-slate-400">
           {title}
         </h3>
 
@@ -327,7 +327,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl font-bold text-gray-900 dark:text-white mb-1"
+            className="text-2xl font-black text-gray-900 dark:text-white mb-1 tracking-tight"
           >
             {value}
           </motion.p>
@@ -335,7 +335,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
         {/* Subtitle */}
         {subtitle && (
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 leading-none">
+          <p className="ui-label mb-0 mt-2 leading-none">
             {subtitle}
           </p>
         )}

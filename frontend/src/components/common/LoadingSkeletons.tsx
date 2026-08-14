@@ -234,7 +234,7 @@ export const CenterLoader: React.FC<{
     )}>
       <div className="text-center">
         <SpinnerLoader size="lg" className="mx-auto mb-4" />
-        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{text}</p>
+        <p className="ui-body-small text-slate-600 dark:text-slate-400">{text}</p>
       </div>
     </div>
   );

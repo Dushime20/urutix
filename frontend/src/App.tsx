@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { AuthProvider } from './contexts/AuthContext';
@@ -8,7 +8,7 @@ import { CurrencyProvider } from './contexts/CurrencyContext';
 import { I18nProvider } from './contexts/i18n-context';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from 'react-hot-toast';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { MutationSyncProvider } from './components/MutationSyncProvider';
 
 // Keep essential components that are needed immediately (layouts, auth, home)
@@ -237,10 +237,20 @@ const PageLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
     <div className="text-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-      <p className="text-sm text-gray-500">Loading...</p>
+      <p className="ui-body-small text-gray-500">Loading...</p>
     </div>
   </div>
 );
+
+function AppUiShell({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const isMarketing = pathname === '/';
+  return (
+    <div className="contents" {...(!isMarketing ? { 'data-app-ui': '' } : {})}>
+      {children}
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -256,6 +266,7 @@ function App() {
           <CurrencyProvider>
             <NotificationProvider>
               <Router>
+                <AppUiShell>
                 <Suspense fallback={<PageLoadingFallback />}>
                   <Routes>
                     <Route path="/" element={<Home />} />
@@ -736,6 +747,7 @@ function App() {
                     <Route path="/dashboard/admin/*" element={<Navigate to="/admin" replace />} />
                   </Routes>
                 </Suspense>
+                </AppUiShell>
               </Router>
             </NotificationProvider>
           </CurrencyProvider>
@@ -745,7 +757,14 @@ function App() {
       </ThemeProvider>
       <Toaster
           position="bottom-right"
-          toastOptions={{ duration: 2000 }}
+          toastOptions={{
+            duration: 2000,
+            style: {
+              fontFamily: 'Inter, system-ui, sans-serif',
+              fontSize: '0.875rem',
+              fontWeight: 700,
+            },
+          }}
           containerClassName="!z-[9999999]"
         />
       </I18nProvider>

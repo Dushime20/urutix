@@ -96,6 +96,12 @@ export default {
         inter: ['Inter', 'sans-serif'],
         mono: ['Inter', 'Mona Sans', 'system-ui', 'sans-serif'],
       },
+      fontSize: {
+        '3xs': ['0.5625rem', { lineHeight: '0.875rem', letterSpacing: '0.1em' }],
+        '2xs': ['0.625rem', { lineHeight: '1rem', letterSpacing: '0.1em' }],
+        'page-title': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.025em' }],
+        'section-title': ['1.125rem', { lineHeight: '1.5rem', letterSpacing: '-0.025em' }],
+      },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',

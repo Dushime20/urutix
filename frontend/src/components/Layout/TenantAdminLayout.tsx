@@ -45,7 +45,7 @@ const TenantAdminLayoutContent: React.FC = () => {
     return <ModernLoader isLoading={isLoading || !user} text="Initializing_Tenant_Space" />;
   }
 
-  // Tenant dashboard views render their own TenantHeader — do not nest DashboardHeader (avoids double header)
+  // Tenant dashboard views render their own DashboardHeader — do not nest another copy
   const isDashboardIndex = location.pathname.startsWith('/tenant-admin') && (
     location.pathname === '/tenant-admin' ||
     location.pathname === '/tenant-admin/' ||

@@ -23,16 +23,18 @@ export type AuctionListParams = {
   status?: string;
   filters?: AuctionFilters;
   watchedOnly?: boolean;
+  enabled?: boolean;
 };
 
 export function useAuctionsQuery(params: AuctionListParams = {}) {
-  const { page = 1, limit = 10, status = 'all', filters, watchedOnly = false } = params;
+  const { page = 1, limit = 10, status = 'all', filters, watchedOnly = false, enabled = true } = params;
   const listFilters = filters ?? {};
 
   return useQuery({
     queryKey: watchedOnly || listFilters.showWatchedOnly
       ? [...queryKeys.bidding.auctions, 'watched']
       : [...queryKeys.bidding.auctions, { page, limit, status, ...listFilters }],
+    enabled,
     queryFn: async () => {
       if (watchedOnly || listFilters.showWatchedOnly) {
         const response = await biddingAPI.getWatchedAuctions();

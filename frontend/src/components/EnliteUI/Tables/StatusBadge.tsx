@@ -66,7 +66,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${VARIANT_CLASSES[resolved]} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ui-badge border ${VARIANT_CLASSES[resolved]} ${className}`}
     >
       {icon}
       {label}

@@ -32,7 +32,7 @@ export const Select: React.FC<SelectProps> = ({
     <div className={`${widthClass} ${className}`}>
       {/* Label */}
       {label && (
-        <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2 transition-colors duration-300">
+        <label className="ui-label">
           {label}
           {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -43,7 +43,7 @@ export const Select: React.FC<SelectProps> = ({
         <motion.select
           whileFocus={{ scale: 1.01 }}
           className={`
-            w-full px-4 py-2.5 pr-10
+            w-full px-4 py-2.5 pr-10 ui-input
             border-2 rounded-xl
             bg-white dark:bg-slate-800
             text-gray-900 dark:text-slate-100
@@ -83,7 +83,7 @@ export const Select: React.FC<SelectProps> = ({
         <motion.p
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`mt-1.5 text-sm ${hasError ? 'text-red-600' : 'text-gray-500 dark:text-slate-400'} transition-colors duration-300`}
+          className={`mt-1.5 ${hasError ? 'ui-error' : 'ui-helper'} transition-colors duration-300`}
         >
           {error || helperText}
         </motion.p>

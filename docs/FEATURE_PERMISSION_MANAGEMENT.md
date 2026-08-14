@@ -73,18 +73,28 @@ Role matrix remains at `/admin/permissions`.
 
 ## Backend enforcement
 
-`PermissionsGuard` + `@RequirePermissions(...)` now runs through `CapabilityService` (feature + RBAC).
+Two layers — **existing API behavior is unchanged** unless permissions apply:
 
-Wired on:
+### 1. Normal users (no admin overrides)
 
-- Bidding: `bids:create`, `bids:manage`, `auctions:create`
-- Matching: `matching:request`, `matching:view_results`, `matching:respond`
-- Cargo/loads (+ V2): `cargo:create`, `cargo:edit`, `cargo:delete`, `cargo:publish`
-- Trips: `trips:start`, `trips:complete`, `trips:assign_driver`
-- Brokers: `brokers:assign`
-- Lending: `lending:create_request`, `lending:approve` (approve + reject)
-- Customs: `customs:create`, `customs:update`
-- Receivers: `receivers:inspect`
+JWT + `@Roles` / service logic work exactly as before. No capability check on most endpoints.
+
+### 2. Users with admin grant/deny (`user_permissions` rows)
+
+`UserPermissionOverrideGuard` (global) blocks only when a **denied** capability matches the route (e.g. deny `auctions:view` → `GET /bidding/auctions` returns 403).
+
+### 3. Endpoints with `@RequirePermissions` (opt-in)
+
+`PermissionsGuard` on those handlers only. Checks capability **with role fallback** so role-based access still works if the permission DB is incomplete.
+
+Permission resolution on opt-in endpoints:
+
+1. Explicit user **DENY** → block  
+2. Feature kill-switch → block  
+3. Effective permission → allow  
+4. Else matching **role** (@Roles or catalog default) → allow  
+
+Per-user **deny** always wins over role fallback.
 
 403 body shape:
 

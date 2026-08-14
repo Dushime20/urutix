@@ -98,7 +98,7 @@ export const Modal: React.FC<ModalProps> = ({
             {(title || showCloseButton) && (
               <div className={`px-6 py-4 rounded-t-2xl flex items-center justify-between ${headerColorClasses[headerColor]}`}>
                 {title && (
-                  <h2 className="text-xl font-bold">
+                  <h2 className="ui-section-title">
                     {title}
                   </h2>
                 )}

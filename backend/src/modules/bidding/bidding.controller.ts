@@ -525,47 +525,6 @@ export class BiddingController {
   @Get('auctions')
   @ApiOperation({
     summary: 'Get all auctions',
-    description: 'Retrieve all auctions with optional filtering.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Auctions retrieved successfully',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          loadId: { type: 'string' },
-          auctionType: { type: 'string' },
-          status: { type: 'string' },
-          auctionStart: { type: 'string', format: 'date-time' },
-          auctionEnd: { type: 'string', format: 'date-time' },
-          reservePrice: { type: 'number' },
-          minimumBidIncrement: { type: 'number' },
-          totalBids: { type: 'number' },
-          uniqueBidders: { type: 'number' },
-          currentHighestBid: { type: 'number' },
-          load: {
-            type: 'object',
-            properties: {
-              title: { type: 'string' },
-              description: { type: 'string' },
-              weight: { type: 'number' },
-              loadValue: { type: 'number' },
-              pickupDate: { type: 'string', format: 'date-time' },
-              deliveryDate: { type: 'string', format: 'date-time' },
-              pickupLocation: { type: 'string' },
-              deliveryLocation: { type: 'string' },
-            },
-          },
-        },
-      },
-    },
-  })
-  @Get('auctions')
-  @ApiOperation({
-    summary: 'Get all auctions',
     description: 'Retrieve all auctions for the current tenant, optionally filtered by status',
   })
   @ApiQuery({

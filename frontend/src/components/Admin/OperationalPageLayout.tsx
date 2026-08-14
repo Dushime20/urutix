@@ -24,11 +24,11 @@ const OperationalPageLayout: React.FC<OperationalPageLayoutProps> = ({
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
+            <h1 className="ui-page-title text-slate-800 dark:text-white">
               {title}
             </h1>
             {description && (
-              <p className="text-sm text-slate-400 font-medium mt-0.5">{description}</p>
+              <p className="ui-body-small mt-0.5">{description}</p>
             )}
           </div>
           {actions && (

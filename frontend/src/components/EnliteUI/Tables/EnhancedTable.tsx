@@ -132,7 +132,7 @@ export function EnhancedTable<T = any>({
             {columns.map((column) => (
               <div
                 key={column.key}
-                className={`${cellPad} text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ${getAlignClass(column.align)}`}
+                className={`${cellPad} ui-table-header ${getAlignClass(column.align)}`}
               >
                 {column.label}
               </div>
@@ -184,7 +184,7 @@ export function EnhancedTable<T = any>({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-[#345E85] hover:bg-[#2c5173] text-white text-xs font-bold uppercase tracking-wider transition-colors"
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-[#345E85] hover:bg-[#2c5173] text-white ui-button transition-colors"
             >
               Try again
             </button>
@@ -229,7 +229,7 @@ export function EnhancedTable<T = any>({
                       : column.sortable ? 'none' : undefined
                   }
                   className={`
-                    ${cellPad} text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest
+                    ${cellPad} ui-table-header
                     ${getAlignClass(column.align)}
                     ${column.sortable ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors select-none' : ''}
                   `}
@@ -264,7 +264,7 @@ export function EnhancedTable<T = any>({
                     <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
                       <Inbox className="w-8 h-8 text-slate-300 dark:text-slate-600" aria-hidden />
                     </div>
-                    <p className="text-base font-semibold text-slate-700 dark:text-slate-200">{emptyMessage}</p>
+                    <p className="ui-body text-slate-700 dark:text-slate-200">{emptyMessage}</p>
                   </div>
                 </td>
               </tr>
@@ -302,7 +302,7 @@ export function EnhancedTable<T = any>({
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className={`${cellPad} text-sm text-gray-900 dark:text-slate-100 ${getAlignClass(column.align)}`}
+                        className={`${cellPad} ui-table-body text-gray-900 dark:text-slate-100 ${getAlignClass(column.align)}`}
                       >
                         {column.render
                           ? column.render((row as any)[column.key], row, index)

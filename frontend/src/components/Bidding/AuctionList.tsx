@@ -106,7 +106,8 @@ interface AuctionListProps {
 }
 
 const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = false }) => {
-  const { can, isFeatureEnabled } = usePermission();
+  const { can, isFeatureEnabled, isLoading: permsLoading } = usePermission();
+  const canViewAuctions = can('auctions:view') && isFeatureEnabled('auctions:view');
   const canCreateBid = can('bids:create') && isFeatureEnabled('bids:create');
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
@@ -176,13 +177,15 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     isLoading: loading,
     isError,
     error: queryError,
-  } = useAuctionsQuery({ filters });
+  } = useAuctionsQuery({ filters, enabled: canViewAuctions && !permsLoading });
 
   const { data: watchedAuctions = new Set<string>() } = useWatchedAuctionIds();
   const toggleWatchMutation = useToggleAuctionWatch();
   const submitBidMutation = useSubmitBidMutation();
 
-  const error = isError
+  const error = !canViewAuctions && !permsLoading
+    ? 'You do not have permission to view auctions.'
+    : isError
     ? (queryError instanceof Error ? queryError.message : 'Failed to load auctions. Please try again.')
     : null;
 
@@ -613,7 +616,18 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     </div>
   );
 
-  if (loading) {
+  if (!permsLoading && !canViewAuctions) {
+    return (
+      <div className="text-center py-16 space-y-2">
+        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Cannot view auctions</p>
+        <p className="text-xs text-slate-500">
+          {error || 'Your account does not have the auctions:view permission.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (loading || permsLoading) {
     return (
       <div className="text-center py-8 sm:py-12">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

@@ -29,7 +29,7 @@ export const Textarea: React.FC<TextareaProps> = ({
     <div className={`${widthClass} ${className}`}>
       {/* Label */}
       {label && (
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <label className="ui-label">
           {label}
           {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -39,7 +39,7 @@ export const Textarea: React.FC<TextareaProps> = ({
       <motion.textarea
         whileFocus={{ scale: 1.01 }}
         className={`
-          w-full px-4 py-2.5
+          w-full px-4 py-2.5 ui-input
           border-2 rounded-xl
           ${hasError 
             ? 'border-red-500 focus:border-red-600 focus:ring-red-500' 
@@ -63,7 +63,7 @@ export const Textarea: React.FC<TextareaProps> = ({
           <motion.p
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`text-sm ${hasError ? 'text-red-600' : 'text-gray-500'}`}
+            className={hasError ? 'ui-error' : 'ui-helper'}
           >
             {error || helperText}
           </motion.p>
@@ -71,7 +71,7 @@ export const Textarea: React.FC<TextareaProps> = ({
 
         {/* Character Count */}
         {showCharCount && (
-          <p className={`text-sm ${
+          <p className={`ui-caption ${
             maxLength && charCount > maxLength * 0.9 
               ? 'text-amber-600' 
               : 'text-gray-500'

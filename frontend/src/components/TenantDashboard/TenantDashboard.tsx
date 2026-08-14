@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle as FaExclamationTriangle,
   Download,
@@ -33,7 +33,7 @@ import {
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 
-import TenantHeader from './TenantHeader';
+import DashboardHeader from '../Layout/DashboardHeader';
 import QuickStats from './QuickStats';
 import FleetOverview from './FleetOverview';
 import CargoAnalytics from './CargoAnalytics';
@@ -56,7 +56,6 @@ import TenantCommunication from '../../pages/tenant/TenantCommunication';
 import { EnhancedKycVerificationCenter as KycManagementPage } from '../UserKYC';
 import TenantSupportCenter from '../../pages/support/TenantSupportCenter';
 import { tenantApi } from '../../services/tenantApi';
-import { useAuth } from '../../contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 import { TripTracker } from '../TripTracker/TripTracker';
 import RoutePerformance from './RoutePerformance';
@@ -86,11 +85,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
   className = '',
   defaultView = 'overview'
 }) => {
-  const { user } = useAuth();
   const { tSync } = useTranslation();
-  const queryClient = useQueryClient();
   const [timeRange, setTimeRange] = useState('7d');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports'>(defaultView);
   const [trackingActivity, setTrackingActivity] = useState<any>(null);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
@@ -156,26 +152,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     setSelectedView(defaultView);
   }, [defaultView]);
 
-  // Create tenant data object from authenticated user
-  const currentTenant = useMemo(() => {
-    if (user) {
-      return {
-        id: user.tenantId,
-        name: user.tenantName && user.tenantName !== user.tenantId ? user.tenantName : 'Default Tenant',
-        status: 'active' as const,
-        type: 'fleet-operator'
-      };
-    }
-    return {
-      id: 'default-tenant',
-      name: 'Default Tenant',
-      status: 'active' as const,
-      type: 'fleet-operator'
-    };
-  }, [user]);
-
   // Use React Query for data fetching
-  const { data: tenantData, isLoading, error, refetch } = useQuery({
+  const { data: tenantData, isLoading, error } = useQuery({
     queryKey: ['tenant', tenantId, timeRange],
     queryFn: async () => {
       const summary = await tenantApi.getTenantDashboardSummary(tenantId || 'default-tenant', timeRange);
@@ -225,26 +203,8 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      // Invalidate all tenant-related queries to force a refresh across all components
-      await Promise.all([
-        refetch(),
-        queryClient.invalidateQueries({ queryKey: ['tenant'] }),
-        queryClient.invalidateQueries({ queryKey: ['tenant-notifications'] }),
-        queryClient.invalidateQueries({ queryKey: ['activeTrips'] }),
-        // Add a small delay to let the animation show for at least a moment feels better
-        new Promise(resolve => setTimeout(resolve, 800))
-      ]);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   const handleTimeRangeChange = (range: string) => {
     setTimeRange(range);
-    // In real app, this would update data based on time range
   };
 
   const handleExportData = async (format: 'csv' | 'excel' | 'pdf' = 'csv') => {
@@ -399,13 +359,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
 
   return (
     <div className={`min-h-screen bg-[#fafafa] dark:bg-slate-950 ${className}`}>
-      <TenantHeader
-        tenant={currentTenant}
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        selectedView={selectedView}
-        setSelectedView={setSelectedView}
-      />
+      <DashboardHeader />
 
       <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Loading State - Premium Skeleton */}

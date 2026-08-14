@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import './styles/typography.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -50,11 +51,26 @@
   html {
     /* clip avoids creating a scroll containment that breaks position:sticky/fixed headers */
     overflow-x: clip;
-    font-family: 'Mona Sans', 'system-ui', 'sans-serif';
+    font-family: var(--ui-font-sans);
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
-  
+
+  /*
+   * App-level ~90% visual density on tablet/desktop.
+   * Root rem scaling (not zoom/transform) so fixed, sticky, and overlay
+   * positioning stay correct. Mobile stays at 16px for touch and readability.
+   */
+  @media (min-width: 768px) {
+    html {
+      font-size: 90%;
+    }
+  }
+
   body {
     overflow-x: clip;
+    font-family: var(--ui-font-sans);
     @apply bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-100;
   }
 
@@ -139,35 +155,99 @@
     @apply bg-primary-600 dark:bg-primary-500 border-primary-600 dark:border-primary-500;
   }
 
-  /* Typography System - Consistent Font Sizes */
+  /* Typography defaults — Admin → Users hierarchy */
   h1 {
-    @apply text-3xl font-bold text-gray-900 dark:text-white;
+    font-size: var(--ui-text-page-title);
+    font-weight: var(--ui-weight-page-title);
+    line-height: var(--ui-leading-title);
+    letter-spacing: var(--ui-tracking-title);
+    @apply text-gray-900 dark:text-white;
   }
 
   h2 {
-    @apply text-xl font-semibold text-gray-900 dark:text-white;
+    font-size: var(--ui-text-section-title);
+    font-weight: var(--ui-weight-section);
+    line-height: var(--ui-leading-title);
+    letter-spacing: var(--ui-tracking-title);
+    @apply text-gray-900 dark:text-white;
   }
 
   h3 {
-    @apply text-lg font-semibold text-gray-900 dark:text-white;
+    font-size: var(--ui-text-body);
+    font-weight: var(--ui-weight-table-body);
+    line-height: var(--ui-leading-title);
+    letter-spacing: var(--ui-tracking-title);
+    @apply text-gray-900 dark:text-white;
   }
 
   h4 {
-    @apply text-base font-semibold text-gray-900 dark:text-white;
+    font-size: var(--ui-text-body-small);
+    font-weight: var(--ui-weight-label);
+    line-height: var(--ui-leading-label);
+    @apply text-gray-900 dark:text-white;
   }
 
   p {
-    @apply text-sm text-gray-700 dark:text-slate-400;
+    font-size: var(--ui-text-body);
+    line-height: var(--ui-leading-body);
+    @apply text-gray-700 dark:text-slate-400;
   }
 
-  /* Label styles */
   label {
-    @apply text-sm font-medium text-gray-700 dark:text-slate-300;
+    font-size: var(--ui-text-label);
+    font-weight: var(--ui-weight-label);
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+    line-height: var(--ui-leading-label);
+    @apply text-slate-400 dark:text-slate-500;
   }
 
-  /* Small text */
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']):not([type='range']):not([type='color']):not([type='button']):not([type='submit']):not([type='reset']),
+  select,
+  textarea {
+    font-size: var(--ui-text-input);
+    font-weight: var(--ui-weight-input);
+    font-family: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    font-size: inherit;
+    font-weight: 700;
+    @apply text-gray-400 dark:text-slate-500;
+  }
+
   .text-small {
-    @apply text-xs text-gray-500 dark:text-slate-500;
+    font-size: var(--ui-text-caption);
+    @apply text-gray-500 dark:text-slate-500;
+  }
+
+  /*
+   * Authenticated app shells: keep page titles on the Admin → Users scale
+   * even when a page still has leftover text-3xl / text-5xl utilities.
+   * Marketing (landing) is not marked data-app-ui.
+   */
+  [data-app-ui] h1 {
+    font-size: var(--ui-text-page-title) !important;
+    font-weight: var(--ui-weight-page-title) !important;
+    letter-spacing: var(--ui-tracking-title);
+    line-height: var(--ui-leading-title);
+  }
+
+  [data-app-ui] label.text-sm,
+  [data-app-ui] label.text-xs,
+  [data-app-ui] label.text-\[10px\],
+  [data-app-ui] label.text-\[11px\] {
+    font-size: var(--ui-text-label) !important;
+    font-weight: var(--ui-weight-label) !important;
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+  }
+
+  [data-app-ui] input.text-sm:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']),
+  [data-app-ui] select.text-sm,
+  [data-app-ui] textarea.text-sm {
+    font-weight: var(--ui-weight-input);
   }
 
   /* Global Scrollbar Styles - Applies to all scrollbars */
@@ -234,6 +314,125 @@
 }
 
 @layer components {
+  .ui-page-title {
+    font-size: var(--ui-text-page-title);
+    font-weight: var(--ui-weight-page-title);
+    line-height: var(--ui-leading-title);
+    letter-spacing: var(--ui-tracking-title);
+    @apply text-slate-900 dark:text-white;
+  }
+
+  .ui-section-title {
+    font-size: var(--ui-text-section-title);
+    font-weight: var(--ui-weight-section);
+    line-height: var(--ui-leading-title);
+    letter-spacing: var(--ui-tracking-title);
+    text-transform: uppercase;
+    @apply text-gray-900 dark:text-white;
+  }
+
+  .ui-card-title {
+    font-size: var(--ui-text-card-title);
+    font-weight: var(--ui-weight-card);
+    line-height: var(--ui-leading-title);
+    letter-spacing: var(--ui-tracking-title);
+    @apply text-gray-900 dark:text-slate-100;
+  }
+
+  .ui-body {
+    font-size: var(--ui-text-body);
+    font-weight: var(--ui-weight-body);
+    line-height: var(--ui-leading-body);
+    @apply text-gray-900 dark:text-white;
+  }
+
+  .ui-body-small {
+    font-size: var(--ui-text-body-small);
+    font-weight: var(--ui-weight-body);
+    line-height: var(--ui-leading-body);
+    @apply text-slate-500 dark:text-slate-400;
+  }
+
+  .ui-label {
+    display: block;
+    font-size: var(--ui-text-label);
+    font-weight: var(--ui-weight-label);
+    line-height: var(--ui-leading-label);
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    @apply text-slate-400 dark:text-slate-500;
+  }
+
+  .ui-caption {
+    font-size: var(--ui-text-caption);
+    font-weight: var(--ui-weight-caption);
+    line-height: 1.625;
+  }
+
+  .ui-table-header {
+    font-size: var(--ui-text-table-header);
+    font-weight: var(--ui-weight-table-header);
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+    @apply text-slate-400 dark:text-slate-500;
+  }
+
+  .ui-table-body {
+    font-size: var(--ui-text-table-body);
+    font-weight: var(--ui-weight-table-body);
+    letter-spacing: var(--ui-tracking-title);
+    @apply text-gray-900 dark:text-white;
+  }
+
+  .ui-button {
+    font-size: var(--ui-text-button);
+    font-weight: var(--ui-weight-button);
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+    line-height: 1.25;
+  }
+
+  .ui-tab {
+    font-size: var(--ui-text-tab);
+    font-weight: var(--ui-weight-tab);
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+  }
+
+  .ui-badge {
+    font-size: var(--ui-text-badge);
+    font-weight: var(--ui-weight-badge);
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+    line-height: 1.25;
+  }
+
+  .ui-nav {
+    font-size: var(--ui-text-nav);
+    font-weight: var(--ui-weight-nav);
+  }
+
+  .ui-input {
+    font-size: var(--ui-text-input);
+    font-weight: var(--ui-weight-input);
+    line-height: var(--ui-leading-body);
+  }
+
+  .ui-helper {
+    font-size: var(--ui-text-caption);
+    font-weight: var(--ui-weight-caption);
+    line-height: 1.625;
+    @apply text-slate-500 dark:text-slate-400;
+  }
+
+  .ui-error {
+    font-size: var(--ui-text-caption);
+    font-weight: 700;
+    line-height: 1.625;
+    @apply text-red-600 dark:text-red-400;
+  }
+
   /* Ensure map doesn't interfere with modals */
   .fleet-map-container {
     z-index: 1 !important;
@@ -253,7 +452,8 @@
   }
   
   .btn {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center rounded-md font-black uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    font-size: var(--ui-text-button);
   }
   
   .btn-primary {
@@ -313,15 +513,21 @@
   }
   
   .btn-sm {
-    @apply h-8 px-3 text-xs;
+    @apply h-8 px-3;
+    font-size: var(--ui-text-button);
   }
   
   .btn-md {
     @apply h-10 px-4 py-2;
+    font-size: var(--ui-text-button);
   }
   
   .btn-lg {
-    @apply h-12 px-6 text-base;
+    @apply h-12 px-6;
+    font-size: var(--ui-text-body);
+    font-weight: var(--ui-weight-body);
+    text-transform: none;
+    letter-spacing: 0;
   }
   
   .card {
@@ -333,11 +539,16 @@
   }
   
   .card-title {
-    @apply text-2xl font-semibold leading-none tracking-tight dark:text-white;
+    font-size: var(--ui-text-card-title);
+    font-weight: var(--ui-weight-card);
+    letter-spacing: var(--ui-tracking-title);
+    line-height: var(--ui-leading-title);
+    @apply dark:text-white;
   }
   
   .card-description {
-    @apply text-sm text-gray-600 dark:text-slate-400;
+    font-size: var(--ui-text-body);
+    @apply text-gray-600 dark:text-slate-400;
   }
   
   .card-content {
@@ -349,15 +560,23 @@
   }
   
   .input {
-    @apply flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500;
+    @apply flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 file:border-0 file:bg-transparent file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500;
+    font-size: var(--ui-text-input);
+    font-weight: var(--ui-weight-input);
   }
   
   .label {
-    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 dark:text-slate-300;
+    font-size: var(--ui-text-label);
+    font-weight: var(--ui-weight-label);
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+    @apply leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 dark:text-slate-400;
   }
   
   .badge {
-    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    font-size: var(--ui-text-badge);
+    font-weight: var(--ui-weight-badge);
   }
   
   .badge-primary {
@@ -385,11 +604,15 @@
   }
 
   .filter-select-label {
-    @apply pl-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400;
+    @apply pl-1 uppercase tracking-widest text-slate-400 dark:text-slate-500;
+    font-size: var(--ui-text-label);
+    font-weight: var(--ui-weight-label);
   }
 
   .filter-select {
-    @apply appearance-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-[0_15px_30px_-20px_rgba(15,23,42,0.45)] dark:shadow-[0_15px_30px_-20px_rgba(0,0,0,0.6)] transition-colors duration-300 focus:border-blue-500 dark:focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-primary-900/50;
+    @apply appearance-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 pr-10 text-slate-700 dark:text-slate-200 shadow-[0_15px_30px_-20px_rgba(15,23,42,0.45)] dark:shadow-[0_15px_30px_-20px_rgba(0,0,0,0.6)] transition-colors duration-300 focus:border-blue-500 dark:focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-primary-900/50;
+    font-size: var(--ui-text-input);
+    font-weight: var(--ui-weight-input);
     background-image: none;
   }
 
@@ -420,7 +643,10 @@
   }
 
   table thead th {
-    @apply px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-slate-300;
+    @apply px-4 py-3 text-left uppercase text-slate-400 dark:text-slate-500;
+    font-size: var(--ui-text-table-header);
+    font-weight: var(--ui-weight-table-header);
+    letter-spacing: var(--ui-tracking-label);
     position: relative;
   }
 
@@ -448,7 +674,8 @@
   }
 
   table tbody td {
-    @apply px-4 py-3.5 text-sm text-gray-700 dark:text-slate-300;
+    @apply px-4 py-3.5 text-gray-700 dark:text-slate-300;
+    font-size: var(--ui-text-table-body);
     position: relative;
   }
 
@@ -470,6 +697,58 @@
   /* Subtle shadow for depth */
   table {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  /* MUI defaults — align leftover Material pages to Admin → Users */
+  [data-app-ui] .MuiTab-root {
+    font-size: var(--ui-text-tab) !important;
+    font-weight: 900 !important;
+    letter-spacing: var(--ui-tracking-label) !important;
+    text-transform: uppercase !important;
+    font-family: var(--ui-font-sans) !important;
+  }
+
+  [data-app-ui] .MuiInputBase-input,
+  [data-app-ui] .MuiSelect-select,
+  [data-app-ui] .MuiMenuItem-root {
+    font-size: var(--ui-text-input) !important;
+    font-weight: 700 !important;
+    font-family: var(--ui-font-sans) !important;
+  }
+
+  [data-app-ui] .MuiInputLabel-root,
+  [data-app-ui] .MuiFormLabel-root,
+  [data-app-ui] .MuiFormControlLabel-label {
+    font-size: var(--ui-text-label) !important;
+    font-weight: 900 !important;
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+    font-family: var(--ui-font-sans) !important;
+  }
+
+  [data-app-ui] .MuiButton-root {
+    font-size: var(--ui-text-button) !important;
+    font-weight: 900 !important;
+    letter-spacing: var(--ui-tracking-label) !important;
+    text-transform: uppercase !important;
+    font-family: var(--ui-font-sans) !important;
+  }
+
+  [data-app-ui] .MuiAlert-message,
+  [data-app-ui] .MuiChip-label,
+  [data-app-ui] .MuiTypography-body2 {
+    font-family: var(--ui-font-sans) !important;
+  }
+
+  [data-app-ui] .MuiChip-label {
+    font-size: var(--ui-text-badge) !important;
+    font-weight: 900 !important;
+    letter-spacing: var(--ui-tracking-label);
+    text-transform: uppercase;
+  }
+
+  [data-app-ui] .MuiTypography-root {
+    font-family: var(--ui-font-sans) !important;
   }
 }
 
