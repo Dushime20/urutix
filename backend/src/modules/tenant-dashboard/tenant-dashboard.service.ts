@@ -7,12 +7,13 @@ import { User, UserRole } from '../../entities/user.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Payment, PaymentStatus } from '../../entities/payment.entity';
 import { Bid } from '../../entities/bid.entity';
-import { CreditAccount } from '../../entities/credit-account.entity';
+import { CreditTransaction, CreditTransactionType } from '../../entities/credit-transaction.entity';
 import { CreditService } from '../../services/credit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../../entities/notification.entity';
 
 export interface TenantMetrics {
+  /** Bonus credits earned from accepted bids (TRX) in the selected time range */
   totalRevenue: number;
   totalShipments: number;
   averageLoadUtilization: number;
@@ -61,8 +62,8 @@ export class TenantDashboardService {
     private readonly paymentRepository: Repository<Payment>,
     @InjectRepository(Bid)
     private readonly bidRepository: Repository<Bid>,
-    @InjectRepository(CreditAccount)
-    private readonly creditAccountRepository: Repository<CreditAccount>,
+    @InjectRepository(CreditTransaction)
+    private readonly creditTransactionRepository: Repository<CreditTransaction>,
     private readonly creditService: CreditService,
     private readonly notificationsService: NotificationsService,
   ) { }
@@ -129,32 +130,23 @@ export class TenantDashboardService {
       },
     });
 
-    // Get payments for the tenant
-    const payments = await this.paymentRepository.find({
-      where: {
-        tenantId,
-        createdAt: Between(startDate, endDate),
-        status: PaymentStatus.COMPLETED,
-      },
-    });
-
-    // Get tenant-level credit account for partner sales revenue
-    const tenantCreditAccount = await this.creditAccountRepository.findOne({
-      where: {
-        tenantId,
-        userId: null, // Tenant-level account
-      },
-    });
-
-    // Calculate metrics
-    const operationalRevenue = payments.reduce(
-      (sum, payment) => sum + (Number(payment.amount) || 0),
-      0,
-    );
-    const partnerSalesRevenue = tenantCreditAccount 
-      ? Number(tenantCreditAccount.revenueFromPartnerSales) || 0
-      : 0;
-    const totalRevenue = operationalRevenue + partnerSalesRevenue;
+    // Total earnings = bonus credits granted to the tenant from accepted bids
+    const bidBonusResult = await this.creditTransactionRepository
+      .createQueryBuilder('ct')
+      .select('COALESCE(SUM(ct.amount), 0)', 'total')
+      .where('ct.tenantId = :tenantId', { tenantId })
+      .andWhere('ct.userId IS NULL')
+      .andWhere('ct.type = :type', { type: CreditTransactionType.BONUS })
+      .andWhere('ct.createdAt >= :startDate AND ct.createdAt <= :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('(ct.referenceType = :refType OR ct.description ILIKE :desc)', {
+        refType: 'BID',
+        desc: 'Bid revenue%',
+      })
+      .getRawOne();
+    const totalRevenue = Number(bidBonusResult?.total) || 0;
     const totalShipments = loads.length;
     const activeTrucks = trucks.filter(
       (truck) => truck.status === VehicleStatus.AVAILABLE,

@@ -366,15 +366,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
         },
         {
           label: 'Commercial',
-          path: '/tenant-admin/financial',
+          path: '/tenant-admin/purchase-credits',
           icon: DollarSign,
           subItems: [
-            { label: 'Financial', path: '/tenant-admin/financial' },
             { label: 'Purchase Credits', path: '/tenant-admin/purchase-credits' },
-            { label: 'Billing', path: '/tenant-admin/billing' },
-            { label: 'Plans', path: '/tenant-admin/subscription-plans' },
             { label: 'Communication', path: '/tenant-admin/communication' },
-            { label: 'Settings', path: '/tenant-admin/settings' },
           ]
         },
         {

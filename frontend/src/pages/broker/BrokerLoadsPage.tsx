@@ -6,17 +6,13 @@ import { brokerAPI, type BrokerLoad, type LoadContract, getPickupAddress, getDel
 import LocationLabel from '../../components/common/LocationLabel';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import ContractAcceptanceModal from '../../components/broker/ContractAcceptanceModal';
-import FilterSelect from '../../components/common/FilterSelect';
 import receiverService, { type Receiver } from '../../services/receiverService';
 import {
   Package,
   Search,
-  Grid,
-  Table,
   ArrowRight,
   AlertCircle,
   Download,
-  Clock,
   Eye,
   X,
   Loader2,
@@ -48,12 +44,6 @@ const BrokerLoadsPage: React.FC = () => {
   const [receiversLoading, setReceiversLoading] = useState(false);
   const [receiverSearchTerm, setReceiverSearchTerm] = useState('');
   const [assigningReceiver, setAssigningReceiver] = useState(false);
-
-  // Filters and view mode
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [cargoTypeFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
   useEffect(() => {
     if (user && user.role === 'BROKER') {
@@ -96,18 +86,6 @@ const BrokerLoadsPage: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const filteredLoads = useMemo(() => {
-    return loads.filter(load => {
-      const matchesSearch =
-        load.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        load.id.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = !statusFilter || load.status === statusFilter;
-      const matchesCargoType = !cargoTypeFilter || load.cargoType === cargoTypeFilter;
-      return matchesSearch && matchesStatus && matchesCargoType;
-    });
-  }, [loads, searchTerm, statusFilter, cargoTypeFilter]);
 
   const handleAcceptContract = async (contractId: string) => {
     try {
@@ -269,277 +247,138 @@ const BrokerLoadsPage: React.FC = () => {
     });
   }, [receivers, receiverSearchTerm]);
 
-  const getStatusPrimeStyle = (status: string) => {
-    switch (status) {
-      case 'IN_TRANSIT': return 'bg-indigo-50 text-indigo-600 border-indigo-100';
-      case 'DELIVERED':
-      case 'COMPLETED': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      case 'CANCELLED': return 'bg-rose-50 text-rose-600 border-rose-100';
-      case 'ASSIGNED': return 'bg-primary-50 text-primary-600 border-primary-100';
-      default: return 'bg-slate-50 text-slate-500 border-slate-100';
-    }
-  };
-
   if (loading) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 sm:px-9 md:px-10 lg:px-12 xl:px-14 space-y-12 animate-fade-in pb-24">
-      {/* Ultra-Compact Loads Header */}
-      <div className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-slate-100/60 dark:bg-primary-600/10 rounded-full -mr-48 -mt-48 blur-[80px]"></div>
-        
-        <div className="relative z-10 flex items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-[#345E85]/10 dark:bg-white/10 border border-[#345E85]/20 dark:border-white/20 flex items-center justify-center">
-            <Package size={24} className="text-[#345E85] dark:text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none mb-1 text-slate-900 dark:text-white">Loads</h1>
-            <p className="text-slate-400 text-sm font-bold uppercase tracking-[0.3em]">{filteredLoads.length} AVAILABLE</p>
-          </div>
-        </div>
-
-        <div className="relative z-10 flex items-center gap-12 mr-4">
-           <div className="h-10 w-px bg-white/10 mx-2 hidden md:block"></div>
-           <div className="text-center hidden md:block">
-             <p className="text-xl font-bold leading-none text-primary-400">{filteredLoads.filter(l => l.status === 'ASSIGNED').length}</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Assigned</p>
-           </div>
-           <div className="text-center hidden md:block">
-             <p className="text-xl font-bold leading-none text-emerald-400">{filteredLoads.filter(l => l.status === 'COMPLETED').length}</p>
-             <p className="text-xs font-bold text-slate-500 uppercase mt-0.5 dark:text-slate-400">Closed</p>
-           </div>
-           <button 
-             onClick={() => setViewMode(viewMode === 'card' ? 'table' : 'card')}
-             className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all backdrop-blur-xl"
-           >
-             {viewMode === 'card' ? <Table size={18} /> : <Grid size={18} />}
-           </button>
-        </div>
-      </div>
-
-      {/* Pipeline Master Control */}
-      <div className="bg-white rounded-[3rem] border border-slate-100 p-8 shadow-sm flex flex-col lg:flex-row gap-8 relative group overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-        <div className="flex-1 relative group">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-600 transition-colors" size={20} />
-          <input
-            type="text"
-            placeholder="Search Load ID or Location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-16 pr-8 py-5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:bg-white focus:shadow-xl transition-all outline-none placeholder:text-slate-300 dark:bg-slate-800/50 dark:text-white"
-          />
-        </div>
-        <div className="flex gap-4">
-          <FilterSelect
-            label="Stage"
-            icon={<Clock className="text-primary-600" size={16} />}
-            value={statusFilter}
-            placeholder="All Stages"
-            options={[
-              { value: '', label: 'All Loads' },
-              { value: 'ASSIGNED', label: 'Assigned' },
-              { value: 'IN_TRANSIT', label: 'In Transit' },
-              { value: 'COMPLETED', label: 'Delivered' },
-            ]}
-            onChange={setStatusFilter}
-          />
-        </div>
-      </div>
-
-      {/* Load Stream */}
-      {filteredLoads.length === 0 ? (
-        <div className="bg-white rounded-[3.5rem] border border-slate-100 p-48 text-center space-y-8 shadow-sm opacity-50 dark:bg-slate-900 dark:border-slate-800">
-          <Package className="w-24 h-24 text-slate-100 mx-auto" />
-          <p className="text-xs font-bold text-slate-400 uppercase leading-relaxed">System scan complete. No loads in pipeline matching criteria.</p>
-        </div>
-      ) : viewMode === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLoads.map((load) => {
-            const contract = contracts.get(load.id);
-            return (
-              <div key={load.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between h-full group">
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusPrimeStyle(load.status)}`}>
-                      {load.status.replace('_', ' ')}
-                    </span>
-                    <span className="text-slate-400 text-xs font-medium">#{load.id.slice(0, 8)}</span>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 line-clamp-2">{load.title}</h3>
-                  
-                  <div className="flex items-center gap-6 mb-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <div>
-                       <p className="text-xs text-slate-500 font-medium mb-1">Rate</p>
-                       <p className="text-base font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
-                    </div>
-                    {load.brokerCommissionRate > 0 && (
-                       <div>
-                          <p className="text-xs text-emerald-600 font-medium mb-1">Yield</p>
-                          <p className="text-base font-bold text-emerald-600">+{load.brokerCommissionRate}%</p>
-                       </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-3 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1"><div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-primary-600"></div></div>
-                      <div className="flex-1">
-                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Pickup</p>
-                        <LocationLabel
-                          address={getPickupAddress(load)}
-                          lat={getPickupCoords(load)?.lat}
-                          lng={getPickupCoords(load)?.lng}
-                          fallback="Not Specified"
-                          className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 block"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1"><div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-900 border-2 border-slate-800 dark:border-slate-400"></div></div>
-                      <div className="flex-1">
-                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Delivery</p>
-                        <LocationLabel
-                          address={getDeliveryAddress(load)}
-                          lat={getDeliveryCoords(load)?.lat}
-                          lng={getDeliveryCoords(load)?.lng}
-                          fallback="Not Specified"
-                          className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 block"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {contract && contract.status === 'PENDING_BROKER_ACCEPTANCE' && (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-center justify-between">
-                       <div className="flex items-center gap-2">
-                          <AlertCircle className="text-amber-600 dark:text-amber-500" size={16} />
-                          <p className="text-xs font-medium text-amber-800 dark:text-amber-400">Contract Pending</p>
-                       </div>
-                       <button onClick={() => handleViewContract(load.id)} className="px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded-lg hover:bg-amber-700 transition-colors">Review</button>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <button onClick={() => navigate(`/dashboard/broker/loads/${load.id}`)} className="flex-1 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors flex justify-center items-center gap-2">
-                      <Eye size={16} /> View Details
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleOpenAssignReceiverModal(load.id); }} 
-                      className="p-2.5 bg-teal-100 text-teal-600 rounded-xl hover:bg-teal-200 transition-colors dark:bg-teal-900/20 dark:text-teal-400 dark:hover:bg-teal-900/30" 
-                      title="Assign Existing Receiver"
-                    >
-                      <Users size={18} />
-                    </button>
-                    <button onClick={() => handleDownloadContract(load.id)} className="p-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700" title="Download Contract">
-                      <Download size={18} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <StandardDataTable<BrokerLoad>
-          embedded
-          columns={[
-            {
-              key: 'title',
-              label: 'Carrier Payload',
-              sortable: true,
-              alwaysVisible: true,
-              render: (_: any, load: BrokerLoad) => (
+    <div className="max-w-7xl mx-auto px-6 sm:px-9 md:px-10 lg:px-12 xl:px-14 animate-fade-in pb-24">
+      <StandardDataTable<BrokerLoad>
+        title="Loads"
+        icon={<Package size={18} />}
+        columns={[
+          {
+            key: 'title',
+            label: 'Load',
+            sortable: true,
+            alwaysVisible: true,
+            render: (_: any, load: BrokerLoad) => {
+              const contract = contracts.get(load.id);
+              const pending = contract?.status === 'PENDING_BROKER_ACCEPTANCE';
+              return (
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-center text-slate-300 shadow-sm">
                     <Package size={18} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-900 uppercase italic dark:text-white">{load.title}</p>
-                    <p className="text-xs font-bold text-slate-400 uppercase mt-0.5">#{load.id.slice(0, 8)}</p>
-                    <div className="mt-1">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{load.title}</p>
+                    <p className="text-xs font-medium text-slate-400 mt-0.5">#{load.id.slice(0, 8)}</p>
+                    <div className="mt-1 flex items-center gap-2">
                       <StatusBadge status={load.status} label={load.status.replace(/_/g, ' ')} />
+                      {pending && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                          <AlertCircle size={12} /> Pending
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-              ),
+              );
             },
-            {
-              key: 'pickupLocation',
-              label: 'Route Details',
-              render: (_: any, load: BrokerLoad) => (
-                <div className="flex items-center gap-3 text-sm font-bold text-slate-600 uppercase dark:text-slate-300">
-                  <LocationLabel
-                    address={getPickupAddress(load)}
-                    lat={getPickupCoords(load)?.lat}
-                    lng={getPickupCoords(load)?.lng}
-                    fallback="N/A"
-                    className="truncate max-w-[120px]"
-                  />
-                  <ArrowRight size={10} className="shrink-0" />
-                  <LocationLabel
-                    address={getDeliveryAddress(load)}
-                    lat={getDeliveryCoords(load)?.lat}
-                    lng={getDeliveryCoords(load)?.lng}
-                    fallback="N/A"
-                    className="truncate max-w-[120px]"
-                  />
-                </div>
-              ),
-            },
-            {
-              key: 'loadValue',
-              label: 'Yield Index',
-              sortable: true,
-              align: 'right',
-              render: (_: any, load: BrokerLoad) => (
-                <div>
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
-                  {load.brokerCommissionRate ? (
-                    <p className="text-xs font-bold text-primary-500 uppercase">Comm: {load.brokerCommissionRate}%</p>
-                  ) : null}
-                </div>
-              ),
-            },
-          ] as Column<BrokerLoad>[]}
-          data={filteredLoads}
-          getRowId={(row) => row.id}
-          onRowClick={(row) => navigate(`/dashboard/broker/loads/${row.id}`)}
-          searchable={false}
-          pagination
-          pageSize={10}
-          columnVisibility
-          stickyHeader
-          striped
-          hoverable
-          emptyMessage="No loads in pipeline matching criteria"
-          rowActions={[
-            {
-              key: 'assign',
-              label: 'Assign receiver',
-              icon: <Users size={14} />,
-              onClick: (row) => handleOpenAssignReceiverModal(row.id),
-            },
-            {
-              key: 'download',
-              label: 'Download contract',
-              icon: <Download size={14} />,
-              onClick: (row) => handleDownloadContract(row.id),
-            },
-            {
-              key: 'view',
-              label: 'View details',
-              icon: <Eye size={14} />,
-              onClick: (row) => navigate(`/dashboard/broker/loads/${row.id}`),
-            },
-          ] as TableAction<BrokerLoad>[]}
-          ariaLabel="Broker loads table"
-        />
-      )}
+          },
+          {
+            key: 'pickupLocation',
+            label: 'Route',
+            render: (_: any, load: BrokerLoad) => (
+              <div className="flex items-center gap-3 text-sm font-medium text-slate-600 dark:text-slate-300">
+                <LocationLabel
+                  address={getPickupAddress(load)}
+                  lat={getPickupCoords(load)?.lat}
+                  lng={getPickupCoords(load)?.lng}
+                  fallback="N/A"
+                  className="truncate max-w-[140px]"
+                />
+                <ArrowRight size={12} className="shrink-0 text-slate-400" />
+                <LocationLabel
+                  address={getDeliveryAddress(load)}
+                  lat={getDeliveryCoords(load)?.lat}
+                  lng={getDeliveryCoords(load)?.lng}
+                  fallback="N/A"
+                  className="truncate max-w-[140px]"
+                />
+              </div>
+            ),
+          },
+          {
+            key: 'loadValue',
+            label: 'Rate',
+            sortable: true,
+            align: 'right',
+            render: (_: any, load: BrokerLoad) => (
+              <div>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{fmtMoney(load.loadValue ?? 0)}</p>
+                {load.brokerCommissionRate ? (
+                  <p className="text-xs font-medium text-primary-500">Comm: {load.brokerCommissionRate}%</p>
+                ) : null}
+              </div>
+            ),
+          },
+        ] as Column<BrokerLoad>[]}
+        data={loads}
+        getRowId={(row) => row.id}
+        onRowClick={(row) => navigate(`/dashboard/broker/loads/${row.id}`)}
+        searchable
+        searchPlaceholder="Search load ID, title, or status..."
+        searchKeys={['title', 'description', 'id', 'status', 'cargoType']}
+        filters={[
+          {
+            key: 'status',
+            label: 'Status',
+            options: [
+              { value: 'ASSIGNED', label: 'Assigned' },
+              { value: 'IN_TRANSIT', label: 'In Transit' },
+              { value: 'COMPLETED', label: 'Delivered' },
+            ],
+          },
+        ]}
+        pagination
+        pageSize={10}
+        columnVisibility
+        stickyHeader
+        striped
+        hoverable
+        emptyMessage="No loads found"
+        onRefresh={loadBrokerLoads}
+        rowActions={[
+          {
+            key: 'review',
+            label: 'Review contract',
+            icon: <AlertCircle size={14} />,
+            variant: 'warning',
+            hidden: (row) => contracts.get(row.id)?.status !== 'PENDING_BROKER_ACCEPTANCE',
+            onClick: (row) => handleViewContract(row.id),
+          },
+          {
+            key: 'assign',
+            label: 'Assign receiver',
+            icon: <Users size={14} />,
+            onClick: (row) => handleOpenAssignReceiverModal(row.id),
+          },
+          {
+            key: 'download',
+            label: 'Download contract',
+            icon: <Download size={14} />,
+            onClick: (row) => handleDownloadContract(row.id),
+          },
+          {
+            key: 'view',
+            label: 'View details',
+            icon: <Eye size={14} />,
+            onClick: (row) => navigate(`/dashboard/broker/loads/${row.id}`),
+          },
+        ] as TableAction<BrokerLoad>[]}
+        ariaLabel="Broker loads table"
+      />
 
       {showContractModal && selectedContract && (
         <ContractAcceptanceModal

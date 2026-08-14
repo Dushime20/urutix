@@ -19,7 +19,6 @@ import {
   FaShieldAlt,
   FaHeadset,
   FaLightbulb,
-  FaArrowLeft,
   FaGift,
   FaStore,
   FaInfoCircle,
@@ -445,32 +444,6 @@ const SubscriptionPlans: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Header - Enlite Prime Style */}
-      <div className="bg-white rounded-[32px] shadow-[0_4px_20px_rgba(0,0,0,0.02)] p-8 border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-        {/* Decorative Background Blur */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
-
-        <div className="flex items-center gap-5 relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100/50 shadow-sm">
-            <FaCrown className="w-6 h-6 text-[#345E85]" />
-          </div>
-          <div>
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Billing & Operations</h3>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Choose Your Perfect Plan</h1>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center gap-4 relative z-10">
-          <button
-            onClick={() => navigate('/tenant-admin/billing')}
-            className="px-6 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition-all font-black text-[11px] uppercase tracking-widest flex items-center gap-2 shadow-sm whitespace-nowrap"
-          >
-            <FaArrowLeft className="text-xs" />
-            Back to Billing
-          </button>
-        </div>
       </div>
 
       {activeTab === 'plans' && (

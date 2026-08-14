@@ -3,7 +3,6 @@ import { Truck, DollarSign, AlertTriangle, Route } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
-import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 interface Metrics {
   totalRevenue: number;
@@ -24,7 +23,6 @@ interface QuickStatsProps {
 
 const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
   const { tSync } = useTranslation();
-  const { format: formatCurrency } = useCurrencyFormat();
 
   const formatNumber = (num: number | undefined) => {
     return new Intl.NumberFormat('en-US').format(num || 0);
@@ -40,7 +38,7 @@ const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
   const stats = [
     {
       title: tSync('Total Earnings'),
-      value: formatCurrency(metrics?.totalRevenue),
+      value: `${formatNumber(metrics?.totalRevenue)} TRX`,
       icon: DollarSign,
     },
     {

@@ -1,6 +1,7 @@
 import api from './api';
 
 export interface TenantMetrics {
+  /** Bonus credits earned from accepted bids (TRX) */
   totalRevenue: number;
   totalShipments: number;
   activeFleet: number;

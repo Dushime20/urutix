@@ -342,8 +342,10 @@ export class CreditService {
     tenantId: string,
     amount: number,
     reason: string,
-    expiresAt?: Date, // kept in signature for caller compatibility — ignored
+    expiresAt?: Date | null, // kept in signature for caller compatibility — ignored
     userId?: string,
+    referenceType?: string,
+    referenceId?: string,
   ): Promise<CreditTransaction> {
     const account = await this.getOrCreateCreditAccount(tenantId, userId);
 
@@ -363,6 +365,8 @@ export class CreditService {
       amount,
       balanceAfter: account.currentBalance,
       description: reason,
+      referenceType: referenceType || undefined,
+      referenceId: referenceId || undefined,
       metadata: { grantedAt: new Date().toISOString() },
     });
 
@@ -1089,6 +1093,8 @@ export class CreditService {
       `Bid revenue from "${dto.loadTitle}" - earned from truck owner payment (${dto.cargoWeightTons} tons × ${dto.creditsPerTonTruckOwner} credits/ton)`,
       null, // No expiry
       undefined, // Tenant-level account
+      'BID',
+      dto.bidId,
     );
 
     // Calculate net result for tenant admin
