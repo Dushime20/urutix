@@ -27,6 +27,7 @@ import { documentApi, type Document as DocumentType } from '../../services/docum
 import toast from 'react-hot-toast';
 import DocumentUploadModal from '../documents/DocumentUploadModal';
 import DocumentPreviewModal from '../documents/DocumentPreviewModal';
+import { flattenComplianceDocuments } from '../../utils/vehicleComplianceDocuments';
 
 interface TruckDetailsModalProps {
     isOpen: boolean;
@@ -213,13 +214,17 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                                     <InfoItem icon={Hash} label="Plate Number" value={truck.plateNumber} />
+                                                    <InfoItem icon={Hash} label="VIN" value={truck.vin || 'N/A'} />
                                                     <InfoItem icon={Truck} label="Make & Model" value={`${truck.make || 'N/A'} ${truck.model || ''}`} />
                                                     <InfoItem icon={Calendar} label="Year" value={truck.year?.toString() || 'N/A'} />
-                                                    <InfoItem icon={Truck} label="Truck Type" value={typeof truck.truckType === 'string' ? truck.truckType.replace(/_/g, ' ') : String(truck.truckType || 'N/A')} />
-                                                    <InfoItem icon={Weight} label="Capacity (Weight)" value={truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : 'N/A'} />
-                                                    <InfoItem icon={Gauge} label="Capacity (Volume)" value={truck.capacityVolume ? `${Number(truck.capacityVolume).toLocaleString()} m³` : 'N/A'} />
+                                                    <InfoItem icon={Truck} label="Vehicle Type" value={typeof truck.truckType === 'string' ? truck.truckType.replace(/_/g, ' ') : String(truck.truckType || 'N/A')} />
+                                                    <InfoItem icon={Truck} label="Vehicle Class" value={typeof truck.vehicleClass === 'string' ? truck.vehicleClass.replace(/_/g, ' ') : 'N/A'} />
+                                                    <InfoItem icon={Weight} label="Payload" value={truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : 'N/A'} />
+                                                    <InfoItem icon={Gauge} label="Volume" value={truck.capacityVolume ? `${Number(truck.capacityVolume).toLocaleString()} m³` : 'N/A'} />
+                                                    <InfoItem icon={Fuel} label="Propulsion" value={typeof truck.fuelType === 'string' ? truck.fuelType.replace(/_/g, ' ') : 'N/A'} />
+                                                    <InfoItem icon={Activity} label="Odometer" value={truck.mileage ? `${Number(truck.mileage).toLocaleString()} km` : 'N/A'} />
                                                     <InfoItem icon={MapPin} label="Current Location" value={location} />
-                                                    <InfoItem icon={Activity} label="Mileage" value={truck.mileage ? `${Number(truck.mileage).toLocaleString()} km` : 'N/A'} />
+                                                    <InfoItem icon={Hash} label="Fleet Group" value={truck.fleetGroup || 'N/A'} />
                                                 </div>
                                             </div>
 
@@ -267,6 +272,24 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                             <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                                                         </div>
                                                         <div>
+                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Insurance Expiry</p>
+                                                            <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.insuranceExpiry)}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl transition-colors">
+                                                            <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Registry Expiry</p>
+                                                            <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.registrationExpiry)}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl transition-colors">
+                                                            <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                                                        </div>
+                                                        <div>
                                                             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Registered</p>
                                                             <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.createdAt)}</p>
                                                         </div>
@@ -293,6 +316,36 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
                                                     </div>
                                                 ) : (
                                                     <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4 transition-colors">No drivers assigned</p>
+                                                )}
+                                            </div>
+
+                                            <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
+                                                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 transition-colors">Compliance documents</h4>
+                                                {flattenComplianceDocuments(truck.complianceDocuments).length > 0 ? (
+                                                    <div className="space-y-3">
+                                                        {flattenComplianceDocuments(truck.complianceDocuments).map(({ title, record }, idx) => {
+                                                            const expired = Boolean(record.expiryDate) && new Date(record.expiryDate as string) < new Date(new Date().toDateString());
+                                                            return (
+                                                                <div key={`${title}-${idx}`} className="flex items-start justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{title}</p>
+                                                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1">
+                                                                            {record.number ? `${record.number} · ` : ''}
+                                                                            {record.expiryDate ? `Expires ${formatDate(record.expiryDate)}` : 'No expiry'}
+                                                                            {record.fileName ? ` · ${record.fileName}` : ''}
+                                                                        </p>
+                                                                    </div>
+                                                                    <span className={`shrink-0 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                                                                        expired ? 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                                                    }`}>
+                                                                        {expired ? 'Expired' : (record.status || 'Valid')}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No compliance files attached</p>
                                                 )}
                                             </div>
 

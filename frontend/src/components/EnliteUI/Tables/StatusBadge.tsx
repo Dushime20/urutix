@@ -27,8 +27,11 @@ export function resolveStatusVariant(status: string): StatusBadgeVariant {
   if (['active', 'approved', 'completed', 'paid', 'available', 'verified', 'success', 'disbursed', 'repaid', 'cleared', 'accepted', 'delivered'].includes(s)) {
     return 'success';
   }
-  if (['pending', 'pending_review', 'in_progress', 'processing', 'scheduled', 'planned', 'awaiting', 'offer_sent', 'in_transit'].includes(s)) {
+  if (['pending', 'pending_review', 'in_progress', 'processing', 'scheduled', 'planned', 'awaiting', 'offer_sent', 'in_transit', 'under_review'].includes(s)) {
     return 'warning';
+  }
+  if (['additional_information_required', 'information_required'].includes(s)) {
+    return 'orange';
   }
   if (['rejected', 'failed', 'cancelled', 'canceled', 'defaulted', 'suspended', 'blocked', 'overdue', 'error', 'out_of_service'].includes(s)) {
     return 'error';

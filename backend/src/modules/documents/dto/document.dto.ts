@@ -92,6 +92,9 @@ export class CreateDocumentDto {
   @IsOptional()
   tags?: string[];
 
+  @IsOptional()
+  metadata?: Record<string, any>;
+
   @IsBoolean()
   @IsOptional()
   sendNotification?: boolean;

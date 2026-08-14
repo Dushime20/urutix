@@ -48,7 +48,8 @@ export const UserRole = {
     DRIVER: 'DRIVER',
     AGENT: 'AGENT',
     BROKER: 'BROKER',
-    LENDER: 'LENDER'
+    LENDER: 'LENDER',
+    PARKING_RESERVATION_MANAGER: 'PARKING_RESERVATION_MANAGER',
 } as const;
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];

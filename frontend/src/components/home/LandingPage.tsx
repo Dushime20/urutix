@@ -51,6 +51,7 @@ const ROLE_DASHBOARD: Record<string, string> = {
   MANAGER: "/dashboard",
   AGENT: "/dashboard",
   USER: "/dashboard",
+  PARKING_RESERVATION_MANAGER: "/dashboard/parking/reservations",
 }
 
 const NAV_LINKS = [
@@ -310,6 +311,12 @@ function Navbar() {
                 </a>
               )
             })}
+            <Link
+              to="/parking-reservation"
+              className="relative px-3.5 py-2 text-[13px] font-semibold tracking-tight rounded-md text-primary-700 hover:text-primary-500 hover:bg-primary-50 transition-colors"
+            >
+              <TranslatedText text="Reserve Truck Parking" />
+            </Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-2.5 lg:gap-3">
@@ -407,6 +414,14 @@ function Navbar() {
                     </a>
                   )
                 })}
+                <Link
+                  to="/parking-reservation"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between py-3.5 border-b border-primary-50 text-sm font-semibold text-primary-800"
+                >
+                  <TranslatedText text="Reserve Truck Parking" />
+                  <ChevronRight className="w-4 h-4 text-primary-300" />
+                </Link>
               </nav>
 
               <div className="px-5 pb-5 pt-2 space-y-2.5">

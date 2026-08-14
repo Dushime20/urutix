@@ -26,6 +26,12 @@ import toast from 'react-hot-toast';
 import type { FleetItem } from '../../types/fleet';
 import { driverApi } from '../../services/driverApi';
 import { fleetApi } from '../../services/fleetApi';
+import {
+  hydrateComplianceDocuments,
+  hasPendingComplianceFiles,
+  stripComplianceFiles,
+  uploadVehicleComplianceDocuments,
+} from '../../utils/vehicleComplianceDocuments';
 import type { Driver } from '../../services/fleetApi';
 import {
   Dialog,
@@ -36,6 +42,7 @@ import {
 } from '@/components/ui';
 import {
   BasicInformationStep,
+  LegalComplianceStep,
   SpecificationsStep,
   CargoCapabilitiesStep,
   LoadingEquipmentStep,
@@ -51,7 +58,7 @@ import {
 interface FleetFormStepperProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => Promise<any>;
   initialData: FleetItem | null;
   mode: 'create' | 'edit';
   activeTab: 'trucks' | 'drivers';
@@ -169,14 +176,14 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     }
 
     return [
-      { id: 1, title: 'Basic Information', description: 'Vehicle details & identification', icon: <Truck size={18} /> },
-      { id: 2, title: 'Specifications', description: 'Technical dimensions & ratings', icon: <Settings2 size={18} /> },
-      { id: 3, title: 'Cargo Capabilities', description: 'Cargo type support & handling', icon: <Box size={18} /> },
-      { id: 4, title: 'Loading Equipment', description: 'Loading and unloading tools', icon: <Wrench size={18} /> },
-      { id: 5, title: 'Security & Monitoring', description: 'Safety features & tracking', icon: <ShieldCheck size={18} /> },
-      { id: 6, title: 'Certifications', description: 'Legal compliance & permits', icon: <Award size={18} /> },
-      { id: 7, title: 'Route Capabilities', description: 'Route types & restrictions', icon: <Navigation size={18} /> },
-      { id: 8, title: 'Cost Structure', description: 'Pricing rates & surcharges', icon: <CircleDollarSign size={18} /> },
+      { id: 1, title: 'Basic Information', description: 'Vehicle identity & fleet details', icon: <Truck size={18} /> },
+      { id: 2, title: 'Legal & Compliance', description: 'Insurance, registry & operating authority', icon: <Award size={18} /> },
+      { id: 3, title: 'Vehicle Specifications', description: 'Technical dimensions & ratings', icon: <Settings2 size={18} /> },
+      { id: 4, title: 'Cargo Capabilities', description: 'Cargo type support & handling', icon: <Box size={18} /> },
+      { id: 5, title: 'Loading Equipment', description: 'Loading and unloading tools', icon: <Wrench size={18} /> },
+      { id: 6, title: 'Security & Monitoring', description: 'Safety features & tracking', icon: <ShieldCheck size={18} /> },
+      { id: 7, title: 'Certifications & Routes', description: 'Permits, routes & restrictions', icon: <Navigation size={18} /> },
+      { id: 8, title: 'Costing & Operations', description: 'Rates, maintenance & contacts', icon: <CircleDollarSign size={18} /> },
     ];
   };
 
@@ -199,12 +206,63 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         capacityVolume: initialData.capacityVolume?.toString() || '',
         registrationNumber: initialData.registrationNumber || '',
         registrationExpiry: formatDateForInput(initialData.registrationExpiry),
-        insurancePolicy: initialData.insurancePolicy || '',
-        insuranceExpiry: formatDateForInput(initialData.insuranceExpiry),
-        roadworthyCertExpiry: formatDateForInput(initialData.roadworthyCertExpiry),
+        insurancePolicy: initialData.insurancePolicy || (initialData as any).complianceDocuments?.insurance?.number || '',
+        insuranceExpiry: formatDateForInput(initialData.insuranceExpiry || (initialData as any).complianceDocuments?.insurance?.expiryDate),
+        roadworthyCertExpiry: formatDateForInput(initialData.roadworthyCertExpiry || (initialData as any).complianceDocuments?.roadworthy?.expiryDate),
         mileage: initialData.mileage?.toString() || '',
         truckType: initialData.truckType || '',
         trailerType: initialData.trailerType || '',
+        status: initialData.status || 'AVAILABLE',
+        manufacturer: initialData.manufacturer || '',
+        chassis: initialData.chassis || '',
+        availabilityStatus: initialData.availabilityStatus || 'AVAILABLE',
+        ownershipType: initialData.ownershipType || '',
+        vehicleClass: initialData.vehicleClass || '',
+        fleetGroup: initialData.fleetGroup || '',
+        businessUnit: initialData.businessUnit || '',
+        costCenter: initialData.costCenter || '',
+        chassisConfiguration: initialData.chassisConfiguration || '',
+        dotNumber: initialData.dotNumber || '',
+        mcNumber: initialData.mcNumber || '',
+        operatingAuthority: initialData.operatingAuthority || (initialData as any).complianceDocuments?.operatingAuthority?.number || '',
+        crossBorderPermit: initialData.crossBorderPermit || (initialData as any).complianceDocuments?.crossBorderPermit?.number || '',
+        customsBond: initialData.customsBond || (initialData as any).complianceDocuments?.customsBond?.number || '',
+        portAuthorization: initialData.portAuthorization || (initialData as any).complianceDocuments?.portAuthorization?.number || '',
+        hasCrossBorderPermit: Boolean(
+          initialData.crossBorderPermit ||
+          initialData.customsBond ||
+          initialData.portAuthorization ||
+          (initialData as any).complianceDocuments?.crossBorderPermit?.number ||
+          (initialData as any).complianceDocuments?.customsBond?.number ||
+          (initialData as any).complianceDocuments?.portAuthorization?.number
+        ),
+        complianceDocuments: hydrateComplianceDocuments((initialData as any).complianceDocuments, {
+          insurancePolicy: initialData.insurancePolicy,
+          insuranceExpiry: formatDateForInput(initialData.insuranceExpiry),
+          roadworthyCertExpiry: formatDateForInput(initialData.roadworthyCertExpiry),
+          operatingAuthority: initialData.operatingAuthority,
+          crossBorderPermit: initialData.crossBorderPermit,
+          customsBond: initialData.customsBond,
+          portAuthorization: initialData.portAuthorization,
+        }),
+        axleConfiguration: initialData.axleConfiguration || '',
+        fuelTankCapacity: initialData.fuelTankCapacity?.toString() || '',
+        engineModel: initialData.engineModel || '',
+        horsepower: initialData.horsepower?.toString() || '',
+        torque: initialData.torque?.toString() || '',
+        transmission: initialData.transmission || '',
+        grossVehicleWeight: initialData.grossVehicleWeight?.toString() || '',
+        driverRequirements: initialData.driverRequirements || '',
+        operationalRestrictions: initialData.operationalRestrictions || '',
+        emergencyContacts: Array.isArray(initialData.emergencyContacts) && initialData.emergencyContacts.length > 0
+          ? initialData.emergencyContacts
+          : [{ name: '', phone: '', relationship: '', email: '' }],
+        lastMaintenanceDate: formatDateForInput(initialData.lastMaintenanceDate),
+        nextMaintenanceDate: formatDateForInput(initialData.nextMaintenanceDate),
+        maxLength: initialData.maxLength?.toString() || '',
+        maxWidth: initialData.maxWidth?.toString() || '',
+        maxHeight: initialData.maxHeight?.toString() || '',
+        fuelEfficiency: (initialData as any).fuelEfficiency?.toString() || '',
         // Core requirements
         hasRefrigeration: initialData.hasRefrigeration || false,
         hasLiftGate: initialData.hasLiftGate || false,
@@ -457,6 +515,40 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         mileage: '',
         truckType: '',
         trailerType: '',
+        status: 'AVAILABLE',
+        manufacturer: '',
+        chassis: '',
+        availabilityStatus: 'AVAILABLE',
+        ownershipType: '',
+        vehicleClass: '',
+        fleetGroup: '',
+        businessUnit: '',
+        costCenter: '',
+        chassisConfiguration: '',
+        dotNumber: '',
+        mcNumber: '',
+        operatingAuthority: '',
+        crossBorderPermit: '',
+        customsBond: '',
+        portAuthorization: '',
+        hasCrossBorderPermit: false,
+        complianceDocuments: hydrateComplianceDocuments(),
+        axleConfiguration: '',
+        fuelTankCapacity: '',
+        engineModel: '',
+        horsepower: '',
+        torque: '',
+        transmission: '',
+        grossVehicleWeight: '',
+        driverRequirements: '',
+        operationalRestrictions: '',
+        emergencyContacts: [{ name: '', phone: '', relationship: '', email: '' }],
+        lastMaintenanceDate: '',
+        nextMaintenanceDate: '',
+        maxLength: '',
+        maxWidth: '',
+        maxHeight: '',
+        fuelEfficiency: '',
         // Core requirements
         hasRefrigeration: false,
         hasLiftGate: false,
@@ -850,9 +942,6 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     // Normalize truck payload to backend CreateTruckDto
     const d: any = data || {};
     console.log('🚛 Processing truck data:', d);
-    
-    const oneYearFromNow = new Date();
-    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
     // Helper function to convert date string to ISO format
     const formatDate = (dateValue: any): string | undefined => {
@@ -897,7 +986,9 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       registrationNumber: d.registrationNumber,
       registrationExpiry: d.registrationExpiry,
       insurancePolicy: d.insurancePolicy,
-      insuranceExpiry: d.insuranceExpiry
+      insuranceExpiry: d.insuranceExpiry,
+      chassisConfiguration: d.chassisConfiguration,
+      trailerType: d.trailerType,
     };
 
     console.log('📋 Required fields check:', requiredFields);
@@ -912,25 +1003,36 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
 
+    if (String(d.vin || '').length !== 17) {
+      throw new Error('VIN Registry must be exactly 17 characters');
+    }
+
+    const parseOptionalNumber = (value: any): number | undefined => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const parsed = typeof value === 'string' ? parseFloat(value) : Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+
     const converted: any = {
       // Required fields
       plateNumber: d.plateNumber || '',
       vin: d.vin || '',
       make: d.make || '',
       model: d.model || '',
-      year: typeof d.year === 'string' ? parseInt(d.year) || 2023 : (d.year || 2023),
-      fuelType: d.fuelType || 'DIESEL',
-      capacityWeight: typeof d.capacityWeight === 'string' ? parseFloat(d.capacityWeight) || 1 : (d.capacityWeight || 1),
-      capacityVolume: typeof d.capacityVolume === 'string' ? parseFloat(d.capacityVolume) || 1 : (d.capacityVolume || 1),
+      year: typeof d.year === 'string' ? parseInt(d.year, 10) : d.year,
+      fuelType: d.fuelType,
+      capacityWeight: typeof d.capacityWeight === 'string' ? parseFloat(d.capacityWeight) : d.capacityWeight,
+      capacityVolume: typeof d.capacityVolume === 'string' ? parseFloat(d.capacityVolume) : d.capacityVolume,
       registrationNumber: d.registrationNumber || '',
-      registrationExpiry: formatDate(d.registrationExpiry) || oneYearFromNow.toISOString(),
-      insurancePolicy: d.insurancePolicy || '',
-      insuranceExpiry: formatDate(d.insuranceExpiry) || oneYearFromNow.toISOString(),
+      registrationExpiry: formatDate(d.registrationExpiry),
+      insurancePolicy: d.insurancePolicy || d.complianceDocuments?.insurance?.number || '',
+      insuranceExpiry: formatDate(d.insuranceExpiry || d.complianceDocuments?.insurance?.expiryDate),
+      chassisConfiguration: d.chassisConfiguration,
+      trailerType: d.trailerType,
       hasRefrigeration: toBoolean(d.hasRefrigeration),
-      hasLiftGate: toBoolean(d.hasLiftGate),
-      // hasGps: read from securityFeatures (where SecurityMonitoringStep writes to) with fallback to top-level
+      hasLiftGate: toBoolean(d.hasLiftGate || d.loadingCapabilities?.hasForklift),
       hasGps: toBoolean(d.securityFeatures?.hasGps ?? d.hasGps),
-      hasHazmatPermit: toBoolean(d.hasHazmatPermit),
+      hasHazmatPermit: toBoolean(d.hasHazmatPermit || d.certifications?.hazmatCertified),
       // Sync all security/monitoring fields from securityFeatures object to top-level flat fields
       // SecurityMonitoringStep writes to securityFeatures, backend expects flat fields
       hasTracking: toBoolean(d.securityFeatures?.hasTracking ?? d.hasTracking),
@@ -984,13 +1086,51 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
     // Optional fields
     if (d.color) converted.color = d.color;
+    if (d.status) converted.status = d.status;
+    if (d.manufacturer) converted.manufacturer = d.manufacturer;
+    if (d.chassis) converted.chassis = d.chassis;
+    if (d.availabilityStatus) converted.availabilityStatus = d.availabilityStatus;
+    if (d.ownershipType) converted.ownershipType = d.ownershipType;
+    if (d.vehicleClass) converted.vehicleClass = d.vehicleClass;
+    if (d.fleetGroup) converted.fleetGroup = d.fleetGroup;
+    if (d.businessUnit) converted.businessUnit = d.businessUnit;
+    if (d.costCenter) converted.costCenter = d.costCenter;
+    if (d.dotNumber) converted.dotNumber = d.dotNumber;
+    if (d.mcNumber) converted.mcNumber = d.mcNumber;
+    if (d.operatingAuthority) converted.operatingAuthority = d.operatingAuthority;
+    if (d.crossBorderPermit) converted.crossBorderPermit = d.crossBorderPermit;
+    if (d.customsBond) converted.customsBond = d.customsBond;
+    if (d.portAuthorization) converted.portAuthorization = d.portAuthorization;
+    if (d.axleConfiguration) converted.axleConfiguration = d.axleConfiguration;
+    if (d.engineModel) converted.engineModel = d.engineModel;
+    if (d.transmission) converted.transmission = d.transmission;
+    if (d.driverRequirements) converted.driverRequirements = d.driverRequirements;
+    if (d.operationalRestrictions) converted.operationalRestrictions = d.operationalRestrictions;
+    const fuelTankCapacity = parseOptionalNumber(d.fuelTankCapacity);
+    if (fuelTankCapacity !== undefined) converted.fuelTankCapacity = fuelTankCapacity;
+    const horsepower = parseOptionalNumber(d.horsepower);
+    if (horsepower !== undefined) converted.horsepower = horsepower;
+    const torque = parseOptionalNumber(d.torque);
+    if (torque !== undefined) converted.torque = torque;
+    const grossVehicleWeight = parseOptionalNumber(d.grossVehicleWeight);
+    if (grossVehicleWeight !== undefined) converted.grossVehicleWeight = grossVehicleWeight;
+    if (Array.isArray(d.emergencyContacts)) {
+      converted.emergencyContacts = d.emergencyContacts.filter(
+        (contact: any) => contact?.name || contact?.phone || contact?.email
+      );
+    }
     if (d.mileage !== undefined && d.mileage !== null && d.mileage !== '') {
-      converted.mileage = typeof d.mileage === 'string' ? parseInt(d.mileage) || 0 : d.mileage;
+      converted.mileage = typeof d.mileage === 'string' ? parseInt(d.mileage, 10) || 0 : d.mileage;
     }
     if (d.maxLength) converted.maxLength = typeof d.maxLength === 'string' ? parseFloat(d.maxLength) : d.maxLength;
     if (d.maxWidth) converted.maxWidth = typeof d.maxWidth === 'string' ? parseFloat(d.maxWidth) : d.maxWidth;
     if (d.maxHeight) converted.maxHeight = typeof d.maxHeight === 'string' ? parseFloat(d.maxHeight) : d.maxHeight;
-    if (d.roadworthyCertExpiry) converted.roadworthyCertExpiry = formatDate(d.roadworthyCertExpiry);
+    const fuelEfficiency = parseOptionalNumber(d.fuelEfficiency);
+    if (fuelEfficiency !== undefined) converted.fuelEfficiency = fuelEfficiency;
+    if (d.roadworthyCertExpiry || d.complianceDocuments?.roadworthy?.expiryDate) {
+      converted.roadworthyCertExpiry = formatDate(d.roadworthyCertExpiry || d.complianceDocuments?.roadworthy?.expiryDate);
+    }
+    converted.complianceDocuments = stripComplianceFiles(d.complianceDocuments);
     // Always build equipmentList from checked equipment fields
     converted.equipmentList = buildEquipmentList(d);
     if (d.lastMaintenanceDate) converted.lastMaintenanceDate = formatDate(d.lastMaintenanceDate);
@@ -1007,6 +1147,9 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     loadingBooleans.forEach(key => {
       if (d[key] !== undefined) converted[key] = toBoolean(d[key]);
     });
+    converted.hasWinch = toBoolean(d.hasWinch || d.loadingCapabilities?.hasCrane);
+    converted.hasTailLift = toBoolean(d.hasTailLift || d.loadingCapabilities?.hasLoadingDock);
+    converted.hasLiftGate = toBoolean(d.hasLiftGate || d.loadingCapabilities?.hasForklift);
 
     // ── Cargo Type Capabilities (all fields from CargoCapabilitiesStep) ───────
     // CargoCapabilitiesStep writes to formData.cargoCapabilities (nested object)
@@ -1033,6 +1176,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     }
     if (d.certifications && Object.keys(d.certifications).length > 0) {
       converted.certifications = d.certifications;
+      converted.hasHazmat = toBoolean(d.hasHazmat || d.certifications.hazmatCertified);
+      converted.hasDangerousGoods = toBoolean(d.hasDangerousGoods || d.certifications.dangerousGoodsCertified);
+      converted.hasFoodGrade = toBoolean(d.hasFoodGrade || d.certifications.foodGradeCertified);
+      converted.hasPharmaceutical = toBoolean(d.hasPharmaceutical || d.certifications.pharmaceuticalCertified);
+      converted.hasHazmatPermit = toBoolean(d.hasHazmatPermit || d.certifications.hazmatCertified);
     }
     if (d.routeCapabilities && Object.keys(d.routeCapabilities).length > 0) {
       converted.routeCapabilities = d.routeCapabilities;
@@ -1100,31 +1248,35 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
           return !!(
             formData.plateNumber &&
             formData.vin &&
+            formData.vin.length === 17 &&
             formData.registrationNumber &&
             formData.make &&
             formData.model &&
-            formData.year &&
+            formData.year
+          );
+        case 2: // Legal & Compliance
+          return !!(
             formData.insurancePolicy &&
             formData.insuranceExpiry &&
             formData.registrationExpiry
           );
-        case 2: // Specifications (now includes required capacity and fuel type)
+        case 3: // Vehicle Specifications
           return !!(
+            formData.chassisConfiguration &&
+            formData.trailerType &&
             formData.capacityWeight &&
             formData.capacityVolume &&
             formData.fuelType
           );
-        case 3: // Cargo Capabilities (optional checkboxes, always complete)
+        case 4: // Cargo Capabilities
           return true;
-        case 4: // Loading Equipment (optional checkboxes, always complete)
+        case 5: // Loading Equipment
           return true;
-        case 5: // Security & Monitoring (optional checkboxes, always complete)
+        case 6: // Security & Monitoring
           return true;
-        case 6: // Certifications (optional, always complete)
+        case 7: // Certifications & Routes
           return true;
-        case 7: // Route Capabilities (optional, always complete)
-          return true;
-        case 8: // Cost Structure (optional, always complete)
+        case 8: // Costing & Operations
           return true;
         default:
           return false;
@@ -1168,6 +1320,18 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  const persistComplianceUploads = async (saved: any) => {
+    if (activeTab !== 'trucks') return;
+    const truckId = saved?.id || initialData?.id;
+    if (!truckId) return;
+    if (!hasPendingComplianceFiles(formData.complianceDocuments as any)) return;
+    const uploaded = await uploadVehicleComplianceDocuments(
+      truckId,
+      formData.complianceDocuments as any,
+    );
+    await fleetApi.updateTruck(truckId, { complianceDocuments: uploaded } as any);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1238,7 +1402,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       console.log('📤 Submitting form data:', formData);
       const convertedData = convertFormDataForSubmission(formData);
       console.log('📦 Converted data for submission:', convertedData);
-      await onSubmit(convertedData);
+      const saved = await onSubmit(convertedData);
+      await persistComplianceUploads(saved);
       console.log('✅ Form submitted successfully');
 
       // Dismiss loading toast (success toast is handled by parent component)
@@ -1323,7 +1488,8 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       console.log('📤 Submitting form data manually:', formData);
       const convertedData = convertFormDataForSubmission(formData);
       console.log('📦 Converted data for submission:', convertedData);
-      await onSubmit(convertedData);
+      const saved = await onSubmit(convertedData);
+      await persistComplianceUploads(saved);
       console.log('✅ Form submitted successfully');
 
       // Dismiss loading toast (success toast is handled by parent component)
@@ -1410,35 +1576,43 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
           handleInputChange={handleInputChange}
         />;
       case 2:
-        return <SpecificationsStep
+        return <LegalComplianceStep
           formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 3:
-        return <CargoCapabilitiesStep
+        return <SpecificationsStep
           formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 4:
-        return <LoadingEquipmentStep
+        return <CargoCapabilitiesStep
           formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 5:
-        return <SecurityMonitoringStep
+        return <LoadingEquipmentStep
           formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 6:
-        return <CertificationsStep
+        return <SecurityMonitoringStep
           formData={formData}
           handleInputChange={handleInputChange}
         />;
       case 7:
-        return <RouteCapabilitiesStep
-          formData={formData}
-          handleInputChange={handleInputChange}
-        />;
+        return (
+          <div className="space-y-10">
+            <CertificationsStep
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+            <RouteCapabilitiesStep
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+          </div>
+        );
       case 8:
         return <CostStructureStep
           formData={formData}

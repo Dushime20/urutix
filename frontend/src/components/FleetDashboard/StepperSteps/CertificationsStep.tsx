@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaCertificate, FaShieldAlt, FaUserGraduate, FaDollarSign } from 'react-icons/fa';
 import { useCurrencyFormat } from '../../../hooks/useCurrencyFormat';
+import ComplianceDocumentField from './ComplianceDocumentField';
 
 interface CertificationsStepProps {
   formData: any;
@@ -50,7 +51,7 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
       ],
     },
     {
-      title: 'Driver Certifications',
+      title: 'Driver Endorsements',
       icon: <FaUserGraduate className="w-4 h-4" />,
       certifications: [
         { key: 'cdlCertified', label: 'CDL Certified', description: 'Commercial driver license' },
@@ -160,6 +161,77 @@ export const CertificationsStep: React.FC<CertificationsStepProps> = ({
         <p className="text-[9px] text-gray-500 dark:text-gray-400 font-medium italic">
           * PARSE SYSTEM WILL EXTRACT UNIQUE IDENTIFIERS FROM COMMA-SEPARATED VALUES
         </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            Vehicle Certification Documents
+          </h4>
+          <button
+            type="button"
+            onClick={() => {
+              const current = formData.complianceDocuments?.vehicleCertifications || [];
+              handleInputChange('complianceDocuments', {
+                ...(formData.complianceDocuments || {}),
+                vehicleCertifications: [...current, { status: 'VALID', certificationType: '' }],
+              });
+            }}
+            className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-500 hover:underline"
+          >
+            + Add certificate
+          </button>
+        </div>
+        {(formData.complianceDocuments?.vehicleCertifications || []).length === 0 && (
+          <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            Attach official vehicle certificates with a file input, number, issuer, and expiry.
+          </p>
+        )}
+        {(formData.complianceDocuments?.vehicleCertifications || []).map((cert: any, index: number) => (
+          <ComplianceDocumentField
+            key={`vehicle-cert-${index}`}
+            title={`Vehicle Certification ${index + 1}`}
+            numberLabel="Certificate number"
+            value={cert}
+            extraField={(
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">
+                  Certification type
+                </label>
+                <input
+                  type="text"
+                  value={cert.certificationType || ''}
+                  onChange={(e) => {
+                    const next = [...(formData.complianceDocuments?.vehicleCertifications || [])];
+                    next[index] = { ...cert, certificationType: e.target.value };
+                    handleInputChange('complianceDocuments', {
+                      ...(formData.complianceDocuments || {}),
+                      vehicleCertifications: next,
+                    });
+                  }}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+                  placeholder="e.g. DOT, ISO, SmartWay"
+                  maxLength={80}
+                />
+              </div>
+            )}
+            onChange={(record) => {
+              const next = [...(formData.complianceDocuments?.vehicleCertifications || [])];
+              next[index] = record;
+              handleInputChange('complianceDocuments', {
+                ...(formData.complianceDocuments || {}),
+                vehicleCertifications: next,
+              });
+            }}
+            onRemove={() => {
+              const next = (formData.complianceDocuments?.vehicleCertifications || []).filter((_: any, i: number) => i !== index);
+              handleInputChange('complianceDocuments', {
+                ...(formData.complianceDocuments || {}),
+                vehicleCertifications: next,
+              });
+            }}
+          />
+        ))}
       </div>
 
       {/* Certifications Summary */}

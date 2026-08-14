@@ -1,4 +1,5 @@
 export { default as BasicInformationStep } from './BasicInformationStep';
+export { LegalComplianceStep } from './LegalComplianceStep';
 export { SpecificationsStep } from './SpecificationsStep';
 export { CargoCapabilitiesStep } from './CargoCapabilitiesStep';
 export { LoadingEquipmentStep } from './LoadingEquipmentStep';

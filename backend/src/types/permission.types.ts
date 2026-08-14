@@ -51,7 +51,8 @@ export enum UserRole {
     TRUCK_OWNER = 'TRUCK_OWNER',
     DRIVER = 'DRIVER',
     AGENT = 'AGENT',
-    LENDER = 'LENDER'
+    LENDER = 'LENDER',
+    PARKING_RESERVATION_MANAGER = 'PARKING_RESERVATION_MANAGER',
 }
 
 export interface PermissionCheck {

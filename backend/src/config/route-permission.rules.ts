@@ -27,6 +27,7 @@ export const ROUTE_PERMISSION_SKIP: RegExp[] = [
   /^lending\/webhook/i,
   /^bidding\/test$/,
   /^bidding\/test-db$/,
+  /^parking-reservations\/lookup/,
 ];
 
 export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [
@@ -99,6 +100,18 @@ export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [
   { methods: ['GET', 'HEAD'], pattern: /^receivers(\/|$)/, permissions: ['receivers:view', 'cargo:view_own'] },
   { methods: ['POST', 'PUT', 'PATCH'], pattern: /^receivers\/.*inspect/i, permissions: ['receivers:inspect'] },
   { pattern: /^cargo-owner\/epods/, permissions: ['trips:confirm_epod', 'receivers:inspect', 'cargo:view_own'] },
+
+  // ── Parking reservations ────────────────────────────────────────────────────
+  { methods: ['GET', 'HEAD'], pattern: /^parking-reservations(\/|$)/, permissions: ['parking:view', 'parking:view_own', 'parking:view_details'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/approve/, permissions: ['parking:approve'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/reject/, permissions: ['parking:reject'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/assign/, permissions: ['parking:assign'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/request-information/, permissions: ['parking:request_information'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/cancel/, permissions: ['parking:cancel'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/notes/, permissions: ['parking:add_note'] },
+  { methods: ['PATCH'], pattern: /^parking-reservations\/.*\/review/, permissions: ['parking:review'] },
+  { methods: ['PATCH'], pattern: /^parking-reservations\/facility/, permissions: ['parking:manage_capacity'] },
+  { methods: ['GET'], pattern: /^parking-reservations\/export/, permissions: ['parking:export'] },
 
   // ── Financial / payments ────────────────────────────────────────────────────
   { methods: ['GET', 'HEAD'], pattern: /^(payments|financial|pending-payments|invoices)(\/|$)/, permissions: ['payments:view', 'payments:view_own', 'invoices:view'] },

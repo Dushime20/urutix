@@ -73,6 +73,39 @@ export enum TrailerType {
   SPECIALIZED = 'SPECIALIZED',
 }
 
+export enum VehicleAvailabilityStatus {
+  AVAILABLE = 'AVAILABLE',
+  ASSIGNED = 'ASSIGNED',
+  RESERVED = 'RESERVED',
+  UNAVAILABLE = 'UNAVAILABLE',
+}
+
+export enum OwnershipType {
+  OWNED = 'OWNED',
+  LEASED = 'LEASED',
+  RENTED = 'RENTED',
+  OWNER_OPERATOR = 'OWNER_OPERATOR',
+  FINANCED = 'FINANCED',
+  THIRD_PARTY = 'THIRD_PARTY',
+}
+
+export enum VehicleClass {
+  LIGHT = 'LIGHT',
+  MEDIUM = 'MEDIUM',
+  HEAVY = 'HEAVY',
+  EXTRA_HEAVY = 'EXTRA_HEAVY',
+  SPECIALIZED = 'SPECIALIZED',
+}
+
+export enum ChassisConfiguration {
+  TRACTOR = 'TRACTOR',
+  RIGID = 'RIGID',
+  ARTICULATED = 'ARTICULATED',
+  DRAWBAR = 'DRAWBAR',
+  DOLLY = 'DOLLY',
+  TRAILER_ONLY = 'TRAILER_ONLY',
+}
+
 @Entity('trucks')
 @Index(['tenantId', 'plateNumber'], {
   unique: true,
@@ -108,6 +141,33 @@ export class Truck {
 
   @Column({ length: 50, nullable: true })
   color?: string;
+
+  @Column({ length: 100, nullable: true })
+  manufacturer?: string;
+
+  @Column({ length: 100, nullable: true })
+  chassis?: string;
+
+  @Column({ length: 50, nullable: true, default: VehicleAvailabilityStatus.AVAILABLE })
+  availabilityStatus?: string;
+
+  @Column({ length: 50, nullable: true })
+  ownershipType?: string;
+
+  @Column({ length: 50, nullable: true })
+  vehicleClass?: string;
+
+  @Column({ length: 100, nullable: true })
+  fleetGroup?: string;
+
+  @Column({ length: 100, nullable: true })
+  businessUnit?: string;
+
+  @Column({ length: 100, nullable: true })
+  costCenter?: string;
+
+  @Column({ length: 50, nullable: true })
+  chassisConfiguration?: string;
 
   @Column({
     type: 'enum',
@@ -453,6 +513,7 @@ export class Truck {
     maxLengthCapacity?: number;
     maxWidthCapacity?: number;
     maxHeightCapacity?: number;
+    maxWeight?: number;
   };
 
   @Column('jsonb', { default: {} })
@@ -715,6 +776,41 @@ export class Truck {
   @Column('date', { nullable: true })
   roadworthyCertExpiry?: Date;
 
+  @Column({ length: 50, nullable: true })
+  dotNumber?: string;
+
+  @Column({ length: 50, nullable: true })
+  mcNumber?: string;
+
+  @Column({ length: 100, nullable: true })
+  operatingAuthority?: string;
+
+  @Column({ length: 100, nullable: true })
+  crossBorderPermit?: string;
+
+  @Column({ length: 100, nullable: true })
+  customsBond?: string;
+
+  @Column({ length: 100, nullable: true })
+  portAuthorization?: string;
+
+  @Column({ type: 'text', nullable: true })
+  driverRequirements?: string;
+
+  @Column({ type: 'text', nullable: true })
+  operationalRestrictions?: string;
+
+  @Column('jsonb', { default: [] })
+  emergencyContacts: Array<{
+    name?: string;
+    phone?: string;
+    relationship?: string;
+    email?: string;
+  }>;
+
+  @Column('jsonb', { default: {} })
+  complianceDocuments: Record<string, any>;
+
   @Column({ default: false })
   hasRefrigeration: boolean;
 
@@ -738,6 +834,27 @@ export class Truck {
 
   @Column({ default: 0 })
   mileage: number;
+
+  @Column({ length: 50, nullable: true })
+  axleConfiguration?: string;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  fuelTankCapacity?: number;
+
+  @Column({ length: 100, nullable: true })
+  engineModel?: string;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  horsepower?: number;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  torque?: number;
+
+  @Column({ length: 50, nullable: true })
+  transmission?: string;
+
+  @Column('decimal', { precision: 12, scale: 2, nullable: true })
+  grossVehicleWeight?: number;
 
   @Column('jsonb', { default: [] })
   maintenanceAlerts: any[];

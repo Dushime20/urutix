@@ -64,6 +64,7 @@ const AdminSidebar: React.FC = () => {
                 { label: 'Trucks', icon: Truck, path: '/admin/trucks' },
                 { label: 'Loads', icon: Package, path: '/admin/loads' },
                 { label: 'Trips', icon: Activity, path: '/admin/trips' },
+                { label: 'Parking', icon: FileCheck, path: '/admin/parking-reservations' },
             ]
         },
         {

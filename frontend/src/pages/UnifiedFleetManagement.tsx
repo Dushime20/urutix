@@ -64,22 +64,11 @@ const UnifiedFleetManagement: React.FC = () => {
 
   const handleTruckFormSubmit = async (truckData: any) => {
     try {
-      if (editingTruck) {
-        await fleetApi.updateTruck(editingTruck.id, truckData);
-        toast.success('Truck updated successfully');
-      } else {
-        const createdTruck = await fleetApi.createTruck(truckData);
-        console.log('✅ Truck created successfully:', createdTruck);
-        toast.success('Truck created successfully');
-      }
-      setShowTruckForm(false);
-      setEditingTruck(null);
-
-      await refetchTrucks();
-      invalidateFleet();
-      
-      // Switch to my trucks tab to see the new/updated truck
-      setActiveTab('my-trucks');
+      const savedTruck = editingTruck
+        ? await fleetApi.updateTruck(editingTruck.id, truckData)
+        : await fleetApi.createTruck(truckData);
+      toast.success(editingTruck ? 'Truck updated successfully' : 'Truck created successfully');
+      return savedTruck;
     } catch (error: any) {
       console.error('Error saving truck:', error);
       toast.error(getApiErrorMessage(error));

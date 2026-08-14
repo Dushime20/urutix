@@ -545,6 +545,9 @@ export class CapabilityService {
       'customs:create': 'Customs inspection creation is currently unavailable. Please contact your administrator for more information.',
       'customs:update': 'Customs inspection updates are currently unavailable. Please contact your administrator for more information.',
       'receivers:inspect': 'Cargo inspection is currently unavailable. Please contact your administrator for more information.',
+      'parking:create': 'Parking reservations are currently unavailable. Please contact your administrator for more information.',
+      'parking:approve': 'Parking reservation approval is currently unavailable. Please contact your administrator for more information.',
+      'parking:review': 'Parking reservation review is currently unavailable. Please contact your administrator for more information.',
     };
     return (
       labels[code] ||

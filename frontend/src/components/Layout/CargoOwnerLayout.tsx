@@ -26,6 +26,8 @@ const CargoOwnerLayout: React.FC = () => {
         navigate('/dashboard/driver');
       } else if (user.role === 'TENANT_ADMIN') {
         navigate('/tenant-admin');
+      } else if (user.role === 'PARKING_RESERVATION_MANAGER') {
+        navigate('/dashboard/parking/reservations');
       } else if (user.role === 'LENDER') {
         navigate('/lender');
       } else if (user.role === 'BROKER') {

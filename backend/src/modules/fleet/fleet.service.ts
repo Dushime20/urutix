@@ -15,6 +15,7 @@ import {
   VehicleStatus,
   TruckType,
   FuelType,
+  VehicleAvailabilityStatus,
 } from '../../entities/truck.entity';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
 import { Route } from '../../entities/route.entity';
@@ -204,8 +205,12 @@ export class FleetService {
         ...cleanedDto,
         ownerId: userId,
         tenantId,
-        status: VehicleStatus.AVAILABLE,
+        status: createTruckDto.status || VehicleStatus.AVAILABLE,
+        availabilityStatus:
+          createTruckDto.availabilityStatus ||
+          VehicleAvailabilityStatus.AVAILABLE,
         equipmentList: createTruckDto.equipmentList || [],
+        emergencyContacts: createTruckDto.emergencyContacts || [],
         maintenanceAlerts: [],
         assignedDrivers: [],
         assignedRoutes: [],
@@ -490,13 +495,21 @@ export class FleetService {
       // Basic info
       'plateNumber', 'vin', 'make', 'model', 'year', 'color', 'fuelType',
       'truckType', 'trailerType', 'status', 'isActive',
+      'manufacturer', 'chassis', 'availabilityStatus', 'ownershipType',
+      'vehicleClass', 'fleetGroup', 'businessUnit', 'costCenter',
+      'chassisConfiguration',
       // Capacity & dimensions
       'capacityWeight', 'capacityVolume', 'maxLength', 'maxWidth', 'maxHeight',
-      'mileage', 'fuelEfficiency',
+      'mileage', 'fuelEfficiency', 'axleConfiguration', 'fuelTankCapacity',
+      'engineModel', 'horsepower', 'torque', 'transmission', 'grossVehicleWeight',
       // Registration & compliance
       'registrationNumber', 'registrationExpiry', 'insurancePolicy',
       'insuranceExpiry', 'roadworthyCertExpiry',
       'lastMaintenanceDate', 'nextMaintenanceDate',
+      'dotNumber', 'mcNumber', 'operatingAuthority', 'crossBorderPermit',
+      'customsBond', 'portAuthorization',
+      'driverRequirements', 'operationalRestrictions', 'emergencyContacts',
+      'complianceDocuments',
       // Core capability flags
       'hasRefrigeration', 'hasLiftGate', 'hasGps', 'hasHazmatPermit',
       // Loading equipment (flat booleans)

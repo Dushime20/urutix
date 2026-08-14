@@ -38,22 +38,25 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
 
   const handlingRequirements = [
     {
-      key: 'hasLiftGate',
-      label: 'Requires Forklift',
+      key: 'hasForklift',
+      label: 'Forklift',
       icon: '🔧',
-      description: 'Truck has lift gate — can service loads requiring forklift for loading/unloading',
+      description: 'Vehicle has forklift loading capability',
+      matchingKey: 'hasLiftGate',
     },
     {
-      key: 'hasWinch',
-      label: 'Requires Crane',
+      key: 'hasCrane',
+      label: 'Crane',
       icon: '🏗️',
-      description: 'Truck has winch/crane — can service loads requiring crane for loading/unloading',
+      description: 'Vehicle has crane / winch loading capability',
+      matchingKey: 'hasWinch',
     },
     {
-      key: 'hasTailLift',
-      label: 'Requires Loading Dock',
+      key: 'hasLoadingDock',
+      label: 'Loading Dock',
       icon: '🚪',
-      description: 'Truck has tail lift — can service loads requiring a loading dock',
+      description: 'Vehicle can service loading-dock operations',
+      matchingKey: 'hasTailLift',
     },
   ];
 
@@ -71,13 +74,17 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
           <span className="text-[9px] text-blue-600 dark:text-blue-500 font-bold italic uppercase tracking-tighter">Match Critical</span>
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {handlingRequirements.map(({ key, label, icon, description }) => (
+          {handlingRequirements.map(({ key, label, icon, description, matchingKey }) => (
             <label key={key} className="group flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-600/30 transition-all shadow-none">
               <div className="pt-1">
                 <input
                   type="checkbox"
-                  checked={formData[key] || false}
-                  onChange={() => handleInputChange(key, !formData[key])}
+                  checked={formData.loadingCapabilities?.[key] || formData[matchingKey] || false}
+                  onChange={() => {
+                    const next = !(formData.loadingCapabilities?.[key] || formData[matchingKey]);
+                    handleInputChange(`loadingCapabilities.${key}`, next);
+                    handleInputChange(matchingKey, next);
+                  }}
                   className="w-4 h-4 rounded border-gray-200 dark:border-gray-600 text-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:ring-offset-0 bg-white dark:bg-gray-700 transition-all"
                 />
               </div>
@@ -136,7 +143,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Loading Latency (MIN)</label>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Max Loading Time (min)</label>
               <input
                 type="number"
                 value={formData.loadingCapabilities?.maxLoadingTime || ''}
@@ -146,7 +153,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Unloading Latency (MIN)</label>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Max Unloading Time (min)</label>
               <input
                 type="number"
                 value={formData.loadingCapabilities?.maxUnloadingTime || ''}
@@ -163,7 +170,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
           <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-3">Manifest Summary</h4>
           <div className="flex flex-wrap gap-2">
             {handlingRequirements
-              .filter(({ key }) => formData[key])
+              .filter(({ key, matchingKey }) => formData.loadingCapabilities?.[key] || formData[matchingKey])
               .map(({ key, label, icon }) => (
                 <span key={key} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-[10px] font-bold text-blue-700 dark:text-blue-400 rounded-md border border-blue-200 dark:border-blue-800 uppercase tracking-wider shadow-none transition-all">
                   <span className="mr-1.5 opacity-70">{icon}</span>
@@ -178,7 +185,7 @@ export const LoadingEquipmentStep: React.FC<LoadingEquipmentStepProps> = ({
                   {label}
                 </span>
               ))}
-            {handlingRequirements.filter(({ key }) => formData[key]).length === 0 &&
+            {handlingRequirements.filter(({ key, matchingKey }) => formData.loadingCapabilities?.[key] || formData[matchingKey]).length === 0 &&
              equipmentOptions.filter(({ key }) => formData[key]).length === 0 && (
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest italic">NO ASSETS REGISTERED</span>
             )}

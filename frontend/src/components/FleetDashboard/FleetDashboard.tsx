@@ -357,13 +357,7 @@ export const FleetDashboard: React.FC = () => {
       }
 
       setFleetItems(prev => [newFleetItem, ...prev]);
-      setShowForm(false);
-      if (location.pathname.includes('/create')) {
-        navigate('/dashboard/fleet');
-      }
-      
-      // Trigger refresh to ensure data is up to date
-      setRefreshTrigger(prev => prev + 1);
+      return newFleetItem;
     } catch (error: any) {
       console.error('Error creating fleet item:', error);
       throw error;
@@ -390,8 +384,7 @@ export const FleetDashboard: React.FC = () => {
       setFleetItems(prev => prev.map(item =>
         item.id === editingFleetItem.id ? updatedFleetItem : item
       ));
-      setShowForm(false);
-      setEditingFleetItem(null);
+      return updatedFleetItem;
     } catch (error: any) {
       console.error('Error updating fleet item:', error);
       throw error;
@@ -517,10 +510,7 @@ export const FleetDashboard: React.FC = () => {
   const handleCloseForm = useCallback(() => {
     setShowForm(false);
     setEditingFleetItem(null);
-    // Trigger refresh when closing form (especially after edit)
-    if (formMode === 'edit') {
-      setRefreshTrigger(prev => prev + 1);
-    }
+    setRefreshTrigger(prev => prev + 1);
     if (location.pathname.includes('/create')) {
       navigate('/dashboard/fleet');
     }

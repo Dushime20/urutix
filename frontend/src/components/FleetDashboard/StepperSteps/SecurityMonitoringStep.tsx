@@ -22,20 +22,20 @@ export const SecurityMonitoringStep: React.FC<SecurityMonitoringStepProps> = ({
       title: 'GPS & Tracking',
       icon: <FaMapMarkerAlt className="w-4 h-4" />,
       features: [
-        { key: 'hasGps', label: 'GPS Navigation', description: 'Real-time GPS tracking' },
-        { key: 'hasTracking', label: 'Real-time Tracking', description: 'Live location tracking' },
-        { key: 'hasTelematics', label: 'Telematics System', description: 'Advanced vehicle monitoring' },
-        { key: 'hasRouteOptimization', label: 'Route Optimization', description: 'AI-powered route planning' },
-        { key: 'hasRealTimeTracking', label: 'Real-time Updates', description: 'Live status updates' },
+        { key: 'hasGps', label: 'GPS', description: 'GPS hardware installed on the vehicle' },
+        { key: 'hasRealTimeTracking', label: 'Real-Time Tracking', description: 'Live location tracking, distinct from basic GPS' },
         { key: 'hasGeofencing', label: 'Geofencing', description: 'Virtual boundary alerts' },
+        { key: 'hasTelematics', label: 'Telematics', description: 'Advanced vehicle telematics' },
+        { key: 'hasTracking', label: 'Asset Tracking', description: 'Asset / fleet tracking service' },
+        { key: 'hasRouteOptimization', label: 'Route Optimization', description: 'AI-powered route planning' },
       ],
     },
     {
       title: 'Safety & Monitoring',
       icon: <FaShieldAlt className="w-4 h-4" />,
       features: [
-        { key: 'hasDashCam', label: 'Dash Cam', description: 'Forward-facing camera' },
-        { key: 'hasSafetyCameras', label: 'Safety Cameras', description: 'Multi-angle surveillance' },
+        { key: 'hasDashCam', label: 'Dash Cam', description: 'Forward-facing dash camera' },
+        { key: 'hasSafetyCameras', label: 'Cameras', description: 'Additional vehicle cameras, distinct from dash cam' },
         { key: 'hasCollisionAvoidance', label: 'Collision Avoidance', description: 'Automatic braking system' },
         { key: 'hasLaneDeparture', label: 'Lane Departure', description: 'Lane departure warning' },
         { key: 'hasAdaptiveCruise', label: 'Adaptive Cruise', description: 'Smart cruise control' },
@@ -56,7 +56,7 @@ export const SecurityMonitoringStep: React.FC<SecurityMonitoringStepProps> = ({
       ],
     },
     {
-      title: 'Temperature & Environment',
+      title: 'Environmental Monitoring',
       icon: <FaThermometerHalf className="w-4 h-4" />,
       features: [
         { key: 'hasTemperatureAlerts', label: 'Temperature Alerts', description: 'Temperature deviation alerts' },
@@ -80,7 +80,7 @@ export const SecurityMonitoringStep: React.FC<SecurityMonitoringStepProps> = ({
       ],
     },
     {
-      title: 'Vehicle Systems',
+      title: 'Vehicle Health Monitoring',
       icon: <FaShieldAlt className="w-4 h-4" />,
       features: [
         { key: 'hasTirePressureMonitoring', label: 'Tire Pressure Monitor', description: 'Tire pressure tracking' },

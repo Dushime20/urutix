@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio, Headphones } from 'lucide-react';
+import { LogOut, User, Menu, X, ChevronDown, Package, BarChart3, CreditCard, Settings, HelpCircle, Truck, Users, Route, DollarSign, Home, Wallet, Activity, Zap, Landmark, AlertTriangle, Clock, FileText, Shield, TrendingUp, ClipboardList, ShoppingCart, MessageSquare, Radio, Headphones, Warehouse } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigationPermissions } from '../../hooks/useNavigationPermissions';
 import CargoOwnerNotificationDropdown from '../notifications/CargoOwnerNotificationDropdown';
@@ -56,6 +56,20 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
   const navItems = useMemo<NavItem[]>(() => {
     const basePath = '/dashboard';
 
+    if (user?.role === 'PARKING_RESERVATION_MANAGER') {
+      return [
+        { label: 'Dashboard', path: '/dashboard/parking/reservations', icon: Home },
+        {
+          label: 'Parking Management',
+          path: '/dashboard/parking/reservations',
+          icon: Warehouse,
+          subItems: [
+            { label: 'Reservations', path: '/dashboard/parking/reservations' },
+          ],
+        },
+      ];
+    }
+
     if (user?.role === 'CARGO_RECEIVER') {
       return [
         { label: 'Overview', path: '/dashboard', icon: Home },
@@ -106,6 +120,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: `${basePath}/support/new` },
+            { label: 'My Parking Reservations', path: `${basePath}/parking-reservations` },
           ]
         },
       ];
@@ -165,6 +180,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Activity,
           subItems: [
             { label: 'My Truck Details', path: '/dashboard/driver/truck' },
+            { label: 'Parking Reservation', path: '/dashboard/driver/parking' },
             { label: 'Safety & Training', path: '/dashboard/driver/safety' },
             { label: 'Earnings Registry', path: '/dashboard/driver/earnings' },
             { label: 'Performance Metrics', path: '/dashboard/driver/analytics' },
@@ -177,6 +193,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/dashboard/driver/support/new' },
+            { label: 'Parking Reservation', path: '/dashboard/driver/parking' },
           ]
         },
         { label: 'Account', path: '/dashboard/driver/profile', icon: User },
@@ -218,6 +235,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: '/dashboard/fleet/support/new' },
+            { label: 'My Parking Reservations', path: '/dashboard/fleet/parking-reservations' },
           ]
         },
       ];
@@ -234,6 +252,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Network Monitoring', path: '/admin/monitoring' },
             { label: 'Bidding Oversight', path: '/admin/bidding' },
             { label: 'Resolution Center', path: '/admin/disputes' },
+            { label: 'Parking Reservations', path: '/admin/parking-reservations' },
             { label: 'System Health', path: '/admin/health' },
           ]
         },
@@ -361,6 +380,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Routes', path: '/tenant-admin/routes' },
             { label: 'Partners', path: '/tenant-admin/truck-owners' },
             { label: 'Users', path: '/tenant-admin/users' },
+            { label: 'Parking Reservations', path: '/tenant-admin/parking-reservations' },
             { label: 'Reports', path: '/tenant-admin/reports' },
           ]
         },
@@ -419,6 +439,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
       }
       if (p.includes('/tracking')) {
         return navPerms.canAccessTracking;
+      }
+      if (p.includes('parking')) {
+        return navPerms.canAccessParking;
       }
       if (p.includes('/financial') || p.includes('/invoices') || p.includes('/payments') || p.includes('commissions')) {
         return navPerms.canAccessFinancial || navPerms.canAccessPayments;
@@ -562,7 +585,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             >
               {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
-            <div className="flex items-center flex-shrink-0 cursor-pointer px-1" onClick={() => navigate(user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' : user?.role === 'LENDER' ? '/lender' : user?.role === 'BROKER' ? '/dashboard/broker' : user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? '/admin' : user?.role === 'TENANT_ADMIN' ? '/tenant-admin' : '/dashboard')}>
+            <div className="flex items-center flex-shrink-0 cursor-pointer px-1" onClick={() => navigate(user?.role === 'PARKING_RESERVATION_MANAGER' ? '/dashboard/parking/reservations' : user?.role === 'CUSTOMS_OFFICER' ? '/dashboard/customs' : user?.role === 'LENDER' ? '/lender' : user?.role === 'BROKER' ? '/dashboard/broker' : user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? '/admin' : user?.role === 'TENANT_ADMIN' ? '/tenant-admin' : '/dashboard')}>
               <img src={logoUrutiX} alt="UrutiX Logistics Logo" className="h-7 sm:h-8 md:h-10 lg:h-12 max-w-none w-auto object-contain transition-all" />
             </div>
 

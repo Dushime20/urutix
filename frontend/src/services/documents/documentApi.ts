@@ -76,6 +76,8 @@ export interface CreateDocumentRequest {
   priority?: string;
   tags?: string[];
   metadata?: Record<string, any>;
+  requiresRenewal?: boolean;
+  renewalReminderDays?: number;
   sendNotification?: boolean;
 }
 

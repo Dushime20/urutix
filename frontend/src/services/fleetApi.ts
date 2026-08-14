@@ -64,6 +64,44 @@ export interface Truck {
   totalTrips?: number;
   lastMaintenanceDate?: string;
   nextMaintenanceDate?: string;
+  color?: string;
+  manufacturer?: string;
+  chassis?: string;
+  availabilityStatus?: string;
+  ownershipType?: string;
+  vehicleClass?: string;
+  fleetGroup?: string;
+  businessUnit?: string;
+  costCenter?: string;
+  chassisConfiguration?: string;
+  dotNumber?: string;
+  mcNumber?: string;
+  operatingAuthority?: string;
+  crossBorderPermit?: string;
+  customsBond?: string;
+  portAuthorization?: string;
+  axleConfiguration?: string;
+  fuelTankCapacity?: number;
+  engineModel?: string;
+  horsepower?: number;
+  torque?: number;
+  transmission?: string;
+  grossVehicleWeight?: number;
+  driverRequirements?: string;
+  operationalRestrictions?: string;
+  emergencyContacts?: Array<{
+    name?: string;
+    phone?: string;
+    relationship?: string;
+    email?: string;
+  }>;
+  complianceDocuments?: Record<string, any>;
+  cargoCapabilities?: Record<string, any>;
+  loadingCapabilities?: Record<string, any>;
+  securityFeatures?: Record<string, any>;
+  certifications?: Record<string, any>;
+  routeCapabilities?: Record<string, any>;
+  costStructure?: Record<string, any>;
 }
 
 export interface DriverAssignment {
@@ -234,6 +272,45 @@ export interface CreateTruckDto {
   // Additional details
   color?: string;
   equipmentList?: string[];
+  manufacturer?: string;
+  chassis?: string;
+  status?: string;
+  availabilityStatus?: string;
+  ownershipType?: string;
+  vehicleClass?: string;
+  fleetGroup?: string;
+  businessUnit?: string;
+  costCenter?: string;
+  chassisConfiguration?: string;
+  trailerType?: string;
+  dotNumber?: string;
+  mcNumber?: string;
+  operatingAuthority?: string;
+  crossBorderPermit?: string;
+  customsBond?: string;
+  portAuthorization?: string;
+  axleConfiguration?: string;
+  fuelTankCapacity?: number;
+  engineModel?: string;
+  horsepower?: number;
+  torque?: number;
+  transmission?: string;
+  grossVehicleWeight?: number;
+  driverRequirements?: string;
+  operationalRestrictions?: string;
+  emergencyContacts?: Array<{
+    name?: string;
+    phone?: string;
+    relationship?: string;
+    email?: string;
+  }>;
+  complianceDocuments?: Record<string, any>;
+  cargoCapabilities?: Record<string, any>;
+  loadingCapabilities?: Record<string, any>;
+  securityFeatures?: Record<string, any>;
+  certifications?: Record<string, any>;
+  routeCapabilities?: Record<string, any>;
+  costStructure?: Record<string, any>;
 }
 
 export interface OptimizedRoute {
@@ -279,6 +356,15 @@ export interface UpdateTruckDto {
   status?: string;
   truckType?: string;
   trailerType?: string;
+  manufacturer?: string;
+  chassis?: string;
+  availabilityStatus?: string;
+  ownershipType?: string;
+  vehicleClass?: string;
+  fleetGroup?: string;
+  businessUnit?: string;
+  costCenter?: string;
+  chassisConfiguration?: string;
   // Capacity & dimensions
   capacityWeight?: number;
   capacityVolume?: number;
@@ -294,6 +380,28 @@ export interface UpdateTruckDto {
   roadworthyCertExpiry?: string;
   lastMaintenanceDate?: string;
   nextMaintenanceDate?: string;
+  dotNumber?: string;
+  mcNumber?: string;
+  operatingAuthority?: string;
+  crossBorderPermit?: string;
+  customsBond?: string;
+  portAuthorization?: string;
+  driverRequirements?: string;
+  operationalRestrictions?: string;
+  emergencyContacts?: Array<{
+    name?: string;
+    phone?: string;
+    relationship?: string;
+    email?: string;
+  }>;
+  complianceDocuments?: Record<string, any>;
+  axleConfiguration?: string;
+  fuelTankCapacity?: number;
+  engineModel?: string;
+  horsepower?: number;
+  torque?: number;
+  transmission?: string;
+  grossVehicleWeight?: number;
   // Location
   currentAddress?: string;
   currentLocation?: any;

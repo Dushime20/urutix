@@ -13,6 +13,7 @@ const ROLE_DEFAULTS: Record<string, string[]> = {
     'auctions:view', 'auctions:create', 'bids:view', 'bids:manage',
     'matching:request', 'matching:view_results', 'lending:create_request', 'brokers:assign',
     'trips:view_assigned', 'analytics:view_own', 'analytics:view_tenant',
+    'parking:create', 'parking:view_own',
   ],
   TRUCK_OWNER: [
     'fleet:view', 'fleet:view_own', 'fleet:create', 'fleet:edit', 'fleet:delete', 'fleet:assign_driver',
@@ -20,10 +21,12 @@ const ROLE_DEFAULTS: Record<string, string[]> = {
     'auctions:view', 'bids:view_own', 'bids:create', 'bids:view_history',
     'matching:respond', 'trips:view', 'trips:start', 'trips:complete', 'trips:assign_driver',
     'lending:view_own', 'lending:create_request', 'analytics:view_own',
+    'parking:create', 'parking:view_own',
   ],
   DRIVER: [
     'trips:view_assigned', 'trips:start', 'trips:complete', 'trips:pause', 'trips:resume',
     'trips:view_epod', 'analytics:view_own',
+    'parking:create', 'parking:view_own',
   ],
   LENDER: [
     'lending:view', 'lending:approve', 'lending:disburse', 'lending:repayment', 'lending:policies',
@@ -41,6 +44,11 @@ const ROLE_DEFAULTS: Record<string, string[]> = {
   CUSTOMS_OFFICER: ['customs:view', 'customs:create', 'customs:update'],
   FLEET_MANAGER: ['fleet:view', 'fleet:edit', 'trips:assign_driver', 'trips:start', 'trips:complete'],
   FLEET_DISPATCHER: ['trips:assign_driver', 'trips:start', 'trips:complete', 'fleet:view'],
+  PARKING_RESERVATION_MANAGER: [
+    'parking:view', 'parking:view_details', 'parking:review', 'parking:approve',
+    'parking:reject', 'parking:request_information', 'parking:cancel', 'parking:assign',
+    'parking:add_note', 'parking:export',
+  ],
 };
 
 function buildPermissionRoleMap(): Record<string, string[]> {

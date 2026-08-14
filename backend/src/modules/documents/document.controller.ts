@@ -166,6 +166,11 @@ export class DocumentController {
             ? JSON.parse(body.tags)
             : body.tags
           : undefined,
+        metadata: body.metadata
+          ? typeof body.metadata === 'string'
+            ? JSON.parse(body.metadata)
+            : body.metadata
+          : undefined,
         sendNotification:
           body.sendNotification === 'true' || body.sendNotification === true,
       };

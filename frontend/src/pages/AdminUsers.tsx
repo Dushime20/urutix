@@ -38,7 +38,7 @@ interface User {
   id: string;
   email: string;
   phone?: string;
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'TENANT_ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'BROKER' | 'AGENT' | 'LENDER' | 'CARGO_RECEIVER' | 'FLEET_MANAGER' | 'FLEET_DISPATCHER' | 'FLEET_ACCOUNTANT' | 'FLEET_SAFETY_OFFICER' | 'CUSTOMS_OFFICER';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'TENANT_ADMIN' | 'CARGO_OWNER' | 'TRUCK_OWNER' | 'DRIVER' | 'BROKER' | 'AGENT' | 'LENDER' | 'CARGO_RECEIVER' | 'FLEET_MANAGER' | 'FLEET_DISPATCHER' | 'FLEET_ACCOUNTANT' | 'FLEET_SAFETY_OFFICER' | 'CUSTOMS_OFFICER' | 'PARKING_RESERVATION_MANAGER';
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED';
   tenantId: string;
   tenantName?: string;
@@ -82,6 +82,7 @@ const CREATE_USER_ROLES = [
   'AGENT',
   'LENDER',
   'CUSTOMS_OFFICER',
+  'PARKING_RESERVATION_MANAGER',
   'FLEET_MANAGER',
   'FLEET_DISPATCHER',
   'FLEET_ACCOUNTANT',
@@ -571,6 +572,7 @@ const AdminUsers: React.FC = () => {
                 { value: 'AGENT', label: 'Agent' },
                 { value: 'LENDER', label: 'Lender' },
                 { value: 'CUSTOMS_OFFICER', label: 'Customs Officer' },
+                { value: 'PARKING_RESERVATION_MANAGER', label: 'Parking Reservation Officer' },
                 { value: 'FLEET_MANAGER', label: 'Fleet Manager' },
                 { value: 'FLEET_DISPATCHER', label: 'Fleet Dispatcher' },
                 { value: 'FLEET_ACCOUNTANT', label: 'Fleet Accountant' },

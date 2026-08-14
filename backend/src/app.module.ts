@@ -58,6 +58,7 @@ import { MessengerModule }         from './modules/messenger/messenger.module';
 import { MultiModalModule }        from './modules/multi-modal/multi-modal.module';
 import { NotificationModule }      from './modules/notifications/notification.module';
 import { OcrModule }               from './modules/ocr/ocr.module';
+import { ParkingReservationsModule } from './modules/parking-reservations/parking-reservations.module';
 import { PaymentsModule }          from './modules/payments/payments.module';
 import { RatingsModule }           from './modules/ratings/ratings.module';
 import { ReceiversModule }         from './modules/receivers/receivers.module';
@@ -126,6 +127,7 @@ import { UsersModule }             from './modules/users/users.module';
     MultiModalModule,
     NotificationModule,
     OcrModule,
+    ParkingReservationsModule,
     PaymentsModule,
     RatingsModule,
     ReceiversModule,

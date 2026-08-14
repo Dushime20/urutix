@@ -93,6 +93,136 @@ export class CreateTruckDto {
   roadworthyCertExpiry?: Date;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  manufacturer?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  chassis?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  availabilityStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  ownershipType?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  vehicleClass?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  fleetGroup?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  businessUnit?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  costCenter?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  chassisConfiguration?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  dotNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  mcNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  operatingAuthority?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  crossBorderPermit?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  customsBond?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  portAuthorization?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  axleConfiguration?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fuelTankCapacity?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  engineModel?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  horsepower?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  torque?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  transmission?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  grossVehicleWeight?: number;
+
+  @IsOptional()
+  @IsString()
+  driverRequirements?: string;
+
+  @IsOptional()
+  @IsString()
+  operationalRestrictions?: string;
+
+  @IsOptional()
+  @IsArray()
+  emergencyContacts?: Array<{
+    name?: string;
+    phone?: string;
+    relationship?: string;
+    email?: string;
+  }>;
+
+  @IsOptional()
+  complianceDocuments?: Record<string, any>;
+
+  @IsOptional()
   @IsEnum(VehicleStatus)
   status?: VehicleStatus;
 
@@ -553,6 +683,7 @@ export class CreateTruckDto {
     maxLengthCapacity?: number;
     maxWidthCapacity?: number;
     maxHeightCapacity?: number;
+    maxWeight?: number;
   };
 
   @IsOptional()

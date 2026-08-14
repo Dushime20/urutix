@@ -110,30 +110,57 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
         <div className="space-y-4">
           <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center mb-4">
             <FaThermometerHalf className="w-3.5 h-3.5 mr-2 text-blue-600 dark:text-blue-500" />
-            Thermal Control Registry
+            Thermal Controls
           </h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MIN Operational (°C)</label>
-              <input
-                type="number"
-                value={formData.cargoCapabilities?.temperatureRange?.min || ''}
-                onChange={(e) => handleTemperatureChange('min', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
-                placeholder="-40"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Operational (°C)</label>
-              <input
-                type="number"
-                value={formData.cargoCapabilities?.temperatureRange?.max || ''}
-                onChange={(e) => handleTemperatureChange('max', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
-                placeholder="40"
-              />
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            {[
+              { key: 'hasReefer', label: 'Reefer' },
+              { key: 'hasFrozen', label: 'Frozen' },
+              { key: 'hasChilled', label: 'Chilled' },
+              { key: 'hasAmbient', label: 'Ambient' },
+              { key: 'hasControlledAtmosphere', label: 'Controlled Atmosphere' },
+              { key: 'hasTemperatureMonitoring', label: 'Temperature Monitoring' },
+            ].map(({ key, label }) => (
+              <label key={key} className="group flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-600/30 transition-all shadow-none">
+                <input
+                  type="checkbox"
+                  checked={formData.cargoCapabilities?.[key] || formData[key] || false}
+                  onChange={() => {
+                    handleCapabilityToggle(key);
+                    handleInputChange(key, !(formData.cargoCapabilities?.[key] || formData[key]));
+                  }}
+                  className="w-4 h-4 rounded border-gray-200 dark:border-gray-600 text-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:ring-offset-0 bg-white dark:bg-gray-700 transition-all"
+                />
+                <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-tight group-hover:text-blue-600 transition-colors">
+                  {label}
+                </span>
+              </label>
+            ))}
           </div>
+          {(formData.cargoCapabilities?.hasReefer || formData.hasReefer || formData.cargoCapabilities?.hasFrozen || formData.hasFrozen || formData.cargoCapabilities?.hasChilled || formData.hasChilled) && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MIN Operational (°C)</label>
+                <input
+                  type="number"
+                  value={formData.cargoCapabilities?.temperatureRange?.min ?? ''}
+                  onChange={(e) => handleTemperatureChange('min', e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+                  placeholder="-40"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MAX Operational (°C)</label>
+                <input
+                  type="number"
+                  value={formData.cargoCapabilities?.temperatureRange?.max ?? ''}
+                  onChange={(e) => handleTemperatureChange('max', e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+                  placeholder="40"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Humidity Control */}
@@ -183,14 +210,15 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
         <div className="space-y-4">
           <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center">
             <FaWeight className="w-3.5 h-3.5 mr-2 text-blue-600 dark:text-blue-500" />
-            Operational Mass Registry
+            Weight & Clearance Limits
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
-              { field: 'maxVolumeCapacity', label: 'VOLUME (M³)', icon: '📦' },
-              { field: 'maxWeightPerAxle', label: 'AXLE (KG)', icon: '⚖️' },
-              { field: 'maxClearanceHeight', label: 'CLR (M)', icon: '🚛' },
-            ].map(({ field, label, icon }) => (
+              { field: 'maxVolumeCapacity', label: 'Volume (m³)' },
+              { field: 'maxWeight', label: 'Weight Limit (kg)' },
+              { field: 'maxWeightPerAxle', label: 'Axle Weight Limit (kg)' },
+              { field: 'maxClearanceHeight', label: 'Clearance Limit (m)' },
+            ].map(({ field, label }) => (
               <div key={field}>
                 <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">
                   {label}
@@ -198,6 +226,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={formData.cargoCapabilities?.[field] || ''}
                   onChange={(e) => handleDimensionChange(field, e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
@@ -205,6 +234,20 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
                 />
               </div>
             ))}
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">
+                Gross Vehicle Weight (kg)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.grossVehicleWeight || ''}
+                onChange={(e) => handleInputChange('grossVehicleWeight', e.target.value === '' ? '' : e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+                placeholder="0.00"
+              />
+            </div>
           </div>
         </div>
     </div>

@@ -65,6 +65,7 @@ export class UsersService {
       UserRole.FLEET_ACCOUNTANT,
       UserRole.FLEET_SAFETY_OFFICER,
       UserRole.CUSTOMS_OFFICER,
+      UserRole.PARKING_RESERVATION_MANAGER,
     ];
 
     return validTenantRoles.includes(role);

@@ -96,6 +96,8 @@ export function getNotificationsHubPath(role?: string | null): string {
       return '/dashboard/broker/notifications';
     case 'CUSTOMS_OFFICER':
       return '/dashboard/customs/notifications';
+    case 'PARKING_RESERVATION_MANAGER':
+      return '/dashboard/parking/reservations';
     case 'LENDER':
       return '/lender/notifications';
     case 'CARGO_OWNER':
@@ -123,6 +125,8 @@ export function getRoleHomePath(role?: string | null): string {
       return '/dashboard/broker';
     case 'CUSTOMS_OFFICER':
       return '/dashboard/customs';
+    case 'PARKING_RESERVATION_MANAGER':
+      return '/dashboard/parking/reservations';
     case 'LENDER':
       return '/lender';
     case 'CARGO_OWNER':
@@ -167,6 +171,19 @@ function moduleFallbackForPath(pathname: string, role?: string | null): string {
     if (role === 'TRUCK_OWNER') return '/dashboard/fleet';
     if (role === 'DRIVER') return '/dashboard/driver/cargo';
     return '/dashboard/cargos';
+  }
+  if (pathname.includes('/parking')) {
+    if (role === 'PARKING_RESERVATION_MANAGER' || role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'TENANT_ADMIN') {
+      return role === 'SUPER_ADMIN'
+        ? '/admin/parking-reservations'
+        : role === 'ADMIN'
+          ? '/admin-operational/parking-reservations'
+          : role === 'TENANT_ADMIN'
+            ? '/tenant-admin/parking-reservations'
+            : '/dashboard/parking/reservations';
+    }
+    if (role === 'TRUCK_OWNER') return '/dashboard/fleet/parking-reservations';
+    return '/dashboard/parking-reservations';
   }
   if (pathname.includes('/dispute') || pathname.includes('/support')) {
     if (role === 'BROKER') return '/dashboard/broker/disputes';

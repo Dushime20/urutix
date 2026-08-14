@@ -39,6 +39,7 @@ function roleBadgeColor(role: string) {
     BROKER:        'bg-indigo-50 text-indigo-700 border-indigo-200',
     LENDER:        'bg-emerald-50 text-emerald-700 border-emerald-200',
     CUSTOMS_OFFICER: 'bg-amber-50 text-amber-700 border-amber-200',
+    PARKING_RESERVATION_MANAGER: 'bg-sky-50 text-sky-700 border-sky-200',
   };
   return map[role] || 'bg-gray-50 text-gray-700 border-gray-200';
 }
@@ -507,7 +508,7 @@ const PermissionManagement: React.FC = () => {
     fetchUsers(search, roleFilter);
   };
 
-  const roles = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CARGO_OWNER', 'TRUCK_OWNER', 'DRIVER', 'BROKER', 'LENDER', 'CUSTOMS_OFFICER'];
+  const roles = ['SUPER_ADMIN', 'ADMIN', 'TENANT_ADMIN', 'CARGO_OWNER', 'TRUCK_OWNER', 'DRIVER', 'BROKER', 'LENDER', 'CUSTOMS_OFFICER', 'PARKING_RESERVATION_MANAGER'];
 
   const userColumns: Column<any>[] = useMemo(() => [
     {

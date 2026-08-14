@@ -20,6 +20,7 @@ import AdminOperationalLayout from './components/Layout/AdminOperationalLayout';
 import TenantAdminLayout from './components/Layout/TenantAdminLayout';
 import LenderLayout from './components/Layout/LenderLayout';
 import BrokerLayout from './components/Layout/BrokerLayout';
+import ParkingLayout from './components/Layout/ParkingLayout';
 
 import Auth from './pages/Auth';
 import Home from './pages/Home';
@@ -98,6 +99,13 @@ const FinancialAdminDashboard = lazy(() => import('./pages/admin/FinancialAdminD
 const TenantAdminDashboard = lazy(() => import('./pages/admin-dashboard/Dashboard'));
 const EnhancedPermissions = lazy(() => import('./pages/admin/EnhancedPermissions'));
 const FeatureControls = lazy(() => import('./pages/admin/FeatureControls'));
+const AdminParkingReservations = lazy(() => import('./pages/admin/AdminParkingReservations'));
+const ParkingReservationPage = lazy(() => import('./pages/ParkingReservation'));
+const ParkingReservationLookupPage = lazy(() => import('./pages/ParkingReservationLookup'));
+const ParkingReservationsDashboard = lazy(() => import('./pages/parking/ParkingReservationsDashboard'));
+const ParkingReservationDetails = lazy(() => import('./pages/parking/ParkingReservationDetails'));
+const MyParkingReservations = lazy(() => import('./pages/parking/MyParkingReservations'));
+const OperationalParkingReservations = lazy(() => import('./pages/admin-operational/ParkingReservations'));
 const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
 const SubscriptionManagement = lazy(() => import('./pages/admin/SubscriptionManagement'));
 const RoleManagement = lazy(() => import('./pages/admin/RoleManagement'));
@@ -270,6 +278,8 @@ function App() {
                 <Suspense fallback={<PageLoadingFallback />}>
                   <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/parking-reservation" element={<ParkingReservationPage />} />
+                    <Route path="/parking-reservation/lookup" element={<ParkingReservationLookupPage />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
@@ -354,6 +364,8 @@ function App() {
                       <Route path="settlement-processing/:tripId" element={<SettlementProcessing />} />
                       <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
+                      <Route path="parking-reservations" element={<MyParkingReservations basePath="/dashboard/parking-reservations" />} />
+                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/dashboard/parking-reservations" />} />
                       <Route path="support" element={<UserSupportPage />} />
                       <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
@@ -468,6 +480,8 @@ function App() {
                       <Route path="tracking/trips/:tripId" element={<TripTracking />} />
                       <Route path="trip-tracking/:tripId" element={<TripTracking />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
+                      <Route path="parking-reservations" element={<MyParkingReservations basePath="/dashboard/fleet/parking-reservations" />} />
+                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/dashboard/fleet/parking-reservations" />} />
                       <Route path="support" element={<UserSupportPage />} />
                       <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
@@ -506,6 +520,9 @@ function App() {
                       <Route path="notifications" element={<DriverDashboard />} />
                       <Route path="profile" element={<DriverDashboard />} />
                       <Route path="settings" element={<DriverDashboard />} />
+                      <Route path="parking" element={<DriverDashboard />} />
+                      <Route path="parking-reservations" element={<DriverDashboard />} />
+                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/dashboard/driver/parking" />} />
                       <Route path="support" element={<DriverHelpSupport />} />
                       <Route path="ratings" element={<UnifiedReputationManagement />} />
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
@@ -544,6 +561,8 @@ function App() {
                       <Route path="permissions" element={<EnhancedPermissions />} />
                       <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
                       <Route path="feature-controls" element={<FeatureControls />} />
+                      <Route path="parking-reservations" element={<AdminParkingReservations />} />
+                      <Route path="parking-reservations/:id" element={<AdminParkingReservations />} />
                       <Route path="activity-logs" element={<ActivityLogs />} />
                       <Route path="advanced-settings" element={<AdvancedSettings />} />
                       <Route path="system-settings" element={<SystemSettings />} />
@@ -567,6 +586,8 @@ function App() {
                       <Route path="trips" element={<OperationalAdminTrips />} />
                       <Route path="loads" element={<OperationalAdminLoads />} />
                       <Route path="disputes" element={<OperationalAdminDisputes />} />
+                      <Route path="parking-reservations" element={<OperationalParkingReservations />} />
+                      <Route path="parking-reservations/:id" element={<OperationalParkingReservations />} />
                       <Route path="analytics" element={<OperationalAdminAnalytics />} />
                       <Route path="financial" element={<OperationalAdminFinancial />} />
                       <Route path="bidding" element={<OperationalAdminBidding />} />
@@ -653,6 +674,8 @@ function App() {
                       <Route path="resource-unavailable" element={<NotificationResourceUnavailablePage />} />
                       <Route path="support" element={<TenantSupportCenter />} />
                       <Route path="support/analytics" element={<SupportAnalyticsDashboard onBack={() => window.history.back()} />} />
+                      <Route path="parking-reservations" element={<ParkingReservationsDashboard basePath="/tenant-admin/parking-reservations" />} />
+                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/tenant-admin/parking-reservations" />} />
                     </Route>
 
                     {/* Lender Routes */}
@@ -720,6 +743,13 @@ function App() {
                       <Route path="payouts" element={<PayoutsPage />} />
                       <Route path="support" element={<UserSupportPage />} />
                       <Route path="support/new" element={<UserSupportPage />} />
+                    </Route>
+
+                    {/* Parking Reservation Officer Routes */}
+                    <Route path="/dashboard/parking" element={<ParkingLayout />}>
+                      <Route index element={<Navigate to="reservations" replace />} />
+                      <Route path="reservations" element={<ParkingReservationsDashboard />} />
+                      <Route path="reservations/:id" element={<ParkingReservationDetails />} />
                     </Route>
 
                     {/* Customs Officer Routes */}

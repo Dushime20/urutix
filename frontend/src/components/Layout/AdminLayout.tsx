@@ -38,6 +38,9 @@ const AdminLayoutContent: React.FC = () => {
           case 'LENDER':
             navigate('/lender', { replace: true });
             break;
+          case 'PARKING_RESERVATION_MANAGER':
+            navigate('/dashboard/parking/reservations', { replace: true });
+            break;
           default:
             navigate('/auth', { replace: true });
         }

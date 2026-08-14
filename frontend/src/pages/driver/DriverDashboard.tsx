@@ -13,6 +13,7 @@ import {
   Fuel as FuelIcon,
   Route,
   Home,
+  ParkingSquare,
   Bell,
   Truck,
   DollarSign,
@@ -51,6 +52,7 @@ import { ProofOfDelivery } from '../../components/DriverDashboard/ProofOfDeliver
 import { RewardsTimeline } from '../../components/DriverDashboard/RewardsTimeline';
 import { MaintenanceHealth } from '../../components/DriverDashboard/MaintenanceHealth';
 import { MyTruck } from '../../components/DriverDashboard/MyTruck';
+import { ParkingReservations } from '../../components/DriverDashboard/ParkingReservations';
 import { DriverRouteMap } from '../../components/DriverDashboard/DriverRouteMap';
 import { DriverMessenger } from '../../components/DriverDashboard/DriverMessenger';
 import { CommunicationRelay } from '../../components/DriverDashboard/CommunicationRelay';
@@ -109,6 +111,7 @@ const DriverDashboard: React.FC = () => {
     else if (path.endsWith('/messages')) setActiveTab('messages');
     else if (path.endsWith('/fuel')) setActiveTab('fuel');
     else if (path.endsWith('/wallet')) setActiveTab('wallet');
+    else if (path.endsWith('/parking') || path.includes('/parking-reservations')) setActiveTab('parking');
   }, [location.pathname]);
 
   useEffect(() => {
@@ -229,6 +232,7 @@ const DriverDashboard: React.FC = () => {
       icon: Truck,
       subItems: [
         { id: 'truck_details', label: 'My Truck', icon: Truck },
+        { id: 'parking', label: 'Parking Reservation', icon: ParkingSquare },
         { id: 'fuel', label: 'Fuel management', icon: FuelIcon },
         { id: 'wallet', label: 'Wallet & Advances', icon: DollarSign },
         { id: 'earnings', label: 'Earnings Registry', icon: Activity },
@@ -362,6 +366,13 @@ const DriverDashboard: React.FC = () => {
                   >
                     <Package size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
                     <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Cargo" /></span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('parking')}
+                    className="snap-start shrink-0 flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-[#2b5271] hover:text-white text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl transition-colors group min-w-max"
+                  >
+                    <ParkingSquare size={16} className="shrink-0 text-[#2b5271] group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-widest"><TranslatedText text="Parking" /></span>
                   </button>
                 </div>
               </div>
@@ -527,6 +538,7 @@ const DriverDashboard: React.FC = () => {
         {activeTab === 'safety' && <SafetyRecords driverId={driverId} onReportIncident={() => setShowIncidentModal(true)} />}
         {activeTab === 'documents' && <DriverDocuments driverId={driverId} />}
         {activeTab === 'truck_details' && <MyTruck driverId={driverId} />}
+        {activeTab === 'parking' && <ParkingReservations driver={driver || currentDriverProfile} />}
         {activeTab === 'profile' && <DriverProfile driver={driver || currentDriverProfile} loading={driverLoading} />}
         {activeTab === 'leaderboard' && (
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">

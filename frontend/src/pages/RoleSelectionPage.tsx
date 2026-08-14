@@ -61,6 +61,9 @@ const RoleSelectionPage = () => {
                     case 'CUSTOMS_OFFICER':
                         navigate('/dashboard/customs');
                         break;
+                    case 'PARKING_RESERVATION_MANAGER':
+                        navigate('/dashboard/parking/reservations');
+                        break;
                     default:
                         navigate('/dashboard');
                         break;

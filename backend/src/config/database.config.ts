@@ -167,6 +167,13 @@ import { BulkEmailLog }  from './../entities/bulk-email-log.entity';
 import { CustomsInspection } from './../entities/customs-inspection.entity';
 import { CustomsCheckpoint } from './../entities/customs-checkpoint.entity';
 
+import {
+  ParkingFacilityConfig,
+  ParkingReservation,
+  ParkingReservationActivity,
+  ParkingReservationSequence,
+} from './../entities/parking-reservation.entity';
+
 // ── System / Infrastructure ────────────────────────────────────────────────
 import { AuditLog }       from './../entities/audit-log.entity';
 import { AuditEvent }     from './../entities/audit-event.entity';
@@ -242,6 +249,8 @@ export const ALL_ENTITIES = [
   Document, EmailTemplate, BulkEmailLog,
   // Customs
   CustomsInspection, CustomsCheckpoint,
+  // Parking
+  ParkingReservation, ParkingReservationActivity, ParkingFacilityConfig, ParkingReservationSequence,
   // System
   AuditLog, AuditEvent, ActivityLog,
   SystemSettings, SecurityEvent, SystemHealthLog, Alert,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaTruck, FaIdCard, FaTools, FaFileAlt, FaCheckCircle, FaMapMarkerAlt, FaHistory } from 'react-icons/fa';
 import { fleetApi } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
+import { flattenComplianceDocuments } from '../../utils/vehicleComplianceDocuments';
 
 interface VehicleDetailsModalProps {
     isOpen: boolean;
@@ -150,9 +151,13 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
                                                 <dl className="space-y-4 text-sm">
                                                     {[
                                                         { label: 'Asset Year', value: vehicle.year || 'N/A' },
-                                                        { label: 'Vehicle Type', value: vehicle.truckType || 'Heavy Truck' },
-                                                        { label: 'Maximum Payload', value: vehicle.maxWeight ? `${vehicle.maxWeight} kg` : 'N/A' },
-                                                        { label: 'Propulsion', value: 'Diesel / Heavy Engine' }
+                                                        { label: 'Vehicle Type', value: vehicle.truckType ? String(vehicle.truckType).replace(/_/g, ' ') : 'N/A' },
+                                                        { label: 'Vehicle Class', value: vehicle.vehicleClass ? String(vehicle.vehicleClass).replace(/_/g, ' ') : 'N/A' },
+                                                        { label: 'Maximum Payload', value: vehicle.capacityWeight ? `${vehicle.capacityWeight} kg` : 'N/A' },
+                                                        { label: 'Volume', value: vehicle.capacityVolume ? `${vehicle.capacityVolume} m³` : 'N/A' },
+                                                        { label: 'Propulsion', value: vehicle.fuelType ? String(vehicle.fuelType).replace(/_/g, ' ') : 'N/A' },
+                                                        { label: 'VIN', value: vehicle.vin || 'N/A' },
+                                                        { label: 'Registration', value: vehicle.registrationNumber || 'N/A' },
                                                     ].map((item, i) => (
                                                         <div key={i} className="flex flex-col gap-1">
                                                             <dt className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">{item.label}</dt>
@@ -244,28 +249,54 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
                                         </div>
                                     </div>
                                 )}
+                                {activeTab === 'compliance' && (
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 gap-4">
-                                            {/* Compliance Items */}
-                                            {['Vehicle Insurance', 'Road Worthiness Inspection', 'Transport Permit'].map((doc, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800 rounded-lg transition-all group">
-                                                    <div className="flex items-center gap-5">
-                                                        <div className="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-lg transition-colors">
-                                                            <FaFileAlt size={18} />
+                                            {(() => {
+                                                const items = flattenComplianceDocuments(vehicle?.complianceDocuments);
+                                                if (items.length === 0) {
+                                                    return (
+                                                        <div className="text-center py-16 bg-gray-50 dark:bg-gray-800/20 rounded-lg border border-gray-100 dark:border-gray-800">
+                                                            <FaFileAlt className="mx-auto text-gray-300 dark:text-gray-700 text-4xl mb-4 opacity-50" />
+                                                            <p className="text-gray-400 dark:text-gray-500 font-bold uppercase tracking-[0.2em] text-[10px]">
+                                                                No compliance documents on file
+                                                            </p>
                                                         </div>
-                                                        <div>
-                                                            <h4 className="font-bold text-gray-900 dark:text-white transition-colors uppercase tracking-tight">{doc}</h4>
-                                                            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-2 uppercase tracking-widest transition-colors">Valid until: {new Date(Date.now() + (idx * 30 + 60) * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
+                                                    );
+                                                }
+                                                return items.map(({ title, record }, idx) => {
+                                                    const expired = Boolean(record.expiryDate) && new Date(record.expiryDate as string) < new Date(new Date().toDateString());
+                                                    return (
+                                                        <div key={`${title}-${idx}`} className="flex items-center justify-between p-6 bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800 rounded-lg">
+                                                            <div className="flex items-center gap-5">
+                                                                <div className="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded-lg">
+                                                                    <FaFileAlt size={18} />
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="font-bold text-gray-900 dark:text-white uppercase tracking-tight">{title}</h4>
+                                                                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 mt-2 uppercase tracking-widest">
+                                                                        {record.number ? `${record.number} · ` : ''}
+                                                                        {record.expiryDate
+                                                                            ? `Valid until ${new Date(record.expiryDate).toLocaleDateString()}`
+                                                                            : 'No expiry on file'}
+                                                                        {record.fileName ? ` · ${record.fileName}` : ''}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`text-[10px] font-black px-4 py-1 rounded-md uppercase tracking-widest flex items-center gap-1.5 ${
+                                                                expired
+                                                                    ? 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/40'
+                                                                    : 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/40'
+                                                            }`}>
+                                                                <FaCheckCircle size={12} /> {expired ? 'Expired' : (record.status || 'Valid')}
+                                                            </span>
                                                         </div>
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/40 px-4 py-1 rounded-md transition-all flex items-center gap-1.5 uppercase tracking-widest">
-                                                        <FaCheckCircle size={12} /> Compliance Verified
-                                                    </span>
-                                                </div>
-                                            ))}
+                                                    );
+                                                });
+                                            })()}
                                         </div>
                                     </div>
-
+                                )}
 
                                 {activeTab === 'documents' && (
                                     <div className="text-center py-16 bg-gray-50 dark:bg-gray-800/20 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors flex flex-col items-center justify-center">

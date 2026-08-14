@@ -28,6 +28,7 @@ const MobileBottomNav: React.FC = () => {
             case 'DRIVER': return '/dashboard/driver';
             case 'BROKER': return '/dashboard/broker';
             case 'CUSTOMS_OFFICER': return '/dashboard/customs';
+            case 'PARKING_RESERVATION_MANAGER': return '/dashboard/parking/reservations';
             case 'LENDER': return '/lender';
             case 'CARGO_OWNER': 
             case 'CARGO_RECEIVER':
@@ -45,6 +46,7 @@ const MobileBottomNav: React.FC = () => {
             case 'DRIVER': return '/dashboard/driver/profile';
             case 'BROKER': return '/dashboard/broker';
             case 'CUSTOMS_OFFICER': return '/dashboard/customs';
+            case 'PARKING_RESERVATION_MANAGER': return '/dashboard/parking/reservations';
             case 'LENDER': return '/lender';
             case 'CARGO_OWNER': 
             case 'CARGO_RECEIVER':
@@ -62,6 +64,7 @@ const MobileBottomNav: React.FC = () => {
             case 'DRIVER': return '/dashboard/driver/notifications';
             case 'BROKER': return '/dashboard/broker/notifications';
             case 'CUSTOMS_OFFICER': return '/dashboard/customs/notifications';
+            case 'PARKING_RESERVATION_MANAGER': return '/dashboard/parking/reservations';
             case 'LENDER': return '/lender/notifications';
             case 'CARGO_OWNER':
             case 'CARGO_RECEIVER':

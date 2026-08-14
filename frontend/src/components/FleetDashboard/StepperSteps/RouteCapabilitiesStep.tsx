@@ -172,6 +172,19 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
         </div>
       </div>
 
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+          Operational Restrictions
+        </h4>
+        <textarea
+          value={formData.operationalRestrictions || ''}
+          onChange={(e) => handleInputChange('operationalRestrictions', e.target.value)}
+          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none min-h-[100px] resize-none"
+          placeholder="Describe operational limitations, banned routes, time-of-day restrictions, or other constraints..."
+          maxLength={2000}
+        />
+      </div>
+
       {/* Route Summary */}
       <div className="bg-blue-600/5 dark:bg-blue-600/10 rounded-lg p-4 border border-blue-600/10">
         <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-4">Transit Profile Summary</h4>

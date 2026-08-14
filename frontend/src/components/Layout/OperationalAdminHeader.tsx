@@ -44,6 +44,7 @@ const navItems: NavItem[] = [
       { label: 'Load Management',    path: '/admin-operational/loads',      icon: Package },
       { label: 'Bidding Oversight',  path: '/admin-operational/bidding',    icon: ClipboardList },
       { label: 'Resolution Center',  path: '/admin-operational/disputes',   icon: Scale },
+      { label: 'Parking Reservations', path: '/admin-operational/parking-reservations', icon: ClipboardList },
       { label: 'Network Monitoring', path: '/admin-operational/monitoring', icon: Activity },
     ],
   },

@@ -330,7 +330,7 @@ export interface FleetItem {
   engineNumber?: string;
   transmissionType?: string;
   axleConfiguration?: string;
-  grossVehicleWeight?: number;
+  grossVehicleWeight?: number | string;
   emptyWeight?: number;
   color?: string; // Added for form compatibility
   mileage?: number; // Added for form compatibility
@@ -344,6 +344,44 @@ export interface FleetItem {
   maxLength?: number | string;
   maxWidth?: number | string;
   maxHeight?: number | string;
+
+  // Enterprise fleet identity
+  manufacturer?: string;
+  chassis?: string;
+  availabilityStatus?: string;
+  ownershipType?: string;
+  vehicleClass?: string;
+  fleetGroup?: string;
+  businessUnit?: string;
+  costCenter?: string;
+  chassisConfiguration?: string;
+  hasCrossBorderPermit?: boolean;
+
+  // Legal & compliance
+  dotNumber?: string;
+  mcNumber?: string;
+  operatingAuthority?: string;
+  crossBorderPermit?: string;
+  customsBond?: string;
+  portAuthorization?: string;
+
+  // Technical specifications
+  axleConfiguration?: string;
+  fuelTankCapacity?: number | string;
+  engineModel?: string;
+  horsepower?: number | string;
+  torque?: number | string;
+  transmission?: string;
+  fuelEfficiency?: number | string;
+  driverRequirements?: string;
+  operationalRestrictions?: string;
+  emergencyContacts?: Array<{
+    name?: string;
+    phone?: string;
+    relationship?: string;
+    email?: string;
+  }>;
+  complianceDocuments?: Record<string, any>;
 
   // Equipment and capabilities
   hasRefrigeration?: boolean;

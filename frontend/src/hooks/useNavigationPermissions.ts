@@ -232,6 +232,15 @@ export const useNavigationPermissions = () => {
       role === 'TRUCK_OWNER' || role === 'DRIVER',
     );
 
+    const canAccessParking = allow(
+      ['parking:view', 'parking:view_own', 'parking:view_details', 'parking:create', 'parking:review'],
+      role === 'PARKING_RESERVATION_MANAGER' ||
+        role === 'CARGO_OWNER' ||
+        role === 'TRUCK_OWNER' ||
+        role === 'DRIVER' ||
+        isAdmin,
+    );
+
     const canAccessSettings = true;
 
     return {
@@ -272,6 +281,7 @@ export const useNavigationPermissions = () => {
       canAccessMaintenance,
       canAccessFuel,
       canAccessSettings,
+      canAccessParking,
     };
   }, [
     hasPermission,
