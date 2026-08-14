@@ -15,7 +15,6 @@ import {
     FileText,
     Landmark,
     UserCircle,
-
     FileCheck,
     Server,
     Bell,
@@ -23,9 +22,6 @@ import {
     ChevronRight,
     ArrowRight,
     Mail,
-    Shield,
-    ToggleLeft,
-    KeyRound,
 } from 'lucide-react';
 import { TranslatedText } from '../translated-text';
 import logoUrutiX from '../../assets/urutiX Logistics Logo (1).svg';
@@ -90,15 +86,6 @@ const AdminSidebar: React.FC = () => {
             title: 'Subscription',
             items: [
                 { label: 'Subscriptions', icon: FileCheck, path: '/admin/subscriptions' },
-            ]
-        },
-        {
-            title: 'Permissions',
-            items: [
-                { label: 'Roles', icon: KeyRound, path: '/admin/roles' },
-                { label: 'Role Permissions', icon: Shield, path: '/admin/permissions' },
-                { label: 'Feature Controls', icon: ToggleLeft, path: '/admin/feature-controls' },
-                { label: 'Activity Logs', icon: Activity, path: '/admin/activity-logs' },
             ]
         },
         {
