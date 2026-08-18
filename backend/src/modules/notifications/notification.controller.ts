@@ -34,6 +34,25 @@ import {
 } from './dto/notification.dto';
 import { Notification } from '../../entities/notification.entity';
 
+const MY_NOTIFICATION_ROLES = [
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.TENANT_ADMIN,
+  UserRole.MANAGER,
+  UserRole.CARGO_OWNER,
+  UserRole.CARGO_RECEIVER,
+  UserRole.TRUCK_OWNER,
+  UserRole.DRIVER,
+  UserRole.AGENT,
+  UserRole.LENDER,
+  UserRole.BROKER,
+  UserRole.USER,
+  UserRole.PARKING_RESERVATION_MANAGER,
+  UserRole.FLEET_MANAGER,
+  UserRole.FLEET_DISPATCHER,
+  UserRole.CUSTOMS_OFFICER,
+];
+
 @ApiTags('Notifications')
 @Controller('notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -279,20 +298,7 @@ export class NotificationController {
   }
 
   @Get('my')
-  @Roles(
-    UserRole.SUPER_ADMIN,
-    UserRole.ADMIN,
-    UserRole.TENANT_ADMIN,
-    UserRole.MANAGER,
-    UserRole.CARGO_OWNER,
-    UserRole.CARGO_RECEIVER,
-    UserRole.TRUCK_OWNER,
-    UserRole.DRIVER,
-    UserRole.AGENT,
-    UserRole.LENDER,
-    UserRole.BROKER,
-    UserRole.USER,
-  )
+  @Roles(...MY_NOTIFICATION_ROLES)
   @ApiOperation({
     summary: 'Get current user notifications',
     description: 'Retrieve notifications for the currently authenticated user',
@@ -323,20 +329,7 @@ export class NotificationController {
   }
 
   @Get('my/unread-count')
-  @Roles(
-    UserRole.SUPER_ADMIN,
-    UserRole.ADMIN,
-    UserRole.TENANT_ADMIN,
-    UserRole.MANAGER,
-    UserRole.CARGO_OWNER,
-    UserRole.CARGO_RECEIVER,
-    UserRole.TRUCK_OWNER,
-    UserRole.DRIVER,
-    UserRole.AGENT,
-    UserRole.LENDER,
-    UserRole.BROKER,
-    UserRole.USER,
-  )
+  @Roles(...MY_NOTIFICATION_ROLES)
   @ApiOperation({
     summary: 'Get unread notifications count',
     description: 'Get the count of unread notifications for the current user',
@@ -435,15 +428,7 @@ export class NotificationController {
   }
 
   @Get(':id')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.SUPER_ADMIN,
-    UserRole.TRUCK_OWNER,
-    UserRole.DRIVER,
-    UserRole.BROKER,
-    UserRole.CARGO_OWNER,
-    UserRole.LENDER,
-  )
+  @Roles(...MY_NOTIFICATION_ROLES)
   @ApiOperation({
     summary: 'Get notification by ID',
     description: 'Retrieve a specific notification by its ID',
@@ -470,15 +455,7 @@ export class NotificationController {
   }
 
   @Put(':id')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.SUPER_ADMIN,
-    UserRole.TRUCK_OWNER,
-    UserRole.DRIVER,
-    UserRole.BROKER,
-    UserRole.CARGO_OWNER,
-    UserRole.LENDER,
-  )
+  @Roles(...MY_NOTIFICATION_ROLES)
   @ApiOperation({
     summary: 'Update notification',
     description: 'Update an existing notification',
@@ -507,17 +484,7 @@ export class NotificationController {
   }
 
   @Post(':id/read')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.SUPER_ADMIN,
-    UserRole.TRUCK_OWNER,
-    UserRole.DRIVER,
-    UserRole.BROKER,
-    UserRole.CARGO_OWNER,
-    UserRole.CARGO_RECEIVER,
-    UserRole.LENDER,
-    UserRole.AGENT,
-  )
+  @Roles(...MY_NOTIFICATION_ROLES)
   @ApiOperation({
     summary: 'Mark notification as read',
     description: 'Mark a notification as read by the current user',
@@ -540,20 +507,7 @@ export class NotificationController {
   }
 
   @Post('bulk/read')
-  @Roles(
-    UserRole.ADMIN,
-    UserRole.SUPER_ADMIN,
-    UserRole.TRUCK_OWNER,
-    UserRole.DRIVER,
-    UserRole.BROKER,
-    UserRole.CARGO_OWNER,
-    UserRole.CARGO_RECEIVER,
-    UserRole.LENDER,
-    UserRole.AGENT,
-    UserRole.TENANT_ADMIN,
-    UserRole.MANAGER,
-    UserRole.USER,
-  )
+  @Roles(...MY_NOTIFICATION_ROLES)
   @ApiOperation({
     summary: 'Bulk mark notifications as read',
     description: 'Mark multiple notifications as read at once',

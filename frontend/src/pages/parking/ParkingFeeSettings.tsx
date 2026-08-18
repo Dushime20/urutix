@@ -98,6 +98,8 @@ function countryValue(value?: string) {
   return match?.name || raw;
 }
 
+const inputClass = 'ui-input w-full border rounded-xl p-3';
+
 function hydrate(data: Partial<ParkingFeeSchedule>, facility?: Partial<ParkingFeeSchedule>): ParkingFeeSchedule {
   return {
     ...emptyForm,
