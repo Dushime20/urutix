@@ -16,6 +16,8 @@ import { Tenant } from '../../entities/tenant.entity';
 import { MobileMoneyPaymentService } from '../payments/services/mobile-money-payment.service';
 import {
   ParkingFacilityConfig,
+  ParkingFeeSchedule,
+  ParkingFeeScheduleStatus,
   ParkingReservation,
   ParkingReservationActivity,
   ParkingReservationActivityAction,
@@ -23,6 +25,7 @@ import {
   ParkingReservationPaymentStatus,
   ParkingReservationStatus,
 } from '../../entities/parking-reservation.entity';
+import { AuditLog, AuditAction } from '../../entities/audit-log.entity';
 import {
   AddParkingNoteDto,
   AssignParkingReservationDto,
@@ -34,6 +37,7 @@ import {
   GuestParkingPaymentDto,
   LookupParkingReservationDto,
   ParkingReservationFilterDto,
+  PreviewParkingQuoteDto,
   RejectParkingReservationDto,
   RequestInformationDto,
   SubmitParkingPaymentDto,
@@ -42,11 +46,11 @@ import {
   WaiveParkingPaymentDto,
 } from './dto/parking-reservation.dto';
 import {
-  addDays,
   addMonths,
   calculateParkingFeeQuote,
   canTransition,
   effectivePaymentStatus,
+  feeSchedulePeriodsOverlap,
   formatReservationReference,
   hasSufficientCapacity,
   invoiceNumberFor,
@@ -57,12 +61,21 @@ import {
   normalizeMcNumber,
   normalizeUsdotNumber,
   periodsOverlap,
-  roundMoney,
+  resolvePaymentDueAt,
   startOfTodayUtc,
   toDateString,
   toMoneyNumber,
   toUtcDateOnly,
+  validateContractLimits,
 } from './parking-reservation.workflow';
+import {
+  applyFeeScheduleDto,
+  newDraftFromFacility,
+  quoteFromSchedule,
+  snapshotFromSchedule,
+  syncFacilityFromSchedule,
+  toFeeScheduleView,
+} from './parking-fee-schedule.mapper';
 
 const STAFF_ROLES = new Set<string>([
   UserRole.SUPER_ADMIN,
@@ -96,6 +109,10 @@ export class ParkingReservationsService {
     private readonly activityRepo: Repository<ParkingReservationActivity>,
     @InjectRepository(ParkingFacilityConfig)
     private readonly facilityRepo: Repository<ParkingFacilityConfig>,
+    @InjectRepository(ParkingFeeSchedule)
+    private readonly feeScheduleRepo: Repository<ParkingFeeSchedule>,
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepo: Repository<AuditLog>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(Tenant)
@@ -179,59 +196,425 @@ export class ParkingReservationsService {
     return this.facilityRepo.save(facility);
   }
 
-  toFeeScheduleView(facility: ParkingFacilityConfig) {
-    return {
-      id: facility.id,
-      facilityName: facility.facilityName,
-      totalCapacity: facility.totalCapacity,
-      allowPastStartDates: facility.allowPastStartDates,
-      currency: (facility.currency || 'USD').toUpperCase(),
-      monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
-      reservationFee: toMoneyNumber(facility.reservationFee),
-      taxPercent: toMoneyNumber(facility.taxPercent),
-      paymentDueDays: facility.paymentDueDays || 7,
-      feeNotes: facility.feeNotes || '',
-      paymentInstructions: facility.paymentInstructions || '',
-    };
+  toFeeScheduleView(schedule: ParkingFeeSchedule, facility?: ParkingFacilityConfig) {
+    return toFeeScheduleView(schedule, facility);
+  }
+
+  private async listSchedulesForFacility(facilityId: string) {
+    return this.feeScheduleRepo.find({
+      where: { parkingFacilityId: facilityId },
+      order: { version: 'DESC', createdAt: 'DESC' },
+    });
+  }
+
+  private async findWorkingSchedule(facility: ParkingFacilityConfig) {
+    const schedules = await this.listSchedulesForFacility(facility.id);
+    return (
+      schedules.find((item) => item.status === ParkingFeeScheduleStatus.DRAFT) ||
+      schedules.find((item) => item.status === ParkingFeeScheduleStatus.ACTIVE) ||
+      schedules.find((item) => item.status === ParkingFeeScheduleStatus.SCHEDULED) ||
+      schedules[0] ||
+      null
+    );
+  }
+
+  private async findApplicableSchedule(params: {
+    facility: ParkingFacilityConfig;
+    startDate: Date | string;
+    spaceType?: string;
+    vehicleType?: string;
+    requireActive?: boolean;
+  }) {
+    const start = toDateString(params.startDate instanceof Date ? params.startDate : toUtcDateOnly(params.startDate));
+    const spaceType = params.spaceType || 'TRUCK_SPACE';
+    const vehicleType = params.vehicleType || 'TRUCK';
+    const schedules = await this.feeScheduleRepo.find({
+      where: { parkingFacilityId: params.facility.id, spaceType, vehicleType },
+      order: { version: 'DESC' },
+    });
+    const applicable = schedules.find((item) => {
+      const live = this.liveStatus(item);
+      if (live !== ParkingFeeScheduleStatus.ACTIVE && live !== ParkingFeeScheduleStatus.SCHEDULED) return false;
+      if (params.requireActive !== false && live !== ParkingFeeScheduleStatus.ACTIVE) return false;
+      const from = item.effectiveFrom;
+      const until = item.effectiveUntil;
+      return from <= start && (!until || until >= start);
+    });
+    if (applicable) return applicable;
+    return (
+      schedules.find((item) => this.liveStatus(item) === ParkingFeeScheduleStatus.ACTIVE) ||
+      null
+    );
+  }
+
+  private liveStatus(schedule: ParkingFeeSchedule): ParkingFeeScheduleStatus {
+    const today = toDateString(new Date());
+    if (
+      (schedule.status === ParkingFeeScheduleStatus.ACTIVE || schedule.status === ParkingFeeScheduleStatus.SCHEDULED) &&
+      schedule.effectiveUntil &&
+      schedule.effectiveUntil < today
+    ) {
+      return ParkingFeeScheduleStatus.EXPIRED;
+    }
+    if (schedule.status === ParkingFeeScheduleStatus.SCHEDULED && schedule.effectiveFrom <= today) {
+      return ParkingFeeScheduleStatus.ACTIVE;
+    }
+    return schedule.status;
   }
 
   async getFeeSchedule(user: AuthUser) {
     this.assertStaff(user);
-    return this.toFeeScheduleView(await this.getFacility(user.tenantId));
+    const facility = await this.getFacility(user.tenantId);
+    const schedules = await this.listSchedulesForFacility(facility.id);
+    const working = await this.findWorkingSchedule(facility);
+    const view = working
+      ? toFeeScheduleView(working, facility)
+      : toFeeScheduleView(
+          this.feeScheduleRepo.create(newDraftFromFacility(facility, this.actorId(user))) as ParkingFeeSchedule,
+          facility,
+        );
+    return {
+      ...view,
+      schedules: schedules.map((item) => ({
+        id: item.id,
+        name: item.name,
+        status: this.liveStatus(item),
+        version: item.version,
+        currency: item.currency,
+        effectiveFrom: item.effectiveFrom,
+        effectiveUntil: item.effectiveUntil || null,
+        monthlyRatePerSpace: toMoneyNumber(item.monthlyRatePerSpace),
+      })),
+    };
+  }
+
+  async listFeeSchedules(user: AuthUser) {
+    this.assertStaff(user);
+    const facility = await this.getFacility(user.tenantId);
+    const schedules = await this.listSchedulesForFacility(facility.id);
+    return schedules.map((item) => toFeeScheduleView(item, facility));
+  }
+
+  async getFeeScheduleById(id: string, user: AuthUser) {
+    this.assertStaff(user);
+    const facility = await this.getFacility(user.tenantId);
+    const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
+    if (!schedule || schedule.parkingFacilityId !== facility.id) {
+      throw new NotFoundException('Fee schedule not found.');
+    }
+    return toFeeScheduleView(schedule, facility);
   }
 
   async updateFeeSchedule(dto: UpdateParkingFeesDto, user: AuthUser) {
     this.assertStaff(user);
+    this.assertFeeScheduleDto(dto);
     const facility = await this.getFacility(user.tenantId);
-    if (dto.currency) {
-      if (!isValidIso4217Currency(dto.currency)) {
-        throw new BadRequestException('Currency must be a 3-letter ISO 4217 code.');
+    let working: ParkingFeeSchedule | null = null;
+    if (dto.id) {
+      working = await this.feeScheduleRepo.findOne({ where: { id: dto.id } });
+      if (!working || working.parkingFacilityId !== facility.id) {
+        throw new NotFoundException('Fee schedule not found.');
       }
-      facility.currency = dto.currency;
     }
-    if (dto.monthlyRatePerSpace != null) facility.monthlyRatePerSpace = roundMoney(dto.monthlyRatePerSpace);
-    if (dto.reservationFee != null) facility.reservationFee = roundMoney(dto.reservationFee);
-    if (dto.taxPercent != null) facility.taxPercent = roundMoney(dto.taxPercent);
-    if (dto.paymentDueDays != null) facility.paymentDueDays = dto.paymentDueDays;
-    if (dto.feeNotes != null) facility.feeNotes = dto.feeNotes;
-    if (dto.paymentInstructions != null) facility.paymentInstructions = dto.paymentInstructions;
-    return this.toFeeScheduleView(await this.facilityRepo.save(facility));
+    const shouldFork =
+      !working ||
+      working.status === ParkingFeeScheduleStatus.ACTIVE ||
+      working.status === ParkingFeeScheduleStatus.SCHEDULED ||
+      working.status === ParkingFeeScheduleStatus.ARCHIVED ||
+      working.status === ParkingFeeScheduleStatus.EXPIRED;
+    if (shouldFork) {
+      const source = working || undefined;
+      const maxVersion = (await this.listSchedulesForFacility(facility.id)).reduce((max, item) => Math.max(max, item.version), 0);
+      working = this.feeScheduleRepo.create({
+        ...(source
+          ? { ...source, id: undefined as any, createdAt: undefined as any, updatedAt: undefined as any, activatedAt: undefined, activatedByUserId: undefined }
+          : newDraftFromFacility(facility, this.actorId(user))),
+        parkingFacilityId: facility.id,
+        status: ParkingFeeScheduleStatus.DRAFT,
+        version: maxVersion + 1,
+        createdByUserId: this.actorId(user),
+      });
+      delete (working as any).id;
+    }
+    const { previous, next } = applyFeeScheduleDto(working!, dto);
+    this.assertFeeScheduleEntity(working!);
+    working!.updatedByUserId = this.actorId(user);
+    working!.changeLog = [
+      ...(working!.changeLog || []),
+      { at: new Date().toISOString(), by: this.actorId(user), previous, next },
+    ];
+    const saved = await this.feeScheduleRepo.save(working!);
+    await this.auditFeeChange(user, facility, 'UPDATE', previous, next, saved.id);
+    return toFeeScheduleView(saved, facility);
   }
 
-  buildFeeQuote(reservation: ParkingReservation, facility: ParkingFacilityConfig) {
+  async activateFeeSchedule(id: string, user: AuthUser) {
+    this.assertStaff(user);
+    const facility = await this.getFacility(user.tenantId);
+    const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
+    if (!schedule || schedule.parkingFacilityId !== facility.id) {
+      throw new NotFoundException('Fee schedule not found.');
+    }
+    if (toMoneyNumber(schedule.monthlyRatePerSpace) <= 0) {
+      throw new BadRequestException('Monthly rate per truck space must be greater than 0 before activation.');
+    }
+    this.assertFeeScheduleEntity(schedule);
+    const others = await this.feeScheduleRepo.find({
+      where: {
+        parkingFacilityId: schedule.parkingFacilityId,
+        spaceType: schedule.spaceType,
+        vehicleType: schedule.vehicleType,
+      },
+    });
+    for (const item of others) {
+      if (item.id === schedule.id) continue;
+      const status = this.liveStatus(item);
+      if (status !== ParkingFeeScheduleStatus.ACTIVE && status !== ParkingFeeScheduleStatus.SCHEDULED) continue;
+      if (!feeSchedulePeriodsOverlap(schedule.effectiveFrom, schedule.effectiveUntil, item.effectiveFrom, item.effectiveUntil)) {
+        continue;
+      }
+      item.status = ParkingFeeScheduleStatus.ARCHIVED;
+      item.updatedByUserId = this.actorId(user);
+      await this.feeScheduleRepo.save(item);
+    }
+    const today = toDateString(new Date());
+    const nextStatus =
+      schedule.effectiveFrom > today ? ParkingFeeScheduleStatus.SCHEDULED : ParkingFeeScheduleStatus.ACTIVE;
+    const previous = { status: schedule.status };
+    schedule.status = nextStatus;
+    schedule.activatedByUserId = this.actorId(user);
+    schedule.activatedAt = new Date();
+    schedule.updatedByUserId = this.actorId(user);
+    const saved = await this.feeScheduleRepo.save(schedule);
+    if (nextStatus === ParkingFeeScheduleStatus.ACTIVE) {
+      syncFacilityFromSchedule(facility, saved);
+      await this.facilityRepo.save(facility);
+    }
+    await this.auditFeeChange(user, facility, 'ACTIVATE', previous, { status: nextStatus }, saved.id);
+    return toFeeScheduleView(saved, facility);
+  }
+
+  async archiveFeeSchedule(id: string, user: AuthUser) {
+    this.assertStaff(user);
+    const facility = await this.getFacility(user.tenantId);
+    const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
+    if (!schedule || schedule.parkingFacilityId !== facility.id) {
+      throw new NotFoundException('Fee schedule not found.');
+    }
+    const previous = { status: schedule.status };
+    schedule.status = ParkingFeeScheduleStatus.ARCHIVED;
+    schedule.updatedByUserId = this.actorId(user);
+    const saved = await this.feeScheduleRepo.save(schedule);
+    await this.auditFeeChange(user, facility, 'ARCHIVE', previous, { status: ParkingFeeScheduleStatus.ARCHIVED }, schedule.id);
+    return toFeeScheduleView(saved, facility);
+  }
+
+  async previewFeeQuote(dto: PreviewParkingQuoteDto, user?: AuthUser | null) {
+    const facility = dto.facilityId
+      ? await this.facilityRepo.findOne({ where: { id: dto.facilityId } })
+      : await this.getFacility(user?.tenantId);
+    if (!facility) throw new NotFoundException('Parking facility not found.');
+    const start = dto.reservationStartDate || toDateString(new Date());
+    const schedule = dto.scheduleId
+      ? await this.feeScheduleRepo.findOne({ where: { id: dto.scheduleId } })
+      : await this.findApplicableSchedule({
+          facility,
+          startDate: start,
+          spaceType: dto.spaceType,
+          vehicleType: dto.vehicleType,
+        }) || await this.findWorkingSchedule(facility);
+    if (!schedule) {
+      throw new BadRequestException('Reservation cannot be completed because no active pricing schedule is available for this parking space.');
+    }
+    const limitError = validateContractLimits({
+      spaces: dto.spaces,
+      months: dto.months,
+      minSpaces: schedule.minSpaces,
+      maxSpaces: schedule.maxSpaces,
+      minContractMonths: schedule.minContractMonths,
+      maxContractMonths: schedule.maxContractMonths,
+    });
+    if (limitError) throw new BadRequestException(limitError);
+    const quote = quoteFromSchedule(schedule, dto.spaces, dto.months);
+    return {
+      ...quote,
+      feeScheduleId: schedule.id,
+      feeScheduleVersion: schedule.version,
+      feeNotes: schedule.feeNotes || '',
+      paymentInstructions: user ? schedule.paymentInstructions || '' : undefined,
+    };
+  }
+
+  async getPublicPricing() {
+    const facility = await this.getFacility();
+    const schedule =
+      (await this.findApplicableSchedule({ facility, startDate: new Date() })) ||
+      (await this.findWorkingSchedule(facility));
+    if (!schedule) {
+      return {
+        facilityName: facility.facilityName,
+        currency: (facility.currency || 'USD').toUpperCase(),
+        monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
+        minSpaces: 1,
+        maxSpaces: facility.totalCapacity || 100,
+        minContractMonths: 1,
+        maxContractMonths: 60,
+        feeNotes: facility.feeNotes || '',
+        hasActiveSchedule: false,
+      };
+    }
+    return {
+      facilityName: facility.facilityName,
+      currency: (schedule.currency || 'USD').toUpperCase(),
+      monthlyRatePerSpace: toMoneyNumber(schedule.monthlyRatePerSpace),
+      reservationFeeType: schedule.reservationFeeType,
+      reservationFeeValue: toMoneyNumber(schedule.reservationFeeValue),
+      reservationFeeApplication: schedule.reservationFeeApplication,
+      minSpaces: schedule.minSpaces,
+      maxSpaces: schedule.maxSpaces,
+      minContractMonths: schedule.minContractMonths,
+      maxContractMonths: schedule.maxContractMonths,
+      feeNotes: schedule.feeNotes || '',
+      taxName: schedule.taxName,
+      taxPercent: schedule.taxEnabled ? toMoneyNumber(schedule.taxPercent) : 0,
+      taxEnabled: schedule.taxEnabled,
+      hasActiveSchedule: this.liveStatus(schedule) === ParkingFeeScheduleStatus.ACTIVE,
+    };
+  }
+
+  private assertFeeScheduleDto(dto: UpdateParkingFeesDto) {
+    if (dto.currency && !isValidIso4217Currency(dto.currency)) {
+      throw new BadRequestException('Currency must be a 3-letter ISO 4217 code.');
+    }
+    if (dto.minContractMonths != null && dto.maxContractMonths != null && dto.maxContractMonths < dto.minContractMonths) {
+      throw new BadRequestException('Maximum contract months must be greater than or equal to minimum months.');
+    }
+    if (dto.minSpaces != null && dto.maxSpaces != null && dto.maxSpaces < dto.minSpaces) {
+      throw new BadRequestException('Maximum truck spaces must be greater than or equal to minimum spaces.');
+    }
+    if (dto.effectiveFrom && dto.effectiveUntil && dto.effectiveUntil < dto.effectiveFrom) {
+      throw new BadRequestException('Effective until must be on or after effective from.');
+    }
+  }
+
+  private assertFeeScheduleEntity(schedule: ParkingFeeSchedule) {
+    if (!isValidIso4217Currency(schedule.currency || '')) {
+      throw new BadRequestException('Currency must be a 3-letter ISO 4217 code.');
+    }
+    if (schedule.maxContractMonths < schedule.minContractMonths) {
+      throw new BadRequestException('Maximum contract months must be greater than or equal to minimum months.');
+    }
+    if (schedule.maxSpaces < schedule.minSpaces) {
+      throw new BadRequestException('Maximum truck spaces must be greater than or equal to minimum spaces.');
+    }
+    if (schedule.effectiveUntil && schedule.effectiveUntil < schedule.effectiveFrom) {
+      throw new BadRequestException('Effective until must be on or after effective from.');
+    }
+    if (schedule.reservationFeeType === 'PERCENTAGE' && toMoneyNumber(schedule.reservationFeeValue) > 100) {
+      throw new BadRequestException('Percentage reservation fee must be between 0 and 100.');
+    }
+  }
+
+  private async assertNoOverlap(schedule: ParkingFeeSchedule) {
+    const others = await this.feeScheduleRepo.find({
+      where: {
+        parkingFacilityId: schedule.parkingFacilityId,
+        spaceType: schedule.spaceType,
+        vehicleType: schedule.vehicleType,
+      },
+    });
+    const conflict = others.find((item) => {
+      if (item.id === schedule.id) return false;
+      const status = this.liveStatus(item);
+      if (status !== ParkingFeeScheduleStatus.ACTIVE && status !== ParkingFeeScheduleStatus.SCHEDULED) return false;
+      return feeSchedulePeriodsOverlap(
+        schedule.effectiveFrom,
+        schedule.effectiveUntil,
+        item.effectiveFrom,
+        item.effectiveUntil,
+      );
+    });
+    if (conflict) {
+      throw new ConflictException(
+        `An ${this.liveStatus(conflict).toLowerCase()} fee schedule already covers this facility, space type, vehicle type, and effective period.`,
+      );
+    }
+  }
+
+  private async auditFeeChange(
+    user: AuthUser,
+    facility: ParkingFacilityConfig,
+    event: string,
+    previous: Record<string, unknown>,
+    next: Record<string, unknown>,
+    scheduleId: string,
+  ) {
+    const userId = this.actorId(user);
+    if (!userId) return;
+    try {
+      await this.auditLogRepo.save(
+        this.auditLogRepo.create({
+          userId,
+          tenantId: facility.tenantId || user.tenantId || userId,
+          action: event === 'UPDATE' ? AuditAction.UPDATE : AuditAction.OTHER,
+          description: `Parking fee schedule ${event.toLowerCase()}`,
+          metadata: { scheduleId, facilityId: facility.id, previous, next, event },
+        }),
+      );
+    } catch (error) {
+      this.logger.warn(`Failed to write parking fee audit log: ${(error as Error).message}`);
+    }
+  }
+
+  buildFeeQuote(reservation: ParkingReservation, scheduleOrFacility: ParkingFeeSchedule | ParkingFacilityConfig) {
+    if ('reservationFeeValue' in scheduleOrFacility) {
+      return quoteFromSchedule(scheduleOrFacility, reservation.truckSpacesRequested, reservation.contractMonths);
+    }
     return calculateParkingFeeQuote({
       spaces: reservation.truckSpacesRequested,
       months: reservation.contractMonths,
-      monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
-      reservationFee: toMoneyNumber(facility.reservationFee),
-      taxPercent: toMoneyNumber(facility.taxPercent),
-      currency: (facility.currency || 'USD').toUpperCase(),
+      monthlyRatePerSpace: toMoneyNumber(scheduleOrFacility.monthlyRatePerSpace),
+      reservationFee: toMoneyNumber(scheduleOrFacility.reservationFee),
+      taxPercent: toMoneyNumber(scheduleOrFacility.taxPercent),
+      currency: (scheduleOrFacility.currency || 'USD').toUpperCase(),
+    });
+  }
+
+  private quoteFromSnapshot(reservation: ParkingReservation) {
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    if (snapshot.totalAmount == null && reservation.totalAmountDue == null) return null;
+    if (snapshot.occupancyAmount == null && reservation.occupancyAmount == null) return null;
+    return calculateParkingFeeQuote({
+      spaces: reservation.truckSpacesRequested,
+      months: reservation.contractMonths,
+      monthlyRatePerSpace: toMoneyNumber(
+        snapshot.monthlyRatePerSpace ??
+          (reservation.truckSpacesRequested * reservation.contractMonths
+            ? toMoneyNumber(reservation.occupancyAmount) /
+              (reservation.truckSpacesRequested * reservation.contractMonths)
+            : 0),
+      ),
+      reservationFee: toMoneyNumber(snapshot.reservationFee ?? reservation.reservationFeeAmount),
+      reservationFeeType: snapshot.reservationFeeType as any,
+      reservationFeeApplication: snapshot.reservationFeeApplication as any,
+      taxPercent: toMoneyNumber(snapshot.taxPercent ?? reservation.taxPercent),
+      taxEnabled: snapshot.taxEnabled as boolean | undefined,
+      taxName: (snapshot.taxName as string) || 'VAT',
+      currency: (reservation.currency || (snapshot.currency as string) || 'USD').toUpperCase(),
     });
   }
 
   private async applyApprovalInvoice(reservation: ParkingReservation, user: AuthUser) {
     const facility = await this.getFacility(reservation.tenantId);
-    const quote = this.buildFeeQuote(reservation, facility);
+    const schedule = reservation.feeScheduleId
+      ? await this.feeScheduleRepo.findOne({ where: { id: reservation.feeScheduleId } })
+      : null;
+    const snapshotQuote = this.quoteFromSnapshot(reservation);
+    const quote =
+      snapshotQuote ||
+      (schedule
+        ? this.buildFeeQuote(reservation, schedule)
+        : this.buildFeeQuote(reservation, facility));
     reservation.currency = quote.currency;
     reservation.occupancyAmount = quote.occupancyAmount;
     reservation.reservationFeeAmount = quote.reservationFeeAmount;
@@ -240,17 +623,21 @@ export class ParkingReservationsService {
     reservation.taxAmount = quote.taxAmount;
     reservation.totalAmountDue = quote.totalAmount;
     reservation.invoiceNumber = invoiceNumberFor(reservation.reservationReference);
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
     reservation.feeSnapshot = {
+      ...(schedule ? snapshotFromSchedule(schedule, quote) : { ...quote, monthlyRatePerSpace: quote.monthlyRatePerSpace }),
+      ...snapshot,
       ...quote,
-      monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
-      reservationFee: toMoneyNumber(facility.reservationFee),
-      feeNotes: facility.feeNotes || '',
-      paymentInstructions: facility.paymentInstructions || '',
-      paymentDueDays: facility.paymentDueDays || 7,
     };
+    const dueAt = resolvePaymentDueAt({
+      paymentDueType: (reservation.feeSnapshot as any).paymentDueType || schedule?.paymentDueType,
+      paymentDueDays: Number((reservation.feeSnapshot as any).paymentDueDays ?? schedule?.paymentDueDays ?? facility.paymentDueDays ?? 7),
+      invoiceDate: new Date(),
+      startDate: reservation.requestedStartDate,
+    });
     if (quote.totalAmount > 0) {
       reservation.paymentStatus = ParkingReservationPaymentStatus.DUE;
-      reservation.paymentDueAt = addDays(new Date(), facility.paymentDueDays || 7);
+      reservation.paymentDueAt = dueAt;
       await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_REQUESTED, user, {
         metadata: {
           invoiceNumber: reservation.invoiceNumber,
@@ -356,6 +743,23 @@ export class ParkingReservationsService {
     const tenantId = await this.resolveTenantId(user);
     const facility = await this.getFacility(tenantId);
     const start = this.validateBusinessFields(dto, facility.allowPastStartDates);
+    const schedule = await this.findApplicableSchedule({ facility, startDate: start, requireActive: true });
+    if (!schedule) {
+      throw new BadRequestException(
+        'Reservation cannot be completed because no active pricing schedule is available for this parking space.',
+      );
+    }
+    const limitError = validateContractLimits({
+      spaces: dto.truckSpacesRequested,
+      months: dto.contractMonths,
+      minSpaces: schedule.minSpaces,
+      maxSpaces: schedule.maxSpaces,
+      minContractMonths: schedule.minContractMonths,
+      maxContractMonths: schedule.maxContractMonths,
+    });
+    if (limitError) throw new BadRequestException(limitError);
+    const quote = quoteFromSchedule(schedule, dto.truckSpacesRequested, dto.contractMonths);
+    const snapshot = snapshotFromSchedule(schedule, quote);
     const end = addMonths(start, dto.contractMonths);
     const mcNumber = normalizeMcNumber(dto.mcNumber);
     const usdotNumber = normalizeUsdotNumber(dto.usdotNumber);
@@ -397,6 +801,15 @@ export class ParkingReservationsService {
         duplicateOfReferences: duplicates.map((d) => d.reservationReference),
         idempotencyKey,
         submitterIpHash: this.hashIp(ip),
+        feeScheduleId: schedule.id,
+        currency: quote.currency,
+        occupancyAmount: quote.occupancyAmount,
+        reservationFeeAmount: quote.reservationFeeAmount,
+        subtotalAmount: quote.subtotalAmount,
+        taxPercent: quote.taxPercent,
+        taxAmount: quote.taxAmount,
+        totalAmountDue: quote.totalAmount,
+        feeSnapshot: snapshot,
       });
       const saved = await manager.save(ParkingReservation, entity);
       await manager.save(
@@ -412,6 +825,10 @@ export class ParkingReservationsService {
             companyName: saved.companyName,
             truckSpacesRequested: saved.truckSpacesRequested,
             possibleDuplicate: saved.possibleDuplicate,
+            feeScheduleId: schedule.id,
+            feeScheduleVersion: schedule.version,
+            grandTotal: quote.totalAmount,
+            currency: quote.currency,
           },
         }),
       );
@@ -602,10 +1019,13 @@ export class ParkingReservationsService {
       ? await this.evaluateCapacity(reservation)
       : undefined;
     const facility = await this.getFacility(reservation.tenantId);
-    const feeQuote =
-      reservation.paymentStatus === ParkingReservationPaymentStatus.NOT_APPLICABLE
-        ? this.buildFeeQuote(reservation, facility)
-        : undefined;
+    let feeQuote = this.quoteFromSnapshot(reservation);
+    if (!feeQuote && reservation.paymentStatus === ParkingReservationPaymentStatus.NOT_APPLICABLE) {
+      const schedule = reservation.feeScheduleId
+        ? await this.feeScheduleRepo.findOne({ where: { id: reservation.feeScheduleId } })
+        : null;
+      feeQuote = this.buildFeeQuote(reservation, schedule || facility);
+    }
 
     if (this.isStaff(user.role)) {
       return {
@@ -1139,6 +1559,10 @@ export class ParkingReservationsService {
 
   async cancel(id: string, dto: CancelParkingReservationDto, user: AuthUser) {
     const reservation = await this.loadManaged(id, user);
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    if (snapshot.cancellationAllowed === false) {
+      throw new BadRequestException('Cancellation is not allowed for this reservation under the applicable fee schedule.');
+    }
     this.assertTransition(reservation, ParkingReservationStatus.CANCELLED);
     const previous = reservation.status;
     reservation.status = ParkingReservationStatus.CANCELLED;

@@ -38,6 +38,7 @@ import {
   IshemaPayStatusDto,
   LookupParkingReservationDto,
   ParkingReservationFilterDto,
+  PreviewParkingQuoteDto,
   RejectParkingReservationDto,
   RequestInformationDto,
   SubmitParkingPaymentDto,
@@ -235,6 +236,78 @@ export class ParkingReservationsController {
   async updateFees(@Body() dto: UpdateParkingFeesDto, @Request() req) {
     const data = await this.service.updateFeeSchedule(dto, req.user);
     return { success: true, message: 'Parking reservation fees updated.', data };
+  }
+
+  @Get('fees/schedules')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:view', 'parking:manage_fees')
+  async listFeeSchedules(@Request() req) {
+    return { success: true, data: await this.service.listFeeSchedules(req.user) };
+  }
+
+  @Get('fees/schedules/:id')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:view', 'parking:manage_fees')
+  async getFeeScheduleById(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    return { success: true, data: await this.service.getFeeScheduleById(id, req.user) };
+  }
+
+  @Post('fees/schedules/:id/activate')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:manage_fees')
+  @ApiOperation({ summary: 'Activate a parking fee schedule' })
+  async activateFeeSchedule(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const data = await this.service.activateFeeSchedule(id, req.user);
+    return { success: true, message: 'Fee schedule activated.', data };
+  }
+
+  @Post('fees/schedules/:id/archive')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:manage_fees')
+  @ApiOperation({ summary: 'Archive a parking fee schedule' })
+  async archiveFeeSchedule(@Param('id', ParseUUIDPipe) id: string, @Request() req) {
+    const data = await this.service.archiveFeeSchedule(id, req.user);
+    return { success: true, message: 'Fee schedule archived.', data };
+  }
+
+  @Post('fees/preview')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:view', 'parking:manage_fees')
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Preview a reservation quote from the applicable fee schedule' })
+  async previewFees(@Body() dto: PreviewParkingQuoteDto, @Request() req) {
+    const data = await this.service.previewFeeQuote(dto, req.user);
+    return { success: true, data };
+  }
+
+  @Get('public-pricing')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @ApiOperation({ summary: 'Public parking pricing notes and contract limits' })
+  async publicPricing() {
+    return { success: true, data: await this.service.getPublicPricing() };
+  }
+
+  @Post('public-quote')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Public live quote preview' })
+  async publicQuote(@Body() dto: PreviewParkingQuoteDto) {
+    const data = await this.service.previewFeeQuote(dto);
+    return { success: true, data };
   }
 
   @Get('export')

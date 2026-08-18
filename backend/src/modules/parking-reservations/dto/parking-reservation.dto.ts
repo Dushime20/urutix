@@ -17,6 +17,11 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import {
+  ParkingLateFeeType,
+  ParkingPaymentDueType,
+  ParkingPaymentFrequency,
+  ParkingReservationFeeApplication,
+  ParkingReservationFeeType,
   ParkingReservationPaymentMethod,
   ParkingReservationStatus,
 } from '../../../entities/parking-reservation.entity';
@@ -251,6 +256,34 @@ export class UpdateParkingFacilityDto {
 
 export class UpdateParkingFeesDto {
   @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(160)
+  name?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  spaceType?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  vehicleType?: string;
+
+  @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
   @IsString()
   @Matches(/^[A-Z]{3}$/, { message: 'Currency must be a 3-letter ISO 4217 code' })
@@ -268,7 +301,53 @@ export class UpdateParkingFeesDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(1000000)
+  dailyRate?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  weeklyRate?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  longTermRate?: number;
+
+  @IsOptional()
+  @IsEnum(ParkingReservationFeeType)
+  reservationFeeType?: ParkingReservationFeeType;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
   reservationFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  reservationFeeValue?: number;
+
+  @IsOptional()
+  @IsEnum(ParkingReservationFeeApplication)
+  reservationFeeApplication?: ParkingReservationFeeApplication;
+
+  @IsOptional()
+  @IsBoolean()
+  taxEnabled?: boolean;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  taxName?: string;
 
   @IsOptional()
   @Type(() => Number)
@@ -278,11 +357,107 @@ export class UpdateParkingFeesDto {
   taxPercent?: number;
 
   @IsOptional()
+  @IsEnum(ParkingPaymentFrequency)
+  paymentFrequency?: ParkingPaymentFrequency;
+
+  @IsOptional()
+  @IsEnum(ParkingPaymentDueType)
+  paymentDueType?: ParkingPaymentDueType;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(90)
+  paymentDueDays?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(30)
+  gracePeriodDays?: number;
+
+  @IsOptional()
+  @IsEnum(ParkingLateFeeType)
+  lateFeeType?: ParkingLateFeeType;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  lateFeeValue?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  autoRenewal?: boolean;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(90)
-  paymentDueDays?: number;
+  @Max(120)
+  minContractMonths?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(120)
+  maxContractMonths?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  minSpaces?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  maxSpaces?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  cancellationAllowed?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(365)
+  cancellationNoticeDays?: number;
+
+  @IsOptional()
+  @IsEnum(ParkingLateFeeType)
+  cancellationFeeType?: ParkingLateFeeType;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  cancellationFeeValue?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  refundEligible?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  earlyTerminationAllowed?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  effectiveFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  effectiveUntil?: string;
 
   @IsOptional()
   @Transform(trim)
@@ -295,6 +470,44 @@ export class UpdateParkingFeesDto {
   @IsString()
   @MaxLength(4000)
   paymentInstructions?: string;
+}
+
+export class PreviewParkingQuoteDto {
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  spaces: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(120)
+  months: number;
+
+  @IsOptional()
+  @IsDateString()
+  reservationStartDate?: string;
+
+  @IsOptional()
+  @IsUUID()
+  scheduleId?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  spaceType?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  vehicleType?: string;
+
+  @IsOptional()
+  @IsUUID()
+  facilityId?: string;
 }
 
 export class SubmitParkingPaymentDto {

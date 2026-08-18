@@ -2,9 +2,11 @@ import api from './api';
 import type {
   CreateParkingReservationPayload,
   ParkingFacility,
+  ParkingFeeQuote,
   ParkingFeeSchedule,
   ParkingOfficer,
   ParkingPaymentMethod,
+  ParkingPublicPricing,
   ParkingReservation,
   ParkingReservationStats,
 } from '../types/parking';
@@ -26,16 +28,6 @@ export type ParkingIshemaPayResult = {
   amount?: number;
   currency?: string;
   message?: string;
-};
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  message?: string;
-  data: T;
-  pagination?: { total: number; page: number; limit: number };
-  possibleDuplicate?: boolean;
-  emailSent?: boolean;
-  emailedTo?: string[];
 };
 
 export interface ParkingListParams {
@@ -129,8 +121,43 @@ export const parkingApi = {
     return response.data.data;
   },
 
+  listFeeSchedules: async () => {
+    const response = await api.get<ApiEnvelope<ParkingFeeSchedule[]>>('/parking-reservations/fees/schedules');
+    return response.data.data || [];
+  },
+
+  getFeeSchedule: async (id: string) => {
+    const response = await api.get<ApiEnvelope<ParkingFeeSchedule>>(`/parking-reservations/fees/schedules/${id}`);
+    return response.data.data;
+  },
+
   updateFees: async (payload: Partial<ParkingFeeSchedule>) => {
     const response = await api.patch<ApiEnvelope<ParkingFeeSchedule>>('/parking-reservations/fees', payload);
+    return response.data.data;
+  },
+
+  activateFeeSchedule: async (id: string) => {
+    const response = await api.post<ApiEnvelope<ParkingFeeSchedule>>(`/parking-reservations/fees/schedules/${id}/activate`);
+    return response.data.data;
+  },
+
+  archiveFeeSchedule: async (id: string) => {
+    const response = await api.post<ApiEnvelope<ParkingFeeSchedule>>(`/parking-reservations/fees/schedules/${id}/archive`);
+    return response.data.data;
+  },
+
+  previewFees: async (payload: { spaces: number; months: number; reservationStartDate?: string; scheduleId?: string }) => {
+    const response = await api.post<ApiEnvelope<ParkingFeeQuote>>('/parking-reservations/fees/preview', payload);
+    return response.data.data;
+  },
+
+  publicPricing: async () => {
+    const response = await api.get<ApiEnvelope<ParkingPublicPricing>>('/parking-reservations/public-pricing');
+    return response.data.data;
+  },
+
+  publicQuote: async (payload: { spaces: number; months: number; reservationStartDate?: string }) => {
+    const response = await api.post<ApiEnvelope<ParkingFeeQuote>>('/parking-reservations/public-quote', payload);
     return response.data.data;
   },
 

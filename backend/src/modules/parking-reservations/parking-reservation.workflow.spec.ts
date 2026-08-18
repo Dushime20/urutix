@@ -2,8 +2,10 @@ import {
   actionForTransition,
   addMonths,
   calculateParkingFeeQuote,
+  calculateReservationFeeAmount,
   canTransition,
   effectivePaymentStatus,
+  feeSchedulePeriodsOverlap,
   formatReservationReference,
   hasSufficientCapacity,
   invoiceNumberFor,
@@ -11,8 +13,10 @@ import {
   isValidPhone,
   isValidUsdotNumber,
   periodsOverlap,
+  resolvePaymentDueAt,
   toDateString,
   toUtcDateOnly,
+  validateContractLimits,
 } from './parking-reservation.workflow';
 import { ParkingReservationStatus } from '../../entities/parking-reservation.entity';
 
@@ -78,7 +82,83 @@ describe('parking reservation workflow', () => {
     expect(quote.taxAmount).toBe(152.5);
     expect(quote.totalAmount).toBe(1677.5);
     expect(quote.currency).toBe('USD');
+    expect(quote.monthlyRatePerSpace).toBe(250);
     expect(invoiceNumberFor('PR-2026-000123')).toBe('INV-PR-2026-000123');
+  });
+
+  it('quotes 1×1, 10×3 and 100×12 occupancy', () => {
+    expect(calculateParkingFeeQuote({
+      spaces: 1, months: 1, monthlyRatePerSpace: 150, reservationFee: 0, taxPercent: 0, currency: 'USD',
+    }).occupancyAmount).toBe(150);
+    expect(calculateParkingFeeQuote({
+      spaces: 10, months: 3, monthlyRatePerSpace: 150, reservationFee: 0, taxPercent: 0, currency: 'USD',
+    }).occupancyAmount).toBe(4500);
+    expect(calculateParkingFeeQuote({
+      spaces: 100, months: 12, monthlyRatePerSpace: 150, reservationFee: 0, taxPercent: 0, currency: 'USD',
+    }).occupancyAmount).toBe(180000);
+  });
+
+  it('supports fixed, percentage and zero reservation fees', () => {
+    expect(calculateReservationFeeAmount({
+      occupancyAmount: 9000, spaces: 20, reservationFee: 50, reservationFeeType: 'FIXED', reservationFeeApplication: 'PER_RESERVATION',
+    })).toBe(50);
+    expect(calculateReservationFeeAmount({
+      occupancyAmount: 9000, spaces: 20, reservationFee: 10, reservationFeeType: 'FIXED', reservationFeeApplication: 'PER_SPACE',
+    })).toBe(200);
+    expect(calculateReservationFeeAmount({
+      occupancyAmount: 9000, spaces: 20, reservationFee: 2, reservationFeeType: 'PERCENTAGE',
+    })).toBe(180);
+    expect(calculateReservationFeeAmount({
+      occupancyAmount: 9000, spaces: 20, reservationFee: 0, reservationFeeType: 'FIXED',
+    })).toBe(0);
+  });
+
+  it('applies 0% and 18% tax without double-taxing', () => {
+    const zero = calculateParkingFeeQuote({
+      spaces: 20, months: 3, monthlyRatePerSpace: 150, reservationFee: 180, taxPercent: 0, taxEnabled: true, currency: 'USD',
+    });
+    expect(zero.subtotalAmount).toBe(9180);
+    expect(zero.taxAmount).toBe(0);
+    expect(zero.totalAmount).toBe(9180);
+    const vat = calculateParkingFeeQuote({
+      spaces: 20, months: 3, monthlyRatePerSpace: 150, reservationFee: 180, taxPercent: 18, taxName: 'VAT', currency: 'USD',
+    });
+    expect(vat.occupancyAmount).toBe(9000);
+    expect(vat.reservationFeeAmount).toBe(180);
+    expect(vat.subtotalAmount).toBe(9180);
+    expect(vat.taxAmount).toBe(1652.4);
+    expect(vat.totalAmount).toBe(10832.4);
+    expect(vat.taxName).toBe('VAT');
+  });
+
+  it('validates contract space and month limits', () => {
+    expect(validateContractLimits({ spaces: 0, months: 1, minSpaces: 1, maxSpaces: 50 })).toMatch(/spaces/);
+    expect(validateContractLimits({ spaces: 60, months: 1, minSpaces: 1, maxSpaces: 50 })).toMatch(/spaces/);
+    expect(validateContractLimits({ spaces: 1, months: 24, minContractMonths: 1, maxContractMonths: 12 })).toMatch(/duration/);
+    expect(validateContractLimits({ spaces: 10, months: 3, minSpaces: 1, maxSpaces: 50, minContractMonths: 1, maxContractMonths: 12 })).toBeNull();
+  });
+
+  it('prevents overlapping fee schedule periods', () => {
+    expect(feeSchedulePeriodsOverlap('2026-01-01', '2026-12-31', '2026-06-01', '2026-12-31')).toBe(true);
+    expect(feeSchedulePeriodsOverlap('2026-01-01', '2026-06-30', '2026-07-01', '2026-12-31')).toBe(false);
+    expect(feeSchedulePeriodsOverlap('2026-01-01', null, '2026-06-01', '2026-12-31')).toBe(true);
+  });
+
+  it('resolves payment due dates from payment terms', () => {
+    const invoice = new Date('2026-08-01T00:00:00.000Z');
+    expect(resolvePaymentDueAt({ paymentDueType: 'IMMEDIATELY', invoiceDate: invoice }).toISOString()).toBe(invoice.toISOString());
+    expect(resolvePaymentDueAt({ paymentDueType: 'DAYS_AFTER_INVOICE', paymentDueDays: 7, invoiceDate: invoice }).toISOString()).toBe('2026-08-08T00:00:00.000Z');
+  });
+
+  it('keeps historical quotes independent of later rate changes', () => {
+    const original = calculateParkingFeeQuote({
+      spaces: 20, months: 3, monthlyRatePerSpace: 150, reservationFee: 0, taxPercent: 0, currency: 'USD',
+    });
+    const updated = calculateParkingFeeQuote({
+      spaces: 20, months: 3, monthlyRatePerSpace: 180, reservationFee: 0, taxPercent: 0, currency: 'USD',
+    });
+    expect(original.occupancyAmount).toBe(9000);
+    expect(updated.occupancyAmount).toBe(10800);
   });
 
   it('marks unpaid invoices overdue after the due date', () => {

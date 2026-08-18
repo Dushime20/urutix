@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowRight } from 'lucide-react';
@@ -10,6 +11,8 @@ import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import type { ParkingReservation } from '../../types/parking';
 import { SignaturePad } from './SignaturePad';
+import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
+import { formatParkingMoney } from '../../types/parking';
 
 const schema = z.object({
   companyName: z.string().min(2, 'Company name is required'),
@@ -50,6 +53,11 @@ export function ParkingReservationForm({
   submitLabel = 'Submit Reservation',
 }: ParkingReservationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const pricingQuery = useQuery({
+    queryKey: ['parking-public-pricing'],
+    queryFn: parkingApi.publicPricing,
+  });
+  const pricing = pricingQuery.data;
   const idempotencyKey = useMemo(
     () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`),
     [],
@@ -76,6 +84,24 @@ export function ParkingReservationForm({
       ...defaultValues,
     },
   });
+
+  const spaces = Number(form.watch('truckSpacesRequested') || 1);
+  const months = Number(form.watch('contractMonths') || 1);
+  const quote = useMemo(() => {
+    if (!pricing) return null;
+    return calculateParkingFeeQuote({
+      spaces: Math.max(1, spaces),
+      months: Math.max(1, months),
+      monthlyRatePerSpace: pricing.monthlyRatePerSpace,
+      reservationFee: pricing.reservationFeeValue || 0,
+      reservationFeeType: pricing.reservationFeeType,
+      reservationFeeApplication: pricing.reservationFeeApplication,
+      taxPercent: pricing.taxPercent || 0,
+      taxEnabled: pricing.taxEnabled,
+      taxName: pricing.taxName,
+      currency: pricing.currency,
+    });
+  }, [pricing, spaces, months]);
 
   const onSubmit = async (values: ParkingReservationFormData) => {
     try {
@@ -152,10 +178,10 @@ export function ParkingReservationForm({
       <Section title="Parking Requirements">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Number of Truck Spaces" error={form.formState.errors.truckSpacesRequested?.message}>
-            <input type="number" min={1} className={fieldClass} {...form.register('truckSpacesRequested')} />
+            <input type="number" min={pricing?.minSpaces || 1} max={pricing?.maxSpaces || 700} className={fieldClass} {...form.register('truckSpacesRequested')} />
           </Field>
           <Field label="Contract Duration (months)" error={form.formState.errors.contractMonths?.message}>
-            <input type="number" min={1} className={fieldClass} {...form.register('contractMonths')} />
+            <input type="number" min={pricing?.minContractMonths || 1} max={pricing?.maxContractMonths || 60} className={fieldClass} {...form.register('contractMonths')} />
           </Field>
           <Field label="Requested Start Date" error={form.formState.errors.requestedStartDate?.message}>
             <input type="date" className={fieldClass} {...form.register('requestedStartDate')} />
@@ -164,6 +190,21 @@ export function ParkingReservationForm({
         <Field label="Additional notes (optional)">
           <textarea rows={3} className={fieldClass} {...form.register('customerNotes')} />
         </Field>
+        {pricing?.feeNotes && (
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{pricing.feeNotes}</p>
+        )}
+        {pricing && !pricing.hasActiveSchedule && (
+          <p className="text-sm font-semibold text-amber-700">Pricing is not currently active. The parking team must activate a fee schedule before this reservation can be completed.</p>
+        )}
+        {quote && (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-4 space-y-1.5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Quote preview</p>
+            <div className="flex justify-between text-sm font-medium text-slate-600"><span>Parking subtotal</span><span>{formatParkingMoney(quote.occupancyAmount, quote.currency)}</span></div>
+            <div className="flex justify-between text-sm font-medium text-slate-600"><span>Administration fee</span><span>{formatParkingMoney(quote.reservationFeeAmount, quote.currency)}</span></div>
+            <div className="flex justify-between text-sm font-medium text-slate-600"><span>{quote.taxName || 'VAT'} {quote.taxPercent}%</span><span>{formatParkingMoney(quote.taxAmount, quote.currency)}</span></div>
+            <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white pt-1 border-t border-slate-200"><span>Grand total</span><span>{formatParkingMoney(quote.totalAmount, quote.currency)}</span></div>
+          </div>
+        )}
       </Section>
 
       <Section title="Authorization">

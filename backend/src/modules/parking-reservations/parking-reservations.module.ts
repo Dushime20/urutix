@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   ParkingFacilityConfig,
+  ParkingFeeSchedule,
   ParkingReservation,
   ParkingReservationActivity,
   ParkingReservationSequence,
@@ -10,6 +11,7 @@ import { User } from '../../entities/user.entity';
 import { Tenant } from '../../entities/tenant.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Driver } from '../../entities/driver.entity';
+import { AuditLog } from '../../entities/audit-log.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { EventsModule } from '../events/events.module';
 import { MessengerModule } from '../messenger/messenger.module';
@@ -30,6 +32,8 @@ import { ParkingReservationListener } from './listeners/parking-reservation.list
       Tenant,
       Notification,
       Driver,
+      ParkingFeeSchedule,
+      AuditLog,
     ]),
     EnhancedAuthModule,
     EventsModule,

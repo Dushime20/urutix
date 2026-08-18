@@ -61,6 +61,46 @@ export enum ParkingReservationPaymentMethod {
   OTHER = 'OTHER',
 }
 
+export enum ParkingFeeScheduleStatus {
+  DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum ParkingReservationFeeType {
+  FIXED = 'FIXED',
+  PERCENTAGE = 'PERCENTAGE',
+}
+
+export enum ParkingReservationFeeApplication {
+  PER_RESERVATION = 'PER_RESERVATION',
+  PER_SPACE = 'PER_SPACE',
+  PERCENT_OF_SUBTOTAL = 'PERCENT_OF_SUBTOTAL',
+}
+
+export enum ParkingPaymentFrequency {
+  ONE_TIME = 'ONE_TIME',
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  ANNUAL = 'ANNUAL',
+}
+
+export enum ParkingPaymentDueType {
+  IMMEDIATELY = 'IMMEDIATELY',
+  BEFORE_RESERVATION = 'BEFORE_RESERVATION',
+  ON_INVOICE_DATE = 'ON_INVOICE_DATE',
+  DAYS_AFTER_INVOICE = 'DAYS_AFTER_INVOICE',
+  DAYS_BEFORE_START = 'DAYS_BEFORE_START',
+}
+
+export enum ParkingLateFeeType {
+  NONE = 'NONE',
+  FIXED = 'FIXED',
+  PERCENTAGE = 'PERCENTAGE',
+}
+
 @Entity('parking_reservations')
 @Index(['tenantId', 'status', 'createdAt'])
 @Index(['reservationReference'], { unique: true })
@@ -276,6 +316,9 @@ export class ParkingReservation {
   @Column({ type: 'jsonb', nullable: true })
   feeSnapshot?: Record<string, unknown>;
 
+  @Column('uuid', { nullable: true })
+  feeScheduleId?: string;
+
   @OneToMany(() => ParkingReservationActivity, (activity) => activity.reservation)
   activities?: ParkingReservationActivity[];
 
@@ -380,6 +423,181 @@ export class ParkingFacilityConfig {
 
   @Column({ type: 'text', nullable: true })
   paymentInstructions?: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+
+@Entity('parking_fee_schedules')
+@Index(['parkingFacilityId', 'spaceType', 'vehicleType', 'status', 'effectiveFrom'])
+@Index(['status', 'effectiveFrom', 'effectiveUntil'])
+export class ParkingFeeSchedule {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column('uuid')
+  parkingFacilityId: string;
+
+  @ManyToOne(() => ParkingFacilityConfig, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'parkingFacilityId' })
+  facility?: ParkingFacilityConfig;
+
+  @Column({ length: 160 })
+  name: string;
+
+  @Column({ type: 'text', nullable: true })
+  description?: string;
+
+  @Column({ length: 80, default: 'TRUCK_SPACE' })
+  spaceType: string;
+
+  @Column({ length: 80, default: 'TRUCK' })
+  vehicleType: string;
+
+  @Column({ length: 3, default: 'USD' })
+  currency: string;
+
+  @Column({
+    type: 'enum',
+    enum: ParkingFeeScheduleStatus,
+    enumName: 'parking_fee_schedule_status_enum',
+    default: ParkingFeeScheduleStatus.DRAFT,
+  })
+  status: ParkingFeeScheduleStatus;
+
+  @Column({ type: 'int', default: 1 })
+  version: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  monthlyRatePerSpace: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  dailyRate?: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  weeklyRate?: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  longTermRate?: number;
+
+  @Column({
+    type: 'enum',
+    enum: ParkingReservationFeeType,
+    enumName: 'parking_reservation_fee_type_enum',
+    default: ParkingReservationFeeType.FIXED,
+  })
+  reservationFeeType: ParkingReservationFeeType;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  reservationFeeValue: number;
+
+  @Column({
+    type: 'enum',
+    enum: ParkingReservationFeeApplication,
+    enumName: 'parking_fee_application_enum',
+    default: ParkingReservationFeeApplication.PER_RESERVATION,
+  })
+  reservationFeeApplication: ParkingReservationFeeApplication;
+
+  @Column({ type: 'boolean', default: false })
+  taxEnabled: boolean;
+
+  @Column({ length: 80, default: 'VAT' })
+  taxName: string;
+
+  @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 })
+  taxPercent: number;
+
+  @Column({
+    type: 'enum',
+    enum: ParkingPaymentFrequency,
+    enumName: 'parking_payment_frequency_enum',
+    default: ParkingPaymentFrequency.ONE_TIME,
+  })
+  paymentFrequency: ParkingPaymentFrequency;
+
+  @Column({
+    type: 'enum',
+    enum: ParkingPaymentDueType,
+    enumName: 'parking_payment_due_type_enum',
+    default: ParkingPaymentDueType.DAYS_AFTER_INVOICE,
+  })
+  paymentDueType: ParkingPaymentDueType;
+
+  @Column({ type: 'int', default: 7 })
+  paymentDueDays: number;
+
+  @Column({ type: 'int', default: 0 })
+  gracePeriodDays: number;
+
+  @Column({ type: 'enum', enum: ParkingLateFeeType, enumName: 'parking_late_fee_type_enum', default: ParkingLateFeeType.NONE })
+  lateFeeType: ParkingLateFeeType;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  lateFeeValue: number;
+
+  @Column({ type: 'boolean', default: false })
+  autoRenewal: boolean;
+
+  @Column({ type: 'int', default: 1 })
+  minContractMonths: number;
+
+  @Column({ type: 'int', default: 12 })
+  maxContractMonths: number;
+
+  @Column({ type: 'int', default: 1 })
+  minSpaces: number;
+
+  @Column({ type: 'int', default: 100 })
+  maxSpaces: number;
+
+  @Column({ type: 'boolean', default: true })
+  cancellationAllowed: boolean;
+
+  @Column({ type: 'int', default: 0 })
+  cancellationNoticeDays: number;
+
+  @Column({ type: 'enum', enum: ParkingLateFeeType, enumName: 'parking_late_fee_type_enum', default: ParkingLateFeeType.NONE })
+  cancellationFeeType: ParkingLateFeeType;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  cancellationFeeValue: number;
+
+  @Column({ type: 'boolean', default: false })
+  refundEligible: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  earlyTerminationAllowed: boolean;
+
+  @Column({ type: 'date' })
+  effectiveFrom: string;
+
+  @Column({ type: 'date', nullable: true })
+  effectiveUntil?: string;
+
+  @Column({ type: 'text', nullable: true })
+  feeNotes?: string;
+
+  @Column({ type: 'text', nullable: true })
+  paymentInstructions?: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  changeLog?: Record<string, unknown>[];
+
+  @Column('uuid', { nullable: true })
+  createdByUserId?: string;
+
+  @Column('uuid', { nullable: true })
+  updatedByUserId?: string;
+
+  @Column('uuid', { nullable: true })
+  activatedByUserId?: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  activatedAt?: Date;
 
   @CreateDateColumn()
   createdAt: Date;

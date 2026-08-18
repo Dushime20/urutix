@@ -169,6 +169,7 @@ import { CustomsCheckpoint } from './../entities/customs-checkpoint.entity';
 
 import {
   ParkingFacilityConfig,
+  ParkingFeeSchedule,
   ParkingReservation,
   ParkingReservationActivity,
   ParkingReservationSequence,
@@ -250,7 +251,7 @@ export const ALL_ENTITIES = [
   // Customs
   CustomsInspection, CustomsCheckpoint,
   // Parking
-  ParkingReservation, ParkingReservationActivity, ParkingFacilityConfig, ParkingReservationSequence,
+  ParkingReservation, ParkingReservationActivity, ParkingFacilityConfig, ParkingReservationSequence, ParkingFeeSchedule,
   // System
   AuditLog, AuditEvent, ActivityLog,
   SystemSettings, SecurityEvent, SystemHealthLog, Alert,

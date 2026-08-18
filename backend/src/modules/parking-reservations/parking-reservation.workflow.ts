@@ -141,6 +141,10 @@ export type ParkingFeeInput = {
   reservationFee: number;
   taxPercent: number;
   currency: string;
+  reservationFeeType?: 'FIXED' | 'PERCENTAGE';
+  reservationFeeApplication?: 'PER_RESERVATION' | 'PER_SPACE' | 'PERCENT_OF_SUBTOTAL';
+  taxEnabled?: boolean;
+  taxName?: string;
 };
 
 export type ParkingFeeLineItem = {
@@ -159,6 +163,10 @@ export type ParkingFeeQuote = {
   taxPercent: number;
   taxAmount: number;
   totalAmount: number;
+  taxName: string;
+  monthlyRatePerSpace: number;
+  spaces: number;
+  months: number;
   lineItems: ParkingFeeLineItem[];
 };
 
@@ -176,12 +184,42 @@ export function isValidIso4217Currency(code: string): boolean {
   return /^[A-Z]{3}$/.test((code || '').trim());
 }
 
+export function calculateReservationFeeAmount(input: {
+  occupancyAmount: number;
+  spaces: number;
+  reservationFee: number;
+  reservationFeeType?: string;
+  reservationFeeApplication?: string;
+}): number {
+  const value = toMoneyNumber(input.reservationFee);
+  const type = (input.reservationFeeType || 'FIXED').toUpperCase();
+  const application = (input.reservationFeeApplication || 'PER_RESERVATION').toUpperCase();
+  if (type === 'PERCENTAGE' || application === 'PERCENT_OF_SUBTOTAL') {
+    return roundMoney(input.occupancyAmount * (value / 100));
+  }
+  if (application === 'PER_SPACE') {
+    return roundMoney(value * input.spaces);
+  }
+  return roundMoney(value);
+}
+
 export function calculateParkingFeeQuote(input: ParkingFeeInput): ParkingFeeQuote {
   const currency = (input.currency || 'USD').trim().toUpperCase();
-  const occupancyAmount = roundMoney(input.spaces * input.months * toMoneyNumber(input.monthlyRatePerSpace));
-  const reservationFeeAmount = toMoneyNumber(input.reservationFee);
+  const monthlyRatePerSpace = toMoneyNumber(input.monthlyRatePerSpace);
+  const occupancyAmount = roundMoney(input.spaces * input.months * monthlyRatePerSpace);
+  const reservationFeeAmount = calculateReservationFeeAmount({
+    occupancyAmount,
+    spaces: input.spaces,
+    reservationFee: input.reservationFee,
+    reservationFeeType: input.reservationFeeType,
+    reservationFeeApplication: input.reservationFeeApplication,
+  });
   const subtotalAmount = roundMoney(occupancyAmount + reservationFeeAmount);
-  const taxPercent = toMoneyNumber(input.taxPercent);
+  const taxEnabled = input.taxEnabled === false
+    ? false
+    : input.taxEnabled === true || toMoneyNumber(input.taxPercent) > 0;
+  const taxPercent = taxEnabled ? toMoneyNumber(input.taxPercent) : 0;
+  const taxName = (input.taxName || 'VAT').trim() || 'VAT';
   const taxAmount = roundMoney(subtotalAmount * (taxPercent / 100));
   const totalAmount = roundMoney(subtotalAmount + taxAmount);
   return {
@@ -192,12 +230,16 @@ export function calculateParkingFeeQuote(input: ParkingFeeInput): ParkingFeeQuot
     taxPercent,
     taxAmount,
     totalAmount,
+    taxName,
+    monthlyRatePerSpace,
+    spaces: input.spaces,
+    months: input.months,
     lineItems: [
       {
         code: 'OCCUPANCY',
         description: `Truck parking occupancy (${input.spaces} space(s) × ${input.months} month(s))`,
         quantity: input.spaces * input.months,
-        unitAmount: toMoneyNumber(input.monthlyRatePerSpace),
+        unitAmount: monthlyRatePerSpace,
         amount: occupancyAmount,
       },
       {
@@ -209,13 +251,71 @@ export function calculateParkingFeeQuote(input: ParkingFeeInput): ParkingFeeQuot
       },
       {
         code: 'TAX',
-        description: `Tax / VAT (${taxPercent}%)`,
+        description: `${taxName} (${taxPercent}%)`,
         quantity: 1,
         unitAmount: taxAmount,
         amount: taxAmount,
       },
     ],
   };
+}
+
+export function validateContractLimits(input: {
+  spaces: number;
+  months: number;
+  minSpaces?: number;
+  maxSpaces?: number;
+  minContractMonths?: number;
+  maxContractMonths?: number;
+}): string | null {
+  const minSpaces = Math.max(1, Number(input.minSpaces || 1));
+  const maxSpaces = Math.max(minSpaces, Number(input.maxSpaces || minSpaces));
+  const minMonths = Math.max(1, Number(input.minContractMonths || 1));
+  const maxMonths = Math.max(minMonths, Number(input.maxContractMonths || minMonths));
+  if (input.spaces < minSpaces || input.spaces > maxSpaces) {
+    return `Number of truck spaces must be between ${minSpaces} and ${maxSpaces}.`;
+  }
+  if (input.months < minMonths || input.months > maxMonths) {
+    return `Contract duration must be between ${minMonths} and ${maxMonths} month(s).`;
+  }
+  return null;
+}
+
+export function feeSchedulePeriodsOverlap(
+  aFrom: string,
+  aUntil: string | null | undefined,
+  bFrom: string,
+  bUntil: string | null | undefined,
+): boolean {
+  const aStart = toUtcDateOnly(aFrom);
+  const bStart = toUtcDateOnly(bFrom);
+  const aEnd = aUntil ? toUtcDateOnly(aUntil) : new Date(Date.UTC(9999, 11, 31));
+  const bEnd = bUntil ? toUtcDateOnly(bUntil) : new Date(Date.UTC(9999, 11, 31));
+  return aStart.getTime() <= bEnd.getTime() && bStart.getTime() <= aEnd.getTime();
+}
+
+export function resolvePaymentDueAt(input: {
+  paymentDueType?: string;
+  paymentDueDays?: number;
+  invoiceDate?: Date;
+  startDate?: Date | string;
+}): Date {
+  const invoiceDate = input.invoiceDate || new Date();
+  const days = Math.max(0, Number(input.paymentDueDays || 0));
+  const type = (input.paymentDueType || 'DAYS_AFTER_INVOICE').toUpperCase();
+  const start = input.startDate ? toUtcDateOnly(input.startDate) : invoiceDate;
+  switch (type) {
+    case 'IMMEDIATELY':
+    case 'ON_INVOICE_DATE':
+      return invoiceDate;
+    case 'BEFORE_RESERVATION':
+      return start;
+    case 'DAYS_BEFORE_START':
+      return addDays(start, -days);
+    case 'DAYS_AFTER_INVOICE':
+    default:
+      return addDays(invoiceDate, days || 7);
+  }
 }
 
 export function invoiceNumberFor(reservationReference: string): string {

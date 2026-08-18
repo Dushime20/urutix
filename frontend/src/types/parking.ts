@@ -92,7 +92,103 @@ export interface ParkingFeeQuote {
   taxPercent: number;
   taxAmount: number;
   totalAmount: number;
+  taxName?: string;
+  monthlyRatePerSpace?: number;
+  spaces?: number;
+  months?: number;
   lineItems: ParkingFeeLineItem[];
+  feeScheduleId?: string;
+  feeScheduleVersion?: number;
+  feeNotes?: string;
+}
+
+export type ParkingFeeScheduleStatus = 'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'EXPIRED' | 'ARCHIVED';
+export type ParkingReservationFeeType = 'FIXED' | 'PERCENTAGE';
+export type ParkingReservationFeeApplication = 'PER_RESERVATION' | 'PER_SPACE' | 'PERCENT_OF_SUBTOTAL';
+export type ParkingPaymentFrequency = 'ONE_TIME' | 'MONTHLY' | 'QUARTERLY' | 'ANNUAL';
+export type ParkingPaymentDueType =
+  | 'IMMEDIATELY'
+  | 'BEFORE_RESERVATION'
+  | 'ON_INVOICE_DATE'
+  | 'DAYS_AFTER_INVOICE'
+  | 'DAYS_BEFORE_START';
+export type ParkingLateFeeType = 'NONE' | 'FIXED' | 'PERCENTAGE';
+
+export interface ParkingFeeScheduleVersion {
+  id: string;
+  name: string;
+  status: ParkingFeeScheduleStatus;
+  version: number;
+  currency: string;
+  effectiveFrom: string;
+  effectiveUntil?: string | null;
+  monthlyRatePerSpace: number;
+}
+
+export interface ParkingFeeSchedule {
+  id: string;
+  name?: string;
+  description?: string;
+  parkingFacilityId?: string;
+  facilityName: string;
+  totalCapacity: number;
+  allowPastStartDates: boolean;
+  spaceType?: string;
+  vehicleType?: string;
+  currency: string;
+  status?: ParkingFeeScheduleStatus;
+  version?: number;
+  monthlyRatePerSpace: number;
+  dailyRate?: number | null;
+  weeklyRate?: number | null;
+  longTermRate?: number | null;
+  reservationFeeType?: ParkingReservationFeeType;
+  reservationFeeValue?: number;
+  reservationFee: number;
+  reservationFeeApplication?: ParkingReservationFeeApplication;
+  taxEnabled?: boolean;
+  taxName?: string;
+  taxPercent: number;
+  paymentFrequency?: ParkingPaymentFrequency;
+  paymentDueType?: ParkingPaymentDueType;
+  paymentDueDays: number;
+  gracePeriodDays?: number;
+  lateFeeType?: ParkingLateFeeType;
+  lateFeeValue?: number;
+  autoRenewal?: boolean;
+  minContractMonths?: number;
+  maxContractMonths?: number;
+  minSpaces?: number;
+  maxSpaces?: number;
+  cancellationAllowed?: boolean;
+  cancellationNoticeDays?: number;
+  cancellationFeeType?: ParkingLateFeeType;
+  cancellationFeeValue?: number;
+  refundEligible?: boolean;
+  earlyTerminationAllowed?: boolean;
+  effectiveFrom?: string;
+  effectiveUntil?: string | null;
+  feeNotes?: string;
+  paymentInstructions?: string;
+  schedules?: ParkingFeeScheduleVersion[];
+}
+
+export interface ParkingPublicPricing {
+  facilityName: string;
+  currency: string;
+  monthlyRatePerSpace: number;
+  reservationFeeType?: ParkingReservationFeeType;
+  reservationFeeValue?: number;
+  reservationFeeApplication?: ParkingReservationFeeApplication;
+  minSpaces: number;
+  maxSpaces: number;
+  minContractMonths: number;
+  maxContractMonths: number;
+  feeNotes: string;
+  taxName?: string;
+  taxPercent?: number;
+  taxEnabled?: boolean;
+  hasActiveSchedule: boolean;
 }
 
 export interface ParkingPayment {
@@ -113,20 +209,6 @@ export interface ParkingPayment {
   lineItems?: ParkingFeeLineItem[];
   feeNotes?: string;
   instructions?: string;
-}
-
-export interface ParkingFeeSchedule {
-  id: string;
-  facilityName: string;
-  totalCapacity: number;
-  allowPastStartDates: boolean;
-  currency: string;
-  monthlyRatePerSpace: number;
-  reservationFee: number;
-  taxPercent: number;
-  paymentDueDays: number;
-  feeNotes?: string;
-  paymentInstructions?: string;
 }
 
 export interface ParkingReservationActivity {

@@ -6,13 +6,16 @@ import { StatCard } from '../../components/EnliteUI';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
-import { PARKING_PAYMENT_LABELS, PARKING_STATUS_LABELS, formatParkingMoney, type ParkingReservation } from '../../types/parking';
+import { PARKING_PAYMENT_LABELS, PARKING_STATUS_LABELS, type ParkingReservation } from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
 import { usePermission } from '../../contexts/PermissionContext';
+import { useParkingMoney } from '../../hooks/useParkingMoney';
+import CurrencySelector from '../../components/common/CurrencySelector';
 
 const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservations' }: { basePath?: string }) => {
   const navigate = useNavigate();
   const { can } = usePermission();
+  const { money } = useParkingMoney();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
@@ -86,7 +89,7 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
       label: 'Payment',
       render: (_v, row) =>
         row.payment && row.payment.status !== 'NOT_APPLICABLE'
-          ? `${PARKING_PAYMENT_LABELS[row.payment.status]} · ${formatParkingMoney(row.payment.totalAmount, row.payment.currency)}`
+          ? `${PARKING_PAYMENT_LABELS[row.payment.status]} · ${money(row.payment.totalAmount, row.payment.currency)}`
           : '—',
     },
     {
@@ -94,7 +97,7 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
       label: 'Assigned To',
       render: (v) => (v as string) || '—',
     },
-  ], []);
+  ], [money]);
 
   const rowActions: TableAction<ParkingReservation>[] = [
     { label: 'View Details', onClick: (row) => navigate(`${basePath}/${row.id}`) },
@@ -109,15 +112,18 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
             <TranslatedText text="Review, assign, and process Nova Parking 365 reservation requests." />
           </p>
         </div>
-        {can('parking:manage_fees') && (
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard/parking/fees')}
-            className="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-          >
-            Configure reservation fees
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <CurrencySelector variant="full" />
+          {can('parking:manage_fees') && (
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/parking/fees')}
+              className="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              Configure reservation fees
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">

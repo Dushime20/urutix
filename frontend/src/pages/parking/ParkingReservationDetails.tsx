@@ -9,12 +9,13 @@ import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import {
   PARKING_STATUS_LABELS,
-  formatParkingMoney,
   isParkingPaymentOpen,
   type ParkingReservationStatus,
 } from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
 import { usePermission } from '../../contexts/PermissionContext';
+import { useParkingMoney } from '../../hooks/useParkingMoney';
+import CurrencySelector from '../../components/common/CurrencySelector';
 import ModernLoader from '../../components/common/ModernLoader';
 import { ParkingActivityTimeline } from '../../components/parking/ParkingActivityTimeline';
 import { ParkingPaymentCard } from '../../components/parking/ParkingPaymentCard';
@@ -27,6 +28,7 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { can } = usePermission();
+  const { money } = useParkingMoney();
   const [modal, setModal] = useState<ModalKind>(null);
   const [reason, setReason] = useState('');
   const [extra, setExtra] = useState('');
@@ -128,7 +130,8 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
           <h1 className="ui-page-title">{reservation.reservationReference}</h1>
           <div className="mt-2"><StatusBadge status={reservation.status} label={PARKING_STATUS_LABELS[reservation.status]} /></div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <CurrencySelector variant="full" />
           {actions.map((action) => (
             <button
               key={action.label}
@@ -208,6 +211,7 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
         <ParkingPaymentCard
           reservation={reservation}
           quote={reservation.feeQuote}
+          convertDisplay
           staff={can('parking:confirm_payment')}
           submitting={run.isPending}
           onSubmit={can('parking:confirm_payment') ? async (payload) => {
@@ -294,9 +298,9 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
         {reservation.feeQuote && (
           <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-3">
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Fees to request from the driver</p>
-            <p className="text-sm font-black text-slate-900">{formatParkingMoney(reservation.feeQuote.totalAmount, reservation.feeQuote.currency)}</p>
+            <p className="text-sm font-black text-slate-900">{money(reservation.feeQuote.totalAmount, reservation.feeQuote.currency)}</p>
             <p className="text-xs text-slate-500 mt-1">
-              Occupancy {formatParkingMoney(reservation.feeQuote.occupancyAmount, reservation.feeQuote.currency)} + reservation fee {formatParkingMoney(reservation.feeQuote.reservationFeeAmount, reservation.feeQuote.currency)} + tax {formatParkingMoney(reservation.feeQuote.taxAmount, reservation.feeQuote.currency)}
+              Occupancy {money(reservation.feeQuote.occupancyAmount, reservation.feeQuote.currency)} + reservation fee {money(reservation.feeQuote.reservationFeeAmount, reservation.feeQuote.currency)} + tax {money(reservation.feeQuote.taxAmount, reservation.feeQuote.currency)}
             </p>
             {reservation.feeQuote.totalAmount <= 0 && (
               <p className="text-xs font-semibold text-amber-700 mt-2">Fee schedule is currently 0. Configure reservation fees before confirming if the driver should be billed.</p>

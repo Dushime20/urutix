@@ -1,135 +1,651 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
-import { formatParkingMoney, type ParkingFeeSchedule } from '../../types/parking';
+import type { ParkingFeeSchedule, ParkingFeeScheduleStatus } from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
 import { usePermission } from '../../contexts/PermissionContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { useParkingMoney } from '../../hooks/useParkingMoney';
+import CurrencySelector from '../../components/common/CurrencySelector';
 import ModernLoader from '../../components/common/ModernLoader';
+import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
+import { Modal } from '../../components/EnliteUI';
+import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+const STATUS_LABELS: Record<ParkingFeeScheduleStatus, string> = {
+  DRAFT: 'Draft',
+  SCHEDULED: 'Scheduled',
+  ACTIVE: 'Active',
+  EXPIRED: 'Expired',
+  ARCHIVED: 'Archived',
+};
 
 const emptyForm: ParkingFeeSchedule = {
   id: '',
+  name: 'Nova Parking 365 monthly',
+  description: '',
   facilityName: '',
   totalCapacity: 700,
   allowPastStartDates: false,
+  spaceType: 'TRUCK_SPACE',
+  vehicleType: 'TRUCK',
   currency: 'USD',
+  status: 'DRAFT',
+  version: 1,
   monthlyRatePerSpace: 0,
+  dailyRate: null,
+  weeklyRate: null,
+  longTermRate: null,
+  reservationFeeType: 'FIXED',
+  reservationFeeValue: 0,
   reservationFee: 0,
+  reservationFeeApplication: 'PER_RESERVATION',
+  taxEnabled: false,
+  taxName: 'VAT',
   taxPercent: 0,
+  paymentFrequency: 'ONE_TIME',
+  paymentDueType: 'DAYS_AFTER_INVOICE',
   paymentDueDays: 7,
+  gracePeriodDays: 0,
+  lateFeeType: 'NONE',
+  lateFeeValue: 0,
+  autoRenewal: false,
+  minContractMonths: 1,
+  maxContractMonths: 12,
+  minSpaces: 1,
+  maxSpaces: 100,
+  cancellationAllowed: true,
+  cancellationNoticeDays: 0,
+  cancellationFeeType: 'NONE',
+  cancellationFeeValue: 0,
+  refundEligible: false,
+  earlyTerminationAllowed: true,
+  effectiveFrom: today(),
+  effectiveUntil: '',
   feeNotes: '',
   paymentInstructions: '',
 };
 
+const inputClass = 'ui-input w-full border rounded-xl p-3';
+
+function hydrate(data: Partial<ParkingFeeSchedule>, facilityName?: string): ParkingFeeSchedule {
+  return {
+    ...emptyForm,
+    ...data,
+    facilityName: data.facilityName || facilityName || '',
+    reservationFeeValue: data.reservationFeeValue ?? data.reservationFee ?? 0,
+    reservationFee: data.reservationFeeValue ?? data.reservationFee ?? 0,
+    effectiveFrom: data.effectiveFrom || today(),
+    effectiveUntil: data.effectiveUntil || '',
+  };
+}
+
 const ParkingFeeSettings = () => {
   const { can } = usePermission();
   const qc = useQueryClient();
+  const { supportedCurrencies } = useCurrency();
+  const { money, billed, converted, preferredCurrency, rateLabel } = useParkingMoney();
   const [form, setForm] = useState<ParkingFeeSchedule>(emptyForm);
+  const [modalOpen, setModalOpen] = useState(false);
   const [spaces, setSpaces] = useState(1);
   const [months, setMonths] = useState(1);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+
+  const canEdit = can('parking:manage_fees');
 
   const query = useQuery({
-    queryKey: ['parking-fees'],
-    queryFn: parkingApi.fees,
+    queryKey: ['parking-fee-schedules'],
+    queryFn: parkingApi.listFeeSchedules,
   });
 
-  useEffect(() => {
-    if (query.data) setForm(query.data);
-  }, [query.data]);
+  const rows = query.data || [];
+  const facilityName = rows[0]?.facilityName || form.facilityName;
+
+  const currencyOptions = useMemo(() => {
+    const list = [...supportedCurrencies].sort((a, b) => a.code.localeCompare(b.code));
+    if (form.currency && !list.some((c) => c.code === form.currency)) {
+      list.unshift({
+        code: form.currency,
+        name: form.currency,
+        symbol: form.currency,
+        locale: 'en-US',
+        decimals: 2,
+        flag: '',
+      });
+    }
+    return list;
+  }, [form.currency, supportedCurrencies]);
+
+  const patch = (partial: Partial<ParkingFeeSchedule>) => {
+    setForm((current) => ({ ...current, ...partial }));
+    setFieldError(null);
+  };
+
+  const openCreate = () => {
+    setForm(hydrate({ facilityName }));
+    setSpaces(1);
+    setMonths(1);
+    setFieldError(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = async (row: ParkingFeeSchedule) => {
+    try {
+      const data = row.id ? await parkingApi.getFeeSchedule(row.id) : row;
+      setForm(hydrate(data, facilityName));
+      setSpaces(1);
+      setMonths(1);
+      setFieldError(null);
+      setModalOpen(true);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setFieldError(null);
+  };
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ['parking-fee-schedules'] });
+
+  const validate = () => {
+    if (!form.currency || !/^[A-Z]{3}$/.test(form.currency)) return 'Currency must be a valid ISO 4217 code.';
+    if (Number(form.monthlyRatePerSpace) <= 0) return 'Monthly rate per truck space must be greater than 0.';
+    if (Number(form.taxPercent) < 0 || Number(form.taxPercent) > 100) return 'Tax / VAT percent must be between 0 and 100.';
+    if (Number(form.minContractMonths || 1) < 1) return 'Minimum contract months must be at least 1.';
+    if (Number(form.maxContractMonths || 1) < Number(form.minContractMonths || 1)) return 'Maximum months must be greater than or equal to minimum months.';
+    if (Number(form.minSpaces || 1) < 1) return 'Minimum truck spaces must be at least 1.';
+    if (Number(form.maxSpaces || 1) < Number(form.minSpaces || 1)) return 'Maximum spaces must be greater than or equal to minimum spaces.';
+    if (form.effectiveFrom && form.effectiveUntil && form.effectiveUntil < form.effectiveFrom) return 'Effective until must be on or after effective from.';
+    if (Number(form.paymentDueDays) < 0) return 'Payment due days cannot be negative.';
+    if (form.reservationFeeType === 'PERCENTAGE' && Number(form.reservationFeeValue ?? form.reservationFee) > 100) {
+      return 'Percentage reservation fee must be between 0 and 100.';
+    }
+    return null;
+  };
+
+  const payload = () => ({
+    id: form.id || undefined,
+    name: form.name,
+    description: form.description,
+    spaceType: form.spaceType,
+    vehicleType: form.vehicleType,
+    currency: form.currency.trim().toUpperCase(),
+    monthlyRatePerSpace: Number(form.monthlyRatePerSpace),
+    dailyRate: form.dailyRate == null ? undefined : Number(form.dailyRate),
+    weeklyRate: form.weeklyRate == null ? undefined : Number(form.weeklyRate),
+    longTermRate: form.longTermRate == null ? undefined : Number(form.longTermRate),
+    reservationFeeType: form.reservationFeeType,
+    reservationFeeValue: Number(form.reservationFeeValue ?? form.reservationFee),
+    reservationFeeApplication: form.reservationFeeApplication,
+    taxEnabled: form.taxEnabled,
+    taxName: form.taxName,
+    taxPercent: Number(form.taxPercent),
+    paymentFrequency: form.paymentFrequency,
+    paymentDueType: form.paymentDueType,
+    paymentDueDays: Number(form.paymentDueDays),
+    gracePeriodDays: Number(form.gracePeriodDays || 0),
+    lateFeeType: form.lateFeeType,
+    lateFeeValue: Number(form.lateFeeValue || 0),
+    autoRenewal: form.autoRenewal,
+    minContractMonths: Number(form.minContractMonths),
+    maxContractMonths: Number(form.maxContractMonths),
+    minSpaces: Number(form.minSpaces),
+    maxSpaces: Number(form.maxSpaces),
+    cancellationAllowed: form.cancellationAllowed,
+    cancellationNoticeDays: Number(form.cancellationNoticeDays || 0),
+    cancellationFeeType: form.cancellationFeeType,
+    cancellationFeeValue: Number(form.cancellationFeeValue || 0),
+    refundEligible: form.refundEligible,
+    earlyTerminationAllowed: form.earlyTerminationAllowed,
+    effectiveFrom: form.effectiveFrom,
+    effectiveUntil: form.effectiveUntil || undefined,
+    feeNotes: form.feeNotes,
+    paymentInstructions: form.paymentInstructions,
+  });
 
   const save = useMutation({
-    mutationFn: () =>
-      parkingApi.updateFees({
-        currency: form.currency.trim().toUpperCase(),
-        monthlyRatePerSpace: Number(form.monthlyRatePerSpace),
-        reservationFee: Number(form.reservationFee),
-        taxPercent: Number(form.taxPercent),
-        paymentDueDays: Number(form.paymentDueDays),
-        feeNotes: form.feeNotes,
-        paymentInstructions: form.paymentInstructions,
-      }),
+    mutationFn: () => {
+      const error = validate();
+      if (error) {
+        setFieldError(error);
+        throw new Error(error);
+      }
+      return parkingApi.updateFees(payload());
+    },
     onSuccess: (data) => {
-      setForm(data);
-      qc.invalidateQueries({ queryKey: ['parking-fees'] });
-      toast.success('Reservation fees updated');
+      setForm(hydrate(data, facilityName));
+      refresh();
+      toast.success('Fee schedule saved');
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
-  const preview = useMemo(() => {
-    const occupancy = Number(spaces) * Number(months) * Number(form.monthlyRatePerSpace || 0);
-    const subtotal = occupancy + Number(form.reservationFee || 0);
-    const tax = subtotal * (Number(form.taxPercent || 0) / 100);
-    return { occupancy, subtotal, tax, total: subtotal + tax };
-  }, [spaces, months, form.monthlyRatePerSpace, form.reservationFee, form.taxPercent]);
+  const activate = useMutation({
+    mutationFn: async (id?: string) => {
+      const scheduleId = id || form.id;
+      if (!scheduleId) {
+        const saved = await save.mutateAsync();
+        if (!saved.id) throw new Error('Save the fee schedule before activating.');
+        return parkingApi.activateFeeSchedule(saved.id);
+      }
+      return parkingApi.activateFeeSchedule(scheduleId);
+    },
+    onSuccess: (data) => {
+      setForm(hydrate(data, facilityName));
+      refresh();
+      toast.success('Fee schedule activated');
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
+  const archive = useMutation({
+    mutationFn: (id: string) => parkingApi.archiveFeeSchedule(id),
+    onSuccess: () => {
+      refresh();
+      closeModal();
+      toast.success('Fee schedule archived');
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
+  const preview = useMemo(
+    () =>
+      calculateParkingFeeQuote({
+        spaces: Math.max(1, Number(spaces) || 1),
+        months: Math.max(1, Number(months) || 1),
+        monthlyRatePerSpace: Number(form.monthlyRatePerSpace || 0),
+        reservationFee: Number(form.reservationFeeValue ?? form.reservationFee ?? 0),
+        reservationFeeType: form.reservationFeeType,
+        reservationFeeApplication: form.reservationFeeApplication,
+        taxPercent: Number(form.taxPercent || 0),
+        taxEnabled: form.taxEnabled,
+        taxName: form.taxName,
+        currency: form.currency,
+      }),
+    [spaces, months, form],
+  );
+
+  const columns: Column<ParkingFeeSchedule>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Schedule',
+      sortable: true,
+      render: (_v, row) => (
+        <div>
+          <div className="font-bold text-slate-900 dark:text-white">{row.name || 'Untitled schedule'}</div>
+          <div className="text-xs text-slate-500">{row.facilityName} · v{row.version || 1}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_v, row) => (
+        <StatusBadge status={row.status || 'DRAFT'} label={STATUS_LABELS[(row.status || 'DRAFT') as ParkingFeeScheduleStatus]} />
+      ),
+    },
+    { key: 'spaceType', label: 'Space type', render: (v) => String(v || 'TRUCK_SPACE').replace(/_/g, ' ') },
+    { key: 'vehicleType', label: 'Vehicle', render: (v) => String(v || 'TRUCK') },
+    { key: 'currency', label: 'Currency' },
+    {
+      key: 'monthlyRatePerSpace',
+      label: 'Monthly rate',
+      render: (_v, row) => money(row.monthlyRatePerSpace, row.currency),
+    },
+    {
+      key: 'reservationFee',
+      label: 'Admin fee',
+      render: (_v, row) =>
+        row.reservationFeeType === 'PERCENTAGE'
+          ? `${row.reservationFeeValue ?? row.reservationFee}%`
+          : money(row.reservationFeeValue ?? row.reservationFee, row.currency),
+    },
+    {
+      key: 'taxPercent',
+      label: 'Tax',
+      render: (_v, row) => (row.taxEnabled === false ? '—' : `${row.taxName || 'VAT'} ${row.taxPercent}%`),
+    },
+    {
+      key: 'minSpaces',
+      label: 'Spaces',
+      render: (_v, row) => `${row.minSpaces ?? 1}–${row.maxSpaces ?? 100}`,
+    },
+    {
+      key: 'minContractMonths',
+      label: 'Months',
+      render: (_v, row) => `${row.minContractMonths ?? 1}–${row.maxContractMonths ?? 12}`,
+    },
+    {
+      key: 'effectiveFrom',
+      label: 'Effective',
+      render: (_v, row) => `${String(row.effectiveFrom || '').slice(0, 10) || '—'} → ${row.effectiveUntil ? String(row.effectiveUntil).slice(0, 10) : 'Open'}`,
+    },
+  ], [money]);
+
+  const rowActions: TableAction<ParkingFeeSchedule>[] = [
+    { label: 'Edit', onClick: (row) => { void openEdit(row); } },
+    {
+      label: 'Activate',
+      variant: 'success',
+      hidden: (row) => row.status === 'ACTIVE' || row.status === 'ARCHIVED' || !canEdit,
+      onClick: (row) => activate.mutate(row.id),
+    },
+    {
+      label: 'Archive',
+      variant: 'danger',
+      hidden: (row) => row.status === 'ARCHIVED' || !canEdit,
+      onClick: (row) => archive.mutate(row.id),
+    },
+  ];
+
+  const status = (form.status || 'DRAFT') as ParkingFeeScheduleStatus;
+  const feeValue = form.reservationFeeValue ?? form.reservationFee;
+  const showConverted = form.currency !== preferredCurrency;
 
   if (query.isLoading) return <ModernLoader isLoading text="Loading_Fee_Schedule" />;
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div>
-        <h1 className="ui-page-title"><TranslatedText text="Reservation Fees" /></h1>
-        <p className="ui-body-small mt-1">
-          <TranslatedText text="Configure ISO 4217 currency, occupancy rates, reservation fees, and tax. These amounts are snapshotted onto each reservation when it is confirmed, then the driver is asked to pay." />
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h1 className="ui-page-title"><TranslatedText text="Reservation Fees" /></h1>
+          <p className="ui-body-small mt-1">
+            <TranslatedText text="View saved fee schedules in the table. Use Add or Edit to open the configuration form." />
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <CurrencySelector variant="full" />
+          {canEdit && (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="px-4 py-2 rounded-lg font-bold text-sm bg-primary-600 hover:bg-primary-700 text-white"
+            >
+              Add fee schedule
+            </button>
+          )}
+        </div>
       </div>
 
-      {!can('parking:manage_fees') && (
+      {!canEdit && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-semibold">
           You don't have permission to perform this action.
         </div>
       )}
 
-      <form
-        className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 space-y-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          save.mutate();
-        }}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Currency (ISO 4217)">
-            <input className="ui-input w-full border rounded-xl p-3 uppercase" maxLength={3} value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} />
-          </Field>
-          <Field label="Payment due days">
-            <input type="number" min={1} max={90} className="ui-input w-full border rounded-xl p-3" value={form.paymentDueDays} onChange={(e) => setForm({ ...form, paymentDueDays: Number(e.target.value) })} />
-          </Field>
-          <Field label="Monthly rate per truck space">
-            <input type="number" min={0} step="0.01" className="ui-input w-full border rounded-xl p-3" value={form.monthlyRatePerSpace} onChange={(e) => setForm({ ...form, monthlyRatePerSpace: Number(e.target.value) })} />
-          </Field>
-          <Field label="Reservation / administration fee">
-            <input type="number" min={0} step="0.01" className="ui-input w-full border rounded-xl p-3" value={form.reservationFee} onChange={(e) => setForm({ ...form, reservationFee: Number(e.target.value) })} />
-          </Field>
-          <Field label="Tax / VAT percent">
-            <input type="number" min={0} max={100} step="0.01" className="ui-input w-full border rounded-xl p-3" value={form.taxPercent} onChange={(e) => setForm({ ...form, taxPercent: Number(e.target.value) })} />
-          </Field>
-        </div>
-        <Field label="Public fee notes">
-          <textarea rows={3} className="ui-input w-full border rounded-xl p-3" value={form.feeNotes || ''} onChange={(e) => setForm({ ...form, feeNotes: e.target.value })} />
-        </Field>
-        <Field label="Payment instructions">
-          <textarea rows={4} className="ui-input w-full border rounded-xl p-3" placeholder="Bank account, mobile money, or card terminal instructions" value={form.paymentInstructions || ''} onChange={(e) => setForm({ ...form, paymentInstructions: e.target.value })} />
-        </Field>
-        <button type="submit" disabled={!can('parking:manage_fees') || save.isPending} className="px-5 py-2.5 rounded-xl bg-primary-600 text-white font-bold text-sm disabled:opacity-50">
-          Save fee schedule
-        </button>
-      </form>
+      <StandardDataTable
+        title="Fee schedules"
+        columns={columns}
+        data={rows}
+        loading={query.isLoading}
+        error={query.isError ? getApiErrorMessage(query.error) : null}
+        onRetry={() => query.refetch()}
+        searchable
+        searchPlaceholder="Search schedule, currency, status"
+        rowActions={rowActions}
+        emptyMessage="No fee schedules found"
+        ariaLabel="Parking fee schedules"
+      />
 
-      <section className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6">
-        <h2 className="ui-section-title mb-4"><TranslatedText text="Quote preview" /></h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Field label="Spaces">
-            <input type="number" min={1} className="ui-input w-full border rounded-xl p-3" value={spaces} onChange={(e) => setSpaces(Number(e.target.value))} />
-          </Field>
-          <Field label="Months">
-            <input type="number" min={1} className="ui-input w-full border rounded-xl p-3" value={months} onChange={(e) => setMonths(Number(e.target.value))} />
-          </Field>
+      <Modal
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={form.id ? 'Edit fee schedule' : 'Add fee schedule'}
+        size="full"
+        footer={
+          <div className="flex flex-col sm:flex-row justify-end gap-2">
+            <button type="button" className="px-4 py-2 rounded-lg font-bold border" onClick={closeModal}>Cancel</button>
+            {form.id && status !== 'ARCHIVED' && (
+              <button
+                type="button"
+                disabled={!canEdit || archive.isPending}
+                onClick={() => archive.mutate(form.id)}
+                className="px-4 py-2 rounded-lg font-bold bg-white border border-slate-200 text-slate-700 disabled:opacity-50"
+              >
+                Archive
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={!canEdit || activate.isPending || save.isPending}
+              onClick={() => activate.mutate(form.id || undefined)}
+              className="px-4 py-2 rounded-lg font-bold bg-emerald-600 text-white disabled:opacity-50"
+            >
+              Activate
+            </button>
+            <button
+              type="button"
+              disabled={!canEdit || save.isPending}
+              onClick={() => save.mutate()}
+              className="px-4 py-2 rounded-lg font-bold bg-primary-600 text-white disabled:opacity-50"
+            >
+              Save draft
+            </button>
+          </div>
+        }
+      >
+        {fieldError && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-lg text-xs font-semibold mb-4">{fieldError}</div>
+        )}
+        <div className="space-y-6">
+          <section className="space-y-4">
+            <h3 className="ui-section-title"><TranslatedText text="General" /></h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Fee schedule name">
+                <input className={inputClass} value={form.name || ''} onChange={(e) => patch({ name: e.target.value })} />
+              </Field>
+              <Field label="Facility">
+                <input className={inputClass} value={form.facilityName} readOnly />
+              </Field>
+              <Field label="Space type">
+                <select className={inputClass} value={form.spaceType} onChange={(e) => patch({ spaceType: e.target.value })}>
+                  <option value="TRUCK_SPACE">Truck space</option>
+                  <option value="OVERSIZE">Oversize</option>
+                </select>
+              </Field>
+              <Field label="Vehicle type">
+                <select className={inputClass} value={form.vehicleType} onChange={(e) => patch({ vehicleType: e.target.value })}>
+                  <option value="TRUCK">Truck</option>
+                  <option value="TRAILER">Trailer</option>
+                  <option value="CONTAINER">Container</option>
+                </select>
+              </Field>
+              <Field label="Currency (ISO 4217)">
+                <select className={inputClass} value={form.currency} onChange={(e) => patch({ currency: e.target.value })}>
+                  {currencyOptions.map((c) => (
+                    <option key={c.code} value={c.code}>{c.flag ? `${c.flag} ` : ''}{c.code} — {c.name}</option>
+                  ))}
+                </select>
+                {rateLabel(form.currency) && <p className="text-[11px] font-semibold text-slate-500 mt-1.5">{rateLabel(form.currency)}</p>}
+              </Field>
+              <Field label="Status">
+                <input className={inputClass} value={`${status}${form.version ? ` · v${form.version}` : ''}`} readOnly />
+              </Field>
+            </div>
+            <Field label="Description">
+              <textarea rows={2} className={inputClass} value={form.description || ''} onChange={(e) => patch({ description: e.target.value })} />
+            </Field>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="ui-section-title"><TranslatedText text="Pricing" /></h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label={`Monthly rate per truck space (${form.currency})`}>
+                <input type="number" min={0} step="0.01" className={inputClass} value={form.monthlyRatePerSpace} onChange={(e) => patch({ monthlyRatePerSpace: Number(e.target.value) })} />
+                {showConverted && <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(form.monthlyRatePerSpace, form.currency)}</p>}
+              </Field>
+              <Field label="Daily rate (optional)">
+                <input type="number" min={0} step="0.01" className={inputClass} value={form.dailyRate ?? ''} onChange={(e) => patch({ dailyRate: e.target.value === '' ? null : Number(e.target.value) })} />
+              </Field>
+              <Field label="Weekly rate (optional)">
+                <input type="number" min={0} step="0.01" className={inputClass} value={form.weeklyRate ?? ''} onChange={(e) => patch({ weeklyRate: e.target.value === '' ? null : Number(e.target.value) })} />
+              </Field>
+              <Field label="Long-term contract rate (optional)">
+                <input type="number" min={0} step="0.01" className={inputClass} value={form.longTermRate ?? ''} onChange={(e) => patch({ longTermRate: e.target.value === '' ? null : Number(e.target.value) })} />
+              </Field>
+              <Field label="Reservation / admin fee type">
+                <select className={inputClass} value={form.reservationFeeType} onChange={(e) => patch({ reservationFeeType: e.target.value as ParkingFeeSchedule['reservationFeeType'] })}>
+                  <option value="FIXED">Fixed amount</option>
+                  <option value="PERCENTAGE">Percentage</option>
+                </select>
+              </Field>
+              <Field label={form.reservationFeeType === 'PERCENTAGE' ? 'Fee value (%)' : `Fee value (${form.currency})`}>
+                <input type="number" min={0} step="0.01" className={inputClass} value={feeValue} onChange={(e) => patch({ reservationFeeValue: Number(e.target.value), reservationFee: Number(e.target.value) })} />
+                {showConverted && form.reservationFeeType === 'FIXED' && <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(feeValue, form.currency)}</p>}
+              </Field>
+              <Field label="Fee application">
+                <select className={inputClass} value={form.reservationFeeApplication} onChange={(e) => patch({ reservationFeeApplication: e.target.value as ParkingFeeSchedule['reservationFeeApplication'] })}>
+                  <option value="PER_RESERVATION">Per reservation</option>
+                  <option value="PER_SPACE">Per truck space</option>
+                  <option value="PERCENT_OF_SUBTOTAL">Percentage of parking subtotal</option>
+                </select>
+              </Field>
+              <Field label="Tax enabled">
+                <select className={inputClass} value={form.taxEnabled ? 'yes' : 'no'} onChange={(e) => patch({ taxEnabled: e.target.value === 'yes' })}>
+                  <option value="yes">Enabled</option>
+                  <option value="no">Disabled</option>
+                </select>
+              </Field>
+              <Field label="Tax name">
+                <input className={inputClass} value={form.taxName || 'VAT'} onChange={(e) => patch({ taxName: e.target.value })} />
+              </Field>
+              <Field label="Tax / VAT percent">
+                <input type="number" min={0} max={100} step="0.01" className={inputClass} value={form.taxPercent} onChange={(e) => patch({ taxPercent: Number(e.target.value), taxEnabled: Number(e.target.value) > 0 ? true : form.taxEnabled })} />
+              </Field>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="ui-section-title"><TranslatedText text="Contract & payment" /></h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Minimum months"><input type="number" min={1} className={inputClass} value={form.minContractMonths} onChange={(e) => patch({ minContractMonths: Number(e.target.value) })} /></Field>
+              <Field label="Maximum months"><input type="number" min={1} className={inputClass} value={form.maxContractMonths} onChange={(e) => patch({ maxContractMonths: Number(e.target.value) })} /></Field>
+              <Field label="Minimum truck spaces"><input type="number" min={1} className={inputClass} value={form.minSpaces} onChange={(e) => patch({ minSpaces: Number(e.target.value) })} /></Field>
+              <Field label="Maximum truck spaces"><input type="number" min={1} className={inputClass} value={form.maxSpaces} onChange={(e) => patch({ maxSpaces: Number(e.target.value) })} /></Field>
+              <Field label="Payment frequency">
+                <select className={inputClass} value={form.paymentFrequency} onChange={(e) => patch({ paymentFrequency: e.target.value as ParkingFeeSchedule['paymentFrequency'] })}>
+                  <option value="ONE_TIME">One-time</option>
+                  <option value="MONTHLY">Monthly</option>
+                  <option value="QUARTERLY">Quarterly</option>
+                  <option value="ANNUAL">Annual</option>
+                </select>
+              </Field>
+              <Field label="Payment due">
+                <select className={inputClass} value={form.paymentDueType} onChange={(e) => patch({ paymentDueType: e.target.value as ParkingFeeSchedule['paymentDueType'] })}>
+                  <option value="IMMEDIATELY">Due immediately</option>
+                  <option value="BEFORE_RESERVATION">Due before reservation</option>
+                  <option value="ON_INVOICE_DATE">Due on invoice date</option>
+                  <option value="DAYS_AFTER_INVOICE">Due X days after invoice</option>
+                  <option value="DAYS_BEFORE_START">Due X days before reservation start</option>
+                </select>
+              </Field>
+              <Field label="Payment due days">
+                <input type="number" min={0} max={90} className={inputClass} value={form.paymentDueDays} onChange={(e) => patch({ paymentDueDays: Number(e.target.value) })} />
+              </Field>
+              <Field label="Grace period (0–30 days)">
+                <input type="number" min={0} max={30} className={inputClass} value={form.gracePeriodDays} onChange={(e) => patch({ gracePeriodDays: Number(e.target.value) })} />
+              </Field>
+              <Field label="Late payment fee">
+                <select className={inputClass} value={form.lateFeeType} onChange={(e) => patch({ lateFeeType: e.target.value as ParkingFeeSchedule['lateFeeType'] })}>
+                  <option value="NONE">No late fee</option>
+                  <option value="FIXED">Fixed amount</option>
+                  <option value="PERCENTAGE">Percentage</option>
+                </select>
+              </Field>
+              <Field label="Late fee value">
+                <input type="number" min={0} step="0.01" className={inputClass} value={form.lateFeeValue} onChange={(e) => patch({ lateFeeValue: Number(e.target.value) })} />
+              </Field>
+              <Field label="Auto renewal">
+                <select className={inputClass} value={form.autoRenewal ? 'yes' : 'no'} onChange={(e) => patch({ autoRenewal: e.target.value === 'yes' })}>
+                  <option value="yes">Enabled</option>
+                  <option value="no">Disabled</option>
+                </select>
+              </Field>
+              <Field label="Cancellation allowed">
+                <select className={inputClass} value={form.cancellationAllowed ? 'yes' : 'no'} onChange={(e) => patch({ cancellationAllowed: e.target.value === 'yes' })}>
+                  <option value="yes">Allowed</option>
+                  <option value="no">Not allowed</option>
+                </select>
+              </Field>
+              <Field label="Cancellation notice (days)">
+                <input type="number" min={0} className={inputClass} value={form.cancellationNoticeDays} onChange={(e) => patch({ cancellationNoticeDays: Number(e.target.value) })} />
+              </Field>
+              <Field label="Early termination allowed">
+                <select className={inputClass} value={form.earlyTerminationAllowed ? 'yes' : 'no'} onChange={(e) => patch({ earlyTerminationAllowed: e.target.value === 'yes' })}>
+                  <option value="yes">Allowed</option>
+                  <option value="no">Not allowed</option>
+                </select>
+              </Field>
+              <Field label="Refund eligible">
+                <select className={inputClass} value={form.refundEligible ? 'yes' : 'no'} onChange={(e) => patch({ refundEligible: e.target.value === 'yes' })}>
+                  <option value="yes">Eligible</option>
+                  <option value="no">Not eligible</option>
+                </select>
+              </Field>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="ui-section-title"><TranslatedText text="Validity" /></h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Effective from">
+                <input type="date" className={inputClass} value={form.effectiveFrom || ''} onChange={(e) => patch({ effectiveFrom: e.target.value })} />
+              </Field>
+              <Field label="Effective until">
+                <input type="date" className={inputClass} value={form.effectiveUntil || ''} onChange={(e) => patch({ effectiveUntil: e.target.value })} />
+              </Field>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="ui-section-title"><TranslatedText text="Customer information" /></h3>
+            <Field label="Public pricing notes">
+              <textarea rows={3} className={inputClass} value={form.feeNotes || ''} onChange={(e) => patch({ feeNotes: e.target.value })} />
+            </Field>
+            <Field label="Payment instructions">
+              <textarea rows={4} className={inputClass} placeholder="Bank account, mobile money, or card terminal instructions" value={form.paymentInstructions || ''} onChange={(e) => patch({ paymentInstructions: e.target.value })} />
+            </Field>
+          </section>
+
+          <section className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl p-4">
+            <h3 className="ui-section-title mb-4"><TranslatedText text="Quote preview" /></h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <Field label="Truck spaces">
+                <input type="number" min={form.minSpaces || 1} max={form.maxSpaces || 100} className={inputClass} value={spaces} onChange={(e) => setSpaces(Number(e.target.value))} />
+              </Field>
+              <Field label="Contract duration (months)">
+                <input type="number" min={form.minContractMonths || 1} max={form.maxContractMonths || 12} className={inputClass} value={months} onChange={(e) => setMonths(Number(e.target.value))} />
+              </Field>
+            </div>
+            <dl className="text-sm font-medium text-slate-600 dark:text-slate-300 space-y-1.5">
+              <Row label="Truck spaces" value={String(preview.spaces)} />
+              <Row label="Contract duration" value={`${preview.months} months`} />
+              <Row label="Monthly rate / space" value={money(preview.monthlyRatePerSpace, form.currency)} />
+              <div className="border-t border-slate-200 dark:border-slate-700 my-2" />
+              <Row label="Parking subtotal" value={money(preview.occupancyAmount, form.currency)} />
+              <Row label="Administration fee" value={money(preview.reservationFeeAmount, form.currency)} />
+              <Row label="Taxable amount" value={money(preview.subtotalAmount, form.currency)} />
+              <Row label={`${preview.taxName || 'VAT'} ${preview.taxPercent}%`} value={money(preview.taxAmount, form.currency)} />
+              <div className="border-t border-slate-200 dark:border-slate-700 my-2" />
+              <div className="flex justify-between text-lg font-black text-slate-900 dark:text-white">
+                <dt>Grand total</dt>
+                <dd>{money(preview.totalAmount, form.currency)}</dd>
+              </div>
+            </dl>
+            {showConverted && (
+              <p className="text-xs font-semibold text-slate-500 mt-3">
+                Billed in {form.currency}: {billed(preview.totalAmount, form.currency)}. Displayed in {preferredCurrency} using current rates.
+              </p>
+            )}
+          </section>
         </div>
-        <p className="text-sm font-medium text-slate-600">Occupancy: {formatParkingMoney(preview.occupancy, form.currency)}</p>
-        <p className="text-sm font-medium text-slate-600">Tax: {formatParkingMoney(preview.tax, form.currency)}</p>
-        <p className="text-lg font-black text-slate-900 dark:text-white mt-2">Total: {formatParkingMoney(preview.total, form.currency)}</p>
-      </section>
+      </Modal>
     </div>
   );
 };
@@ -140,6 +656,15 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <span className="ui-label block mb-2">{label}</span>
       {children}
     </label>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt>{label}</dt>
+      <dd className="font-semibold text-slate-800 dark:text-slate-100">{value}</dd>
+    </div>
   );
 }
 
