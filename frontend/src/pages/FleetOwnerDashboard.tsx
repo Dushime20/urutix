@@ -21,7 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import logoUrutiX from '../assets/urutiX Logistics Logo (1).svg';
 import toast from 'react-hot-toast';
-import { FleetFormEnhanced as FleetForm } from '../components/FleetDashboard/FleetFormEnhanced';
+import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import ModernLoader from '../components/common/ModernLoader';
 import { StandardDataTable, StatusBadge, type Column } from '../components/EnliteUI/Tables';
 
@@ -198,22 +198,19 @@ const FleetOwnerDashboard: React.FC = () => {
       const createdTruck = await fleetApi.createTruck(data);
       console.log('✅ Truck created successfully:', createdTruck);
       toast.success('Truck added successfully!');
-      setShowTruckForm(false);
-      setEditingTruck(null);
-      
-      // Wait for dashboard data refresh to complete
-      await loadDashboardData();
+      return createdTruck;
     } catch (error) {
       console.error('Error creating truck:', error);
       toast.error('Failed to add truck. Please try again.');
       throw error;
     }
-  }, [loadDashboardData]);
+  }, []);
 
   const handleCloseTruckForm = useCallback(() => {
     setShowTruckForm(false);
     setEditingTruck(null);
-  }, []);
+    void loadDashboardData();
+  }, [loadDashboardData]);
 
   if (loading) {
     return <ModernLoader isLoading={true} type="dashboard" showStats={true} />;
@@ -904,7 +901,7 @@ const FleetOwnerDashboard: React.FC = () => {
       <Footer />
 
       {/* Truck Creation Form Modal */}
-      <FleetForm
+      <FleetFormStepper
         isOpen={showTruckForm}
         onClose={handleCloseTruckForm}
         onSubmit={handleSubmitTruck}

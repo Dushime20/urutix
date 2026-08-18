@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fleetApi, type FleetItem, type Driver } from '../services/fleetApi'; // Import FleetItem and Driver types
-import { FleetFormEnhanced as FleetForm } from '../components/FleetDashboard/FleetFormEnhanced';
+import FleetFormStepper from '../components/FleetDashboard/FleetFormStepper';
 import DocumentAssignmentModal from '../components/FleetDashboard/DocumentAssignmentModal';
 import DriverFormModal from '../components/FleetDashboard/DriverFormModal';
 import VehicleDetailsModal from '../components/FleetDashboard/VehicleDetailsModal';
@@ -412,12 +412,6 @@ const NewFleetManager: React.FC = () => {
                 truck = await fleetApi.updateTruck(editingTruck.id, data);
                 toast.success('Truck updated successfully!');
             }
-            setShowTruckForm(false);
-            setEditingTruck(null);
-            
-            // Wait for data refresh to complete before returning
-            await loadFleetData();
-            
             return truck;
         } catch (error) {
             console.error('Error saving truck:', error);
@@ -429,6 +423,7 @@ const NewFleetManager: React.FC = () => {
     const handleCloseTruckForm = () => {
         setShowTruckForm(false);
         setEditingTruck(null);
+        void loadFleetData();
     };
 
     // Driver Handlers
@@ -1194,7 +1189,7 @@ const NewFleetManager: React.FC = () => {
             )}
 
             {/* Truck Registration Form Modal */}
-            <FleetForm
+            <FleetFormStepper
                 isOpen={showTruckForm}
                 onClose={handleCloseTruckForm}
                 onSubmit={handleSubmitTruck}

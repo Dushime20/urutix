@@ -26,7 +26,7 @@ const STATUS_LABELS: Record<ParkingFeeScheduleStatus, string> = {
 
 const emptyForm: ParkingFeeSchedule = {
   id: '',
-  name: 'Nova Parking 365 monthly',
+  name: '',
   description: '',
   facilityName: '',
   totalCapacity: 700,
@@ -398,6 +398,7 @@ const ParkingFeeSettings = () => {
         onClose={closeModal}
         title={form.id ? 'Edit fee schedule' : 'Add fee schedule'}
         size="full"
+        zIndexClass="z-[10050]"
         footer={
           <div className="flex flex-col sm:flex-row justify-end gap-2">
             <button type="button" className="px-4 py-2 rounded-lg font-bold border" onClick={closeModal}>Cancel</button>

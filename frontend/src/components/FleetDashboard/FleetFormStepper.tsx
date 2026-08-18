@@ -27,7 +27,6 @@ import type { FleetItem } from '../../types/fleet';
 import { driverApi } from '../../services/driverApi';
 import { fleetApi } from '../../services/fleetApi';
 import {
-  hydrateComplianceDocuments,
   hasPendingComplianceFiles,
   stripComplianceFiles,
   uploadVehicleComplianceDocuments,
@@ -59,6 +58,13 @@ import {
   DriverInformationStep,
   ReviewSubmitStep
 } from './StepperSteps';
+import {
+  getEmptyDriverFormData,
+  getEmptyTruckFormData,
+  hydrateDriverFormData,
+  hydrateTruckFormData,
+  normalizeTruckStatus,
+} from './hydrateFleetFormData';
 
 
 interface FleetFormStepperProps {
@@ -154,24 +160,6 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
     enabled: activeTab === 'drivers' && mode === 'create' && driverCreationMode === 'existing' && existingDriverSearch.length > 0,
   });
 
-  // Helper to format date strings for HTML5 date inputs (YYYY-MM-DD)
-  const formatDateForInput = (dateStr: any) => {
-    if (!dateStr) return '';
-    try {
-      // Check if it's already in YYYY-MM-DD format
-      if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        return dateStr;
-      }
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return '';
-      return date.toISOString().split('T')[0];
-    } catch (err) {
-      console.error('Date formatting error:', err);
-      return '';
-    }
-  };
-
-  // Define steps based on activeTab
   const getSteps = () => {
     if (activeTab === 'drivers') {
       return [
@@ -196,541 +184,15 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
   const steps = getSteps();
 
   useEffect(() => {
-    if (initialData) {
-      // Initialize loadingCapabilities from initialData
-      const loadingCapabilities = initialData.loadingCapabilities || {};
-      setFormData({
-        // Truck fields
-        plateNumber: initialData.plateNumber || '',
-        vin: initialData.vin || '',
-        make: initialData.make || '',
-        model: initialData.model || '',
-        year: initialData.year?.toString() || '',
-        color: initialData.color || '',
-        fuelType: initialData.fuelType || '',
-        capacityWeight: initialData.capacityWeight?.toString() || '',
-        capacityVolume: initialData.capacityVolume?.toString() || '',
-        registrationNumber: initialData.registrationNumber || '',
-        registrationExpiry: formatDateForInput(initialData.registrationExpiry),
-        insurancePolicy: initialData.insurancePolicy || (initialData as any).complianceDocuments?.insurance?.number || '',
-        insuranceExpiry: formatDateForInput(initialData.insuranceExpiry || (initialData as any).complianceDocuments?.insurance?.expiryDate),
-        roadworthyCertExpiry: formatDateForInput(initialData.roadworthyCertExpiry || (initialData as any).complianceDocuments?.roadworthy?.expiryDate),
-        mileage: initialData.mileage?.toString() || '',
-        truckType: initialData.truckType || '',
-        trailerType: initialData.trailerType || '',
-        status: initialData.status || 'AVAILABLE',
-        manufacturer: initialData.manufacturer || '',
-        chassis: initialData.chassis || '',
-        availabilityStatus: initialData.availabilityStatus || 'AVAILABLE',
-        ownershipType: initialData.ownershipType || '',
-        vehicleClass: initialData.vehicleClass || '',
-        fleetGroup: initialData.fleetGroup || '',
-        businessUnit: initialData.businessUnit || '',
-        costCenter: initialData.costCenter || '',
-        chassisConfiguration: initialData.chassisConfiguration || '',
-        dotNumber: initialData.dotNumber || '',
-        mcNumber: initialData.mcNumber || '',
-        operatingAuthority: initialData.operatingAuthority || (initialData as any).complianceDocuments?.operatingAuthority?.number || '',
-        crossBorderPermit: initialData.crossBorderPermit || (initialData as any).complianceDocuments?.crossBorderPermit?.number || '',
-        customsBond: initialData.customsBond || (initialData as any).complianceDocuments?.customsBond?.number || '',
-        portAuthorization: initialData.portAuthorization || (initialData as any).complianceDocuments?.portAuthorization?.number || '',
-        hasCrossBorderPermit: Boolean(
-          initialData.crossBorderPermit ||
-          initialData.customsBond ||
-          initialData.portAuthorization ||
-          (initialData as any).complianceDocuments?.crossBorderPermit?.number ||
-          (initialData as any).complianceDocuments?.customsBond?.number ||
-          (initialData as any).complianceDocuments?.portAuthorization?.number
-        ),
-        complianceDocuments: hydrateComplianceDocuments((initialData as any).complianceDocuments, {
-          insurancePolicy: initialData.insurancePolicy,
-          insuranceExpiry: formatDateForInput(initialData.insuranceExpiry),
-          registrationNumber: initialData.registrationNumber,
-          registrationExpiry: formatDateForInput(initialData.registrationExpiry),
-          roadworthyCertExpiry: formatDateForInput(initialData.roadworthyCertExpiry),
-          operatingAuthority: initialData.operatingAuthority,
-          crossBorderPermit: initialData.crossBorderPermit,
-          customsBond: initialData.customsBond,
-          portAuthorization: initialData.portAuthorization,
-          insuranceStatus:
-            (initialData as any).complianceDocuments?.insurance?.status ||
-            (Array.isArray((initialData as any).insuranceAlerts)
-              ? (initialData as any).insuranceAlerts.find((item: any) => item?.source === 'vehicle_form' || item?.id === 'ins-vehicle-form')?.status
-              : undefined),
-          insuranceIssuingAuthority:
-            (initialData as any).complianceDocuments?.insurance?.issuingAuthority ||
-            (Array.isArray((initialData as any).insuranceAlerts)
-              ? (initialData as any).insuranceAlerts.find((item: any) => item?.source === 'vehicle_form' || item?.id === 'ins-vehicle-form')?.issuingAuthority
-              : undefined),
-          insuranceIssueDate: formatDateForInput(
-            (initialData as any).complianceDocuments?.insurance?.issueDate ||
-            (Array.isArray((initialData as any).insuranceAlerts)
-              ? (initialData as any).insuranceAlerts.find((item: any) => item?.source === 'vehicle_form' || item?.id === 'ins-vehicle-form')?.issueDate
-              : undefined),
-          ),
-        }),
-        axleConfiguration: initialData.axleConfiguration || '',
-        fuelTankCapacity: initialData.fuelTankCapacity?.toString() || '',
-        engineModel: initialData.engineModel || '',
-        horsepower: initialData.horsepower?.toString() || '',
-        torque: initialData.torque?.toString() || '',
-        transmission: initialData.transmission || '',
-        grossVehicleWeight: initialData.grossVehicleWeight?.toString() || '',
-        driverRequirements: initialData.driverRequirements || '',
-        operationalRestrictions: initialData.operationalRestrictions || '',
-        emergencyContacts: Array.isArray(initialData.emergencyContacts) && initialData.emergencyContacts.length > 0
-          ? initialData.emergencyContacts
-          : [{ name: '', phone: '', relationship: '', email: '' }],
-        assetDetails: {
-          retirementStatus: 'ACTIVE',
-          ...((initialData as any).assetDetails || {}),
-        },
-        createdBy: (initialData as any).createdBy || '',
-        updatedBy: (initialData as any).updatedBy || '',
-        lastMaintenanceDate: formatDateForInput(initialData.lastMaintenanceDate),
-        nextMaintenanceDate: formatDateForInput(initialData.nextMaintenanceDate),
-        maxLength: initialData.maxLength?.toString() || '',
-        maxWidth: initialData.maxWidth?.toString() || '',
-        maxHeight: initialData.maxHeight?.toString() || '',
-        fuelEfficiency: (initialData as any).fuelEfficiency?.toString() || '',
-        // Core requirements
-        hasRefrigeration: initialData.hasRefrigeration || false,
-        hasLiftGate: initialData.hasLiftGate || false,
-        hasGps: initialData.hasGps || false,
-        hasHazmatPermit: initialData.hasHazmatPermit || false,
-        // Essential cargo equipment
-        hasSideRails: initialData.hasSideRails || false,
-        hasTarps: initialData.hasTarps || false,
-        hasStraps: initialData.hasStraps || false,
-        hasChains: initialData.hasChains || false,
-        hasWinch: initialData.hasWinch || false,
-        hasRam: initialData.hasRam || false,
-        hasTailLift: initialData.hasTailLift || false,
-        hasSideLift: initialData.hasSideLift || false,
-        hasRollerBed: initialData.hasRollerBed || false,
-        hasDropDeck: initialData.hasDropDeck || false,
-        hasExtendable: initialData.hasExtendable || false,
-        hasLowbed: initialData.hasLowbed || false,
-        hasStepDeck: initialData.hasStepDeck || false,
-        hasPowerOnly: initialData.hasPowerOnly || false,
-        hasContainerChassis: initialData.hasContainerChassis || false,
-        // Cargo type capabilities
-        hasTanker: initialData.hasTanker || false,
-        hasBulk: initialData.hasBulk || false,
-        hasRefrigerated: initialData.hasRefrigerated || false,
-        hasHeated: initialData.hasHeated || false,
-        hasVentilated: initialData.hasVentilated || false,
-        hasCurtainSide: initialData.hasCurtainSide || false,
-        hasBox: initialData.hasBox || false,
-        hasVan: initialData.hasVan || false,
-        hasPlatform: initialData.hasPlatform || false,
-        hasCarCarrier: initialData.hasCarCarrier || false,
-        hasHeavyHaul: initialData.hasHeavyHaul || false,
-        hasOversized: initialData.hasOversized || false,
-        // Specialized cargo capabilities
-        hasHazmat: initialData.hasHazmat || false,
-        hasDangerousGoods: initialData.hasDangerousGoods || false,
-        hasFoodGrade: initialData.hasFoodGrade || false,
-        hasPharmaceutical: initialData.hasPharmaceutical || false,
-        hasLiquid: initialData.hasLiquid || false,
-        hasDryBulk: initialData.hasDryBulk || false,
-        hasGas: initialData.hasGas || false,
-        hasChemical: initialData.hasChemical || false,
-        hasWaste: initialData.hasWaste || false,
-        // Temperature control
-        hasReefer: initialData.hasReefer || false,
-        hasFrozen: initialData.hasFrozen || false,
-        hasChilled: initialData.hasChilled || false,
-        hasAmbient: initialData.hasAmbient || false,
-        hasControlledAtmosphere: initialData.hasControlledAtmosphere || false,
-        hasHumidityControl: initialData.hasHumidityControl || false,
-        hasTemperatureMonitoring: initialData.hasTemperatureMonitoring || false,
-        // Technology and tracking
-        hasGPS: initialData.hasGPS || false,
-        hasTracking: initialData.hasTracking || false,
-        hasTelematics: initialData.hasTelematics || false,
-        hasELD: initialData.hasELD || false,
-        hasDashCam: initialData.hasDashCam || false,
-        hasSafetyCameras: initialData.hasSafetyCameras || false,
-        // Safety features
-        hasCollisionAvoidance: initialData.hasCollisionAvoidance || false,
-        hasLaneDeparture: initialData.hasLaneDeparture || false,
-        hasAdaptiveCruise: initialData.hasAdaptiveCruise || false,
-        hasBlindSpot: initialData.hasBlindSpot || false,
-        hasBackupCamera: initialData.hasBackupCamera || false,
-        // Monitoring systems
-        hasTirePressureMonitoring: initialData.hasTirePressureMonitoring || false,
-        hasEngineMonitoring: initialData.hasEngineMonitoring || false,
-        hasFuelMonitoring: initialData.hasFuelMonitoring || false,
-        hasMaintenanceAlerts: initialData.hasMaintenanceAlerts || false,
-        hasDriverMonitoring: initialData.hasDriverMonitoring || false,
-        hasFatigueMonitoring: initialData.hasFatigueMonitoring || false,
-        hasSpeedMonitoring: initialData.hasSpeedMonitoring || false,
-        hasIdleMonitoring: initialData.hasIdleMonitoring || false,
-        // Route and tracking
-        hasRouteOptimization: initialData.hasRouteOptimization || false,
-        hasRealTimeTracking: initialData.hasRealTimeTracking || false,
-        hasGeofencing: initialData.hasGeofencing || false,
-        // Cargo monitoring
-        hasTemperatureAlerts: initialData.hasTemperatureAlerts || false,
-        hasHumidityAlerts: initialData.hasHumidityAlerts || false,
-        hasShockMonitoring: initialData.hasShockMonitoring || false,
-        hasTiltMonitoring: initialData.hasTiltMonitoring || false,
-        hasDoorMonitoring: initialData.hasDoorMonitoring || false,
-        hasCargoMonitoring: initialData.hasCargoMonitoring || false,
-        hasWeightMonitoring: initialData.hasWeightMonitoring || false,
-        hasVolumeMonitoring: initialData.hasVolumeMonitoring || false,
-        // Specialized monitoring
-        hasPressureMonitoring: initialData.hasPressureMonitoring || false,
-        hasFlowMonitoring: initialData.hasFlowMonitoring || false,
-        hasLevelMonitoring: initialData.hasLevelMonitoring || false,
-        hasQualityMonitoring: initialData.hasQualityMonitoring || false,
-        hasContaminationMonitoring: initialData.hasContaminationMonitoring || false,
-        // Safety systems
-        hasLeakDetection: initialData.hasLeakDetection || false,
-        hasOverfillProtection: initialData.hasOverfillProtection || false,
-        hasEmergencyShutdown: initialData.hasEmergencyShutdown || false,
-        hasFireSuppression: initialData.hasFireSuppression || false,
-        hasExplosionProof: initialData.hasExplosionProof || false,
-        // Material specifications
-        hasCorrosionResistant: initialData.hasCorrosionResistant || false,
-        hasStainlessSteel: initialData.hasStainlessSteel || false,
-        hasAluminum: initialData.hasAluminum || false,
-        hasCarbonSteel: initialData.hasCarbonSteel || false,
-        hasFiberglass: initialData.hasFiberglass || false,
-        hasPlastic: initialData.hasPlastic || false,
-        hasComposite: initialData.hasComposite || false,
-        hasInsulated: initialData.hasInsulated || false,
-        equipmentList: initialData.equipmentList || [],
-        // Nested objects
-        loadingCapabilities: loadingCapabilities,
-        // cargoCapabilities: merge flat top-level fields with the nested object
-        cargoCapabilities: {
-          ...(initialData.cargoCapabilities || {}),
-          hasTanker: initialData.hasTanker ?? initialData.cargoCapabilities?.hasTanker ?? false,
-          hasBulk: initialData.hasBulk ?? initialData.cargoCapabilities?.hasBulk ?? false,
-          hasRefrigerated: initialData.hasRefrigerated ?? initialData.cargoCapabilities?.hasRefrigerated ?? false,
-          hasHeated: initialData.hasHeated ?? initialData.cargoCapabilities?.hasHeated ?? false,
-          hasVentilated: initialData.hasVentilated ?? initialData.cargoCapabilities?.hasVentilated ?? false,
-          hasCurtainSide: initialData.hasCurtainSide ?? initialData.cargoCapabilities?.hasCurtainSide ?? false,
-          hasBox: initialData.hasBox ?? initialData.cargoCapabilities?.hasBox ?? false,
-          hasVan: initialData.hasVan ?? initialData.cargoCapabilities?.hasVan ?? false,
-          hasPlatform: initialData.hasPlatform ?? initialData.cargoCapabilities?.hasPlatform ?? false,
-          hasCarCarrier: initialData.hasCarCarrier ?? initialData.cargoCapabilities?.hasCarCarrier ?? false,
-          hasHeavyHaul: initialData.hasHeavyHaul ?? initialData.cargoCapabilities?.hasHeavyHaul ?? false,
-          hasOversized: initialData.hasOversized ?? initialData.cargoCapabilities?.hasOversized ?? false,
-          hasHazmat: initialData.hasHazmat ?? initialData.cargoCapabilities?.hasHazmat ?? false,
-          hasDangerousGoods: initialData.hasDangerousGoods ?? initialData.cargoCapabilities?.hasDangerousGoods ?? false,
-          hasFoodGrade: initialData.hasFoodGrade ?? initialData.cargoCapabilities?.hasFoodGrade ?? false,
-          hasPharmaceutical: initialData.hasPharmaceutical ?? initialData.cargoCapabilities?.hasPharmaceutical ?? false,
-          hasLiquid: initialData.hasLiquid ?? initialData.cargoCapabilities?.hasLiquid ?? false,
-          hasDryBulk: initialData.hasDryBulk ?? initialData.cargoCapabilities?.hasDryBulk ?? false,
-          hasGas: initialData.hasGas ?? initialData.cargoCapabilities?.hasGas ?? false,
-          hasChemical: initialData.hasChemical ?? initialData.cargoCapabilities?.hasChemical ?? false,
-          hasWaste: initialData.hasWaste ?? initialData.cargoCapabilities?.hasWaste ?? false,
-          hasReefer: initialData.hasReefer ?? initialData.cargoCapabilities?.hasReefer ?? false,
-          hasFrozen: initialData.hasFrozen ?? initialData.cargoCapabilities?.hasFrozen ?? false,
-          hasChilled: initialData.hasChilled ?? initialData.cargoCapabilities?.hasChilled ?? false,
-          hasAmbient: initialData.hasAmbient ?? initialData.cargoCapabilities?.hasAmbient ?? false,
-          hasControlledAtmosphere: initialData.hasControlledAtmosphere ?? initialData.cargoCapabilities?.hasControlledAtmosphere ?? false,
-          hasHumidityControl: initialData.hasHumidityControl ?? initialData.cargoCapabilities?.hasHumidityControl ?? false,
-          hasTemperatureMonitoring: initialData.hasTemperatureMonitoring ?? initialData.cargoCapabilities?.hasTemperatureMonitoring ?? false,
-        },
-        // certifications: ensure nested object is initialized and merged with flat fields
-        certifications: {
-          ...(initialData.certifications || {}),
-          hazmatCertified: initialData.hasHazmatPermit ?? initialData.hasHazmat ?? initialData.certifications?.hazmatCertified ?? false,
-          dangerousGoodsCertified: initialData.hasDangerousGoods ?? initialData.certifications?.dangerousGoodsCertified ?? false,
-          foodGradeCertified: initialData.hasFoodGrade ?? initialData.certifications?.foodGradeCertified ?? false,
-          pharmaceuticalCertified: initialData.hasPharmaceutical ?? initialData.certifications?.pharmaceuticalCertified ?? false,
-        },
-        // routeCapabilities: ensure nested object is initialized
-        routeCapabilities: initialData.routeCapabilities || {},
-        // costStructure: ensure nested object is initialized
-        costStructure: initialData.costStructure || {},
-        // securityFeatures: merge flat top-level fields with the nested object
-        // so SecurityMonitoringStep checkboxes pre-fill correctly on edit
-        securityFeatures: {
-          // Start with any existing nested securityFeatures object
-          ...(initialData.securityFeatures || {}),
-          // Then overlay flat top-level fields (these take priority as they are the DB source of truth)
-          hasGps: initialData.hasGps ?? initialData.securityFeatures?.hasGps ?? false,
-          hasTracking: initialData.hasTracking ?? initialData.securityFeatures?.hasTracking ?? false,
-          hasTelematics: initialData.hasTelematics ?? initialData.securityFeatures?.hasTelematics ?? false,
-          hasRouteOptimization: initialData.hasRouteOptimization ?? initialData.securityFeatures?.hasRouteOptimization ?? false,
-          hasRealTimeTracking: initialData.hasRealTimeTracking ?? initialData.securityFeatures?.hasRealTimeTracking ?? false,
-          hasGeofencing: initialData.hasGeofencing ?? initialData.securityFeatures?.hasGeofencing ?? false,
-          hasDashCam: initialData.hasDashCam ?? initialData.securityFeatures?.hasDashCam ?? false,
-          hasSafetyCameras: initialData.hasSafetyCameras ?? initialData.securityFeatures?.hasSafetyCameras ?? false,
-          hasCollisionAvoidance: initialData.hasCollisionAvoidance ?? initialData.securityFeatures?.hasCollisionAvoidance ?? false,
-          hasLaneDeparture: initialData.hasLaneDeparture ?? initialData.securityFeatures?.hasLaneDeparture ?? false,
-          hasAdaptiveCruise: initialData.hasAdaptiveCruise ?? initialData.securityFeatures?.hasAdaptiveCruise ?? false,
-          hasBlindSpot: initialData.hasBlindSpot ?? initialData.securityFeatures?.hasBlindSpot ?? false,
-          hasBackupCamera: initialData.hasBackupCamera ?? initialData.securityFeatures?.hasBackupCamera ?? false,
-          hasCargoMonitoring: initialData.hasCargoMonitoring ?? initialData.securityFeatures?.hasCargoMonitoring ?? false,
-          hasWeightMonitoring: initialData.hasWeightMonitoring ?? initialData.securityFeatures?.hasWeightMonitoring ?? false,
-          hasVolumeMonitoring: initialData.hasVolumeMonitoring ?? initialData.securityFeatures?.hasVolumeMonitoring ?? false,
-          hasDoorMonitoring: initialData.hasDoorMonitoring ?? initialData.securityFeatures?.hasDoorMonitoring ?? false,
-          hasShockMonitoring: initialData.hasShockMonitoring ?? initialData.securityFeatures?.hasShockMonitoring ?? false,
-          hasTiltMonitoring: initialData.hasTiltMonitoring ?? initialData.securityFeatures?.hasTiltMonitoring ?? false,
-          hasTemperatureAlerts: initialData.hasTemperatureAlerts ?? initialData.securityFeatures?.hasTemperatureAlerts ?? false,
-          hasHumidityAlerts: initialData.hasHumidityAlerts ?? initialData.securityFeatures?.hasHumidityAlerts ?? false,
-          hasPressureMonitoring: initialData.hasPressureMonitoring ?? initialData.securityFeatures?.hasPressureMonitoring ?? false,
-          hasFlowMonitoring: initialData.hasFlowMonitoring ?? initialData.securityFeatures?.hasFlowMonitoring ?? false,
-          hasLevelMonitoring: initialData.hasLevelMonitoring ?? initialData.securityFeatures?.hasLevelMonitoring ?? false,
-          hasQualityMonitoring: initialData.hasQualityMonitoring ?? initialData.securityFeatures?.hasQualityMonitoring ?? false,
-          hasContaminationMonitoring: initialData.hasContaminationMonitoring ?? initialData.securityFeatures?.hasContaminationMonitoring ?? false,
-          hasELD: initialData.hasELD ?? initialData.securityFeatures?.hasELD ?? false,
-          hasDriverMonitoring: initialData.hasDriverMonitoring ?? initialData.securityFeatures?.hasDriverMonitoring ?? false,
-          hasFatigueMonitoring: initialData.hasFatigueMonitoring ?? initialData.securityFeatures?.hasFatigueMonitoring ?? false,
-          hasSpeedMonitoring: initialData.hasSpeedMonitoring ?? initialData.securityFeatures?.hasSpeedMonitoring ?? false,
-          hasIdleMonitoring: initialData.hasIdleMonitoring ?? initialData.securityFeatures?.hasIdleMonitoring ?? false,
-          hasTirePressureMonitoring: initialData.hasTirePressureMonitoring ?? initialData.securityFeatures?.hasTirePressureMonitoring ?? false,
-          hasEngineMonitoring: initialData.hasEngineMonitoring ?? initialData.securityFeatures?.hasEngineMonitoring ?? false,
-          hasFuelMonitoring: initialData.hasFuelMonitoring ?? initialData.securityFeatures?.hasFuelMonitoring ?? false,
-          hasMaintenanceAlerts: initialData.hasMaintenanceAlerts ?? initialData.securityFeatures?.hasMaintenanceAlerts ?? false,
-        },
-        // Driver fields
-        firstName: initialData.firstName || '',
-        lastName: initialData.lastName || '',
-        dateOfBirth: formatDateForInput(initialData.dateOfBirth),
-        licenseNumber: initialData.licenseNumber || '',
-        licenseType: initialData.licenseType || '',
-        licenseIssueDate: formatDateForInput(initialData.licenseIssueDate),
-        licenseExpiry: formatDateForInput(initialData.licenseExpiry),
-        licenseState: initialData.licenseState || '',
-        licenseCountry: initialData.licenseCountry || '',
-        address: initialData.address || '',
-        employmentType: initialData.employmentType || '',
-        hireDate: formatDateForInput(initialData.hireDate),
-        status: initialData.status || 'ACTIVE',
-        availabilityStatus: initialData.availabilityStatus || 'AVAILABLE',
-        experience: initialData.experience?.toString() || '',
-        driverNotes: initialData.driverNotes || '',
-        specialCertifications: '',
-        hourlyRate: initialData.hourlyRate?.toString() || '',
-        mileageRate: initialData.mileageRate?.toString() || '',
-        medicalCertExpiry: formatDateForInput(initialData.medicalCertExpiry),
-        drugTestDate: formatDateForInput(initialData.drugTestDate),
-        backgroundCheckDate: formatDateForInput(initialData.backgroundCheckDate),
-        trainingCompletionDate: formatDateForInput(initialData.trainingCompletionDate),
-        emergencyContact: {
-          name: initialData.emergencyContact?.name || '',
-          phone: initialData.emergencyContact?.phone || '',
-          relationship: initialData.emergencyContact?.relationship || '',
-        },
-        contactInfo: {
-          phone: initialData.contactInfo?.phone || initialData.phone || '',
-          email: initialData.contactInfo?.email || initialData.email || ''
-        }
-      });
-    } else {
-      // Initialize with empty nested objects
-      setFormData({
-        // Truck fields
-        plateNumber: '',
-        vin: '',
-        make: '',
-        model: '',
-        year: '',
-        color: '',
-        fuelType: '',
-        capacityWeight: '',
-        capacityVolume: '',
-        registrationNumber: '',
-        registrationExpiry: '',
-        insurancePolicy: '',
-        insuranceExpiry: '',
-        roadworthyCertExpiry: '',
-        mileage: '',
-        truckType: '',
-        trailerType: '',
-        status: 'AVAILABLE',
-        manufacturer: '',
-        chassis: '',
-        availabilityStatus: 'AVAILABLE',
-        ownershipType: '',
-        vehicleClass: '',
-        fleetGroup: '',
-        businessUnit: '',
-        costCenter: '',
-        chassisConfiguration: '',
-        dotNumber: '',
-        mcNumber: '',
-        operatingAuthority: '',
-        crossBorderPermit: '',
-        customsBond: '',
-        portAuthorization: '',
-        hasCrossBorderPermit: false,
-        complianceDocuments: hydrateComplianceDocuments(),
-        axleConfiguration: '',
-        fuelTankCapacity: '',
-        engineModel: '',
-        horsepower: '',
-        torque: '',
-        transmission: '',
-        grossVehicleWeight: '',
-        driverRequirements: '',
-        operationalRestrictions: '',
-        emergencyContacts: [{ name: '', phone: '', relationship: '', email: '' }],
-        assetDetails: { retirementStatus: 'ACTIVE' },
-        lastMaintenanceDate: '',
-        nextMaintenanceDate: '',
-        maxLength: '',
-        maxWidth: '',
-        maxHeight: '',
-        fuelEfficiency: '',
-        // Core requirements
-        hasRefrigeration: false,
-        hasLiftGate: false,
-        hasGps: false,
-        hasHazmatPermit: false,
-        // Essential cargo equipment
-        hasSideRails: false,
-        hasTarps: false,
-        hasStraps: false,
-        hasChains: false,
-        hasWinch: false,
-        hasRam: false,
-        hasTailLift: false,
-        hasSideLift: false,
-        hasRollerBed: false,
-        hasDropDeck: false,
-        hasExtendable: false,
-        hasLowbed: false,
-        hasStepDeck: false,
-        hasPowerOnly: false,
-        hasContainerChassis: false,
-        // Cargo type capabilities
-        hasTanker: false,
-        hasBulk: false,
-        hasRefrigerated: false,
-        hasHeated: false,
-        hasVentilated: false,
-        hasCurtainSide: false,
-        hasBox: false,
-        hasVan: false,
-        hasPlatform: false,
-        hasCarCarrier: false,
-        hasHeavyHaul: false,
-        hasOversized: false,
-        // Specialized cargo capabilities
-        hasHazmat: false,
-        hasDangerousGoods: false,
-        hasFoodGrade: false,
-        hasPharmaceutical: false,
-        hasLiquid: false,
-        hasDryBulk: false,
-        hasGas: false,
-        hasChemical: false,
-        hasWaste: false,
-        // Temperature control
-        hasReefer: false,
-        hasChilled: false,
-        hasAmbient: false,
-        hasControlledAtmosphere: false,
-        hasHumidityControl: false,
-        hasTemperatureMonitoring: false,
-        // Technology and tracking
-        hasGPS: false,
-        hasTracking: false,
-        hasTelematics: false,
-        hasELD: false,
-        hasDashCam: false,
-        hasSafetyCameras: false,
-        // Safety features
-        hasCollisionAvoidance: false,
-        hasLaneDeparture: false,
-        hasAdaptiveCruise: false,
-        hasBlindSpot: false,
-        hasBackupCamera: false,
-        // Monitoring systems
-        hasTirePressureMonitoring: false,
-        hasEngineMonitoring: false,
-        hasFuelMonitoring: false,
-        hasMaintenanceAlerts: false,
-        hasDriverMonitoring: false,
-        hasFatigueMonitoring: false,
-        hasSpeedMonitoring: false,
-        hasIdleMonitoring: false,
-        // Route and tracking
-        hasRouteOptimization: false,
-        hasRealTimeTracking: false,
-        hasGeofencing: false,
-        // Cargo monitoring
-        hasTemperatureAlerts: false,
-        hasHumidityAlerts: false,
-        hasShockMonitoring: false,
-        hasTiltMonitoring: false,
-        hasDoorMonitoring: false,
-        hasCargoMonitoring: false,
-        hasWeightMonitoring: false,
-        hasVolumeMonitoring: false,
-        // Specialized monitoring
-        hasPressureMonitoring: false,
-        hasFlowMonitoring: false,
-        hasLevelMonitoring: false,
-        hasQualityMonitoring: false,
-        hasContaminationMonitoring: false,
-        // Safety systems
-        hasLeakDetection: false,
-        hasOverfillProtection: false,
-        hasEmergencyShutdown: false,
-        hasFireSuppression: false,
-        hasExplosionProof: false,
-        // Material specifications
-        hasCorrosionResistant: false,
-        hasStainlessSteel: false,
-        hasAluminum: false,
-        hasCarbonSteel: false,
-        hasFiberglass: false,
-        hasPlastic: false,
-        hasComposite: false,
-        hasInsulated: false,
-        equipmentList: [],
-        // Nested objects - initialize empty
-        loadingCapabilities: {},
-        securityFeatures: {},
-        cargoCapabilities: {},
-        certifications: {},
-        routeCapabilities: {},
-        costStructure: {},
-        // Driver fields
-        firstName: '',
-        lastName: '',
-        licenseNumber: '',
-        licenseType: '',
-        licenseState: '',
-        licenseCountry: '',
-        licenseIssueDate: '',
-        licenseExpiry: '',
-        dateOfBirth: '',
-        address: '',
-        employmentType: '',
-        hireDate: '',
-        status: 'ACTIVE',
-        availabilityStatus: 'AVAILABLE',
-        experience: '',
-        driverNotes: '',
-        specialCertifications: '',
-        hourlyRate: '',
-        mileageRate: '',
-        medicalCertExpiry: '',
-        drugTestDate: '',
-        backgroundCheckDate: '',
-        trainingCompletionDate: '',
-        emergencyContact: {
-          name: '',
-          phone: '',
-          relationship: '',
-        },
-        contactInfo: {
-          phone: '',
-          email: ''
-        }
-      });
+    if (!isOpen) return;
+    if (activeTab === 'drivers') {
+      setFormData(initialData ? hydrateDriverFormData(initialData) : getEmptyDriverFormData());
+      return;
     }
-  }, [initialData]);
+    const next = initialData ? hydrateTruckFormData(initialData) : getEmptyTruckFormData();
+    next.status = normalizeTruckStatus(next.status);
+    setFormData(next);
+  }, [isOpen, initialData, activeTab]);
 
   // Helper function to build equipmentList from all equipment boolean fields
   const buildEquipmentList = React.useCallback((formData: Partial<FleetFormData>): string[] => {
@@ -802,11 +264,14 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       });
     } else {
       setFormData((prev: Partial<FleetFormData>) => {
+        const nextValue = field === 'status' && activeTab === 'trucks'
+          ? normalizeTruckStatus(value)
+          : value;
         const updated: Partial<FleetFormData> = {
           ...prev,
-          [field]: value
+          [field]: nextValue
         };
-        if (field === 'status' && (value === 'MAINTENANCE' || value === 'OUT_OF_SERVICE')) {
+        if (field === 'status' && activeTab === 'trucks' && (nextValue === 'MAINTENANCE' || nextValue === 'OUT_OF_SERVICE')) {
           updated.availabilityStatus = 'UNAVAILABLE';
         }
         // Update equipmentList if this is an equipment field
@@ -1130,10 +595,10 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
     // Optional fields
     if (d.color) converted.color = d.color;
-    if (d.status) converted.status = d.status;
+    converted.status = normalizeTruckStatus(d.status);
+    converted.availabilityStatus = d.availabilityStatus || 'AVAILABLE';
     if (d.manufacturer) converted.manufacturer = d.manufacturer;
     if (d.chassis) converted.chassis = d.chassis;
-    if (d.availabilityStatus) converted.availabilityStatus = d.availabilityStatus;
     if (d.ownershipType) converted.ownershipType = d.ownershipType;
     if (d.vehicleClass) converted.vehicleClass = d.vehicleClass;
     if (d.fleetGroup) converted.fleetGroup = d.fleetGroup;
@@ -1654,6 +1119,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         return <BasicInformationStep
           formData={formData}
           handleInputChange={handleInputChange}
+          mode={mode}
         />;
       case 2:
         return <LegalComplianceStep
@@ -1702,6 +1168,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         return <BasicInformationStep
           formData={formData}
           handleInputChange={handleInputChange}
+          mode={mode}
         />;
     }
   };

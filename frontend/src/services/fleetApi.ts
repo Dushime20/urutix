@@ -638,8 +638,9 @@ export const fleetApi = {
 
   getTruck: async (id: string): Promise<Truck> => {
     const response = await api.get<FleetApiResponse<Truck>>(`/fleet/trucks/${id}`);
-    const truck = response.data.truck || response.data.data || response.data.trucks;
-    if (!truck) {
+    const body: any = response.data;
+    const truck = body?.truck || body?.data?.truck || (body?.data && !Array.isArray(body.data) ? body.data : null) || body?.trucks;
+    if (!truck || typeof truck !== 'object') {
       throw new Error('Truck not found');
     }
     return truck as Truck;

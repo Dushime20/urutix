@@ -12,6 +12,7 @@ import {
   IsObject,
   Allow,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import {
   FuelType,
   VehicleStatus,
@@ -243,6 +244,10 @@ export class CreateTruckDto {
   updatedBy?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (!value || value === 'ACTIVE') return VehicleStatus.AVAILABLE;
+    return value;
+  })
   @IsEnum(VehicleStatus)
   status?: VehicleStatus;
 

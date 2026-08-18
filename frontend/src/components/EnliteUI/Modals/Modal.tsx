@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
 
@@ -12,6 +13,7 @@ export interface ModalProps {
   closeOnOverlayClick?: boolean;
   footer?: React.ReactNode;
   headerColor?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info' | 'default';
+  zIndexClass?: string;
 }
 
 const sizeClasses = {
@@ -42,6 +44,7 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnOverlayClick = true,
   footer,
   headerColor = 'default',
+  zIndexClass = 'z-[10050]',
 }) => {
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -72,10 +75,12 @@ export const Modal: React.FC<ModalProps> = ({
     }
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className={`fixed inset-0 ${zIndexClass} flex items-center justify-center p-4`}>
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -131,7 +136,8 @@ export const Modal: React.FC<ModalProps> = ({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };
 

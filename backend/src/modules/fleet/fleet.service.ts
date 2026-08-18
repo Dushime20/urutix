@@ -206,7 +206,9 @@ export class FleetService {
         return undefined;
       };
 
-      const status = createTruckDto.status || VehicleStatus.AVAILABLE;
+      const status = Object.values(VehicleStatus).includes(createTruckDto.status as VehicleStatus)
+        ? (createTruckDto.status as VehicleStatus)
+        : VehicleStatus.AVAILABLE;
       const complianceDocuments = sanitizeComplianceDocuments(
         cleanedDto.complianceDocuments,
       );

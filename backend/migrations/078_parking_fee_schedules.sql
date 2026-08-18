@@ -120,32 +120,3 @@ ALTER TABLE parking_reservations
 
 CREATE INDEX IF NOT EXISTS idx_parking_reservations_fee_schedule
   ON parking_reservations ("feeScheduleId");
-
-INSERT INTO parking_fee_schedules (
-  "parkingFacilityId", name, description, currency, status, version,
-  "monthlyRatePerSpace", "reservationFeeType", "reservationFeeValue",
-  "reservationFeeApplication", "taxEnabled", "taxName", "taxPercent",
-  "paymentDueDays", "feeNotes", "paymentInstructions", "effectiveFrom"
-)
-SELECT
-  f.id,
-  COALESCE(NULLIF(f."facilityName", ''), 'Nova Parking 365') || ' monthly',
-  'Backfilled from facility fee configuration',
-  COALESCE(f.currency, 'USD'),
-  'ACTIVE',
-  1,
-  COALESCE(f."monthlyRatePerSpace", 0),
-  'FIXED',
-  COALESCE(f."reservationFee", 0),
-  'PER_RESERVATION',
-  COALESCE(f."taxPercent", 0) > 0,
-  'VAT',
-  COALESCE(f."taxPercent", 0),
-  COALESCE(f."paymentDueDays", 7),
-  f."feeNotes",
-  f."paymentInstructions",
-  CURRENT_DATE
-FROM parking_facility_config f
-WHERE NOT EXISTS (
-  SELECT 1 FROM parking_fee_schedules s WHERE s."parkingFacilityId" = f.id
-);

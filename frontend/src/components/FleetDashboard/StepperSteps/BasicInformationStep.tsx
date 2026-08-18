@@ -1,9 +1,12 @@
 import React from 'react';
 import { FaTruck, FaIdCard, FaBuilding } from 'react-icons/fa';
+import { FleetStatus } from '../../../types/fleet';
+import { normalizeTruckStatus } from '../hydrateFleetFormData';
 
 interface BasicInformationStepProps {
   formData: any;
   handleInputChange: (field: string, value: any) => void;
+  mode?: 'create' | 'edit';
 }
 
 const inputClass =
@@ -12,10 +15,10 @@ const labelClass =
   'block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1';
 
 const vehicleStatuses = [
-  { value: 'AVAILABLE', label: 'Available' },
-  { value: 'IN_TRANSIT', label: 'In Transit' },
-  { value: 'MAINTENANCE', label: 'Maintenance' },
-  { value: 'OUT_OF_SERVICE', label: 'Out of Service' },
+  { value: FleetStatus.AVAILABLE, label: 'Available' },
+  { value: FleetStatus.IN_TRANSIT, label: 'In Transit' },
+  { value: FleetStatus.MAINTENANCE, label: 'Maintenance' },
+  { value: FleetStatus.OUT_OF_SERVICE, label: 'Out of Service' },
 ];
 
 const availabilityStatuses = [
@@ -252,7 +255,7 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
           <div>
             <label className={labelClass}>Vehicle Status</label>
             <select
-              value={formData.status || 'AVAILABLE'}
+              value={normalizeTruckStatus(formData.status)}
               onChange={(e) => handleInputChange('status', e.target.value)}
               className={inputClass}
             >
