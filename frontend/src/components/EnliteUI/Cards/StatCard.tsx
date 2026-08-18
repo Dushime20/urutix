@@ -103,7 +103,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   colorClass,
   secondaryColor,
 }) => {
-  const colors = colorClasses[color];
+  const colors = colorClasses[color] ?? colorClasses.primary;
 
   const getTrendColor = () => {
     if (trendDirection === 'up') return 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20';
