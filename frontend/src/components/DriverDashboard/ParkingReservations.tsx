@@ -160,7 +160,7 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
                         <Clock size={11} /> {String(row.requestedStartDate).slice(0, 10)}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <MapPin size={11} /> {row.truckSpacesRequested} space{row.truckSpacesRequested === 1 ? '' : 's'} · {row.contractMonths} month{row.contractMonths === 1 ? '' : 's'}
+                        <MapPin size={11} /> {row.facilityName ? `${row.facilityName} · ` : ''}{row.truckSpacesRequested} space{row.truckSpacesRequested === 1 ? '' : 's'} · {row.contractMonths} month{row.contractMonths === 1 ? '' : 's'}
                       </span>
                     </div>
                   </div>

@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { Brackets, DataSource, EntityManager, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
-import { Tenant } from '../../entities/tenant.entity';
+import { Tenant, TenantStatus } from '../../entities/tenant.entity';
 import { MobileMoneyPaymentService } from '../payments/services/mobile-money-payment.service';
 import {
   ParkingFacilityConfig,
@@ -40,6 +40,7 @@ import {
   PreviewParkingQuoteDto,
   RejectParkingReservationDto,
   RequestInformationDto,
+  SearchParkingFacilitiesDto,
   SubmitParkingPaymentDto,
   UpdateParkingFacilityDto,
   UpdateParkingFeesDto,
@@ -51,6 +52,7 @@ import {
   canTransition,
   effectivePaymentStatus,
   feeSchedulePeriodsOverlap,
+  formatParkingLocation,
   formatReservationReference,
   hasSufficientCapacity,
   invoiceNumberFor,
@@ -171,8 +173,12 @@ export class ParkingReservationsService {
 
   async getFacility(tenantId?: string | null): Promise<ParkingFacilityConfig> {
     if (tenantId) {
-      const scoped = await this.facilityRepo.findOne({ where: { tenantId } });
-      if (scoped) return scoped;
+      const scoped = await this.facilityRepo.find({
+        where: { tenantId },
+        order: { isDefault: 'DESC', createdAt: 'ASC' },
+        take: 1,
+      });
+      if (scoped[0]) return scoped[0];
     }
     const fallback = await this.facilityRepo.findOne({ where: { isDefault: true } });
     if (fallback) return fallback;
@@ -181,6 +187,7 @@ export class ParkingReservationsService {
       totalCapacity: 700,
       allowPastStartDates: false,
       isDefault: true,
+      isActive: true,
     });
     return this.facilityRepo.save(created);
   }
@@ -193,7 +200,182 @@ export class ParkingReservationsService {
     if (dto.totalCapacity != null) facility.totalCapacity = dto.totalCapacity;
     if (dto.facilityName) facility.facilityName = dto.facilityName;
     if (dto.allowPastStartDates != null) facility.allowPastStartDates = dto.allowPastStartDates;
+    if (dto.city != null) facility.city = dto.city;
+    if (dto.country != null) facility.country = dto.country;
+    if (dto.region != null) facility.region = dto.region;
     return this.facilityRepo.save(facility);
+  }
+
+  async resolveBookableFacility(facilityId: string): Promise<ParkingFacilityConfig> {
+    if (!facilityId || !/^[0-9a-f-]{36}$/i.test(facilityId)) {
+      throw new BadRequestException('Select a parking location to continue.');
+    }
+    const facility = await this.facilityRepo.findOne({
+      where: { id: facilityId },
+      relations: ['tenant'],
+    });
+    if (!facility) {
+      throw new BadRequestException('The selected parking facility was not found.');
+    }
+    if (facility.isActive === false) {
+      throw new BadRequestException('This parking facility is not currently accepting reservations.');
+    }
+    if (facility.tenantId) {
+      const tenant = facility.tenant || (await this.tenantRepo.findOne({ where: { id: facility.tenantId } }));
+      if (
+        !tenant ||
+        tenant.isActive === false ||
+        tenant.status === TenantStatus.SUSPENDED ||
+        tenant.status === TenantStatus.DEACTIVATED
+      ) {
+        throw new BadRequestException('This parking facility is not currently accepting reservations.');
+      }
+    }
+    if (facility.parkingManagerId) {
+      const manager = await this.userRepo.findOne({ where: { id: facility.parkingManagerId } });
+      if (!manager || (facility.tenantId && manager.tenantId !== facility.tenantId)) {
+        throw new BadRequestException('This parking facility is not currently accepting reservations.');
+      }
+    }
+    return facility;
+  }
+
+  async searchFacilities(dto: SearchParkingFacilitiesDto, user?: AuthUser | null) {
+    const page = dto.page && dto.page > 0 ? dto.page : 1;
+    const limit = dto.limit && dto.limit > 0 ? Math.min(dto.limit, 50) : 20;
+    const term = (dto.search || '').trim();
+    const like = term ? `%${term.replace(/[%_\\]/g, '')}%` : '';
+    let driverCity = '';
+    let driverCountry = '';
+    if (user?.tenantId) {
+      const driverTenant = await this.tenantRepo.findOne({ where: { id: user.tenantId } });
+      driverCity = (driverTenant?.city || '').trim();
+      driverCountry = (driverTenant?.country || '').trim();
+    }
+
+    const reservedSql = `COALESCE((
+      SELECT SUM(r."truckSpacesRequested")
+      FROM parking_reservations r
+      WHERE r."parkingFacilityId" = f.id
+        AND r.status = 'APPROVED'
+        AND r."contractEndDate" >= CURRENT_DATE
+    ), 0)`;
+
+    const applyFilters = (qb: ReturnType<Repository<ParkingFacilityConfig>['createQueryBuilder']>) => {
+      qb.leftJoin(Tenant, 't', 't.id = f.tenantId')
+        .where('f.isActive = true')
+        .andWhere(
+          new Brackets((sub) => {
+            sub.where('f.tenantId IS NULL').orWhere('(t.isActive = true AND t.status = :tenantActive)', {
+              tenantActive: TenantStatus.ACTIVE,
+            });
+          }),
+        );
+      if (term) {
+        qb.andWhere(
+          new Brackets((sub) => {
+            sub
+              .where('f.facilityName ILIKE :q', { q: like })
+              .orWhere('t.name ILIKE :q', { q: like })
+              .orWhere('COALESCE(f.city, t.city) ILIKE :q', { q: like })
+              .orWhere('COALESCE(f.country, t.country) ILIKE :q', { q: like })
+              .orWhere('COALESCE(f.region, t.state) ILIKE :q', { q: like })
+              .orWhere(
+                `EXISTS (
+                  SELECT 1 FROM users u
+                  LEFT JOIN user_profiles p ON p."userId" = u.id
+                  WHERE u."tenantId" = f."tenantId"
+                    AND u.role = :managerRole
+                    AND u.status = :managerStatus
+                    AND (
+                      p."firstName" ILIKE :q
+                      OR p."lastName" ILIKE :q
+                      OR CONCAT(COALESCE(p."firstName", ''), ' ', COALESCE(p."lastName", '')) ILIKE :q
+                      OR p."companyName" ILIKE :q
+                    )
+                )`,
+                { q: like, managerRole: UserRole.PARKING_RESERVATION_MANAGER, managerStatus: UserStatus.ACTIVE },
+              );
+          }),
+        );
+      }
+      if (dto.country) {
+        qb.andWhere('COALESCE(f.country, t.country) ILIKE :country', { country: `%${dto.country}%` });
+      }
+      if (dto.city) {
+        qb.andWhere('COALESCE(f.city, t.city) ILIKE :city', { city: `%${dto.city}%` });
+      }
+      if (dto.tenantId) {
+        qb.andWhere('f.tenantId = :filterTenantId', { filterTenantId: dto.tenantId });
+      }
+      if (dto.availableOnly) {
+        qb.andWhere(`(f."totalCapacity" - ${reservedSql}) > 0`);
+      }
+      return qb;
+    };
+
+    const total = await applyFilters(this.facilityRepo.createQueryBuilder('f')).getCount();
+
+    const qb = applyFilters(this.facilityRepo.createQueryBuilder('f'));
+    qb.select('f.id', 'id')
+      .addSelect('f.facilityName', 'facilityName')
+      .addSelect('f.tenantId', 'tenantId')
+      .addSelect('f.parkingManagerId', 'parkingManagerId')
+      .addSelect('COALESCE(f.city, t.city)', 'city')
+      .addSelect('COALESCE(f.country, t.country)', 'country')
+      .addSelect('COALESCE(f.region, t.state)', 'region')
+      .addSelect('t.name', 'managerName')
+      .addSelect('f.totalCapacity', 'totalCapacity')
+      .addSelect('f.currency', 'currency')
+      .addSelect(reservedSql, 'reservedSpaces')
+      .addSelect(`f."totalCapacity" - ${reservedSql}`, 'availableSpaces')
+      .addOrderBy(`CASE WHEN (f."totalCapacity" - ${reservedSql}) <= 0 THEN 1 ELSE 0 END`, 'ASC');
+
+    if (user?.tenantId) {
+      qb.addOrderBy('CASE WHEN f.tenantId = :rankTenant THEN 0 ELSE 1 END', 'ASC');
+      qb.setParameter('rankTenant', user.tenantId);
+    }
+    if (driverCity) {
+      qb.addOrderBy('CASE WHEN LOWER(COALESCE(f.city, t.city)) = LOWER(:rankCity) THEN 0 ELSE 1 END', 'ASC');
+      qb.setParameter('rankCity', driverCity);
+    }
+    if (driverCountry) {
+      qb.addOrderBy('CASE WHEN LOWER(COALESCE(f.country, t.country)) = LOWER(:rankCountry) THEN 0 ELSE 1 END', 'ASC');
+      qb.setParameter('rankCountry', driverCountry);
+    }
+    qb.addOrderBy('f.facilityName', 'ASC');
+
+    const rows = await qb.offset((page - 1) * limit).limit(limit).getRawMany();
+    return {
+      items: rows.map((row) => this.toPublicFacilityView(row, user)),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  private toPublicFacilityView(row: Record<string, any>, user?: AuthUser | null) {
+    const totalCapacity = Number(row.totalCapacity) || 0;
+    const availableSpaces = Math.max(0, Number(row.availableSpaces) || 0);
+    const city = row.city || '';
+    const country = row.country || '';
+    const region = row.region || '';
+    const sameTenant = !!(user?.tenantId && row.tenantId && user.tenantId === row.tenantId);
+    const isAvailable = availableSpaces > 0;
+    return {
+      id: row.id,
+      facilityName: row.facilityName,
+      managerName: row.managerName || row.facilityName,
+      city,
+      country,
+      region,
+      locationLabel: formatParkingLocation(city, country, region),
+      totalCapacity,
+      availableSpaces,
+      isAvailable,
+      recommended: sameTenant && isAvailable,
+      currency: (row.currency || 'USD').toUpperCase(),
+    };
   }
 
   toFeeScheduleView(schedule: ParkingFeeSchedule, facility?: ParkingFacilityConfig) {
@@ -343,6 +525,30 @@ export class ParkingReservationsService {
       ...(working!.changeLog || []),
       { at: new Date().toISOString(), by: this.actorId(user), previous, next },
     ];
+    let facilityChanged = false;
+    if (dto.facilityName) {
+      facility.facilityName = dto.facilityName;
+      facilityChanged = true;
+    }
+    if (dto.city != null) {
+      facility.city = dto.city;
+      facilityChanged = true;
+    }
+    if (dto.country != null) {
+      facility.country = dto.country;
+      facilityChanged = true;
+    }
+    if (dto.region != null) {
+      facility.region = dto.region;
+      facilityChanged = true;
+    }
+    if (dto.totalCapacity != null) {
+      facility.totalCapacity = dto.totalCapacity;
+      facilityChanged = true;
+    }
+    if (facilityChanged) {
+      await this.facilityRepo.save(facility);
+    }
     const saved = await this.feeScheduleRepo.save(working!);
     await this.auditFeeChange(user, facility, 'UPDATE', previous, next, saved.id);
     return toFeeScheduleView(saved, facility);
@@ -411,7 +617,7 @@ export class ParkingReservationsService {
 
   async previewFeeQuote(dto: PreviewParkingQuoteDto, user?: AuthUser | null) {
     const facility = dto.facilityId
-      ? await this.facilityRepo.findOne({ where: { id: dto.facilityId } })
+      ? await this.resolveBookableFacility(dto.facilityId)
       : await this.getFacility(user?.tenantId);
     if (!facility) throw new NotFoundException('Parking facility not found.');
     const start = dto.reservationStartDate || toDateString(new Date());
@@ -445,14 +651,33 @@ export class ParkingReservationsService {
     };
   }
 
-  async getPublicPricing() {
-    const facility = await this.getFacility();
+  async getPublicPricing(facilityId?: string) {
+    const facility = facilityId ? await this.resolveBookableFacility(facilityId) : await this.getFacility();
+    const tenant = facility.tenantId
+      ? facility.tenant || (await this.tenantRepo.findOne({ where: { id: facility.tenantId } }))
+      : null;
+    const city = facility.city || tenant?.city || '';
+    const country = facility.country || tenant?.country || '';
+    const region = facility.region || tenant?.state || '';
+    const availability = await this.evaluateFacilityCapacity(facility, startOfTodayUtc(), addMonths(startOfTodayUtc(), 12), 0);
     const schedule =
       (await this.findApplicableSchedule({ facility, startDate: new Date() })) ||
       (await this.findWorkingSchedule(facility));
+    const location = {
+      parkingFacilityId: facility.id,
+      facilityName: facility.facilityName,
+      managerName: tenant?.name || facility.facilityName,
+      city,
+      country,
+      region,
+      locationLabel: formatParkingLocation(city, country, region),
+      availableSpaces: Math.max(0, availability.remaining),
+      totalCapacity: facility.totalCapacity,
+      isAvailable: availability.remaining > 0,
+    };
     if (!schedule) {
       return {
-        facilityName: facility.facilityName,
+        ...location,
         currency: (facility.currency || 'USD').toUpperCase(),
         monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
         minSpaces: 1,
@@ -464,7 +689,7 @@ export class ParkingReservationsService {
       };
     }
     return {
-      facilityName: facility.facilityName,
+      ...location,
       currency: (schedule.currency || 'USD').toUpperCase(),
       monthlyRatePerSpace: toMoneyNumber(schedule.monthlyRatePerSpace),
       reservationFeeType: schedule.reservationFeeType,
@@ -479,6 +704,8 @@ export class ParkingReservationsService {
       taxPercent: schedule.taxEnabled ? toMoneyNumber(schedule.taxPercent) : 0,
       taxEnabled: schedule.taxEnabled,
       hasActiveSchedule: this.liveStatus(schedule) === ParkingFeeScheduleStatus.ACTIVE,
+      spaceType: schedule.spaceType,
+      vehicleType: schedule.vehicleType,
     };
   }
 
@@ -736,12 +963,12 @@ export class ParkingReservationsService {
     if (idempotencyKey) {
       const existing = await this.reservationRepo.findOne({ where: { idempotencyKey } });
       if (existing) {
-        return { created: false, reservation: this.toPublicView(existing), possibleDuplicate: existing.possibleDuplicate, emailSent: true, emailedTo: [] };
+        return { created: false, reservation: this.toPublicView(existing, { facility: existing.parkingFacility }), possibleDuplicate: existing.possibleDuplicate, emailSent: true, emailedTo: [] };
       }
     }
 
-    const tenantId = await this.resolveTenantId(user);
-    const facility = await this.getFacility(tenantId);
+    const facility = await this.resolveBookableFacility(dto.parkingFacilityId);
+    const tenantId = facility.tenantId || (await this.resolveTenantId(user));
     const start = this.validateBusinessFields(dto, facility.allowPastStartDates);
     const schedule = await this.findApplicableSchedule({ facility, startDate: start, requireActive: true });
     if (!schedule) {
@@ -761,6 +988,17 @@ export class ParkingReservationsService {
     const quote = quoteFromSchedule(schedule, dto.truckSpacesRequested, dto.contractMonths);
     const snapshot = snapshotFromSchedule(schedule, quote);
     const end = addMonths(start, dto.contractMonths);
+    const capacity = await this.evaluateFacilityCapacity(
+      facility,
+      start,
+      end,
+      dto.truckSpacesRequested,
+    );
+    if (!capacity.sufficient) {
+      throw new BadRequestException(
+        `There ${capacity.remaining === 1 ? 'is' : 'are'} only ${Math.max(0, capacity.remaining)} parking ${capacity.remaining === 1 ? 'space' : 'spaces'} available at ${facility.facilityName} for the requested period.`,
+      );
+    }
     const mcNumber = normalizeMcNumber(dto.mcNumber);
     const usdotNumber = normalizeUsdotNumber(dto.usdotNumber);
     const startDate = toDateString(start);
@@ -779,6 +1017,7 @@ export class ParkingReservationsService {
       const entity = manager.create(ParkingReservation, {
         reservationReference,
         tenantId,
+        parkingFacilityId: facility.id,
         companyName: dto.companyName,
         mcNumber,
         usdotNumber,
@@ -823,6 +1062,8 @@ export class ParkingReservationsService {
           newStatus: ParkingReservationStatus.PENDING_REVIEW,
           metadata: {
             companyName: saved.companyName,
+            parkingFacilityId: facility.id,
+            facilityName: facility.facilityName,
             truckSpacesRequested: saved.truckSpacesRequested,
             possibleDuplicate: saved.possibleDuplicate,
             feeScheduleId: schedule.id,
@@ -845,7 +1086,7 @@ export class ParkingReservationsService {
 
     return {
       created: true,
-      reservation: this.toPublicView(reservation),
+      reservation: this.toPublicView(reservation, { facility }),
       possibleDuplicate: reservation.possibleDuplicate,
       emailSent: emailResult?.emailSent === true,
       emailedTo: emailResult?.sentTo || [],
@@ -880,7 +1121,9 @@ export class ParkingReservationsService {
     const qb = this.reservationRepo
       .createQueryBuilder('r')
       .leftJoinAndSelect('r.assignedTo', 'assignedTo')
-      .leftJoinAndSelect('assignedTo.profile', 'assignedProfile');
+      .leftJoinAndSelect('assignedTo.profile', 'assignedProfile')
+      .leftJoinAndSelect('r.parkingFacility', 'parkingFacility')
+      .leftJoinAndSelect('parkingFacility.tenant', 'parkingFacilityTenant');
 
     this.applyVisibility(qb, user);
 
@@ -1709,14 +1952,48 @@ export class ParkingReservationsService {
   }
 
   async evaluateCapacity(reservation: ParkingReservation) {
-    const facility = await this.getFacility(reservation.tenantId);
-    const start = toUtcDateOnly(reservation.requestedStartDate);
-    const end = toUtcDateOnly(reservation.contractEndDate);
-    const approved = await this.reservationRepo.find({
-      where: { status: ParkingReservationStatus.APPROVED },
-    });
+    const facility = reservation.parkingFacilityId
+      ? (await this.facilityRepo.findOne({ where: { id: reservation.parkingFacilityId } })) ||
+        (await this.getFacility(reservation.tenantId))
+      : await this.getFacility(reservation.tenantId);
+    return this.evaluateFacilityCapacity(
+      facility,
+      reservation.requestedStartDate,
+      reservation.contractEndDate,
+      reservation.truckSpacesRequested,
+      reservation.id,
+    );
+  }
+
+  async evaluateFacilityCapacity(
+    facility: ParkingFacilityConfig,
+    startDate: Date | string,
+    endDate: Date | string,
+    requestedSpaces: number,
+    excludeId?: string,
+  ) {
+    const start = toUtcDateOnly(startDate);
+    const end = toUtcDateOnly(endDate);
+    const qb = this.reservationRepo
+      .createQueryBuilder('r')
+      .where('r.status = :status', { status: ParkingReservationStatus.APPROVED });
+    if (facility.id) {
+      qb.andWhere(
+        new Brackets((sub) => {
+          sub.where('r.parkingFacilityId = :facilityId', { facilityId: facility.id });
+          if (facility.tenantId) {
+            sub.orWhere('(r.parkingFacilityId IS NULL AND r.tenantId = :tenantId)', {
+              tenantId: facility.tenantId,
+            });
+          }
+        }),
+      );
+    }
+    if (excludeId) {
+      qb.andWhere('r.id != :excludeId', { excludeId });
+    }
+    const approved = await qb.getMany();
     const reservedSpaces = approved
-      .filter((item) => item.id !== reservation.id)
       .filter((item) =>
         periodsOverlap(start, end, toUtcDateOnly(item.requestedStartDate), toUtcDateOnly(item.contractEndDate)),
       )
@@ -1727,12 +2004,8 @@ export class ParkingReservationsService {
       totalCapacity: facility.totalCapacity,
       reservedSpaces,
       remaining,
-      requested: reservation.truckSpacesRequested,
-      sufficient: hasSufficientCapacity(
-        facility.totalCapacity,
-        reservedSpaces,
-        reservation.truckSpacesRequested,
-      ),
+      requested: requestedSpaces,
+      sufficient: hasSufficientCapacity(facility.totalCapacity, reservedSpaces, requestedSpaces),
     };
   }
 
@@ -1759,7 +2032,7 @@ export class ParkingReservationsService {
   private async loadReservation(id: string): Promise<ParkingReservation> {
     const reservation = await this.reservationRepo.findOne({
       where: { id },
-      relations: ['assignedTo', 'assignedTo.profile', 'reviewedBy', 'reviewedBy.profile', 'submittedBy'],
+      relations: ['assignedTo', 'assignedTo.profile', 'reviewedBy', 'reviewedBy.profile', 'submittedBy', 'parkingFacility', 'parkingFacility.tenant'],
     });
     if (!reservation) {
       throw new NotFoundException('Reservation not found.');
@@ -1854,9 +2127,17 @@ export class ParkingReservationsService {
     reservation: ParkingReservation,
     options?: { facility?: ParkingFacilityConfig; includeInstructions?: boolean },
   ) {
+    const facility = options?.facility || reservation.parkingFacility;
+    const tenantName = facility?.tenant?.name;
     return {
       id: reservation.id,
       reservationReference: reservation.reservationReference,
+      parkingFacilityId: reservation.parkingFacilityId || facility?.id,
+      facilityName: facility?.facilityName,
+      managerName: tenantName || facility?.facilityName,
+      locationLabel: facility
+        ? formatParkingLocation(facility.city, facility.country, facility.region)
+        : undefined,
       companyName: reservation.companyName,
       mcNumber: reservation.mcNumber,
       usdotNumber: reservation.usdotNumber,
@@ -1886,7 +2167,10 @@ export class ParkingReservationsService {
       where: { reservationId: reservation.id },
       order: { createdAt: 'ASC' },
     });
-    const facility = await this.getFacility(reservation.tenantId);
+    const facility = reservation.parkingFacilityId
+      ? (await this.facilityRepo.findOne({ where: { id: reservation.parkingFacilityId }, relations: ['tenant'] })) ||
+        (await this.getFacility(reservation.tenantId))
+      : await this.getFacility(reservation.tenantId);
     return this.withPublicActivities(
       this.toPublicView(reservation, { facility, includeInstructions: true }),
       activities,
@@ -1909,6 +2193,8 @@ export class ParkingReservationsService {
     return {
       id: reservation.id,
       reservationReference: reservation.reservationReference,
+      parkingFacilityId: reservation.parkingFacilityId,
+      facilityName: reservation.parkingFacility?.facilityName,
       companyName: reservation.companyName,
       mcNumber: reservation.mcNumber,
       usdotNumber: reservation.usdotNumber,

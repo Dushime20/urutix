@@ -113,6 +113,9 @@ export class CreateParkingReservationDto {
   @MaxLength(80)
   idempotencyKey?: string;
 
+  @IsUUID()
+  parkingFacilityId: string;
+
   /** Honeypot — must remain empty. */
   @IsOptional()
   @IsString()
@@ -252,6 +255,66 @@ export class UpdateParkingFacilityDto {
   @IsOptional()
   @IsBoolean()
   allowPastStartDates?: boolean;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  city?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  country?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  region?: string;
+}
+
+export class SearchParkingFacilitiesDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(200)
+  search?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  country?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  city?: string;
+
+  @IsOptional()
+  @IsUUID()
+  tenantId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  availableOnly?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
 }
 
 export class UpdateParkingFeesDto {
@@ -470,6 +533,37 @@ export class UpdateParkingFeesDto {
   @IsString()
   @MaxLength(4000)
   paymentInstructions?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(160)
+  facilityName?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  city?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  country?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  region?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100000)
+  totalCapacity?: number;
 }
 
 export class PreviewParkingQuoteDto {

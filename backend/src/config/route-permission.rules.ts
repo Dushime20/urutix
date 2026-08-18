@@ -29,6 +29,9 @@ export const ROUTE_PERMISSION_SKIP: RegExp[] = [
   /^bidding\/test-db$/,
   /^parking-reservations\/lookup/,
   /^parking-reservations\/lookup\/pay/,
+  /^parking-reservations\/public-pricing/,
+  /^parking-reservations\/public-quote/,
+  /^parking-reservations\/facilities/,
 ];
 
 export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [

@@ -2,6 +2,7 @@ import api from './api';
 import type {
   CreateParkingReservationPayload,
   ParkingFacility,
+  ParkingFacilitySearchResult,
   ParkingFeeQuote,
   ParkingFeeSchedule,
   ParkingOfficer,
@@ -151,14 +152,36 @@ export const parkingApi = {
     return response.data.data;
   },
 
-  publicPricing: async () => {
-    const response = await api.get<ApiEnvelope<ParkingPublicPricing>>('/parking-reservations/public-pricing');
+  publicPricing: async (facilityId?: string) => {
+    const response = await api.get<ApiEnvelope<ParkingPublicPricing>>('/parking-reservations/public-pricing', {
+      params: facilityId ? { facilityId } : undefined,
+    });
     return response.data.data;
   },
 
-  publicQuote: async (payload: { spaces: number; months: number; reservationStartDate?: string }) => {
+  publicQuote: async (payload: { spaces: number; months: number; reservationStartDate?: string; facilityId?: string }) => {
     const response = await api.post<ApiEnvelope<ParkingFeeQuote>>('/parking-reservations/public-quote', payload);
     return response.data.data;
+  },
+
+  searchFacilities: async (params?: {
+    search?: string;
+    country?: string;
+    city?: string;
+    tenantId?: string;
+    availableOnly?: boolean;
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await api.get<ApiEnvelope<ParkingFacilitySearchResult[]>>('/parking-reservations/facilities', {
+      params,
+    });
+    return {
+      items: response.data.data || [],
+      total: response.data.pagination?.total || 0,
+      page: response.data.pagination?.page || 1,
+      limit: response.data.pagination?.limit || 20,
+    };
   },
 
   get: async (id: string) => {

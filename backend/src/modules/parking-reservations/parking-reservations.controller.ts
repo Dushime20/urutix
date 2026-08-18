@@ -41,6 +41,7 @@ import {
   PreviewParkingQuoteDto,
   RejectParkingReservationDto,
   RequestInformationDto,
+  SearchParkingFacilitiesDto,
   SubmitParkingPaymentDto,
   UpdateParkingFacilityDto,
   UpdateParkingFeesDto,
@@ -292,11 +293,26 @@ export class ParkingReservationsController {
 
   @Get('public-pricing')
   @Public()
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(OptionalJwtAuthGuard, ThrottlerGuard)
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Public parking pricing notes and contract limits' })
-  async publicPricing() {
-    return { success: true, data: await this.service.getPublicPricing() };
+  async publicPricing(@Query('facilityId') facilityId?: string) {
+    return { success: true, data: await this.service.getPublicPricing(facilityId) };
+  }
+
+  @Get('facilities')
+  @Public()
+  @UseGuards(OptionalJwtAuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Search bookable parking facilities' })
+  async searchFacilities(@Query() dto: SearchParkingFacilitiesDto, @Request() req) {
+    const result = await this.service.searchFacilities(dto, req.user);
+    return {
+      success: true,
+      data: result.items,
+      pagination: { total: result.total, page: result.page, limit: result.limit },
+    };
   }
 
   @Post('public-quote')

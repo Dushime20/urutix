@@ -11,6 +11,10 @@ export type ParkingReservationStatus =
 export interface ParkingReservation {
   id: string;
   reservationReference: string;
+  parkingFacilityId?: string;
+  facilityName?: string;
+  managerName?: string;
+  locationLabel?: string;
   companyName: string;
   mcNumber: string;
   usdotNumber: string;
@@ -131,6 +135,9 @@ export interface ParkingFeeSchedule {
   description?: string;
   parkingFacilityId?: string;
   facilityName: string;
+  city?: string;
+  country?: string;
+  region?: string;
   totalCapacity: number;
   allowPastStartDates: boolean;
   spaceType?: string;
@@ -174,7 +181,16 @@ export interface ParkingFeeSchedule {
 }
 
 export interface ParkingPublicPricing {
+  parkingFacilityId?: string;
   facilityName: string;
+  managerName?: string;
+  city?: string;
+  country?: string;
+  region?: string;
+  locationLabel?: string;
+  availableSpaces?: number;
+  totalCapacity?: number;
+  isAvailable?: boolean;
   currency: string;
   monthlyRatePerSpace: number;
   reservationFeeType?: ParkingReservationFeeType;
@@ -189,6 +205,33 @@ export interface ParkingPublicPricing {
   taxPercent?: number;
   taxEnabled?: boolean;
   hasActiveSchedule: boolean;
+  spaceType?: string;
+  vehicleType?: string;
+}
+
+export interface ParkingFacility {
+  id: string;
+  facilityName: string;
+  totalCapacity: number;
+  allowPastStartDates: boolean;
+  city?: string;
+  country?: string;
+  region?: string;
+}
+
+export interface ParkingFacilitySearchResult {
+  id: string;
+  facilityName: string;
+  managerName: string;
+  city?: string;
+  country?: string;
+  region?: string;
+  locationLabel: string;
+  totalCapacity: number;
+  availableSpaces: number;
+  isAvailable: boolean;
+  recommended?: boolean;
+  currency?: string;
 }
 
 export interface ParkingPayment {
@@ -232,13 +275,6 @@ export interface ParkingReservationStats {
   todaysRequests: number;
 }
 
-export interface ParkingFacility {
-  id: string;
-  facilityName: string;
-  totalCapacity: number;
-  allowPastStartDates: boolean;
-}
-
 export interface ParkingOfficer {
   id: string;
   email: string;
@@ -248,6 +284,7 @@ export interface ParkingOfficer {
 }
 
 export interface CreateParkingReservationPayload {
+  parkingFacilityId: string;
   companyName: string;
   mcNumber: string;
   usdotNumber: string;

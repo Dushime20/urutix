@@ -53,6 +53,8 @@ const ParkingReservationPage = () => {
                   </p>
                   <div className="text-left bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-2 mb-6">
                     <Row label="Reservation Reference" value={submitted.reservationReference} />
+                    {submitted.facilityName && <Row label="Parking Location" value={submitted.facilityName} />}
+                    {submitted.locationLabel && <Row label="Address" value={submitted.locationLabel} />}
                     <Row label="Requested Start Date" value={String(submitted.requestedStartDate).slice(0, 10)} />
                     <Row label="Number of Truck Spaces" value={String(submitted.truckSpacesRequested)} />
                     <Row label="Contract Duration" value={`${submitted.contractMonths} month(s)`} />

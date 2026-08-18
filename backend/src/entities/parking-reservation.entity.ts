@@ -101,8 +101,76 @@ export enum ParkingLateFeeType {
   PERCENTAGE = 'PERCENTAGE',
 }
 
+@Entity('parking_facility_config')
+export class ParkingFacilityConfig {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column('uuid', { nullable: true })
+  tenantId?: string;
+
+  @ManyToOne(() => Tenant, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'tenantId' })
+  tenant?: Tenant;
+
+  @Column('uuid', { nullable: true })
+  parkingManagerId?: string;
+
+  @Column({ length: 160, default: 'Nova Parking 365' })
+  facilityName: string;
+
+  @Column({ length: 80, nullable: true })
+  city?: string;
+
+  @Column({ length: 80, nullable: true })
+  country?: string;
+
+  @Column({ length: 80, nullable: true })
+  region?: string;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
+  @Column({ type: 'int', default: 700 })
+  totalCapacity: number;
+
+  @Column({ type: 'boolean', default: false })
+  allowPastStartDates: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  isDefault: boolean;
+
+  @Column({ length: 3, default: 'USD' })
+  currency: string;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  monthlyRatePerSpace: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  reservationFee: number;
+
+  @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 })
+  taxPercent: number;
+
+  @Column({ type: 'int', default: 7 })
+  paymentDueDays: number;
+
+  @Column({ type: 'text', nullable: true })
+  feeNotes?: string;
+
+  @Column({ type: 'text', nullable: true })
+  paymentInstructions?: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+}
+
 @Entity('parking_reservations')
 @Index(['tenantId', 'status', 'createdAt'])
+@Index(['parkingFacilityId', 'status'])
 @Index(['reservationReference'], { unique: true })
 @Index(['email', 'status'])
 @Index(['driverEmail'])
@@ -123,6 +191,13 @@ export class ParkingReservation {
   @ManyToOne(() => Tenant, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'tenantId' })
   tenant?: Tenant;
+
+  @Column('uuid', { nullable: true })
+  parkingFacilityId?: string;
+
+  @ManyToOne(() => ParkingFacilityConfig, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'parkingFacilityId' })
+  parkingFacility?: ParkingFacilityConfig;
 
   @Column({ length: 200 })
   companyName: string;
@@ -381,54 +456,6 @@ export class ParkingReservationActivity {
 
   @CreateDateColumn()
   createdAt: Date;
-}
-
-@Entity('parking_facility_config')
-export class ParkingFacilityConfig {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column('uuid', { nullable: true })
-  tenantId?: string;
-
-  @Column({ length: 160, default: 'Nova Parking 365' })
-  facilityName: string;
-
-  @Column({ type: 'int', default: 700 })
-  totalCapacity: number;
-
-  @Column({ type: 'boolean', default: false })
-  allowPastStartDates: boolean;
-
-  @Column({ type: 'boolean', default: true })
-  isDefault: boolean;
-
-  @Column({ length: 3, default: 'USD' })
-  currency: string;
-
-  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
-  monthlyRatePerSpace: number;
-
-  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
-  reservationFee: number;
-
-  @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 })
-  taxPercent: number;
-
-  @Column({ type: 'int', default: 7 })
-  paymentDueDays: number;
-
-  @Column({ type: 'text', nullable: true })
-  feeNotes?: string;
-
-  @Column({ type: 'text', nullable: true })
-  paymentInstructions?: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
 
 @Entity('parking_fee_schedules')

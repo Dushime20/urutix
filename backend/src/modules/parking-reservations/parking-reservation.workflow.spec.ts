@@ -6,6 +6,7 @@ import {
   canTransition,
   effectivePaymentStatus,
   feeSchedulePeriodsOverlap,
+  formatParkingLocation,
   formatReservationReference,
   hasSufficientCapacity,
   invoiceNumberFor,
@@ -21,6 +22,13 @@ import {
 import { ParkingReservationStatus } from '../../entities/parking-reservation.entity';
 
 describe('parking reservation workflow', () => {
+  it('formats parking locations with country names', () => {
+    expect(formatParkingLocation('Kigali', 'RW')).toBe('Kigali, Rwanda');
+    expect(formatParkingLocation('Nairobi', 'Kenya')).toBe('Nairobi, Kenya');
+    expect(formatParkingLocation('', 'KE')).toBe('Kenya');
+    expect(formatParkingLocation('Kampala', '', 'Central')).toBe('Kampala, Central');
+  });
+
   it('formats reservation references', () => {
     expect(formatReservationReference(2026, 123)).toBe('PR-2026-000123');
   });

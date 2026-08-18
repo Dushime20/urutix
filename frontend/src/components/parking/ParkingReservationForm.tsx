@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,12 +9,14 @@ import toast from 'react-hot-toast';
 import { TranslatedText } from '../translated-text';
 import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
-import type { ParkingReservation } from '../../types/parking';
+import type { ParkingFacilitySearchResult, ParkingReservation } from '../../types/parking';
 import { SignaturePad } from './SignaturePad';
+import { ParkingFacilitySelector } from './ParkingFacilitySelector';
 import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
 import { formatParkingMoney } from '../../types/parking';
 
 const schema = z.object({
+  parkingFacilityId: z.string().uuid('Select a parking location'),
   companyName: z.string().min(2, 'Company name is required'),
   mcNumber: z.string().min(5, 'Enter a valid MC number').max(40),
   usdotNumber: z.string().min(5, 'Enter a valid USDOT number').max(40),
@@ -53,9 +55,12 @@ export function ParkingReservationForm({
   submitLabel = 'Submit Reservation',
 }: ParkingReservationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [facility, setFacility] = useState<ParkingFacilitySearchResult | null>(null);
+  const facilityId = facility?.id;
   const pricingQuery = useQuery({
-    queryKey: ['parking-public-pricing'],
-    queryFn: parkingApi.publicPricing,
+    queryKey: ['parking-public-pricing', facilityId],
+    queryFn: () => parkingApi.publicPricing(facilityId),
+    enabled: !!facilityId,
   });
   const pricing = pricingQuery.data;
   const idempotencyKey = useMemo(
@@ -66,6 +71,7 @@ export function ParkingReservationForm({
   const form = useForm<ParkingReservationFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      parkingFacilityId: '',
       companyName: '',
       mcNumber: '',
       usdotNumber: '',
@@ -103,12 +109,17 @@ export function ParkingReservationForm({
     });
   }, [pricing, spaces, months]);
 
+  useEffect(() => {
+    form.setValue('parkingFacilityId', facility?.id || '', { shouldValidate: !!facility });
+  }, [facility, form]);
+
   const onSubmit = async (values: ParkingReservationFormData) => {
     try {
       setIsLoading(true);
       const response = await parkingApi.create(
         {
           ...values,
+          parkingFacilityId: facility?.id || values.parkingFacilityId,
           customerNotes: values.customerNotes || undefined,
           idempotencyKey,
         },
@@ -130,6 +141,15 @@ export function ParkingReservationForm({
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" noValidate>
       <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...form.register('website')} />
+      <input type="hidden" {...form.register('parkingFacilityId')} />
+
+      <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
+        <ParkingFacilitySelector
+          value={facility}
+          onChange={setFacility}
+          error={form.formState.errors.parkingFacilityId?.message}
+        />
+      </div>
 
       <Section title="Company Information">
         <Field label="Company Name" error={form.formState.errors.companyName?.message}>
@@ -176,6 +196,16 @@ export function ParkingReservationForm({
       </Section>
 
       <Section title="Parking Requirements">
+        {!facility && (
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            <TranslatedText text="Select a parking location to see availability, pricing and reservation rules for that facility." />
+          </p>
+        )}
+        {facility && pricingQuery.isError && (
+          <p className="text-sm font-semibold text-rose-600">
+            <TranslatedText text="Unable to load pricing for this parking facility. Please try another location or try again." />
+          </p>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Number of Truck Spaces" error={form.formState.errors.truckSpacesRequested?.message}>
             <input type="number" min={pricing?.minSpaces || 1} max={pricing?.maxSpaces || 700} className={fieldClass} {...form.register('truckSpacesRequested')} />
@@ -190,6 +220,13 @@ export function ParkingReservationForm({
         <Field label="Additional notes (optional)">
           <textarea rows={3} className={fieldClass} {...form.register('customerNotes')} />
         </Field>
+        {facility && pricing && typeof pricing.availableSpaces === 'number' && (
+          <p className={`text-sm font-semibold ${pricing.isAvailable === false ? 'text-amber-700' : 'text-slate-600 dark:text-slate-300'}`}>
+            {pricing.facilityName}: {pricing.availableSpaces} {pricing.availableSpaces === 1 ? 'space' : 'spaces'} available
+            {pricing.currency ? ` · ${pricing.currency}` : ''}
+            {pricing.monthlyRatePerSpace ? ` · ${formatParkingMoney(pricing.monthlyRatePerSpace, pricing.currency)} / space / month` : ''}
+          </p>
+        )}
         {pricing?.feeNotes && (
           <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{pricing.feeNotes}</p>
         )}

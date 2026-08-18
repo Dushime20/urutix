@@ -339,3 +339,40 @@ export function effectivePaymentStatus(
   }
   return status || 'NOT_APPLICABLE';
 }
+
+const COUNTRY_NAMES: Record<string, string> = {
+  RW: 'Rwanda',
+  KE: 'Kenya',
+  UG: 'Uganda',
+  TZ: 'Tanzania',
+  BI: 'Burundi',
+  SS: 'South Sudan',
+  CD: 'DR Congo',
+  ZA: 'South Africa',
+  NG: 'Nigeria',
+  ET: 'Ethiopia',
+  GH: 'Ghana',
+  ZM: 'Zambia',
+  MW: 'Malawi',
+  US: 'United States',
+  GB: 'United Kingdom',
+};
+
+export function countryDisplayName(country?: string | null): string {
+  const value = (country || '').trim();
+  if (!value) return '';
+  return COUNTRY_NAMES[value.toUpperCase()] || value;
+}
+
+export function formatParkingLocation(
+  city?: string | null,
+  country?: string | null,
+  region?: string | null,
+): string {
+  const cityName = (city || '').trim();
+  const regionName = (region || '').trim();
+  const countryName = countryDisplayName(country);
+  if (cityName && countryName) return `${cityName}, ${countryName}`;
+  if (cityName && regionName) return `${cityName}, ${regionName}`;
+  return cityName || regionName || countryName;
+}

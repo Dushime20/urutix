@@ -29,6 +29,9 @@ const emptyForm: ParkingFeeSchedule = {
   name: '',
   description: '',
   facilityName: '',
+  city: '',
+  country: '',
+  region: '',
   totalCapacity: 700,
   allowPastStartDates: false,
   spaceType: 'TRUCK_SPACE',
@@ -70,13 +73,40 @@ const emptyForm: ParkingFeeSchedule = {
   paymentInstructions: '',
 };
 
-const inputClass = 'ui-input w-full border rounded-xl p-3';
+const COUNTRIES = [
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'KE', name: 'Kenya' },
+  { code: 'UG', name: 'Uganda' },
+  { code: 'TZ', name: 'Tanzania' },
+  { code: 'BI', name: 'Burundi' },
+  { code: 'SS', name: 'South Sudan' },
+  { code: 'CD', name: 'DR Congo' },
+  { code: 'ET', name: 'Ethiopia' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'NG', name: 'Nigeria' },
+  { code: 'GH', name: 'Ghana' },
+  { code: 'ZM', name: 'Zambia' },
+  { code: 'MW', name: 'Malawi' },
+];
 
-function hydrate(data: Partial<ParkingFeeSchedule>, facilityName?: string): ParkingFeeSchedule {
+function countryValue(value?: string) {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  const match = COUNTRIES.find(
+    (item) => item.name.toLowerCase() === raw.toLowerCase() || item.code.toLowerCase() === raw.toLowerCase(),
+  );
+  return match?.name || raw;
+}
+
+function hydrate(data: Partial<ParkingFeeSchedule>, facility?: Partial<ParkingFeeSchedule>): ParkingFeeSchedule {
   return {
     ...emptyForm,
     ...data,
-    facilityName: data.facilityName || facilityName || '',
+    facilityName: data.facilityName || facility?.facilityName || '',
+    city: data.city || facility?.city || '',
+    country: data.country || facility?.country || '',
+    region: data.region || facility?.region || '',
+    totalCapacity: data.totalCapacity || facility?.totalCapacity || 700,
     reservationFeeValue: data.reservationFeeValue ?? data.reservationFee ?? 0,
     reservationFee: data.reservationFeeValue ?? data.reservationFee ?? 0,
     effectiveFrom: data.effectiveFrom || today(),
@@ -101,9 +131,19 @@ const ParkingFeeSettings = () => {
     queryKey: ['parking-fee-schedules'],
     queryFn: parkingApi.listFeeSchedules,
   });
+  const facilityQuery = useQuery({
+    queryKey: ['parking-facility'],
+    queryFn: parkingApi.facility,
+  });
 
   const rows = query.data || [];
-  const facilityName = rows[0]?.facilityName || form.facilityName;
+  const facilityDefaults: Partial<ParkingFeeSchedule> = {
+    facilityName: facilityQuery.data?.facilityName || rows[0]?.facilityName || form.facilityName,
+    city: facilityQuery.data?.city || rows[0]?.city || form.city,
+    country: countryValue(facilityQuery.data?.country || rows[0]?.country || form.country),
+    region: facilityQuery.data?.region || rows[0]?.region || form.region,
+    totalCapacity: facilityQuery.data?.totalCapacity || rows[0]?.totalCapacity || form.totalCapacity,
+  };
 
   const currencyOptions = useMemo(() => {
     const list = [...supportedCurrencies].sort((a, b) => a.code.localeCompare(b.code));
@@ -126,7 +166,7 @@ const ParkingFeeSettings = () => {
   };
 
   const openCreate = () => {
-    setForm(hydrate({ facilityName }));
+    setForm(hydrate({ facilityName: facilityDefaults.facilityName }, facilityDefaults));
     setSpaces(1);
     setMonths(1);
     setFieldError(null);
@@ -136,7 +176,7 @@ const ParkingFeeSettings = () => {
   const openEdit = async (row: ParkingFeeSchedule) => {
     try {
       const data = row.id ? await parkingApi.getFeeSchedule(row.id) : row;
-      setForm(hydrate(data, facilityName));
+      setForm(hydrate(data, facilityDefaults));
       setSpaces(1);
       setMonths(1);
       setFieldError(null);
@@ -151,9 +191,15 @@ const ParkingFeeSettings = () => {
     setFieldError(null);
   };
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ['parking-fee-schedules'] });
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ['parking-fee-schedules'] });
+    qc.invalidateQueries({ queryKey: ['parking-facility'] });
+  };
 
   const validate = () => {
+    if (!(form.facilityName || '').trim()) return 'Parking facility name is required so drivers can identify this location.';
+    if (!(form.city || '').trim()) return 'City is required so drivers can search for this parking location.';
+    if (!(form.country || '').trim()) return 'Country is required so drivers can search for this parking location.';
     if (!form.currency || !/^[A-Z]{3}$/.test(form.currency)) return 'Currency must be a valid ISO 4217 code.';
     if (Number(form.monthlyRatePerSpace) <= 0) return 'Monthly rate per truck space must be greater than 0.';
     if (Number(form.taxPercent) < 0 || Number(form.taxPercent) > 100) return 'Tax / VAT percent must be between 0 and 100.';
@@ -207,6 +253,11 @@ const ParkingFeeSettings = () => {
     effectiveUntil: form.effectiveUntil || undefined,
     feeNotes: form.feeNotes,
     paymentInstructions: form.paymentInstructions,
+    facilityName: (form.facilityName || '').trim(),
+    city: (form.city || '').trim(),
+    country: countryValue(form.country),
+    region: (form.region || '').trim(),
+    totalCapacity: Number(form.totalCapacity || 700),
   });
 
   const save = useMutation({
@@ -219,7 +270,7 @@ const ParkingFeeSettings = () => {
       return parkingApi.updateFees(payload());
     },
     onSuccess: (data) => {
-      setForm(hydrate(data, facilityName));
+      setForm(hydrate(data, facilityDefaults));
       refresh();
       toast.success('Fee schedule saved');
     },
@@ -237,7 +288,7 @@ const ParkingFeeSettings = () => {
       return parkingApi.activateFeeSchedule(scheduleId);
     },
     onSuccess: (data) => {
-      setForm(hydrate(data, facilityName));
+      setForm(hydrate(data, facilityDefaults));
       refresh();
       toast.success('Fee schedule activated');
     },
@@ -279,7 +330,9 @@ const ParkingFeeSettings = () => {
       render: (_v, row) => (
         <div>
           <div className="font-bold text-slate-900 dark:text-white">{row.name || 'Untitled schedule'}</div>
-          <div className="text-xs text-slate-500">{row.facilityName} · v{row.version || 1}</div>
+          <div className="text-xs text-slate-500">
+            {[row.facilityName, row.city, countryValue(row.country)].filter(Boolean).join(' · ')} · v{row.version || 1}
+          </div>
         </div>
       ),
     },
@@ -441,9 +494,6 @@ const ParkingFeeSettings = () => {
               <Field label="Fee schedule name">
                 <input className={inputClass} value={form.name || ''} onChange={(e) => patch({ name: e.target.value })} />
               </Field>
-              <Field label="Facility">
-                <input className={inputClass} value={form.facilityName} readOnly />
-              </Field>
               <Field label="Space type">
                 <select className={inputClass} value={form.spaceType} onChange={(e) => patch({ spaceType: e.target.value })}>
                   <option value="TRUCK_SPACE">Truck space</option>
@@ -472,6 +522,69 @@ const ParkingFeeSettings = () => {
             <Field label="Description">
               <textarea rows={2} className={inputClass} value={form.description || ''} onChange={(e) => patch({ description: e.target.value })} />
             </Field>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="ui-section-title"><TranslatedText text="Location" /></h3>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <TranslatedText text="Drivers search and select this parking facility by name, city, country, or parking manager when they make a reservation." />
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Parking facility name">
+                <input
+                  className={inputClass}
+                  placeholder="Kigali Truck Parking"
+                  value={form.facilityName}
+                  onChange={(e) => patch({ facilityName: e.target.value })}
+                />
+              </Field>
+              <Field label="Total parking spaces">
+                <input
+                  type="number"
+                  min={1}
+                  className={inputClass}
+                  value={form.totalCapacity || ''}
+                  onChange={(e) => patch({ totalCapacity: Number(e.target.value) })}
+                />
+              </Field>
+              <Field label="City">
+                <input
+                  className={inputClass}
+                  placeholder="Kigali"
+                  value={form.city || ''}
+                  onChange={(e) => patch({ city: e.target.value })}
+                />
+              </Field>
+              <Field label="Country">
+                <select
+                  className={inputClass}
+                  value={countryValue(form.country)}
+                  onChange={(e) => patch({ country: e.target.value })}
+                >
+                  <option value="">Select country</option>
+                  {COUNTRIES.map((item) => (
+                    <option key={item.code} value={item.name}>{item.name}</option>
+                  ))}
+                  {form.country && !COUNTRIES.some((item) => countryValue(item.name) === countryValue(form.country) || item.code === form.country) && (
+                    <option value={countryValue(form.country)}>{countryValue(form.country)}</option>
+                  )}
+                </select>
+              </Field>
+              <Field label="Region / state (optional)">
+                <input
+                  className={inputClass}
+                  placeholder="Kigali City"
+                  value={form.region || ''}
+                  onChange={(e) => patch({ region: e.target.value })}
+                />
+              </Field>
+            </div>
+            {(form.facilityName || form.city || form.country) && (
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                {form.facilityName || 'Parking facility'}
+                {form.city || form.country ? ` · 📍 ${[form.city, countryValue(form.country)].filter(Boolean).join(', ')}` : ''}
+              </p>
+            )}
           </section>
 
           <section className="space-y-4">
