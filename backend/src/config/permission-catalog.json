@@ -104,7 +104,9 @@
     { "resource": "parking", "action": "assign", "category": "parking", "description": "Assign parking reservations" },
     { "resource": "parking", "action": "add_note", "category": "parking", "description": "Add internal notes to parking reservations" },
     { "resource": "parking", "action": "export", "category": "parking", "description": "Export parking reservations" },
-    { "resource": "parking", "action": "manage_capacity", "category": "parking", "description": "Manage parking facility capacity" }
+    { "resource": "parking", "action": "manage_capacity", "category": "parking", "description": "Manage parking facility capacity" },
+    { "resource": "parking", "action": "manage_fees", "category": "parking", "description": "Configure parking reservation fees" },
+    { "resource": "parking", "action": "confirm_payment", "category": "parking", "description": "Confirm or waive parking reservation payments" }
   ],
   "roleDefaults": {
     "CARGO_OWNER": [
@@ -146,7 +148,8 @@
     "PARKING_RESERVATION_MANAGER": [
       "parking:view", "parking:view_details", "parking:review", "parking:approve",
       "parking:reject", "parking:request_information", "parking:cancel", "parking:assign",
-      "parking:add_note", "parking:export"
+      "parking:add_note", "parking:export", "parking:manage_capacity", "parking:manage_fees",
+      "parking:confirm_payment"
     ]
   }
 }

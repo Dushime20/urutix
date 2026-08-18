@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import toast from 'react-hot-toast';
 import { fleetApi } from '../../services/fleetApi';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { TruckFullProfile } from './TruckFullProfile';
 
 interface TruckRecordsProps {
   truckId: string;
@@ -580,6 +581,11 @@ export const TruckRecords: React.FC<TruckRecordsProps> = ({ truckId }) => {
         {activeTab === 'overview' && (
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Records Dashboard</h2>
+            {truck && (
+              <div className="mb-8">
+                <TruckFullProfile truck={truck} />
+              </div>
+            )}
 
             {/* Alerts Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">

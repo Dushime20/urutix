@@ -548,6 +548,7 @@ export class CapabilityService {
       'parking:create': 'Parking reservations are currently unavailable. Please contact your administrator for more information.',
       'parking:approve': 'Parking reservation approval is currently unavailable. Please contact your administrator for more information.',
       'parking:review': 'Parking reservation review is currently unavailable. Please contact your administrator for more information.',
+      'parking:manage_fees': 'Parking reservation fee configuration is currently unavailable. Please contact your administrator for more information.',
     };
     return (
       labels[code] ||

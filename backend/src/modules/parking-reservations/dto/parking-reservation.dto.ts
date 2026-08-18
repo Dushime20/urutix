@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -15,7 +16,10 @@ import {
   MinLength,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ParkingReservationStatus } from '../../../entities/parking-reservation.entity';
+import {
+  ParkingReservationPaymentMethod,
+  ParkingReservationStatus,
+} from '../../../entities/parking-reservation.entity';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -243,4 +247,126 @@ export class UpdateParkingFacilityDto {
   @IsOptional()
   @IsBoolean()
   allowPastStartDates?: boolean;
+}
+
+export class UpdateParkingFeesDto {
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase() : value))
+  @IsString()
+  @Matches(/^[A-Z]{3}$/, { message: 'Currency must be a 3-letter ISO 4217 code' })
+  currency?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  monthlyRatePerSpace?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  reservationFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100)
+  taxPercent?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(90)
+  paymentDueDays?: number;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(2000)
+  feeNotes?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(4000)
+  paymentInstructions?: string;
+}
+
+export class SubmitParkingPaymentDto {
+  @IsEnum(ParkingReservationPaymentMethod)
+  paymentMethod: ParkingReservationPaymentMethod;
+
+  @Transform(trim)
+  @IsString()
+  @MinLength(4)
+  @MaxLength(80)
+  paymentReference: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(500)
+  notes?: string;
+}
+
+export class GuestParkingPaymentDto extends LookupParkingReservationDto {
+  @IsEnum(ParkingReservationPaymentMethod)
+  paymentMethod: ParkingReservationPaymentMethod;
+
+  @Transform(trim)
+  @IsString()
+  @MinLength(4)
+  @MaxLength(80)
+  paymentReference: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(500)
+  notes?: string;
+}
+
+export class GuestIshemaPayDto extends LookupParkingReservationDto {
+  @Transform(trim)
+  @IsString()
+  @MinLength(9)
+  @MaxLength(20)
+  phoneNumber: string;
+}
+
+export class GuestIshemaPayStatusDto extends LookupParkingReservationDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  referenceId?: string;
+}
+
+export class InitiateIshemaPayDto {
+  @Transform(trim)
+  @IsString()
+  @MinLength(9)
+  @MaxLength(20)
+  phoneNumber: string;
+}
+
+export class IshemaPayStatusDto {
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(80)
+  referenceId?: string;
+}
+
+export class WaiveParkingPaymentDto {
+  @Transform(trim)
+  @IsString()
+  @MinLength(5)
+  @MaxLength(1000)
+  reason: string;
 }

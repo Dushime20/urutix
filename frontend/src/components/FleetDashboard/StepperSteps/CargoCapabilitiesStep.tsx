@@ -27,6 +27,11 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
       : [...currentTypes, cargoType];
 
     handleInputChange('cargoCapabilities.supportedCargoTypes', updatedTypes);
+
+    if (cargoType === 'LIQUID' && !currentTypes.includes(cargoType)) {
+      handleInputChange('hasTanker', true);
+      handleInputChange('cargoCapabilities.hasTanker', true);
+    }
   };
 
   const handleCapabilityToggle = (capability: string) => {
@@ -77,6 +82,25 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
             </label>
           ))}
         </div>
+        {(formData.cargoCapabilities?.supportedCargoTypes || []).length > 0 && (
+          <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-widest px-1 space-y-1">
+            {formData.cargoCapabilities?.supportedCargoTypes?.includes('REFRIGERATED') && (
+              <p>Refrigerated cargo requires temperature limits and temperature alert monitoring.</p>
+            )}
+            {formData.cargoCapabilities?.supportedCargoTypes?.includes('HAZARDOUS') && (
+              <p>Hazardous cargo requires Hazmat certification and safety controls.</p>
+            )}
+            {formData.cargoCapabilities?.supportedCargoTypes?.includes('LIQUID') && (
+              <p>Liquid cargo requires tanker-compatible configuration.</p>
+            )}
+            {formData.cargoCapabilities?.supportedCargoTypes?.includes('VALUABLE') && (
+              <p>Valuable cargo requires GPS, real-time tracking, geofencing, and insurance.</p>
+            )}
+            {formData.cargoCapabilities?.supportedCargoTypes?.includes('OVERSIZED') && (
+              <p>Oversized cargo requires dimensions and declared weight limits.</p>
+            )}
+          </div>
+        )}
       </div>
 
         {/* Special Handling Capabilities */}
@@ -137,7 +161,7 @@ export const CargoCapabilitiesStep: React.FC<CargoCapabilitiesStepProps> = ({
               </label>
             ))}
           </div>
-          {(formData.cargoCapabilities?.hasReefer || formData.hasReefer || formData.cargoCapabilities?.hasFrozen || formData.hasFrozen || formData.cargoCapabilities?.hasChilled || formData.hasChilled) && (
+          {(formData.cargoCapabilities?.hasReefer || formData.hasReefer || formData.cargoCapabilities?.hasFrozen || formData.hasFrozen || formData.cargoCapabilities?.hasChilled || formData.hasChilled || formData.cargoCapabilities?.supportedCargoTypes?.includes('REFRIGERATED') || formData.cargoCapabilities?.maxRefrigeratedHandling) && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">MIN Operational (°C)</label>

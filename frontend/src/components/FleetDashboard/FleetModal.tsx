@@ -3,21 +3,18 @@ import {
   X,
   Truck,
   User,
-  MapPin,
-  Package,
-  ShieldCheck,
   FileText,
   Download,
   ExternalLink,
-  Shield,
-  Zap,
-  Layers
+  ShieldCheck,
 } from 'lucide-react';
 import type { FleetItem } from '../../types/fleet';
 import { documentApi, type Document } from '../../services/documents/documentApi';
+import { fleetApi } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui';
 import { motion } from 'framer-motion';
+import { TruckFullProfile } from './TruckFullProfile';
 
 interface FleetModalProps {
   fleetItem: FleetItem | null;
@@ -32,6 +29,31 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
 }) => {
   const [driverDocuments, setDriverDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  const [fullTruck, setFullTruck] = useState<any>(null);
+  const [loadingTruck, setLoadingTruck] = useState(false);
+
+  useEffect(() => {
+    if (!fleetItem || activeTab !== 'trucks') {
+      setFullTruck(null);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchTruck = async () => {
+      setLoadingTruck(true);
+      try {
+        const truck = await fleetApi.getTruck(fleetItem.id);
+        if (!cancelled) setFullTruck(truck);
+      } catch {
+        if (!cancelled) setFullTruck(fleetItem);
+      } finally {
+        if (!cancelled) setLoadingTruck(false);
+      }
+    };
+
+    fetchTruck();
+    return () => { cancelled = true; };
+  }, [fleetItem, activeTab]);
 
   useEffect(() => {
     if (!fleetItem || activeTab !== 'drivers') {
@@ -128,118 +150,34 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
           </div>
 
           <div className="flex-1 overflow-y-auto p-8 space-y-10">
-            {/* Intel Grid */}
+            {activeTab === 'trucks' ? (
+              loadingTruck && !fullTruck ? (
+                <div className="py-20 flex flex-col items-center justify-center">
+                  <div className="size-10 border-4 border-gray-200 dark:border-gray-700 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin mb-4" />
+                  <p className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Loading truck details...</p>
+                </div>
+              ) : (
+                <TruckFullProfile truck={fullTruck || fleetItem} />
+              )
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-8">
                 <div>
                   <SectionHeader icon={ShieldCheck} title="Primary Parameters" />
                   <div className="grid grid-cols-2 gap-4">
-                    {activeTab === 'trucks' ? (
-                      <>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Plate Number</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.plateNumber}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">VIN Vector</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.vin || 'Not Indexed'}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Make / Model</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.make} {fleetItem.model}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Asset Year</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.year}</p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">License No.</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.licenseNumber}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Experience</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.experience} Years</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {activeTab === 'trucks' && (
-                  <div>
-                    <SectionHeader icon={Shield} title="Compliance & Protection" />
-                    <div className="space-y-3">
-                      {[
-                        { l: 'Registration', v: fleetItem.registrationNumber, d: fleetItem.registrationExpiry },
-                        { l: 'Insurance', v: fleetItem.insurancePolicy, d: fleetItem.insuranceExpiry },
-                        { l: 'Roadworthy', v: 'Certificate', d: fleetItem.roadworthyCertExpiry }
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                          <div>
-                            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">{item.l}</p>
-                            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.v || 'Not Provided'}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Expiry</p>
-                            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">{item.d ? new Date(item.d).toLocaleDateString() : 'N/A'}</p>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">License No.</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.licenseNumber}</p>
+                    </div>
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+                      <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Experience</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.experience} Years</p>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="space-y-8">
-                {activeTab === 'trucks' ? (
-                  <div className="space-y-8">
-                    <div>
-                      <SectionHeader icon={Package} title="Payload Capabilities" />
-                      <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 space-y-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="size-8 bg-white dark:bg-gray-900 rounded-lg flex items-center justify-center text-blue-400 dark:text-blue-500"><Zap size={14} /></div>
-                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Max Payload</span>
-                          </div>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.capacityWeight?.toLocaleString()} kg</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="size-8 bg-white dark:bg-gray-900 rounded-lg flex items-center justify-center text-blue-400 dark:text-blue-500"><Layers size={14} /></div>
-                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Volume Matrix</span>
-                          </div>
-                          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{fleetItem.capacityVolume} m³</span>
-                        </div>
-                        {fleetItem.cargoCapabilities?.supportedCargoTypes && (
-                          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Certified Types</p>
-                            <div className="flex flex-wrap gap-2">
-                              {fleetItem.cargoCapabilities.supportedCargoTypes.map((t, i) => (
-                                <span key={i} className="px-2 py-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">{t}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <SectionHeader icon={MapPin} title="Operational Vector" />
-                      <div className="p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900/50">
-                        <div className="flex items-start gap-4">
-                          <div className="size-10 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center text-white"><MapPin size={20} /></div>
-                          <div>
-                            <p className="text-xs font-medium text-blue-400 dark:text-blue-500 uppercase tracking-wider mb-1">Current Coordinates</p>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug">{fleetItem.currentLocation?.address || 'Geolocation Offline'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
                   <div>
                     <SectionHeader icon={FileText} title="Personnel Assets" />
                     <div className="space-y-3">
@@ -272,9 +210,9 @@ const FleetModalComp: React.FC<FleetModalProps> = ({
                       )}
                     </div>
                   </div>
-                )}
               </div>
             </div>
+            )}
           </div>
 
           <div className="p-8 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 flex justify-end transition-colors">

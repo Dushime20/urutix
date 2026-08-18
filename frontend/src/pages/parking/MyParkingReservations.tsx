@@ -20,6 +20,14 @@ const MyParkingReservations = ({ basePath = '/dashboard/parking-reservations' }:
     { key: 'truckSpacesRequested', label: 'Spaces' },
     { key: 'contractMonths', label: 'Contract Duration', render: (v) => `${v} month(s)` },
     { key: 'status', label: 'Status', render: (_v, row) => <StatusBadge status={row.status} label={PARKING_STATUS_LABELS[row.status]} /> },
+    {
+      key: 'payment',
+      label: 'Payment',
+      render: (_v, row) =>
+        row.payment && row.payment.status !== 'NOT_APPLICABLE'
+          ? `${row.payment.status.replace(/_/g, ' ')}`
+          : '—',
+    },
     { key: 'createdAt', label: 'Submitted Date', render: (v) => new Date(v as string).toLocaleDateString() },
     { key: 'updatedAt', label: 'Last Updated', render: (v) => new Date(v as string).toLocaleDateString() },
   ], []);

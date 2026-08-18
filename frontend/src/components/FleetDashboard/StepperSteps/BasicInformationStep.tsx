@@ -376,6 +376,89 @@ const BasicInformationStep: React.FC<BasicInformationStepProps> = ({
           </div>
         </div>
       </div>
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center mb-4">
+          Home Terminal
+        </h4>
+        <div>
+          <label className={labelClass}>Home Terminal</label>
+          <input
+            type="text"
+            value={formData.assetDetails?.homeTerminal || ''}
+            onChange={(e) =>
+              handleInputChange('assetDetails', {
+                ...(formData.assetDetails || {}),
+                homeTerminal: e.target.value,
+              })
+            }
+            className={inputClass}
+            maxLength={150}
+            placeholder="e.g. Nairobi Depot / Mombasa Yard"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+          Vehicle Photos
+        </h4>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+          multiple
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            const current = formData.assetDetails?.photos || [];
+            const next = [
+              ...current,
+              ...files.slice(0, Math.max(0, 8 - current.length)).map((file) => ({
+                file,
+                fileName: file.name,
+                fileSize: file.size,
+                mimeType: file.type,
+                previewUrl: URL.createObjectURL(file),
+              })),
+            ];
+            handleInputChange('assetDetails', {
+              ...(formData.assetDetails || {}),
+              photos: next,
+            });
+            e.target.value = '';
+          }}
+          className="block w-full text-sm text-gray-600 dark:text-gray-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-widest file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer cursor-pointer bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg"
+        />
+        <p className="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-widest px-1">
+          JPG, PNG or WEBP · Up to 8 photos
+        </p>
+        <div className="flex flex-wrap gap-3">
+          {(formData.assetDetails?.photos || []).map((photo: any, index: number) => (
+            <div key={`${photo.fileName}-${index}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+              {photo.previewUrl ? (
+                <img src={photo.previewUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[9px] font-bold uppercase tracking-widest text-gray-400 bg-gray-50 dark:bg-gray-800">
+                  Photo
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (photo.previewUrl) URL.revokeObjectURL(photo.previewUrl);
+                  const next = (formData.assetDetails?.photos || []).filter((_: any, i: number) => i !== index);
+                  handleInputChange('assetDetails', {
+                    ...(formData.assetDetails || {}),
+                    photos: next,
+                  });
+                }}
+                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px]"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

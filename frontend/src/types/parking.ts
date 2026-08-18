@@ -60,6 +60,73 @@ export interface ParkingReservation {
     requested: number;
     sufficient: boolean;
   };
+  payment?: ParkingPayment;
+  feeQuote?: ParkingFeeQuote;
+}
+
+export type ParkingPaymentStatus =
+  | 'NOT_APPLICABLE'
+  | 'DUE'
+  | 'PENDING_VERIFICATION'
+  | 'PAID'
+  | 'OVERDUE'
+  | 'WAIVED'
+  | 'CANCELLED'
+  | 'REFUNDED';
+
+export type ParkingPaymentMethod = 'CREDIT_TRANSFER' | 'CARD' | 'CASH' | 'MOBILE_MONEY' | 'OTHER';
+
+export interface ParkingFeeLineItem {
+  code: string;
+  description: string;
+  quantity: number;
+  unitAmount: number;
+  amount: number;
+}
+
+export interface ParkingFeeQuote {
+  currency: string;
+  occupancyAmount: number;
+  reservationFeeAmount: number;
+  subtotalAmount: number;
+  taxPercent: number;
+  taxAmount: number;
+  totalAmount: number;
+  lineItems: ParkingFeeLineItem[];
+}
+
+export interface ParkingPayment {
+  status: ParkingPaymentStatus;
+  invoiceNumber?: string | null;
+  currency: string;
+  occupancyAmount: number;
+  reservationFeeAmount: number;
+  subtotalAmount: number;
+  taxPercent: number;
+  taxAmount: number;
+  totalAmount: number;
+  dueAt?: string | null;
+  paidAt?: string | null;
+  paidAmount?: number | null;
+  paymentMethod?: ParkingPaymentMethod | null;
+  paymentReference?: string | null;
+  lineItems?: ParkingFeeLineItem[];
+  feeNotes?: string;
+  instructions?: string;
+}
+
+export interface ParkingFeeSchedule {
+  id: string;
+  facilityName: string;
+  totalCapacity: number;
+  allowPastStartDates: boolean;
+  currency: string;
+  monthlyRatePerSpace: number;
+  reservationFee: number;
+  taxPercent: number;
+  paymentDueDays: number;
+  feeNotes?: string;
+  paymentInstructions?: string;
 }
 
 export interface ParkingReservationActivity {
@@ -140,4 +207,42 @@ export const PARKING_ACTIVITY_LABELS: Record<string, string> = {
   RESERVATION_CANCELLED: 'Reservation cancelled',
   NOTE_ADDED: 'Internal note added',
   STATUS_CHANGED: 'Status changed',
+  PAYMENT_REQUESTED: 'Payment requested',
+  PAYMENT_SUBMITTED: 'Payment confirmation submitted',
+  PAYMENT_RECEIVED: 'Payment received',
+  PAYMENT_WAIVED: 'Fees waived',
 };
+
+export const PARKING_PAYMENT_LABELS: Record<ParkingPaymentStatus, string> = {
+  NOT_APPLICABLE: 'No fees due',
+  DUE: 'Payment due',
+  PENDING_VERIFICATION: 'Payment pending verification',
+  PAID: 'Paid',
+  OVERDUE: 'Payment overdue',
+  WAIVED: 'Fees waived',
+  CANCELLED: 'Payment cancelled',
+  REFUNDED: 'Refunded',
+};
+
+export const PARKING_PAYMENT_METHOD_LABELS: Record<ParkingPaymentMethod, string> = {
+  CREDIT_TRANSFER: 'Bank transfer',
+  CARD: 'Card',
+  CASH: 'Cash',
+  MOBILE_MONEY: 'Mobile money',
+  OTHER: 'Other',
+};
+
+export function formatParkingMoney(amount?: number | null, currency = 'USD'): string {
+  const value = Number(amount);
+  const code = (currency || 'USD').toUpperCase();
+  if (!Number.isFinite(value)) return `${code} 0.00`;
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: code }).format(value);
+  } catch {
+    return `${code} ${value.toFixed(2)}`;
+  }
+}
+
+export function isParkingPaymentOpen(status?: ParkingPaymentStatus): boolean {
+  return status === 'DUE' || status === 'OVERDUE' || status === 'PENDING_VERIFICATION';
+}

@@ -16,6 +16,7 @@ import { AuditLog } from '../../entities/audit-log.entity';
 import { Trip } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
+import { toPublicTruck } from '../fleet/truck-persistence.util';
 import { Route as FleetRoute } from '../../entities/route.entity';
 import { UsersService } from '../users/users.service';
 import { CreateTenantDto, SubscriptionPlan } from './dto/create-tenant.dto';
@@ -967,7 +968,7 @@ export class AdminService {
         }
 
         return {
-          ...truck,
+          ...toPublicTruck(truck),
           currentLocationString: locationString,
           coordinates,
           // Tenant information

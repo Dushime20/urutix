@@ -23,6 +23,7 @@ export interface ComplianceDocRecord {
 
 export interface VehicleComplianceDocuments {
   insurance?: ComplianceDocRecord;
+  registration?: ComplianceDocRecord;
   roadworthy?: ComplianceDocRecord;
   operatingAuthority?: ComplianceDocRecord;
   crossBorderPermit?: ComplianceDocRecord;
@@ -40,6 +41,12 @@ export const COMPLIANCE_DOC_CONFIG: Record<
     documentType: 'VEHICLE_INSURANCE',
     complianceKind: 'INSURANCE_POLICY',
     numberLabel: 'Policy number',
+  },
+  registration: {
+    title: 'Registration Document',
+    documentType: 'VEHICLE_REGISTRATION',
+    complianceKind: 'VEHICLE_REGISTRATION',
+    numberLabel: 'Registration number',
   },
   roadworthy: {
     title: 'Roadworthy Certificate',
@@ -105,6 +112,7 @@ export function stripComplianceFiles(
   };
   return {
     insurance: strip(docs.insurance),
+    registration: strip(docs.registration),
     roadworthy: strip(docs.roadworthy),
     operatingAuthority: strip(docs.operatingAuthority),
     crossBorderPermit: strip(docs.crossBorderPermit),
@@ -185,6 +193,7 @@ export function hasPendingComplianceFiles(
   if (!docs) return false;
   const records = [
     docs.insurance,
+    docs.registration,
     docs.roadworthy,
     docs.operatingAuthority,
     docs.crossBorderPermit,
@@ -247,11 +256,16 @@ export function hydrateComplianceDocuments(
   scalars?: {
     insurancePolicy?: string;
     insuranceExpiry?: string;
+    registrationNumber?: string;
+    registrationExpiry?: string;
     roadworthyCertExpiry?: string;
     operatingAuthority?: string;
     crossBorderPermit?: string;
     customsBond?: string;
     portAuthorization?: string;
+    insuranceStatus?: string;
+    insuranceIssuingAuthority?: string;
+    insuranceIssueDate?: string;
   },
 ): VehicleComplianceDocuments {
   const seed = (
@@ -259,13 +273,16 @@ export function hydrateComplianceDocuments(
     extras?: Partial<ComplianceDocRecord>,
   ): ComplianceDocRecord => {
     const { file: _f, previewUrl: _p, ...rest } = record || {};
+    const compactExtras = Object.fromEntries(
+      Object.entries(extras || {}).filter(([, value]) => value !== undefined && value !== ''),
+    );
     return {
-      status: 'VALID',
       ...rest,
-      ...extras,
-      number: extras?.number || rest.number,
-      expiryDate: toDateInput(extras?.expiryDate || rest.expiryDate),
-      issueDate: toDateInput(extras?.issueDate || rest.issueDate),
+      ...compactExtras,
+      number: (compactExtras.number as string) || rest.number,
+      expiryDate: toDateInput((compactExtras.expiryDate as string) || rest.expiryDate),
+      issueDate: toDateInput((compactExtras.issueDate as string) || rest.issueDate),
+      status: ((compactExtras.status as CompliancePermitStatus) || rest.status || 'VALID'),
     };
   };
 
@@ -273,6 +290,13 @@ export function hydrateComplianceDocuments(
     insurance: seed(docs?.insurance, {
       number: docs?.insurance?.number || scalars?.insurancePolicy,
       expiryDate: docs?.insurance?.expiryDate || scalars?.insuranceExpiry,
+      status: (docs?.insurance?.status || scalars?.insuranceStatus || 'VALID') as CompliancePermitStatus,
+      issuingAuthority: docs?.insurance?.issuingAuthority || scalars?.insuranceIssuingAuthority,
+      issueDate: docs?.insurance?.issueDate || scalars?.insuranceIssueDate,
+    }),
+    registration: seed(docs?.registration, {
+      number: docs?.registration?.number || scalars?.registrationNumber,
+      expiryDate: docs?.registration?.expiryDate || scalars?.registrationExpiry,
     }),
     roadworthy: seed(docs?.roadworthy, {
       expiryDate: docs?.roadworthy?.expiryDate || scalars?.roadworthyCertExpiry,
@@ -303,7 +327,7 @@ export function flattenComplianceDocuments(
   (Object.keys(COMPLIANCE_DOC_CONFIG) as Array<keyof typeof COMPLIANCE_DOC_CONFIG>).forEach(
     (key) => {
       const record = docs[key];
-      if (record && (record.number || record.documentId || record.expiryDate || record.fileName)) {
+      if (record && (record.number || record.documentId || record.expiryDate || record.fileName || record.status || record.issuingAuthority)) {
         items.push({ title: COMPLIANCE_DOC_CONFIG[key].title, record });
       }
     },

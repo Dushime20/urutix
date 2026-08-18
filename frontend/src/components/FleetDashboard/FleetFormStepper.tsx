@@ -32,6 +32,12 @@ import {
   stripComplianceFiles,
   uploadVehicleComplianceDocuments,
 } from '../../utils/vehicleComplianceDocuments';
+import {
+  getEnterpriseValidationErrors,
+  stripPhotoFiles,
+  hasPendingPhotoFiles,
+  uploadVehiclePhotos,
+} from '../../utils/vehicleEnterpriseRules';
 import type { Driver } from '../../services/fleetApi';
 import {
   Dialog,
@@ -239,11 +245,29 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         complianceDocuments: hydrateComplianceDocuments((initialData as any).complianceDocuments, {
           insurancePolicy: initialData.insurancePolicy,
           insuranceExpiry: formatDateForInput(initialData.insuranceExpiry),
+          registrationNumber: initialData.registrationNumber,
+          registrationExpiry: formatDateForInput(initialData.registrationExpiry),
           roadworthyCertExpiry: formatDateForInput(initialData.roadworthyCertExpiry),
           operatingAuthority: initialData.operatingAuthority,
           crossBorderPermit: initialData.crossBorderPermit,
           customsBond: initialData.customsBond,
           portAuthorization: initialData.portAuthorization,
+          insuranceStatus:
+            (initialData as any).complianceDocuments?.insurance?.status ||
+            (Array.isArray((initialData as any).insuranceAlerts)
+              ? (initialData as any).insuranceAlerts.find((item: any) => item?.source === 'vehicle_form' || item?.id === 'ins-vehicle-form')?.status
+              : undefined),
+          insuranceIssuingAuthority:
+            (initialData as any).complianceDocuments?.insurance?.issuingAuthority ||
+            (Array.isArray((initialData as any).insuranceAlerts)
+              ? (initialData as any).insuranceAlerts.find((item: any) => item?.source === 'vehicle_form' || item?.id === 'ins-vehicle-form')?.issuingAuthority
+              : undefined),
+          insuranceIssueDate: formatDateForInput(
+            (initialData as any).complianceDocuments?.insurance?.issueDate ||
+            (Array.isArray((initialData as any).insuranceAlerts)
+              ? (initialData as any).insuranceAlerts.find((item: any) => item?.source === 'vehicle_form' || item?.id === 'ins-vehicle-form')?.issueDate
+              : undefined),
+          ),
         }),
         axleConfiguration: initialData.axleConfiguration || '',
         fuelTankCapacity: initialData.fuelTankCapacity?.toString() || '',
@@ -257,6 +281,12 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         emergencyContacts: Array.isArray(initialData.emergencyContacts) && initialData.emergencyContacts.length > 0
           ? initialData.emergencyContacts
           : [{ name: '', phone: '', relationship: '', email: '' }],
+        assetDetails: {
+          retirementStatus: 'ACTIVE',
+          ...((initialData as any).assetDetails || {}),
+        },
+        createdBy: (initialData as any).createdBy || '',
+        updatedBy: (initialData as any).updatedBy || '',
         lastMaintenanceDate: formatDateForInput(initialData.lastMaintenanceDate),
         nextMaintenanceDate: formatDateForInput(initialData.nextMaintenanceDate),
         maxLength: initialData.maxLength?.toString() || '',
@@ -543,6 +573,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         driverRequirements: '',
         operationalRestrictions: '',
         emergencyContacts: [{ name: '', phone: '', relationship: '', email: '' }],
+        assetDetails: { retirementStatus: 'ACTIVE' },
         lastMaintenanceDate: '',
         nextMaintenanceDate: '',
         maxLength: '',
@@ -771,10 +802,13 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       });
     } else {
       setFormData((prev: Partial<FleetFormData>) => {
-        const updated = {
+        const updated: Partial<FleetFormData> = {
           ...prev,
           [field]: value
         };
+        if (field === 'status' && (value === 'MAINTENANCE' || value === 'OUT_OF_SERVICE')) {
+          updated.availabilityStatus = 'UNAVAILABLE';
+        }
         // Update equipmentList if this is an equipment field
         if (field.startsWith('has')) {
           return {
@@ -1007,6 +1041,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       throw new Error('VIN Registry must be exactly 17 characters');
     }
 
+    const enterpriseErrors = getEnterpriseValidationErrors(d);
+    if (enterpriseErrors.length > 0) {
+      throw new Error(enterpriseErrors[0]);
+    }
+
     const parseOptionalNumber = (value: any): number | undefined => {
       if (value === undefined || value === null || value === '') return undefined;
       const parsed = typeof value === 'string' ? parseFloat(value) : Number(value);
@@ -1069,6 +1108,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       hasEngineMonitoring: toBoolean(d.securityFeatures?.hasEngineMonitoring ?? d.hasEngineMonitoring),
       hasFuelMonitoring: toBoolean(d.securityFeatures?.hasFuelMonitoring ?? d.hasFuelMonitoring),
       hasMaintenanceAlerts: toBoolean(d.securityFeatures?.hasMaintenanceAlerts ?? d.hasMaintenanceAlerts),
+      hasLeakDetection: toBoolean(d.securityFeatures?.hasLeakDetection ?? d.hasLeakDetection),
+      hasFireSuppression: toBoolean(d.securityFeatures?.hasFireSuppression ?? d.hasFireSuppression),
+      hasEmergencyShutdown: toBoolean(d.securityFeatures?.hasEmergencyShutdown ?? d.hasEmergencyShutdown),
+      hasExplosionProof: toBoolean(d.securityFeatures?.hasExplosionProof ?? d.hasExplosionProof),
+      hasOverfillProtection: toBoolean(d.securityFeatures?.hasOverfillProtection ?? d.hasOverfillProtection),
       // Pass securityFeatures object as well for backend compatibility
       securityFeatures: d.securityFeatures || {},
     };
@@ -1131,6 +1175,27 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
       converted.roadworthyCertExpiry = formatDate(d.roadworthyCertExpiry || d.complianceDocuments?.roadworthy?.expiryDate);
     }
     converted.complianceDocuments = stripComplianceFiles(d.complianceDocuments);
+    if (converted.complianceDocuments?.insurance && !converted.complianceDocuments.insurance.status) {
+      converted.complianceDocuments.insurance.status = 'VALID';
+    }
+    converted.assetDetails = {
+      ...(d.assetDetails || {}),
+      photos: stripPhotoFiles(d.assetDetails?.photos),
+      fifthWheel: Boolean(d.assetDetails?.fifthWheel),
+    };
+    converted.cargoCapabilities = d.cargoCapabilities || {};
+    converted.loadingCapabilities = d.loadingCapabilities || {};
+    converted.securityFeatures = d.securityFeatures || {};
+    converted.certifications = d.certifications || {};
+    converted.routeCapabilities = d.routeCapabilities || {};
+    if (d.costStructure && Object.keys(d.costStructure).length > 0) {
+      const cs = { ...d.costStructure };
+      if (cs.hazmatSurcharge !== undefined && cs.hazardousSurcharge === undefined) {
+        cs.hazardousSurcharge = cs.hazmatSurcharge;
+        delete cs.hazmatSurcharge;
+      }
+      converted.costStructure = cs;
+    }
     // Always build equipmentList from checked equipment fields
     converted.equipmentList = buildEquipmentList(d);
     if (d.lastMaintenanceDate) converted.lastMaintenanceDate = formatDate(d.lastMaintenanceDate);
@@ -1259,7 +1324,7 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             formData.insurancePolicy &&
             formData.insuranceExpiry &&
             formData.registrationExpiry
-          );
+          ) && getEnterpriseValidationErrors(formData, 2).length === 0;
         case 3: // Vehicle Specifications
           return !!(
             formData.chassisConfiguration &&
@@ -1267,15 +1332,15 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
             formData.capacityWeight &&
             formData.capacityVolume &&
             formData.fuelType
-          );
+          ) && getEnterpriseValidationErrors(formData, 3).length === 0;
         case 4: // Cargo Capabilities
-          return true;
+          return getEnterpriseValidationErrors(formData, 4).length === 0;
         case 5: // Loading Equipment
           return true;
         case 6: // Security & Monitoring
-          return true;
+          return getEnterpriseValidationErrors(formData, 6).length === 0;
         case 7: // Certifications & Routes
-          return true;
+          return getEnterpriseValidationErrors(formData, 7).length === 0;
         case 8: // Costing & Operations
           return true;
         default:
@@ -1305,6 +1370,11 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
         return;
       }
     }
+    const enterpriseErrors = getEnterpriseValidationErrors(formData, currentStep);
+    if (enterpriseErrors.length > 0) {
+      toast.error(enterpriseErrors[0]);
+      return;
+    }
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
       // Show progress toast
@@ -1324,14 +1394,24 @@ const FleetFormStepper: React.FC<FleetFormStepperProps> = ({
 
   const persistComplianceUploads = async (saved: any) => {
     if (activeTab !== 'trucks') return;
-    const truckId = saved?.id || initialData?.id;
+    const truckId = saved?.id || saved?.truck?.id || initialData?.id;
     if (!truckId) return;
-    if (!hasPendingComplianceFiles(formData.complianceDocuments as any)) return;
-    const uploaded = await uploadVehicleComplianceDocuments(
-      truckId,
-      formData.complianceDocuments as any,
-    );
-    await fleetApi.updateTruck(truckId, { complianceDocuments: uploaded } as any);
+    const updates: any = {};
+    if (hasPendingComplianceFiles(formData.complianceDocuments as any)) {
+      updates.complianceDocuments = await uploadVehicleComplianceDocuments(
+        truckId,
+        formData.complianceDocuments as any,
+      );
+    }
+    if (hasPendingPhotoFiles(formData.assetDetails?.photos)) {
+      const photos = await uploadVehiclePhotos(truckId, formData.assetDetails?.photos);
+      updates.assetDetails = {
+        ...(formData.assetDetails || {}),
+        photos,
+      };
+    }
+    if (Object.keys(updates).length === 0) return;
+    await fleetApi.updateTruck(truckId, updates);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

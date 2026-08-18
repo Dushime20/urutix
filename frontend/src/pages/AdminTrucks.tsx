@@ -25,6 +25,7 @@ import AdminPageLayout from '../components/Admin/AdminPageLayout';
 import { adminAPI, type AdminTruck } from '../services/adminApi';
 import ModernLoader from '../components/common/ModernLoader';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
+import { TruckFullProfile } from '../components/FleetDashboard/TruckFullProfile';
 
 // ── Truck Detail Modal ────────────────────────────────────────────────────────
 
@@ -133,11 +134,7 @@ const TruckDetailModal: React.FC<TruckDetailModalProps> = ({ truck, onClose }) =
 
           {/* Vehicle Info */}
           <Section title="Vehicle Information">
-            <InfoRow label="License Plate"  value={plate}  icon={Hash} />
-            <InfoRow label="Make"           value={truck.make}          icon={Truck} />
-            <InfoRow label="Model"          value={truck.model}         icon={Truck} />
-            <InfoRow label="Year"           value={truck.year}          icon={Calendar} />
-            <InfoRow label="Registered"     value={truck.createdAt ? new Date(truck.createdAt).toLocaleDateString('en-US', { dateStyle: 'medium' }) : undefined} icon={Calendar} />
+            <TruckFullProfile truck={truck} compact />
           </Section>
 
           {/* Ownership */}

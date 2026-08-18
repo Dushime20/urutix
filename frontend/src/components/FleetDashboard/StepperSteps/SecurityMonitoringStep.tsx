@@ -89,6 +89,17 @@ export const SecurityMonitoringStep: React.FC<SecurityMonitoringStepProps> = ({
         { key: 'hasMaintenanceAlerts', label: 'Maintenance Alerts', description: 'Service reminder system' },
       ],
     },
+    {
+      title: 'Safety Controls',
+      icon: <FaShieldAlt className="w-4 h-4" />,
+      features: [
+        { key: 'hasLeakDetection', label: 'Leak Detection', description: 'Required for hazardous cargo' },
+        { key: 'hasFireSuppression', label: 'Fire Suppression', description: 'Onboard fire suppression' },
+        { key: 'hasEmergencyShutdown', label: 'Emergency Shutdown', description: 'Emergency power cut-off' },
+        { key: 'hasExplosionProof', label: 'Explosion Proof', description: 'Explosion-proof equipment' },
+        { key: 'hasOverfillProtection', label: 'Overfill Protection', description: 'Tanker overfill protection' },
+      ],
+    },
   ];
 
   return (
@@ -168,6 +179,21 @@ export const SecurityMonitoringStep: React.FC<SecurityMonitoringStepProps> = ({
         {Object.values(formData.securityFeatures || {}).filter(Boolean).length === 0 && (
           <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest italic">NO PROTOCOLS ACTIVATED</span>
         )}
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+          IoT Device IDs
+        </h4>
+        <input
+          type="text"
+          value={formData.assetDetails?.iotDeviceIds || ''}
+          onChange={(e) =>
+            handleInputChange('assetDetails', { ...(formData.assetDetails || {}), iotDeviceIds: e.target.value })
+          }
+          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none"
+          placeholder="Comma-separated GPS, ELD, camera, or sensor IDs"
+        />
       </div>
     </div>
   );

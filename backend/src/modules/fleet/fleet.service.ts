@@ -31,6 +31,11 @@ import {
 } from '../../entities/document.entity';
 import { CreateTruckDto } from './dto/create-truck.dto';
 import { CreateFleetDriverDto } from './dto/create-driver.dto';
+import {
+  sanitizeComplianceDocuments,
+  mergeInsuranceAlerts,
+  availabilityForStatus,
+} from './truck-persistence.util';
 import { EmailService } from '../auth/services/email.service';
 import { DocumentService } from '../documents/document.service';
 import { FileUploadService } from '../file-upload/file-upload.service';
@@ -201,16 +206,41 @@ export class FleetService {
         return undefined;
       };
 
+      const status = createTruckDto.status || VehicleStatus.AVAILABLE;
+      const complianceDocuments = sanitizeComplianceDocuments(
+        cleanedDto.complianceDocuments,
+      );
+      const insuranceAlerts = mergeInsuranceAlerts(
+        [],
+        complianceDocuments,
+        userId,
+      );
+
       const truck = this.truckRepository.create({
         ...cleanedDto,
         ownerId: userId,
         tenantId,
-        status: createTruckDto.status || VehicleStatus.AVAILABLE,
+        status,
         availabilityStatus:
-          createTruckDto.availabilityStatus ||
+          availabilityForStatus(status, createTruckDto.availabilityStatus) ||
           VehicleAvailabilityStatus.AVAILABLE,
         equipmentList: createTruckDto.equipmentList || [],
         emergencyContacts: createTruckDto.emergencyContacts || [],
+        complianceDocuments,
+        cargoCapabilities: cleanedDto.cargoCapabilities || {},
+        loadingCapabilities: cleanedDto.loadingCapabilities || {},
+        securityFeatures: cleanedDto.securityFeatures || {},
+        certifications: cleanedDto.certifications || {},
+        routeCapabilities: cleanedDto.routeCapabilities || {},
+        costStructure: cleanedDto.costStructure || {},
+        assetDetails: {
+          ...(cleanedDto.assetDetails || {}),
+          createdBy: userId,
+          updatedBy: userId,
+        },
+        createdBy: userId,
+        updatedBy: userId,
+        insuranceAlerts,
         maintenanceAlerts: [],
         assignedDrivers: [],
         assignedRoutes: [],
@@ -510,6 +540,15 @@ export class FleetService {
       'customsBond', 'portAuthorization',
       'driverRequirements', 'operationalRestrictions', 'emergencyContacts',
       'complianceDocuments',
+      'cargoCapabilities',
+      'loadingCapabilities',
+      'securityFeatures',
+      'certifications',
+      'routeCapabilities',
+      'costStructure',
+      'assetDetails',
+      'createdBy',
+      'updatedBy',
       // Core capability flags
       'hasRefrigeration', 'hasLiftGate', 'hasGps', 'hasHazmatPermit',
       // Loading equipment (flat booleans)
@@ -555,6 +594,7 @@ export class FleetService {
       // JSONB nested objects
       'equipmentList', 'cargoCapabilities', 'loadingCapabilities',
       'securityFeatures', 'certifications', 'routeCapabilities', 'costStructure',
+      'assetDetails',
     ];
 
     // Only update fields that are provided and allowed
@@ -581,6 +621,35 @@ export class FleetService {
         }
       }
     });
+
+    if (updateTruckDto.complianceDocuments) {
+      truck.complianceDocuments = sanitizeComplianceDocuments(
+        updateTruckDto.complianceDocuments,
+      );
+      truck.insuranceAlerts = mergeInsuranceAlerts(
+        truck.insuranceAlerts,
+        truck.complianceDocuments,
+        userId,
+      );
+    }
+
+    if (updateTruckDto.assetDetails) {
+      truck.assetDetails = {
+        ...(truck.assetDetails || {}),
+        ...updateTruckDto.assetDetails,
+        createdBy: truck.createdBy || truck.assetDetails?.createdBy,
+        updatedBy: userId,
+      };
+    }
+    truck.updatedBy = userId;
+
+    const nextAvailability = availabilityForStatus(
+      truck.status,
+      truck.availabilityStatus,
+    );
+    if (nextAvailability) {
+      truck.availabilityStatus = nextAvailability;
+    }
 
     return this.truckRepository.save(truck);
   }

@@ -3,6 +3,7 @@ import { FaTimes, FaTruck, FaIdCard, FaTools, FaFileAlt, FaCheckCircle, FaMapMar
 import { fleetApi } from '../../services/fleetApi';
 import toast from 'react-hot-toast';
 import { flattenComplianceDocuments } from '../../utils/vehicleComplianceDocuments';
+import { TruckFullProfile } from './TruckFullProfile';
 
 interface VehicleDetailsModalProps {
     isOpen: boolean;
@@ -142,72 +143,7 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
                     {/* Main Content */}
                     <div className="flex-1 bg-white dark:bg-gray-900 p-8 overflow-y-auto transition-colors">
                                 {activeTab === 'overview' && (
-                                    <div className="space-y-8">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                                            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors">
-                                                <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-5 flex items-center gap-2">
-                                                    <FaTruck className="text-blue-600 dark:text-blue-500" /> Specifications
-                                                </h4>
-                                                <dl className="space-y-4 text-sm">
-                                                    {[
-                                                        { label: 'Asset Year', value: vehicle.year || 'N/A' },
-                                                        { label: 'Vehicle Type', value: vehicle.truckType ? String(vehicle.truckType).replace(/_/g, ' ') : 'N/A' },
-                                                        { label: 'Vehicle Class', value: vehicle.vehicleClass ? String(vehicle.vehicleClass).replace(/_/g, ' ') : 'N/A' },
-                                                        { label: 'Maximum Payload', value: vehicle.capacityWeight ? `${vehicle.capacityWeight} kg` : 'N/A' },
-                                                        { label: 'Volume', value: vehicle.capacityVolume ? `${vehicle.capacityVolume} m³` : 'N/A' },
-                                                        { label: 'Propulsion', value: vehicle.fuelType ? String(vehicle.fuelType).replace(/_/g, ' ') : 'N/A' },
-                                                        { label: 'VIN', value: vehicle.vin || 'N/A' },
-                                                        { label: 'Registration', value: vehicle.registrationNumber || 'N/A' },
-                                                    ].map((item, i) => (
-                                                        <div key={i} className="flex flex-col gap-1">
-                                                            <dt className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest">{item.label}</dt>
-                                                            <dd className="font-bold text-gray-900 dark:text-white transition-colors">{item.value}</dd>
-                                                        </div>
-                                                    ))}
-                                                </dl>
-                                            </div>
-
-                                            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors">
-                                                <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-5 flex items-center gap-2">
-                                                    <FaIdCard className="text-blue-600 dark:text-blue-500" /> Assigned Personnel
-                                                </h4>
-                                                {vehicle.assignedDrivers && vehicle.assignedDrivers.length > 0 ? (
-                                                    <div className="flex items-center gap-5">
-                                                        <div className="relative">
-                                                            <img
-                                                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${vehicle.assignedDrivers[0].driverName}`}
-                                                                alt="Driver"
-                                                                className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-900 shadow-sm dark:shadow-none transition-colors"
-                                                            />
-                                                            <div className="absolute -bottom-1 -right-1 size-4 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <p className="font-bold text-gray-900 dark:text-white transition-colors">{vehicle.assignedDrivers[0].driverName}</p>
-                                                            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest transition-colors">ID: {vehicle.assignedDrivers[0].driverId}</p>
-                                                            <span className="inline-block mt-2 text-[10px] uppercase font-black text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/40 px-3 py-1 rounded-md transition-all">Verified Active</span>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-full flex items-center justify-center text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase tracking-widest italic transition-colors">
-                                                        No personnel assigned
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-5 flex items-center gap-2">
-                                                <FaMapMarkerAlt className="text-blue-600 dark:text-blue-500" /> Geospatial Registry
-                                            </h4>
-                                            <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg h-56 flex items-center justify-center border border-gray-100 dark:border-gray-800 transition-colors">
-                                                <div className="text-center text-gray-400 dark:text-gray-500">
-                                                    <FaMapMarkerAlt className="mx-auto text-3xl mb-3 opacity-30 transition-opacity" />
-                                                    <p className="text-[10px] font-bold uppercase tracking-widest">Map visualization system</p>
-                                                    <p className="text-[10px] font-medium opacity-50 mt-1">Lat: -1.2921, Long: 36.8219 (Registry Hub)</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <TruckFullProfile truck={vehicle} />
                                 )}
 
                                 {activeTab === 'maintenance' && (

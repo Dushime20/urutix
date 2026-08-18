@@ -65,6 +65,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Warehouse,
           subItems: [
             { label: 'Reservations', path: '/dashboard/parking/reservations' },
+            { label: 'Reservation Fees', path: '/dashboard/parking/fees' },
           ],
         },
       ];

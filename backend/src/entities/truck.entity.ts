@@ -811,6 +811,15 @@ export class Truck {
   @Column('jsonb', { default: {} })
   complianceDocuments: Record<string, any>;
 
+  @Column('jsonb', { default: {} })
+  assetDetails: Record<string, any>;
+
+  @Column({ length: 100, nullable: true })
+  createdBy?: string;
+
+  @Column({ length: 100, nullable: true })
+  updatedBy?: string;
+
   @Column({ default: false })
   hasRefrigeration: boolean;
 

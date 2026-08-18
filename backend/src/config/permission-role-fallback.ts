@@ -47,7 +47,8 @@ const ROLE_DEFAULTS: Record<string, string[]> = {
   PARKING_RESERVATION_MANAGER: [
     'parking:view', 'parking:view_details', 'parking:review', 'parking:approve',
     'parking:reject', 'parking:request_information', 'parking:cancel', 'parking:assign',
-    'parking:add_note', 'parking:export',
+    'parking:add_note', 'parking:export', 'parking:manage_capacity', 'parking:manage_fees',
+    'parking:confirm_payment',
   ],
 };
 

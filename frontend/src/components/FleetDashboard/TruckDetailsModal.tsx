@@ -4,13 +4,10 @@ import { createPortal } from 'react-dom';
 import {
     X,
     Truck,
-    MapPin,
     Calendar,
     Users,
     FileText,
     Wrench,
-    Gauge,
-    Weight,
     Clock,
     AlertTriangle,
     Upload,
@@ -19,7 +16,6 @@ import {
     Fuel,
     Route,
     Star,
-    Hash,
     Activity
 } from 'lucide-react';
 import { fleetApi } from '../../services/fleetApi';
@@ -27,7 +23,7 @@ import { documentApi, type Document as DocumentType } from '../../services/docum
 import toast from 'react-hot-toast';
 import DocumentUploadModal from '../documents/DocumentUploadModal';
 import DocumentPreviewModal from '../documents/DocumentPreviewModal';
-import { flattenComplianceDocuments } from '../../utils/vehicleComplianceDocuments';
+import { TruckFullProfile } from './TruckFullProfile';
 
 interface TruckDetailsModalProps {
     isOpen: boolean;
@@ -93,12 +89,6 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
         if (!date) return 'N/A';
         return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     };
-
-    const location = truck?.currentLocation
-        ? typeof truck.currentLocation === 'string'
-            ? truck.currentLocation
-            : truck.currentLocation?.address || 'No location set'
-        : 'No location set';
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: Truck },
@@ -203,174 +193,14 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
 
                                 {/* =========== OVERVIEW TAB =========== */}
                                 {activeTab === 'overview' && (
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                        {/* Main Info */}
-                                        <div className="lg:col-span-2 space-y-6">
-                                            {/* Vehicle Information */}
-                                            <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                                                <div className="flex items-center justify-between mb-6">
-                                                    <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Vehicle Information</h3>
-                                                    <Truck className="w-5 h-5 text-primary-500 dark:text-primary-400" />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                                    <InfoItem icon={Hash} label="Plate Number" value={truck.plateNumber} />
-                                                    <InfoItem icon={Hash} label="VIN" value={truck.vin || 'N/A'} />
-                                                    <InfoItem icon={Truck} label="Make & Model" value={`${truck.make || 'N/A'} ${truck.model || ''}`} />
-                                                    <InfoItem icon={Calendar} label="Year" value={truck.year?.toString() || 'N/A'} />
-                                                    <InfoItem icon={Truck} label="Vehicle Type" value={typeof truck.truckType === 'string' ? truck.truckType.replace(/_/g, ' ') : String(truck.truckType || 'N/A')} />
-                                                    <InfoItem icon={Truck} label="Vehicle Class" value={typeof truck.vehicleClass === 'string' ? truck.vehicleClass.replace(/_/g, ' ') : 'N/A'} />
-                                                    <InfoItem icon={Weight} label="Payload" value={truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : 'N/A'} />
-                                                    <InfoItem icon={Gauge} label="Volume" value={truck.capacityVolume ? `${Number(truck.capacityVolume).toLocaleString()} m³` : 'N/A'} />
-                                                    <InfoItem icon={Fuel} label="Propulsion" value={typeof truck.fuelType === 'string' ? truck.fuelType.replace(/_/g, ' ') : 'N/A'} />
-                                                    <InfoItem icon={Activity} label="Odometer" value={truck.mileage ? `${Number(truck.mileage).toLocaleString()} km` : 'N/A'} />
-                                                    <InfoItem icon={MapPin} label="Current Location" value={location} />
-                                                    <InfoItem icon={Hash} label="Fleet Group" value={truck.fleetGroup || 'N/A'} />
-                                                </div>
-                                            </div>
-
-                                            {/* Performance Summary */}
-                                            <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                                                <div className="flex items-center justify-between mb-6">
-                                                    <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Performance</h3>
-                                                    <Activity className="w-5 h-5 text-primary-500 dark:text-primary-400" />
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                    <MiniStat label="Total Trips" value={truck.totalTrips?.toString() || '0'} icon={Route} />
-                                                    <MiniStat label="Revenue" value={truck.totalRevenue ? `KES ${Number(truck.totalRevenue).toLocaleString()}` : 'KES 0'} icon={Star} />
-                                                    <MiniStat label="Fuel Efficiency" value={truck.fuelEfficiency ? `${truck.fuelEfficiency} km/l` : 'N/A'} icon={Fuel} />
-                                                    <MiniStat label="Rating" value={truck.averageRating ? `${Number(truck.averageRating).toFixed(1)} ★` : 'N/A'} icon={Star} />
-                                                </div>
-                                            </div>
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <MiniStat label="Total Trips" value={truck.totalTrips?.toString() || '0'} icon={Route} />
+                                            <MiniStat label="Revenue" value={truck.totalRevenue ? `KES ${Number(truck.totalRevenue).toLocaleString()}` : 'KES 0'} icon={Star} />
+                                            <MiniStat label="Fuel Efficiency" value={truck.fuelEfficiency ? `${truck.fuelEfficiency} km/l` : 'N/A'} icon={Fuel} />
+                                            <MiniStat label="Rating" value={truck.averageRating ? `${Number(truck.averageRating).toFixed(1)} ★` : 'N/A'} icon={Star} />
                                         </div>
-
-                                        {/* Sidebar */}
-                                        <div className="space-y-6">
-                                            {/* Quick Stats */}
-                                            <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                                                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Schedule</h4>
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-primary-50 dark:bg-primary-950/30 rounded-xl transition-colors">
-                                                            <Wrench className="w-4 h-4 text-primary-500 dark:text-primary-400" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Last Maintenance</p>
-                                                            <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.lastMaintenanceDate)}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-amber-50 dark:bg-amber-950/30 rounded-xl transition-colors">
-                                                            <Clock className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Next Maintenance</p>
-                                                            <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.nextMaintenanceDate)}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl transition-colors">
-                                                            <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Insurance Expiry</p>
-                                                            <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.insuranceExpiry)}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl transition-colors">
-                                                            <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Registry Expiry</p>
-                                                            <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.registrationExpiry)}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl transition-colors">
-                                                            <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Registered</p>
-                                                            <p className="text-sm font-bold text-slate-900 dark:text-white transition-colors">{formatDate(truck.createdAt)}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Assigned Drivers Preview */}
-                                            <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                                                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 transition-colors">Assigned Drivers</h4>
-                                                {Array.isArray(truck.assignedDrivers) && truck.assignedDrivers.length > 0 ? (
-                                                    <div className="space-y-3">
-                                                        {truck.assignedDrivers.map((driver: any, idx: number) => (
-                                                            <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl transition-colors">
-                                                                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 flex items-center justify-center text-xs font-black transition-colors">
-                                                                    {driver.driverName?.charAt(0) || 'D'}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate transition-colors">{driver.driverName}</p>
-                                                                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">{driver.status}</p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4 transition-colors">No drivers assigned</p>
-                                                )}
-                                            </div>
-
-                                            <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                                                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 transition-colors">Compliance documents</h4>
-                                                {flattenComplianceDocuments(truck.complianceDocuments).length > 0 ? (
-                                                    <div className="space-y-3">
-                                                        {flattenComplianceDocuments(truck.complianceDocuments).map(({ title, record }, idx) => {
-                                                            const expired = Boolean(record.expiryDate) && new Date(record.expiryDate as string) < new Date(new Date().toDateString());
-                                                            return (
-                                                                <div key={`${title}-${idx}`} className="flex items-start justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                                                                    <div className="min-w-0">
-                                                                        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{title}</p>
-                                                                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1">
-                                                                            {record.number ? `${record.number} · ` : ''}
-                                                                            {record.expiryDate ? `Expires ${formatDate(record.expiryDate)}` : 'No expiry'}
-                                                                            {record.fileName ? ` · ${record.fileName}` : ''}
-                                                                        </p>
-                                                                    </div>
-                                                                    <span className={`shrink-0 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                                                                        expired ? 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'
-                                                                    }`}>
-                                                                        {expired ? 'Expired' : (record.status || 'Valid')}
-                                                                    </span>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No compliance files attached</p>
-                                                )}
-                                            </div>
-
-                                            {/* Documents Count */}
-                                            <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
-                                                <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 transition-colors">Documents</h4>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-primary-50 dark:bg-primary-950/30 rounded-xl transition-colors">
-                                                            <FileText className="w-4 h-4 text-primary-500 dark:text-primary-400" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-2xl font-black text-slate-900 dark:text-white transition-colors">{documents.length}</p>
-                                                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider transition-colors">Total Files</p>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => setActiveTab('documents')}
-                                                        className="px-4 py-2 bg-primary-50 dark:bg-primary-950/30 text-primary-600 dark:text-primary-400 rounded-xl text-xs font-bold hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-all shadow-sm"
-                                                    >
-                                                        View All
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <TruckFullProfile truck={truck} />
                                     </div>
                                 )}
 
@@ -633,18 +463,6 @@ const TruckDetailsModal = ({ isOpen, onClose, truckId }: TruckDetailsModalProps)
 };
 
 /* ============ Helper Components ============ */
-
-const InfoItem = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-    <div className="flex items-center gap-3">
-        <div className="p-2 bg-primary-50 rounded-xl shrink-0">
-            <Icon className="w-4 h-4 text-primary-500" />
-        </div>
-        <div className="min-w-0">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{value}</p>
-        </div>
-    </div>
-);
 
 const MiniStat = ({ label, value, icon: Icon }: { label: string; value: string; icon: any }) => (
     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 text-center">

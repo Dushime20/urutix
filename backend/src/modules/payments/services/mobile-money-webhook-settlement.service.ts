@@ -60,9 +60,22 @@ export class MobileMoneyWebhookSettlementService {
       return;
     }
 
+    if (referenceId.startsWith('PARK-') || meta.isParkingReservation || meta.parkingReservationId) {
+      await this.invokeParking('confirmFromIshemaWebhook', {
+        referenceId,
+        transactionId: payment.transactionId || referenceId,
+        paymentId: payment.id,
+      });
+      return;
+    }
+
     this.logger.log(
       `Generic trip/service payment ${payment.id} completed via webhook (${referenceId})`,
     );
+  }
+
+  async settleParkingReservation(payload: { referenceId: string; transactionId?: string; paymentId?: string }) {
+    await this.invokeParking('confirmFromIshemaWebhook', payload);
   }
 
   async settleFailedPayment(
@@ -153,6 +166,20 @@ export class MobileMoneyWebhookSettlementService {
       await subscriptionService[method](payload);
     } catch (err: any) {
       this.logger.error(`Subscription webhook handler ${method} failed: ${err.message}`, err.stack);
+    }
+  }
+
+  private async invokeParking(method: string, payload: Record<string, unknown>): Promise<void> {
+    try {
+      const { ParkingReservationsService } = await import('../../parking-reservations/parking-reservations.service');
+      const parkingService = this.moduleRef.get(ParkingReservationsService, { strict: false });
+      if (!parkingService?.[method]) {
+        this.logger.error(`ParkingReservationsService.${method} is not available`);
+        return;
+      }
+      await parkingService[method](payload);
+    } catch (err: any) {
+      this.logger.error(`Parking webhook handler ${method} failed: ${err.message}`, err.stack);
     }
   }
 }

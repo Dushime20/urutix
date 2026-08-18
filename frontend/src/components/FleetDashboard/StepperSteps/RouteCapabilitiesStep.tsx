@@ -185,6 +185,24 @@ export const RouteCapabilitiesStep: React.FC<RouteCapabilitiesStepProps> = ({
         />
       </div>
 
+      {formData.routeCapabilities?.supportsAirFreight && (
+        <div className="space-y-4">
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+            Air Cargo Compliance
+          </h4>
+          <textarea
+            required
+            value={formData.assetDetails?.airCargoCompliance || ''}
+            onChange={(e) =>
+              handleInputChange('assetDetails', { ...(formData.assetDetails || {}), airCargoCompliance: e.target.value })
+            }
+            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none min-h-[90px] resize-none"
+            placeholder="IATA/ICAO screening, ULD compatibility, known consignor status, air waybill process..."
+            maxLength={2000}
+          />
+        </div>
+      )}
+
       {/* Route Summary */}
       <div className="bg-blue-600/5 dark:bg-blue-600/10 rounded-lg p-4 border border-blue-600/10">
         <h4 className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-4">Transit Profile Summary</h4>

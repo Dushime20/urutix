@@ -36,6 +36,29 @@ export enum ParkingReservationActivityAction {
   RESERVATION_CANCELLED = 'RESERVATION_CANCELLED',
   NOTE_ADDED = 'NOTE_ADDED',
   STATUS_CHANGED = 'STATUS_CHANGED',
+  PAYMENT_REQUESTED = 'PAYMENT_REQUESTED',
+  PAYMENT_SUBMITTED = 'PAYMENT_SUBMITTED',
+  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
+  PAYMENT_WAIVED = 'PAYMENT_WAIVED',
+}
+
+export enum ParkingReservationPaymentStatus {
+  NOT_APPLICABLE = 'NOT_APPLICABLE',
+  DUE = 'DUE',
+  PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+  WAIVED = 'WAIVED',
+  CANCELLED = 'CANCELLED',
+  REFUNDED = 'REFUNDED',
+}
+
+export enum ParkingReservationPaymentMethod {
+  CREDIT_TRANSFER = 'CREDIT_TRANSFER',
+  CARD = 'CARD',
+  CASH = 'CASH',
+  MOBILE_MONEY = 'MOBILE_MONEY',
+  OTHER = 'OTHER',
 }
 
 @Entity('parking_reservations')
@@ -195,6 +218,64 @@ export class ParkingReservation {
   @Column({ length: 64, nullable: true })
   submitterIpHash?: string;
 
+  @Column({
+    type: 'enum',
+    enum: ParkingReservationPaymentStatus,
+    enumName: 'parking_reservation_payment_status_enum',
+    default: ParkingReservationPaymentStatus.NOT_APPLICABLE,
+  })
+  paymentStatus: ParkingReservationPaymentStatus;
+
+  @Column({ length: 3, nullable: true })
+  currency?: string;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  occupancyAmount?: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  reservationFeeAmount?: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  subtotalAmount?: number;
+
+  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
+  taxPercent?: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  taxAmount?: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  totalAmountDue?: number;
+
+  @Column({ length: 40, nullable: true })
+  invoiceNumber?: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  paymentDueAt?: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  paidAt?: Date;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
+  paidAmount?: number;
+
+  @Column({
+    type: 'enum',
+    enum: ParkingReservationPaymentMethod,
+    enumName: 'parking_reservation_payment_method_enum',
+    nullable: true,
+  })
+  paymentMethod?: ParkingReservationPaymentMethod;
+
+  @Column({ length: 80, nullable: true })
+  paymentReference?: string;
+
+  @Column({ type: 'text', nullable: true })
+  paymentNotes?: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  feeSnapshot?: Record<string, unknown>;
+
   @OneToMany(() => ParkingReservationActivity, (activity) => activity.reservation)
   activities?: ParkingReservationActivity[];
 
@@ -278,6 +359,27 @@ export class ParkingFacilityConfig {
 
   @Column({ type: 'boolean', default: true })
   isDefault: boolean;
+
+  @Column({ length: 3, default: 'USD' })
+  currency: string;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  monthlyRatePerSpace: number;
+
+  @Column({ type: 'numeric', precision: 12, scale: 2, default: 0 })
+  reservationFee: number;
+
+  @Column({ type: 'numeric', precision: 5, scale: 2, default: 0 })
+  taxPercent: number;
+
+  @Column({ type: 'int', default: 7 })
+  paymentDueDays: number;
+
+  @Column({ type: 'text', nullable: true })
+  feeNotes?: string;
+
+  @Column({ type: 'text', nullable: true })
+  paymentInstructions?: string;
 
   @CreateDateColumn()
   createdAt: Date;

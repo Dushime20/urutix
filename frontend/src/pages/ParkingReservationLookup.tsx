@@ -9,8 +9,11 @@ import { TranslatedText } from '../components/translated-text';
 import { PublicNavbar } from '../components/home/PublicNavbar';
 import { parkingApi } from '../services/parkingApi';
 import { getApiErrorMessage } from '../config/errorMessages';
-import { PARKING_STATUS_LABELS, type ParkingReservation } from '../types/parking';
+import { PARKING_STATUS_LABELS, formatParkingMoney, isParkingPaymentOpen, type ParkingReservation } from '../types/parking';
 import { StatusBadge } from '../components/EnliteUI/Tables';
+import { ParkingActivityTimeline } from '../components/parking/ParkingActivityTimeline';
+import { ParkingPaymentCard } from '../components/parking/ParkingPaymentCard';
+import { ParkingIshemaPayModal } from '../components/parking/ParkingIshemaPayModal';
 
 const schema = z.object({
   reservationReference: z.string().min(5, 'Reservation reference is required'),
@@ -24,6 +27,7 @@ const ParkingReservationLookupPage = () => {
   const [loading, setLoading] = useState(false);
   const [reservation, setReservation] = useState<ParkingReservation | null>(null);
   const [responding, setResponding] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -66,6 +70,9 @@ const ParkingReservationLookupPage = () => {
     }
   };
 
+  const confirmedAndPayable =
+    reservation?.status === 'APPROVED' && isParkingPaymentOpen(reservation.payment?.status);
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans antialiased relative overflow-hidden">
       <PublicNavbar alwaysSolid />
@@ -101,7 +108,7 @@ const ParkingReservationLookupPage = () => {
             </form>
 
             {reservation && (
-              <div className="px-6 sm:px-8 pb-8 space-y-4">
+              <div className="px-6 sm:px-8 pb-8 space-y-5">
                 <div className="flex items-center justify-between">
                   <p className="font-black text-slate-900">{reservation.reservationReference}</p>
                   <StatusBadge status={reservation.status} label={PARKING_STATUS_LABELS[reservation.status]} />
@@ -118,6 +125,39 @@ const ParkingReservationLookupPage = () => {
                     </button>
                   </div>
                 )}
+                {confirmedAndPayable && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Reservation confirmed — payment required</p>
+                    <p className="text-sm font-medium text-slate-700">
+                      Pay {formatParkingMoney(reservation.payment?.totalAmount, reservation.payment?.currency)} with Ishema to complete this reservation.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPayOpen(true)}
+                      className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 rounded-xl text-[11px]"
+                    >
+                      <TranslatedText text="Pay now" />
+                    </button>
+                  </div>
+                )}
+                <ParkingPaymentCard reservation={reservation} />
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Events and status</p>
+                  <ParkingActivityTimeline activities={reservation.activities} />
+                </div>
+                <ParkingIshemaPayModal
+                  open={payOpen}
+                  onClose={() => setPayOpen(false)}
+                  reservation={reservation}
+                  lookup={{
+                    reservationReference: reservation.reservationReference,
+                    email: form.getValues('email') || reservation.driverEmail || reservation.email,
+                  }}
+                  onPaid={(updated) => {
+                    setReservation(updated);
+                    toast.success('Payment confirmed. Your reservation is approved.');
+                  }}
+                />
               </div>
             )}
           </div>

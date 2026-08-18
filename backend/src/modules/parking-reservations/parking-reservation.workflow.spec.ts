@@ -1,9 +1,12 @@
 import {
   actionForTransition,
   addMonths,
+  calculateParkingFeeQuote,
   canTransition,
+  effectivePaymentStatus,
   formatReservationReference,
   hasSufficientCapacity,
+  invoiceNumberFor,
   isValidMcNumber,
   isValidPhone,
   isValidUsdotNumber,
@@ -58,5 +61,29 @@ describe('parking reservation workflow', () => {
 
   it('maps approval to an audit action', () => {
     expect(actionForTransition(ParkingReservationStatus.APPROVED)).toBe('RESERVATION_APPROVED');
+  });
+
+  it('quotes occupancy, reservation fee and tax using ISO money rounding', () => {
+    const quote = calculateParkingFeeQuote({
+      spaces: 2,
+      months: 3,
+      monthlyRatePerSpace: 250,
+      reservationFee: 25,
+      taxPercent: 10,
+      currency: 'USD',
+    });
+    expect(quote.occupancyAmount).toBe(1500);
+    expect(quote.reservationFeeAmount).toBe(25);
+    expect(quote.subtotalAmount).toBe(1525);
+    expect(quote.taxAmount).toBe(152.5);
+    expect(quote.totalAmount).toBe(1677.5);
+    expect(quote.currency).toBe('USD');
+    expect(invoiceNumberFor('PR-2026-000123')).toBe('INV-PR-2026-000123');
+  });
+
+  it('marks unpaid invoices overdue after the due date', () => {
+    expect(effectivePaymentStatus('DUE', new Date(Date.now() - 60_000))).toBe('OVERDUE');
+    expect(effectivePaymentStatus('DUE', new Date(Date.now() + 60_000))).toBe('DUE');
+    expect(effectivePaymentStatus('PAID', new Date(Date.now() - 60_000))).toBe('PAID');
   });
 });

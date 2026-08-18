@@ -1,20 +1,16 @@
 import React from 'react';
 import {
   Check,
-  Truck,
   User,
   Settings,
   Shield,
-  Map,
   Award,
   FileText,
   Calendar,
-  Tag,
   AlignLeft,
-  Clock,
   Info,
 } from 'lucide-react';
-import { flattenComplianceDocuments } from '../../../utils/vehicleComplianceDocuments';
+import { TruckFullProfile } from '../TruckFullProfile';
 
 interface ReviewSubmitStepProps {
   formData: any;
@@ -193,31 +189,6 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
     'emergencyContact.name', 'emergencyContact.phone', 'emergencyContact.relationship',
   ];
 
-  // ── truck field groups ────────────────────────────────────────────────────
-  const basicFields = [
-    'plateNumber', 'vin', 'make', 'model', 'year', 'color', 'fuelType',
-    'capacityWeight', 'capacityVolume', 'registrationNumber', 'registrationExpiry',
-    'insurancePolicy', 'insuranceExpiry',
-  ];
-
-  const cargoFields = [
-    'truckType', 'trailerType', 'hasTanker', 'hasBulk', 'hasRefrigerated',
-    'hasCarCarrier', 'hasHeavyHaul', 'hasOversized', 'hasHazmat',
-    'hasDangerousGoods', 'hasFoodGrade', 'hasPharmaceutical',
-  ];
-
-  const equipmentFields = [
-    'hasSideRails', 'hasTarps', 'hasStraps', 'hasChains', 'hasWinch',
-    'hasRam', 'hasTailLift', 'hasSideLift', 'hasRollerBed', 'hasDropDeck',
-    'hasExtendable', 'hasLowbed', 'hasStepDeck', 'hasPowerOnly',
-  ];
-
-  const technologyFields = [
-    'hasGPS', 'hasTracking', 'hasTelematics', 'hasELD', 'hasDashCam',
-    'hasSafetyCameras', 'hasCollisionAvoidance', 'hasLaneDeparture',
-    'hasAdaptiveCruise', 'hasBlindSpot', 'hasBackupCamera',
-  ];
-
   // ── certifications (driver) ───────────────────────────────────────────────
   const certLabels: Record<string, string> = {
     cdlCertified: 'CDL Certified',
@@ -368,61 +339,7 @@ const ReviewSubmitStep: React.FC<ReviewSubmitStepProps> = ({ formData, activeTab
 
       {/* ── TRUCK SECTIONS ────────────────────────────────────────────────── */}
       {activeTab === 'trucks' && (
-        <>
-          <Section
-            title="Basic Information"
-            icon={<Truck className="w-3.5 h-3.5" />}
-            data={formData}
-            fields={basicFields}
-            accent="text-blue-600 dark:text-blue-400"
-          />
-          <Section
-            title="Cargo Capabilities"
-            icon={<Settings className="w-3.5 h-3.5" />}
-            data={formData}
-            fields={cargoFields}
-            accent="text-blue-600 dark:text-blue-400"
-          />
-          <Section
-            title="Loading Equipment"
-            icon={<Shield className="w-3.5 h-3.5" />}
-            data={formData}
-            fields={equipmentFields}
-            accent="text-blue-600 dark:text-blue-400"
-          />
-          <Section
-            title="Technology & Tracking"
-            icon={<Map className="w-3.5 h-3.5" />}
-            data={formData}
-            fields={technologyFields}
-            accent="text-blue-600 dark:text-blue-400"
-          />
-          {flattenComplianceDocuments(formData.complianceDocuments).length > 0 && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 p-5">
-              <SectionHeader
-                icon={<FileText className="w-3.5 h-3.5" />}
-                title="Compliance documents"
-                accent="text-blue-600 dark:text-blue-400"
-              />
-              <div className="space-y-2">
-                {flattenComplianceDocuments(formData.complianceDocuments).map(({ title, record }, idx) => (
-                  <div key={`${title}-${idx}`} className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 dark:border-gray-800 last:border-0">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-gray-900 dark:text-white">{title}</p>
-                      <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest">
-                        {record.number ? `${record.number} · ` : ''}
-                        {record.fileName || (record.file ? record.file.name : 'No file attached')}
-                      </p>
-                    </div>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">
-                      {record.expiryDate ? `Exp ${record.expiryDate}` : record.status || ''}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        <TruckFullProfile truck={formData} compact />
       )}
 
       {/* ready banner */}

@@ -2,10 +2,31 @@ import api from './api';
 import type {
   CreateParkingReservationPayload,
   ParkingFacility,
+  ParkingFeeSchedule,
   ParkingOfficer,
+  ParkingPaymentMethod,
   ParkingReservation,
   ParkingReservationStats,
 } from '../types/parking';
+
+type ApiEnvelope<T> = {
+  success: boolean;
+  message?: string;
+  data: T;
+  pagination?: { total: number; page: number; limit: number };
+  possibleDuplicate?: boolean;
+  emailSent?: boolean;
+  emailedTo?: string[];
+};
+
+export type ParkingIshemaPayResult = {
+  reservation: ParkingReservation;
+  referenceId?: string;
+  providerStatus: string;
+  amount?: number;
+  currency?: string;
+  message?: string;
+};
 
 type ApiEnvelope<T> = {
   success: boolean;
@@ -57,6 +78,27 @@ export const parkingApi = {
     return response.data.data;
   },
 
+  guestPay: async (payload: {
+    reservationReference: string;
+    email: string;
+    paymentMethod: ParkingPaymentMethod;
+    paymentReference: string;
+    notes?: string;
+  }) => {
+    const response = await api.post<ApiEnvelope<ParkingReservation>>('/parking-reservations/lookup/pay', payload);
+    return response.data.data;
+  },
+
+  guestPayNow: async (payload: { reservationReference: string; email: string; phoneNumber: string }) => {
+    const response = await api.post<ApiEnvelope<ParkingIshemaPayResult>>('/parking-reservations/lookup/pay-now', payload);
+    return response.data.data;
+  },
+
+  guestPayStatus: async (payload: { reservationReference: string; email: string; referenceId?: string }) => {
+    const response = await api.post<ApiEnvelope<ParkingIshemaPayResult>>('/parking-reservations/lookup/pay-status', payload);
+    return response.data.data;
+  },
+
   list: async (params?: ParkingListParams) => {
     const response = await api.get<ApiEnvelope<ParkingReservation[]>>('/parking-reservations', { params });
     return {
@@ -79,6 +121,16 @@ export const parkingApi = {
 
   facility: async () => {
     const response = await api.get<ApiEnvelope<ParkingFacility>>('/parking-reservations/facility');
+    return response.data.data;
+  },
+
+  fees: async () => {
+    const response = await api.get<ApiEnvelope<ParkingFeeSchedule>>('/parking-reservations/fees');
+    return response.data.data;
+  },
+
+  updateFees: async (payload: Partial<ParkingFeeSchedule>) => {
+    const response = await api.patch<ApiEnvelope<ParkingFeeSchedule>>('/parking-reservations/fees', payload);
     return response.data.data;
   },
 
@@ -142,6 +194,46 @@ export const parkingApi = {
   addNote: async (id: string, note: string) => {
     const response = await api.post<ApiEnvelope<ParkingReservation>>(`/parking-reservations/${id}/notes`, {
       note,
+    });
+    return response.data.data;
+  },
+
+  pay: async (
+    id: string,
+    payload: { paymentMethod: ParkingPaymentMethod; paymentReference: string; notes?: string },
+  ) => {
+    const response = await api.post<ApiEnvelope<ParkingReservation>>(`/parking-reservations/${id}/pay`, payload);
+    return response.data.data;
+  },
+
+  payNow: async (id: string, phoneNumber: string) => {
+    const response = await api.post<ApiEnvelope<ParkingIshemaPayResult>>(`/parking-reservations/${id}/pay-now`, {
+      phoneNumber,
+    });
+    return response.data.data;
+  },
+
+  payStatus: async (id: string, referenceId?: string) => {
+    const response = await api.post<ApiEnvelope<ParkingIshemaPayResult>>(`/parking-reservations/${id}/pay-status`, {
+      referenceId,
+    });
+    return response.data.data;
+  },
+
+  confirmPayment: async (
+    id: string,
+    payload: { paymentMethod: ParkingPaymentMethod; paymentReference: string; notes?: string },
+  ) => {
+    const response = await api.post<ApiEnvelope<ParkingReservation>>(
+      `/parking-reservations/${id}/confirm-payment`,
+      payload,
+    );
+    return response.data.data;
+  },
+
+  waivePayment: async (id: string, reason: string) => {
+    const response = await api.post<ApiEnvelope<ParkingReservation>>(`/parking-reservations/${id}/waive-payment`, {
+      reason,
     });
     return response.data.data;
   },

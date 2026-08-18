@@ -4,8 +4,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ParkingSquare, Plus, Clock, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { parkingApi } from '../../services/parkingApi';
-import { PARKING_STATUS_LABELS, type ParkingReservation } from '../../types/parking';
+import {
+  PARKING_PAYMENT_LABELS,
+  PARKING_STATUS_LABELS,
+  formatParkingMoney,
+  isParkingPaymentOpen,
+  type ParkingReservation,
+} from '../../types/parking';
 import { ParkingReservationForm } from '../parking/ParkingReservationForm';
+import { ParkingActivityTimeline } from '../parking/ParkingActivityTimeline';
+import { ParkingIshemaPayModal } from '../parking/ParkingIshemaPayModal';
 import { TranslatedText } from '../translated-text';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import { Modal } from '../EnliteUI';
@@ -33,6 +41,7 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
   const [showForm, setShowForm] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ['my-parking-reservations'],
@@ -58,6 +67,7 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
   }), [driver]);
 
   const items = query.data?.items || [];
+  const payingItem = items.find((row) => row.id === payingId);
 
   return (
     <div className="animate-in fade-in duration-500 w-full max-w-6xl mx-auto space-y-6">
@@ -216,11 +226,46 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
                     )}
                   </div>
                 )}
+
+                {row.status === 'APPROVED' && isParkingPaymentOpen(row.payment?.status) && (
+                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-2">
+                      {PARKING_PAYMENT_LABELS[row.payment!.status]} · {formatParkingMoney(row.payment?.totalAmount, row.payment?.currency)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPayingId(row.id)}
+                      className="px-4 py-2 rounded-lg bg-[#2b5271] text-white text-[10px] font-black uppercase tracking-widest"
+                    >
+                      <TranslatedText text="Pay now" />
+                    </button>
+                  </div>
+                )}
+
+                {row.activities && row.activities.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Events and status</p>
+                    <ParkingActivityTimeline activities={row.activities} />
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+      {payingItem && (
+        <ParkingIshemaPayModal
+          open={!!payingId}
+          onClose={() => setPayingId(null)}
+          reservation={payingItem}
+          reservationId={payingItem.id}
+          onPaid={() => {
+            setPayingId(null);
+            queryClient.invalidateQueries({ queryKey: ['my-parking-reservations'] });
+            toast.success('Payment confirmed. Your reservation is approved.');
+          }}
+        />
+      )}
     </div>
   );
 };

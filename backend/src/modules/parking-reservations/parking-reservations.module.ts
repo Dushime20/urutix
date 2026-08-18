@@ -13,6 +13,7 @@ import { Driver } from '../../entities/driver.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { EventsModule } from '../events/events.module';
 import { MessengerModule } from '../messenger/messenger.module';
+import { PaymentsModule } from '../payments/payments.module';
 import { SmsService } from '../notifications/services/sms.service';
 import { ParkingReservationsController } from './parking-reservations.controller';
 import { ParkingReservationsService } from './parking-reservations.service';
@@ -33,6 +34,7 @@ import { ParkingReservationListener } from './listeners/parking-reservation.list
     EnhancedAuthModule,
     EventsModule,
     MessengerModule,
+    PaymentsModule,
   ],
   controllers: [ParkingReservationsController],
   providers: [ParkingReservationsService, ParkingReservationListener, SmsService],

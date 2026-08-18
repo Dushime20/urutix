@@ -181,8 +181,13 @@ export const TrucksList: React.FC<TrucksListProps> = ({ onAddTruck, refreshTrigg
   }, [search, statusFilter]);
 
   // --- Handlers ---
-  const handleEditTruck = (truck: any) => {
-    setSelectedTruck(truck);
+  const handleEditTruck = async (truck: any) => {
+    try {
+      const fullTruck = await fleetApi.getTruck(truck.id);
+      setSelectedTruck(fullTruck);
+    } catch {
+      setSelectedTruck(truck);
+    }
     setShowEditModal(true);
   };
 

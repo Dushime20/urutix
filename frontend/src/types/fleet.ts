@@ -700,6 +700,9 @@ export interface FleetItem {
     gpsTrackingSurcharge?: number;
     insuranceSurcharge?: number;
   };
+  assetDetails?: Record<string, any>;
+  createdBy?: string;
+  updatedBy?: string;
 
   // Comprehensive records
   documents?: TruckDocument[];

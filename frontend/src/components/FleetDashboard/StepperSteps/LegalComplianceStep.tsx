@@ -6,6 +6,7 @@ import type {
   VehicleComplianceDocuments,
 } from '../../../utils/vehicleComplianceDocuments';
 import { COMPLIANCE_DOC_CONFIG } from '../../../utils/vehicleComplianceDocuments';
+import { getExpiryAlerts } from '../../../utils/vehicleEnterpriseRules';
 
 interface LegalComplianceStepProps {
   formData: any;
@@ -22,6 +23,10 @@ export const LegalComplianceStep: React.FC<LegalComplianceStepProps> = ({
   handleInputChange,
 }) => {
   const docs: VehicleComplianceDocuments = formData.complianceDocuments || {};
+  const expiryAlerts = getExpiryAlerts(formData);
+  const claims = Array.isArray(formData.assetDetails?.insuranceClaims)
+    ? formData.assetDetails.insuranceClaims
+    : [];
   const hasCrossBorder =
     Boolean(formData.hasCrossBorderPermit) ||
     Boolean(docs.crossBorderPermit?.number) ||
@@ -56,6 +61,16 @@ export const LegalComplianceStep: React.FC<LegalComplianceStepProps> = ({
         </h3>
       </div>
 
+      {expiryAlerts.length > 0 && (
+        <div className="p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+          {expiryAlerts.map((alert) => (
+            <p key={alert} className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">
+              {alert}
+            </p>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-4">
         <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
           Insurance & Registration
@@ -70,6 +85,17 @@ export const LegalComplianceStep: React.FC<LegalComplianceStepProps> = ({
             required
           />
         </div>
+        <ComplianceDocumentField
+          title={COMPLIANCE_DOC_CONFIG.registration.title}
+          numberLabel={COMPLIANCE_DOC_CONFIG.registration.numberLabel}
+          value={docs.registration || { number: formData.registrationNumber, expiryDate: formData.registrationExpiry, status: 'VALID' }}
+          onChange={(record) =>
+            updateDoc('registration', record, {
+              registrationNumber: record.number || formData.registrationNumber,
+              registrationExpiry: record.expiryDate || formData.registrationExpiry,
+            })
+          }
+        />
         <ComplianceDocumentField
           title={COMPLIANCE_DOC_CONFIG.insurance.title}
           numberLabel="Insurance Policy ID"
@@ -185,6 +211,88 @@ export const LegalComplianceStep: React.FC<LegalComplianceStepProps> = ({
             />
           </div>
         )}
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            Insurance Claims Tracking
+          </h4>
+          <button
+            type="button"
+            onClick={() =>
+              handleInputChange('assetDetails', {
+                ...(formData.assetDetails || {}),
+                insuranceClaims: [...claims, { claimNumber: '', incidentDate: '', amount: '', status: 'pending', description: '' }],
+              })
+            }
+            className="text-[10px] font-bold uppercase tracking-widest text-blue-600 dark:text-blue-500 hover:underline"
+          >
+            + Add claim
+          </button>
+        </div>
+        {claims.length === 0 && (
+          <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+            Track open or historical insurance claims against this vehicle.
+          </p>
+        )}
+        {claims.map((claim: any, index: number) => (
+          <div key={`claim-${index}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-100 dark:border-gray-700">
+            {[
+              { key: 'claimNumber', label: 'Claim number', type: 'text' },
+              { key: 'incidentDate', label: 'Incident date', type: 'date' },
+              { key: 'amount', label: 'Amount', type: 'number' },
+            ].map((field) => (
+              <div key={field.key}>
+                <label className={labelClass}>{field.label}</label>
+                <input
+                  type={field.type}
+                  value={claim[field.key] || ''}
+                  onChange={(e) => {
+                    const next = claims.map((item: any, i: number) =>
+                      i === index ? { ...item, [field.key]: e.target.value } : item,
+                    );
+                    handleInputChange('assetDetails', { ...(formData.assetDetails || {}), insuranceClaims: next });
+                  }}
+                  className={inputClass}
+                />
+              </div>
+            ))}
+            <div>
+              <label className={labelClass}>Status</label>
+              <select
+                value={claim.status || 'pending'}
+                onChange={(e) => {
+                  const next = claims.map((item: any, i: number) =>
+                    i === index ? { ...item, status: e.target.value } : item,
+                  );
+                  handleInputChange('assetDetails', { ...(formData.assetDetails || {}), insuranceClaims: next });
+                }}
+                className={inputClass}
+              >
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="denied">Denied</option>
+                <option value="settled">Settled</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4">
+              <label className={labelClass}>Description</label>
+              <input
+                type="text"
+                value={claim.description || ''}
+                onChange={(e) => {
+                  const next = claims.map((item: any, i: number) =>
+                    i === index ? { ...item, description: e.target.value } : item,
+                  );
+                  handleInputChange('assetDetails', { ...(formData.assetDetails || {}), insuranceClaims: next });
+                }}
+                className={inputClass}
+                placeholder="Claim summary"
+              />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

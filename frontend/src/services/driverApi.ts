@@ -979,30 +979,7 @@ class DriverApiService {
     return response.data;
   }
 
-  async getAssignedTruck(truckId: string): Promise<{
-    id: string;
-    plateNumber: string;
-    make: string;
-    model: string;
-    year?: number;
-    status: string;
-    color?: string;
-    capacityWeight?: number;
-    capacityVolume?: number;
-    fuelType?: string;
-    truckType?: string;
-    mileage?: number;
-    vin?: string;
-    registrationExpiry?: string;
-    insuranceExpiry?: string;
-    roadworthyCertExpiry?: string;
-    lastMaintenanceDate?: string;
-    nextMaintenanceDate?: string;
-    hasGps?: boolean;
-    hasRefrigeration?: boolean;
-    hasLiftGate?: boolean;
-    hasHazmatPermit?: boolean;
-  } | null> {
+  async getAssignedTruck(truckId: string): Promise<any | null> {
     try {
       const response = await api.get(`/fleet/trucks/${truckId}`);
       return response.data.truck || null;

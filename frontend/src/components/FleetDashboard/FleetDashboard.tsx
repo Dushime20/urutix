@@ -224,15 +224,21 @@ export const FleetDashboard: React.FC = () => {
     const name = [t.make, t.model].filter(Boolean).join(' ').trim() || t.plateNumber || t.id || 'Unknown Truck';
     const status = (t.status as unknown as FleetStatus) || FleetStatus.AVAILABLE;
     return {
+      ...t,
       id: t.id,
       type: 'truck',
       name,
       status,
       currentLocation: t.currentLocation ? {
-        coordinates: { coordinates: [] },
+        ...(typeof t.currentLocation === 'object' ? t.currentLocation as any : {}),
+        coordinates: (t.currentLocation as any)?.coordinates
+          ? { coordinates: Array.isArray((t.currentLocation as any).coordinates)
+              ? (t.currentLocation as any).coordinates
+              : (t.currentLocation as any).coordinates?.coordinates || [] }
+          : { coordinates: [] },
         address: typeof t.currentLocation === 'string'
           ? t.currentLocation
-          : (t.currentLocation as any)?.address || 'Unknown'
+          : (t.currentLocation as any)?.address || t.currentAddress || 'Unknown'
       } : undefined,
       createdAt: t.createdAt ? new Date(t.createdAt) : new Date(),
       updatedAt: t.updatedAt ? new Date(t.updatedAt) : new Date(),

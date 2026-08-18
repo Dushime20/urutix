@@ -96,6 +96,21 @@ const FALLBACK_CATALOG: CatalogPermission[] = [
   { resource: 'users', action: 'view_own', category: 'users', description: 'View own profile' },
   { resource: 'users', action: 'edit_own', category: 'users', description: 'Edit own profile' },
   { resource: 'users', action: 'permissions.manage', category: 'users', description: 'Manage user permissions' },
+  { resource: 'parking', action: 'view', category: 'parking', description: 'View parking reservations' },
+  { resource: 'parking', action: 'view_details', category: 'parking', description: 'View parking reservation details' },
+  { resource: 'parking', action: 'view_own', category: 'parking', description: 'View own parking reservations' },
+  { resource: 'parking', action: 'create', category: 'parking', description: 'Submit parking reservation requests' },
+  { resource: 'parking', action: 'review', category: 'parking', description: 'Review parking reservations' },
+  { resource: 'parking', action: 'approve', category: 'parking', description: 'Approve parking reservations' },
+  { resource: 'parking', action: 'reject', category: 'parking', description: 'Reject parking reservations' },
+  { resource: 'parking', action: 'request_information', category: 'parking', description: 'Request additional reservation information' },
+  { resource: 'parking', action: 'cancel', category: 'parking', description: 'Cancel parking reservations' },
+  { resource: 'parking', action: 'assign', category: 'parking', description: 'Assign parking reservations' },
+  { resource: 'parking', action: 'add_note', category: 'parking', description: 'Add internal notes to parking reservations' },
+  { resource: 'parking', action: 'export', category: 'parking', description: 'Export parking reservations' },
+  { resource: 'parking', action: 'manage_capacity', category: 'parking', description: 'Manage parking facility capacity' },
+  { resource: 'parking', action: 'manage_fees', category: 'parking', description: 'Configure parking reservation fees' },
+  { resource: 'parking', action: 'confirm_payment', category: 'parking', description: 'Confirm or waive parking reservation payments' },
 ];
 
 const FALLBACK_ROLE_DEFAULTS: Record<string, string[]> = {
@@ -138,7 +153,8 @@ const FALLBACK_ROLE_DEFAULTS: Record<string, string[]> = {
   PARKING_RESERVATION_MANAGER: [
     'parking:view', 'parking:view_details', 'parking:review', 'parking:approve',
     'parking:reject', 'parking:request_information', 'parking:cancel', 'parking:assign',
-    'parking:add_note', 'parking:export',
+    'parking:add_note', 'parking:export', 'parking:manage_capacity', 'parking:manage_fees',
+    'parking:confirm_payment',
   ],
 };
 

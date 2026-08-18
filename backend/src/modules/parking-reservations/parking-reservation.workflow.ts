@@ -133,3 +133,109 @@ export function actionForTransition(
       return ParkingReservationActivityAction.STATUS_CHANGED;
   }
 }
+
+export type ParkingFeeInput = {
+  spaces: number;
+  months: number;
+  monthlyRatePerSpace: number;
+  reservationFee: number;
+  taxPercent: number;
+  currency: string;
+};
+
+export type ParkingFeeLineItem = {
+  code: 'OCCUPANCY' | 'RESERVATION_FEE' | 'TAX';
+  description: string;
+  quantity: number;
+  unitAmount: number;
+  amount: number;
+};
+
+export type ParkingFeeQuote = {
+  currency: string;
+  occupancyAmount: number;
+  reservationFeeAmount: number;
+  subtotalAmount: number;
+  taxPercent: number;
+  taxAmount: number;
+  totalAmount: number;
+  lineItems: ParkingFeeLineItem[];
+};
+
+export function roundMoney(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+export function toMoneyNumber(value: unknown): number {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? roundMoney(parsed) : 0;
+}
+
+export function isValidIso4217Currency(code: string): boolean {
+  return /^[A-Z]{3}$/.test((code || '').trim());
+}
+
+export function calculateParkingFeeQuote(input: ParkingFeeInput): ParkingFeeQuote {
+  const currency = (input.currency || 'USD').trim().toUpperCase();
+  const occupancyAmount = roundMoney(input.spaces * input.months * toMoneyNumber(input.monthlyRatePerSpace));
+  const reservationFeeAmount = toMoneyNumber(input.reservationFee);
+  const subtotalAmount = roundMoney(occupancyAmount + reservationFeeAmount);
+  const taxPercent = toMoneyNumber(input.taxPercent);
+  const taxAmount = roundMoney(subtotalAmount * (taxPercent / 100));
+  const totalAmount = roundMoney(subtotalAmount + taxAmount);
+  return {
+    currency,
+    occupancyAmount,
+    reservationFeeAmount,
+    subtotalAmount,
+    taxPercent,
+    taxAmount,
+    totalAmount,
+    lineItems: [
+      {
+        code: 'OCCUPANCY',
+        description: `Truck parking occupancy (${input.spaces} space(s) × ${input.months} month(s))`,
+        quantity: input.spaces * input.months,
+        unitAmount: toMoneyNumber(input.monthlyRatePerSpace),
+        amount: occupancyAmount,
+      },
+      {
+        code: 'RESERVATION_FEE',
+        description: 'Reservation / administration fee',
+        quantity: 1,
+        unitAmount: reservationFeeAmount,
+        amount: reservationFeeAmount,
+      },
+      {
+        code: 'TAX',
+        description: `Tax / VAT (${taxPercent}%)`,
+        quantity: 1,
+        unitAmount: taxAmount,
+        amount: taxAmount,
+      },
+    ],
+  };
+}
+
+export function invoiceNumberFor(reservationReference: string): string {
+  return `INV-${reservationReference}`;
+}
+
+export function addDays(from: Date, days: number): Date {
+  return new Date(from.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+export function effectivePaymentStatus(
+  status: string | undefined,
+  dueAt?: Date | string | null,
+): string {
+  if (
+    status === 'DUE' &&
+    dueAt &&
+    new Date(dueAt).getTime() < Date.now()
+  ) {
+    return 'OVERDUE';
+  }
+  return status || 'NOT_APPLICABLE';
+}

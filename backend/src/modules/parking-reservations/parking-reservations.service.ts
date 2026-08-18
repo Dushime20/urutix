@@ -8,15 +8,19 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ConfigService } from '@nestjs/config';
 import { Brackets, DataSource, EntityManager, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { Tenant } from '../../entities/tenant.entity';
+import { MobileMoneyPaymentService } from '../payments/services/mobile-money-payment.service';
 import {
   ParkingFacilityConfig,
   ParkingReservation,
   ParkingReservationActivity,
   ParkingReservationActivityAction,
+  ParkingReservationPaymentMethod,
+  ParkingReservationPaymentStatus,
   ParkingReservationStatus,
 } from '../../entities/parking-reservation.entity';
 import {
@@ -25,25 +29,38 @@ import {
   CancelParkingReservationDto,
   CreateParkingReservationDto,
   GuestInformationResponseDto,
+  GuestIshemaPayDto,
+  GuestIshemaPayStatusDto,
+  GuestParkingPaymentDto,
   LookupParkingReservationDto,
   ParkingReservationFilterDto,
   RejectParkingReservationDto,
   RequestInformationDto,
+  SubmitParkingPaymentDto,
   UpdateParkingFacilityDto,
+  UpdateParkingFeesDto,
+  WaiveParkingPaymentDto,
 } from './dto/parking-reservation.dto';
 import {
+  addDays,
   addMonths,
+  calculateParkingFeeQuote,
   canTransition,
+  effectivePaymentStatus,
   formatReservationReference,
   hasSufficientCapacity,
+  invoiceNumberFor,
+  isValidIso4217Currency,
   isValidMcNumber,
   isValidPhone,
   isValidUsdotNumber,
   normalizeMcNumber,
   normalizeUsdotNumber,
   periodsOverlap,
+  roundMoney,
   startOfTodayUtc,
   toDateString,
+  toMoneyNumber,
   toUtcDateOnly,
 } from './parking-reservation.workflow';
 
@@ -85,6 +102,8 @@ export class ParkingReservationsService {
     private readonly tenantRepo: Repository<Tenant>,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
+    private readonly configService: ConfigService,
+    private readonly mobileMoneyPaymentService: MobileMoneyPaymentService,
   ) {}
 
   private actorId(user?: AuthUser | null): string | undefined {
@@ -158,6 +177,93 @@ export class ParkingReservationsService {
     if (dto.facilityName) facility.facilityName = dto.facilityName;
     if (dto.allowPastStartDates != null) facility.allowPastStartDates = dto.allowPastStartDates;
     return this.facilityRepo.save(facility);
+  }
+
+  toFeeScheduleView(facility: ParkingFacilityConfig) {
+    return {
+      id: facility.id,
+      facilityName: facility.facilityName,
+      totalCapacity: facility.totalCapacity,
+      allowPastStartDates: facility.allowPastStartDates,
+      currency: (facility.currency || 'USD').toUpperCase(),
+      monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
+      reservationFee: toMoneyNumber(facility.reservationFee),
+      taxPercent: toMoneyNumber(facility.taxPercent),
+      paymentDueDays: facility.paymentDueDays || 7,
+      feeNotes: facility.feeNotes || '',
+      paymentInstructions: facility.paymentInstructions || '',
+    };
+  }
+
+  async getFeeSchedule(user: AuthUser) {
+    this.assertStaff(user);
+    return this.toFeeScheduleView(await this.getFacility(user.tenantId));
+  }
+
+  async updateFeeSchedule(dto: UpdateParkingFeesDto, user: AuthUser) {
+    this.assertStaff(user);
+    const facility = await this.getFacility(user.tenantId);
+    if (dto.currency) {
+      if (!isValidIso4217Currency(dto.currency)) {
+        throw new BadRequestException('Currency must be a 3-letter ISO 4217 code.');
+      }
+      facility.currency = dto.currency;
+    }
+    if (dto.monthlyRatePerSpace != null) facility.monthlyRatePerSpace = roundMoney(dto.monthlyRatePerSpace);
+    if (dto.reservationFee != null) facility.reservationFee = roundMoney(dto.reservationFee);
+    if (dto.taxPercent != null) facility.taxPercent = roundMoney(dto.taxPercent);
+    if (dto.paymentDueDays != null) facility.paymentDueDays = dto.paymentDueDays;
+    if (dto.feeNotes != null) facility.feeNotes = dto.feeNotes;
+    if (dto.paymentInstructions != null) facility.paymentInstructions = dto.paymentInstructions;
+    return this.toFeeScheduleView(await this.facilityRepo.save(facility));
+  }
+
+  buildFeeQuote(reservation: ParkingReservation, facility: ParkingFacilityConfig) {
+    return calculateParkingFeeQuote({
+      spaces: reservation.truckSpacesRequested,
+      months: reservation.contractMonths,
+      monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
+      reservationFee: toMoneyNumber(facility.reservationFee),
+      taxPercent: toMoneyNumber(facility.taxPercent),
+      currency: (facility.currency || 'USD').toUpperCase(),
+    });
+  }
+
+  private async applyApprovalInvoice(reservation: ParkingReservation, user: AuthUser) {
+    const facility = await this.getFacility(reservation.tenantId);
+    const quote = this.buildFeeQuote(reservation, facility);
+    reservation.currency = quote.currency;
+    reservation.occupancyAmount = quote.occupancyAmount;
+    reservation.reservationFeeAmount = quote.reservationFeeAmount;
+    reservation.subtotalAmount = quote.subtotalAmount;
+    reservation.taxPercent = quote.taxPercent;
+    reservation.taxAmount = quote.taxAmount;
+    reservation.totalAmountDue = quote.totalAmount;
+    reservation.invoiceNumber = invoiceNumberFor(reservation.reservationReference);
+    reservation.feeSnapshot = {
+      ...quote,
+      monthlyRatePerSpace: toMoneyNumber(facility.monthlyRatePerSpace),
+      reservationFee: toMoneyNumber(facility.reservationFee),
+      feeNotes: facility.feeNotes || '',
+      paymentInstructions: facility.paymentInstructions || '',
+      paymentDueDays: facility.paymentDueDays || 7,
+    };
+    if (quote.totalAmount > 0) {
+      reservation.paymentStatus = ParkingReservationPaymentStatus.DUE;
+      reservation.paymentDueAt = addDays(new Date(), facility.paymentDueDays || 7);
+      await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_REQUESTED, user, {
+        metadata: {
+          invoiceNumber: reservation.invoiceNumber,
+          totalAmount: quote.totalAmount,
+          currency: quote.currency,
+          paymentStatus: reservation.paymentStatus,
+        },
+      });
+    } else {
+      reservation.paymentStatus = ParkingReservationPaymentStatus.NOT_APPLICABLE;
+      reservation.paymentDueAt = null as any;
+    }
+    return quote;
   }
 
   private async resolveTenantId(user?: AuthUser | null): Promise<string> {
@@ -334,7 +440,7 @@ export class ParkingReservationsService {
     if (!reservation) {
       throw new NotFoundException('No reservation was found for that reference and email.');
     }
-    return this.toPublicView(reservation);
+    return this.toPublicDetailView(reservation);
   }
 
   async guestRespond(dto: GuestInformationResponseDto) {
@@ -410,13 +516,35 @@ export class ParkingReservationsService {
     qb.orderBy(`r.${sortBy}`, sortDir);
 
     const [items, total] = await qb.skip((page - 1) * limit).take(limit).getManyAndCount();
+    const activitiesByReservation = await this.loadActivitiesFor(items.map((item) => item.id), !this.isStaff(user.role));
     const mapper = this.isStaff(user.role) ? this.toOfficerListView : this.toPublicView;
     return {
-      items: items.map((item) => mapper.call(this, item)),
+      items: items.map((item) => ({
+        ...mapper.call(this, item),
+        activities: activitiesByReservation.get(item.id) || [],
+      })),
       total,
       page,
       limit,
     };
+  }
+
+  private async loadActivitiesFor(ids: string[], publicOnly: boolean) {
+    const map = new Map<string, ReturnType<ParkingReservationsService['toActivityView']>[]>();
+    if (!ids.length) return map;
+    const activities = await this.activityRepo
+      .createQueryBuilder('a')
+      .where('a.reservationId IN (:...ids)', { ids })
+      .orderBy('a.createdAt', 'ASC')
+      .getMany();
+    for (const activity of activities) {
+      if (publicOnly && activity.action === ParkingReservationActivityAction.NOTE_ADDED) continue;
+      const view = publicOnly ? this.toPublicActivityView(activity) : this.toActivityView(activity);
+      const list = map.get(activity.reservationId) || [];
+      list.push(view);
+      map.set(activity.reservationId, list);
+    }
+    return map;
   }
 
   async getStats(user: AuthUser) {
@@ -473,10 +601,15 @@ export class ParkingReservationsService {
     const capacity = this.isStaff(user.role)
       ? await this.evaluateCapacity(reservation)
       : undefined;
+    const facility = await this.getFacility(reservation.tenantId);
+    const feeQuote =
+      reservation.paymentStatus === ParkingReservationPaymentStatus.NOT_APPLICABLE
+        ? this.buildFeeQuote(reservation, facility)
+        : undefined;
 
     if (this.isStaff(user.role)) {
       return {
-        ...this.toOfficerDetailView(reservation),
+        ...this.toOfficerDetailView(reservation, facility),
         activities: activities.map((a) => this.toActivityView(a)),
         possibleDuplicates: duplicates.map((d) => ({
           id: d.id,
@@ -485,15 +618,14 @@ export class ParkingReservationsService {
           createdAt: d.createdAt,
         })),
         capacity,
+        feeQuote,
       };
     }
 
-    return {
-      ...this.toPublicView(reservation),
-      activities: activities
-        .filter((a) => a.action !== ParkingReservationActivityAction.NOTE_ADDED)
-        .map((a) => this.toPublicActivityView(a)),
-    };
+    return this.withPublicActivities(
+      this.toPublicView(reservation, { facility, includeInstructions: true }),
+      activities,
+    );
   }
 
   async getActivity(id: string, user: AuthUser) {
@@ -591,9 +723,13 @@ export class ParkingReservationsService {
       newStatus: ParkingReservationStatus.APPROVED,
       metadata: { capacity },
     });
+    const quote = await this.applyApprovalInvoice(reservation, user);
+    await this.reservationRepo.save(reservation);
     await this.eventEmitter.emitAsync('parking.reservation.approved', {
       reservation,
       actorId: this.actorId(user),
+      paymentRequested: reservation.paymentStatus === ParkingReservationPaymentStatus.DUE,
+      quote,
     });
     return this.findOne(id, user);
   }
@@ -668,6 +804,339 @@ export class ParkingReservationsService {
     return this.recordInformationResponse(reservation, response, user);
   }
 
+  async guestPay(dto: GuestParkingPaymentDto) {
+    const reservation = await this.findByReferenceAndEmail(dto.reservationReference, dto.email);
+    if (!reservation) {
+      throw new NotFoundException('No reservation was found for that reference and email.');
+    }
+    return this.submitPayment(
+      reservation,
+      {
+        paymentMethod: dto.paymentMethod,
+        paymentReference: dto.paymentReference,
+        notes: dto.notes,
+      },
+      { email: dto.email, role: 'GUEST' },
+      false,
+    );
+  }
+
+  async initiateIshemaPayment(
+    reservation: ParkingReservation,
+    phoneNumber: string,
+    user: AuthUser,
+  ) {
+    if (reservation.status !== ParkingReservationStatus.APPROVED) {
+      throw new ConflictException('Pay now is available after the parking team confirms the reservation.');
+    }
+    const current = effectivePaymentStatus(reservation.paymentStatus, reservation.paymentDueAt);
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      throw new ConflictException('This reservation has already been paid.');
+    }
+    if (
+      reservation.paymentStatus === ParkingReservationPaymentStatus.NOT_APPLICABLE ||
+      reservation.paymentStatus === ParkingReservationPaymentStatus.WAIVED ||
+      reservation.paymentStatus === ParkingReservationPaymentStatus.CANCELLED
+    ) {
+      throw new ConflictException('No parking reservation fees are due for this reservation.');
+    }
+    if (!['DUE', 'OVERDUE', 'PENDING_VERIFICATION'].includes(current)) {
+      throw new ConflictException('This reservation is not awaiting payment.');
+    }
+
+    const amount = toMoneyNumber(reservation.totalAmountDue);
+    if (amount <= 0) {
+      throw new BadRequestException('There is no amount due for this reservation.');
+    }
+
+    const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+    if (!platformPhone) {
+      throw new BadRequestException('Mobile money collection is not configured.');
+    }
+
+    const referenceId = `PARK-${reservation.reservationReference.replace(/[^A-Z0-9]/gi, '')}-${Date.now().toString(36)}`.slice(0, 80);
+    const message = `Nova Parking 365 ${reservation.reservationReference}`;
+    const response = await this.mobileMoneyPaymentService.createTransaction(
+      amount,
+      phoneNumber,
+      referenceId,
+      message,
+      [
+        {
+          percentage: 100,
+          phoneNumber: platformPhone,
+          receiverMessage: message.slice(0, 160),
+        },
+      ],
+    );
+    const status = (response.savedTransaction?.status || response.transaction?.status || 'pending').toLowerCase();
+    if (status === 'failed') {
+      throw new BadRequestException('Ishema could not start the payment. Check the phone number and try again.');
+    }
+
+    reservation.paymentMethod = ParkingReservationPaymentMethod.MOBILE_MONEY;
+    reservation.paymentReference = referenceId;
+    reservation.paymentStatus = ParkingReservationPaymentStatus.PENDING_VERIFICATION;
+    reservation.paymentNotes = `Ishema collection started for ${phoneNumber}`;
+    reservation.feeSnapshot = {
+      ...(reservation.feeSnapshot || {}),
+      ishemaReferenceId: referenceId,
+      ishemaPhone: phoneNumber,
+    };
+    await this.reservationRepo.save(reservation);
+    await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_SUBMITTED, user, {
+      metadata: { paymentMethod: ParkingReservationPaymentMethod.MOBILE_MONEY, paymentReference: referenceId },
+    });
+
+    if (status === 'success') {
+      await this.markReservationPaidFromIshema(reservation, referenceId, user);
+    }
+
+    return {
+      reservation: await this.toPublicDetailView(reservation),
+      referenceId,
+      providerStatus: status,
+      amount,
+      currency: reservation.currency || 'RWF',
+      message:
+        status === 'success'
+          ? 'Payment confirmed by Ishema. Your reservation is approved.'
+          : 'Approve the payment prompt on your phone to complete this reservation.',
+    };
+  }
+
+  async guestInitiateIshema(dto: GuestIshemaPayDto) {
+    const reservation = await this.findByReferenceAndEmail(dto.reservationReference, dto.email);
+    if (!reservation) {
+      throw new NotFoundException('No reservation was found for that reference and email.');
+    }
+    return this.initiateIshemaPayment(reservation, dto.phoneNumber, { email: dto.email, role: 'GUEST' });
+  }
+
+  async initiateIshemaAsUser(id: string, phoneNumber: string, user: AuthUser) {
+    const reservation = await this.loadReservation(id);
+    this.assertCanView(reservation, user);
+    return this.initiateIshemaPayment(reservation, phoneNumber, user);
+  }
+
+  async guestIshemaStatus(dto: GuestIshemaPayStatusDto) {
+    const reservation = await this.findByReferenceAndEmail(dto.reservationReference, dto.email);
+    if (!reservation) {
+      throw new NotFoundException('No reservation was found for that reference and email.');
+    }
+    return this.refreshIshemaStatus(
+      reservation,
+      dto.referenceId,
+      { email: dto.email, role: 'GUEST' },
+    );
+  }
+
+  async refreshIshemaStatusAsUser(id: string, referenceId: string | undefined, user: AuthUser) {
+    const reservation = await this.loadReservation(id);
+    this.assertCanView(reservation, user);
+    return this.refreshIshemaStatus(reservation, referenceId, user);
+  }
+
+  async confirmFromIshemaWebhook(payload: { referenceId: string; transactionId?: string; paymentId?: string }) {
+    const reservation = await this.findByIshemaReference(payload.referenceId);
+    if (!reservation) {
+      this.logger.warn(`No parking reservation for Ishema reference ${payload.referenceId}`);
+      return null;
+    }
+    return this.markReservationPaidFromIshema(
+      reservation,
+      payload.referenceId,
+      { email: 'Ishema', role: 'SYSTEM' },
+    );
+  }
+
+  private async refreshIshemaStatus(
+    reservation: ParkingReservation,
+    referenceId: string | undefined,
+    user: AuthUser,
+  ) {
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      return {
+        providerStatus: 'success',
+        reservation: await this.toPublicDetailView(reservation),
+      };
+    }
+    const ref =
+      referenceId ||
+      reservation.paymentReference ||
+      ((reservation.feeSnapshot || {}) as Record<string, unknown>).ishemaReferenceId;
+    if (!ref || typeof ref !== 'string') {
+      throw new BadRequestException('No Ishema payment has been started for this reservation.');
+    }
+
+    const statusResponse = await this.mobileMoneyPaymentService.checkTransactionStatus(ref);
+    const status = (
+      statusResponse.savedTransaction?.status ||
+      statusResponse.transaction?.status ||
+      'pending'
+    ).toLowerCase();
+
+    if (status === 'success') {
+      await this.markReservationPaidFromIshema(reservation, ref, user);
+    } else if (status === 'failed') {
+      if (reservation.paymentStatus === ParkingReservationPaymentStatus.PENDING_VERIFICATION) {
+        reservation.paymentStatus = ParkingReservationPaymentStatus.DUE;
+        await this.reservationRepo.save(reservation);
+      }
+    }
+
+    return {
+      providerStatus: status,
+      reservation: await this.toPublicDetailView(reservation),
+    };
+  }
+
+  private async findByIshemaReference(referenceId: string) {
+    return this.reservationRepo
+      .createQueryBuilder('r')
+      .where('r.paymentReference = :ref', { ref: referenceId })
+      .orWhere(`r."feeSnapshot"->>'ishemaReferenceId' = :ref`, { ref: referenceId })
+      .getOne();
+  }
+
+  private async markReservationPaidFromIshema(
+    reservation: ParkingReservation,
+    referenceId: string,
+    user: AuthUser,
+  ) {
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      if (reservation.status !== ParkingReservationStatus.APPROVED) {
+        reservation.status = ParkingReservationStatus.APPROVED;
+        reservation.approvedAt = reservation.approvedAt || new Date();
+        await this.reservationRepo.save(reservation);
+      }
+      return this.toPublicDetailView(reservation);
+    }
+
+    reservation.paymentStatus = ParkingReservationPaymentStatus.PAID;
+    reservation.paidAt = new Date();
+    reservation.paidAmount = toMoneyNumber(reservation.totalAmountDue);
+    reservation.paymentMethod = ParkingReservationPaymentMethod.MOBILE_MONEY;
+    reservation.paymentReference = referenceId;
+    if (reservation.status !== ParkingReservationStatus.APPROVED) {
+      reservation.status = ParkingReservationStatus.APPROVED;
+      reservation.approvedAt = reservation.approvedAt || new Date();
+    }
+    await this.reservationRepo.save(reservation);
+    await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_RECEIVED, user, {
+      metadata: {
+        paymentMethod: ParkingReservationPaymentMethod.MOBILE_MONEY,
+        paymentReference: referenceId,
+        amount: reservation.paidAmount,
+        currency: reservation.currency,
+        provider: 'ishema',
+      },
+    });
+    await this.eventEmitter.emitAsync('parking.reservation.payment_received', {
+      reservation,
+      actorId: this.actorId(user),
+    });
+    return this.toPublicDetailView(reservation);
+  }
+
+  async payAsUser(id: string, dto: SubmitParkingPaymentDto, user: AuthUser) {
+    const reservation = await this.loadReservation(id);
+    this.assertCanView(reservation, user);
+    return this.submitPayment(reservation, dto, user, false);
+  }
+
+  async confirmPayment(id: string, dto: SubmitParkingPaymentDto, user: AuthUser) {
+    const reservation = await this.loadManaged(id, user);
+    return this.submitPayment(reservation, dto, user, true);
+  }
+
+  async waivePayment(id: string, dto: WaiveParkingPaymentDto, user: AuthUser) {
+    const reservation = await this.loadManaged(id, user);
+    if (reservation.status !== ParkingReservationStatus.APPROVED) {
+      throw new ConflictException('Fees can only be waived for an approved reservation.');
+    }
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      throw new ConflictException('This reservation has already been paid.');
+    }
+    reservation.paymentStatus = ParkingReservationPaymentStatus.WAIVED;
+    reservation.paymentNotes = dto.reason;
+    await this.reservationRepo.save(reservation);
+    await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_WAIVED, user, {
+      metadata: { reason: dto.reason },
+    });
+    await this.eventEmitter.emitAsync('parking.reservation.payment_waived', {
+      reservation,
+      actorId: this.actorId(user),
+    });
+    return this.findOne(id, user);
+  }
+
+  private async submitPayment(
+    reservation: ParkingReservation,
+    dto: SubmitParkingPaymentDto,
+    user: AuthUser,
+    autoConfirm: boolean,
+  ) {
+    const current = effectivePaymentStatus(reservation.paymentStatus, reservation.paymentDueAt);
+    if (reservation.status !== ParkingReservationStatus.APPROVED) {
+      throw new ConflictException('Payment can only be submitted for an approved reservation.');
+    }
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      throw new ConflictException('This reservation has already been paid.');
+    }
+    if (
+      reservation.paymentStatus === ParkingReservationPaymentStatus.NOT_APPLICABLE ||
+      reservation.paymentStatus === ParkingReservationPaymentStatus.WAIVED ||
+      reservation.paymentStatus === ParkingReservationPaymentStatus.CANCELLED
+    ) {
+      throw new ConflictException('No parking reservation fees are due for this reservation.');
+    }
+    if (!['DUE', 'OVERDUE', 'PENDING_VERIFICATION'].includes(current)) {
+      throw new ConflictException('This reservation is not awaiting payment.');
+    }
+
+    reservation.paymentMethod = dto.paymentMethod;
+    reservation.paymentReference = dto.paymentReference;
+    reservation.paymentNotes = dto.notes;
+    reservation.paidAmount = toMoneyNumber(reservation.totalAmountDue);
+
+    if (autoConfirm) {
+      reservation.paymentStatus = ParkingReservationPaymentStatus.PAID;
+      reservation.paidAt = new Date();
+      await this.reservationRepo.save(reservation);
+      await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_RECEIVED, user, {
+        metadata: {
+          paymentMethod: dto.paymentMethod,
+          paymentReference: dto.paymentReference,
+          amount: reservation.paidAmount,
+          currency: reservation.currency,
+        },
+      });
+      await this.eventEmitter.emitAsync('parking.reservation.payment_received', {
+        reservation,
+        actorId: this.actorId(user),
+      });
+    } else {
+      reservation.paymentStatus = ParkingReservationPaymentStatus.PENDING_VERIFICATION;
+      await this.reservationRepo.save(reservation);
+      await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_SUBMITTED, user, {
+        metadata: {
+          paymentMethod: dto.paymentMethod,
+          paymentReference: dto.paymentReference,
+        },
+      });
+      await this.eventEmitter.emitAsync('parking.reservation.payment_submitted', {
+        reservation,
+        actorId: this.actorId(user),
+      });
+    }
+
+    if (this.isStaff(user.role)) {
+      return this.findOne(reservation.id, user);
+    }
+    return this.toPublicDetailView(reservation);
+  }
+
   async cancel(id: string, dto: CancelParkingReservationDto, user: AuthUser) {
     const reservation = await this.loadManaged(id, user);
     this.assertTransition(reservation, ParkingReservationStatus.CANCELLED);
@@ -676,6 +1145,13 @@ export class ParkingReservationsService {
     reservation.cancellationReason = dto.reason;
     reservation.cancelledByUserId = this.actorId(user);
     reservation.cancelledAt = new Date();
+    if (
+      reservation.paymentStatus === ParkingReservationPaymentStatus.DUE ||
+      reservation.paymentStatus === ParkingReservationPaymentStatus.PENDING_VERIFICATION ||
+      reservation.paymentStatus === ParkingReservationPaymentStatus.OVERDUE
+    ) {
+      reservation.paymentStatus = ParkingReservationPaymentStatus.CANCELLED;
+    }
     await this.reservationRepo.save(reservation);
     await this.addActivity(reservation, ParkingReservationActivityAction.RESERVATION_CANCELLED, user, {
       previousStatus: previous,
@@ -742,6 +1218,9 @@ export class ParkingReservationsService {
       'Requested Date',
       'Submitted',
       'Status',
+      'Payment Status',
+      'Amount Due',
+      'Currency',
     ];
     const lines = [header.join(',')];
     for (const row of result.items as any[]) {
@@ -759,6 +1238,9 @@ export class ParkingReservationsService {
           row.requestedStartDate,
           row.createdAt,
           row.status,
+          row.payment?.status || '',
+          row.payment?.totalAmount ?? '',
+          row.payment?.currency || '',
         ]
           .map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`)
           .join(','),
@@ -799,7 +1281,7 @@ export class ParkingReservationsService {
       reservation,
       actorId: this.actorId(user),
     });
-    return this.toPublicView(reservation);
+    return this.toPublicDetailView(reservation);
   }
 
   async evaluateCapacity(reservation: ParkingReservation) {
@@ -944,7 +1426,10 @@ export class ParkingReservationsService {
     return name || user.email;
   }
 
-  toPublicView(reservation: ParkingReservation) {
+  toPublicView(
+    reservation: ParkingReservation,
+    options?: { facility?: ParkingFacilityConfig; includeInstructions?: boolean },
+  ) {
     return {
       id: reservation.id,
       reservationReference: reservation.reservationReference,
@@ -968,6 +1453,31 @@ export class ParkingReservationsService {
       informationResponse: reservation.informationResponse,
       createdAt: reservation.createdAt,
       updatedAt: reservation.updatedAt,
+      payment: this.toPaymentView(reservation, options),
+    };
+  }
+
+  private async toPublicDetailView(reservation: ParkingReservation) {
+    const activities = await this.activityRepo.find({
+      where: { reservationId: reservation.id },
+      order: { createdAt: 'ASC' },
+    });
+    const facility = await this.getFacility(reservation.tenantId);
+    return this.withPublicActivities(
+      this.toPublicView(reservation, { facility, includeInstructions: true }),
+      activities,
+    );
+  }
+
+  private withPublicActivities(
+    view: ReturnType<ParkingReservationsService['toPublicView']>,
+    activities: ParkingReservationActivity[],
+  ) {
+    return {
+      ...view,
+      activities: activities
+        .filter((a) => a.action !== ParkingReservationActivityAction.NOTE_ADDED)
+        .map((a) => this.toPublicActivityView(a)),
     };
   }
 
@@ -993,10 +1503,11 @@ export class ParkingReservationsService {
       possibleDuplicate: reservation.possibleDuplicate,
       createdAt: reservation.createdAt,
       updatedAt: reservation.updatedAt,
+      payment: this.toPaymentView(reservation),
     };
   }
 
-  private toOfficerDetailView(reservation: ParkingReservation) {
+  private toOfficerDetailView(reservation: ParkingReservation, facility?: ParkingFacilityConfig) {
     return {
       ...this.toOfficerListView(reservation),
       customerNotes: reservation.customerNotes,
@@ -1017,6 +1528,38 @@ export class ParkingReservationsService {
       informationResponse: reservation.informationResponse,
       informationRespondedAt: reservation.informationRespondedAt,
       duplicateOfReferences: reservation.duplicateOfReferences,
+      payment: this.toPaymentView(reservation, { facility, includeInstructions: true }),
+    };
+  }
+
+  private toPaymentView(
+    reservation: ParkingReservation,
+    options?: { facility?: ParkingFacilityConfig; includeInstructions?: boolean },
+  ) {
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    const status = effectivePaymentStatus(reservation.paymentStatus, reservation.paymentDueAt);
+    const payable = status === 'DUE' || status === 'OVERDUE' || status === 'PENDING_VERIFICATION';
+    return {
+      status,
+      invoiceNumber: reservation.invoiceNumber || null,
+      currency: reservation.currency || (snapshot.currency as string) || 'USD',
+      occupancyAmount: toMoneyNumber(reservation.occupancyAmount),
+      reservationFeeAmount: toMoneyNumber(reservation.reservationFeeAmount),
+      subtotalAmount: toMoneyNumber(reservation.subtotalAmount),
+      taxPercent: toMoneyNumber(reservation.taxPercent),
+      taxAmount: toMoneyNumber(reservation.taxAmount),
+      totalAmount: toMoneyNumber(reservation.totalAmountDue),
+      dueAt: reservation.paymentDueAt || null,
+      paidAt: reservation.paidAt || null,
+      paidAmount: reservation.paidAmount != null ? toMoneyNumber(reservation.paidAmount) : null,
+      paymentMethod: reservation.paymentMethod || null,
+      paymentReference: reservation.paymentReference || null,
+      lineItems: Array.isArray(snapshot.lineItems) ? snapshot.lineItems : [],
+      feeNotes: (snapshot.feeNotes as string) || options?.facility?.feeNotes || '',
+      instructions:
+        options?.includeInstructions && payable
+          ? options.facility?.paymentInstructions || (snapshot.paymentInstructions as string) || ''
+          : '',
     };
   }
 

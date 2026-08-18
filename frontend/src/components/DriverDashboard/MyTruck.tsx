@@ -19,6 +19,7 @@ import { MaintenanceTicketModal } from './MaintenanceTicketModal';
 import { MissionLogs } from './MissionLogs';
 import { StatCard } from '../EnliteUI/Cards/StatCard';
 import { StatusBadge } from '../EnliteUI/Tables';
+import { TruckFullProfile } from '../FleetDashboard/TruckFullProfile';
 
 interface MyTruckProps {
   driverId: string;
@@ -208,6 +209,13 @@ export const MyTruck: React.FC<MyTruckProps> = ({ driverId, truckData }) => {
               variant="classic"
               color="warning"
             />
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5">
+              <TranslatedText text="Complete vehicle information" />
+            </p>
+            <TruckFullProfile truck={truck} compact />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">

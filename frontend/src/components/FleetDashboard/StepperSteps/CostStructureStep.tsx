@@ -288,6 +288,190 @@ export const CostStructureStep: React.FC<CostStructureStepProps> = ({
         </div>
       </div>
 
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+          Asset Value
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Purchase Date</label>
+            <input
+              type="date"
+              value={formData.assetDetails?.purchaseDate || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), purchaseDate: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Purchase Price ({currencyLabel})</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.assetDetails?.purchasePrice || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), purchasePrice: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Current Value ({currencyLabel})</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.assetDetails?.currentValue || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), currentValue: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {(formData.ownershipType === 'LEASED' || formData.ownershipType === 'RENTED' || formData.ownershipType === 'FINANCED') && (
+        <div className="space-y-4">
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+            Lease Information
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Lessor</label>
+              <input
+                type="text"
+                value={formData.assetDetails?.leaseLessor || ''}
+                onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), leaseLessor: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Contract Number</label>
+              <input
+                type="text"
+                value={formData.assetDetails?.leaseContractNumber || ''}
+                onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), leaseContractNumber: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Monthly Payment ({currencyLabel})</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.assetDetails?.leaseMonthlyPayment || ''}
+                onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), leaseMonthlyPayment: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Start Date</label>
+              <input
+                type="date"
+                value={formData.assetDetails?.leaseStartDate || ''}
+                onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), leaseStartDate: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">End Date</label>
+              <input
+                type="date"
+                value={formData.assetDetails?.leaseEndDate || ''}
+                onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), leaseEndDate: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+          Fuel Card Details
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Provider</label>
+            <input
+              type="text"
+              value={formData.assetDetails?.fuelCardProvider || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), fuelCardProvider: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="e.g. Shell, Total"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Card Number</label>
+            <input
+              type="text"
+              value={formData.assetDetails?.fuelCardNumber || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), fuelCardNumber: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="Last 4 or tokenized number"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Expiry</label>
+            <input
+              type="date"
+              value={formData.assetDetails?.fuelCardExpiry || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), fuelCardExpiry: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+          Retirement Workflow
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Status</label>
+            <select
+              value={formData.assetDetails?.retirementStatus || 'ACTIVE'}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), retirementStatus: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+            >
+              <option value="ACTIVE" className="dark:bg-gray-900">Active</option>
+              <option value="SCHEDULED" className="dark:bg-gray-900">Scheduled</option>
+              <option value="RETIRED" className="dark:bg-gray-900">Retired</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Planned Date</label>
+            <input
+              type="date"
+              value={formData.assetDetails?.retirementDate || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), retirementDate: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 px-1">Reason</label>
+            <input
+              type="text"
+              value={formData.assetDetails?.retirementReason || ''}
+              onChange={(e) => handleInputChange('assetDetails', { ...(formData.assetDetails || {}), retirementReason: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-lg text-sm font-semibold text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 dark:focus:border-blue-500 transition-all outline-none shadow-none"
+              placeholder="e.g. End of useful life"
+            />
+          </div>
+        </div>
+      </div>
+
+      {(formData.createdBy || formData.updatedBy || formData.assetDetails?.createdBy) && (
+        <div className="space-y-2">
+          <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Audit</h4>
+          <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">
+            Created by {formData.createdBy || formData.assetDetails?.createdBy || '—'}
+            {formData.updatedBy || formData.assetDetails?.updatedBy
+              ? ` · Updated by ${formData.updatedBy || formData.assetDetails?.updatedBy}`
+              : ''}
+          </p>
+        </div>
+      )}
+
       {/* Pricing Notes */}
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
         <h4 className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-widest mb-3">Operational Directives</h4>

@@ -104,6 +104,7 @@ const ParkingReservationPage = lazy(() => import('./pages/ParkingReservation'));
 const ParkingReservationLookupPage = lazy(() => import('./pages/ParkingReservationLookup'));
 const ParkingReservationsDashboard = lazy(() => import('./pages/parking/ParkingReservationsDashboard'));
 const ParkingReservationDetails = lazy(() => import('./pages/parking/ParkingReservationDetails'));
+const ParkingFeeSettings = lazy(() => import('./pages/parking/ParkingFeeSettings'));
 const MyParkingReservations = lazy(() => import('./pages/parking/MyParkingReservations'));
 const OperationalParkingReservations = lazy(() => import('./pages/admin-operational/ParkingReservations'));
 const ActivityLogs = lazy(() => import('./pages/admin/ActivityLogs'));
@@ -750,6 +751,7 @@ function App() {
                       <Route index element={<Navigate to="reservations" replace />} />
                       <Route path="reservations" element={<ParkingReservationsDashboard />} />
                       <Route path="reservations/:id" element={<ParkingReservationDetails />} />
+                      <Route path="fees" element={<ParkingFeeSettings />} />
                     </Route>
 
                     {/* Customs Officer Routes */}

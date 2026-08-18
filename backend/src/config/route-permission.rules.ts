@@ -28,6 +28,7 @@ export const ROUTE_PERMISSION_SKIP: RegExp[] = [
   /^bidding\/test$/,
   /^bidding\/test-db$/,
   /^parking-reservations\/lookup/,
+  /^parking-reservations\/lookup\/pay/,
 ];
 
 export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [
@@ -111,6 +112,13 @@ export const ROUTE_PERMISSION_RULES: RoutePermissionRule[] = [
   { methods: ['POST'], pattern: /^parking-reservations\/.*\/notes/, permissions: ['parking:add_note'] },
   { methods: ['PATCH'], pattern: /^parking-reservations\/.*\/review/, permissions: ['parking:review'] },
   { methods: ['PATCH'], pattern: /^parking-reservations\/facility/, permissions: ['parking:manage_capacity'] },
+  { methods: ['GET'], pattern: /^parking-reservations\/fees/, permissions: ['parking:view', 'parking:manage_fees'] },
+  { methods: ['PATCH'], pattern: /^parking-reservations\/fees/, permissions: ['parking:manage_fees'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/pay-now/, permissions: ['parking:view_own', 'parking:create'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/pay-status/, permissions: ['parking:view_own', 'parking:create'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/pay/, permissions: ['parking:view_own', 'parking:create'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/confirm-payment/, permissions: ['parking:confirm_payment', 'parking:approve'] },
+  { methods: ['POST'], pattern: /^parking-reservations\/.*\/waive-payment/, permissions: ['parking:confirm_payment', 'parking:approve'] },
   { methods: ['GET'], pattern: /^parking-reservations\/export/, permissions: ['parking:export'] },
 
   // ── Financial / payments ────────────────────────────────────────────────────

@@ -102,6 +102,9 @@ export interface Truck {
   certifications?: Record<string, any>;
   routeCapabilities?: Record<string, any>;
   costStructure?: Record<string, any>;
+  assetDetails?: Record<string, any>;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface DriverAssignment {
@@ -311,6 +314,9 @@ export interface CreateTruckDto {
   certifications?: Record<string, any>;
   routeCapabilities?: Record<string, any>;
   costStructure?: Record<string, any>;
+  assetDetails?: Record<string, any>;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface OptimizedRoute {
@@ -519,6 +525,9 @@ export interface UpdateTruckDto {
   costStructure?: Record<string, any>;
   loadingCapabilities?: Record<string, any>;
   cargoCapabilities?: Record<string, any>;
+  assetDetails?: Record<string, any>;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface CreateDriverDto {

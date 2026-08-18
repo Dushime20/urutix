@@ -28,6 +28,10 @@ type ApplicantNotice = {
   subject: string;
   emailTitle: string;
   emailBody: string;
+  extraHtml?: string;
+  ctaLabel?: string;
+  priority?: NotificationPriority;
+  skipEmail?: boolean;
 };
 
 @Injectable()
@@ -139,15 +143,87 @@ export class ParkingReservationListener {
   }
 
   @OnEvent('parking.reservation.approved')
-  async onApproved(payload: { reservation: ParkingReservation }) {
-    const { reservation } = payload;
+  async onApproved(payload: { reservation: ParkingReservation; paymentRequested?: boolean }) {
+    const { reservation, paymentRequested } = payload;
+    const paymentDue = paymentRequested || reservation.paymentStatus === 'DUE';
+    const amountLabel = this.money(reservation.totalAmountDue, reservation.currency);
     await this.notifyApplicant(reservation, {
       type: NotificationType.PARKING_RESERVATION_APPROVED,
-      title: 'Parking reservation approved',
-      message: `${reservation.reservationReference} has been approved.`,
-      subject: `Reservation approved — ${reservation.reservationReference}`,
-      emailTitle: 'Reservation Approved',
-      emailBody: `Your truck parking reservation ${this.escape(reservation.reservationReference)} has been approved.`,
+      title: 'Parking reservation confirmed',
+      message: paymentDue
+        ? `${reservation.reservationReference} is confirmed. Please pay ${amountLabel} to complete the reservation.`
+        : `${reservation.reservationReference} has been approved.`,
+      subject: paymentDue
+        ? `Reservation confirmed — payment required (${reservation.reservationReference})`
+        : `Reservation confirmed — ${reservation.reservationReference}`,
+      emailTitle: 'Reservation Confirmed',
+      emailBody: paymentDue
+        ? `Your truck parking reservation ${this.escape(reservation.reservationReference)} has been reviewed and confirmed. Please pay the reservation fees below to secure your space(s).`
+        : `Your truck parking reservation ${this.escape(reservation.reservationReference)} has been reviewed and confirmed.`,
+      extraHtml: paymentDue ? this.paymentBox(reservation) : '',
+      ctaLabel: paymentDue ? 'Pay reservation fees' : 'Track your reservation',
+      priority: paymentDue ? NotificationPriority.HIGH : NotificationPriority.NORMAL,
+    });
+    if (paymentDue) {
+      await this.notifyApplicant(reservation, {
+        type: NotificationType.PARKING_RESERVATION_PAYMENT_DUE,
+        title: 'Parking reservation fees due',
+        message: `Pay ${amountLabel} for ${reservation.reservationReference}. Invoice ${reservation.invoiceNumber || ''}.`.trim(),
+        subject: `Payment required — ${reservation.reservationReference}`,
+        emailTitle: 'Reservation Fees Due',
+        emailBody: `A payment of <strong>${this.escape(amountLabel)}</strong> is now due for reservation ${this.escape(reservation.reservationReference)}. Use the invoice details below and submit your payment confirmation from the lookup page or your driver dashboard.`,
+        extraHtml: this.paymentBox(reservation),
+        ctaLabel: 'Pay reservation fees',
+        priority: NotificationPriority.HIGH,
+        skipEmail: true,
+      });
+    }
+  }
+
+  @OnEvent('parking.reservation.payment_submitted')
+  async onPaymentSubmitted(payload: { reservation: ParkingReservation }) {
+    const { reservation } = payload;
+    await this.notifyOfficers(reservation, {
+      type: NotificationType.PARKING_RESERVATION_PAYMENT_DUE,
+      title: 'Parking payment confirmation received',
+      message: `${reservation.reservationReference} submitted payment ${reservation.paymentReference || ''} for verification.`,
+      actionUrl: `/dashboard/parking/reservations/${reservation.id}`,
+    });
+    await this.notifyApplicant(reservation, {
+      type: NotificationType.PARKING_RESERVATION_PAYMENT_DUE,
+      title: 'Payment confirmation received',
+      message: `We received your payment confirmation for ${reservation.reservationReference}. The parking team will verify it shortly.`,
+      subject: `Payment confirmation received — ${reservation.reservationReference}`,
+      emailTitle: 'Payment Confirmation Received',
+      emailBody: `Thank you. We received your payment confirmation for reservation ${this.escape(reservation.reservationReference)}. Our parking team will verify the payment and notify you when it is recorded.`,
+    });
+  }
+
+  @OnEvent('parking.reservation.payment_received')
+  async onPaymentReceived(payload: { reservation: ParkingReservation }) {
+    const { reservation } = payload;
+    const amountLabel = this.money(reservation.paidAmount || reservation.totalAmountDue, reservation.currency);
+    await this.notifyApplicant(reservation, {
+      type: NotificationType.PARKING_RESERVATION_PAYMENT_RECEIVED,
+      title: 'Parking reservation payment received',
+      message: `Payment of ${amountLabel} for ${reservation.reservationReference} has been confirmed.`,
+      subject: `Payment confirmed — ${reservation.reservationReference}`,
+      emailTitle: 'Payment Confirmed',
+      emailBody: `We have confirmed your payment of <strong>${this.escape(amountLabel)}</strong> for reservation ${this.escape(reservation.reservationReference)}. Your parking reservation is now paid in full.`,
+      extraHtml: this.paymentBox(reservation),
+    });
+  }
+
+  @OnEvent('parking.reservation.payment_waived')
+  async onPaymentWaived(payload: { reservation: ParkingReservation }) {
+    const { reservation } = payload;
+    await this.notifyApplicant(reservation, {
+      type: NotificationType.PARKING_RESERVATION_PAYMENT_RECEIVED,
+      title: 'Parking reservation fees waived',
+      message: `Fees for ${reservation.reservationReference} were waived. No payment is required.`,
+      subject: `Fees waived — ${reservation.reservationReference}`,
+      emailTitle: 'Parking Fees Waived',
+      emailBody: `The parking team waived the reservation fees for ${this.escape(reservation.reservationReference)}. No payment is required.`,
     });
   }
 
@@ -190,11 +266,15 @@ export class ParkingReservationListener {
     reservation: ParkingReservation,
     notice: ApplicantNotice,
   ): Promise<{ success: boolean; sentTo: string[] }> {
-    const email = await this.emailApplicant(reservation, {
-      subject: notice.subject,
-      title: notice.emailTitle,
-      body: notice.emailBody,
-    });
+    const email = notice.skipEmail
+      ? { success: true, sentTo: [] as string[] }
+      : await this.emailApplicant(reservation, {
+          subject: notice.subject,
+          title: notice.emailTitle,
+          body: notice.emailBody,
+          extraHtml: notice.extraHtml,
+          ctaLabel: notice.ctaLabel,
+        });
     await this.notifyRegisteredDriver(reservation, notice);
     return email;
   }
@@ -236,6 +316,40 @@ export class ParkingReservationListener {
     `;
   }
 
+  private paymentBox(reservation: ParkingReservation): string {
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    const currency = reservation.currency || (snapshot.currency as string) || 'USD';
+    const due = reservation.paymentDueAt
+      ? new Date(reservation.paymentDueAt).toISOString().slice(0, 10)
+      : 'Upon confirmation';
+    const instructions = typeof snapshot.paymentInstructions === 'string' ? snapshot.paymentInstructions : '';
+    return `
+      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:16px;margin:8px 0 20px;">
+        <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#c2410c;font-weight:700;">Payment required</div>
+        <div style="font-size:22px;font-weight:800;color:#9a3412;margin:8px 0;">${this.escape(this.money(reservation.totalAmountDue, currency))}</div>
+        <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;font-size:14px;color:#334155;">
+          <tr><td style="padding:4px 0;">Invoice</td><td>${this.escape(reservation.invoiceNumber || '')}</td></tr>
+          <tr><td style="padding:4px 0;">Occupancy</td><td>${this.escape(this.money(reservation.occupancyAmount, currency))}</td></tr>
+          <tr><td style="padding:4px 0;">Reservation fee</td><td>${this.escape(this.money(reservation.reservationFeeAmount, currency))}</td></tr>
+          <tr><td style="padding:4px 0;">Tax / VAT</td><td>${this.escape(this.money(reservation.taxAmount, currency))}</td></tr>
+          <tr><td style="padding:4px 0;">Due date</td><td>${this.escape(due)}</td></tr>
+        </table>
+        ${instructions ? `<p style="margin:12px 0 0;font-size:13px;color:#7c2d12;"><strong>How to pay:</strong> ${this.escape(instructions)}</p>` : ''}
+      </div>
+    `;
+  }
+
+  private money(amount: unknown, currency?: string): string {
+    const value = Number(amount);
+    const code = (currency || 'USD').toUpperCase();
+    if (!Number.isFinite(value)) return `${code} 0.00`;
+    try {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: code }).format(value);
+    } catch {
+      return `${code} ${value.toFixed(2)}`;
+    }
+  }
+
   private applicantEmails(reservation: ParkingReservation): string[] {
     const emails = [reservation.driverEmail, reservation.email]
       .map((value) => (value || '').trim().toLowerCase())
@@ -249,7 +363,7 @@ export class ParkingReservationListener {
 
   private async emailApplicant(
     reservation: ParkingReservation,
-    opts: { subject: string; title: string; body: string },
+    opts: { subject: string; title: string; body: string; extraHtml?: string; ctaLabel?: string },
   ): Promise<{ success: boolean; sentTo: string[] }> {
     const recipients = this.applicantEmails(reservation);
     if (!recipients.length) {
@@ -273,10 +387,10 @@ export class ParkingReservationListener {
         title: opts.title,
         greeting,
         body: opts.body,
-        extraHtml: `${this.referenceBox(reservation)}${this.summary(reservation)}`,
-        ctaLabel: 'Track your reservation',
+        extraHtml: `${opts.extraHtml || ''}${this.referenceBox(reservation)}${this.summary(reservation)}`,
+        ctaLabel: opts.ctaLabel || 'Track your reservation',
         ctaUrl: lookupUrl,
-        note: 'Use your reservation reference and the driver email from this message to look up status at any time. We will also email you whenever the status changes.',
+        note: 'Use your reservation reference and the driver email from this message to look up status, events, and payment at any time. We will also email you whenever the status changes.',
         textBody: [
           opts.title,
           '',
@@ -379,6 +493,7 @@ export class ParkingReservationListener {
           message: notice.message,
           actionUrl,
           channels: [NotificationChannel.IN_APP, NotificationChannel.SMS, NotificationChannel.EMAIL],
+          priority: notice.priority,
         });
         await this.sendApplicantSms(account.phone, reservation, notice);
         await this.sendApplicantMessage(account.user, reservation, notice);
@@ -486,6 +601,7 @@ export class ParkingReservationListener {
       message: string;
       actionUrl: string;
       channels?: NotificationChannel[];
+      priority?: NotificationPriority;
     },
   ) {
     try {
@@ -494,7 +610,7 @@ export class ParkingReservationListener {
         recipientId: userId,
         notificationType: opts.type,
         category: NotificationCategory.PARKING,
-        priority: NotificationPriority.NORMAL,
+        priority: opts.priority || NotificationPriority.NORMAL,
         title: opts.title,
         message: opts.message,
         channels: opts.channels || [NotificationChannel.IN_APP],
@@ -503,6 +619,8 @@ export class ParkingReservationListener {
         entityType: EntityType.PARKING_RESERVATION,
         entityId: reservation.id,
         actionUrl: opts.actionUrl,
+        actionText: opts.priority === NotificationPriority.HIGH ? 'Review now' : undefined,
+        requiresAction: opts.priority === NotificationPriority.HIGH,
         metadata: {
           reservationReference: reservation.reservationReference,
           status: reservation.status,

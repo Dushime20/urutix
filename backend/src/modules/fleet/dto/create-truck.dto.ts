@@ -9,6 +9,8 @@ import {
   MaxLength,
   IsDateString,
   IsArray,
+  IsObject,
+  Allow,
 } from 'class-validator';
 import {
   FuelType,
@@ -211,6 +213,7 @@ export class CreateTruckDto {
   operationalRestrictions?: string;
 
   @IsOptional()
+  @Allow()
   @IsArray()
   emergencyContacts?: Array<{
     name?: string;
@@ -220,7 +223,24 @@ export class CreateTruckDto {
   }>;
 
   @IsOptional()
+  @Allow()
+  @IsObject()
   complianceDocuments?: Record<string, any>;
+
+  @IsOptional()
+  @Allow()
+  @IsObject()
+  assetDetails?: Record<string, any>;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  createdBy?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  updatedBy?: string;
 
   @IsOptional()
   @IsEnum(VehicleStatus)
@@ -247,8 +267,8 @@ export class CreateTruckDto {
   isActive?: boolean;
 
   @IsOptional()
+  @Allow()
   @IsArray()
-  @IsString({ each: true })
   equipmentList?: string[];
 
   @IsOptional()
@@ -270,6 +290,7 @@ export class CreateTruckDto {
   fuelEfficiency?: number;
 
   @IsOptional()
+  @Allow()
   currentLocation?: any;
 
   @IsOptional()
@@ -663,6 +684,8 @@ export class CreateTruckDto {
 
   // Cargo-specific alignment fields
   @IsOptional()
+  @Allow()
+  @IsObject()
   cargoCapabilities?: {
     supportedCargoTypes?: string[];
     maxFragileHandling?: boolean;
@@ -687,6 +710,8 @@ export class CreateTruckDto {
   };
 
   @IsOptional()
+  @Allow()
+  @IsObject()
   loadingCapabilities?: {
     hasForklift?: boolean;
     hasCrane?: boolean;
@@ -705,6 +730,8 @@ export class CreateTruckDto {
   };
 
   @IsOptional()
+  @Allow()
+  @IsObject()
   securityFeatures?: {
     hasGps?: boolean;
     hasTracking?: boolean;
@@ -757,6 +784,8 @@ export class CreateTruckDto {
   };
 
   @IsOptional()
+  @Allow()
+  @IsObject()
   certifications?: {
     hazmatCertified?: boolean;
     dangerousGoodsCertified?: boolean;
@@ -780,6 +809,8 @@ export class CreateTruckDto {
   };
 
   @IsOptional()
+  @Allow()
+  @IsObject()
   routeCapabilities?: {
     maxDistance?: number;
     maxHoursToAvailability?: number;
@@ -833,6 +864,8 @@ export class CreateTruckDto {
   };
 
   @IsOptional()
+  @Allow()
+  @IsObject()
   costStructure?: {
     baseRate?: number;
     perKmRate?: number;

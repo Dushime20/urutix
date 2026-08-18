@@ -328,6 +328,161 @@ export const SpecificationsStep: React.FC<SpecificationsStepProps> = ({
             />
           </div>
         </div>
+        {(formData.fuelType === 'ELECTRIC' || formData.fuelType === 'HYBRID') && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            <div>
+              <label className={labelClass}>Battery Capacity (kWh) *</label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                required
+                value={formData.assetDetails?.batteryCapacity || ''}
+                onChange={(e) =>
+                  handleInputChange('assetDetails', { ...(formData.assetDetails || {}), batteryCapacity: e.target.value })
+                }
+                className={inputClass}
+                placeholder="e.g. 350"
+              />
+            </div>
+            {formData.fuelType === 'ELECTRIC' && (
+              <>
+                <div>
+                  <label className={labelClass}>Charging Type *</label>
+                  <select
+                    required
+                    value={formData.assetDetails?.chargingType || ''}
+                    onChange={(e) =>
+                      handleInputChange('assetDetails', { ...(formData.assetDetails || {}), chargingType: e.target.value })
+                    }
+                    className={inputClass}
+                  >
+                    <option value="" className="dark:bg-gray-900">Select type...</option>
+                    <option value="AC" className="dark:bg-gray-900">AC</option>
+                    <option value="DC_FAST" className="dark:bg-gray-900">DC Fast</option>
+                    <option value="CCS" className="dark:bg-gray-900">CCS</option>
+                    <option value="CHADEMO" className="dark:bg-gray-900">CHAdeMO</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Charging Speed (kW) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    required
+                    value={formData.assetDetails?.chargingSpeed || ''}
+                    onChange={(e) =>
+                      handleInputChange('assetDetails', { ...(formData.assetDetails || {}), chargingSpeed: e.target.value })
+                    }
+                    className={inputClass}
+                    placeholder="e.g. 150"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Operating Range (km) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    required
+                    value={formData.assetDetails?.operatingRange || ''}
+                    onChange={(e) =>
+                      handleInputChange('assetDetails', { ...(formData.assetDetails || {}), operatingRange: e.target.value })
+                    }
+                    className={inputClass}
+                    placeholder="e.g. 400"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+          Trailer Compatibility
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Compatible Trailer Types</label>
+            <input
+              type="text"
+              value={formData.assetDetails?.trailerCompatibility || ''}
+              onChange={(e) =>
+                handleInputChange('assetDetails', { ...(formData.assetDetails || {}), trailerCompatibility: e.target.value })
+              }
+              className={inputClass}
+              placeholder="e.g. Dry van, Reefer, Flatbed"
+            />
+          </div>
+          <label className="group flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-600/30 transition-all shadow-none">
+            <input
+              type="checkbox"
+              checked={Boolean(formData.assetDetails?.fifthWheel)}
+              onChange={() =>
+                handleInputChange('assetDetails', {
+                  ...(formData.assetDetails || {}),
+                  fifthWheel: !formData.assetDetails?.fifthWheel,
+                })
+              }
+              className="w-4 h-4 rounded border-gray-200 dark:border-gray-600 text-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:ring-offset-0 bg-white dark:bg-gray-700"
+            />
+            <span className="text-[10px] font-bold text-gray-900 dark:text-white uppercase tracking-tight">Fifth Wheel</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
+          Emissions
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className={labelClass}>CO2 Emissions (g/km)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.1"
+              value={formData.assetDetails?.co2Emissions || ''}
+              onChange={(e) =>
+                handleInputChange('assetDetails', { ...(formData.assetDetails || {}), co2Emissions: e.target.value })
+              }
+              className={inputClass}
+              placeholder="e.g. 820"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Emission Standard</label>
+            <input
+              type="text"
+              value={formData.assetDetails?.emissionStandard || ''}
+              onChange={(e) =>
+                handleInputChange('assetDetails', { ...(formData.assetDetails || {}), emissionStandard: e.target.value })
+              }
+              className={inputClass}
+              placeholder="e.g. Euro 6"
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Euro Rating</label>
+            <select
+              value={formData.assetDetails?.euroRating || ''}
+              onChange={(e) =>
+                handleInputChange('assetDetails', { ...(formData.assetDetails || {}), euroRating: e.target.value })
+              }
+              className={inputClass}
+            >
+              <option value="" className="dark:bg-gray-900">Select rating...</option>
+              {['EURO_3', 'EURO_4', 'EURO_5', 'EURO_6', 'EURO_7'].map((rating) => (
+                <option key={rating} value={rating} className="dark:bg-gray-900">
+                  {rating.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
     </div>
   );

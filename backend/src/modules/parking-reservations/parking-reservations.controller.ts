@@ -31,11 +31,19 @@ import {
   CancelParkingReservationDto,
   CreateParkingReservationDto,
   GuestInformationResponseDto,
+  GuestIshemaPayDto,
+  GuestIshemaPayStatusDto,
+  GuestParkingPaymentDto,
+  InitiateIshemaPayDto,
+  IshemaPayStatusDto,
   LookupParkingReservationDto,
   ParkingReservationFilterDto,
   RejectParkingReservationDto,
   RequestInformationDto,
+  SubmitParkingPaymentDto,
   UpdateParkingFacilityDto,
+  UpdateParkingFeesDto,
+  WaiveParkingPaymentDto,
 } from './dto/parking-reservation.dto';
 
 const STAFF_ROLES = [
@@ -115,6 +123,47 @@ export class ParkingReservationsController {
     return { success: true, message: 'Your response has been submitted.', data };
   }
 
+  @Post('lookup/pay')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 8, ttl: 60_000 } })
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Submit parking fee payment confirmation as a guest' })
+  async guestPay(@Body() dto: GuestParkingPaymentDto) {
+    const data = await this.service.guestPay(dto);
+    return {
+      success: true,
+      message: 'Payment confirmation submitted. The parking team will verify the payment.',
+      data,
+    };
+  }
+
+  @Post('lookup/pay-now')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 6, ttl: 60_000 } })
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Start Ishema mobile money payment for a confirmed reservation' })
+  async guestPayNow(@Body() dto: GuestIshemaPayDto) {
+    const data = await this.service.guestInitiateIshema(dto);
+    return {
+      success: true,
+      message: data.message,
+      data,
+    };
+  }
+
+  @Post('lookup/pay-status')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Check Ishema payment status for a guest reservation' })
+  async guestPayStatus(@Body() dto: GuestIshemaPayStatusDto) {
+    const data = await this.service.guestIshemaStatus(dto);
+    return { success: true, data };
+  }
+
   @Get()
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -159,12 +208,33 @@ export class ParkingReservationsController {
   @Patch('facility')
   @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TENANT_ADMIN, UserRole.PARKING_RESERVATION_MANAGER)
   @RequirePermissions('parking:manage_capacity')
   @UsePipes(pipe)
   async updateFacility(@Body() dto: UpdateParkingFacilityDto, @Request() req) {
     const data = await this.service.updateFacility(dto, req.user);
     return { success: true, message: 'Parking facility capacity updated.', data };
+  }
+
+  @Get('fees')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:view', 'parking:manage_fees')
+  async fees(@Request() req) {
+    return { success: true, data: await this.service.getFeeSchedule(req.user) };
+  }
+
+  @Patch('fees')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:manage_fees')
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Configure parking reservation fees' })
+  async updateFees(@Body() dto: UpdateParkingFeesDto, @Request() req) {
+    const data = await this.service.updateFeeSchedule(dto, req.user);
+    return { success: true, message: 'Parking reservation fees updated.', data };
   }
 
   @Get('export')
@@ -285,6 +355,85 @@ export class ParkingReservationsController {
   ) {
     const data = await this.service.respondAsUser(id, body.response, req.user);
     return { success: true, message: 'Your response has been submitted.', data };
+  }
+
+  @Post(':id/pay')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...AUTH_ROLES)
+  @RequirePermissions('parking:view_own', 'parking:create', 'parking:review')
+  @UsePipes(pipe)
+  async pay(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SubmitParkingPaymentDto,
+    @Request() req,
+  ) {
+    const data = await this.service.payAsUser(id, dto, req.user);
+    return {
+      success: true,
+      message: 'Payment confirmation submitted. The parking team will verify the payment.',
+      data,
+    };
+  }
+
+  @Post(':id/pay-now')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...AUTH_ROLES)
+  @RequirePermissions('parking:view_own', 'parking:create', 'parking:review')
+  @UsePipes(pipe)
+  async payNow(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: InitiateIshemaPayDto,
+    @Request() req,
+  ) {
+    const data = await this.service.initiateIshemaAsUser(id, dto.phoneNumber, req.user);
+    return { success: true, message: data.message, data };
+  }
+
+  @Post(':id/pay-status')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...AUTH_ROLES)
+  @RequirePermissions('parking:view_own', 'parking:create', 'parking:review')
+  @UsePipes(pipe)
+  async payStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: IshemaPayStatusDto,
+    @Request() req,
+  ) {
+    const data = await this.service.refreshIshemaStatusAsUser(id, dto.referenceId, req.user);
+    return { success: true, data };
+  }
+
+  @Post(':id/confirm-payment')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:confirm_payment', 'parking:approve')
+  @UsePipes(pipe)
+  async confirmPayment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SubmitParkingPaymentDto,
+    @Request() req,
+  ) {
+    const data = await this.service.confirmPayment(id, dto, req.user);
+    return { success: true, message: 'Payment confirmed.', data };
+  }
+
+  @Post(':id/waive-payment')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:confirm_payment', 'parking:approve')
+  @UsePipes(pipe)
+  async waivePayment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: WaiveParkingPaymentDto,
+    @Request() req,
+  ) {
+    const data = await this.service.waivePayment(id, dto, req.user);
+    return { success: true, message: 'Parking fees waived.', data };
   }
 
   @Post(':id/cancel')

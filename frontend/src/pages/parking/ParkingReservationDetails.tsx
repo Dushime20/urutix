@@ -8,15 +8,19 @@ import { StatusBadge } from '../../components/EnliteUI/Tables';
 import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import {
-  PARKING_ACTIVITY_LABELS,
   PARKING_STATUS_LABELS,
+  formatParkingMoney,
+  isParkingPaymentOpen,
   type ParkingReservationStatus,
 } from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
 import { usePermission } from '../../contexts/PermissionContext';
 import ModernLoader from '../../components/common/ModernLoader';
+import { ParkingActivityTimeline } from '../../components/parking/ParkingActivityTimeline';
+import { ParkingPaymentCard } from '../../components/parking/ParkingPaymentCard';
+import { ParkingIshemaPayModal } from '../../components/parking/ParkingIshemaPayModal';
 
-type ModalKind = 'approve' | 'reject' | 'info' | 'assign' | 'note' | 'cancel' | null;
+type ModalKind = 'approve' | 'reject' | 'info' | 'assign' | 'note' | 'cancel' | 'waive' | null;
 
 const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations' }: { listPath?: string }) => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +31,7 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
   const [reason, setReason] = useState('');
   const [extra, setExtra] = useState('');
   const [assignee, setAssignee] = useState('');
+  const [payOpen, setPayOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ['parking-reservation', id],
@@ -56,6 +61,7 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
       if (action === 'assign') return parkingApi.assign(id, assignee);
       if (action === 'note') return parkingApi.addNote(id, reason);
       if (action === 'cancel') return parkingApi.cancel(id, reason);
+      if (action === 'waive') return parkingApi.waivePayment(id, reason);
     },
     onSuccess: () => {
       toast.success('Reservation updated');
@@ -94,6 +100,9 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
     if (status === 'APPROVED') {
       if (can('parking:cancel')) items.push({ label: 'Cancel Reservation', permission: 'parking:cancel', onClick: () => setModal('cancel'), tone: 'error' });
       if (can('parking:add_note')) items.push({ label: 'Add Note', permission: 'parking:add_note', onClick: () => setModal('note') });
+      if (can('parking:confirm_payment') && reservation?.payment && reservation.payment.status !== 'PAID' && reservation.payment.status !== 'WAIVED' && reservation.payment.status !== 'NOT_APPLICABLE') {
+        items.push({ label: 'Waive Fees', permission: 'parking:confirm_payment', onClick: () => setModal('waive') });
+      }
     }
     return items;
   }, [status, can, run]);
@@ -191,16 +200,52 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
           {reservation.rejectionReason && <Info label="Rejection reason" value={reservation.rejectionReason} />}
         </Card>
         <Card title="Activity Timeline">
-          <ol className="space-y-3">
-            {(reservation.activities || []).map((activity) => (
-              <li key={activity.id} className="border-l-2 border-primary-200 pl-3">
-                <p className="text-sm font-bold text-slate-800">{PARKING_ACTIVITY_LABELS[activity.action] || activity.action}</p>
-                <p className="text-xs text-slate-500">{activity.actorLabel || activity.actorRole || 'System'} · {new Date(activity.createdAt).toLocaleString()}</p>
-              </li>
-            ))}
-          </ol>
+          <ParkingActivityTimeline activities={reservation.activities} />
         </Card>
       </div>
+
+      {(reservation.payment || reservation.feeQuote) && (
+        <ParkingPaymentCard
+          reservation={reservation}
+          quote={reservation.feeQuote}
+          staff={can('parking:confirm_payment')}
+          submitting={run.isPending}
+          onSubmit={can('parking:confirm_payment') ? async (payload) => {
+            if (!id) return;
+            try {
+              await parkingApi.confirmPayment(id, payload);
+              toast.success('Payment confirmed');
+              refresh();
+            } catch (error) {
+              toast.error(getApiErrorMessage(error));
+            }
+          } : undefined}
+        />
+      )}
+
+      {status === 'APPROVED' && isParkingPaymentOpen(reservation.payment?.status) && !can('parking:confirm_payment') && (
+        <button
+          type="button"
+          onClick={() => setPayOpen(true)}
+          className="px-4 py-2 rounded-lg font-bold bg-primary-600 hover:bg-primary-700 text-white text-sm"
+        >
+          Pay now
+        </button>
+      )}
+
+      {reservation && (
+        <ParkingIshemaPayModal
+          open={payOpen}
+          onClose={() => setPayOpen(false)}
+          reservation={reservation}
+          reservationId={reservation.id}
+          onPaid={() => {
+            setPayOpen(false);
+            refresh();
+            toast.success('Payment confirmed. Your reservation is approved.');
+          }}
+        />
+      )}
 
       {status === 'ADDITIONAL_INFORMATION_REQUIRED' && can('parking:view_own') && !can('parking:review') && (
         <Card title="Respond to information request">
@@ -246,6 +291,18 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
         <Info label="Truck Spaces" value={String(reservation.truckSpacesRequested)} />
         <Info label="Contract Duration" value={`${reservation.contractMonths} months`} />
         <Info label="Start Date" value={String(reservation.requestedStartDate).slice(0, 10)} />
+        {reservation.feeQuote && (
+          <div className="mt-4 rounded-xl bg-amber-50 border border-amber-100 p-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-1">Fees to request from the driver</p>
+            <p className="text-sm font-black text-slate-900">{formatParkingMoney(reservation.feeQuote.totalAmount, reservation.feeQuote.currency)}</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Occupancy {formatParkingMoney(reservation.feeQuote.occupancyAmount, reservation.feeQuote.currency)} + reservation fee {formatParkingMoney(reservation.feeQuote.reservationFeeAmount, reservation.feeQuote.currency)} + tax {formatParkingMoney(reservation.feeQuote.taxAmount, reservation.feeQuote.currency)}
+            </p>
+            {reservation.feeQuote.totalAmount <= 0 && (
+              <p className="text-xs font-semibold text-amber-700 mt-2">Fee schedule is currently 0. Configure reservation fees before confirming if the driver should be billed.</p>
+            )}
+          </div>
+        )}
       </Modal>
 
       <Modal isOpen={modal === 'reject'} onClose={() => setModal(null)} title="Reject Reservation" size="md" footer={
@@ -293,6 +350,16 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
         </div>
       }>
         <textarea className="w-full ui-input border rounded-xl p-3" rows={4} value={reason} onChange={(e) => setReason(e.target.value)} />
+      </Modal>
+
+      <Modal isOpen={modal === 'waive'} onClose={() => setModal(null)} title="Waive Reservation Fees" size="md" footer={
+        <div className="flex justify-end gap-2">
+          <button className="px-4 py-2 rounded-lg font-bold border" onClick={() => setModal(null)}>Close</button>
+          <button className="px-4 py-2 rounded-lg font-bold bg-primary-600 text-white" disabled={reason.trim().length < 5} onClick={() => run.mutate('waive')}>Waive fees</button>
+        </div>
+      }>
+        <p className="text-sm font-medium text-slate-600 mb-3">The driver will be notified that no payment is required.</p>
+        <textarea className="w-full ui-input border rounded-xl p-3" rows={4} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for waiver" />
       </Modal>
     </div>
   );

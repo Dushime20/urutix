@@ -34,6 +34,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FleetService } from './fleet.service';
 import { CreateTruckDto } from './dto/create-truck.dto';
+import { toPublicTruck } from './truck-persistence.util';
 import { CreateFleetDriverDto } from './dto/create-driver.dto';
 import { AssignDriverDto } from './dto/assign-driver.dto';
 import { AssignRouteDto } from './dto/assign-route.dto';
@@ -157,15 +158,7 @@ export class FleetController {
 
       return {
         message: 'Truck created successfully',
-        truck: {
-          id: truck.id,
-          plateNumber: truck.plateNumber,
-          make: truck.make,
-          model: truck.model,
-          status: truck.status,
-          capacityWeight: truck.capacityWeight,
-          capacityVolume: truck.capacityVolume,
-        },
+        truck: toPublicTruck(truck),
       };
     } catch (error) {
       console.error('❌ Error in createTruck controller:', error);
@@ -304,13 +297,7 @@ export class FleetController {
 
       console.log('✅ Controller - Trucks retrieved successfully:', trucks.length);
 
-      const mappedTrucks = trucks.map(t => ({
-        ...t,
-        currentLocation: {
-          ...(typeof t.currentLocation === 'object' ? t.currentLocation : {}),
-          address: t.currentAddress,
-        }
-      }));
+      const mappedTrucks = trucks.map((t) => toPublicTruck(t));
 
       return {
         message: 'Trucks retrieved successfully',
@@ -340,7 +327,7 @@ export class FleetController {
     const truck = await this.fleetService.findOneTruck(id, req.user.tenantId, userId);
     return {
       message: 'Truck retrieved successfully',
-      truck,
+      truck: toPublicTruck(truck),
     };
   }
 
@@ -381,15 +368,7 @@ export class FleetController {
 
     return {
       message: 'Truck updated successfully',
-      truck: {
-        id: truck.id,
-        plateNumber: truck.plateNumber,
-        make: truck.make,
-        model: truck.model,
-        status: truck.status,
-        capacityWeight: truck.capacityWeight,
-        capacityVolume: truck.capacityVolume,
-      },
+      truck: toPublicTruck(truck),
     };
   }
 
@@ -491,15 +470,7 @@ export class FleetController {
 
       return {
         message: 'Truck location updated successfully',
-        truck: {
-          id: truck.id,
-          plateNumber: truck.plateNumber,
-          currentLocation: {
-            ...(typeof truck.currentLocation === 'object' ? truck.currentLocation : {}),
-            address: truck.currentAddress,
-          },
-          locationUpdatedAt: truck.locationUpdatedAt,
-        },
+        truck: toPublicTruck(truck),
       };
     } catch (error) {
       console.error('❌ Error in updateTruckLocation controller:', error);

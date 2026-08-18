@@ -1616,6 +1616,18 @@ export class PaymentsController {
       const payment = allPayments[0] || paymentsWithMetadata[0] || await this.mobileMoneyWebhookSettlement.findPaymentForCallback(callbackData.referenceId);
 
       if (!payment) {
+        if (String(callbackData.referenceId || '').startsWith('PARK-')) {
+          if (callbackData.status === 'success') {
+            await this.mobileMoneyWebhookSettlement.settleParkingReservation({
+              referenceId: callbackData.referenceId,
+            });
+          }
+          return {
+            message: 'Parking reservation payment processed',
+            referenceId: callbackData.referenceId,
+            received: true,
+          };
+        }
         this.logger.warn(
           `Payment not found for Mobile Money reference: ${callbackData.referenceId}. Searched ${allPayments.length} direct matches, ${paymentsWithMetadata.length} metadata matches.`,
         );
