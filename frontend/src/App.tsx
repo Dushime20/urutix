@@ -136,6 +136,9 @@ const CarrierTierPage = lazy(() => import('./pages/dashboard/fleet/CarrierTierPa
 const LoadMapPage = lazy(() => import('./pages/dashboard/fleet/LoadMapPage'));
 const BulkUploadPage = lazy(() => import('./pages/dashboard/cargos/BulkUploadPage'));
 const LoadTemplatesPage = lazy(() => import('./pages/dashboard/LoadTemplatesPage'));
+const DistributionCampaignPage = lazy(() => import('./pages/cargo-owner/DistributionCampaignPage'));
+const AvailableSpacePage = lazy(() => import('./pages/cargo-owner/AvailableSpacePage'));
+const SellCapacityPage = lazy(() => import('./pages/truck-owner/SellCapacityPage'));
 const IntegrationsPage = lazy(() => import('./pages/tenant-admin/IntegrationsPage'));
 const BrandingSettingsPage = lazy(() => import('./pages/tenant-admin/BrandingSettingsPage'));
 
@@ -284,6 +287,7 @@ function App() {
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/setup-password" element={<DriverPasswordSetup />} />
                     <Route path="/driver/setup-password" element={<DriverPasswordSetup />} />
                     <Route path="/tenant/setup-password" element={<TenantPasswordSetup />} />
                     <Route path="/lender/setup-password" element={<LenderPasswordSetup />} />
@@ -350,6 +354,8 @@ function App() {
                       <Route path="customs-inspections/:id" element={<CargoCustomsInspectionsPage />} />
                       <Route path="carrier-marketplace" element={<CarrierMarketplacePage />} />
                       <Route path="templates" element={<LoadTemplatesPage />} />
+                      <Route path="campaigns" element={<DistributionCampaignPage />} />
+                      <Route path="available-space" element={<AvailableSpacePage />} />
                       <Route path="cargos/bulk-upload" element={<BulkUploadPage />} />
 
                       {/* Enhanced Transaction Flow Routes */}
@@ -413,6 +419,8 @@ function App() {
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
                       <Route path="scoring" element={<UnifiedReputationManagement />} />
                       <Route path="receivers" element={<ReceiversPage />} />
+                      <Route path="campaigns" element={<DistributionCampaignPage />} />
+                      <Route path="available-space" element={<AvailableSpacePage />} />
 
                       {/* Enhanced Transaction Flow Routes */}
                       <Route path="transaction-flow" element={<TransactionFlow />} />
@@ -471,6 +479,7 @@ function App() {
                       <Route path="settings" element={<Settings />} />
                       <Route path="support" element={<FleetHelpSupport />} />
                       <Route path="backhaul" element={<BackhaulMatchingPage />} />
+                      <Route path="capacity" element={<SellCapacityPage />} />
                       <Route path="tier" element={<CarrierTierPage />} />
                       <Route path="load-map" element={<LoadMapPage />} />
                       <Route path="notifications" element={<UnifiedNotificationManagement />} />

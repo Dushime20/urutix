@@ -96,6 +96,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Package,
           subItems: [
             { label: 'Create Payload', path: `${basePath}/cargos/create` },
+            { label: 'AI Planner', path: `${basePath}/campaigns` },
+            { label: 'Available space', path: `${basePath}/available-space` },
             { label: 'Cargo Inventory', path: `${basePath}/cargos/list` },
             { label: 'Smart Matching', path: `${basePath}/smart-matching` },
             { label: 'Accepted Matches', path: `${basePath}/accepted-matches` },
@@ -224,6 +226,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Active Trips', path: '/dashboard/trips' },
             { label: '🔴 Live Tracking', path: '/dashboard/fleet/tracking' },
             { label: 'Smart Matching', path: '/dashboard/fleet?tab=matches' },
+            { label: 'Sell capacity', path: '/dashboard/fleet/capacity' },
+            { label: 'Backhaul', path: '/dashboard/fleet/backhaul' },
             { label: 'Freight Bidding', path: '/dashboard/fleet/bids' },
             { label: 'Route Planning', path: '/dashboard/fleet/routes' },
             { label: 'Financial', path: '/dashboard/fleet/financial' },

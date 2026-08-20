@@ -19,7 +19,6 @@ import {
   Gavel,
   CreditCard,
   MapPin,
-  Mic,
   Camera,
   Plus
 } from 'lucide-react';
@@ -54,7 +53,6 @@ import QuickActionPanel from '../components/Cargo/QuickActionPanel';
 import QuickActionFlow from '../components/Dashboard/QuickActionFlow';
 import OnboardingTour from '../components/Onboarding/OnboardingTour';
 import { useOnboardingStore, useShouldShowOnboarding } from '../stores/onboardingStore';
-import VoiceCargoInput from '../components/VoiceInput/VoiceCargoInput';
 import CameraDocumentScanner from '../components/Camera/CameraDocumentScanner';
 import PendingDeliveriesList from '../components/CargoReceiver/PendingDeliveriesList';
 import CargoOwnerEpodDashboard from '../components/CargoOwner/CargoOwnerEpodDashboard';
@@ -110,7 +108,6 @@ const CargoOwnerDashboard = () => {
   const [showQuickActionFlow, setShowQuickActionFlow] = useState(false);
 
   // Advanced features state
-  const [showVoiceInput, setShowVoiceInput] = useState(false);
   const [showDocumentScanner, setShowDocumentScanner] = useState(false);
 
 
@@ -824,11 +821,11 @@ const CargoOwnerDashboard = () => {
                 <span className="text-[10px] bg-[#345E85] dark:bg-primary-600 text-white px-3 py-1.5 rounded-full font-black uppercase tracking-widest shadow-sm">NEW</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {/* Voice Input */}
+                {/* AI Distribution Planner — cargo owner states company intent */}
                 <button
                   onClick={() => {
-                    setShowVoiceInput(true);
-                    markFeatureDiscovered('voice_input');
+                    navigate('/dashboard/campaigns');
+                    markFeatureDiscovered('distribution_campaign');
                   }}
                   className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 dark:hover:border-primary-700 transition-all duration-300 group relative overflow-hidden shadow-sm"
                 >
@@ -836,12 +833,32 @@ const CargoOwnerDashboard = () => {
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
                       <div className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-4 group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
-                        <Mic className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
+                        <Sparkles className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
                       </div>
-                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-3 py-1 rounded-lg font-black uppercase tracking-widest">2 Min</span>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-3 py-1 rounded-lg font-black uppercase tracking-widest">AI Plan</span>
                     </div>
-                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight mb-2 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">Voice Create</h3>
-                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">Speak to create cargo hands-free</p>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight mb-2 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">AI Planner</h3>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">Tell us what your company needs to move</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    navigate('/dashboard/available-space');
+                    markFeatureDiscovered('available_space');
+                  }}
+                  className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] text-left hover:shadow-xl hover:border-blue-100 dark:hover:border-primary-700 transition-all duration-300 group relative overflow-hidden shadow-sm"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/10 dark:group-hover:bg-blue-500/20 transition-colors"></div>
+                  <div className="relative z-10">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-4 group-hover:bg-[#345E85] dark:group-hover:bg-primary-600 group-hover:text-white transition-all duration-300">
+                        <Truck className="w-6 h-6 text-[#345E85] dark:text-blue-400 group-hover:text-white" />
+                      </div>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-3 py-1 rounded-lg font-black uppercase tracking-widest">LTL</span>
+                    </div>
+                    <h3 className="text-xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight mb-2 group-hover:text-[#345E85] dark:group-hover:text-primary-400 transition-colors">Available space</h3>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">Book unused kg on a truck already going your way</p>
                   </div>
                 </button>
 
@@ -1294,20 +1311,6 @@ const CargoOwnerDashboard = () => {
           void refetchCargos();
         }}
       />
-
-      {/* Voice Input Modal */}
-      {showVoiceInput && (
-        <VoiceCargoInput
-          onDataCaptured={(data) => {
-            console.log('Voice data captured:', data);
-            // TODO: Open cargo creation form with pre-filled data
-            // For now, just show the quick create modal
-            setShowVoiceInput(false);
-            setShowQuickCreate(true);
-          }}
-          onClose={() => setShowVoiceInput(false)}
-        />
-      )}
 
       {/* Document Scanner Modal */}
       {showDocumentScanner && (

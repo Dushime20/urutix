@@ -161,7 +161,7 @@ services:
       SMTP_PORT:   ${SMTP_PORT:-587}
       SMTP_USER:   ${SMTP_USER}
       SMTP_PASS:   ${SMTP_PASS}
-      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_FROM:   ${SMTP_FROM}
 
       # ── Mobile Money ──────────────────────────────────────────────────────

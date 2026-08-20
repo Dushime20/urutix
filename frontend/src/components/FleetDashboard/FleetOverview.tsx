@@ -629,6 +629,23 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
         />
       </div>
 
+      {truckStats.utilization < 85 && trucks.length > 0 && (
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard/fleet/capacity')}
+          className="w-full text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 hover:border-[#345E85]/40 transition-all flex items-center justify-between gap-4"
+        >
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">Unused capacity</p>
+            <p className="text-sm font-black text-slate-900 dark:text-white mt-1">Sell leftover space on trucks that are not full</p>
+            <p className="text-xs text-slate-500 mt-1">If a unit is running Kigali → Nairobi with empty kg, list it. Listing is free; commission is charged on the match.</p>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl bg-[#345E85] text-white whitespace-nowrap">
+            Sell capacity
+          </span>
+        </button>
+      )}
+
       {/* ── Row 2: Status Ring + Performance + Alerts ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <FleetStatusRing

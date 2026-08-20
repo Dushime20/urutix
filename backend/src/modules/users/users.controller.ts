@@ -10,6 +10,7 @@ import {
   HttpStatus,
   Request,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -19,12 +20,14 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UsersService, CreateTenantUserDto } from './users.service';
-import { UserRole } from '../../entities/user.entity';
+import { User, UserRole } from '../../entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly eventEmitter: EventEmitter2,
@@ -121,6 +124,11 @@ export class UsersController {
     @Request() req: any,
   ) {
     const caller = req.user;
+    const callerId = caller.userId || caller.id;
+    this.logger.log(
+      `[CREATE USER] requested by ${caller.email || callerId} (${caller.role}) → ` +
+      `email=${createUserDto.email} role=${createUserDto.role} tenant=${tenantId}`,
+    );
 
     // Restriction Logic: TRUCK_OWNER can only create fleet management roles and drivers
     if (caller.role === UserRole.TRUCK_OWNER) {
@@ -143,7 +151,16 @@ export class UsersController {
     const isPlatformAdmin = caller.role === UserRole.ADMIN || caller.role === UserRole.SUPER_ADMIN;
 
     if (createUserDto.role === UserRole.SUPER_ADMIN && caller.role !== UserRole.SUPER_ADMIN) {
+      this.logger.warn(
+        `[CREATE USER] blocked SUPER_ADMIN create by ${caller.email || callerId} (${caller.role})`,
+      );
       throw new ForbiddenException('Only SUPER_ADMIN users can create SUPER_ADMIN accounts.');
+    }
+
+    if (createUserDto.role === UserRole.SUPER_ADMIN) {
+      this.logger.log(
+        `[CREATE USER] SUPER_ADMIN account requested for ${createUserDto.email} by ${caller.email || callerId}`,
+      );
     }
     
     if (caller.role !== UserRole.TENANT_ADMIN && !isPlatformAdmin) {
@@ -160,22 +177,39 @@ export class UsersController {
 
     this.eventEmitter.emit('system.admin.tenant_user_created', {
       tenantId,
-      actorId: caller.userId || caller.id,
+      actorId: callerId,
       actorRole: caller.role,
       newUserId: user.id,
       newUserRole: user.role,
       newUserEmail: user.email,
     });
 
+    const emailSent = (user as User & { emailSent?: boolean }).emailSent === true;
+
+    this.logger.log(
+      `[CREATE USER] done id=${user.id} email=${user.email} role=${user.role} ` +
+      `status=${user.status} emailSent=${emailSent}`,
+    );
+    if (!emailSent) {
+      this.logger.error(
+        `[CREATE USER] password setup email NOT sent for ${user.email} (${user.role}). ` +
+        `Check EmailService / SMTP logs above.`,
+      );
+    }
+
     return {
       success: true,
-      message: 'Tenant user created successfully. Password setup email has been sent.',
+      emailSent,
+      message: emailSent
+        ? 'User created successfully. A password setup email has been sent.'
+        : 'User created, but the password setup email failed to send. Please check SMTP settings and resend.',
       data: {
         id: user.id,
         email: user.email,
         role: user.role,
         tenantId: user.tenantId,
         status: user.status,
+        emailSent,
       },
     };
   }

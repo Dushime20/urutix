@@ -177,22 +177,24 @@ const AdminUsers: React.FC = () => {
   // Mutations
   const { mutate: createUser, isPending: isCreating } = useMutation({
     mutationFn: () => {
-      // Generate a secure random password since the admin shouldn't set this
-      const generatedPassword = Math.random().toString(36).slice(-10) + 'A1!';
       return createTenantUser(tenantId, {
         email: email.trim(),
-        password: generatedPassword,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         role: role,
         phoneNumber: phoneNumber.trim() || undefined,
+        sendPasswordSetupEmail: true,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['admin-all-users'] });
       resetForm();
       setShowCreateModal(false);
-      toast.success('User created successfully');
+      if (data?.emailSent === false) {
+        toast.error(data?.message || 'User created, but the password setup email failed to send.');
+      } else {
+        toast.success(data?.message || 'User created. Password setup email sent.');
+      }
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Failed to create user');

@@ -316,12 +316,13 @@ export const fetchTenants = () =>
 
 export const createTenantUser = (tenantId: string, data: {
   email: string;
-  password: string;
+  password?: string;
   firstName: string;
   lastName: string;
   role: string;
   phoneNumber?: string;
   companyName?: string;
+  sendPasswordSetupEmail?: boolean;
 }) =>
   api.post<any>(`/users/tenant/${tenantId}/user`, data)
     .then(res => res.data);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTruck, FaCheck, FaStar, FaRocket, FaGavel } from 'react-icons/fa';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import EnhancedCargoForm from '../../pages/dashboard/cargos/create/components/form';
 import TruckSelectionModal from '../../pages/dashboard/cargos/create/components/form/TruckSelectionModal';
 import SmartMatchingFlow from './SmartMatchingFlow';
@@ -53,6 +53,7 @@ interface JourneyStep {
 const EnhancedJourneyFlow: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<'cargo-form' | 'journey-selection' | 'smart-matching' | 'publish-bid' | 'booking'>('cargo-form');
   const [cargoData, setCargoData] = useState<CargoFormData | null>(null);
   const [selectedJourney, setSelectedJourney] = useState<'smart-matching' | 'publish-bid' | null>(null);
@@ -147,12 +148,20 @@ const EnhancedJourneyFlow: React.FC = () => {
     }
   };
 
-  const handleJourneySelection = (journey: 'smart-matching' | 'publish-bid') => {
+  const handleJourneySelection = (journey: 'smart-matching' | 'publish-bid' | 'book-space') => {
+    if (journey === 'book-space') {
+      const qs = new URLSearchParams({
+        loadId: cargoData?.id || '',
+        weightKg: String((cargoData as any)?.weight || ''),
+        title: (cargoData as any)?.title || '',
+      });
+      navigate(`/dashboard/available-space?${qs.toString()}`);
+      return;
+    }
     setSelectedJourney(journey);
     setCurrentStep(journey);
     
     if (journey === 'smart-matching') {
-      // Trigger smart matching immediately
       triggerSmartMatching();
     }
   };
@@ -554,6 +563,30 @@ const EnhancedJourneyFlow: React.FC = () => {
               className="w-full px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Processing...' : 'Choose Publish for Bid'}
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg border-2 border-[#345E85]/30 hover:border-[#345E85] transition-colors duration-200 lg:col-span-2">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <div className="bg-blue-100 rounded-full p-3 mr-4">
+                <FaTruck className="text-[#345E85]" size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Share a truck already on this route</h3>
+                <p className="text-sm text-gray-600 dark:text-slate-300">Book leftover space instead of hiring a full truck</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Use this when your cargo is smaller than a full truck. Example: a unit going Kigali → Nairobi with 40% empty. You pay leftover freight plus an 8% match fee.
+            </p>
+            <button
+              onClick={() => handleJourneySelection('book-space')}
+              disabled={loading}
+              className="px-6 py-3 bg-[#345E85] text-white font-medium rounded-lg hover:bg-[#2c5173] disabled:opacity-50"
+            >
+              Book available space
             </button>
           </div>
         </div>

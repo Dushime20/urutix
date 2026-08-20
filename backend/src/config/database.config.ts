@@ -56,6 +56,9 @@ import { Truck }   from './../entities/truck.entity';
 import { Epod }            from './../entities/epod.entity';
 import { ShipmentReservation } from './../entities/shipment-reservation.entity';
 import { CargoInspection } from './../entities/cargo-inspection.entity';
+import { DistributionCampaign } from './../entities/distribution-campaign.entity';
+import { CapacityOffer } from './../entities/capacity-offer.entity';
+import { CapacityBooking } from './../entities/capacity-booking.entity';
 
 // ── Payments ───────────────────────────────────────────────────────────────
 import { Payment }         from './../entities/payment.entity';
@@ -206,7 +209,8 @@ export const ALL_ENTITIES = [
   Load, LoadDocument, LoadContract, LoadMatch, LoadTemplate,
   Location, Route, RouteTruck,
   Trip, Driver, Truck,
-  Epod, ShipmentReservation, CargoInspection,
+  Epod, ShipmentReservation, CargoInspection, DistributionCampaign,
+  CapacityOffer, CapacityBooking,
   // Payments
   Payment, PaymentAuditLog, Receipt, EscrowAccount, SubscriptionPayment,
   // Bidding & Auctions

@@ -31,6 +31,8 @@ import { AvailabilityModule }      from './modules/availability/availability.mod
 import { BiddingModule }           from './modules/bidding/bidding.module';
 import { BrokersModule }           from './modules/brokers/brokers.module';
 import { CargoOwnerModule }        from './modules/cargo-owner/cargo-owner.module';
+import { CampaignsModule }         from './modules/campaigns/campaigns.module';
+import { CapacityModule }          from './modules/capacity/capacity.module';
 import { CarrierMarketplaceModule } from './modules/carrier-marketplace/carrier-marketplace.module';
 import { CarrierTierModule }       from './modules/carrier-tier/carrier-tier.module';
 import { ComplianceModule }        from './modules/compliance/compliance.module';
@@ -101,6 +103,8 @@ import { UsersModule }             from './modules/users/users.module';
     BiddingModule,
     BrokersModule,
     CargoOwnerModule,
+    CampaignsModule,
+    CapacityModule,
     CarrierMarketplaceModule,
     CarrierTierModule,
     ComplianceModule,

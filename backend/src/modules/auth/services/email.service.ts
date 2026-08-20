@@ -27,13 +27,24 @@ export class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private readonly fromAddress: string;
   private readonly frontendUrl: string;
+  private readonly smtpHost?: string;
+  private readonly smtpPort: number;
+  private readonly smtpUser?: string;
+  private readonly smtpPass?: string;
+  private readonly smtpSecure: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    const host   = configService.get<string>('SMTP_HOST');
-    const port   = configService.get<number>('SMTP_PORT', 587);
-    const user   = configService.get<string>('SMTP_USER');
-    const pass   = configService.get<string>('SMTP_PASS');
-    const secure = port === 465;
+    this.smtpHost = configService.get<string>('SMTP_HOST') || undefined;
+    // Env vars are always strings in Docker — Number() so 465 is actually 465, not "465"
+    this.smtpPort = Number(configService.get('SMTP_PORT') ?? 587);
+    this.smtpUser = configService.get<string>('SMTP_USER') || undefined;
+    this.smtpPass = configService.get<string>('SMTP_PASS') || undefined;
+
+    const secureFlag = configService.get<string>('SMTP_SECURE');
+    this.smtpSecure =
+      secureFlag !== undefined && secureFlag !== ''
+        ? ['true', '1', 'yes'].includes(String(secureFlag).toLowerCase())
+        : this.smtpPort === 465;
 
     // Read FRONTEND_URL directly — never depend on getEnvConfig() which
     // requires BACKEND_URL and SMTP_USER to also be set.
@@ -44,38 +55,67 @@ export class EmailService {
     this.fromAddress =
       configService.get<string>('SMTP_FROM') ||
       configService.get<string>('EMAIL_FROM_ADDRESS') ||
-      user ||
+      this.smtpUser ||
       '';
 
     if (!this.frontendUrl) {
       this.logger.warn('[EMAIL] FRONTEND_URL is not set — email links will be broken');
     }
 
-    if (!host || !user || !pass) {
+    if (!this.smtpHost || !this.smtpUser || !this.smtpPass) {
       this.logger.warn('Email service: SMTP not fully configured — emails will be logged but not delivered');
-      this.logger.warn(`Missing: ${[!host && 'SMTP_HOST', !user && 'SMTP_USER', !pass && 'SMTP_PASS'].filter(Boolean).join(', ')}`);
+      this.logger.warn(`Missing: ${[!this.smtpHost && 'SMTP_HOST', !this.smtpUser && 'SMTP_USER', !this.smtpPass && 'SMTP_PASS'].filter(Boolean).join(', ')}`);
       return;
     }
 
+    if (this.smtpPort === 465 && !this.smtpSecure) {
+      this.logger.warn('[EMAIL] SMTP_PORT=465 but SMTP_SECURE is false — Gmail will close the socket. Forcing secure=true.');
+    }
+    if (this.smtpPort === 587 && this.smtpSecure) {
+      this.logger.warn('[EMAIL] SMTP_PORT=587 with SMTP_SECURE=true is invalid (587 uses STARTTLS). Forcing secure=false.');
+    }
+
+    this.initTransporter();
+  }
+
+  private resolvedSecure(): boolean {
+    if (this.smtpPort === 465) return true;
+    if (this.smtpPort === 587) return false;
+    return this.smtpSecure;
+  }
+
+  private createTransporter(): nodemailer.Transporter {
+    const secure = this.resolvedSecure();
+    return nodemailer.createTransport({
+      host: this.smtpHost,
+      port: this.smtpPort,
+      secure,
+      auth: { user: this.smtpUser, pass: this.smtpPass },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 30000,
+      tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2',
+      },
+      requireTLS: !secure,
+    });
+  }
+
+  private initTransporter(): void {
     try {
-      this.transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure,
-        auth: { user, pass },
-        // Connection timeouts — prevents hanging on slow/unreliable SMTP servers
-        connectionTimeout: 10000,   // 10s to establish connection
-        greetingTimeout:   10000,   // 10s for server greeting
-        socketTimeout:     30000,   // 30s per socket operation
-        ...(secure ? { tls: { rejectUnauthorized: false } } : {}),
-      });
+      const secure = this.resolvedSecure();
+      this.transporter = this.createTransporter();
+      this.logger.log(
+        `[EMAIL] SMTP transporter created — ${this.smtpHost}:${this.smtpPort} secure=${secure} from=${this.fromAddress}`,
+      );
 
       this.transporter.verify((err) => {
         if (err) {
           this.logger.warn(`[EMAIL] SMTP verify failed: ${err.message} — emails may still deliver`);
           this.logger.warn(`[EMAIL] Hint: for Gmail use port 465 + SMTP_SECURE=true, or port 587 + SMTP_SECURE=false`);
         } else {
-          this.logger.log(`[EMAIL] SMTP ready ✓ — ${host}:${port} | from=${this.fromAddress}`);
+          this.logger.log(`[EMAIL] SMTP ready ✓ — ${this.smtpHost}:${this.smtpPort} | from=${this.fromAddress}`);
         }
       });
     } catch (err: any) {
@@ -123,37 +163,66 @@ export class EmailService {
       return { success: false, error: `Invalid email address: ${to}` };
     }
 
-    this.logger.log(`[EMAIL] from="${from}" | replyTo="${replyTo || 'none'}" | hasHtml=${!!htmlBody} | hasText=${!!textBody}`);
+    this.logger.log(
+      `[EMAIL] from="${from}" | replyTo="${replyTo || 'none'}" | hasHtml=${!!htmlBody} | hasText=${!!textBody} | smtp=${this.smtpHost}:${this.smtpPort} secure=${this.resolvedSecure()}`,
+    );
 
-    // ── Send ────────────────────────────────────────────────────────────────
+    const mail = {
+      from,
+      to: to.trim().toLowerCase(),
+      subject,
+      ...(htmlBody  ? { html: htmlBody }   : {}),
+      ...(textBody  ? { text: textBody }   : {}),
+      ...(replyTo   ? { replyTo }          : {}),
+    };
+
     try {
-      const result = await this.transporter.sendMail({
-        from,
-        to: to.trim().toLowerCase(),
-        subject,
-        ...(htmlBody  ? { html: htmlBody }   : {}),
-        ...(textBody  ? { text: textBody }   : {}),
-        ...(replyTo   ? { replyTo }          : {}),
-      });
-
-      this.logger.log(`[EMAIL] SMTP response: accepted=${JSON.stringify(result.accepted)} rejected=${JSON.stringify(result.rejected || [])} messageId=${result.messageId}`);
-
-      if (result.rejected?.length) {
-        this.logger.error(`[EMAIL] REJECTED by server for: ${result.rejected.join(', ')}`);
-        return { success: false, error: `Rejected: ${result.rejected.join(', ')}` };
-      }
-
-      this.logger.log(`[EMAIL] DELIVERED ✓ → ${to} | "${subject}" | id=${result.messageId}`);
-      return { success: true, messageId: result.messageId };
+      return await this.dispatchMail(mail, to, subject);
     } catch (err: any) {
-      this.logger.error(`[EMAIL] SEND FAILED → to=${to} | subject="${subject}"`);
-      this.logger.error(`[EMAIL] Error: ${err.message}`);
-      if (err.code)         this.logger.error(`[EMAIL] Code: ${err.code}`);
-      if (err.response)     this.logger.error(`[EMAIL] SMTP response: ${err.response}`);
-      if (err.responseCode) this.logger.error(`[EMAIL] SMTP code: ${err.responseCode}`);
-      if (err.command)      this.logger.error(`[EMAIL] Failed command: ${err.command}`);
-      return { success: false, error: err.message };
+      if (this.isRetryableSmtpError(err)) {
+        this.logger.warn(`[EMAIL] retrying after "${err.message}" — recreating SMTP transporter`);
+        this.initTransporter();
+        try {
+          return await this.dispatchMail(mail, to, subject);
+        } catch (retryErr: any) {
+          return this.logSendFailure(to, subject, retryErr);
+        }
+      }
+      return this.logSendFailure(to, subject, err);
     }
+  }
+
+  private async dispatchMail(
+    mail: Record<string, unknown>,
+    to: string,
+    subject: string,
+  ): Promise<SendResult> {
+    const result = await this.transporter!.sendMail(mail);
+
+    this.logger.log(`[EMAIL] SMTP response: accepted=${JSON.stringify(result.accepted)} rejected=${JSON.stringify(result.rejected || [])} messageId=${result.messageId}`);
+
+    if (result.rejected?.length) {
+      this.logger.error(`[EMAIL] REJECTED by server for: ${result.rejected.join(', ')}`);
+      return { success: false, error: `Rejected: ${result.rejected.join(', ')}` };
+    }
+
+    this.logger.log(`[EMAIL] DELIVERED ✓ → ${to} | "${subject}" | id=${result.messageId}`);
+    return { success: true, messageId: result.messageId };
+  }
+
+  private isRetryableSmtpError(err: any): boolean {
+    const message = `${err?.message || ''} ${err?.code || ''}`;
+    return /socket close|ECONNRESET|ETIMEDOUT|ECONNECTION|connection closed|EPIPE|ESOCKET/i.test(message);
+  }
+
+  private logSendFailure(to: string, subject: string, err: any): SendResult {
+    this.logger.error(`[EMAIL] SEND FAILED → to=${to} | subject="${subject}"`);
+    this.logger.error(`[EMAIL] Error: ${err.message}`);
+    if (err.code)         this.logger.error(`[EMAIL] Code: ${err.code}`);
+    if (err.response)     this.logger.error(`[EMAIL] SMTP response: ${err.response}`);
+    if (err.responseCode) this.logger.error(`[EMAIL] SMTP code: ${err.responseCode}`);
+    if (err.command)      this.logger.error(`[EMAIL] Failed command: ${err.command}`);
+    return { success: false, error: err.message };
   }
 
   // ─── Auth emails ───────────────────────────────────────────────────────────
@@ -212,7 +281,63 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/driver/setup-password?token=${token}`,
         features: ['Accept and manage trip assignments', 'Track your routes in real time', 'Submit proof-of-delivery reports', 'View your earnings and schedules'],
       }),
-    });
+    }, true);
+  }
+
+  /**
+   * Generic password-setup email for roles without a dedicated template
+   * (Admin, Super Admin, fleet roles, parking manager, etc.).
+   */
+  async sendAccountPasswordSetupEmail(
+    email: string, firstName: string, roleLabel: string, token: string,
+  ): Promise<void> {
+    await this.sendAndLog('sendAccountPasswordSetupEmail', email, {
+      subject: `Set up your UrutiX ${roleLabel} Account`,
+      htmlBody: this.renderSetupEmail({
+        firstName, role: roleLabel, ctaColor: '#345E85',
+        setupUrl: `${this.frontendUrl}/setup-password?token=${token}`,
+        features: [
+          'Sign in to your UrutiX workspace',
+          'Access the tools for your role',
+          'Manage your profile and notifications',
+        ],
+      }),
+    }, true);
+  }
+
+  async sendSuperAdminPasswordSetupEmail(
+    email: string, firstName: string, _lastName: string, token: string,
+  ): Promise<void> {
+    await this.sendAndLog('sendSuperAdminPasswordSetupEmail', email, {
+      subject: 'Set up your UrutiX Super Admin Account',
+      htmlBody: this.renderSetupEmail({
+        firstName, role: 'Super Admin', ctaColor: '#7c3aed',
+        setupUrl: `${this.frontendUrl}/setup-password?token=${token}`,
+        features: [
+          'Manage all tenants and platform users',
+          'Configure system settings and permissions',
+          'Monitor operations across the platform',
+          'Access billing, revenue, and audit logs',
+        ],
+      }),
+    }, true);
+  }
+
+  async sendAdminPasswordSetupEmail(
+    email: string, firstName: string, _lastName: string, token: string,
+  ): Promise<void> {
+    await this.sendAndLog('sendAdminPasswordSetupEmail', email, {
+      subject: 'Set up your UrutiX Admin Account',
+      htmlBody: this.renderSetupEmail({
+        firstName, role: 'Admin', ctaColor: '#345E85',
+        setupUrl: `${this.frontendUrl}/setup-password?token=${token}`,
+        features: [
+          'Manage users and tenant operations',
+          'Review platform activity and reports',
+          'Configure operational settings',
+        ],
+      }),
+    }, true);
   }
 
   async sendDriverWelcomeEmail(
@@ -241,7 +366,7 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/tenant/setup-password?token=${token}`,
         features: [`Manage your "${tenantName}" workspace`, 'Invite and manage team members', 'Configure subscription and billing', 'Monitor all fleet operations'],
       }),
-    });
+    }, true);
   }
 
   async sendCargoOwnerPasswordSetupEmail(
@@ -255,7 +380,7 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/cargo-owner/setup-password?token=${token}`,
         features: ['Create and publish cargo shipments', 'Find and assign vetted carriers', 'Track shipments in real time', 'View analytics and shipping history'],
       }),
-    });
+    }, true);
   }
 
   async sendBrokerPasswordSetupEmail(
@@ -269,7 +394,7 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/broker/setup-password?token=${token}`,
         features: ['Browse and bid on available loads', 'Manage assignments and commissions', 'Track shipment progress', 'View earnings and payout history'],
       }),
-    });
+    }, true);
   }
 
   async sendTruckOwnerPasswordSetupEmail(
@@ -283,7 +408,7 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/truck-owner/setup-password?token=${token}`,
         features: ['Manage your fleet of trucks and drivers', 'Track vehicles and performance', 'Monitor fuel and maintenance', 'View earnings and financial reports'],
       }),
-    });
+    }, true);
   }
 
   async sendLenderPasswordSetupEmail(
@@ -297,7 +422,7 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/lender/setup-password?token=${token}`,
         features: ['Manage loan applications and approvals', 'Set lending policies and interest rates', 'Track repayments and portfolio performance', 'View financial reports and analytics'],
       }),
-    });
+    }, true);
   }
 
   async sendAgentPasswordSetupEmail(
@@ -311,7 +436,7 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/agent/setup-password?token=${token}`,
         features: ['Coordinate cargo owners and carriers', 'Manage client relationships', 'Track shipments and provide updates', 'Handle documentation and reports'],
       }),
-    });
+    }, true);
   }
 
   async sendCustomsOfficerPasswordSetupEmail(
@@ -325,7 +450,7 @@ export class EmailService {
         setupUrl: `${this.frontendUrl}/customs-officer/setup-password?token=${token}`,
         features: ['Inspect incoming vehicles and shipments', 'Manage cargo inspection workflows', 'Flag restricted goods', 'Access audit logs and reports'],
       }),
-    });
+    }, true);
   }
 
   async sendReceiverInvitationEmail(
@@ -342,7 +467,7 @@ export class EmailService {
         ctaColor: '#345E85',
         note: `If you didn't expect this email, you can ignore it or contact ${cargoOwnerEmail}.`,
       }),
-    });
+    }, true);
   }
 
   async sendAuctionCreatedTruckOwnerEmail(
@@ -618,6 +743,7 @@ export class EmailService {
     methodName: string,
     to: string,
     options: { subject: string; htmlBody?: string; textBody?: string; replyTo?: string },
+    throwOnError = false,
   ): Promise<void> {
     this.logger.log(`[EMAIL] ${methodName} → to=${to} | subject="${options.subject}"`);
     const result = await this.sendGenericEmail({ to, ...options });
@@ -625,6 +751,9 @@ export class EmailService {
       this.logger.log(`[EMAIL] ${methodName} SUCCESS ✓ → ${to} | id=${result.messageId}`);
     } else {
       this.logger.error(`[EMAIL] ${methodName} FAILED ✗ → ${to} | ${result.error}`);
+      if (throwOnError) {
+        throw new Error(result.error || `Failed to send email via ${methodName}`);
+      }
     }
   }
 

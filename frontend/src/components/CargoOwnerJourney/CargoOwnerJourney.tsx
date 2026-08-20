@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaCheck, FaTruck } from 'react-icons/fa';
 import CargoDetailsForm from './CargoDetailsForm';
 import JourneySelectionModal from './JourneySelectionModal';
@@ -63,9 +64,10 @@ interface JourneyStep {
 }
 
 const CargoOwnerJourney: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<'details' | 'selection' | 'smart-matching' | 'publish-bid' | 'assign-broker' | 'booking'>('details');
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<'details' | 'selection' | 'smart-matching' | 'publish-bid' | 'assign-broker' | 'book-space' | 'booking'>('details');
   const [cargoDetails, setCargoDetails] = useState<CargoDetails | null>(null);
-  const [selectedJourney, setSelectedJourney] = useState<'smart-matching' | 'publish-bid' | 'assign-broker' | null>(null);
+  const [selectedJourney, setSelectedJourney] = useState<'smart-matching' | 'publish-bid' | 'assign-broker' | 'book-space' | null>(null);
   const [selectedTruck, setSelectedTruck] = useState<any>(null);
   const [bidData, setBidData] = useState<any>(null);
   const [bookingData, setBookingData] = useState<any>(null);
@@ -192,7 +194,16 @@ const CargoOwnerJourney: React.FC = () => {
     }
   };
 
-  const handleJourneySelection = (journey: 'smart-matching' | 'publish-bid' | 'assign-broker') => {
+  const handleJourneySelection = (journey: 'smart-matching' | 'publish-bid' | 'assign-broker' | 'book-space') => {
+    if (journey === 'book-space') {
+      const qs = new URLSearchParams({
+        loadId: cargoDetails?.id || '',
+        weightKg: String(cargoDetails?.weight || ''),
+        title: cargoDetails?.title || '',
+      });
+      navigate(`/dashboard/available-space?${qs.toString()}`);
+      return;
+    }
     setSelectedJourney(journey);
     setCurrentStep(journey);
   };

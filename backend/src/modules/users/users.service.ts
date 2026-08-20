@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
@@ -25,8 +26,20 @@ export interface CreateTenantUserDto {
   sendPasswordSetupEmail?: boolean; // Optional flag to control email sending
 }
 
+const ROLE_SETUP_LABELS: Partial<Record<UserRole, string>> = {
+  [UserRole.SUPER_ADMIN]: 'Super Admin',
+  [UserRole.ADMIN]: 'Admin',
+  [UserRole.FLEET_MANAGER]: 'Fleet Manager',
+  [UserRole.FLEET_DISPATCHER]: 'Fleet Dispatcher',
+  [UserRole.FLEET_ACCOUNTANT]: 'Fleet Accountant',
+  [UserRole.FLEET_SAFETY_OFFICER]: 'Fleet Safety Officer',
+  [UserRole.PARKING_RESERVATION_MANAGER]: 'Parking Reservation Manager',
+};
+
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -72,14 +85,22 @@ export class UsersService {
   }
 
   async createTenantUser(createUserDto: CreateTenantUserDto): Promise<User> {
+    this.logger.log(
+      `[CREATE USER] start email=${createUserDto.email} role=${createUserDto.role} ` +
+      `tenant=${createUserDto.tenantId} sendEmail=${createUserDto.sendPasswordSetupEmail !== false}`,
+    );
+
     // Verify tenant exists
     const tenant = await this.tenantRepository.findOne({
       where: { id: createUserDto.tenantId },
     });
 
     if (!tenant) {
+      this.logger.warn(`[CREATE USER] tenant not found: ${createUserDto.tenantId}`);
       throw new NotFoundException('Tenant not found');
     }
+
+    this.logger.log(`[CREATE USER] tenant="${tenant.name}" status=${tenant.status}`);
 
     // Check if tenant is active or if we are creating the initial tenant admin for a pending tenant
     if (tenant.status !== TenantStatus.ACTIVE && !(tenant.status === TenantStatus.PENDING_ACTIVATION && createUserDto.role === UserRole.TENANT_ADMIN)) {
@@ -104,6 +125,9 @@ export class UsersService {
     });
 
     if (existingUser) {
+      this.logger.warn(
+        `[CREATE USER] duplicate email=${createUserDto.email} tenant=${createUserDto.tenantId}`,
+      );
       throw new ConflictException(
         'User with this email already exists in this tenant',
       );
@@ -125,6 +149,10 @@ export class UsersService {
     });
 
     const savedUser = await this.userRepository.save(user);
+    this.logger.log(
+      `[CREATE USER] saved id=${savedUser.id} email=${savedUser.email} ` +
+      `role=${savedUser.role} status=${savedUser.status}`,
+    );
 
     // Create user profile
     const userProfile = this.userProfileRepository.create({
@@ -136,6 +164,9 @@ export class UsersService {
     });
 
     await this.userProfileRepository.save(userProfile);
+    this.logger.log(
+      `[CREATE USER] profile saved firstName=${createUserDto.firstName} lastName=${createUserDto.lastName}`,
+    );
 
     // When a LENDER user is created, automatically create the corresponding
     // lenders table row so GET /lending/tenant/lenders returns them immediately.
@@ -164,22 +195,44 @@ export class UsersService {
     }
 
     // Generate password setup token and send email (if enabled)
+    let emailSent = false;
     if (createUserDto.sendPasswordSetupEmail !== false) { // Default to true
+      this.logger.log(
+        `[CREATE USER] sending password setup email to ${savedUser.email} (${savedUser.role})`,
+      );
       try {
         await this.sendPasswordSetupEmail(savedUser, createUserDto.firstName, createUserDto.lastName);
+        emailSent = true;
+        this.logger.log(
+          `[CREATE USER] password setup email SENT ✓ to=${savedUser.email} role=${savedUser.role}`,
+        );
       } catch (emailError) {
-        // Log email error but don't fail user creation
-        console.error('Failed to send password setup email:', emailError);
-        // You might want to set a flag on the user indicating email failed
+        this.logger.error(
+          `[CREATE USER] password setup email FAILED ✗ to=${savedUser.email} role=${savedUser.role}: ` +
+          `${emailError?.message || emailError}`,
+          emailError?.stack,
+        );
       }
+    } else {
+      this.logger.warn(
+        `[CREATE USER] password setup email SKIPPED for ${savedUser.email} (sendPasswordSetupEmail=false)`,
+      );
     }
+
+    this.logger.log(
+      `[CREATE USER] complete id=${savedUser.id} email=${savedUser.email} emailSent=${emailSent}`,
+    );
 
     // Remove sensitive data before returning
     const { passwordHash, ...userWithoutPassword } = savedUser;
-    return userWithoutPassword as User;
+    return Object.assign(userWithoutPassword as User, { emailSent });
   }
 
   private async sendPasswordSetupEmail(user: User, firstName: string, lastName: string): Promise<void> {
+    this.logger.log(
+      `[SETUP EMAIL] generating token for ${user.email} role=${user.role}`,
+    );
+
     // Generate password setup token
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
@@ -200,9 +253,29 @@ export class UsersService {
     });
 
     await this.passwordResetTokenRepository.save(passwordSetupToken);
+    this.logger.log(
+      `[SETUP EMAIL] token saved for ${user.email} expiresAt=${expiresAt.toISOString()}`,
+    );
 
     // Send appropriate email based on user role
+    this.logger.log(`[SETUP EMAIL] dispatching template for role=${user.role} to=${user.email}`);
     switch (user.role) {
+      case UserRole.SUPER_ADMIN:
+        await this.emailService.sendSuperAdminPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          token,
+        );
+        break;
+      case UserRole.ADMIN:
+        await this.emailService.sendAdminPasswordSetupEmail(
+          user.email,
+          firstName,
+          lastName,
+          token,
+        );
+        break;
       case UserRole.DRIVER:
         await this.emailService.sendDriverPasswordSetupEmail(
           user.email,
@@ -277,28 +350,30 @@ export class UsersService {
           token,
         );
         break;
-      default:
-        // Fallback for any other roles - should not happen with current roles
-        await this.sendGenericPasswordSetupEmail(user.email, firstName, lastName, user.role, token);
+      case UserRole.CARGO_RECEIVER:
+        await this.emailService.sendReceiverInvitationEmail(
+          user.email,
+          firstName,
+          lastName,
+          'UrutiX Admin',
+          token,
+        );
         break;
+      default: {
+        const roleLabel =
+          ROLE_SETUP_LABELS[user.role] ||
+          user.role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        this.logger.log(`[SETUP EMAIL] using generic template roleLabel="${roleLabel}"`);
+        await this.emailService.sendAccountPasswordSetupEmail(
+          user.email,
+          firstName,
+          roleLabel,
+          token,
+        );
+        break;
+      }
     }
-  }
-
-  private async sendGenericPasswordSetupEmail(
-    email: string,
-    firstName: string,
-    lastName: string,
-    role: UserRole,
-    token: string,
-  ): Promise<void> {
-    // For now, we'll use the driver email template as a base
-    // In the future, you might want to create role-specific templates
-    await this.emailService.sendDriverPasswordSetupEmail(
-      email,
-      firstName,
-      lastName,
-      token,
-    );
+    this.logger.log(`[SETUP EMAIL] template dispatched for ${user.email} role=${user.role}`);
   }
 
   async createTenantAdminUser(

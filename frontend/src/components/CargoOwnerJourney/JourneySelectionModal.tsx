@@ -8,7 +8,7 @@ import { usePermission } from '../../contexts/PermissionContext';
 interface JourneySelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onJourneySelected: (journey: 'smart-matching' | 'publish-bid' | 'assign-broker') => void;
+  onJourneySelected: (journey: 'smart-matching' | 'publish-bid' | 'assign-broker' | 'book-space') => void;
   cargoData: any;
   loading?: boolean;
 }
@@ -36,7 +36,8 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
 
   const getRecommendation = () => {
     if (!cargoData) return 'smart-matching';
-
+    const weight = Number(cargoData.weight || cargoData.cargoWeight || 0);
+    if (weight > 0 && weight < 19600) return 'book-space';
     if (cargoData.urgencyLevel === 'CRITICAL' || cargoData.urgencyLevel === 'HIGH') {
       return 'smart-matching';
     }
@@ -207,6 +208,37 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
                     : 'Choose Publish for Bid'}
               </button>
             </div>
+          </div>
+
+          <div className={`relative rounded-xl border-2 p-5 transition-all duration-200 ${
+            recommendation === 'book-space'
+              ? 'border-[#345E85] bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-200 dark:border-slate-700 hover:border-[#345E85]/40'
+          }`}>
+            {recommendation === 'book-space' && (
+              <div className="absolute -top-2 -right-2 bg-[#345E85] text-white text-xs px-2 py-1 rounded-full">
+                Recommended
+              </div>
+            )}
+            <div className="flex items-center mb-3">
+              <div className="bg-blue-100 rounded-full p-3 mr-4">
+                <FaTruck className="text-[#345E85]" size={22} />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Share a truck already on this route</h3>
+                <p className="text-sm text-gray-600 dark:text-slate-300">Book leftover space — Airbnb for cargo capacity</p>
+              </div>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Best when your cargo is LTL-sized. A truck going Kigali → Nairobi with unused kg can take your slice. An 8% match fee is billed to you on the leftover booking.
+            </p>
+            <button
+              onClick={() => onJourneySelected('book-space')}
+              disabled={loading}
+              className="w-full px-6 py-3 bg-[#345E85] text-white font-medium rounded-lg hover:bg-[#2c5173] disabled:opacity-50"
+            >
+              Book available space
+            </button>
           </div>
 
           {/* Helper Tools */}
