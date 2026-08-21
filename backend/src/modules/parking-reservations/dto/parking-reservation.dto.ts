@@ -14,6 +14,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import {
@@ -374,11 +375,20 @@ export class UpdateParkingFeesDto {
   weeklyRate?: number;
 
   @IsOptional()
-  @Type(() => Number)
+  @Transform(({ value }) => (value === null || value === '' ? null : Number(value)))
+  @ValidateIf((_, value) => value != null)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(1000000)
-  longTermRate?: number;
+  longTermRate?: number | null;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === null || value === '' ? null : Number(value)))
+  @ValidateIf((_, value) => value != null)
+  @IsInt()
+  @Min(1)
+  @Max(120)
+  longTermMonths?: number | null;
 
   @IsOptional()
   @IsEnum(ParkingReservationFeeType)

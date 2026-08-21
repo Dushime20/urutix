@@ -31,6 +31,8 @@ export function scheduleToQuoteInput(
   schedule: Pick<
     ParkingFeeSchedule,
     | 'monthlyRatePerSpace'
+    | 'longTermRate'
+    | 'longTermMonths'
     | 'reservationFeeValue'
     | 'reservationFeeType'
     | 'reservationFeeApplication'
@@ -42,10 +44,14 @@ export function scheduleToQuoteInput(
   spaces: number,
   months: number,
 ) {
+  const monthlyRate = toMoneyNumber(schedule.monthlyRatePerSpace);
+  const longTermRate = schedule.longTermRate != null ? toMoneyNumber(schedule.longTermRate) : 0;
+  const longTermMonths = Number(schedule.longTermMonths || 0);
+  const useLongTerm = longTermRate > 0 && longTermMonths > 0 && months >= longTermMonths;
   return {
     spaces,
     months,
-    monthlyRatePerSpace: toMoneyNumber(schedule.monthlyRatePerSpace),
+    monthlyRatePerSpace: useLongTerm ? longTermRate : monthlyRate,
     reservationFee: toMoneyNumber(schedule.reservationFeeValue),
     reservationFeeType: schedule.reservationFeeType,
     reservationFeeApplication: schedule.reservationFeeApplication,
@@ -81,6 +87,7 @@ export function toFeeScheduleView(schedule: ParkingFeeSchedule, facility?: Parki
     dailyRate: schedule.dailyRate != null ? toMoneyNumber(schedule.dailyRate) : null,
     weeklyRate: schedule.weeklyRate != null ? toMoneyNumber(schedule.weeklyRate) : null,
     longTermRate: schedule.longTermRate != null ? toMoneyNumber(schedule.longTermRate) : null,
+    longTermMonths: schedule.longTermMonths ?? null,
     reservationFeeType: schedule.reservationFeeType,
     reservationFeeValue: toMoneyNumber(schedule.reservationFeeValue),
     reservationFee: toMoneyNumber(schedule.reservationFeeValue),
@@ -173,7 +180,8 @@ export function applyFeeScheduleDto(schedule: ParkingFeeSchedule, dto: UpdatePar
   if (dto.monthlyRatePerSpace != null) assign('monthlyRatePerSpace', dto.monthlyRatePerSpace as any);
   if (dto.dailyRate != null) schedule.dailyRate = dto.dailyRate;
   if (dto.weeklyRate != null) schedule.weeklyRate = dto.weeklyRate;
-  if (dto.longTermRate != null) schedule.longTermRate = dto.longTermRate;
+  if (dto.longTermRate !== undefined) schedule.longTermRate = dto.longTermRate as any;
+  if (dto.longTermMonths !== undefined) schedule.longTermMonths = dto.longTermMonths as any;
   if (dto.reservationFeeType) assign('reservationFeeType', dto.reservationFeeType);
   if (dto.reservationFeeValue != null) assign('reservationFeeValue', dto.reservationFeeValue as any);
   else if (dto.reservationFee != null) assign('reservationFeeValue', dto.reservationFee as any);

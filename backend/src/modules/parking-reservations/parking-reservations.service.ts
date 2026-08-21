@@ -722,6 +722,9 @@ export class ParkingReservationsService {
     if (dto.effectiveFrom && dto.effectiveUntil && dto.effectiveUntil < dto.effectiveFrom) {
       throw new BadRequestException('Effective until must be on or after effective from.');
     }
+    if (dto.longTermRate != null && dto.longTermRate > 0 && !dto.longTermMonths) {
+      throw new BadRequestException('Choose a long-term contract length, for example 2 years.');
+    }
   }
 
   private assertFeeScheduleEntity(schedule: ParkingFeeSchedule) {

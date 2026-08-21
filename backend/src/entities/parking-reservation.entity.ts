@@ -510,6 +510,9 @@ export class ParkingFeeSchedule {
   @Column({ type: 'numeric', precision: 12, scale: 2, nullable: true })
   longTermRate?: number;
 
+  @Column({ type: 'int', nullable: true })
+  longTermMonths?: number;
+
   @Column({
     type: 'enum',
     enum: ParkingReservationFeeType,

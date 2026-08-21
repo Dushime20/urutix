@@ -10,9 +10,10 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 import { useParkingMoney } from '../../hooks/useParkingMoney';
 import CurrencySelector from '../../components/common/CurrencySelector';
 import ModernLoader from '../../components/common/ModernLoader';
-import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
-import { Modal } from '../../components/EnliteUI';
+import { Modal, SearchableSelect } from '../../components/EnliteUI';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
+import { countryDisplayName, worldCountries } from '../../lib/countries';
+import { calculateParkingFeeQuote, effectiveParkingMonthlyRate } from '../../utils/parkingQuote';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -23,6 +24,27 @@ const STATUS_LABELS: Record<ParkingFeeScheduleStatus, string> = {
   EXPIRED: 'Expired',
   ARCHIVED: 'Archived',
 };
+
+const STATUS_HELP: Record<ParkingFeeScheduleStatus, string> = {
+  DRAFT: 'Not published yet. Drivers cannot use this pricing until you click Activate.',
+  SCHEDULED: 'Approved to go live on the start date below.',
+  ACTIVE: 'Currently used for new parking reservations.',
+  EXPIRED: 'This pricing period has ended and is no longer offered.',
+  ARCHIVED: 'Retired. It stays in history but is not used for new reservations.',
+};
+
+const LONG_TERM_DURATIONS = [
+  { months: 6, label: '6 months' },
+  { months: 12, label: '1 year' },
+  { months: 18, label: '18 months' },
+  { months: 24, label: '2 years' },
+  { months: 36, label: '3 years' },
+  { months: 48, label: '4 years' },
+  { months: 60, label: '5 years' },
+  { months: 120, label: '10 years' },
+];
+
+const COUNTRIES = worldCountries();
 
 const emptyForm: ParkingFeeSchedule = {
   id: '',
@@ -43,6 +65,7 @@ const emptyForm: ParkingFeeSchedule = {
   dailyRate: null,
   weeklyRate: null,
   longTermRate: null,
+  longTermMonths: null,
   reservationFeeType: 'FIXED',
   reservationFeeValue: 0,
   reservationFee: 0,
@@ -73,29 +96,23 @@ const emptyForm: ParkingFeeSchedule = {
   paymentInstructions: '',
 };
 
-const COUNTRIES = [
-  { code: 'RW', name: 'Rwanda' },
-  { code: 'KE', name: 'Kenya' },
-  { code: 'UG', name: 'Uganda' },
-  { code: 'TZ', name: 'Tanzania' },
-  { code: 'BI', name: 'Burundi' },
-  { code: 'SS', name: 'South Sudan' },
-  { code: 'CD', name: 'DR Congo' },
-  { code: 'ET', name: 'Ethiopia' },
-  { code: 'ZA', name: 'South Africa' },
-  { code: 'NG', name: 'Nigeria' },
-  { code: 'GH', name: 'Ghana' },
-  { code: 'ZM', name: 'Zambia' },
-  { code: 'MW', name: 'Malawi' },
-];
-
 function countryValue(value?: string) {
-  const raw = (value || '').trim();
-  if (!raw) return '';
-  const match = COUNTRIES.find(
-    (item) => item.name.toLowerCase() === raw.toLowerCase() || item.code.toLowerCase() === raw.toLowerCase(),
-  );
-  return match?.name || raw;
+  return countryDisplayName(value);
+}
+
+function durationLabel(months?: number | null) {
+  if (!months) return '';
+  const match = LONG_TERM_DURATIONS.find((item) => item.months === months);
+  if (match) return match.label;
+  if (months % 12 === 0) {
+    const years = months / 12;
+    return `${years} ${years === 1 ? 'year' : 'years'}`;
+  }
+  return `${months} months`;
+}
+
+function titleCase(value: string) {
+  return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 const inputClass = 'ui-input w-full border rounded-xl p-3';
@@ -111,6 +128,8 @@ function hydrate(data: Partial<ParkingFeeSchedule>, facility?: Partial<ParkingFe
     totalCapacity: data.totalCapacity || facility?.totalCapacity || 700,
     reservationFeeValue: data.reservationFeeValue ?? data.reservationFee ?? 0,
     reservationFee: data.reservationFeeValue ?? data.reservationFee ?? 0,
+    longTermMonths: data.longTermMonths === undefined ? emptyForm.longTermMonths : data.longTermMonths,
+    longTermRate: data.longTermRate === undefined ? null : data.longTermRate,
     effectiveFrom: data.effectiveFrom || today(),
     effectiveUntil: data.effectiveUntil || '',
   };
@@ -162,6 +181,40 @@ const ParkingFeeSettings = () => {
     return list;
   }, [form.currency, supportedCurrencies]);
 
+  const countryOptions = useMemo(() => {
+    const list = COUNTRIES.map((item) => ({ value: item.name, label: item.name, description: item.code }));
+    const current = countryValue(form.country);
+    if (current && !list.some((item) => item.value.toLowerCase() === current.toLowerCase())) {
+      list.unshift({ value: current, label: current, description: '' });
+    }
+    return list;
+  }, [form.country]);
+
+  const durationOptions = useMemo(() => {
+    const list = LONG_TERM_DURATIONS.map((item) => ({
+      value: String(item.months),
+      label: item.label,
+      description: `${item.months} months`,
+    }));
+    if (form.longTermMonths && !list.some((item) => item.value === String(form.longTermMonths))) {
+      list.push({
+        value: String(form.longTermMonths),
+        label: durationLabel(form.longTermMonths),
+        description: `${form.longTermMonths} months`,
+      });
+    }
+    return list;
+  }, [form.longTermMonths]);
+
+  const currencySelectOptions = useMemo(
+    () =>
+      currencyOptions.map((c) => ({
+        value: c.code,
+        label: `${c.flag ? `${c.flag} ` : ''}${c.code} — ${c.name}`,
+      })),
+    [currencyOptions],
+  );
+
   const patch = (partial: Partial<ParkingFeeSchedule>) => {
     setForm((current) => ({ ...current, ...partial }));
     setFieldError(null);
@@ -202,8 +255,11 @@ const ParkingFeeSettings = () => {
     if (!(form.facilityName || '').trim()) return 'Parking facility name is required so drivers can identify this location.';
     if (!(form.city || '').trim()) return 'City is required so drivers can search for this parking location.';
     if (!(form.country || '').trim()) return 'Country is required so drivers can search for this parking location.';
-    if (!form.currency || !/^[A-Z]{3}$/.test(form.currency)) return 'Currency must be a valid ISO 4217 code.';
+    if (!form.currency || !/^[A-Z]{3}$/.test(form.currency)) return 'Choose a billing currency.';
     if (Number(form.monthlyRatePerSpace) <= 0) return 'Monthly rate per truck space must be greater than 0.';
+    if (form.longTermRate != null && Number(form.longTermRate) > 0 && !form.longTermMonths) {
+      return 'Choose how long a long-term contract must be, for example 2 years.';
+    }
     if (Number(form.taxPercent) < 0 || Number(form.taxPercent) > 100) return 'Tax / VAT percent must be between 0 and 100.';
     if (Number(form.minContractMonths || 1) < 1) return 'Minimum contract months must be at least 1.';
     if (Number(form.maxContractMonths || 1) < Number(form.minContractMonths || 1)) return 'Maximum months must be greater than or equal to minimum months.';
@@ -227,7 +283,8 @@ const ParkingFeeSettings = () => {
     monthlyRatePerSpace: Number(form.monthlyRatePerSpace),
     dailyRate: form.dailyRate == null ? undefined : Number(form.dailyRate),
     weeklyRate: form.weeklyRate == null ? undefined : Number(form.weeklyRate),
-    longTermRate: form.longTermRate == null ? undefined : Number(form.longTermRate),
+    longTermRate: form.longTermRate == null ? null : Number(form.longTermRate),
+    longTermMonths: form.longTermMonths == null ? null : Number(form.longTermMonths),
     reservationFeeType: form.reservationFeeType,
     reservationFeeValue: Number(form.reservationFeeValue ?? form.reservationFee),
     reservationFeeApplication: form.reservationFeeApplication,
@@ -312,7 +369,12 @@ const ParkingFeeSettings = () => {
       calculateParkingFeeQuote({
         spaces: Math.max(1, Number(spaces) || 1),
         months: Math.max(1, Number(months) || 1),
-        monthlyRatePerSpace: Number(form.monthlyRatePerSpace || 0),
+        monthlyRatePerSpace: effectiveParkingMonthlyRate({
+          months: Math.max(1, Number(months) || 1),
+          monthlyRatePerSpace: Number(form.monthlyRatePerSpace || 0),
+          longTermRate: form.longTermRate,
+          longTermMonths: form.longTermMonths,
+        }),
         reservationFee: Number(form.reservationFeeValue ?? form.reservationFee ?? 0),
         reservationFeeType: form.reservationFeeType,
         reservationFeeApplication: form.reservationFeeApplication,
@@ -333,7 +395,8 @@ const ParkingFeeSettings = () => {
         <div>
           <div className="font-bold text-slate-900 dark:text-white">{row.name || 'Untitled schedule'}</div>
           <div className="text-xs text-slate-500">
-            {[row.facilityName, row.city, countryValue(row.country)].filter(Boolean).join(' · ')} · v{row.version || 1}
+            {[row.facilityName, row.city, countryValue(row.country)].filter(Boolean).join(' · ')}
+            {row.version ? ` · Version ${row.version}` : ''}
           </div>
         </div>
       ),
@@ -345,8 +408,8 @@ const ParkingFeeSettings = () => {
         <StatusBadge status={row.status || 'DRAFT'} label={STATUS_LABELS[(row.status || 'DRAFT') as ParkingFeeScheduleStatus]} />
       ),
     },
-    { key: 'spaceType', label: 'Space type', render: (v) => String(v || 'TRUCK_SPACE').replace(/_/g, ' ') },
-    { key: 'vehicleType', label: 'Vehicle', render: (v) => String(v || 'TRUCK') },
+    { key: 'spaceType', label: 'Space type', render: (v) => titleCase(String(v || 'TRUCK_SPACE')) },
+    { key: 'vehicleType', label: 'Vehicle', render: (v) => titleCase(String(v || 'TRUCK')) },
     { key: 'currency', label: 'Currency' },
     {
       key: 'monthlyRatePerSpace',
@@ -493,32 +556,49 @@ const ParkingFeeSettings = () => {
           <section className="space-y-4">
             <h3 className="ui-section-title"><TranslatedText text="General" /></h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Fee schedule name">
-                <input className={inputClass} value={form.name || ''} onChange={(e) => patch({ name: e.target.value })} />
+              <Field label="Fee schedule name" hint="Internal name for this pricing, for example Kigali truck yard 2026.">
+                <input className={inputClass} placeholder="Kigali truck yard 2026" value={form.name || ''} onChange={(e) => patch({ name: e.target.value })} />
               </Field>
               <Field label="Space type">
-                <select className={inputClass} value={form.spaceType} onChange={(e) => patch({ spaceType: e.target.value })}>
-                  <option value="TRUCK_SPACE">Truck space</option>
-                  <option value="OVERSIZE">Oversize</option>
-                </select>
+                <SearchableSelect
+                  value={form.spaceType || 'TRUCK_SPACE'}
+                  onChange={(value) => patch({ spaceType: value })}
+                  searchPlaceholder="Search space type"
+                  options={[
+                    { value: 'TRUCK_SPACE', label: 'Truck space' },
+                    { value: 'OVERSIZE', label: 'Oversize' },
+                  ]}
+                />
               </Field>
               <Field label="Vehicle type">
-                <select className={inputClass} value={form.vehicleType} onChange={(e) => patch({ vehicleType: e.target.value })}>
-                  <option value="TRUCK">Truck</option>
-                  <option value="TRAILER">Trailer</option>
-                  <option value="CONTAINER">Container</option>
-                </select>
+                <SearchableSelect
+                  value={form.vehicleType || 'TRUCK'}
+                  onChange={(value) => patch({ vehicleType: value })}
+                  searchPlaceholder="Search vehicle type"
+                  options={[
+                    { value: 'TRUCK', label: 'Truck' },
+                    { value: 'TRAILER', label: 'Trailer' },
+                    { value: 'CONTAINER', label: 'Container' },
+                  ]}
+                />
               </Field>
-              <Field label="Currency (ISO 4217)">
-                <select className={inputClass} value={form.currency} onChange={(e) => patch({ currency: e.target.value })}>
-                  {currencyOptions.map((c) => (
-                    <option key={c.code} value={c.code}>{c.flag ? `${c.flag} ` : ''}{c.code} — {c.name}</option>
-                  ))}
-                </select>
+              <Field label="Billing currency" hint="The currency drivers will be billed in.">
+                <SearchableSelect
+                  value={form.currency}
+                  onChange={(value) => patch({ currency: value })}
+                  searchPlaceholder="Search currency"
+                  placeholder="Select currency"
+                  options={currencySelectOptions}
+                />
                 {rateLabel(form.currency) && <p className="text-[11px] font-semibold text-slate-500 mt-1.5">{rateLabel(form.currency)}</p>}
               </Field>
-              <Field label="Status">
-                <input className={inputClass} value={`${status}${form.version ? ` · v${form.version}` : ''}`} readOnly />
+              <Field label="Publish status" hint={STATUS_HELP[status]}>
+                <div className="ui-input flex min-h-[48px] items-center justify-between gap-3 rounded-xl border bg-slate-50 px-3 py-3 dark:bg-slate-800/60">
+                  <StatusBadge status={status} label={STATUS_LABELS[status]} />
+                  <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                    Version {form.version || 1}
+                  </span>
+                </div>
               </Field>
             </div>
             <Field label="Description">
@@ -557,20 +637,15 @@ const ParkingFeeSettings = () => {
                   onChange={(e) => patch({ city: e.target.value })}
                 />
               </Field>
-              <Field label="Country">
-                <select
-                  className={inputClass}
+              <Field label="Country" hint="Search any country worldwide. This is how drivers find this parking location.">
+                <SearchableSelect
                   value={countryValue(form.country)}
-                  onChange={(e) => patch({ country: e.target.value })}
-                >
-                  <option value="">Select country</option>
-                  {COUNTRIES.map((item) => (
-                    <option key={item.code} value={item.name}>{item.name}</option>
-                  ))}
-                  {form.country && !COUNTRIES.some((item) => countryValue(item.name) === countryValue(form.country) || item.code === form.country) && (
-                    <option value={countryValue(form.country)}>{countryValue(form.country)}</option>
-                  )}
-                </select>
+                  onChange={(value) => patch({ country: value })}
+                  placeholder="Select country"
+                  searchPlaceholder="Search country"
+                  options={countryOptions}
+                  allowClear
+                />
               </Field>
               <Field label="Region / state (optional)">
                 <input
@@ -596,37 +671,83 @@ const ParkingFeeSettings = () => {
                 <input type="number" min={0} step="0.01" className={inputClass} value={form.monthlyRatePerSpace} onChange={(e) => patch({ monthlyRatePerSpace: Number(e.target.value) })} />
                 {showConverted && <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(form.monthlyRatePerSpace, form.currency)}</p>}
               </Field>
-              <Field label="Daily rate (optional)">
+              <Field label="Daily rate (optional)" hint="Rate for a single day if short stays are offered.">
                 <input type="number" min={0} step="0.01" className={inputClass} value={form.dailyRate ?? ''} onChange={(e) => patch({ dailyRate: e.target.value === '' ? null : Number(e.target.value) })} />
               </Field>
-              <Field label="Weekly rate (optional)">
+              <Field label="Weekly rate (optional)" hint="Rate for a 7-day stay if weekly parking is offered.">
                 <input type="number" min={0} step="0.01" className={inputClass} value={form.weeklyRate ?? ''} onChange={(e) => patch({ weeklyRate: e.target.value === '' ? null : Number(e.target.value) })} />
               </Field>
-              <Field label="Long-term contract rate (optional)">
-                <input type="number" min={0} step="0.01" className={inputClass} value={form.longTermRate ?? ''} onChange={(e) => patch({ longTermRate: e.target.value === '' ? null : Number(e.target.value) })} />
+              <Field
+                label={`Long-term contract length`}
+                hint="How long a driver must book to get the discounted long-term monthly rate, for example 2 years."
+              >
+                <SearchableSelect
+                  value={form.longTermMonths ? String(form.longTermMonths) : ''}
+                  onChange={(value) => patch({ longTermMonths: value ? Number(value) : null })}
+                  placeholder="Select duration"
+                  searchPlaceholder="Search duration, e.g. 2 years"
+                  options={durationOptions}
+                  allowClear
+                />
+              </Field>
+              <Field
+                label={`Long-term monthly rate (${form.currency})`}
+                hint={
+                  form.longTermMonths
+                    ? `Discounted monthly rate per truck space when the contract is ${durationLabel(form.longTermMonths)} or longer.`
+                    : 'Optional discounted monthly rate for long contracts. Choose a duration first.'
+                }
+              >
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className={inputClass}
+                  placeholder="e.g. 180"
+                  value={form.longTermRate ?? ''}
+                  onChange={(e) => patch({ longTermRate: e.target.value === '' ? null : Number(e.target.value) })}
+                />
+                {showConverted && form.longTermRate != null && (
+                  <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(form.longTermRate, form.currency)}</p>
+                )}
               </Field>
               <Field label="Reservation / admin fee type">
-                <select className={inputClass} value={form.reservationFeeType} onChange={(e) => patch({ reservationFeeType: e.target.value as ParkingFeeSchedule['reservationFeeType'] })}>
-                  <option value="FIXED">Fixed amount</option>
-                  <option value="PERCENTAGE">Percentage</option>
-                </select>
+                <SearchableSelect
+                  value={form.reservationFeeType || 'FIXED'}
+                  onChange={(value) => patch({ reservationFeeType: value as ParkingFeeSchedule['reservationFeeType'] })}
+                  searchPlaceholder="Search fee type"
+                  options={[
+                    { value: 'FIXED', label: 'Fixed amount' },
+                    { value: 'PERCENTAGE', label: 'Percentage' },
+                  ]}
+                />
               </Field>
               <Field label={form.reservationFeeType === 'PERCENTAGE' ? 'Fee value (%)' : `Fee value (${form.currency})`}>
                 <input type="number" min={0} step="0.01" className={inputClass} value={feeValue} onChange={(e) => patch({ reservationFeeValue: Number(e.target.value), reservationFee: Number(e.target.value) })} />
                 {showConverted && form.reservationFeeType === 'FIXED' && <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(feeValue, form.currency)}</p>}
               </Field>
-              <Field label="Fee application">
-                <select className={inputClass} value={form.reservationFeeApplication} onChange={(e) => patch({ reservationFeeApplication: e.target.value as ParkingFeeSchedule['reservationFeeApplication'] })}>
-                  <option value="PER_RESERVATION">Per reservation</option>
-                  <option value="PER_SPACE">Per truck space</option>
-                  <option value="PERCENT_OF_SUBTOTAL">Percentage of parking subtotal</option>
-                </select>
+              <Field label="How the admin fee is charged">
+                <SearchableSelect
+                  value={form.reservationFeeApplication || 'PER_RESERVATION'}
+                  onChange={(value) => patch({ reservationFeeApplication: value as ParkingFeeSchedule['reservationFeeApplication'] })}
+                  searchPlaceholder="Search how the fee is charged"
+                  options={[
+                    { value: 'PER_RESERVATION', label: 'Once per reservation' },
+                    { value: 'PER_SPACE', label: 'Once per truck space' },
+                    { value: 'PERCENT_OF_SUBTOTAL', label: 'Percentage of parking subtotal' },
+                  ]}
+                />
               </Field>
-              <Field label="Tax enabled">
-                <select className={inputClass} value={form.taxEnabled ? 'yes' : 'no'} onChange={(e) => patch({ taxEnabled: e.target.value === 'yes' })}>
-                  <option value="yes">Enabled</option>
-                  <option value="no">Disabled</option>
-                </select>
+              <Field label="Charge tax / VAT">
+                <SearchableSelect
+                  value={form.taxEnabled ? 'yes' : 'no'}
+                  onChange={(value) => patch({ taxEnabled: value === 'yes' })}
+                  searchPlaceholder="Search tax option"
+                  options={[
+                    { value: 'yes', label: 'Yes, add tax' },
+                    { value: 'no', label: 'No tax' },
+                  ]}
+                />
               </Field>
               <Field label="Tax name">
                 <input className={inputClass} value={form.taxName || 'VAT'} onChange={(e) => patch({ taxName: e.target.value })} />
@@ -640,69 +761,121 @@ const ParkingFeeSettings = () => {
           <section className="space-y-4">
             <h3 className="ui-section-title"><TranslatedText text="Contract & payment" /></h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Minimum months"><input type="number" min={1} className={inputClass} value={form.minContractMonths} onChange={(e) => patch({ minContractMonths: Number(e.target.value) })} /></Field>
-              <Field label="Maximum months"><input type="number" min={1} className={inputClass} value={form.maxContractMonths} onChange={(e) => patch({ maxContractMonths: Number(e.target.value) })} /></Field>
+              <Field label="Minimum contract length (months)" hint="Shortest booking a driver can make, in months.">
+                <input type="number" min={1} className={inputClass} value={form.minContractMonths} onChange={(e) => patch({ minContractMonths: Number(e.target.value) })} />
+              </Field>
+              <Field label="Maximum contract length (months)" hint="Longest booking a driver can make, in months.">
+                <input type="number" min={1} className={inputClass} value={form.maxContractMonths} onChange={(e) => patch({ maxContractMonths: Number(e.target.value) })} />
+              </Field>
               <Field label="Minimum truck spaces"><input type="number" min={1} className={inputClass} value={form.minSpaces} onChange={(e) => patch({ minSpaces: Number(e.target.value) })} /></Field>
               <Field label="Maximum truck spaces"><input type="number" min={1} className={inputClass} value={form.maxSpaces} onChange={(e) => patch({ maxSpaces: Number(e.target.value) })} /></Field>
-              <Field label="Payment frequency">
-                <select className={inputClass} value={form.paymentFrequency} onChange={(e) => patch({ paymentFrequency: e.target.value as ParkingFeeSchedule['paymentFrequency'] })}>
-                  <option value="ONE_TIME">One-time</option>
-                  <option value="MONTHLY">Monthly</option>
-                  <option value="QUARTERLY">Quarterly</option>
-                  <option value="ANNUAL">Annual</option>
-                </select>
+              <Field label="How often payment is collected">
+                <SearchableSelect
+                  value={form.paymentFrequency || 'ONE_TIME'}
+                  onChange={(value) => patch({ paymentFrequency: value as ParkingFeeSchedule['paymentFrequency'] })}
+                  searchPlaceholder="Search payment frequency"
+                  options={[
+                    { value: 'ONE_TIME', label: 'One-time (full amount up front)' },
+                    { value: 'MONTHLY', label: 'Monthly' },
+                    { value: 'QUARTERLY', label: 'Every 3 months' },
+                    { value: 'ANNUAL', label: 'Once a year' },
+                  ]}
+                />
               </Field>
-              <Field label="Payment due">
-                <select className={inputClass} value={form.paymentDueType} onChange={(e) => patch({ paymentDueType: e.target.value as ParkingFeeSchedule['paymentDueType'] })}>
-                  <option value="IMMEDIATELY">Due immediately</option>
-                  <option value="BEFORE_RESERVATION">Due before reservation</option>
-                  <option value="ON_INVOICE_DATE">Due on invoice date</option>
-                  <option value="DAYS_AFTER_INVOICE">Due X days after invoice</option>
-                  <option value="DAYS_BEFORE_START">Due X days before reservation start</option>
-                </select>
+              <Field label="When payment is due">
+                <SearchableSelect
+                  value={form.paymentDueType || 'DAYS_AFTER_INVOICE'}
+                  onChange={(value) => patch({ paymentDueType: value as ParkingFeeSchedule['paymentDueType'] })}
+                  searchPlaceholder="Search when payment is due"
+                  options={[
+                    { value: 'IMMEDIATELY', label: 'Due immediately' },
+                    { value: 'BEFORE_RESERVATION', label: 'Due before the reservation starts' },
+                    { value: 'ON_INVOICE_DATE', label: 'Due on the invoice date' },
+                    { value: 'DAYS_AFTER_INVOICE', label: 'Due a number of days after the invoice' },
+                    { value: 'DAYS_BEFORE_START', label: 'Due a number of days before start' },
+                  ]}
+                />
               </Field>
-              <Field label="Payment due days">
+              <Field
+                label={
+                  form.paymentDueType === 'DAYS_BEFORE_START'
+                    ? 'Days before reservation starts'
+                    : form.paymentDueType === 'DAYS_AFTER_INVOICE'
+                      ? 'Days after invoice'
+                      : 'Number of days'
+                }
+                hint={
+                  form.paymentDueType === 'DAYS_AFTER_INVOICE' || form.paymentDueType === 'DAYS_BEFORE_START'
+                    ? 'Used with the payment due option above.'
+                    : 'Only used when payment is due a number of days after the invoice or before start.'
+                }
+              >
                 <input type="number" min={0} max={90} className={inputClass} value={form.paymentDueDays} onChange={(e) => patch({ paymentDueDays: Number(e.target.value) })} />
               </Field>
               <Field label="Grace period (0–30 days)">
                 <input type="number" min={0} max={30} className={inputClass} value={form.gracePeriodDays} onChange={(e) => patch({ gracePeriodDays: Number(e.target.value) })} />
               </Field>
               <Field label="Late payment fee">
-                <select className={inputClass} value={form.lateFeeType} onChange={(e) => patch({ lateFeeType: e.target.value as ParkingFeeSchedule['lateFeeType'] })}>
-                  <option value="NONE">No late fee</option>
-                  <option value="FIXED">Fixed amount</option>
-                  <option value="PERCENTAGE">Percentage</option>
-                </select>
+                <SearchableSelect
+                  value={form.lateFeeType || 'NONE'}
+                  onChange={(value) => patch({ lateFeeType: value as ParkingFeeSchedule['lateFeeType'] })}
+                  searchPlaceholder="Search late fee option"
+                  options={[
+                    { value: 'NONE', label: 'No late fee' },
+                    { value: 'FIXED', label: 'Fixed amount' },
+                    { value: 'PERCENTAGE', label: 'Percentage of amount due' },
+                  ]}
+                />
               </Field>
               <Field label="Late fee value">
                 <input type="number" min={0} step="0.01" className={inputClass} value={form.lateFeeValue} onChange={(e) => patch({ lateFeeValue: Number(e.target.value) })} />
               </Field>
               <Field label="Auto renewal">
-                <select className={inputClass} value={form.autoRenewal ? 'yes' : 'no'} onChange={(e) => patch({ autoRenewal: e.target.value === 'yes' })}>
-                  <option value="yes">Enabled</option>
-                  <option value="no">Disabled</option>
-                </select>
+                <SearchableSelect
+                  value={form.autoRenewal ? 'yes' : 'no'}
+                  onChange={(value) => patch({ autoRenewal: value === 'yes' })}
+                  searchPlaceholder="Search auto renewal"
+                  options={[
+                    { value: 'yes', label: 'Yes, renew automatically' },
+                    { value: 'no', label: 'No automatic renewal' },
+                  ]}
+                />
               </Field>
               <Field label="Cancellation allowed">
-                <select className={inputClass} value={form.cancellationAllowed ? 'yes' : 'no'} onChange={(e) => patch({ cancellationAllowed: e.target.value === 'yes' })}>
-                  <option value="yes">Allowed</option>
-                  <option value="no">Not allowed</option>
-                </select>
+                <SearchableSelect
+                  value={form.cancellationAllowed ? 'yes' : 'no'}
+                  onChange={(value) => patch({ cancellationAllowed: value === 'yes' })}
+                  searchPlaceholder="Search cancellation option"
+                  options={[
+                    { value: 'yes', label: 'Yes, cancellation is allowed' },
+                    { value: 'no', label: 'No, cancellation is not allowed' },
+                  ]}
+                />
               </Field>
               <Field label="Cancellation notice (days)">
                 <input type="number" min={0} className={inputClass} value={form.cancellationNoticeDays} onChange={(e) => patch({ cancellationNoticeDays: Number(e.target.value) })} />
               </Field>
               <Field label="Early termination allowed">
-                <select className={inputClass} value={form.earlyTerminationAllowed ? 'yes' : 'no'} onChange={(e) => patch({ earlyTerminationAllowed: e.target.value === 'yes' })}>
-                  <option value="yes">Allowed</option>
-                  <option value="no">Not allowed</option>
-                </select>
+                <SearchableSelect
+                  value={form.earlyTerminationAllowed ? 'yes' : 'no'}
+                  onChange={(value) => patch({ earlyTerminationAllowed: value === 'yes' })}
+                  searchPlaceholder="Search early termination"
+                  options={[
+                    { value: 'yes', label: 'Yes, early termination is allowed' },
+                    { value: 'no', label: 'No, early termination is not allowed' },
+                  ]}
+                />
               </Field>
               <Field label="Refund eligible">
-                <select className={inputClass} value={form.refundEligible ? 'yes' : 'no'} onChange={(e) => patch({ refundEligible: e.target.value === 'yes' })}>
-                  <option value="yes">Eligible</option>
-                  <option value="no">Not eligible</option>
-                </select>
+                <SearchableSelect
+                  value={form.refundEligible ? 'yes' : 'no'}
+                  onChange={(value) => patch({ refundEligible: value === 'yes' })}
+                  searchPlaceholder="Search refund option"
+                  options={[
+                    { value: 'yes', label: 'Yes, refunds are eligible' },
+                    { value: 'no', label: 'No, refunds are not eligible' },
+                  ]}
+                />
               </Field>
             </div>
           </section>
@@ -743,6 +916,11 @@ const ParkingFeeSettings = () => {
               <Row label="Truck spaces" value={String(preview.spaces)} />
               <Row label="Contract duration" value={`${preview.months} months`} />
               <Row label="Monthly rate / space" value={money(preview.monthlyRatePerSpace, form.currency)} />
+              {form.longTermRate && form.longTermMonths && Number(months) >= Number(form.longTermMonths) && (
+                <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  Long-term rate applied for {durationLabel(form.longTermMonths)} or longer.
+                </p>
+              )}
               <div className="border-t border-slate-200 dark:border-slate-700 my-2" />
               <Row label="Parking subtotal" value={money(preview.occupancyAmount, form.currency)} />
               <Row label="Administration fee" value={money(preview.reservationFeeAmount, form.currency)} />
@@ -766,12 +944,13 @@ const ParkingFeeSettings = () => {
   );
 };
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <label className="block">
+    <div className="block">
       <span className="ui-label block mb-2">{label}</span>
       {children}
-    </label>
+      {hint && <p className="mt-1.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">{hint}</p>}
+    </div>
   );
 }
 

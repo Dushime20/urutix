@@ -149,6 +149,7 @@ export interface ParkingFeeSchedule {
   dailyRate?: number | null;
   weeklyRate?: number | null;
   longTermRate?: number | null;
+  longTermMonths?: number | null;
   reservationFeeType?: ParkingReservationFeeType;
   reservationFeeValue?: number;
   reservationFee: number;

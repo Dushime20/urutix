@@ -5,6 +5,19 @@ export function roundParkingMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+export function effectiveParkingMonthlyRate(input: {
+  months: number;
+  monthlyRatePerSpace: number;
+  longTermRate?: number | null;
+  longTermMonths?: number | null;
+}): number {
+  const monthly = roundParkingMoney(Number(input.monthlyRatePerSpace) || 0);
+  const longTerm = roundParkingMoney(Number(input.longTermRate) || 0);
+  const threshold = Number(input.longTermMonths || 0);
+  if (longTerm > 0 && threshold > 0 && input.months >= threshold) return longTerm;
+  return monthly;
+}
+
 export function calculateParkingFeeQuote(input: {
   spaces: number;
   months: number;
