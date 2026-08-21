@@ -569,18 +569,6 @@ export class ParkingReservationListener {
 
     if (facility?.parkingManagerId) {
       ids.add(facility.parkingManagerId);
-    } else {
-      const tenantId = facility?.tenantId || reservation.tenantId;
-      if (tenantId) {
-        const managers = await this.userRepository
-          .createQueryBuilder('u')
-          .where('u.status = :status', { status: UserStatus.ACTIVE })
-          .andWhere('u."deleted_at" IS NULL')
-          .andWhere('u.role::text = :role', { role: UserRole.PARKING_RESERVATION_MANAGER })
-          .andWhere('u.tenantId = :tenantId', { tenantId })
-          .getMany();
-        for (const manager of managers) ids.add(manager.id);
-      }
     }
 
     if (!ids.size) return [];

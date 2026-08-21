@@ -85,10 +85,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_parking_facility_default
   ON parking_facility_config ("isDefault")
   WHERE "isDefault" = TRUE;
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_parking_facility_tenant
-  ON parking_facility_config ("tenantId")
-  WHERE "tenantId" IS NOT NULL;
-
 CREATE TABLE IF NOT EXISTS parking_reservation_sequences (
   year INTEGER PRIMARY KEY,
   "lastNumber" INTEGER NOT NULL DEFAULT 0

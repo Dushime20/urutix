@@ -86,6 +86,8 @@ const STAFF_ROLES = new Set<string>([
   UserRole.PARKING_RESERVATION_MANAGER,
 ]);
 
+const SEEDED_FACILITY_ID = '00000000-0000-0000-0000-000000000365';
+
 const PLATFORM_STAFF_ROLES = new Set<string>([
   UserRole.SUPER_ADMIN,
   UserRole.ADMIN,
@@ -128,16 +130,42 @@ export class ParkingReservationsService {
     return user?.userId || user?.id;
   }
 
+  private normalizedRole(role?: string): string {
+    return String(role || '').trim().toUpperCase();
+  }
+
   private isStaff(role?: string): boolean {
-    return !!role && STAFF_ROLES.has(role);
+    return STAFF_ROLES.has(this.normalizedRole(role) as UserRole);
   }
 
   private isPlatformStaff(role?: string): boolean {
-    return !!role && PLATFORM_STAFF_ROLES.has(role);
+    return PLATFORM_STAFF_ROLES.has(this.normalizedRole(role) as UserRole);
   }
 
   private isParkingManager(role?: string): boolean {
-    return role === UserRole.PARKING_RESERVATION_MANAGER;
+    return this.normalizedRole(role) === UserRole.PARKING_RESERVATION_MANAGER;
+  }
+
+  private isTenantAdmin(role?: string): boolean {
+    return this.normalizedRole(role) === UserRole.TENANT_ADMIN;
+  }
+
+  private async resolveActor(user: AuthUser): Promise<AuthUser> {
+    const id = this.actorId(user);
+    if (!id) return user;
+    const dbUser = await this.userRepo.findOne({
+      where: { id },
+      select: ['id', 'role', 'tenantId', 'email'],
+    });
+    if (!dbUser) return { ...user, id, userId: id };
+    return {
+      ...user,
+      id: dbUser.id,
+      userId: dbUser.id,
+      role: dbUser.role,
+      tenantId: dbUser.tenantId,
+      email: dbUser.email,
+    };
   }
 
   private hashIp(ip?: string): string | undefined {
@@ -178,24 +206,33 @@ export class ParkingReservationsService {
     return this.findManagerFacility(user, tenantId);
   }
 
-  private async findManagerFacility(user?: AuthUser | null, tenantId?: string | null): Promise<ParkingFacilityConfig | null> {
+  private isRegisteredLocation(facility?: ParkingFacilityConfig | null): boolean {
+    if (!facility || facility.isActive === false || facility.isDefault) return false;
+    if (facility.id === SEEDED_FACILITY_ID) return false;
+    return !!(
+      (facility.facilityName || '').trim() &&
+      (facility.city || '').trim() &&
+      (facility.country || '').trim() &&
+      facility.parkingManagerId
+    );
+  }
+
+  private async findManagerFacility(user?: AuthUser | null, _tenantId?: string | null): Promise<ParkingFacilityConfig | null> {
     const userId = this.actorId(user);
-    if (userId) {
-      const owned = await this.facilityRepo.find({
-        where: { parkingManagerId: userId, isActive: true },
-        order: { createdAt: 'ASC' },
-        take: 1,
-      });
-      if (owned[0]) return owned[0];
-    }
-    const scope = tenantId || user?.tenantId;
-    if (!scope) return null;
-    const scoped = await this.facilityRepo.find({
-      where: { tenantId: scope, isActive: true },
-      order: { createdAt: 'ASC' },
-      take: 1,
-    });
-    return scoped[0] || null;
+    if (!userId) return null;
+    const owned = await this.facilityRepo
+      .createQueryBuilder('f')
+      .where('f.parkingManagerId = :userId', { userId })
+      .andWhere('f.isActive = true')
+      .andWhere('f.isDefault = false')
+      .andWhere('f.id <> :seededId', { seededId: SEEDED_FACILITY_ID })
+      .andWhere("NULLIF(BTRIM(COALESCE(f.facilityName, '')), '') IS NOT NULL")
+      .andWhere("NULLIF(BTRIM(COALESCE(f.city, '')), '') IS NOT NULL")
+      .andWhere("NULLIF(BTRIM(COALESCE(f.country, '')), '') IS NOT NULL")
+      .orderBy('f.createdAt', 'ASC')
+      .take(1)
+      .getOne();
+    return owned || null;
   }
 
   private assertLocationInput(name?: string, city?: string, country?: string) {
@@ -221,10 +258,19 @@ export class ParkingReservationsService {
       throw new BadRequestException('Your account is not linked to a parking company.');
     }
     const actorId = this.actorId(user);
+    const inherited = actorId
+      ? await this.facilityRepo.findOne({ where: { parkingManagerId: actorId } })
+      : null;
+    if (inherited && !this.isRegisteredLocation(inherited)) {
+      inherited.parkingManagerId = null as any;
+      inherited.isActive = false;
+      inherited.isDefault = false;
+      await this.facilityRepo.save(inherited);
+    }
     return this.facilityRepo.save(
       this.facilityRepo.create({
         tenantId: user.tenantId,
-        parkingManagerId: this.isParkingManager(user.role) ? actorId : undefined,
+        parkingManagerId: actorId,
         facilityName: attrs.facilityName!.trim(),
         city: attrs.city!.trim(),
         country: attrs.country!.trim(),
@@ -322,39 +368,23 @@ export class ParkingReservationsService {
   }
 
   private async resolveFacilityManagerIds(facility: ParkingFacilityConfig): Promise<string[]> {
-    if (facility.parkingManagerId) {
-      const assigned = await this.userRepo.findOne({
-        where: {
-          id: facility.parkingManagerId,
-          role: UserRole.PARKING_RESERVATION_MANAGER,
-          status: UserStatus.ACTIVE,
-        },
-      });
-      if (assigned) return [assigned.id];
-    }
-    if (!facility.tenantId) return [];
-    const managers = await this.userRepo.find({
+    if (!facility.parkingManagerId) return [];
+    const assigned = await this.userRepo.findOne({
       where: {
-        tenantId: facility.tenantId,
-        role: UserRole.PARKING_RESERVATION_MANAGER,
+        id: facility.parkingManagerId,
         status: UserStatus.ACTIVE,
       },
-      order: { createdAt: 'ASC' },
     });
-    if (managers.length === 1 && !facility.parkingManagerId) {
-      facility.parkingManagerId = managers[0].id;
-      await this.facilityRepo.save(facility);
-    }
-    return managers.map((manager) => manager.id);
+    return assigned ? [assigned.id] : [];
   }
 
   private parkingManagerOwns(reservation: ParkingReservation, user: AuthUser): boolean {
-    if (!this.isParkingManager(user.role)) return false;
     const userId = this.actorId(user);
     if (!userId) return false;
-    if (reservation.assignedToUserId === userId) return true;
-    if (reservation.parkingFacility?.parkingManagerId === userId) return true;
-    return false;
+    if (!this.isParkingManager(user.role) && !this.isTenantAdmin(user.role)) return false;
+    const facility = reservation.parkingFacility;
+    if (!facility || facility.id === SEEDED_FACILITY_ID) return false;
+    return facility.parkingManagerId === userId;
   }
 
   async searchFacilities(dto: SearchParkingFacilitiesDto, user?: AuthUser | null) {
@@ -382,6 +412,8 @@ export class ParkingReservationsService {
       qb.leftJoin(Tenant, 't', 't.id = f.tenantId')
         .where('f.isActive = true')
         .andWhere('f.isDefault = false')
+        .andWhere('f.id <> :seededFacilityId', { seededFacilityId: SEEDED_FACILITY_ID })
+        .andWhere('f.parkingManagerId IS NOT NULL')
         .andWhere('f.tenantId IS NOT NULL')
         .andWhere("NULLIF(BTRIM(COALESCE(f.city, '')), '') IS NOT NULL")
         .andWhere("NULLIF(BTRIM(COALESCE(f.country, '')), '') IS NOT NULL")
@@ -1300,7 +1332,7 @@ export class ParkingReservationsService {
       .leftJoinAndSelect('r.parkingFacility', 'parkingFacility')
       .leftJoinAndSelect('parkingFacility.tenant', 'parkingFacilityTenant');
 
-    this.applyVisibility(qb, user);
+    await this.applyVisibility(qb, user);
 
     if (filter.status) {
       qb.andWhere('r.status = :status', { status: filter.status });
@@ -1385,7 +1417,7 @@ export class ParkingReservationsService {
   async getStats(user: AuthUser) {
     this.assertStaff(user);
     const qb = this.reservationRepo.createQueryBuilder('r');
-    this.applyVisibility(qb, user);
+    await this.applyVisibility(qb, user);
 
     const rows = await qb
       .select('r.status', 'status')
@@ -1400,7 +1432,7 @@ export class ParkingReservationsService {
 
     const todayStart = startOfTodayUtc();
     const todayQb = this.reservationRepo.createQueryBuilder('r');
-    this.applyVisibility(todayQb, user);
+    await this.applyVisibility(todayQb, user);
     const todaysRequests = await todayQb
       .andWhere('r.createdAt >= :today', { today: todayStart.toISOString() })
       .getCount();
@@ -1417,8 +1449,9 @@ export class ParkingReservationsService {
   }
 
   async findOne(id: string, user: AuthUser) {
+    const actor = await this.resolveActor(user);
     const reservation = await this.loadReservation(id);
-    this.assertCanView(reservation, user);
+    this.assertCanView(reservation, actor);
     const activities = await this.activityRepo.find({
       where: { reservationId: reservation.id },
       order: { createdAt: 'ASC' },
@@ -2187,42 +2220,39 @@ export class ParkingReservationsService {
     };
   }
 
-  private applyVisibility(qb: ReturnType<Repository<ParkingReservation>['createQueryBuilder']>, user: AuthUser) {
-    if (this.isPlatformStaff(user.role)) {
+  private async applyVisibility(qb: ReturnType<Repository<ParkingReservation>['createQueryBuilder']>, user: AuthUser) {
+    const actor = await this.resolveActor(user);
+    if (this.isPlatformStaff(actor.role)) {
       return;
     }
-    if (this.isParkingManager(user.role)) {
-      const parkingManagerId = this.actorId(user);
-      if (!parkingManagerId) {
+
+    const actorId = this.actorId(actor);
+    if (this.isParkingManager(actor.role) || this.isTenantAdmin(actor.role)) {
+      if (!actorId) {
         qb.andWhere('1 = 0');
         return;
       }
       qb.andWhere(
-        new Brackets((sub) => {
-          sub.where('r.assignedToUserId = :parkingManagerId', { parkingManagerId });
-          sub.orWhere(
-            `EXISTS (
-              SELECT 1 FROM parking_facility_config f
-              WHERE f.id = r."parkingFacilityId"
-                AND f."parkingManagerId" = :parkingManagerId
-            )`,
-            { parkingManagerId },
-          );
-        }),
+        `EXISTS (
+          SELECT 1 FROM parking_facility_config f
+          WHERE f.id = r."parkingFacilityId"
+            AND f."parkingManagerId" = :parkingManagerId
+            AND f.id <> :seededFacilityId
+        )`,
+        { parkingManagerId: actorId, seededFacilityId: SEEDED_FACILITY_ID },
       );
       return;
     }
-    if (user.role === UserRole.TENANT_ADMIN && user.tenantId) {
-      qb.andWhere('r.tenantId = :tenantId', { tenantId: user.tenantId });
-      return;
-    }
-    const userId = this.actorId(user);
+
     qb.andWhere(
       new Brackets((sub) => {
-        if (userId) sub.where('r.submittedByUserId = :userId', { userId });
-        if (user.email) {
-          sub.orWhere('LOWER(r.email) = :email', { email: user.email.toLowerCase() });
-          sub.orWhere('LOWER(r.driverEmail) = :email', { email: user.email.toLowerCase() });
+        if (actorId) sub.where('r.submittedByUserId = :userId', { userId: actorId });
+        if (actor.email) {
+          sub.orWhere('LOWER(r.email) = :email', { email: actor.email.toLowerCase() });
+          sub.orWhere('LOWER(r.driverEmail) = :email', { email: actor.email.toLowerCase() });
+        }
+        if (!actorId && !actor.email) {
+          sub.where('1 = 0');
         }
       }),
     );
@@ -2240,12 +2270,13 @@ export class ParkingReservationsService {
   }
 
   private async loadManaged(id: string, user: AuthUser): Promise<ParkingReservation> {
-    this.assertStaff(user);
+    const actor = await this.resolveActor(user);
+    this.assertStaff(actor);
     const reservation = await this.loadReservation(id);
-    if (this.isParkingManager(user.role) && !this.parkingManagerOwns(reservation, user)) {
-      throw new ForbiddenException("You don't have permission to perform this action.");
-    }
-    if (user.role === UserRole.TENANT_ADMIN && reservation.tenantId !== user.tenantId) {
+    if (
+      (this.isParkingManager(actor.role) || this.isTenantAdmin(actor.role)) &&
+      !this.parkingManagerOwns(reservation, actor)
+    ) {
       throw new ForbiddenException("You don't have permission to perform this action.");
     }
     return reservation;
@@ -2259,7 +2290,6 @@ export class ParkingReservationsService {
 
   private assertCanView(reservation: ParkingReservation, user: AuthUser) {
     if (this.isPlatformStaff(user.role)) return;
-    if (user.role === UserRole.TENANT_ADMIN && reservation.tenantId === user.tenantId) return;
     if (this.parkingManagerOwns(reservation, user)) return;
     const userId = this.actorId(user);
     if (userId && reservation.submittedByUserId === userId) return;
