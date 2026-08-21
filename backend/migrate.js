@@ -530,6 +530,24 @@ async function showStatus(client) {
 }
 
 /**
+ * Wrap standalone CREATE INDEX statements so a missing column/table does not
+ * abort 000_base_schema.sql on databases that already have older table shapes.
+ */
+function wrapBootstrapIndexes(sql) {
+  // Only wrap top-level CREATE INDEX (start of line). Nested indexes inside
+  // existing DO $$ blocks already have their own exception handlers.
+  return sql.replace(
+    /^CREATE (UNIQUE )?INDEX IF NOT EXISTS \S+\s+ON [^;]+;/gm,
+    (stmt) => `DO $$ BEGIN
+  ${stmt.trim()}
+EXCEPTION
+  WHEN undefined_column THEN RAISE NOTICE 'Skipping index (missing column)';
+  WHEN undefined_table THEN RAISE NOTICE 'Skipping index (missing table)';
+END $$;`,
+  );
+}
+
+/**
  * Bootstrap: unconditionally run 000_base_schema.sql (the foundational schema).
  *
  * Problem this solves: on an existing DB whose schema_migrations table already
@@ -566,7 +584,10 @@ async function bootstrapBaseSchema(client) {
 
   try {
     await client.query('BEGIN');
-    await client.query(content);
+    // Existing TypeORM tables often lack stub columns (e.g. notifications.userId,
+    // bids.tenantId). CREATE TABLE IF NOT EXISTS is a no-op there, then CREATE INDEX
+    // aborts the whole bootstrap. Skip those indexes; later ALTER/migrations add columns.
+    await client.query(wrapBootstrapIndexes(content));
     const elapsed = Date.now() - t0;
     // Record as executed so the normal migration loop skips it cleanly.
     // Uses ON CONFLICT so this is safe whether the row already exists or not.
@@ -650,11 +671,8 @@ async function runMigrations(force = false) {
         executed++;
       } else {
         failed++;
-        if (!force) {
-          logError('\nMigration failed. Stopping execution.');
-          logInfo('Fix the error and run again, or use --force to continue');
-          break;
-        }
+        logWarning(`${migrationFile} failed — continuing with remaining migrations.`);
+        logInfo('Retry later with: node migrate.js retry-failed');
       }
     }
     

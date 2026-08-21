@@ -115,6 +115,13 @@ const MIGRATION_HEALTH = {
       return indexExists(client, 'idx_auctions_type_status');
     },
   },
+  '058_create_cargo_inspections.sql': {
+    description: 'cargo_inspections table for delivery and pre-trip inspections',
+    verify: async (client) => {
+      if (!(await tableExists(client, 'cargo_inspections'))) return false;
+      return columnExists(client, 'cargo_inspections', 'driverId');
+    },
+  },
 };
 
 async function assessMigration(client, migrationName, executedRow) {

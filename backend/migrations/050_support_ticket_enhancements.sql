@@ -168,10 +168,15 @@ BEGIN
     RETURN;
   END IF;
   FOR rec IN
-    SELECT id, created_at, tenant_id
-    FROM   disputes_v2
+    SELECT id,
+           COALESCE(
+             (to_jsonb(d)->>'createdAt')::timestamptz,
+             (to_jsonb(d)->>'created_at')::timestamptz,
+             NOW()
+           ) AS created_at
+    FROM   disputes_v2 d
     WHERE  ticket_number IS NULL
-    ORDER  BY created_at
+    ORDER  BY 2
   LOOP
     yr := TO_CHAR(rec.created_at, 'YYYY');
     UPDATE disputes_v2

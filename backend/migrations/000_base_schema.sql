@@ -914,6 +914,15 @@ CREATE TABLE IF NOT EXISTS notifications (
   "createdAt"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt"        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Existing DBs created by TypeORM use recipientId instead of userId.
+-- CREATE TABLE IF NOT EXISTS is a no-op on those tables, so add the
+-- indexed columns before CREATE INDEX.
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "userId" UUID;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "recipientId" UUID;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "tenantId" UUID;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "entityType" VARCHAR(50) NOT NULL DEFAULT 'SYSTEM';
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "entityId" UUID;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS "isRead" BOOLEAN NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_notifications_tenant_user  ON notifications("tenantId", "userId");
 CREATE INDEX IF NOT EXISTS idx_notifications_user_read    ON notifications("userId", "isRead");
 CREATE INDEX IF NOT EXISTS idx_notifications_entity       ON notifications("entityType", "entityId");
@@ -1215,6 +1224,11 @@ CREATE TABLE IF NOT EXISTS bids (
   "updatedAt"                 TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at                  TIMESTAMPTZ
 );
+-- Older TypeORM DBs created bids without tenantId. CREATE TABLE IF NOT EXISTS
+-- will not add it, so the tenant index would fail without this ALTER.
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "tenantId" UUID;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "loadId" UUID;
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "truckOwnerId" UUID;
 CREATE INDEX IF NOT EXISTS idx_bids_load             ON bids("loadId", status);
 CREATE INDEX IF NOT EXISTS idx_bids_truck_owner_status ON bids("truckOwnerId", status);
 CREATE INDEX IF NOT EXISTS idx_bids_tenant_status    ON bids("tenantId", status);
@@ -1495,6 +1509,7 @@ DO $$ BEGIN CREATE TYPE bid_status AS ENUM (
   'PENDING','ACCEPTED','REJECTED','WITHDRAWN','EXPIRED'
 ); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+ALTER TABLE bids ADD COLUMN IF NOT EXISTS "tenantId"                  UUID;
 ALTER TABLE bids ADD COLUMN IF NOT EXISTS "truckOwnerId"              UUID;
 ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidAmount"                 DECIMAL(15,2);
 ALTER TABLE bids ADD COLUMN IF NOT EXISTS "bidCurrency"               VARCHAR(3) NOT NULL DEFAULT 'USD';

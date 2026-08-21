@@ -30,9 +30,9 @@ import {
   getInspectionStatusLabel,
   getInspectionStatusStyles,
   getPreTripStatusFromLoad,
-  PreTripInspectionWorkflowStatus,
   resolveResumeStep,
 } from './preTripInspection';
+import type { PreTripInspectionWorkflowStatus } from './preTripInspection';
 import { usePreTripInspectionLoads } from '../../hooks/useDriverQueries';
 
 interface PreTripInspectionHubProps {

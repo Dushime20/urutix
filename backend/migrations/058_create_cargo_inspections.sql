@@ -1,6 +1,8 @@
 -- Migration: 058_create_cargo_inspections
 -- Description: Create cargo_inspections table for receiver delivery inspections
 --              and driver pre-trip inspections. Safe to run multiple times.
+--              Older DBs already have the delivery-only table (no driverId);
+--              ALTER TABLE ADD COLUMN runs before CREATE INDEX.
 
 -- ── 1. Status enum ────────────────────────────────────────────────────────────
 DO $$ BEGIN
@@ -15,6 +17,14 @@ DO $$ BEGIN
     'APPROVED'
   );
 EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TYPE "public"."cargo_inspections_status_enum" ADD VALUE IF NOT EXISTS 'FAILED';
+  ALTER TYPE "public"."cargo_inspections_status_enum" ADD VALUE IF NOT EXISTS 'AWAITING_RESOLUTION';
+  ALTER TYPE "public"."cargo_inspections_status_enum" ADD VALUE IF NOT EXISTS 'READY_FOR_RE_INSPECTION';
+  ALTER TYPE "public"."cargo_inspections_status_enum" ADD VALUE IF NOT EXISTS 'APPROVED';
+EXCEPTION WHEN undefined_object THEN NULL;
 END $$;
 
 -- ── 2. Inspection type enum ───────────────────────────────────────────────────
@@ -61,6 +71,20 @@ CREATE TABLE IF NOT EXISTS "cargo_inspections" (
   "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
   CONSTRAINT "PK_cargo_inspections_id" PRIMARY KEY ("id")
 );
+
+-- Existing delivery-only tables: add pre-trip columns before indexes/FKs.
+ALTER TABLE "cargo_inspections" ADD COLUMN IF NOT EXISTS "inspectionType" "public"."cargo_inspections_inspectiontype_enum" NOT NULL DEFAULT 'DELIVERY';
+ALTER TABLE "cargo_inspections" ADD COLUMN IF NOT EXISTS "driverId" uuid;
+ALTER TABLE "cargo_inspections" ADD COLUMN IF NOT EXISTS "decision" "public"."cargo_inspections_decision_enum";
+ALTER TABLE "cargo_inspections" ADD COLUMN IF NOT EXISTS "attemptNumber" integer NOT NULL DEFAULT 1;
+ALTER TABLE "cargo_inspections" ADD COLUMN IF NOT EXISTS "documents" jsonb DEFAULT '[]';
+ALTER TABLE "cargo_inspections" ADD COLUMN IF NOT EXISTS "issues" jsonb DEFAULT '[]';
+ALTER TABLE "cargo_inspections" ADD COLUMN IF NOT EXISTS "verificationData" jsonb;
+
+DO $$ BEGIN
+  ALTER TABLE "cargo_inspections" ALTER COLUMN "receiverId" DROP NOT NULL;
+EXCEPTION WHEN undefined_column THEN NULL;
+END $$;
 
 -- ── 5. Indexes ────────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS "IDX_cargo_inspections_loadId_receiverId"

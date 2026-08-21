@@ -29,8 +29,8 @@ import {
   getInspectionStatusStyles,
   getPreTripStatusFromLoad,
   PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
-  PreTripInspectionWorkflowStatus,
 } from './preTripInspection';
+import type { PreTripInspectionWorkflowStatus } from './preTripInspection';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';

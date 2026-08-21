@@ -13,7 +13,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { driverApi, Trip } from '../../services/driverApi';
+import { driverApi, type Trip } from '../../services/driverApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import {
   VehiclePreTripChecklist,
@@ -28,9 +28,11 @@ import {
   getInspectionStatusStyles,
   getPreTripStatusFromLoad,
   PRE_TRIP_INSPECTION_BLOCKED_MESSAGE,
+  resolveResumeStep,
+} from './preTripInspection';
+import type {
   PreTripInspectionWorkflowStatus,
   PreTripResumeStep,
-  resolveResumeStep,
 } from './preTripInspection';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
