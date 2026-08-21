@@ -351,15 +351,9 @@ export class ParkingReservationsService {
   private parkingManagerOwns(reservation: ParkingReservation, user: AuthUser): boolean {
     if (!this.isParkingManager(user.role)) return false;
     const userId = this.actorId(user);
-    if (userId && reservation.assignedToUserId === userId) return true;
-    const facility = reservation.parkingFacility;
-    if (userId && facility?.parkingManagerId === userId) return true;
-    if (user.tenantId && facility && !facility.parkingManagerId && facility.tenantId === user.tenantId) {
-      return true;
-    }
-    if (user.tenantId && !reservation.parkingFacilityId && reservation.tenantId === user.tenantId) {
-      return true;
-    }
+    if (!userId) return false;
+    if (reservation.assignedToUserId === userId) return true;
+    if (reservation.parkingFacility?.parkingManagerId === userId) return true;
     return false;
   }
 
@@ -2199,38 +2193,21 @@ export class ParkingReservationsService {
     }
     if (this.isParkingManager(user.role)) {
       const parkingManagerId = this.actorId(user);
-      if (!parkingManagerId && !user.tenantId) {
+      if (!parkingManagerId) {
         qb.andWhere('1 = 0');
         return;
       }
       qb.andWhere(
         new Brackets((sub) => {
-          if (parkingManagerId) {
-            sub.where('r.assignedToUserId = :parkingManagerId', { parkingManagerId });
-            sub.orWhere(
-              `EXISTS (
-                SELECT 1 FROM parking_facility_config f
-                WHERE f.id = r."parkingFacilityId"
-                  AND f."parkingManagerId" = :parkingManagerId
-              )`,
-              { parkingManagerId },
-            );
-          }
-          if (user.tenantId) {
-            const clause = parkingManagerId ? 'orWhere' : 'where';
-            sub[clause](
-              `EXISTS (
-                SELECT 1 FROM parking_facility_config f
-                WHERE f.id = r."parkingFacilityId"
-                  AND f."parkingManagerId" IS NULL
-                  AND f."tenantId" = :parkingManagerTenantId
-              )`,
-              { parkingManagerTenantId: user.tenantId },
-            );
-            sub.orWhere('(r."parkingFacilityId" IS NULL AND r.tenantId = :parkingManagerTenantId)', {
-              parkingManagerTenantId: user.tenantId,
-            });
-          }
+          sub.where('r.assignedToUserId = :parkingManagerId', { parkingManagerId });
+          sub.orWhere(
+            `EXISTS (
+              SELECT 1 FROM parking_facility_config f
+              WHERE f.id = r."parkingFacilityId"
+                AND f."parkingManagerId" = :parkingManagerId
+            )`,
+            { parkingManagerId },
+          );
         }),
       );
       return;
