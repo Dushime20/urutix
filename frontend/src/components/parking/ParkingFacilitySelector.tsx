@@ -83,21 +83,22 @@ export function ParkingFacilitySelector({
     if (!isAuthenticated || didAutoSelect.current || value) return;
     const items = recommendedQuery.data?.items || [];
     const recommended = items.find((item) => item.recommended && item.isAvailable) || items.find((item) => item.isAvailable);
-    if (recommended) {
+    if (recommended?.id) {
       didAutoSelect.current = true;
       onChange(recommended);
     }
   }, [isAuthenticated, recommendedQuery.data, value, onChange]);
 
-  const items = searchQuery.data?.items || [];
+  const items = (searchQuery.data?.items || []).filter((item) => !!item.id);
   const searching = searchQuery.isFetching;
   const searchError = searchQuery.isError;
   const placeholder = isAuthenticated
     ? 'Search parking location, city or manager...'
     : 'Search parking location, city or manager...';
 
-  const selectFacility = (facility: ParkingFacilitySearchResult) => {
-    onChange(facility);
+  const selectFacility = (selected: ParkingFacilitySearchResult) => {
+    if (!selected.id) return;
+    onChange(selected);
     setOpen(false);
   };
 

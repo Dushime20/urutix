@@ -317,7 +317,7 @@ export class ParkingReservationsService {
     const total = await applyFilters(this.facilityRepo.createQueryBuilder('f')).getCount();
 
     const qb = applyFilters(this.facilityRepo.createQueryBuilder('f'));
-    qb.select('f.id', 'id')
+    qb.select('f.id', 'facilityId')
       .addSelect('f.facilityName', 'facilityName')
       .addSelect('f.tenantId', 'tenantId')
       .addSelect('f.parkingManagerId', 'parkingManagerId')
@@ -354,18 +354,28 @@ export class ParkingReservationsService {
     };
   }
 
+  private rawColumn(row: Record<string, any>, ...keys: string[]) {
+    for (const key of keys) {
+      const value = row[key];
+      if (value != null && value !== '') return value;
+    }
+    return undefined;
+  }
+
   private toPublicFacilityView(row: Record<string, any>, user?: AuthUser | null) {
-    const totalCapacity = Number(row.totalCapacity) || 0;
-    const availableSpaces = Math.max(0, Number(row.availableSpaces) || 0);
-    const city = row.city || '';
-    const country = row.country || '';
-    const region = row.region || '';
-    const sameTenant = !!(user?.tenantId && row.tenantId && user.tenantId === row.tenantId);
+    const totalCapacity = Number(this.rawColumn(row, 'totalCapacity', 'f_totalCapacity')) || 0;
+    const availableSpaces = Math.max(0, Number(this.rawColumn(row, 'availableSpaces')) || 0);
+    const city = this.rawColumn(row, 'city') || '';
+    const country = this.rawColumn(row, 'country') || '';
+    const region = this.rawColumn(row, 'region') || '';
+    const tenantId = this.rawColumn(row, 'tenantId', 'f_tenantId');
+    const sameTenant = !!(user?.tenantId && tenantId && user.tenantId === tenantId);
     const isAvailable = availableSpaces > 0;
+    const facilityName = this.rawColumn(row, 'facilityName', 'f_facilityName') || '';
     return {
-      id: row.id,
-      facilityName: row.facilityName,
-      managerName: row.managerName || row.facilityName,
+      id: String(this.rawColumn(row, 'facilityId', 'id', 'f_id') || ''),
+      facilityName,
+      managerName: this.rawColumn(row, 'managerName', 't_name') || facilityName,
       city,
       country,
       region,

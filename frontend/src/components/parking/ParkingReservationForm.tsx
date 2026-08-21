@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,8 +15,14 @@ import { ParkingFacilitySelector } from './ParkingFacilitySelector';
 import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
 import { formatParkingMoney } from '../../types/parking';
 
+const facilityIdSchema = z
+  .string()
+  .trim()
+  .min(1, 'Select a parking location')
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Select a parking location');
+
 const schema = z.object({
-  parkingFacilityId: z.string().uuid('Select a parking location'),
+  parkingFacilityId: facilityIdSchema,
   companyName: z.string().min(2, 'Company name is required'),
   mcNumber: z.string().min(5, 'Enter a valid MC number').max(40),
   usdotNumber: z.string().min(5, 'Enter a valid USDOT number').max(40),
@@ -56,7 +62,7 @@ export function ParkingReservationForm({
 }: ParkingReservationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [facility, setFacility] = useState<ParkingFacilitySearchResult | null>(null);
-  const facilityId = facility?.id;
+  const facilityId = (facility?.id || '').trim();
   const pricingQuery = useQuery({
     queryKey: ['parking-public-pricing', facilityId],
     queryFn: () => parkingApi.publicPricing(facilityId),
@@ -109,9 +115,18 @@ export function ParkingReservationForm({
     });
   }, [pricing, spaces, months]);
 
-  useEffect(() => {
-    form.setValue('parkingFacilityId', facility?.id || '', { shouldValidate: !!facility });
-  }, [facility, form]);
+  const applyFacility = useCallback((next: ParkingFacilitySearchResult | null) => {
+    setFacility(next);
+    const id = (next?.id || '').trim();
+    form.setValue('parkingFacilityId', id, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    if (id) {
+      form.clearErrors('parkingFacilityId');
+    }
+  }, [form]);
 
   const onSubmit = async (values: ParkingReservationFormData) => {
     try {
@@ -119,7 +134,7 @@ export function ParkingReservationForm({
       const response = await parkingApi.create(
         {
           ...values,
-          parkingFacilityId: facility?.id || values.parkingFacilityId,
+          parkingFacilityId: facilityId || values.parkingFacilityId,
           customerNotes: values.customerNotes || undefined,
           idempotencyKey,
         },
@@ -141,13 +156,12 @@ export function ParkingReservationForm({
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" noValidate>
       <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...form.register('website')} />
-      <input type="hidden" {...form.register('parkingFacilityId')} />
 
       <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
         <ParkingFacilitySelector
           value={facility}
-          onChange={setFacility}
-          error={form.formState.errors.parkingFacilityId?.message}
+          onChange={applyFacility}
+          error={facilityId ? undefined : form.formState.errors.parkingFacilityId?.message}
         />
       </div>
 
