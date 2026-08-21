@@ -89,7 +89,6 @@ const STAFF_ROLES = new Set<string>([
 const PLATFORM_STAFF_ROLES = new Set<string>([
   UserRole.SUPER_ADMIN,
   UserRole.ADMIN,
-  UserRole.PARKING_RESERVATION_MANAGER,
 ]);
 
 type AuthUser = {
@@ -135,6 +134,10 @@ export class ParkingReservationsService {
 
   private isPlatformStaff(role?: string): boolean {
     return !!role && PLATFORM_STAFF_ROLES.has(role);
+  }
+
+  private isParkingManager(role?: string): boolean {
+    return role === UserRole.PARKING_RESERVATION_MANAGER;
   }
 
   private hashIp(ip?: string): string | undefined {
@@ -203,6 +206,10 @@ export class ParkingReservationsService {
     if (dto.city != null) facility.city = dto.city;
     if (dto.country != null) facility.country = dto.country;
     if (dto.region != null) facility.region = dto.region;
+    const actorId = this.actorId(user);
+    if (this.isParkingManager(user.role) && actorId && !facility.parkingManagerId) {
+      facility.parkingManagerId = actorId;
+    }
     return this.facilityRepo.save(facility);
   }
 
@@ -238,6 +245,48 @@ export class ParkingReservationsService {
       }
     }
     return facility;
+  }
+
+  private async resolveFacilityManagerIds(facility: ParkingFacilityConfig): Promise<string[]> {
+    if (facility.parkingManagerId) {
+      const assigned = await this.userRepo.findOne({
+        where: {
+          id: facility.parkingManagerId,
+          role: UserRole.PARKING_RESERVATION_MANAGER,
+          status: UserStatus.ACTIVE,
+        },
+      });
+      if (assigned) return [assigned.id];
+    }
+    if (!facility.tenantId) return [];
+    const managers = await this.userRepo.find({
+      where: {
+        tenantId: facility.tenantId,
+        role: UserRole.PARKING_RESERVATION_MANAGER,
+        status: UserStatus.ACTIVE,
+      },
+      order: { createdAt: 'ASC' },
+    });
+    if (managers.length === 1 && !facility.parkingManagerId) {
+      facility.parkingManagerId = managers[0].id;
+      await this.facilityRepo.save(facility);
+    }
+    return managers.map((manager) => manager.id);
+  }
+
+  private parkingManagerOwns(reservation: ParkingReservation, user: AuthUser): boolean {
+    if (!this.isParkingManager(user.role)) return false;
+    const userId = this.actorId(user);
+    if (userId && reservation.assignedToUserId === userId) return true;
+    const facility = reservation.parkingFacility;
+    if (userId && facility?.parkingManagerId === userId) return true;
+    if (user.tenantId && facility && !facility.parkingManagerId && facility.tenantId === user.tenantId) {
+      return true;
+    }
+    if (user.tenantId && !reservation.parkingFacilityId && reservation.tenantId === user.tenantId) {
+      return true;
+    }
+    return false;
   }
 
   async searchFacilities(dto: SearchParkingFacilitiesDto, user?: AuthUser | null) {
@@ -1023,6 +1072,8 @@ export class ParkingReservationsService {
       usdotNumber,
       requestedStartDate: startDate,
     });
+    const responsibleManagerIds = await this.resolveFacilityManagerIds(facility);
+    const assignedToUserId = responsibleManagerIds[0];
 
     const reservation = await this.dataSource.transaction(async (manager) => {
       const year = start.getUTCFullYear();
@@ -1049,6 +1100,8 @@ export class ParkingReservationsService {
         signature: dto.signature,
         signedAt: new Date(),
         submittedByUserId: this.actorId(user),
+        assignedToUserId,
+        assignedAt: assignedToUserId ? new Date() : undefined,
         possibleDuplicate: duplicates.length > 0,
         duplicateOfReferences: duplicates.map((d) => d.reservationReference),
         idempotencyKey,
@@ -1077,6 +1130,8 @@ export class ParkingReservationsService {
             companyName: saved.companyName,
             parkingFacilityId: facility.id,
             facilityName: facility.facilityName,
+            parkingManagerId: facility.parkingManagerId,
+            assignedToUserId,
             truckSpacesRequested: saved.truckSpacesRequested,
             possibleDuplicate: saved.possibleDuplicate,
             feeScheduleId: schedule.id,
@@ -1086,8 +1141,25 @@ export class ParkingReservationsService {
           },
         }),
       );
+      if (assignedToUserId) {
+        await manager.save(
+          ParkingReservationActivity,
+          manager.create(ParkingReservationActivity, {
+            reservationId: saved.id,
+            action: ParkingReservationActivityAction.RESERVATION_ASSIGNED,
+            actorRole: 'SYSTEM',
+            actorLabel: 'Parking location assignment',
+            metadata: {
+              assignedToUserId,
+              autoAssigned: true,
+              parkingFacilityId: facility.id,
+            },
+          }),
+        );
+      }
       return saved;
     });
+    reservation.parkingFacility = facility;
 
     const listenerResults = await this.eventEmitter.emitAsync('parking.reservation.created', {
       reservation,
@@ -1274,7 +1346,14 @@ export class ParkingReservationsService {
     const capacity = this.isStaff(user.role)
       ? await this.evaluateCapacity(reservation)
       : undefined;
-    const facility = await this.getFacility(reservation.tenantId);
+    const facility =
+      reservation.parkingFacility ||
+      (reservation.parkingFacilityId
+        ? (await this.facilityRepo.findOne({
+            where: { id: reservation.parkingFacilityId },
+            relations: ['tenant'],
+          })) || (await this.getFacility(reservation.tenantId))
+        : await this.getFacility(reservation.tenantId));
     let feeQuote = this.quoteFromSnapshot(reservation);
     if (!feeQuote && reservation.paymentStatus === ParkingReservationPaymentStatus.NOT_APPLICABLE) {
       const schedule = reservation.feeScheduleId
@@ -1347,6 +1426,9 @@ export class ParkingReservationsService {
     }
     if (!this.isStaff(officer.role)) {
       throw new BadRequestException('Reservations can only be assigned to parking staff.');
+    }
+    if (this.isParkingManager(user.role) && user.tenantId && officer.tenantId !== user.tenantId) {
+      throw new ForbiddenException("You can only assign reservations to staff at your parking location.");
     }
     const previousAssignee = reservation.assignedToUserId;
     const isReassign = !!previousAssignee && previousAssignee !== dto.assignedToUserId;
@@ -2026,6 +2108,44 @@ export class ParkingReservationsService {
     if (this.isPlatformStaff(user.role)) {
       return;
     }
+    if (this.isParkingManager(user.role)) {
+      const parkingManagerId = this.actorId(user);
+      if (!parkingManagerId && !user.tenantId) {
+        qb.andWhere('1 = 0');
+        return;
+      }
+      qb.andWhere(
+        new Brackets((sub) => {
+          if (parkingManagerId) {
+            sub.where('r.assignedToUserId = :parkingManagerId', { parkingManagerId });
+            sub.orWhere(
+              `EXISTS (
+                SELECT 1 FROM parking_facility_config f
+                WHERE f.id = r."parkingFacilityId"
+                  AND f."parkingManagerId" = :parkingManagerId
+              )`,
+              { parkingManagerId },
+            );
+          }
+          if (user.tenantId) {
+            const clause = parkingManagerId ? 'orWhere' : 'where';
+            sub[clause](
+              `EXISTS (
+                SELECT 1 FROM parking_facility_config f
+                WHERE f.id = r."parkingFacilityId"
+                  AND f."parkingManagerId" IS NULL
+                  AND f."tenantId" = :parkingManagerTenantId
+              )`,
+              { parkingManagerTenantId: user.tenantId },
+            );
+            sub.orWhere('(r."parkingFacilityId" IS NULL AND r.tenantId = :parkingManagerTenantId)', {
+              parkingManagerTenantId: user.tenantId,
+            });
+          }
+        }),
+      );
+      return;
+    }
     if (user.role === UserRole.TENANT_ADMIN && user.tenantId) {
       qb.andWhere('r.tenantId = :tenantId', { tenantId: user.tenantId });
       return;
@@ -2056,6 +2176,9 @@ export class ParkingReservationsService {
   private async loadManaged(id: string, user: AuthUser): Promise<ParkingReservation> {
     this.assertStaff(user);
     const reservation = await this.loadReservation(id);
+    if (this.isParkingManager(user.role) && !this.parkingManagerOwns(reservation, user)) {
+      throw new ForbiddenException("You don't have permission to perform this action.");
+    }
     if (user.role === UserRole.TENANT_ADMIN && reservation.tenantId !== user.tenantId) {
       throw new ForbiddenException("You don't have permission to perform this action.");
     }
@@ -2071,6 +2194,7 @@ export class ParkingReservationsService {
   private assertCanView(reservation: ParkingReservation, user: AuthUser) {
     if (this.isPlatformStaff(user.role)) return;
     if (user.role === UserRole.TENANT_ADMIN && reservation.tenantId === user.tenantId) return;
+    if (this.parkingManagerOwns(reservation, user)) return;
     const userId = this.actorId(user);
     if (userId && reservation.submittedByUserId === userId) return;
     if (

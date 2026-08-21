@@ -19,7 +19,7 @@ import {
   NotificationStatus,
   EntityType,
 } from '../../../entities/notification.entity';
-import { ParkingReservation } from '../../../entities/parking-reservation.entity';
+import { ParkingFacilityConfig, ParkingReservation } from '../../../entities/parking-reservation.entity';
 
 type ApplicantNotice = {
   type: NotificationType;
@@ -43,6 +43,8 @@ export class ParkingReservationListener {
     private readonly eventsGateway: EventsGateway,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(ParkingFacilityConfig)
+    private readonly facilityRepository: Repository<ParkingFacilityConfig>,
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(Notification)
@@ -550,17 +552,44 @@ export class ParkingReservationListener {
     if (reservation.assignedToUserId && reservation.assignedToUserId !== recipientId) {
       return reservation.assignedToUserId;
     }
-    const officer = await this.userRepository
-      .createQueryBuilder('u')
-      .where('u.status = :status', { status: UserStatus.ACTIVE })
-      .andWhere('u."deleted_at" IS NULL')
-      .andWhere('u.role::text IN (:...roles)', {
-        roles: [UserRole.PARKING_RESERVATION_MANAGER, UserRole.SUPER_ADMIN, UserRole.ADMIN],
-      })
-      .andWhere('u.id != :recipientId', { recipientId })
-      .orderBy('u.createdAt', 'ASC')
-      .getOne();
-    return officer?.id || null;
+    const officerIds = await this.resolveResponsibleOfficerIds(reservation);
+    return officerIds.find((id) => id !== recipientId) || null;
+  }
+
+  private async resolveResponsibleOfficerIds(reservation: ParkingReservation): Promise<string[]> {
+    const ids = new Set<string>();
+    if (reservation.assignedToUserId) ids.add(reservation.assignedToUserId);
+
+    let facility = reservation.parkingFacility;
+    if (!facility && reservation.parkingFacilityId) {
+      facility = (await this.facilityRepository.findOne({
+        where: { id: reservation.parkingFacilityId },
+      })) || undefined;
+    }
+
+    if (facility?.parkingManagerId) {
+      ids.add(facility.parkingManagerId);
+    } else {
+      const tenantId = facility?.tenantId || reservation.tenantId;
+      if (tenantId) {
+        const managers = await this.userRepository
+          .createQueryBuilder('u')
+          .where('u.status = :status', { status: UserStatus.ACTIVE })
+          .andWhere('u."deleted_at" IS NULL')
+          .andWhere('u.role::text = :role', { role: UserRole.PARKING_RESERVATION_MANAGER })
+          .andWhere('u.tenantId = :tenantId', { tenantId })
+          .getMany();
+        for (const manager of managers) ids.add(manager.id);
+      }
+    }
+
+    if (!ids.size) return [];
+    const officers = await this.userRepository.find({
+      where: { id: In([...ids]), status: UserStatus.ACTIVE },
+    });
+    return officers
+      .filter((officer) => officer.role === UserRole.PARKING_RESERVATION_MANAGER || officer.id === reservation.assignedToUserId)
+      .map((officer) => officer.id);
   }
 
   private async notifyOfficers(
@@ -568,21 +597,9 @@ export class ParkingReservationListener {
     opts: { type: NotificationType; title: string; message: string; actionUrl: string },
   ) {
     try {
-      const officers = await this.userRepository
-        .createQueryBuilder('u')
-        .where('u.status = :status', { status: UserStatus.ACTIVE })
-        .andWhere('u."deleted_at" IS NULL')
-        .andWhere('u.role::text IN (:...roles)', {
-          roles: [
-            UserRole.PARKING_RESERVATION_MANAGER,
-            UserRole.SUPER_ADMIN,
-            UserRole.ADMIN,
-          ],
-        })
-        .getMany();
-
-      for (const officer of officers) {
-        await this.notifyUser(officer.id, reservation, opts);
+      const officerIds = await this.resolveResponsibleOfficerIds(reservation);
+      for (const officerId of officerIds) {
+        await this.notifyUser(officerId, reservation, opts);
       }
     } catch (error) {
       this.logger.error(
