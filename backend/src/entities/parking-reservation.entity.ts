@@ -116,7 +116,7 @@ export class ParkingFacilityConfig {
   @Column('uuid', { nullable: true })
   parkingManagerId?: string;
 
-  @Column({ length: 160, default: 'Nova Parking 365' })
+  @Column({ length: 160, default: '' })
   facilityName: string;
 
   @Column({ length: 80, nullable: true })
@@ -137,7 +137,7 @@ export class ParkingFacilityConfig {
   @Column({ type: 'boolean', default: false })
   allowPastStartDates: boolean;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', default: false })
   isDefault: boolean;
 
   @Column({ length: 3, default: 'USD' })

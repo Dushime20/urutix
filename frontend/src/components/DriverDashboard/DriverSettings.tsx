@@ -49,7 +49,7 @@ export const DriverSettings: React.FC = () => {
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-10">
+    <div className="w-full space-y-8 animate-in fade-in duration-500 pb-10">
 
       {/* Settings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

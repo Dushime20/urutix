@@ -204,7 +204,7 @@ export class ParkingReservationsController {
   @Roles(...STAFF_ROLES)
   @RequirePermissions('parking:view')
   async facility(@Request() req) {
-    return { success: true, data: await this.service.getFacility(req.user.tenantId) };
+    return { success: true, data: await this.service.getFacility(req.user.tenantId, req.user) };
   }
 
   @Patch('facility')

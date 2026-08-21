@@ -114,6 +114,7 @@ export class CreateParkingReservationDto {
   @MaxLength(80)
   idempotencyKey?: string;
 
+  @Transform(trim)
   @IsUUID()
   parkingFacilityId: string;
 

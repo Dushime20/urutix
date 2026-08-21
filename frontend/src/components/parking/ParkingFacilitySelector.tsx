@@ -191,7 +191,7 @@ export function ParkingFacilitySelector({
                 <p className="px-4 py-6 text-center text-sm font-medium text-slate-500">
                   <TranslatedText text="No parking facilities found." />
                   <span className="mt-1 block text-[11px] font-medium text-slate-400">
-                    <TranslatedText text="Try another city, facility name or manager." />
+                    <TranslatedText text="Parking reservation managers must add a location with city and country before drivers can book it." />
                   </span>
                 </p>
               )}

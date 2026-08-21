@@ -70,7 +70,7 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
   const payingItem = items.find((row) => row.id === payingId);
 
   return (
-    <div className="animate-in fade-in duration-500 w-full max-w-6xl mx-auto space-y-6">
+    <div className="animate-in fade-in duration-500 w-full space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">

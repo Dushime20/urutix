@@ -60,9 +60,9 @@ export const TacticalMissionOverlay: React.FC<TacticalMissionOverlayProps> = ({
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -100, opacity: 0 }}
-      className="relative z-[60] px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 pt-6"
+      className="relative z-[60] ui-page-gutter pt-6"
     >
-      <div className="max-w-7xl mx-auto">
+      <div className="ui-page-container">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden relative group">
           <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 gap-6 relative z-10">
             

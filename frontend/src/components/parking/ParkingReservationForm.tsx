@@ -15,14 +15,8 @@ import { ParkingFacilitySelector } from './ParkingFacilitySelector';
 import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
 import { formatParkingMoney } from '../../types/parking';
 
-const facilityIdSchema = z
-  .string()
-  .trim()
-  .min(1, 'Select a parking location')
-  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Select a parking location');
-
 const schema = z.object({
-  parkingFacilityId: facilityIdSchema,
+  parkingFacilityId: z.string().uuid('Select a parking location'),
   companyName: z.string().min(2, 'Company name is required'),
   mcNumber: z.string().min(5, 'Enter a valid MC number').max(40),
   usdotNumber: z.string().min(5, 'Enter a valid USDOT number').max(40),

@@ -94,8 +94,8 @@ export const MyTruck: React.FC<MyTruckProps> = ({ driverId, truckData }) => {
   }, [truck]);
 
   return (
-    <div className="animate-in fade-in duration-500 w-full max-w-6xl mx-auto bg-slate-100 dark:bg-slate-900/50 p-4 sm:p-6 lg:p-8 rounded-[3rem] space-y-6">
-      <div className="px-2 sm:px-4">
+    <div className="animate-in fade-in duration-500 w-full bg-slate-100 dark:bg-slate-900/50 p-4 sm:p-6 lg:p-8 rounded-[3rem] space-y-6">
+      <div>
         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">
           <TranslatedText text="My Truck" />
         </h1>

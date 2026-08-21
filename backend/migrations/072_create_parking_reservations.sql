@@ -72,10 +72,10 @@ END $$;
 CREATE TABLE IF NOT EXISTS parking_facility_config (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "tenantId" UUID NULL,
-  "facilityName" VARCHAR(160) NOT NULL DEFAULT 'Nova Parking 365',
+  "facilityName" VARCHAR(160) NOT NULL DEFAULT '',
   "totalCapacity" INTEGER NOT NULL DEFAULT 700,
   "allowPastStartDates" BOOLEAN NOT NULL DEFAULT FALSE,
-  "isDefault" BOOLEAN NOT NULL DEFAULT TRUE,
+  "isDefault" BOOLEAN NOT NULL DEFAULT FALSE,
   "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT chk_parking_facility_capacity CHECK ("totalCapacity" > 0)
@@ -88,10 +88,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_parking_facility_default
 CREATE UNIQUE INDEX IF NOT EXISTS uq_parking_facility_tenant
   ON parking_facility_config ("tenantId")
   WHERE "tenantId" IS NOT NULL;
-
-INSERT INTO parking_facility_config (id, "facilityName", "totalCapacity", "allowPastStartDates", "isDefault")
-SELECT '00000000-0000-0000-0000-000000000365', 'Nova Parking 365', 700, FALSE, TRUE
-WHERE NOT EXISTS (SELECT 1 FROM parking_facility_config WHERE "isDefault" = TRUE);
 
 CREATE TABLE IF NOT EXISTS parking_reservation_sequences (
   year INTEGER PRIMARY KEY,

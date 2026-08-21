@@ -174,38 +174,104 @@ export class ParkingReservationsService {
     return start;
   }
 
-  async getFacility(tenantId?: string | null): Promise<ParkingFacilityConfig> {
-    if (tenantId) {
-      const scoped = await this.facilityRepo.find({
-        where: { tenantId },
-        order: { isDefault: 'DESC', createdAt: 'ASC' },
+  async getFacility(tenantId?: string | null, user?: AuthUser | null): Promise<ParkingFacilityConfig | null> {
+    return this.findManagerFacility(user, tenantId);
+  }
+
+  private async findManagerFacility(user?: AuthUser | null, tenantId?: string | null): Promise<ParkingFacilityConfig | null> {
+    const userId = this.actorId(user);
+    if (userId) {
+      const owned = await this.facilityRepo.find({
+        where: { parkingManagerId: userId, isActive: true },
+        order: { createdAt: 'ASC' },
         take: 1,
       });
-      if (scoped[0]) return scoped[0];
+      if (owned[0]) return owned[0];
     }
-    const fallback = await this.facilityRepo.findOne({ where: { isDefault: true } });
-    if (fallback) return fallback;
-    const created = this.facilityRepo.create({
-      facilityName: 'Nova Parking 365',
-      totalCapacity: 700,
-      allowPastStartDates: false,
-      isDefault: true,
-      isActive: true,
+    const scope = tenantId || user?.tenantId;
+    if (!scope) return null;
+    const scoped = await this.facilityRepo.find({
+      where: { tenantId: scope, isActive: true },
+      order: { createdAt: 'ASC' },
+      take: 1,
     });
-    return this.facilityRepo.save(created);
+    return scoped[0] || null;
+  }
+
+  private assertLocationInput(name?: string, city?: string, country?: string) {
+    if (!(name || '').trim()) {
+      throw new BadRequestException('Parking facility name is required.');
+    }
+    if (!(city || '').trim()) {
+      throw new BadRequestException('City is required so drivers can find this parking location.');
+    }
+    if (!(country || '').trim()) {
+      throw new BadRequestException('Country is required so drivers can find this parking location.');
+    }
+  }
+
+  private async ensureManagerFacility(
+    user: AuthUser,
+    attrs: { facilityName?: string; city?: string; country?: string; region?: string; totalCapacity?: number },
+  ): Promise<ParkingFacilityConfig> {
+    const existing = await this.findManagerFacility(user, user.tenantId);
+    if (existing) return existing;
+    this.assertLocationInput(attrs.facilityName, attrs.city, attrs.country);
+    if (!user.tenantId) {
+      throw new BadRequestException('Your account is not linked to a parking company.');
+    }
+    const actorId = this.actorId(user);
+    return this.facilityRepo.save(
+      this.facilityRepo.create({
+        tenantId: user.tenantId,
+        parkingManagerId: this.isParkingManager(user.role) ? actorId : undefined,
+        facilityName: attrs.facilityName!.trim(),
+        city: attrs.city!.trim(),
+        country: attrs.country!.trim(),
+        region: (attrs.region || '').trim() || undefined,
+        totalCapacity: attrs.totalCapacity || 700,
+        isDefault: false,
+        isActive: true,
+      }),
+    );
+  }
+
+  private async requireStaffFacility(user: AuthUser): Promise<ParkingFacilityConfig> {
+    const facility = await this.findManagerFacility(user, user.tenantId);
+    if (!facility) {
+      throw new BadRequestException(
+        'Add your parking location (name, city and country) before managing reservations and fees.',
+      );
+    }
+    return facility;
+  }
+
+  private async facilityForReservation(reservation: ParkingReservation): Promise<ParkingFacilityConfig | null> {
+    if (reservation.parkingFacility) return reservation.parkingFacility;
+    if (reservation.parkingFacilityId) {
+      return (
+        (await this.facilityRepo.findOne({
+          where: { id: reservation.parkingFacilityId },
+          relations: ['tenant'],
+        })) || null
+      );
+    }
+    return this.getFacility(reservation.tenantId);
   }
 
   async updateFacility(dto: UpdateParkingFacilityDto, user: AuthUser): Promise<ParkingFacilityConfig> {
     if (!this.isStaff(user.role)) {
       throw new ForbiddenException("You don't have permission to perform this action.");
     }
-    const facility = await this.getFacility(user.tenantId);
+    const facility = await this.ensureManagerFacility(user, dto);
     if (dto.totalCapacity != null) facility.totalCapacity = dto.totalCapacity;
-    if (dto.facilityName) facility.facilityName = dto.facilityName;
+    if (dto.facilityName) facility.facilityName = dto.facilityName.trim();
     if (dto.allowPastStartDates != null) facility.allowPastStartDates = dto.allowPastStartDates;
-    if (dto.city != null) facility.city = dto.city;
-    if (dto.country != null) facility.country = dto.country;
-    if (dto.region != null) facility.region = dto.region;
+    if (dto.city != null) facility.city = dto.city.trim();
+    if (dto.country != null) facility.country = dto.country.trim();
+    if (dto.region != null) facility.region = dto.region.trim();
+    this.assertLocationInput(facility.facilityName, facility.city, facility.country);
+    facility.isDefault = false;
     const actorId = this.actorId(user);
     if (this.isParkingManager(user.role) && actorId && !facility.parkingManagerId) {
       facility.parkingManagerId = actorId;
@@ -225,6 +291,14 @@ export class ParkingReservationsService {
       throw new BadRequestException('The selected parking facility was not found.');
     }
     if (facility.isActive === false) {
+      throw new BadRequestException('This parking facility is not currently accepting reservations.');
+    }
+    if (
+      !facility.tenantId ||
+      !(facility.facilityName || '').trim() ||
+      !(facility.city || '').trim() ||
+      !(facility.country || '').trim()
+    ) {
       throw new BadRequestException('This parking facility is not currently accepting reservations.');
     }
     if (facility.tenantId) {
@@ -313,9 +387,14 @@ export class ParkingReservationsService {
     const applyFilters = (qb: ReturnType<Repository<ParkingFacilityConfig>['createQueryBuilder']>) => {
       qb.leftJoin(Tenant, 't', 't.id = f.tenantId')
         .where('f.isActive = true')
+        .andWhere('f.isDefault = false')
+        .andWhere('f.tenantId IS NOT NULL')
+        .andWhere("NULLIF(BTRIM(COALESCE(f.city, '')), '') IS NOT NULL")
+        .andWhere("NULLIF(BTRIM(COALESCE(f.country, '')), '') IS NOT NULL")
+        .andWhere("NULLIF(BTRIM(COALESCE(f.facilityName, '')), '') IS NOT NULL")
         .andWhere(
           new Brackets((sub) => {
-            sub.where('f.tenantId IS NULL').orWhere('(t.isActive = true AND t.status = :tenantActive)', {
+            sub.where('t.isActive = true AND t.status = :tenantActive', {
               tenantActive: TenantStatus.ACTIVE,
             });
           }),
@@ -505,7 +584,15 @@ export class ParkingReservationsService {
 
   async getFeeSchedule(user: AuthUser) {
     this.assertStaff(user);
-    const facility = await this.getFacility(user.tenantId);
+    const facility = await this.findManagerFacility(user, user.tenantId);
+    if (!facility) {
+      return {
+        ...toFeeScheduleView(
+          this.feeScheduleRepo.create(newDraftFromFacility(undefined, this.actorId(user))) as ParkingFeeSchedule,
+        ),
+        schedules: [],
+      };
+    }
     const schedules = await this.listSchedulesForFacility(facility.id);
     const working = await this.findWorkingSchedule(facility);
     const view = working
@@ -531,14 +618,15 @@ export class ParkingReservationsService {
 
   async listFeeSchedules(user: AuthUser) {
     this.assertStaff(user);
-    const facility = await this.getFacility(user.tenantId);
+    const facility = await this.findManagerFacility(user, user.tenantId);
+    if (!facility) return [];
     const schedules = await this.listSchedulesForFacility(facility.id);
     return schedules.map((item) => toFeeScheduleView(item, facility));
   }
 
   async getFeeScheduleById(id: string, user: AuthUser) {
     this.assertStaff(user);
-    const facility = await this.getFacility(user.tenantId);
+    const facility = await this.requireStaffFacility(user);
     const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
     if (!schedule || schedule.parkingFacilityId !== facility.id) {
       throw new NotFoundException('Fee schedule not found.');
@@ -549,7 +637,7 @@ export class ParkingReservationsService {
   async updateFeeSchedule(dto: UpdateParkingFeesDto, user: AuthUser) {
     this.assertStaff(user);
     this.assertFeeScheduleDto(dto);
-    const facility = await this.getFacility(user.tenantId);
+    const facility = await this.ensureManagerFacility(user, dto);
     let working: ParkingFeeSchedule | null = null;
     if (dto.id) {
       working = await this.feeScheduleRepo.findOne({ where: { id: dto.id } });
@@ -606,6 +694,8 @@ export class ParkingReservationsService {
       facilityChanged = true;
     }
     if (facilityChanged) {
+      this.assertLocationInput(facility.facilityName, facility.city, facility.country);
+      facility.isDefault = false;
       await this.facilityRepo.save(facility);
     }
     const saved = await this.feeScheduleRepo.save(working!);
@@ -615,7 +705,7 @@ export class ParkingReservationsService {
 
   async activateFeeSchedule(id: string, user: AuthUser) {
     this.assertStaff(user);
-    const facility = await this.getFacility(user.tenantId);
+    const facility = await this.requireStaffFacility(user);
     const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
     if (!schedule || schedule.parkingFacilityId !== facility.id) {
       throw new NotFoundException('Fee schedule not found.');
@@ -661,7 +751,7 @@ export class ParkingReservationsService {
 
   async archiveFeeSchedule(id: string, user: AuthUser) {
     this.assertStaff(user);
-    const facility = await this.getFacility(user.tenantId);
+    const facility = await this.requireStaffFacility(user);
     const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
     if (!schedule || schedule.parkingFacilityId !== facility.id) {
       throw new NotFoundException('Fee schedule not found.');
@@ -675,10 +765,10 @@ export class ParkingReservationsService {
   }
 
   async previewFeeQuote(dto: PreviewParkingQuoteDto, user?: AuthUser | null) {
-    const facility = dto.facilityId
-      ? await this.resolveBookableFacility(dto.facilityId)
-      : await this.getFacility(user?.tenantId);
-    if (!facility) throw new NotFoundException('Parking facility not found.');
+    if (!dto.facilityId) {
+      throw new BadRequestException('Select a parking location to continue.');
+    }
+    const facility = await this.resolveBookableFacility(dto.facilityId);
     const start = dto.reservationStartDate || toDateString(new Date());
     const schedule = dto.scheduleId
       ? await this.feeScheduleRepo.findOne({ where: { id: dto.scheduleId } })
@@ -711,7 +801,10 @@ export class ParkingReservationsService {
   }
 
   async getPublicPricing(facilityId?: string) {
-    const facility = facilityId ? await this.resolveBookableFacility(facilityId) : await this.getFacility();
+    if (!facilityId) {
+      throw new BadRequestException('Select a parking location to see pricing.');
+    }
+    const facility = await this.resolveBookableFacility(facilityId);
     const tenant = facility.tenantId
       ? facility.tenant || (await this.tenantRepo.findOne({ where: { id: facility.tenantId } }))
       : null;
@@ -894,7 +987,10 @@ export class ParkingReservationsService {
   }
 
   private async applyApprovalInvoice(reservation: ParkingReservation, user: AuthUser) {
-    const facility = await this.getFacility(reservation.tenantId);
+    const facility = await this.facilityForReservation(reservation);
+    if (!facility) {
+      throw new BadRequestException('This reservation is not linked to a parking location.');
+    }
     const schedule = reservation.feeScheduleId
       ? await this.feeScheduleRepo.findOne({ where: { id: reservation.feeScheduleId } })
       : null;
@@ -1346,14 +1442,7 @@ export class ParkingReservationsService {
     const capacity = this.isStaff(user.role)
       ? await this.evaluateCapacity(reservation)
       : undefined;
-    const facility =
-      reservation.parkingFacility ||
-      (reservation.parkingFacilityId
-        ? (await this.facilityRepo.findOne({
-            where: { id: reservation.parkingFacilityId },
-            relations: ['tenant'],
-          })) || (await this.getFacility(reservation.tenantId))
-        : await this.getFacility(reservation.tenantId));
+    const facility = await this.facilityForReservation(reservation);
     let feeQuote = this.quoteFromSnapshot(reservation);
     if (!feeQuote && reservation.paymentStatus === ParkingReservationPaymentStatus.NOT_APPLICABLE) {
       const schedule = reservation.feeScheduleId
@@ -2047,10 +2136,10 @@ export class ParkingReservationsService {
   }
 
   async evaluateCapacity(reservation: ParkingReservation) {
-    const facility = reservation.parkingFacilityId
-      ? (await this.facilityRepo.findOne({ where: { id: reservation.parkingFacilityId } })) ||
-        (await this.getFacility(reservation.tenantId))
-      : await this.getFacility(reservation.tenantId);
+    const facility = await this.facilityForReservation(reservation);
+    if (!facility) {
+      throw new BadRequestException('This reservation is not linked to a parking location.');
+    }
     return this.evaluateFacilityCapacity(
       facility,
       reservation.requestedStartDate,
@@ -2304,10 +2393,7 @@ export class ParkingReservationsService {
       where: { reservationId: reservation.id },
       order: { createdAt: 'ASC' },
     });
-    const facility = reservation.parkingFacilityId
-      ? (await this.facilityRepo.findOne({ where: { id: reservation.parkingFacilityId }, relations: ['tenant'] })) ||
-        (await this.getFacility(reservation.tenantId))
-      : await this.getFacility(reservation.tenantId);
+    const facility = await this.facilityForReservation(reservation);
     return this.withPublicActivities(
       this.toPublicView(reservation, { facility, includeInstructions: true }),
       activities,

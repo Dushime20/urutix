@@ -59,6 +59,7 @@ import { CommunicationRelay } from '../../components/DriverDashboard/Communicati
 import { messengerApi } from '../../services/messengerApi';
 import { TranslatedText } from '../../components/translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import PageContainer from '../../components/Layout/PageContainer';
 
 
 const DriverDashboard: React.FC = () => {
@@ -272,17 +273,17 @@ const DriverDashboard: React.FC = () => {
 
 
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-9 md:px-10 lg:px-12 xl:px-14 py-6 pb-28 lg:pb-6">
+      <PageContainer className="py-6 pb-28 lg:pb-6">
 
-        <div className="mb-6 flex justify-start sm:justify-end overflow-hidden px-2">
+        <div className="mb-6 flex justify-start sm:justify-end overflow-hidden">
           <TimeRangeSelector value={timeRange} onChange={setTimeRange} />
         </div>
 
         {activeTab === 'overview' && (
-          <div className="animate-in fade-in duration-500 w-full max-w-6xl mx-auto bg-slate-100 dark:bg-slate-900/50 p-4 sm:p-6 lg:p-8 rounded-[3rem]">
+          <div className="animate-in fade-in duration-500 w-full bg-slate-100 dark:bg-slate-900/50 p-4 sm:p-6 lg:p-8 rounded-[3rem]">
             
             {/* Header */}
-            <div className="mb-8 px-4">
+            <div className="mb-8">
               <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">
                 <TranslatedText text="Overview" />
               </h1>
@@ -557,7 +558,7 @@ const DriverDashboard: React.FC = () => {
           />
         )}
         {activeTab === 'settings' && <DriverSettings />}
-      </div>
+      </PageContainer>
 
       {showIncidentModal && (
         <IncidentReportModal
