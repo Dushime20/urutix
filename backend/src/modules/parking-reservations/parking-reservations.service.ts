@@ -57,11 +57,7 @@ import {
   hasSufficientCapacity,
   invoiceNumberFor,
   isValidIso4217Currency,
-  isValidMcNumber,
   isValidPhone,
-  isValidUsdotNumber,
-  normalizeMcNumber,
-  normalizeUsdotNumber,
   periodsOverlap,
   resolvePaymentDueAt,
   startOfTodayUtc,
@@ -73,6 +69,12 @@ import {
   isIshemaPaymentFailed,
   isIshemaPaymentSuccess,
 } from './parking-reservation.workflow';
+import {
+  normalizeCountryCode,
+  normalizeOperatorId,
+  operatorIdentityForCountry,
+  validateOperatorIdentity,
+} from './parking-operator-identity';
 import {
   applyFeeScheduleDto,
   newDraftFromFacility,
@@ -180,11 +182,13 @@ export class ParkingReservationsService {
     if (!dto.agreementAccepted) {
       throw new BadRequestException('You must accept the reservation agreement to continue.');
     }
-    if (!isValidMcNumber(dto.mcNumber)) {
-      throw new BadRequestException('Enter a valid MC number.');
-    }
-    if (!isValidUsdotNumber(dto.usdotNumber)) {
-      throw new BadRequestException('Enter a valid USDOT number.');
+    const identityError = validateOperatorIdentity(
+      dto.companyCountry,
+      dto.mcNumber,
+      dto.usdotNumber,
+    );
+    if (identityError) {
+      throw new BadRequestException(identityError);
     }
     if (!isValidPhone(dto.companyPhone)) {
       throw new BadRequestException('Enter a valid company phone number.');
@@ -1186,8 +1190,10 @@ export class ParkingReservationsService {
         `There ${capacity.remaining === 1 ? 'is' : 'are'} only ${Math.max(0, capacity.remaining)} parking ${capacity.remaining === 1 ? 'space' : 'spaces'} available at ${facility.facilityName} for the requested period.`,
       );
     }
-    const mcNumber = normalizeMcNumber(dto.mcNumber);
-    const usdotNumber = normalizeUsdotNumber(dto.usdotNumber);
+    const companyCountry = normalizeCountryCode(dto.companyCountry);
+    const identity = operatorIdentityForCountry(companyCountry);
+    const mcNumber = normalizeOperatorId(dto.mcNumber);
+    const usdotNumber = normalizeOperatorId(dto.usdotNumber || '');
     const startDate = toDateString(start);
 
     const duplicates = await this.findDuplicates({
@@ -1208,6 +1214,9 @@ export class ParkingReservationsService {
         tenantId,
         parkingFacilityId: facility.id,
         companyName: dto.companyName,
+        companyCountry,
+        operatorPrimaryLabel: identity.primary.label,
+        operatorSecondaryLabel: identity.secondary?.label,
         mcNumber,
         usdotNumber,
         companyPhone: dto.companyPhone.trim(),
@@ -1365,6 +1374,7 @@ export class ParkingReservationsService {
             .orWhere('LOWER(r.companyName) LIKE :term', { term })
             .orWhere('LOWER(r.mcNumber) LIKE :term', { term })
             .orWhere('LOWER(r.usdotNumber) LIKE :term', { term })
+            .orWhere('LOWER(r.companyCountry) LIKE :term', { term })
             .orWhere('LOWER(r.email) LIKE :term', { term })
             .orWhere('LOWER(r.driverEmail) LIKE :term', { term })
             .orWhere("LOWER(CONCAT(r.driverFirstName, ' ', r.driverLastName)) LIKE :term", { term });
@@ -2196,8 +2206,9 @@ export class ParkingReservationsService {
     const header = [
       'Reference',
       'Company',
-      'MC Number',
-      'USDOT',
+      'Country',
+      'Operator ID',
+      'Secondary ID',
       'Company Email',
       'Driver Email',
       'Driver Name',
@@ -2216,6 +2227,7 @@ export class ParkingReservationsService {
         [
           row.reservationReference,
           row.companyName,
+          row.companyCountry,
           row.mcNumber,
           row.usdotNumber,
           row.email,
@@ -2482,6 +2494,9 @@ export class ParkingReservationsService {
         ? formatParkingLocation(facility.city, facility.country, facility.region)
         : undefined,
       companyName: reservation.companyName,
+      companyCountry: reservation.companyCountry || null,
+      operatorPrimaryLabel: reservation.operatorPrimaryLabel || null,
+      operatorSecondaryLabel: reservation.operatorSecondaryLabel || null,
       mcNumber: reservation.mcNumber,
       usdotNumber: reservation.usdotNumber,
       companyPhone: reservation.companyPhone,
@@ -2536,6 +2551,9 @@ export class ParkingReservationsService {
       parkingFacilityId: reservation.parkingFacilityId,
       facilityName: reservation.parkingFacility?.facilityName,
       companyName: reservation.companyName,
+      companyCountry: reservation.companyCountry || null,
+      operatorPrimaryLabel: reservation.operatorPrimaryLabel || null,
+      operatorSecondaryLabel: reservation.operatorSecondaryLabel || null,
       mcNumber: reservation.mcNumber,
       usdotNumber: reservation.usdotNumber,
       email: reservation.email,

@@ -16,6 +16,9 @@ export interface ParkingReservation {
   managerName?: string;
   locationLabel?: string;
   companyName: string;
+  companyCountry?: string | null;
+  operatorPrimaryLabel?: string | null;
+  operatorSecondaryLabel?: string | null;
   mcNumber: string;
   usdotNumber: string;
   companyPhone: string;
@@ -287,8 +290,9 @@ export interface ParkingOfficer {
 export interface CreateParkingReservationPayload {
   parkingFacilityId: string;
   companyName: string;
+  companyCountry: string;
   mcNumber: string;
-  usdotNumber: string;
+  usdotNumber?: string;
   companyPhone: string;
   email: string;
   driverEmail: string;

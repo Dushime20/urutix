@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,27 +14,48 @@ import { SignaturePad } from './SignaturePad';
 import { ParkingFacilitySelector } from './ParkingFacilitySelector';
 import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
 import { formatParkingMoney } from '../../types/parking';
+import { worldCountries } from '../../lib/countries';
+import { isValidOperatorId, operatorIdentityForCountry } from '../../lib/parkingOperatorIdentity';
 
-const schema = z.object({
-  parkingFacilityId: z.string().uuid('Select a parking location'),
-  companyName: z.string().min(2, 'Company name is required'),
-  mcNumber: z.string().min(5, 'Enter a valid MC number').max(40),
-  usdotNumber: z.string().min(5, 'Enter a valid USDOT number').max(40),
-  companyPhone: z.string().min(7, 'Enter a valid phone number').max(40),
-  email: z.string().email('Invalid company email'),
-  driverFirstName: z.string().min(1, 'First name is required'),
-  driverLastName: z.string().min(1, 'Last name is required'),
-  driverEmail: z.string().email('Enter a valid driver email'),
-  truckSpacesRequested: z.coerce.number().int().min(1, 'At least 1 space is required').max(700),
-  contractMonths: z.coerce.number().int().min(1, 'At least 1 month is required').max(60),
-  requestedStartDate: z.string().min(1, 'Start date is required'),
-  agreementAccepted: z.literal(true, { errorMap: () => ({ message: 'You must accept the agreement' }) }),
-  signature: z
-    .string()
-    .regex(/^data:image\/(png|jpeg);base64,/, 'Please sign in the box using your mouse, finger, or stylus'),
-  customerNotes: z.string().optional(),
-  website: z.string().optional(),
-});
+const schema = z
+  .object({
+    parkingFacilityId: z.string().uuid('Select a parking location'),
+    companyName: z.string().min(2, 'Company name is required'),
+    companyCountry: z.string().length(2, 'Select the company country of registration'),
+    mcNumber: z.string().max(40).optional().default(''),
+    usdotNumber: z.string().max(40).optional().default(''),
+    companyPhone: z.string().min(7, 'Enter a valid phone number').max(40),
+    email: z.string().email('Invalid company email'),
+    driverFirstName: z.string().min(1, 'First name is required'),
+    driverLastName: z.string().min(1, 'Last name is required'),
+    driverEmail: z.string().email('Enter a valid driver email'),
+    truckSpacesRequested: z.coerce.number().int().min(1, 'At least 1 space is required').max(700),
+    contractMonths: z.coerce.number().int().min(1, 'At least 1 month is required').max(60),
+    requestedStartDate: z.string().min(1, 'Start date is required'),
+    agreementAccepted: z.literal(true, { errorMap: () => ({ message: 'You must accept the agreement' }) }),
+    signature: z
+      .string()
+      .regex(/^data:image\/(png|jpeg);base64,/, 'Please sign in the box using your mouse, finger, or stylus'),
+    customerNotes: z.string().optional(),
+    website: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const profile = operatorIdentityForCountry(data.companyCountry);
+    if (!isValidOperatorId(data.mcNumber || '', profile.primary)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['mcNumber'],
+        message: `Enter a valid ${profile.primary.label}`,
+      });
+    }
+    if (profile.secondary && !isValidOperatorId(data.usdotNumber || '', profile.secondary)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['usdotNumber'],
+        message: `Enter a valid ${profile.secondary.label}`,
+      });
+    }
+  });
 
 export type ParkingReservationFormData = z.infer<typeof schema>;
 
@@ -73,6 +94,7 @@ export function ParkingReservationForm({
     defaultValues: {
       parkingFacilityId: '',
       companyName: '',
+      companyCountry: '',
       mcNumber: '',
       usdotNumber: '',
       companyPhone: '',
@@ -91,6 +113,20 @@ export function ParkingReservationForm({
     },
   });
 
+  const countries = useMemo(() => worldCountries(), []);
+  const countryCode = form.watch('companyCountry');
+  const identity = useMemo(
+    () => (countryCode ? operatorIdentityForCountry(countryCode) : null),
+    [countryCode],
+  );
+  const previousCountry = useRef(countryCode);
+  useEffect(() => {
+    if (previousCountry.current && previousCountry.current !== countryCode) {
+      form.setValue('mcNumber', '');
+      form.setValue('usdotNumber', '');
+    }
+    previousCountry.current = countryCode;
+  }, [countryCode, form]);
   const spaces = Number(form.watch('truckSpacesRequested') || 1);
   const months = Number(form.watch('contractMonths') || 1);
   const quote = useMemo(() => {
@@ -163,14 +199,48 @@ export function ParkingReservationForm({
         <Field label="Company Name" error={form.formState.errors.companyName?.message}>
           <input className={fieldClass} {...form.register('companyName')} />
         </Field>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="MC Number" error={form.formState.errors.mcNumber?.message}>
-            <input className={fieldClass} {...form.register('mcNumber')} placeholder="MC123456" />
-          </Field>
-          <Field label="USDOT Number" error={form.formState.errors.usdotNumber?.message}>
-            <input className={fieldClass} {...form.register('usdotNumber')} placeholder="1234567" />
-          </Field>
-        </div>
+        <Field
+          label="Country of registration"
+          hint="Operator documents change by country. Select where the company is registered."
+          error={form.formState.errors.companyCountry?.message}
+        >
+          <select className={fieldClass} {...form.register('companyCountry')}>
+            <option value="">Select country</option>
+            {countries.map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {identity && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              label={identity.primary.label}
+              hint={identity.primary.hint}
+              error={form.formState.errors.mcNumber?.message}
+            >
+              <input
+                className={fieldClass}
+                {...form.register('mcNumber')}
+                placeholder={identity.primary.placeholder}
+              />
+            </Field>
+            {identity.secondary && (
+              <Field
+                label={identity.secondary.required ? identity.secondary.label : `${identity.secondary.label} (optional)`}
+                hint={identity.secondary.hint}
+                error={form.formState.errors.usdotNumber?.message}
+              >
+                <input
+                  className={fieldClass}
+                  {...form.register('usdotNumber')}
+                  placeholder={identity.secondary.placeholder}
+                />
+              </Field>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Company Phone" error={form.formState.errors.companyPhone?.message}>
             <input className={fieldClass} {...form.register('companyPhone')} />

@@ -13,6 +13,7 @@ import {
   type ParkingReservationStatus,
 } from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
+import { countryDisplayName } from '../../lib/countries';
 import { usePermission } from '../../contexts/PermissionContext';
 import { useParkingMoney } from '../../hooks/useParkingMoney';
 import CurrencySelector from '../../components/common/CurrencySelector';
@@ -169,8 +170,20 @@ const ParkingReservationDetails = ({ listPath = '/dashboard/parking/reservations
         </Card>
         <Card title="Company Information">
           <Info label="Company Name" value={reservation.companyName} />
-          <Info label="MC Number" value={reservation.mcNumber} />
-          <Info label="USDOT Number" value={reservation.usdotNumber} />
+          <Info
+            label="Country"
+            value={countryDisplayName(reservation.companyCountry) || reservation.companyCountry || '—'}
+          />
+          <Info
+            label={reservation.operatorPrimaryLabel || 'Operator ID'}
+            value={reservation.mcNumber}
+          />
+          {reservation.usdotNumber ? (
+            <Info
+              label={reservation.operatorSecondaryLabel || 'Secondary ID'}
+              value={reservation.usdotNumber}
+            />
+          ) : null}
           <Info label="Phone" value={reservation.companyPhone} />
           <Info label="Company Email" value={reservation.email} />
         </Card>

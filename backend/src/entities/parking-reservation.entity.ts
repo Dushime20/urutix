@@ -202,10 +202,19 @@ export class ParkingReservation {
   @Column({ length: 200 })
   companyName: string;
 
+  @Column({ length: 2, default: '' })
+  companyCountry: string;
+
+  @Column({ length: 80, nullable: true })
+  operatorPrimaryLabel?: string;
+
+  @Column({ length: 80, nullable: true })
+  operatorSecondaryLabel?: string;
+
   @Column({ length: 40 })
   mcNumber: string;
 
-  @Column({ length: 40 })
+  @Column({ length: 40, default: '' })
   usdotNumber: string;
 
   @Column({ length: 40 })

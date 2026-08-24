@@ -37,17 +37,26 @@ export class CreateParkingReservationDto {
   @MaxLength(200)
   companyName: string;
 
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{2}$/, { message: 'Select the company country of registration' })
+  companyCountry: string;
+
   @Transform(trim)
   @IsString()
-  @MinLength(5)
+  @MinLength(3)
   @MaxLength(40)
   mcNumber: string;
 
   @Transform(trim)
+  @ValidateIf((_, value) => typeof value === 'string' && value.trim().length > 0)
+  @IsOptional()
   @IsString()
-  @MinLength(5)
+  @MinLength(3)
   @MaxLength(40)
-  usdotNumber: string;
+  usdotNumber?: string;
 
   @Transform(trim)
   @IsString()

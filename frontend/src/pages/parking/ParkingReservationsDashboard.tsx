@@ -8,6 +8,7 @@ import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import { PARKING_PAYMENT_LABELS, PARKING_STATUS_LABELS, type ParkingReservation } from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
+import { countryDisplayName } from '../../lib/countries';
 import { usePermission } from '../../contexts/PermissionContext';
 import { useParkingMoney } from '../../hooks/useParkingMoney';
 import CurrencySelector from '../../components/common/CurrencySelector';
@@ -49,8 +50,38 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
       render: (_v, row) => <span className="font-bold text-slate-900 dark:text-white">{row.reservationReference}</span>,
     },
     { key: 'companyName', label: 'Company', sortable: true },
-    { key: 'mcNumber', label: 'MC Number' },
-    { key: 'usdotNumber', label: 'USDOT' },
+    {
+      key: 'companyCountry',
+      label: 'Country',
+      render: (_v, row) => countryDisplayName(row.companyCountry) || row.companyCountry || '—',
+    },
+    {
+      key: 'mcNumber',
+      label: 'Operator ID',
+      render: (_v, row) => (
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            {row.operatorPrimaryLabel || 'Operator ID'}
+          </div>
+          <div>{row.mcNumber || '—'}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'usdotNumber',
+      label: 'Secondary ID',
+      render: (_v, row) =>
+        row.usdotNumber ? (
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              {row.operatorSecondaryLabel || 'Secondary ID'}
+            </div>
+            <div>{row.usdotNumber}</div>
+          </div>
+        ) : (
+          '—'
+        ),
+    },
     {
       key: 'email',
       label: 'Contact',
@@ -151,7 +182,7 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
         searchable
         searchValue={search}
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
-        searchPlaceholder="Search reference, company, MC, USDOT, driver, email"
+        searchPlaceholder="Search reference, company, operator ID, driver, email"
         filters={[
           {
             key: 'status',
