@@ -16,6 +16,7 @@ import { calculateParkingFeeQuote } from '../../utils/parkingQuote';
 import { formatParkingMoney } from '../../types/parking';
 import { worldCountries } from '../../lib/countries';
 import { isValidOperatorId, operatorIdentityForCountry } from '../../lib/parkingOperatorIdentity';
+import { SearchableSelect } from '../EnliteUI';
 
 const schema = z
   .object({
@@ -114,6 +115,10 @@ export function ParkingReservationForm({
   });
 
   const countries = useMemo(() => worldCountries(), []);
+  const countryOptions = useMemo(
+    () => countries.map((country) => ({ value: country.code, label: country.name, description: country.code })),
+    [countries],
+  );
   const countryCode = form.watch('companyCountry');
   const identity = useMemo(
     () => (countryCode ? operatorIdentityForCountry(countryCode) : null),
@@ -204,14 +209,23 @@ export function ParkingReservationForm({
           hint="Operator documents change by country. Select where the company is registered."
           error={form.formState.errors.companyCountry?.message}
         >
-          <select className={fieldClass} {...form.register('companyCountry')}>
-            <option value="">Select country</option>
-            {countries.map((country) => (
-              <option key={country.code} value={country.code}>
-                {country.name}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            value={countryCode || ''}
+            onChange={(value) => {
+              form.setValue('companyCountry', value, {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+              if (value) form.clearErrors('companyCountry');
+            }}
+            options={countryOptions}
+            placeholder="Search and select a country"
+            searchPlaceholder="Type a country name or code"
+            emptyMessage="No country matches that search"
+            allowClear
+            triggerClassName={fieldClass}
+          />
         </Field>
         {identity && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

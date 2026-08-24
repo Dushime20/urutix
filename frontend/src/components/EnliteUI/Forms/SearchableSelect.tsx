@@ -18,6 +18,7 @@ export interface SearchableSelectProps {
   emptyMessage?: string;
   allowClear?: boolean;
   className?: string;
+  triggerClassName?: string;
 }
 
 export function SearchableSelect({
@@ -30,6 +31,7 @@ export function SearchableSelect({
   emptyMessage = 'No matching options',
   allowClear = false,
   className = '',
+  triggerClassName = '',
 }: SearchableSelectProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -187,7 +189,7 @@ export function SearchableSelect({
         disabled={disabled}
         onClick={() => !disabled && setOpen((current) => !current)}
         onKeyDown={onTriggerKey}
-        className="ui-input flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-left disabled:cursor-not-allowed disabled:opacity-60"
+        className={`ui-input flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-left disabled:cursor-not-allowed disabled:opacity-60 ${triggerClassName}`}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
