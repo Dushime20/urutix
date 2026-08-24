@@ -366,6 +366,29 @@ export class MobileMoneyPaymentService {
     }
   }
 
+  async getVerifiedTransactionOutcome(referenceId: string): Promise<{
+    referenceId: string;
+    status: 'success' | 'failed' | 'pending';
+    amount: number;
+    message: string;
+  }> {
+    const response = await this.checkTransactionStatus(referenceId);
+    const normalized = this.normalizeCallbackPayload({
+      ...response,
+      referenceId,
+      savedTransaction: {
+        ...(response.savedTransaction || {}),
+        referenceId: response.savedTransaction?.referenceId || referenceId,
+      },
+    });
+    return {
+      referenceId: normalized.referenceId || referenceId,
+      status: normalized.status,
+      amount: normalized.amount,
+      message: normalized.message || 'Provider status checked',
+    };
+  }
+
   /**
    * Verify callback signature (implement when provider adds webhook signing)
    */
@@ -377,22 +400,56 @@ export class MobileMoneyPaymentService {
   /**
    * Process callback from Mobile Money provider
    */
-  async processCallback(payload: MobileMoneyCallbackPayload): Promise<{
+  normalizeCallbackPayload(payload: any): MobileMoneyCallbackPayload {
+    const nested =
+      payload?.savedTransaction ||
+      payload?.transaction ||
+      payload?.data ||
+      payload?.body ||
+      payload;
+    const statusRaw = String(
+      nested?.status || payload?.status || payload?.paymentStatus || 'pending',
+    ).toLowerCase();
+    let status: 'success' | 'failed' | 'pending' = 'pending';
+    if (['success', 'successful', 'completed', 'paid'].includes(statusRaw)) {
+      status = 'success';
+    } else if (['failed', 'failure', 'rejected', 'cancelled', 'canceled'].includes(statusRaw)) {
+      status = 'failed';
+    }
+    return {
+      referenceId: String(
+        nested?.referenceId ||
+          payload?.referenceId ||
+          nested?.externalId ||
+          payload?.externalId ||
+          '',
+      ),
+      status,
+      statusCode: Number(nested?.statusCode ?? payload?.statusCode ?? 0),
+      date: String(nested?.date || nested?.createdAt || payload?.date || ''),
+      amount: Number(nested?.amount ?? payload?.amount ?? 0),
+      message: String(nested?.message || payload?.message || nested?.senderMessage || ''),
+    };
+  }
+
+  async processCallback(payload: MobileMoneyCallbackPayload | any): Promise<{
     referenceId: string;
     status: 'success' | 'failed' | 'pending';
     amount: number;
     message: string;
   }> {
     try {
+      const normalized = this.normalizeCallbackPayload(payload);
       this.logger.log(
-        `Mobile Money callback received: ${payload.referenceId} → ${payload.status}`,
+        `Mobile Money callback received: ${normalized.referenceId} → ${normalized.status}`,
       );
+      this.logger.debug(`Normalized webhook payload: ${JSON.stringify(normalized)}`);
 
       return {
-        referenceId: payload.referenceId,
-        status: payload.status,
-        amount: payload.amount,
-        message: payload.message || 'Payment processed',
+        referenceId: normalized.referenceId,
+        status: normalized.status,
+        amount: normalized.amount,
+        message: normalized.message || 'Payment processed',
       };
     } catch (error: any) {
       this.logger.error('Failed to process Mobile Money callback:', error);

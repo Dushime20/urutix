@@ -8,11 +8,14 @@ import {
   UseGuards,
   Request,
   Headers,
+  HttpCode,
+  HttpStatus,
   ParseUUIDPipe,
   Query,
   ValidationPipe,
   BadRequestException,
   ForbiddenException,
+  UnauthorizedException,
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -38,8 +41,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
 import { RateLimitGuard } from './guards/rate-limit.guard';
-import * as crypto from 'crypto';
 import { Public } from '../../common/decorators/public.decorator';
+import { evaluateWebhookSignature } from './utils/mobile-money-webhook.util';
 import {
   ApiTags,
   ApiOperation,
@@ -1515,6 +1518,7 @@ export class PaymentsController {
   }
 
   @Post('webhooks/mobile-money')
+  @HttpCode(HttpStatus.OK)
   @Public() // Webhooks from external services don't have JWT tokens
   @ApiOperation({
     summary: 'Mobile Money Payment webhook callback',
@@ -1538,62 +1542,78 @@ export class PaymentsController {
   async handleMobileMoneyWebhook(
     @Body() payload: any,
     @Headers('x-webhook-signature') signature: string,
+    @Headers('x-signature') altSignature?: string,
   ) {
-    // ── Signature verification ──────────────────────────────────────────────
-    // Verify the HMAC-SHA256 signature supplied by the Mobile Money provider to
-    // prevent unauthenticated callers from marking payments as COMPLETED.
-    //
-    // Expected header: X-Webhook-Signature: sha256=<hex-digest>
-    //
-    // The secret is stored in MOBILE_MONEY_WEBHOOK_SECRET env var.
-    // If no secret is configured we log a warning and continue — this allows
-    // local development without breaking production when the secret IS set.
+    const webhookSignature = signature || altSignature;
     const webhookSecret = this.configService.get<string>('MOBILE_MONEY_WEBHOOK_SECRET');
-    if (webhookSecret) {
-      if (!signature) {
-        this.logger.warn(
-          'Mobile Money webhook received without X-Webhook-Signature header — rejected',
-        );
-        return { message: 'Missing webhook signature', received: false };
-      }
+    const signatureTrust = evaluateWebhookSignature({
+      secret: webhookSecret,
+      signatureHeader: webhookSignature,
+      rawBody: JSON.stringify(payload ?? {}),
+    });
 
-      const rawBody = JSON.stringify(payload);
-      const expectedSig =
-        'sha256=' +
-        crypto
-          .createHmac('sha256', webhookSecret)
-          .update(rawBody, 'utf8')
-          .digest('hex');
-
-      // Constant-time comparison to prevent timing attacks.
-      const sigBuffer = Buffer.from(signature);
-      const expectedBuffer = Buffer.from(expectedSig);
-      const signaturesMatch =
-        sigBuffer.length === expectedBuffer.length &&
-        crypto.timingSafeEqual(sigBuffer, expectedBuffer);
-
-      if (!signaturesMatch) {
-        this.logger.warn(
-          'Mobile Money webhook signature mismatch — request rejected',
-        );
-        return { message: 'Invalid webhook signature', received: false };
-      }
-    } else {
+    if (signatureTrust === 'invalid') {
+      this.logger.warn('Mobile Money webhook signature mismatch — request rejected');
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
+    if (signatureTrust === 'unsigned') {
       this.logger.warn(
-        'MOBILE_MONEY_WEBHOOK_SECRET is not configured — webhook signature verification is DISABLED. Set this variable in production.',
+        'Mobile Money webhook is unsigned (Ishema does not send X-Webhook-Signature). Acknowledging delivery and settling only after provider GET confirmation.',
+      );
+    }
+    if (!webhookSecret) {
+      this.logger.error(
+        'MOBILE_MONEY_WEBHOOK_SECRET is not configured. Unsigned webhooks will still be confirmed via the Ishema status API before any ledger change.',
       );
     }
 
     try {
-      // Enhanced webhook logging
-      this.logger.log(`Mobile Money webhook received: ${payload.referenceId} → ${payload.status}`);
-      this.logger.debug(`Full webhook payload: ${JSON.stringify(payload, null, 2)}`);
-      
-      // Process the callback
-      const callbackData = await this.mobileMoneyPaymentService.processCallback(payload);
+      const claimed = await this.mobileMoneyPaymentService.processCallback(payload);
+      if (!claimed.referenceId) {
+        this.logger.warn('Mobile Money webhook ignored: missing referenceId');
+        return { received: true, ignored: true, message: 'Missing referenceId' };
+      }
 
-      // Find payment by referenceId - search in all tenants (webhook doesn't have tenant context)
-      // We'll search by referenceId in transactionId, referenceNumber, or metadata
+      this.logger.log(
+        `Mobile Money webhook received reference=${claimed.referenceId} claimedStatus=${claimed.status} trust=${signatureTrust}`,
+      );
+
+      let verified: { referenceId: string; status: 'success' | 'failed' | 'pending'; amount: number; message: string };
+      try {
+        verified = await this.mobileMoneyPaymentService.getVerifiedTransactionOutcome(claimed.referenceId);
+      } catch (error) {
+        this.logger.error(
+          `Acknowledging webhook for ${claimed.referenceId} but skipping settlement: provider status check failed: ${(error as Error).message}`,
+        );
+        return {
+          received: true,
+          verified: false,
+          referenceId: claimed.referenceId,
+          message: 'Acknowledged; provider status not yet confirmed',
+        };
+      }
+
+      const callbackData = {
+        referenceId: verified.referenceId || claimed.referenceId,
+        status: verified.status,
+        amount: verified.amount || claimed.amount,
+        message: verified.message || claimed.message,
+      };
+
+      this.logger.log(
+        `Mobile Money webhook verified reference=${callbackData.referenceId} providerStatus=${callbackData.status}`,
+      );
+
+      if (callbackData.status === 'pending') {
+        return {
+          received: true,
+          verified: true,
+          referenceId: callbackData.referenceId,
+          status: 'pending',
+          message: 'Acknowledged; payment still pending',
+        };
+      }
+
       const allPayments = await this.paymentRepository.find({
         where: [
           { transactionId: callbackData.referenceId },
@@ -1602,7 +1622,6 @@ export class PaymentsController {
         relations: ['trip'],
       });
 
-      // Also search in metadata for referenceId or externalId
       const paymentsWithMetadata = await this.paymentRepository
         .createQueryBuilder('payment')
         .where(
@@ -1633,12 +1652,14 @@ export class PaymentsController {
             message: 'Parking reservation payment processed',
             referenceId: callbackData.referenceId,
             received: true,
+            verified: true,
+            status: callbackData.status,
           };
         }
         this.logger.warn(
           `Payment not found for Mobile Money reference: ${callbackData.referenceId}. Searched ${allPayments.length} direct matches, ${paymentsWithMetadata.length} metadata matches.`,
         );
-        return { message: 'Payment not found', received: true };
+        return { message: 'Payment not found', received: true, verified: true, referenceId: callbackData.referenceId };
       }
 
       this.logger.log(`Found payment ${payment.id} for reference ${callbackData.referenceId}, current status: ${payment.status}`);
@@ -1654,10 +1675,10 @@ export class PaymentsController {
           message: `Payment already ${payment.status}`,
           referenceId: callbackData.referenceId,
           received: true,
+          verified: true,
         };
       }
 
-      // Skip duplicate webhook only when fully settled
       if (
         callbackData.status === 'success' &&
         payment.status === PaymentStatus.COMPLETED &&
@@ -1669,22 +1690,19 @@ export class PaymentsController {
           message: 'Already processed',
           referenceId: callbackData.referenceId,
           status: callbackData.status,
+          received: true,
+          verified: true,
         };
       }
 
-      // Update payment status based on callback
       if (callbackData.status === 'success') {
-        this.logger.log(`Processing successful webhook for payment ${payment.id}, amount: ${callbackData.amount}`);
-        
+        this.logger.log(`Processing verified success for payment ${payment.id}, amount: ${callbackData.amount}`);
+
         const isLenderCollection =
           !!(payment.metadata as any)?.isLenderPayment &&
           (payment.metadata as any)?.momoPhase === 'collection';
 
-        this.logger.log(`Payment type: ${isLenderCollection ? 'Lender Collection' : 'Regular Payment'}`);
-
-        // Lender leg-1 collection: keep PROCESSING until payout webhook completes
         const newStatus = isLenderCollection ? PaymentStatus.PROCESSING : PaymentStatus.COMPLETED;
-        this.logger.log(`Updating payment ${payment.id} status from ${payment.status} to ${newStatus}`);
 
         await this.paymentsService.updatePaymentStatus(
           payment.id,
@@ -1698,10 +1716,10 @@ export class PaymentsController {
         );
 
         await this.mobileMoneyWebhookSettlement.settleSuccessfulPayment(payment, callbackData);
-        this.logger.log(`Successfully processed webhook for payment ${payment.id}`);
+        this.logger.log(`Successfully processed verified webhook for payment ${payment.id}`);
       } else if (callbackData.status === 'failed') {
-        this.logger.error(`Processing failed webhook for payment ${payment.id}, reason: ${callbackData.message}`);
-        
+        this.logger.error(`Processing verified failure for payment ${payment.id}, reason: ${callbackData.message}`);
+
         await this.paymentsService.updatePaymentStatus(
           payment.id,
           {
@@ -1713,22 +1731,29 @@ export class PaymentsController {
         );
 
         await this.mobileMoneyWebhookSettlement.settleFailedPayment(payment, callbackData);
-        this.logger.log(`Successfully processed failed webhook for payment ${payment.id}`);
+        this.logger.log(`Successfully processed verified failed webhook for payment ${payment.id}`);
       }
 
       return {
         message: 'Webhook processed successfully',
         referenceId: callbackData.referenceId,
         status: callbackData.status,
+        received: true,
+        verified: true,
       };
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       this.logger.error('Failed to process Mobile Money webhook:', error);
       return {
-        message: 'Webhook processing failed',
-        error: error.message,
+        received: true,
+        verified: false,
+        message: 'Webhook acknowledged; processing failed',
       };
     }
   }
+
 
   @Get('transactions/:referenceId/status')
   @ApiOperation({

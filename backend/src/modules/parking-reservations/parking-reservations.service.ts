@@ -1838,13 +1838,18 @@ export class ParkingReservationsService {
       return this.toPublicDetailView(reservation);
     }
 
-    let status = payload.status;
-    let paidAmount = payload.amount != null ? toMoneyNumber(payload.amount) : null;
-    if (!isIshemaPaymentSuccess(status) || paidAmount == null || paidAmount <= 0) {
+    let status: string | undefined;
+    let paidAmount: number | null = null;
+    try {
       const statusResponse = await this.mobileMoneyPaymentService.checkTransactionStatus(payload.referenceId);
       const outcome = this.readIshemaOutcome(statusResponse);
       status = outcome.status;
       paidAmount = outcome.paidAmount;
+    } catch (error) {
+      this.logger.error(
+        `Refusing to settle parking reservation from webhook ${payload.referenceId}: provider status check failed: ${(error as Error).message}`,
+      );
+      return this.toPublicDetailView(reservation);
     }
 
     if (isIshemaPaymentFailed(status)) {
@@ -1872,6 +1877,21 @@ export class ParkingReservationsService {
     if (!reservation) {
       this.logger.warn(`No parking reservation for failed Ishema reference ${payload.referenceId}`);
       return null;
+    }
+    try {
+      const statusResponse = await this.mobileMoneyPaymentService.checkTransactionStatus(payload.referenceId);
+      const outcome = this.readIshemaOutcome(statusResponse);
+      if (!isIshemaPaymentFailed(outcome.status)) {
+        this.logger.warn(
+          `Ignoring failed Ishema webhook for ${payload.referenceId}; provider status is ${outcome.status}`,
+        );
+        return this.toPublicDetailView(reservation);
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Could not re-check Ishema before failing ${payload.referenceId}: ${(error as Error).message}`,
+      );
+      return this.toPublicDetailView(reservation);
     }
     await this.revertUnconfirmedIshemaPayment(reservation, payload.reason || 'Ishema payment failed');
     return this.toPublicDetailView(reservation);
