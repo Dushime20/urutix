@@ -65,6 +65,8 @@ export class MobileMoneyWebhookSettlementService {
         referenceId,
         transactionId: payment.transactionId || referenceId,
         paymentId: payment.id,
+        amount: callback.amount,
+        status: 'success',
       });
       return;
     }
@@ -74,8 +76,18 @@ export class MobileMoneyWebhookSettlementService {
     );
   }
 
-  async settleParkingReservation(payload: { referenceId: string; transactionId?: string; paymentId?: string }) {
+  async settleParkingReservation(payload: {
+    referenceId: string;
+    transactionId?: string;
+    paymentId?: string;
+    amount?: number;
+    status?: string;
+  }) {
     await this.invokeParking('confirmFromIshemaWebhook', payload);
+  }
+
+  async failParkingReservation(payload: { referenceId: string; reason?: string }) {
+    await this.invokeParking('failFromIshemaWebhook', payload);
   }
 
   async settleFailedPayment(
@@ -114,6 +126,14 @@ export class MobileMoneyWebhookSettlementService {
         referenceId,
         reason,
         paymentId: payment.id,
+      });
+      return;
+    }
+
+    if (referenceId.startsWith('PARK-') || meta.isParkingReservation || meta.parkingReservationId) {
+      await this.invokeParking('failFromIshemaWebhook', {
+        referenceId,
+        reason,
       });
     }
   }

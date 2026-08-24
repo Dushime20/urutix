@@ -1617,9 +1617,16 @@ export class PaymentsController {
 
       if (!payment) {
         if (String(callbackData.referenceId || '').startsWith('PARK-')) {
-          if (callbackData.status === 'success') {
+          if (callbackData.status === 'success' || callbackData.status === 'completed') {
             await this.mobileMoneyWebhookSettlement.settleParkingReservation({
               referenceId: callbackData.referenceId,
+              amount: callbackData.amount,
+              status: callbackData.status,
+            });
+          } else if (callbackData.status === 'failed') {
+            await this.mobileMoneyWebhookSettlement.failParkingReservation({
+              referenceId: callbackData.referenceId,
+              reason: callbackData.message || 'Ishema payment failed',
             });
           }
           return {

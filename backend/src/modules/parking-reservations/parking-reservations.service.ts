@@ -69,6 +69,9 @@ import {
   toMoneyNumber,
   toUtcDateOnly,
   validateContractLimits,
+  canMarkParkingReservationPaidFromIshema,
+  isIshemaPaymentFailed,
+  isIshemaPaymentSuccess,
 } from './parking-reservation.workflow';
 import {
   applyFeeScheduleDto,
@@ -1743,11 +1746,12 @@ export class ParkingReservationsService {
         },
       ],
     );
-    const status = (response.savedTransaction?.status || response.transaction?.status || 'pending').toLowerCase();
-    if (status === 'failed') {
+    const outcome = this.readIshemaOutcome(response);
+    if (isIshemaPaymentFailed(outcome.status)) {
       throw new BadRequestException('Ishema could not start the payment. Check the phone number and try again.');
     }
 
+    // Create/pending only means the PIN prompt was sent. Do not mark PAID here.
     reservation.paymentMethod = ParkingReservationPaymentMethod.MOBILE_MONEY;
     reservation.paymentReference = referenceId;
     reservation.paymentStatus = ParkingReservationPaymentStatus.PENDING_VERIFICATION;
@@ -1756,26 +1760,20 @@ export class ParkingReservationsService {
       ...(reservation.feeSnapshot || {}),
       ishemaReferenceId: referenceId,
       ishemaPhone: phoneNumber,
+      ishemaRequestedAmount: amount,
     };
     await this.reservationRepo.save(reservation);
     await this.addActivity(reservation, ParkingReservationActivityAction.PAYMENT_SUBMITTED, user, {
       metadata: { paymentMethod: ParkingReservationPaymentMethod.MOBILE_MONEY, paymentReference: referenceId },
     });
 
-    if (status === 'success') {
-      await this.markReservationPaidFromIshema(reservation, referenceId, user);
-    }
-
     return {
       reservation: await this.toPublicDetailView(reservation),
       referenceId,
-      providerStatus: status,
+      providerStatus: 'pending',
       amount,
       currency: reservation.currency || 'RWF',
-      message:
-        status === 'success'
-          ? 'Payment confirmed by Ishema. Your reservation is approved.'
-          : 'Approve the payment prompt on your phone to complete this reservation.',
+      message: 'Approve the payment prompt on your phone to complete this reservation.',
     };
   }
 
@@ -1811,17 +1809,59 @@ export class ParkingReservationsService {
     return this.refreshIshemaStatus(reservation, referenceId, user);
   }
 
-  async confirmFromIshemaWebhook(payload: { referenceId: string; transactionId?: string; paymentId?: string }) {
+  async confirmFromIshemaWebhook(payload: {
+    referenceId: string;
+    transactionId?: string;
+    paymentId?: string;
+    amount?: number;
+    status?: string;
+  }) {
     const reservation = await this.findByIshemaReference(payload.referenceId);
     if (!reservation) {
       this.logger.warn(`No parking reservation for Ishema reference ${payload.referenceId}`);
       return null;
     }
-    return this.markReservationPaidFromIshema(
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      return this.toPublicDetailView(reservation);
+    }
+
+    let status = payload.status;
+    let paidAmount = payload.amount != null ? toMoneyNumber(payload.amount) : null;
+    if (!isIshemaPaymentSuccess(status) || paidAmount == null || paidAmount <= 0) {
+      const statusResponse = await this.mobileMoneyPaymentService.checkTransactionStatus(payload.referenceId);
+      const outcome = this.readIshemaOutcome(statusResponse);
+      status = outcome.status;
+      paidAmount = outcome.paidAmount;
+    }
+
+    if (isIshemaPaymentFailed(status)) {
+      await this.revertUnconfirmedIshemaPayment(reservation, 'Ishema payment failed');
+      return this.toPublicDetailView(reservation);
+    }
+
+    const marked = await this.tryMarkPaidFromIshema(
       reservation,
       payload.referenceId,
       { email: 'Ishema', role: 'SYSTEM' },
+      status,
+      paidAmount,
     );
+    if (!marked) {
+      this.logger.warn(
+        `Refusing to mark parking reservation ${reservation.reservationReference} paid from webhook: status=${status} required=${toMoneyNumber(reservation.totalAmountDue)} paid=${paidAmount}`,
+      );
+    }
+    return this.toPublicDetailView(reservation);
+  }
+
+  async failFromIshemaWebhook(payload: { referenceId: string; reason?: string }) {
+    const reservation = await this.findByIshemaReference(payload.referenceId);
+    if (!reservation) {
+      this.logger.warn(`No parking reservation for failed Ishema reference ${payload.referenceId}`);
+      return null;
+    }
+    await this.revertUnconfirmedIshemaPayment(reservation, payload.reason || 'Ishema payment failed');
+    return this.toPublicDetailView(reservation);
   }
 
   private async refreshIshemaStatus(
@@ -1844,25 +1884,94 @@ export class ParkingReservationsService {
     }
 
     const statusResponse = await this.mobileMoneyPaymentService.checkTransactionStatus(ref);
-    const status = (
-      statusResponse.savedTransaction?.status ||
-      statusResponse.transaction?.status ||
-      'pending'
-    ).toLowerCase();
+    const outcome = this.readIshemaOutcome(statusResponse);
 
-    if (status === 'success') {
-      await this.markReservationPaidFromIshema(reservation, ref, user);
-    } else if (status === 'failed') {
-      if (reservation.paymentStatus === ParkingReservationPaymentStatus.PENDING_VERIFICATION) {
-        reservation.paymentStatus = ParkingReservationPaymentStatus.DUE;
-        await this.reservationRepo.save(reservation);
-      }
+    if (isIshemaPaymentFailed(outcome.status)) {
+      await this.revertUnconfirmedIshemaPayment(reservation, 'Ishema payment failed');
+      return {
+        providerStatus: 'failed',
+        reservation: await this.toPublicDetailView(reservation),
+      };
+    }
+
+    const marked = await this.tryMarkPaidFromIshema(
+      reservation,
+      ref,
+      user,
+      outcome.status,
+      outcome.paidAmount,
+    );
+    let providerStatus = outcome.status;
+    if (marked) {
+      providerStatus = 'success';
+    } else if (isIshemaPaymentSuccess(outcome.status)) {
+      providerStatus = 'amount_mismatch';
+      this.logger.warn(
+        `Ishema reported success for ${reservation.reservationReference} but amount mismatch required=${toMoneyNumber(reservation.totalAmountDue)} paid=${outcome.paidAmount}`,
+      );
     }
 
     return {
-      providerStatus: status,
+      providerStatus,
       reservation: await this.toPublicDetailView(reservation),
     };
+  }
+
+  private readIshemaOutcome(response?: {
+    savedTransaction?: { status?: string; amount?: number };
+    transaction?: { status?: string; amount?: number };
+    status?: string;
+    amount?: number;
+  }): { status: string; paidAmount: number | null } {
+    const status = String(
+      response?.savedTransaction?.status ||
+        response?.transaction?.status ||
+        response?.status ||
+        'pending',
+    ).toLowerCase();
+    const raw =
+      response?.savedTransaction?.amount ??
+      response?.transaction?.amount ??
+      response?.amount;
+    if (raw == null || raw === '') {
+      return { status, paidAmount: null };
+    }
+    const paidAmount = toMoneyNumber(raw);
+    return { status, paidAmount: paidAmount > 0 ? paidAmount : null };
+  }
+
+  private async tryMarkPaidFromIshema(
+    reservation: ParkingReservation,
+    referenceId: string,
+    user: AuthUser,
+    providerStatus: unknown,
+    paidAmount: number | null,
+  ): Promise<boolean> {
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      return true;
+    }
+    if (
+      !canMarkParkingReservationPaidFromIshema({
+        providerStatus,
+        requiredAmount: reservation.totalAmountDue,
+        paidAmount,
+      })
+    ) {
+      return false;
+    }
+    await this.markReservationPaidFromIshema(reservation, referenceId, user, paidAmount as number);
+    return true;
+  }
+
+  private async revertUnconfirmedIshemaPayment(reservation: ParkingReservation, reason: string) {
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
+      return;
+    }
+    if (reservation.paymentStatus === ParkingReservationPaymentStatus.PENDING_VERIFICATION) {
+      reservation.paymentStatus = ParkingReservationPaymentStatus.DUE;
+      reservation.paymentNotes = reason;
+      await this.reservationRepo.save(reservation);
+    }
   }
 
   private async findByIshemaReference(referenceId: string) {
@@ -1877,6 +1986,7 @@ export class ParkingReservationsService {
     reservation: ParkingReservation,
     referenceId: string,
     user: AuthUser,
+    paidAmount: number,
   ) {
     if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
       if (reservation.status !== ParkingReservationStatus.APPROVED) {
@@ -1889,7 +1999,7 @@ export class ParkingReservationsService {
 
     reservation.paymentStatus = ParkingReservationPaymentStatus.PAID;
     reservation.paidAt = new Date();
-    reservation.paidAmount = toMoneyNumber(reservation.totalAmountDue);
+    reservation.paidAmount = toMoneyNumber(paidAmount);
     reservation.paymentMethod = ParkingReservationPaymentMethod.MOBILE_MONEY;
     reservation.paymentReference = referenceId;
     if (reservation.status !== ParkingReservationStatus.APPROVED) {

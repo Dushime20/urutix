@@ -180,6 +180,44 @@ export function toMoneyNumber(value: unknown): number {
   return Number.isFinite(parsed) ? roundMoney(parsed) : 0;
 }
 
+export function isIshemaPaymentSuccess(status: unknown): boolean {
+  const normalized = String(status || '').trim().toLowerCase();
+  return normalized === 'success' || normalized === 'completed';
+}
+
+export function isIshemaPaymentFailed(status: unknown): boolean {
+  const normalized = String(status || '').trim().toLowerCase();
+  return normalized === 'failed' || normalized === 'failure' || normalized === 'rejected';
+}
+
+/** Ishema MoMo settles whole RWF, so compare the charged amount in whole units. */
+export function ishemaRwfAmount(value: unknown): number {
+  return Math.round(toMoneyNumber(value));
+}
+
+export function ishemaPaidAmountMatchesRequired(
+  requiredAmount: unknown,
+  paidAmount: unknown,
+): boolean {
+  if (requiredAmount == null || paidAmount == null || paidAmount === '') {
+    return false;
+  }
+  const required = ishemaRwfAmount(requiredAmount);
+  const paid = ishemaRwfAmount(paidAmount);
+  return required > 0 && paid > 0 && required === paid;
+}
+
+export function canMarkParkingReservationPaidFromIshema(input: {
+  providerStatus: unknown;
+  requiredAmount: unknown;
+  paidAmount: unknown;
+}): boolean {
+  return (
+    isIshemaPaymentSuccess(input.providerStatus) &&
+    ishemaPaidAmountMatchesRequired(input.requiredAmount, input.paidAmount)
+  );
+}
+
 export function isValidIso4217Currency(code: string): boolean {
   return /^[A-Z]{3}$/.test((code || '').trim());
 }

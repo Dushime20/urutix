@@ -42,12 +42,13 @@ export function ParkingIshemaPayModal({
           ? await parkingApi.guestPayStatus({ ...lookup, referenceId })
           : await parkingApi.payStatus(reservationId!, referenceId);
         if (cancelled) return;
-        if (result.providerStatus === 'success') {
+        const paid = result.reservation?.payment?.status === 'PAID';
+        if (result.providerStatus === 'success' && paid) {
           setStep('success');
           onPaid(result.reservation);
           return;
         }
-        if (result.providerStatus === 'failed') {
+        if (result.providerStatus === 'failed' || result.providerStatus === 'amount_mismatch') {
           setStep('failed');
         }
       } catch {
@@ -88,7 +89,7 @@ export function ParkingIshemaPayModal({
         ? await parkingApi.guestPayNow({ ...lookup, phoneNumber: phoneNumber.trim() })
         : await parkingApi.payNow(reservationId!, phoneNumber.trim());
       setReferenceId(result.referenceId);
-      if (result.providerStatus === 'success') {
+      if (result.providerStatus === 'success' && result.reservation?.payment?.status === 'PAID') {
         setStep('success');
         onPaid(result.reservation);
         toast.success('Payment confirmed. Your reservation is approved.');

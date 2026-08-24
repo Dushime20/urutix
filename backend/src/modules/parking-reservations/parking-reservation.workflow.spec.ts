@@ -3,6 +3,7 @@ import {
   addMonths,
   calculateParkingFeeQuote,
   calculateReservationFeeAmount,
+  canMarkParkingReservationPaidFromIshema,
   canTransition,
   effectivePaymentStatus,
   feeSchedulePeriodsOverlap,
@@ -10,9 +11,12 @@ import {
   formatReservationReference,
   hasSufficientCapacity,
   invoiceNumberFor,
+  isIshemaPaymentFailed,
+  isIshemaPaymentSuccess,
   isValidMcNumber,
   isValidPhone,
   isValidUsdotNumber,
+  ishemaPaidAmountMatchesRequired,
   periodsOverlap,
   resolvePaymentDueAt,
   toDateString,
@@ -173,5 +177,43 @@ describe('parking reservation workflow', () => {
     expect(effectivePaymentStatus('DUE', new Date(Date.now() - 60_000))).toBe('OVERDUE');
     expect(effectivePaymentStatus('DUE', new Date(Date.now() + 60_000))).toBe('DUE');
     expect(effectivePaymentStatus('PAID', new Date(Date.now() - 60_000))).toBe('PAID');
+  });
+
+  it('marks an Ishema parking payment paid only on success with matching amount', () => {
+    expect(isIshemaPaymentSuccess('success')).toBe(true);
+    expect(isIshemaPaymentSuccess('pending')).toBe(false);
+    expect(isIshemaPaymentFailed('failed')).toBe(true);
+    expect(ishemaPaidAmountMatchesRequired(15000, 15000)).toBe(true);
+    expect(ishemaPaidAmountMatchesRequired(15000.4, 15000)).toBe(true);
+    expect(ishemaPaidAmountMatchesRequired(15000, 14000)).toBe(false);
+    expect(ishemaPaidAmountMatchesRequired(15000, null)).toBe(false);
+    expect(
+      canMarkParkingReservationPaidFromIshema({
+        providerStatus: 'success',
+        requiredAmount: 25000,
+        paidAmount: 25000,
+      }),
+    ).toBe(true);
+    expect(
+      canMarkParkingReservationPaidFromIshema({
+        providerStatus: 'pending',
+        requiredAmount: 25000,
+        paidAmount: 25000,
+      }),
+    ).toBe(false);
+    expect(
+      canMarkParkingReservationPaidFromIshema({
+        providerStatus: 'success',
+        requiredAmount: 25000,
+        paidAmount: 20000,
+      }),
+    ).toBe(false);
+    expect(
+      canMarkParkingReservationPaidFromIshema({
+        providerStatus: 'failed',
+        requiredAmount: 25000,
+        paidAmount: 25000,
+      }),
+    ).toBe(false);
   });
 });
