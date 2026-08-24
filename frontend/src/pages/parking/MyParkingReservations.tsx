@@ -1,14 +1,16 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../../components/EnliteUI/Tables';
 import { parkingApi } from '../../services/parkingApi';
 import { PARKING_STATUS_LABELS, type ParkingReservation } from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
 import { getApiErrorMessage } from '../../config/errorMessages';
+import { ParkingReservationDetailsModal } from '../../components/parking/ParkingReservationDetailsModal';
 
 const MyParkingReservations = ({ basePath = '/dashboard/parking-reservations' }: { basePath?: string }) => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const query = useQuery({
     queryKey: ['my-parking-reservations'],
     queryFn: () => parkingApi.list({ page: 1, limit: 50, sortBy: 'createdAt', sortDir: 'DESC' }),
@@ -32,8 +34,10 @@ const MyParkingReservations = ({ basePath = '/dashboard/parking-reservations' }:
     { key: 'updatedAt', label: 'Last Updated', render: (v) => new Date(v as string).toLocaleDateString() },
   ], []);
 
+  const openDetails = (rowId: string) => navigate(`${basePath}/${rowId}`);
+
   const rowActions: TableAction<ParkingReservation>[] = [
-    { label: 'View Details', onClick: (row) => navigate(`${basePath}/${row.id}`) },
+    { label: 'View Details', onClick: (row) => openDetails(row.id) },
   ];
 
   return (
@@ -51,8 +55,14 @@ const MyParkingReservations = ({ basePath = '/dashboard/parking-reservations' }:
         searchable
         searchPlaceholder="Search reservations"
         rowActions={rowActions}
+        onRowClick={(row) => openDetails(row.id)}
         emptyMessage="You have not submitted any parking reservations yet"
         ariaLabel="My parking reservations"
+      />
+      <ParkingReservationDetailsModal
+        open={!!id}
+        reservationId={id}
+        onClose={() => navigate(basePath)}
       />
     </div>
   );

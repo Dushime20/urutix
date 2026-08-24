@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList, CheckCircle2, Clock, AlertTriangle, XCircle, CalendarDays } from 'lucide-react';
 import { StatCard } from '../../components/EnliteUI';
@@ -12,9 +12,11 @@ import { countryDisplayName } from '../../lib/countries';
 import { usePermission } from '../../contexts/PermissionContext';
 import { useParkingMoney } from '../../hooks/useParkingMoney';
 import CurrencySelector from '../../components/common/CurrencySelector';
+import { ParkingReservationDetailsModal } from '../../components/parking/ParkingReservationDetailsModal';
 
 const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservations' }: { basePath?: string }) => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { can } = usePermission();
   const { money } = useParkingMoney();
   const [search, setSearch] = useState('');
@@ -130,8 +132,10 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
     },
   ], [money]);
 
+  const openDetails = (rowId: string) => navigate(`${basePath}/${rowId}`);
+
   const rowActions: TableAction<ParkingReservation>[] = [
-    { label: 'View Details', onClick: (row) => navigate(`${basePath}/${row.id}`) },
+    { label: 'View Details', onClick: (row) => openDetails(row.id) },
   ];
 
   return (
@@ -204,8 +208,15 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
         page={page}
         onPageChange={setPage}
         rowActions={rowActions}
+        onRowClick={(row) => openDetails(row.id)}
         emptyMessage="No parking reservations found"
         ariaLabel="Parking reservations"
+      />
+
+      <ParkingReservationDetailsModal
+        open={!!id}
+        reservationId={id}
+        onClose={() => navigate(basePath)}
       />
     </div>
   );

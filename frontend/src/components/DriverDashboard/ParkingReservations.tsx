@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ParkingSquare, Plus, Clock, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -14,6 +14,7 @@ import {
 import { ParkingReservationForm } from '../parking/ParkingReservationForm';
 import { ParkingActivityTimeline } from '../parking/ParkingActivityTimeline';
 import { ParkingIshemaPayModal } from '../parking/ParkingIshemaPayModal';
+import { ParkingReservationDetailsModal } from '../parking/ParkingReservationDetailsModal';
 import { TranslatedText } from '../translated-text';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import { Modal } from '../EnliteUI';
@@ -37,6 +38,7 @@ const statusTone = (status: string) => {
 
 export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver }) => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [responseText, setResponseText] = useState('');
@@ -266,6 +268,11 @@ export const ParkingReservations: React.FC<ParkingReservationsProps> = ({ driver
           }}
         />
       )}
+      <ParkingReservationDetailsModal
+        open={!!id}
+        reservationId={id}
+        onClose={() => navigate('/dashboard/driver/parking')}
+      />
     </div>
   );
 };

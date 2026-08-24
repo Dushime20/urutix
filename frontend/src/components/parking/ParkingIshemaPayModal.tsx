@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { FaSpinner } from 'react-icons/fa';
-import { CheckCircle, Smartphone, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { FaShieldAlt, FaTimes } from 'react-icons/fa';
+import { CheckCircle, Smartphone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
@@ -8,6 +9,11 @@ import { formatParkingMoney, type ParkingReservation } from '../../types/parking
 import { TranslatedText } from '../translated-text';
 
 type Step = 'form' | 'waiting' | 'success' | 'failed';
+type PaymentMethod = 'card' | 'mobile_money';
+
+const inputClass =
+  'w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white';
+const labelClass = 'block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2';
 
 export function ParkingIshemaPayModal({
   open,
@@ -25,13 +31,36 @@ export function ParkingIshemaPayModal({
   onPaid: (reservation: ParkingReservation) => void;
 }) {
   const [step, setStep] = useState<Step>('form');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [mobileProvider, setMobileProvider] = useState('mtn');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [cvv, setCvv] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [referenceId, setReferenceId] = useState<string | undefined>();
 
   const payment = reservation.payment;
   const amount = payment?.totalAmount || 0;
   const currency = payment?.currency || 'RWF';
+  const formattedTotal = formatParkingMoney(amount, currency);
+
+  useEffect(() => {
+    if (!open) return;
+    setStep('form');
+    setPaymentMethod('mobile_money');
+    setPhoneNumber(reservation.companyPhone || '');
+    setMobileProvider('mtn');
+    setCardNumber('');
+    setCardName('');
+    setExpiryDate('');
+    setCvv('');
+    setReferenceId(undefined);
+    setSubmitting(false);
+    // Reset only when the modal opens, not when the reservation object identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     if (!open || step !== 'waiting' || !referenceId) return undefined;
@@ -68,7 +97,7 @@ export function ParkingIshemaPayModal({
     // Intentionally omit onPaid so polling is not reset on each parent render.
   }, [open, step, referenceId, lookup, reservationId]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
   const resetAndClose = () => {
     setStep('form');
@@ -79,10 +108,21 @@ export function ParkingIshemaPayModal({
   };
 
   const startPayment = async () => {
-    if (phoneNumber.replace(/\D/g, '').length < 9) {
-      toast.error('Enter the mobile money phone number that will approve this payment.');
+    if (paymentMethod === 'card') {
+      if (!cardNumber || !cardName || !expiryDate || !cvv) {
+        toast.error('Please fill in all card details');
+        return;
+      }
+      toast.error('Parking reservation fees are paid with Ishema mobile money. Select Mobile Money to continue.');
+      setPaymentMethod('mobile_money');
       return;
     }
+
+    if (phoneNumber.replace(/\D/g, '').length < 9) {
+      toast.error('Please enter your phone number');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const result = lookup
@@ -105,89 +145,326 @@ export function ParkingIshemaPayModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-800">
-            <TranslatedText text="Pay now" />
-          </h2>
-          <button type="button" onClick={resetAndClose} className="text-slate-400 hover:text-slate-700">
-            <X size={18} />
-          </button>
+  const summaryRows = [
+    { label: 'Reservation', value: reservation.reservationReference },
+    { label: 'Location', value: reservation.facilityName || reservation.locationLabel || '—' },
+    { label: 'Company', value: reservation.companyName },
+    {
+      label: 'Spaces',
+      value: `${reservation.truckSpacesRequested} space${reservation.truckSpacesRequested === 1 ? '' : 's'}`,
+    },
+    {
+      label: 'Duration',
+      value: `${reservation.contractMonths} month${reservation.contractMonths === 1 ? '' : 's'}`,
+    },
+    ...(payment
+      ? [
+          { label: 'Occupancy', value: formatParkingMoney(payment.occupancyAmount, currency) },
+          { label: 'Reservation fee', value: formatParkingMoney(payment.reservationFeeAmount, currency) },
+          {
+            label: `Tax / VAT (${payment.taxPercent}%)`,
+            value: formatParkingMoney(payment.taxAmount, currency),
+          },
+        ]
+      : []),
+  ];
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
+        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex items-start sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                <TranslatedText text="Complete Your Purchase" />
+              </h2>
+              <p className="text-sm text-slate-500 mt-1 truncate">
+                {reservation.reservationReference}
+                {reservation.facilityName ? ` · ${reservation.facilityName}` : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={resetAndClose}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors shrink-0"
+            >
+              <FaTimes className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="px-5 py-6">
+        <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
           {step === 'form' && (
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-slate-600">
-                Reservation {reservation.reservationReference} is confirmed. Pay{' '}
-                <span className="font-black text-slate-900">{formatParkingMoney(amount, currency)}</span> with Ishema mobile money to complete approval.
-              </p>
-              <label className="block">
-                <span className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Mobile money number</span>
-                <input
-                  className="w-full px-4 py-2.5 text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl"
-                  placeholder="078xxxxxxx"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={startPayment}
-                className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 rounded-xl text-[11px] disabled:opacity-50"
-              >
-                {submitting ? <FaSpinner className="inline animate-spin" /> : <TranslatedText text="Pay with Ishema" />}
-              </button>
-            </div>
+            <>
+              <div className="bg-blue-50 dark:bg-blue-900/10 rounded-2xl p-4 sm:p-6 border border-blue-100 dark:border-blue-800">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                  <TranslatedText text="Order Summary" />
+                </h3>
+                <div className="space-y-3">
+                  {summaryRows.map((row) => (
+                    <div key={row.label} className="flex items-start justify-between gap-3">
+                      <span className="text-sm text-slate-600 dark:text-slate-400 shrink-0">{row.label}:</span>
+                      <span className="font-bold text-slate-900 dark:text-white text-right break-words">{row.value}</span>
+                    </div>
+                  ))}
+                  <div className="pt-3 border-t border-blue-200 dark:border-blue-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <span className="text-base font-black text-slate-900 dark:text-white">
+                        <TranslatedText text="Total Amount:" />
+                      </span>
+                      <span className="text-xl sm:text-2xl font-black text-[#345E85] dark:text-blue-400 break-all">
+                        {formattedTotal}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4">
+                  <TranslatedText text="Payment Method" />
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('card')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'card'
+                        ? 'border-[#345E85] bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">💳</div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
+                        <TranslatedText text="Credit Card" />
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('mobile_money')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'mobile_money'
+                        ? 'border-[#345E85] bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">📱</div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
+                        <TranslatedText text="Mobile Money" />
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {paymentMethod === 'card' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClass}>
+                      <TranslatedText text="Card Number" />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="1234 5678 9012 3456"
+                      maxLength={19}
+                      value={cardNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\s/g, '');
+                        const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                        setCardNumber(formatted);
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      <TranslatedText text="Cardholder Name" />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="John Doe"
+                      value={cardName}
+                      onChange={(e) => setCardName(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelClass}>
+                        <TranslatedText text="Expiry Date" />
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="MM/YY"
+                        maxLength={5}
+                        value={expiryDate}
+                        onChange={(e) => {
+                          let value = e.target.value.replace(/\D/g, '');
+                          if (value.length >= 2) {
+                            value = `${value.slice(0, 2)}/${value.slice(2, 4)}`;
+                          }
+                          setExpiryDate(value);
+                        }}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>
+                        <TranslatedText text="CVV" />
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="123"
+                        maxLength={4}
+                        value={cvv}
+                        onChange={(e) => setCvv(e.target.value.replace(/\D/g, ''))}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === 'mobile_money' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className={labelClass}>
+                      <TranslatedText text="Mobile Provider" />
+                    </label>
+                    <select
+                      value={mobileProvider}
+                      onChange={(e) => setMobileProvider(e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="mtn">MTN Mobile Money</option>
+                      <option value="airtel">Airtel Money</option>
+                      <option value="tigo">Tigo Cash</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      <TranslatedText text="Phone Number" />
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+250 788 123 456"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className={inputClass}
+                    />
+                    <p className="text-xs text-slate-500 mt-2">
+                      <TranslatedText text="You will receive a prompt on your phone to confirm the payment" />
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-start gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                <FaShieldAlt className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                    <TranslatedText text="Secure Payment" />
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    <TranslatedText text="Your payment information is encrypted and secure. We never store your card details." />
+                  </p>
+                </div>
+              </div>
+            </>
           )}
 
           {step === 'waiting' && (
-            <div className="text-center space-y-4 py-4">
-              <div className="mx-auto w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center text-primary-700">
-                <Smartphone size={24} />
+            <div className="text-center space-y-4 py-8">
+              <div className="mx-auto w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-[#345E85]">
+                <Smartphone size={28} />
               </div>
-              <h3 className="text-lg font-black text-slate-900">Approve on your phone</h3>
-              <p className="text-sm font-medium text-slate-500">
-                Ishema sent a payment prompt of {formatParkingMoney(amount, currency)}. Enter your PIN to approve. This page will update when the payment succeeds.
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                <TranslatedText text="Approve on your phone" />
+              </h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                Ishema sent a payment prompt of {formattedTotal}. Enter your PIN to approve. This page will update when the payment succeeds.
               </p>
-              <FaSpinner className="inline animate-spin text-primary-600" />
+              <div className="w-8 h-8 mx-auto border-2 border-[#345E85] border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
           {step === 'success' && (
-            <div className="text-center space-y-4 py-4">
-              <div className="mx-auto w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <CheckCircle size={28} />
+            <div className="text-center space-y-4 py-8">
+              <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600">
+                <CheckCircle size={32} />
               </div>
-              <h3 className="text-lg font-black text-slate-900">Payment successful</h3>
-              <p className="text-sm font-medium text-slate-500">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                <TranslatedText text="Payment successful" />
+              </h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">
                 Ishema confirmed the payment. Reservation {reservation.reservationReference} is now approved and paid.
               </p>
-              <button type="button" onClick={resetAndClose} className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 rounded-xl text-[11px]">
-                Done
-              </button>
             </div>
           )}
 
           {step === 'failed' && (
-            <div className="text-center space-y-4 py-4">
-              <p className="text-sm font-medium text-slate-600">
+            <div className="text-center space-y-4 py-8">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                <TranslatedText text="Payment not completed" />
+              </h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">
                 The Ishema payment was not completed. You can try again with the same or another mobile money number.
               </p>
-              <button
-                type="button"
-                onClick={() => setStep('form')}
-                className="w-full bg-primary-600 text-white font-black uppercase tracking-widest py-3 rounded-xl text-[11px]"
-              >
-                Try again
-              </button>
             </div>
           )}
         </div>
+
+        <div className="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3">
+          {step === 'success' ? (
+            <button
+              type="button"
+              onClick={resetAndClose}
+              className="px-6 sm:px-8 py-3 text-sm font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white shadow-md hover:shadow-lg rounded-xl transition-all uppercase tracking-wider w-full sm:w-auto text-center sm:ml-auto"
+            >
+              <TranslatedText text="Done" />
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={resetAndClose}
+                className="px-6 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-all w-full sm:w-auto"
+              >
+                <TranslatedText text="Cancel" />
+              </button>
+              {step === 'failed' ? (
+                <button
+                  type="button"
+                  onClick={() => setStep('form')}
+                  className="px-6 sm:px-8 py-3 text-sm font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white shadow-md hover:shadow-lg rounded-xl transition-all uppercase tracking-wider w-full sm:w-auto text-center"
+                >
+                  <TranslatedText text="Try again" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startPayment}
+                  disabled={submitting || step === 'waiting'}
+                  className="px-6 sm:px-8 py-3 text-sm font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white shadow-md hover:shadow-lg rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider w-full sm:w-auto text-center"
+                >
+                  {submitting || step === 'waiting' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <TranslatedText text="Processing..." />
+                    </span>
+                  ) : (
+                    `Pay ${formattedTotal}`
+                  )}
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

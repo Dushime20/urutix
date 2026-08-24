@@ -16,7 +16,8 @@ import {
   isValidMcNumber,
   isValidPhone,
   isValidUsdotNumber,
-  ishemaPaidAmountMatchesRequired,
+    ishemaPaidAmountMatchesRequired,
+  resolveIshemaPaidAmount,
   periodsOverlap,
   resolvePaymentDueAt,
   toDateString,
@@ -201,6 +202,8 @@ describe('parking reservation workflow', () => {
         paidAmount: 25000,
       }),
     ).toBe(false);
+    expect(isIshemaPaymentSuccess('successful')).toBe(true);
+    expect(isIshemaPaymentSuccess('paid')).toBe(true);
     expect(
       canMarkParkingReservationPaidFromIshema({
         providerStatus: 'success',
@@ -215,5 +218,19 @@ describe('parking reservation workflow', () => {
         paidAmount: 25000,
       }),
     ).toBe(false);
+    expect(
+      resolveIshemaPaidAmount({
+        providerStatus: 'success',
+        paidAmount: null,
+        requestedAmount: 184800,
+      }),
+    ).toBe(184800);
+    expect(
+      resolveIshemaPaidAmount({
+        providerStatus: 'pending',
+        paidAmount: null,
+        requestedAmount: 184800,
+      }),
+    ).toBeNull();
   });
 });

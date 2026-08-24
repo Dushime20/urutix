@@ -182,7 +182,12 @@ export function toMoneyNumber(value: unknown): number {
 
 export function isIshemaPaymentSuccess(status: unknown): boolean {
   const normalized = String(status || '').trim().toLowerCase();
-  return normalized === 'success' || normalized === 'completed';
+  return (
+    normalized === 'success' ||
+    normalized === 'successful' ||
+    normalized === 'completed' ||
+    normalized === 'paid'
+  );
 }
 
 export function isIshemaPaymentFailed(status: unknown): boolean {
@@ -205,6 +210,26 @@ export function ishemaPaidAmountMatchesRequired(
   const required = ishemaRwfAmount(requiredAmount);
   const paid = ishemaRwfAmount(paidAmount);
   return required > 0 && paid > 0 && required === paid;
+}
+
+/**
+ * Prefer the amount Ishema reported. If the provider confirms success but
+ * omits amount, use the amount we requested — that is the charge that settled.
+ */
+export function resolveIshemaPaidAmount(input: {
+  providerStatus: unknown;
+  paidAmount: unknown;
+  requestedAmount: unknown;
+}): number | null {
+  if (input.paidAmount != null && input.paidAmount !== '') {
+    const paid = ishemaRwfAmount(input.paidAmount);
+    if (paid > 0) return paid;
+  }
+  if (isIshemaPaymentSuccess(input.providerStatus) && input.requestedAmount != null && input.requestedAmount !== '') {
+    const requested = ishemaRwfAmount(input.requestedAmount);
+    return requested > 0 ? requested : null;
+  }
+  return null;
 }
 
 export function canMarkParkingReservationPaidFromIshema(input: {

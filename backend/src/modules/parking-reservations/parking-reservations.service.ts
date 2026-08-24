@@ -68,6 +68,7 @@ import {
   canMarkParkingReservationPaidFromIshema,
   isIshemaPaymentFailed,
   isIshemaPaymentSuccess,
+  resolveIshemaPaidAmount,
 } from './parking-reservation.workflow';
 import {
   normalizeCountryCode,
@@ -1313,10 +1314,11 @@ export class ParkingReservationsService {
   }
 
   async lookup(dto: LookupParkingReservationDto) {
-    const reservation = await this.findByReferenceAndEmail(dto.reservationReference, dto.email);
+    let reservation = await this.findByReferenceAndEmail(dto.reservationReference, dto.email);
     if (!reservation) {
       throw new NotFoundException('No reservation was found for that reference and email.');
     }
+    reservation = await this.syncPendingIshemaPayment(reservation);
     return this.toPublicDetailView(reservation);
   }
 
@@ -1463,8 +1465,9 @@ export class ParkingReservationsService {
 
   async findOne(id: string, user: AuthUser) {
     const actor = await this.resolveActor(user);
-    const reservation = await this.loadReservation(id);
+    let reservation = await this.loadReservation(id);
     this.assertCanView(reservation, actor);
+    reservation = await this.syncPendingIshemaPayment(reservation);
     const activities = await this.activityRepo.find({
       where: { reservationId: reservation.id },
       order: { createdAt: 'ASC' },
@@ -1939,10 +1942,13 @@ export class ParkingReservationsService {
         response?.status ||
         'pending',
     ).toLowerCase();
+    const extra = response as Record<string, any> | undefined;
     const raw =
       response?.savedTransaction?.amount ??
       response?.transaction?.amount ??
-      response?.amount;
+      response?.amount ??
+      extra?.data?.amount ??
+      extra?.paidAmount;
     if (raw == null || !Number.isFinite(Number(raw))) {
       return { status, paidAmount: null };
     }
@@ -1960,17 +1966,49 @@ export class ParkingReservationsService {
     if (reservation.paymentStatus === ParkingReservationPaymentStatus.PAID) {
       return true;
     }
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    const resolvedPaid = resolveIshemaPaidAmount({
+      providerStatus,
+      paidAmount,
+      requestedAmount: snapshot.ishemaRequestedAmount ?? reservation.totalAmountDue,
+    });
     if (
       !canMarkParkingReservationPaidFromIshema({
         providerStatus,
         requiredAmount: reservation.totalAmountDue,
-        paidAmount,
+        paidAmount: resolvedPaid,
       })
     ) {
       return false;
     }
-    await this.markReservationPaidFromIshema(reservation, referenceId, user, paidAmount as number);
+    await this.markReservationPaidFromIshema(reservation, referenceId, user, resolvedPaid as number);
     return true;
+  }
+
+  private async syncPendingIshemaPayment(reservation: ParkingReservation): Promise<ParkingReservation> {
+    const status = reservation.paymentStatus;
+    if (
+      status === ParkingReservationPaymentStatus.PAID ||
+      status === ParkingReservationPaymentStatus.WAIVED ||
+      status === ParkingReservationPaymentStatus.NOT_APPLICABLE ||
+      status === ParkingReservationPaymentStatus.CANCELLED
+    ) {
+      return reservation;
+    }
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    const ref = reservation.paymentReference || snapshot.ishemaReferenceId;
+    if (!ref || typeof ref !== 'string') {
+      return reservation;
+    }
+    try {
+      await this.refreshIshemaStatus(reservation, ref, { email: 'ishema@system', role: 'SYSTEM' });
+      return this.loadReservation(reservation.id);
+    } catch (error) {
+      this.logger.warn(
+        `Could not auto-confirm Ishema payment for ${reservation.reservationReference}: ${(error as Error).message}`,
+      );
+      return reservation;
+    }
   }
 
   private async revertUnconfirmedIshemaPayment(reservation: ParkingReservation, reason: string) {

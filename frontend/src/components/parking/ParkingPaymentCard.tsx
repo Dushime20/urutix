@@ -37,6 +37,11 @@ export function ParkingPaymentCard({
   const currency = source.currency || 'USD';
   const total = 'totalAmount' in source ? source.totalAmount : 0;
   const open = isParkingPaymentOpen(status);
+  const ishemaPending = status === 'PENDING_VERIFICATION' || payment?.paymentMethod === 'MOBILE_MONEY';
+  const showManualForm =
+    !!onSubmit &&
+    !ishemaPending &&
+    (open || (staff && status !== 'PAID' && status !== 'WAIVED' && status !== 'NOT_APPLICABLE'));
   const lines = payment?.lineItems?.length ? payment.lineItems : quote?.lineItems || [];
   const display = (amount?: number | null) =>
     convertDisplay ? money(amount, currency) : formatParkingMoney(amount, currency);
@@ -84,7 +89,13 @@ export function ParkingPaymentCard({
         </p>
       )}
 
-      {onSubmit && (open || (staff && status !== 'PAID' && status !== 'WAIVED' && status !== 'NOT_APPLICABLE')) && (
+      {(status === 'PENDING_VERIFICATION' || (open && payment?.paymentMethod === 'MOBILE_MONEY')) && (
+        <p className="text-sm font-semibold text-slate-600 mb-2">
+          Mobile money payments are received automatically when Ishema confirms success and the paid amount matches the invoice. No staff confirmation is required.
+        </p>
+      )}
+
+      {showManualForm && onSubmit && (
         <PaymentForm
           staff={staff}
           pending={status === 'PENDING_VERIFICATION'}

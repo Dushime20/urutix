@@ -103,7 +103,6 @@ const AdminParkingReservations = lazy(() => import('./pages/admin/AdminParkingRe
 const ParkingReservationPage = lazy(() => import('./pages/ParkingReservation'));
 const ParkingReservationLookupPage = lazy(() => import('./pages/ParkingReservationLookup'));
 const ParkingReservationsDashboard = lazy(() => import('./pages/parking/ParkingReservationsDashboard'));
-const ParkingReservationDetails = lazy(() => import('./pages/parking/ParkingReservationDetails'));
 const ParkingFeeSettings = lazy(() => import('./pages/parking/ParkingFeeSettings'));
 const MyParkingReservations = lazy(() => import('./pages/parking/MyParkingReservations'));
 const OperationalParkingReservations = lazy(() => import('./pages/admin-operational/ParkingReservations'));
@@ -372,7 +371,7 @@ function App() {
                       <Route path="dispute-resolution/:tripId" element={<DisputeResolution />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
                       <Route path="parking-reservations" element={<MyParkingReservations basePath="/dashboard/parking-reservations" />} />
-                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/dashboard/parking-reservations" />} />
+                      <Route path="parking-reservations/:id" element={<MyParkingReservations basePath="/dashboard/parking-reservations" />} />
                       <Route path="support" element={<UserSupportPage />} />
                       <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
@@ -491,7 +490,7 @@ function App() {
                       <Route path="trip-tracking/:tripId" element={<TripTracking />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
                       <Route path="parking-reservations" element={<MyParkingReservations basePath="/dashboard/fleet/parking-reservations" />} />
-                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/dashboard/fleet/parking-reservations" />} />
+                      <Route path="parking-reservations/:id" element={<MyParkingReservations basePath="/dashboard/fleet/parking-reservations" />} />
                       <Route path="support" element={<UserSupportPage />} />
                       <Route path="support/new" element={<UserSupportPage />} />
                     </Route>
@@ -532,7 +531,7 @@ function App() {
                       <Route path="settings" element={<DriverDashboard />} />
                       <Route path="parking" element={<DriverDashboard />} />
                       <Route path="parking-reservations" element={<DriverDashboard />} />
-                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/dashboard/driver/parking" />} />
+                      <Route path="parking-reservations/:id" element={<DriverDashboard />} />
                       <Route path="support" element={<DriverHelpSupport />} />
                       <Route path="ratings" element={<UnifiedReputationManagement />} />
                       <Route path="rewards" element={<UnifiedReputationManagement />} />
@@ -685,7 +684,7 @@ function App() {
                       <Route path="support" element={<TenantSupportCenter />} />
                       <Route path="support/analytics" element={<SupportAnalyticsDashboard onBack={() => window.history.back()} />} />
                       <Route path="parking-reservations" element={<ParkingReservationsDashboard basePath="/tenant-admin/parking-reservations" />} />
-                      <Route path="parking-reservations/:id" element={<ParkingReservationDetails listPath="/tenant-admin/parking-reservations" />} />
+                      <Route path="parking-reservations/:id" element={<ParkingReservationsDashboard basePath="/tenant-admin/parking-reservations" />} />
                     </Route>
 
                     {/* Lender Routes */}
@@ -759,7 +758,7 @@ function App() {
                     <Route path="/dashboard/parking" element={<ParkingLayout />}>
                       <Route index element={<Navigate to="reservations" replace />} />
                       <Route path="reservations" element={<ParkingReservationsDashboard />} />
-                      <Route path="reservations/:id" element={<ParkingReservationDetails />} />
+                      <Route path="reservations/:id" element={<ParkingReservationsDashboard />} />
                       <Route path="fees" element={<ParkingFeeSettings />} />
                     </Route>
 
