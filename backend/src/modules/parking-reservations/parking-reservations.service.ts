@@ -1739,25 +1739,73 @@ export class ParkingReservationsService {
       throw new BadRequestException('There is no amount due for this reservation.');
     }
 
-    const platformPhone = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
-    if (!platformPhone) {
-      throw new BadRequestException('Mobile money collection is not configured.');
+    const platformPhoneRaw = this.configService.get<string>('MOBILE_MONEY_ACCOUNT_PHONE');
+    if (!platformPhoneRaw) {
+      throw new BadRequestException('MOBILE_MONEY_ACCOUNT_PHONE is not configured. Cannot collect parking payment.');
+    }
+
+    const payerPhone = this.mobileMoneyPaymentService.formatPhoneNumber(phoneNumber);
+    const platformPhone = this.mobileMoneyPaymentService.formatPhoneNumber(platformPhoneRaw);
+    if (payerPhone === platformPhone) {
+      throw new BadRequestException(
+        "Use the payer's MoMo number (the phone that will pay), not the platform account number.",
+      );
+    }
+
+    const existingRef =
+      reservation.paymentReference ||
+      ((reservation.feeSnapshot || {}) as Record<string, unknown>).ishemaReferenceId;
+    if (
+      reservation.paymentStatus === ParkingReservationPaymentStatus.PENDING_VERIFICATION &&
+      typeof existingRef === 'string' &&
+      existingRef
+    ) {
+      try {
+        const existing = this.readIshemaOutcome(
+          await this.mobileMoneyPaymentService.checkTransactionStatus(existingRef),
+        );
+        if (!isIshemaPaymentFailed(existing.status) && !isIshemaPaymentSuccess(existing.status)) {
+          this.logger.log(
+            `Reusing pending parking MoMo collection ${existingRef} for ${reservation.reservationReference}`,
+          );
+          return {
+            reservation: await this.toPublicDetailView(reservation),
+            referenceId: existingRef,
+            providerStatus: 'pending',
+            amount,
+            currency: reservation.currency || 'RWF',
+            message: 'A payment prompt is already pending. Approve it on your phone.',
+          };
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Could not re-check pending parking MoMo ${existingRef}: ${(error as Error).message}`,
+        );
+      }
     }
 
     const referenceId = `PARK-${reservation.reservationReference.replace(/[^A-Z0-9]/gi, '')}-${Date.now().toString(36)}`.slice(0, 80);
-    const message = `Nova Parking 365 ${reservation.reservationReference}`;
+    const senderMessage = `Parking reservation ${reservation.reservationReference} — ${amount} RWF`.substring(0, 160);
+    const callbackUrl = this.configService.get<string>('MOBILE_MONEY_CALLBACK_URL');
+    const transfers = [{
+      percentage: 100,
+      phoneNumber: platformPhone,
+      receiverMessage: senderMessage.substring(0, 160),
+    }];
+
+    this.logger.log(
+      `Initiating parking COLLECTION: ${amount} RWF ` +
+        `| PIN popup → payer ${payerPhone} (user-entered: ${phoneNumber}) ` +
+        `| receiver ${platformPhone} | reservation: ${reservation.reservationReference} | ref: ${referenceId}`,
+    );
+
     const response = await this.mobileMoneyPaymentService.createTransaction(
       amount,
-      phoneNumber,
+      payerPhone,
       referenceId,
-      message,
-      [
-        {
-          percentage: 100,
-          phoneNumber: platformPhone,
-          receiverMessage: message.slice(0, 160),
-        },
-      ],
+      senderMessage,
+      transfers,
+      callbackUrl,
     );
     const outcome = this.readIshemaOutcome(response);
     if (isIshemaPaymentFailed(outcome.status)) {
@@ -1768,11 +1816,11 @@ export class ParkingReservationsService {
     reservation.paymentMethod = ParkingReservationPaymentMethod.MOBILE_MONEY;
     reservation.paymentReference = referenceId;
     reservation.paymentStatus = ParkingReservationPaymentStatus.PENDING_VERIFICATION;
-    reservation.paymentNotes = `Ishema collection started for ${phoneNumber}`;
+    reservation.paymentNotes = `Ishema collection started for ${payerPhone}`;
     reservation.feeSnapshot = {
       ...(reservation.feeSnapshot || {}),
       ishemaReferenceId: referenceId,
-      ishemaPhone: phoneNumber,
+      ishemaPhone: payerPhone,
       ishemaRequestedAmount: amount,
     };
     await this.reservationRepo.save(reservation);

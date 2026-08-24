@@ -15,6 +15,14 @@ const inputClass =
   'w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-[#345E85] focus:border-[#345E85] dark:text-white';
 const labelClass = 'block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2';
 
+/** Same Rwanda MoMo rules as loan repayment: MTN 078/079, Airtel 072/073. */
+function normalizeMomoPhone(raw: string): string | null {
+  let cleaned = raw.replace(/\D/g, '');
+  while (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+  if (!cleaned.startsWith('250')) cleaned = `250${cleaned}`;
+  return /^250(78|79|72|73)\d{7}$/.test(cleaned) ? cleaned : null;
+}
+
 export function ParkingIshemaPayModal({
   open,
   onClose,
@@ -84,13 +92,16 @@ export function ParkingIshemaPayModal({
         // Keep waiting; the driver may still approve the Ishema prompt.
       }
     };
-    const timer = window.setInterval(poll, 3000);
+    const start = window.setTimeout(() => {
+      if (!cancelled) void poll();
+    }, 8000);
+    const timer = window.setInterval(poll, 4000);
     const timeout = window.setTimeout(() => {
       if (!cancelled) setStep('failed');
-    }, 120000);
-    void poll();
+    }, 180000);
     return () => {
       cancelled = true;
+      window.clearTimeout(start);
       window.clearInterval(timer);
       window.clearTimeout(timeout);
     };
@@ -118,16 +129,17 @@ export function ParkingIshemaPayModal({
       return;
     }
 
-    if (phoneNumber.replace(/\D/g, '').length < 9) {
-      toast.error('Please enter your phone number');
+    const normalizedPhone = normalizeMomoPhone(phoneNumber);
+    if (!normalizedPhone) {
+      toast.error('Enter a valid Rwanda MoMo number: 078… / 079… (MTN) or 072… / 073… (Airtel)');
       return;
     }
 
     try {
       setSubmitting(true);
       const result = lookup
-        ? await parkingApi.guestPayNow({ ...lookup, phoneNumber: phoneNumber.trim() })
-        : await parkingApi.payNow(reservationId!, phoneNumber.trim());
+        ? await parkingApi.guestPayNow({ ...lookup, phoneNumber: normalizedPhone })
+        : await parkingApi.payNow(reservationId!, normalizedPhone);
       setReferenceId(result.referenceId);
       if (result.providerStatus === 'success' && result.reservation?.payment?.status === 'PAID') {
         setStep('success');
