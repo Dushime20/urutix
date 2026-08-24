@@ -1617,7 +1617,7 @@ export class PaymentsController {
 
       if (!payment) {
         if (String(callbackData.referenceId || '').startsWith('PARK-')) {
-          if (callbackData.status === 'success' || callbackData.status === 'completed') {
+          if (callbackData.status === 'success') {
             await this.mobileMoneyWebhookSettlement.settleParkingReservation({
               referenceId: callbackData.referenceId,
               amount: callbackData.amount,

@@ -1933,7 +1933,7 @@ export class ParkingReservationsService {
       response?.savedTransaction?.amount ??
       response?.transaction?.amount ??
       response?.amount;
-    if (raw == null || raw === '') {
+    if (raw == null || !Number.isFinite(Number(raw))) {
       return { status, paidAmount: null };
     }
     const paidAmount = toMoneyNumber(raw);
