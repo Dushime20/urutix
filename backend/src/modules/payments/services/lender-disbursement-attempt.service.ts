@@ -227,33 +227,44 @@ export class LenderDisbursementAttemptService {
     raw?: string;
   }> {
     const meta = (payment.metadata || {}) as Record<string, any>;
-    const candidates = [
+    const referenceIds = [
       meta.referenceId,
       payment.referenceNumber,
       meta.payoutReferenceId,
       meta.collectionReferenceId,
-      payment.transactionId,
-      meta.momoTransactionId,
     ].filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+    const uniqueRefs = [...new Set(referenceIds)];
+    const referenceSet = new Set(uniqueRefs);
 
-    const unique = [...new Set(candidates)];
+    const externalId = [
+      meta.externalId,
+      meta.momoTransactionId,
+      payment.transactionId,
+    ].find(
+      (v): v is string =>
+        typeof v === 'string' && v.trim().length > 0 && !referenceSet.has(v),
+    );
 
-    for (const ref of unique) {
+    const refsToCheck =
+      uniqueRefs.length > 0
+        ? uniqueRefs
+        : externalId
+          ? [externalId]
+          : [];
+
+    for (const ref of refsToCheck) {
       try {
-        const response = await this.mobileMoneyPaymentService.checkTransactionStatus(ref);
-        const txn = response.savedTransaction || response.transaction;
-        const raw = String(txn?.status || '').toLowerCase();
-        if (!raw) continue;
-
-        if (raw === 'success' || raw === 'successful' || raw === 'completed') {
-          return { status: 'success', raw };
-        }
-        if (raw === 'failed' || raw === 'failure' || raw === 'rejected') {
-          return { status: 'failed', raw };
-        }
-        if (raw === 'pending' || raw === 'processing' || raw === 'initiated') {
-          return { status: 'pending', raw };
-        }
+        const verified = await this.mobileMoneyPaymentService.getVerifiedTransactionOutcome(
+          ref,
+          externalId,
+        );
+        const raw = verified.status;
+        this.logger.log(
+          `Provider status for payment ${payment.id} ref=${ref}: ${raw} (source=${verified.source})`,
+        );
+        if (raw === 'success') return { status: 'success', raw };
+        if (raw === 'failed') return { status: 'failed', raw };
+        if (raw === 'pending') return { status: 'pending', raw };
         return { status: 'unknown', raw };
       } catch (err: any) {
         this.logger.warn(

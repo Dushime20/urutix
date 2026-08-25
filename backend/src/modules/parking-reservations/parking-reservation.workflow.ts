@@ -195,6 +195,51 @@ export function isIshemaPaymentFailed(status: unknown): boolean {
   return normalized === 'failed' || normalized === 'failure' || normalized === 'rejected';
 }
 
+/** USSD prompts expire quickly; after this window a GET=pending row is not a live PIN. */
+export const ISHEMA_USSD_LIVE_WINDOW_MS = 90_000;
+
+export type IshemaWebhookSettlementAction =
+  | 'settle_success'
+  | 'settle_failed'
+  | 'wait'
+  | 'prompt_undelivered';
+
+/**
+ * Ledger follows the provider GET, never the unsigned callback body.
+ * claimed=failed + GET=pending is a telco push miss (statusCode 500), not a settled failure.
+ */
+export function decideIshemaWebhookSettlement(input: {
+  claimedStatus: unknown;
+  claimedStatusCode?: number;
+  providerStatus: unknown;
+}): IshemaWebhookSettlementAction {
+  if (isIshemaPaymentSuccess(input.providerStatus)) return 'settle_success';
+  if (isIshemaPaymentFailed(input.providerStatus)) return 'settle_failed';
+  const claimedFailed = isIshemaPaymentFailed(input.claimedStatus);
+  const pushError = Number(input.claimedStatusCode) >= 500;
+  if (claimedFailed || pushError) return 'prompt_undelivered';
+  return 'wait';
+}
+
+/** Reuse a pending collection only while a PIN could still be on the phone. */
+export function shouldReusePendingIshemaCollection(input: {
+  providerStatus: unknown;
+  promptUndelivered?: boolean;
+  initiatedAt?: string | Date | null;
+  now?: Date;
+  liveWindowMs?: number;
+}): boolean {
+  if (isIshemaPaymentSuccess(input.providerStatus) || isIshemaPaymentFailed(input.providerStatus)) {
+    return false;
+  }
+  if (input.promptUndelivered) return false;
+  if (!input.initiatedAt) return false;
+  const started = new Date(input.initiatedAt).getTime();
+  if (!Number.isFinite(started)) return false;
+  const windowMs = input.liveWindowMs ?? ISHEMA_USSD_LIVE_WINDOW_MS;
+  return ((input.now ?? new Date()).getTime() - started) < windowMs;
+}
+
 /** Ishema MoMo settles whole RWF, so compare the charged amount in whole units. */
 export function ishemaRwfAmount(value: unknown): number {
   return Math.round(toMoneyNumber(value));

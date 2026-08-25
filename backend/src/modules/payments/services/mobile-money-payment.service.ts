@@ -146,8 +146,9 @@ export class MobileMoneyPaymentService {
   }
 
   /**
-   * Format phone number to ishema format: 250XXXXXXXXX (12 digits, no +).
-   * This is the number that receives the MoMo PIN / USSD popup when used as payer.
+   * Canonical Rwanda MSISDN: 250XXXXXXXXX (12 digits, no +).
+   * Use this for validation and storage. The Ishema HTTP payload uses
+   * {@link toIshemaApiPhoneNumber} (`0783544364` per CreateTransactionDto).
    */
   formatPhoneNumber(phone: string): string {
     if (!phone || typeof phone !== 'string') {
@@ -174,6 +175,25 @@ export class MobileMoneyPaymentService {
     }
 
     return cleaned;
+  }
+
+  /**
+   * Phone format required by Ishema CreateTransactionDto (example: `0783544364`).
+   * @see https://api.payment.ishema.rw/api/v3/docs/index.html
+   */
+  toIshemaApiPhoneNumber(phone: string): string {
+    const canonical = this.formatPhoneNumber(phone);
+    return `0${canonical.slice(3)}`;
+  }
+
+  extractExternalId(response?: MobileMoneyTransactionResponse | Record<string, any>): string | undefined {
+    const extra = (response || {}) as Record<string, any>;
+    const value =
+      extra.savedTransaction?.externalId ||
+      extra.transaction?.externalId ||
+      extra.externalId ||
+      extra.data?.externalId;
+    return typeof value === 'string' && value ? value : undefined;
   }
 
   /**
@@ -233,18 +253,22 @@ export class MobileMoneyPaymentService {
       );
     }
 
-    const formattedPayer = this.formatPhoneNumber(payerPhone);
+    const formattedPayer = this.toIshemaApiPhoneNumber(payerPhone);
     const networkOperator = this.detectNetworkOperator(payerPhone);
     const truncatedMessage = senderMessage.substring(0, 160);
+    const chargedAmount = Math.round(amount);
+    if (!Number.isFinite(chargedAmount) || chargedAmount < 5) {
+      throw new BadRequestException('Ishema amount must be an integer of at least 5 RWF.');
+    }
 
     const formattedTransfers: MobileMoneyTransfer[] = transfers.map((t) => ({
       percentage: t.percentage,
-      phoneNumber: this.formatPhoneNumber(t.phoneNumber),
+      phoneNumber: this.toIshemaApiPhoneNumber(t.phoneNumber),
       receiverMessage: t.receiverMessage.substring(0, 160),
     }));
 
     const payload: MobileMoneyCreateTransactionRequest = {
-      amount: Math.round(amount), // API expects whole numbers (RWF has no cents)
+      amount: chargedAmount,
       callbackUrl: callbackUrl || config.callbackUrl,
       currency: config.currency,
       phoneNumber: formattedPayer,
@@ -336,7 +360,8 @@ export class MobileMoneyPaymentService {
   }
 
   /**
-   * Check transaction status by reference ID
+   * Ishema DB copy of the transaction (GET /transaction/{referenceId}).
+   * This is not live MoPay status — use {@link getVerifiedTransactionOutcome}.
    */
   async checkTransactionStatus(
     referenceId: string,
@@ -346,7 +371,7 @@ export class MobileMoneyPaymentService {
     try {
       const response: any = await firstValueFrom(
         this.httpService.get(
-          `${config.apiUrl}/api/v3/transaction/${referenceId}?apiKey=${config.apiKey}`,
+          `${config.apiUrl}/api/v3/transaction/${encodeURIComponent(referenceId)}?apiKey=${config.apiKey}`,
           {
             headers: { accept: 'application/json' },
             timeout: 30000,
@@ -366,26 +391,97 @@ export class MobileMoneyPaymentService {
     }
   }
 
-  async getVerifiedTransactionOutcome(referenceId: string): Promise<{
+  /**
+   * Live MoPay status (GET /transaction/external/{externalId}).
+   * Official docs: "Get the current status of a transaction from MoPay using external ID".
+   */
+  async checkMopayTransactionStatus(
+    externalId: string,
+  ): Promise<MobileMoneyTransactionResponse> {
+    const config = this.getConfig();
+
+    try {
+      const response: any = await firstValueFrom(
+        this.httpService.get(
+          `${config.apiUrl}/api/v3/transaction/external/${encodeURIComponent(externalId)}?apiKey=${config.apiKey}`,
+          {
+            headers: { accept: 'application/json' },
+            timeout: 30000,
+          },
+        ) as any,
+      );
+
+      return response.data;
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to check MoPay status for externalId=${externalId}: ${error.message}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to check live transaction status from MoPay.',
+      );
+    }
+  }
+
+  async getVerifiedTransactionOutcome(
+    referenceId: string,
+    externalId?: string,
+  ): Promise<{
     referenceId: string;
     status: 'success' | 'failed' | 'pending';
     amount: number;
     message: string;
+    externalId?: string;
+    source: 'mopay' | 'database';
   }> {
-    const response = await this.checkTransactionStatus(referenceId);
+    let dbResponse: MobileMoneyTransactionResponse | undefined;
+    let resolvedExternalId = externalId;
+    if (!resolvedExternalId) {
+      dbResponse = await this.checkTransactionStatus(referenceId);
+      resolvedExternalId = this.extractExternalId(dbResponse);
+    }
+
+    if (resolvedExternalId) {
+      const mopayResponse = await this.checkMopayTransactionStatus(resolvedExternalId);
+      const normalized = this.normalizeCallbackPayload({
+        ...mopayResponse,
+        referenceId,
+      });
+      this.logger.log(
+        `Ishema MoPay status for ${referenceId} (externalId=${resolvedExternalId}): ${normalized.status}`,
+      );
+      return {
+        referenceId: normalized.referenceId || referenceId,
+        status: normalized.status,
+        amount: normalized.amount,
+        message: normalized.message || 'MoPay status checked',
+        externalId: resolvedExternalId,
+        source: 'mopay',
+      };
+    }
+
+    if (!dbResponse) {
+      dbResponse = await this.checkTransactionStatus(referenceId);
+    }
+
+    const dbRecord = dbResponse;
     const normalized = this.normalizeCallbackPayload({
-      ...response,
+      ...dbRecord,
       referenceId,
       savedTransaction: {
-        ...(response.savedTransaction || {}),
-        referenceId: response.savedTransaction?.referenceId || referenceId,
+        ...(dbRecord.savedTransaction || {}),
+        referenceId: dbRecord.savedTransaction?.referenceId || referenceId,
       },
     });
+    this.logger.log(
+      `Ishema DB status for ${referenceId}: ${normalized.status} (no MoPay externalId)`,
+    );
     return {
       referenceId: normalized.referenceId || referenceId,
       status: normalized.status,
       amount: normalized.amount,
       message: normalized.message || 'Provider status checked',
+      externalId: resolvedExternalId,
+      source: 'database',
     };
   }
 
@@ -437,6 +533,7 @@ export class MobileMoneyPaymentService {
     status: 'success' | 'failed' | 'pending';
     amount: number;
     message: string;
+    statusCode: number;
   }> {
     try {
       const normalized = this.normalizeCallbackPayload(payload);
@@ -450,6 +547,7 @@ export class MobileMoneyPaymentService {
         status: normalized.status,
         amount: normalized.amount,
         message: normalized.message || 'Payment processed',
+        statusCode: normalized.statusCode,
       };
     } catch (error: any) {
       this.logger.error('Failed to process Mobile Money callback:', error);

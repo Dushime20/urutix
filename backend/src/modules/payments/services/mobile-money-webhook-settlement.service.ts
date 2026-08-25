@@ -90,6 +90,15 @@ export class MobileMoneyWebhookSettlementService {
     await this.invokeParking('failFromIshemaWebhook', payload);
   }
 
+  async noteParkingPromptState(payload: {
+    referenceId: string;
+    claimedStatus?: string;
+    claimedStatusCode?: number;
+    providerStatus: string;
+  }) {
+    await this.invokeParking('noteIshemaProviderPending', payload);
+  }
+
   async settleFailedPayment(
     payment: Payment,
     callback: { referenceId: string; message?: string },

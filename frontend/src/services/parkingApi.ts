@@ -29,6 +29,7 @@ export type ParkingIshemaPayResult = {
   amount?: number;
   currency?: string;
   message?: string;
+  canRetry?: boolean;
 };
 
 export interface ParkingListParams {

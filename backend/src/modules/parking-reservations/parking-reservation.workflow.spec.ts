@@ -11,8 +11,10 @@ import {
   formatReservationReference,
   hasSufficientCapacity,
   invoiceNumberFor,
+  decideIshemaWebhookSettlement,
   isIshemaPaymentFailed,
   isIshemaPaymentSuccess,
+  shouldReusePendingIshemaCollection,
   isValidMcNumber,
   isValidPhone,
   isValidUsdotNumber,
@@ -232,5 +234,65 @@ describe('parking reservation workflow', () => {
         requestedAmount: 184800,
       }),
     ).toBeNull();
+  });
+
+  it('does not settle money from an unsigned failed callback while GET is pending', () => {
+    expect(
+      decideIshemaWebhookSettlement({
+        claimedStatus: 'failed',
+        claimedStatusCode: 500,
+        providerStatus: 'pending',
+      }),
+    ).toBe('prompt_undelivered');
+    expect(
+      decideIshemaWebhookSettlement({
+        claimedStatus: 'failed',
+        claimedStatusCode: 500,
+        providerStatus: 'failed',
+      }),
+    ).toBe('settle_failed');
+    expect(
+      decideIshemaWebhookSettlement({
+        claimedStatus: 'success',
+        providerStatus: 'success',
+      }),
+    ).toBe('settle_success');
+    expect(
+      decideIshemaWebhookSettlement({
+        claimedStatus: 'pending',
+        providerStatus: 'pending',
+      }),
+    ).toBe('wait');
+  });
+
+  it('reuses a pending Ishema collection only while the USSD could still be on the phone', () => {
+    const initiatedAt = new Date('2026-08-24T16:15:00.000Z');
+    expect(
+      shouldReusePendingIshemaCollection({
+        providerStatus: 'pending',
+        initiatedAt,
+        now: new Date('2026-08-24T16:15:20.000Z'),
+      }),
+    ).toBe(true);
+    expect(
+      shouldReusePendingIshemaCollection({
+        providerStatus: 'pending',
+        promptUndelivered: true,
+        initiatedAt,
+        now: new Date('2026-08-24T16:15:20.000Z'),
+      }),
+    ).toBe(false);
+    expect(
+      shouldReusePendingIshemaCollection({
+        providerStatus: 'pending',
+        initiatedAt,
+        now: new Date('2026-08-24T16:17:00.000Z'),
+      }),
+    ).toBe(false);
+    expect(
+      shouldReusePendingIshemaCollection({
+        providerStatus: 'pending',
+      }),
+    ).toBe(false);
   });
 });

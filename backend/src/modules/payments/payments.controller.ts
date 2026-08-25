@@ -1578,9 +1578,18 @@ export class PaymentsController {
         `Mobile Money webhook received reference=${claimed.referenceId} claimedStatus=${claimed.status} trust=${signatureTrust}`,
       );
 
-      let verified: { referenceId: string; status: 'success' | 'failed' | 'pending'; amount: number; message: string };
+      let verified: {
+        referenceId: string;
+        status: 'success' | 'failed' | 'pending';
+        amount: number;
+        message: string;
+        source?: 'mopay' | 'database';
+      };
       try {
-        verified = await this.mobileMoneyPaymentService.getVerifiedTransactionOutcome(claimed.referenceId);
+        verified = await this.mobileMoneyPaymentService.getVerifiedTransactionOutcome(
+          claimed.referenceId,
+          this.mobileMoneyPaymentService.extractExternalId(payload),
+        );
       } catch (error) {
         this.logger.error(
           `Acknowledging webhook for ${claimed.referenceId} but skipping settlement: provider status check failed: ${(error as Error).message}`,
@@ -1601,10 +1610,18 @@ export class PaymentsController {
       };
 
       this.logger.log(
-        `Mobile Money webhook verified reference=${callbackData.referenceId} providerStatus=${callbackData.status}`,
+        `Mobile Money webhook verified reference=${callbackData.referenceId} providerStatus=${callbackData.status} source=${verified.source || 'unknown'}`,
       );
 
       if (callbackData.status === 'pending') {
+        if (String(callbackData.referenceId || '').startsWith('PARK-')) {
+          await this.mobileMoneyWebhookSettlement.noteParkingPromptState({
+            referenceId: callbackData.referenceId,
+            claimedStatus: claimed.status,
+            claimedStatusCode: claimed.statusCode,
+            providerStatus: verified.status,
+          });
+        }
         return {
           received: true,
           verified: true,
@@ -1770,11 +1787,15 @@ export class PaymentsController {
     @Param('referenceId') referenceId: string,
   ) {
     try {
-      const status = await this.mobileMoneyPaymentService.checkTransactionStatus(referenceId);
+      const status = await this.mobileMoneyPaymentService.getVerifiedTransactionOutcome(referenceId);
 
       return {
         message: 'Transaction status retrieved successfully',
-        transaction: status.transaction || status.savedTransaction,
+        source: status.source,
+        status: status.status,
+        amount: status.amount,
+        referenceId: status.referenceId,
+        externalId: status.externalId,
       };
     } catch (error) {
       throw new BadRequestException(

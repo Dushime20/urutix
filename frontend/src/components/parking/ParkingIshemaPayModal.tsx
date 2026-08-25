@@ -9,6 +9,7 @@ import { formatParkingMoney, type ParkingReservation } from '../../types/parking
 import { TranslatedText } from '../translated-text';
 
 type Step = 'form' | 'waiting' | 'success' | 'failed';
+type FailReason = 'undelivered' | 'failed';
 type PaymentMethod = 'card' | 'mobile_money';
 
 const inputClass =
@@ -48,6 +49,7 @@ export function ParkingIshemaPayModal({
   const [cvv, setCvv] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [referenceId, setReferenceId] = useState<string | undefined>();
+  const [failReason, setFailReason] = useState<FailReason>('failed');
 
   const payment = reservation.payment;
   const amount = payment?.totalAmount || 0;
@@ -65,6 +67,7 @@ export function ParkingIshemaPayModal({
     setExpiryDate('');
     setCvv('');
     setReferenceId(undefined);
+    setFailReason('failed');
     setSubmitting(false);
     // Reset only when the modal opens, not when the reservation object identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,7 +88,13 @@ export function ParkingIshemaPayModal({
           onPaid(result.reservation);
           return;
         }
+        if (result.canRetry && result.providerStatus === 'pending') {
+          setFailReason('undelivered');
+          setStep('failed');
+          return;
+        }
         if (result.providerStatus === 'failed' || result.providerStatus === 'amount_mismatch') {
+          setFailReason('failed');
           setStep('failed');
         }
       } catch {
@@ -97,7 +106,10 @@ export function ParkingIshemaPayModal({
     }, 8000);
     const timer = window.setInterval(poll, 4000);
     const timeout = window.setTimeout(() => {
-      if (!cancelled) setStep('failed');
+      if (!cancelled) {
+        setFailReason('undelivered');
+        setStep('failed');
+      }
     }, 180000);
     return () => {
       cancelled = true;
@@ -114,6 +126,7 @@ export function ParkingIshemaPayModal({
     setStep('form');
     setPhoneNumber('');
     setReferenceId(undefined);
+    setFailReason('failed');
     setSubmitting(false);
     onClose();
   };
@@ -151,6 +164,7 @@ export function ParkingIshemaPayModal({
       toast.success('Approve the payment prompt on your phone.');
     } catch (error) {
       toast.error(getApiErrorMessage(error));
+      setFailReason('failed');
       setStep('failed');
     } finally {
       setSubmitting(false);
@@ -423,7 +437,9 @@ export function ParkingIshemaPayModal({
                 <TranslatedText text="Payment not completed" />
               </h3>
               <p className="text-sm text-slate-500 max-w-sm mx-auto">
-                The Ishema payment was not completed. You can try again with the same or another mobile money number.
+                {failReason === 'undelivered'
+                  ? 'The payment prompt did not reach your phone. Try again to send a new PIN request.'
+                  : 'The Ishema payment was not completed. You can try again with the same or another mobile money number.'}
               </p>
             </div>
           )}
@@ -450,7 +466,10 @@ export function ParkingIshemaPayModal({
               {step === 'failed' ? (
                 <button
                   type="button"
-                  onClick={() => setStep('form')}
+                  onClick={() => {
+                    setFailReason('failed');
+                    setStep('form');
+                  }}
                   className="px-6 sm:px-8 py-3 text-sm font-black bg-[#345E85] hover:bg-[#2a4d6d] text-white shadow-md hover:shadow-lg rounded-xl transition-all uppercase tracking-wider w-full sm:w-auto text-center"
                 >
                   <TranslatedText text="Try again" />
