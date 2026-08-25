@@ -2070,7 +2070,7 @@ export class ParkingReservationsService {
       outcome.status,
       outcome.paidAmount,
     );
-    let providerStatus = outcome.status;
+    let providerStatus: 'success' | 'failed' | 'pending' | 'amount_mismatch' = outcome.status;
     if (marked) {
       providerStatus = 'success';
     } else if (isIshemaPaymentSuccess(outcome.status)) {
