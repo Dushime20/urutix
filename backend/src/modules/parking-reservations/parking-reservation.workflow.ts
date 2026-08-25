@@ -191,8 +191,17 @@ export function isIshemaPaymentSuccess(status: unknown): boolean {
 }
 
 export function isIshemaPaymentFailed(status: unknown): boolean {
-  const normalized = String(status || '').trim().toLowerCase();
-  return normalized === 'failed' || normalized === 'failure' || normalized === 'rejected';
+  const normalized = String(status ?? '').trim().toLowerCase();
+  if (
+    normalized === 'failed' ||
+    normalized === 'failure' ||
+    normalized === 'rejected' ||
+    normalized === 'error'
+  ) {
+    return true;
+  }
+  const code = Number(status);
+  return Number.isFinite(code) && code >= 400;
 }
 
 /** USSD prompts expire quickly; after this window a GET=pending row is not a live PIN. */

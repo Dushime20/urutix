@@ -409,27 +409,48 @@ export class MobileMoneyPaymentService {
     externalId: string,
   ): Promise<MobileMoneyTransactionResponse> {
     const config = this.getConfig();
+    const path = `${config.apiUrl}/api/v3/transaction/external/${encodeURIComponent(externalId)}`;
+    const urls = [
+      { label: 'path-only', url: path },
+      { label: 'apiKey', url: `${path}?apiKey=${config.apiKey}` },
+    ];
 
-    try {
-      const response: any = await firstValueFrom(
-        this.httpService.get(
-          `${config.apiUrl}/api/v3/transaction/external/${encodeURIComponent(externalId)}?apiKey=${config.apiKey}`,
-          {
+    let lastError: string | undefined;
+    for (const attempt of urls) {
+      try {
+        const response: any = await firstValueFrom(
+          this.httpService.get(attempt.url, {
             headers: { accept: 'application/json' },
             timeout: 30000,
-          },
-        ) as any,
-      );
-
-      return response.data;
-    } catch (error: any) {
-      this.logger.error(
-        `Failed to check MoPay status for externalId=${externalId}: ${error.message}`,
-      );
-      throw new InternalServerErrorException(
-        'Failed to check live transaction status from MoPay.',
-      );
+            validateStatus: () => true,
+          }) as any,
+        );
+        const httpStatus = Number(response?.status);
+        this.logger.log(
+          `MoPay GET ${attempt.label} HTTP ${httpStatus} for externalId=${externalId}`,
+        );
+        if (httpStatus >= 200 && httpStatus < 300) {
+          return response.data;
+        }
+        lastError = `HTTP ${httpStatus}: ${JSON.stringify(response?.data)}`;
+        if (httpStatus === 401 || httpStatus === 403 || httpStatus === 404) {
+          continue;
+        }
+        return response.data ?? { status: httpStatus };
+      } catch (error: any) {
+        lastError = error.message;
+        this.logger.warn(
+          `MoPay GET ${attempt.label} failed for externalId=${externalId}: ${error.message}`,
+        );
+      }
     }
+
+    this.logger.error(
+      `Failed to check MoPay status for externalId=${externalId}: ${lastError}`,
+    );
+    throw new InternalServerErrorException(
+      'Failed to check live transaction status from MoPay.',
+    );
   }
 
   async getVerifiedTransactionOutcome(
@@ -524,13 +545,18 @@ export class MobileMoneyPaymentService {
       payload?.data ||
       payload?.body ||
       payload;
-    const statusRaw = String(
-      nested?.status || payload?.status || payload?.paymentStatus || 'pending',
-    ).toLowerCase();
+    const statusCode = Number(nested?.statusCode ?? payload?.statusCode ?? 0);
+    const rawStatus = nested?.status ?? payload?.status ?? payload?.paymentStatus;
+    const statusRaw = String(rawStatus ?? '').trim().toLowerCase();
+    const numericStatus = Number(rawStatus);
     let status: 'success' | 'failed' | 'pending' = 'pending';
     if (['success', 'successful', 'completed', 'paid'].includes(statusRaw)) {
       status = 'success';
-    } else if (['failed', 'failure', 'rejected', 'cancelled', 'canceled'].includes(statusRaw)) {
+    } else if (
+      ['failed', 'failure', 'rejected', 'cancelled', 'canceled', 'error'].includes(statusRaw) ||
+      (Number.isFinite(statusCode) && statusCode >= 400) ||
+      (Number.isFinite(numericStatus) && numericStatus >= 400)
+    ) {
       status = 'failed';
     }
     return {
@@ -542,7 +568,11 @@ export class MobileMoneyPaymentService {
           '',
       ),
       status,
-      statusCode: Number(nested?.statusCode ?? payload?.statusCode ?? 0),
+      statusCode: Number.isFinite(statusCode) && statusCode > 0
+        ? statusCode
+        : Number.isFinite(numericStatus)
+          ? numericStatus
+          : 0,
       date: String(nested?.date || nested?.createdAt || payload?.date || ''),
       amount: Number(nested?.amount ?? payload?.amount ?? 0),
       message: String(nested?.message || payload?.message || nested?.senderMessage || ''),

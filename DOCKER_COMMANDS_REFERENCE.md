@@ -159,7 +159,7 @@ docker-compose -f docker-compose.production.yml stop frontend
 docker-compose -f docker-compose.production.yml logs -f
 
 # View specific service logs
-
+docker-compose -f docker-compose.production.yml logs -f backend
 docker-compose -f docker-compose.production.yml logs -f frontend
 docker-compose -f docker-compose.production.yml logs -f postgres
 docker-compose -f docker-compose.production.yml logs -f redis

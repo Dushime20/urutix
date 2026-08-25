@@ -186,6 +186,9 @@ describe('parking reservation workflow', () => {
     expect(isIshemaPaymentSuccess('success')).toBe(true);
     expect(isIshemaPaymentSuccess('pending')).toBe(false);
     expect(isIshemaPaymentFailed('failed')).toBe(true);
+    expect(isIshemaPaymentFailed(500)).toBe(true);
+    expect(isIshemaPaymentFailed('500')).toBe(true);
+    expect(isIshemaPaymentFailed('pending')).toBe(false);
     expect(ishemaPaidAmountMatchesRequired(15000, 15000)).toBe(true);
     expect(ishemaPaidAmountMatchesRequired(15000.4, 15000)).toBe(true);
     expect(ishemaPaidAmountMatchesRequired(15000, 14000)).toBe(false);
