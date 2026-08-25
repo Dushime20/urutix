@@ -265,14 +265,23 @@ describe('parking reservation workflow', () => {
     ).toBe('wait');
   });
 
-  it('reuses any MoPay-pending collection and never starts a second charge', () => {
-    expect(shouldReusePendingIshemaCollection({ providerStatus: 'pending' })).toBe(true);
+  it('reuses a pending collection only inside the USSD PIN window', () => {
+    const initiatedAt = new Date('2026-08-25T10:40:00.000Z');
     expect(
       shouldReusePendingIshemaCollection({
         providerStatus: 'pending',
-        promptUndelivered: true,
+        initiatedAt,
+        now: new Date('2026-08-25T10:40:20.000Z'),
       }),
     ).toBe(true);
+    expect(
+      shouldReusePendingIshemaCollection({
+        providerStatus: 'pending',
+        initiatedAt,
+        now: new Date('2026-08-25T10:42:00.000Z'),
+      }),
+    ).toBe(false);
+    expect(shouldReusePendingIshemaCollection({ providerStatus: 'pending' })).toBe(false);
     expect(shouldReusePendingIshemaCollection({ providerStatus: 'failed' })).toBe(false);
     expect(shouldReusePendingIshemaCollection({ providerStatus: 'success' })).toBe(false);
   });

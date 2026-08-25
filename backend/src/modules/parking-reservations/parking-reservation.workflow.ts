@@ -219,8 +219,9 @@ export function decideIshemaWebhookSettlement(input: {
 }
 
 /**
- * MoPay `pending` is a live USSD. Never start a second collection while that is true.
- * A second create for the same MSISDN is what Ishema reports as failed/500.
+ * MoPay `pending` is a live USSD only for a short window (MTN/Airtel PIN TTL).
+ * After that, GET may still say pending while no PIN is on the phone — allow a new collection.
+ * Never reuse just because an unsigned webhook said failed during that window.
  */
 export function shouldReusePendingIshemaCollection(input: {
   providerStatus: unknown;
@@ -229,7 +230,14 @@ export function shouldReusePendingIshemaCollection(input: {
   now?: Date;
   liveWindowMs?: number;
 }): boolean {
-  return !isIshemaPaymentSuccess(input.providerStatus) && !isIshemaPaymentFailed(input.providerStatus);
+  if (isIshemaPaymentSuccess(input.providerStatus) || isIshemaPaymentFailed(input.providerStatus)) {
+    return false;
+  }
+  if (!input.initiatedAt) return false;
+  const started = new Date(input.initiatedAt).getTime();
+  if (!Number.isFinite(started)) return false;
+  const windowMs = input.liveWindowMs ?? ISHEMA_USSD_LIVE_WINDOW_MS;
+  return ((input.now ?? new Date()).getTime() - started) < windowMs;
 }
 
 /** Ishema MoMo settles whole RWF, so compare the charged amount in whole units. */

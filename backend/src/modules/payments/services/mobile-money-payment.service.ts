@@ -186,6 +186,16 @@ export class MobileMoneyPaymentService {
     return `0${canonical.slice(3)}`;
   }
 
+  extractCreatedAt(response?: MobileMoneyTransactionResponse | Record<string, any>): string | undefined {
+    const extra = (response || {}) as Record<string, any>;
+    const value =
+      extra.savedTransaction?.createdAt ||
+      extra.transaction?.createdAt ||
+      extra.createdAt ||
+      extra.date;
+    return typeof value === 'string' && value ? value : undefined;
+  }
+
   extractExternalId(response?: MobileMoneyTransactionResponse | Record<string, any>): string | undefined {
     const extra = (response || {}) as Record<string, any>;
     const value =
@@ -431,6 +441,7 @@ export class MobileMoneyPaymentService {
     amount: number;
     message: string;
     externalId?: string;
+    createdAt?: string;
     source: 'mopay' | 'database';
   }> {
     let dbResponse: MobileMoneyTransactionResponse | undefined;
@@ -446,8 +457,16 @@ export class MobileMoneyPaymentService {
         ...mopayResponse,
         referenceId,
       });
+      const extra = mopayResponse as Record<string, any>;
       this.logger.log(
-        `Ishema MoPay status for ${referenceId} (externalId=${resolvedExternalId}): ${normalized.status}`,
+        `Ishema MoPay status for ${referenceId} (externalId=${resolvedExternalId}): ${normalized.status}` +
+          ` raw=${JSON.stringify({
+            status: extra?.status,
+            savedStatus: extra?.savedTransaction?.status,
+            txnStatus: extra?.transaction?.status,
+            dataStatus: extra?.data?.status,
+            message: extra?.message || extra?.savedTransaction?.message,
+          })}`,
       );
       return {
         referenceId: normalized.referenceId || referenceId,
@@ -455,6 +474,7 @@ export class MobileMoneyPaymentService {
         amount: normalized.amount,
         message: normalized.message || 'MoPay status checked',
         externalId: resolvedExternalId,
+        createdAt: this.extractCreatedAt(mopayResponse) || this.extractCreatedAt(dbResponse),
         source: 'mopay',
       };
     }
@@ -481,6 +501,7 @@ export class MobileMoneyPaymentService {
       amount: normalized.amount,
       message: normalized.message || 'Provider status checked',
       externalId: resolvedExternalId,
+      createdAt: this.extractCreatedAt(dbRecord),
       source: 'database',
     };
   }

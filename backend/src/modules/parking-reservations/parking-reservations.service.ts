@@ -2052,7 +2052,17 @@ export class ParkingReservationsService {
       );
     }
 
-    const canRetry = providerStatus === 'failed' || providerStatus === 'amount_mismatch';
+    const canRetry =
+      providerStatus === 'failed' ||
+      providerStatus === 'amount_mismatch' ||
+      (providerStatus === 'pending' &&
+        !shouldReusePendingIshemaCollection({
+          providerStatus: outcome.status,
+          initiatedAt:
+            (typeof snapshot.ishemaInitiatedAt === 'string' && snapshot.ishemaInitiatedAt) ||
+            statusResponse.createdAt ||
+            null,
+        }));
 
     return {
       providerStatus,
@@ -2178,7 +2188,23 @@ export class ParkingReservationsService {
             ? snapshot.ishemaExternalId
             : undefined,
         );
-        if (!shouldReusePendingIshemaCollection({ providerStatus: verified.status })) {
+        const initiatedAt =
+          (ref === snapshot.ishemaReferenceId && typeof snapshot.ishemaInitiatedAt === 'string'
+            ? snapshot.ishemaInitiatedAt
+            : null) ||
+          verified.createdAt ||
+          null;
+        if (
+          !shouldReusePendingIshemaCollection({
+            providerStatus: verified.status,
+            initiatedAt,
+          })
+        ) {
+          if (!isIshemaPaymentSuccess(verified.status) && !isIshemaPaymentFailed(verified.status)) {
+            this.logger.warn(
+              `MoPay still pending for ${ref} but USSD window expired (initiatedAt=${initiatedAt || 'unknown'}); allowing a new collection`,
+            );
+          }
           continue;
         }
         if (reservation.paymentReference !== ref || snapshot.ishemaReferenceId !== ref) {
