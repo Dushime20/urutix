@@ -205,8 +205,8 @@ export type IshemaWebhookSettlementAction =
   | 'prompt_undelivered';
 
 /**
- * Ledger follows the provider GET, never the unsigned callback body.
- * claimed=failed + GET=pending is a telco push miss (statusCode 500), not a settled failure.
+ * Ledger follows live MoPay status, never the unsigned callback body.
+ * claimed=failed + MoPay pending means the charge is still in flight — wait for PIN.
  */
 export function decideIshemaWebhookSettlement(input: {
   claimedStatus: unknown;
@@ -215,13 +215,13 @@ export function decideIshemaWebhookSettlement(input: {
 }): IshemaWebhookSettlementAction {
   if (isIshemaPaymentSuccess(input.providerStatus)) return 'settle_success';
   if (isIshemaPaymentFailed(input.providerStatus)) return 'settle_failed';
-  const claimedFailed = isIshemaPaymentFailed(input.claimedStatus);
-  const pushError = Number(input.claimedStatusCode) >= 500;
-  if (claimedFailed || pushError) return 'prompt_undelivered';
   return 'wait';
 }
 
-/** Reuse a pending collection only while a PIN could still be on the phone. */
+/**
+ * MoPay `pending` is a live USSD. Never start a second collection while that is true.
+ * A second create for the same MSISDN is what Ishema reports as failed/500.
+ */
 export function shouldReusePendingIshemaCollection(input: {
   providerStatus: unknown;
   promptUndelivered?: boolean;
@@ -229,15 +229,7 @@ export function shouldReusePendingIshemaCollection(input: {
   now?: Date;
   liveWindowMs?: number;
 }): boolean {
-  if (isIshemaPaymentSuccess(input.providerStatus) || isIshemaPaymentFailed(input.providerStatus)) {
-    return false;
-  }
-  if (input.promptUndelivered) return false;
-  if (!input.initiatedAt) return false;
-  const started = new Date(input.initiatedAt).getTime();
-  if (!Number.isFinite(started)) return false;
-  const windowMs = input.liveWindowMs ?? ISHEMA_USSD_LIVE_WINDOW_MS;
-  return ((input.now ?? new Date()).getTime() - started) < windowMs;
+  return !isIshemaPaymentSuccess(input.providerStatus) && !isIshemaPaymentFailed(input.providerStatus);
 }
 
 /** Ishema MoMo settles whole RWF, so compare the charged amount in whole units. */

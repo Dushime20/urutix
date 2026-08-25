@@ -88,11 +88,6 @@ export function ParkingIshemaPayModal({
           onPaid(result.reservation);
           return;
         }
-        if (result.canRetry && result.providerStatus === 'pending') {
-          setFailReason('undelivered');
-          setStep('failed');
-          return;
-        }
         if (result.providerStatus === 'failed' || result.providerStatus === 'amount_mismatch') {
           setFailReason('failed');
           setStep('failed');

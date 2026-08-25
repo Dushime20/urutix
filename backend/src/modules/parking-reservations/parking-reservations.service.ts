@@ -1755,51 +1755,27 @@ export class ParkingReservationsService {
     }
 
     const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    const livePending = await this.findLiveParkingIshemaCollection(reservation);
+    if (livePending) {
+      this.logger.log(
+        `Reusing live MoPay parking collection ${livePending.referenceId} for ${reservation.reservationReference} (source=${livePending.source})`,
+      );
+      return {
+        reservation: await this.toPublicDetailView(reservation),
+        referenceId: livePending.referenceId,
+        providerStatus: 'pending',
+        amount,
+        currency: reservation.currency || 'RWF',
+        canRetry: false,
+        message: 'A payment prompt is already pending. Approve it on your phone.',
+      };
+    }
+
     const existingRef =
       reservation.paymentReference || snapshot.ishemaReferenceId;
     let abandonedRef: string | undefined;
-    if (
-      reservation.paymentStatus === ParkingReservationPaymentStatus.PENDING_VERIFICATION &&
-      typeof existingRef === 'string' &&
-      existingRef
-    ) {
-      try {
-        const existing = await this.mobileMoneyPaymentService.getVerifiedTransactionOutcome(
-          existingRef,
-          typeof snapshot.ishemaExternalId === 'string' ? snapshot.ishemaExternalId : undefined,
-        );
-        if (
-          shouldReusePendingIshemaCollection({
-            providerStatus: existing.status,
-            promptUndelivered: snapshot.ishemaPromptUndelivered === true,
-            initiatedAt: typeof snapshot.ishemaInitiatedAt === 'string' ? snapshot.ishemaInitiatedAt : null,
-          })
-        ) {
-          this.logger.log(
-            `Reusing pending parking MoMo collection ${existingRef} for ${reservation.reservationReference}`,
-          );
-          return {
-            reservation: await this.toPublicDetailView(reservation),
-            referenceId: existingRef,
-            providerStatus: 'pending',
-            amount,
-            currency: reservation.currency || 'RWF',
-            canRetry: false,
-            message: 'A payment prompt is already pending. Approve it on your phone.',
-          };
-        }
-        if (!isIshemaPaymentSuccess(existing.status)) {
-          abandonedRef = existingRef;
-          this.logger.warn(
-            `Abandoning parking MoMo ${existingRef} (status=${existing.status}, source=${existing.source}) for ${reservation.reservationReference}; starting a new collection`,
-          );
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Could not re-check pending parking MoMo ${existingRef}: ${(error as Error).message}`,
-        );
-        abandonedRef = existingRef;
-      }
+    if (typeof existingRef === 'string' && existingRef) {
+      abandonedRef = existingRef;
     }
 
     const referenceId = `PARK-${reservation.reservationReference.replace(/[^A-Z0-9]/gi, '')}-${Date.now().toString(36)}`.slice(0, 80);
@@ -1980,14 +1956,10 @@ export class ParkingReservationsService {
     nextSnapshot.ishemaLastCallbackAt = new Date().toISOString();
     nextSnapshot.ishemaLastCallbackStatusCode = payload.claimedStatusCode ?? null;
 
-    if (action === 'prompt_undelivered') {
-      nextSnapshot.ishemaPromptUndelivered = true;
-      reservation.paymentNotes =
-        `Ishema USSD was not delivered (callback ${payload.claimedStatus || 'failed'}` +
-        `${payload.claimedStatusCode ? `/${payload.claimedStatusCode}` : ''}, GET ${payload.providerStatus}). Retry with a new collection.`;
+    if (action === 'wait' && isIshemaPaymentFailed(payload.claimedStatus)) {
       this.logger.warn(
-        `Ishema claimed ${payload.claimedStatus || 'failed'} (statusCode=${payload.claimedStatusCode ?? 'n/a'}) ` +
-          `but GET is ${payload.providerStatus} for ${payload.referenceId} — treating as undelivered USSD, not a settled failure`,
+        `Ishema callback claimed ${payload.claimedStatus} (statusCode=${payload.claimedStatusCode ?? 'n/a'}) ` +
+          `but MoPay is ${payload.providerStatus} for ${payload.referenceId} — keeping the live collection so the PIN can still arrive. Not starting a second charge.`,
       );
     }
 
@@ -2080,19 +2052,13 @@ export class ParkingReservationsService {
       );
     }
 
-    const canRetry =
-      providerStatus === 'pending' &&
-      !shouldReusePendingIshemaCollection({
-        providerStatus: outcome.status,
-        promptUndelivered: snapshot.ishemaPromptUndelivered === true,
-        initiatedAt: typeof snapshot.ishemaInitiatedAt === 'string' ? snapshot.ishemaInitiatedAt : null,
-      });
+    const canRetry = providerStatus === 'failed' || providerStatus === 'amount_mismatch';
 
     return {
       providerStatus,
       canRetry,
       message: canRetry
-        ? 'The payment prompt did not reach the phone. Try again.'
+        ? 'The payment was not completed. You can try again.'
         : undefined,
       reservation: await this.toPublicDetailView(reservation),
     };
@@ -2188,6 +2154,51 @@ export class ParkingReservationsService {
       reservation.paymentNotes = reason;
       await this.reservationRepo.save(reservation);
     }
+  }
+
+  private async findLiveParkingIshemaCollection(
+    reservation: ParkingReservation,
+  ): Promise<{ referenceId: string; source?: string } | null> {
+    const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    const refs: string[] = [];
+    const add = (value: unknown) => {
+      if (typeof value === 'string' && value && !refs.includes(value)) refs.push(value);
+    };
+    add(reservation.paymentReference);
+    add(snapshot.ishemaReferenceId);
+    if (Array.isArray(snapshot.ishemaAbandonedReferenceIds)) {
+      snapshot.ishemaAbandonedReferenceIds.forEach(add);
+    }
+
+    for (const ref of refs) {
+      try {
+        const verified = await this.mobileMoneyPaymentService.getVerifiedTransactionOutcome(
+          ref,
+          ref === snapshot.ishemaReferenceId && typeof snapshot.ishemaExternalId === 'string'
+            ? snapshot.ishemaExternalId
+            : undefined,
+        );
+        if (!shouldReusePendingIshemaCollection({ providerStatus: verified.status })) {
+          continue;
+        }
+        if (reservation.paymentReference !== ref || snapshot.ishemaReferenceId !== ref) {
+          const nextSnapshot = { ...snapshot };
+          nextSnapshot.ishemaReferenceId = ref;
+          if (verified.externalId) nextSnapshot.ishemaExternalId = verified.externalId;
+          nextSnapshot.ishemaPromptUndelivered = false;
+          reservation.paymentReference = ref;
+          reservation.paymentStatus = ParkingReservationPaymentStatus.PENDING_VERIFICATION;
+          reservation.feeSnapshot = nextSnapshot;
+          await this.reservationRepo.save(reservation);
+        }
+        return { referenceId: ref, source: verified.source };
+      } catch (error) {
+        this.logger.warn(
+          `Could not re-check parking MoMo ${ref}: ${(error as Error).message}`,
+        );
+      }
+    }
+    return null;
   }
 
   private async findByIshemaReference(referenceId: string) {

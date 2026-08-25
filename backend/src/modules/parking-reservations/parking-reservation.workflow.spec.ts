@@ -243,7 +243,7 @@ describe('parking reservation workflow', () => {
         claimedStatusCode: 500,
         providerStatus: 'pending',
       }),
-    ).toBe('prompt_undelivered');
+    ).toBe('wait');
     expect(
       decideIshemaWebhookSettlement({
         claimedStatus: 'failed',
@@ -265,34 +265,15 @@ describe('parking reservation workflow', () => {
     ).toBe('wait');
   });
 
-  it('reuses a pending Ishema collection only while the USSD could still be on the phone', () => {
-    const initiatedAt = new Date('2026-08-24T16:15:00.000Z');
-    expect(
-      shouldReusePendingIshemaCollection({
-        providerStatus: 'pending',
-        initiatedAt,
-        now: new Date('2026-08-24T16:15:20.000Z'),
-      }),
-    ).toBe(true);
+  it('reuses any MoPay-pending collection and never starts a second charge', () => {
+    expect(shouldReusePendingIshemaCollection({ providerStatus: 'pending' })).toBe(true);
     expect(
       shouldReusePendingIshemaCollection({
         providerStatus: 'pending',
         promptUndelivered: true,
-        initiatedAt,
-        now: new Date('2026-08-24T16:15:20.000Z'),
       }),
-    ).toBe(false);
-    expect(
-      shouldReusePendingIshemaCollection({
-        providerStatus: 'pending',
-        initiatedAt,
-        now: new Date('2026-08-24T16:17:00.000Z'),
-      }),
-    ).toBe(false);
-    expect(
-      shouldReusePendingIshemaCollection({
-        providerStatus: 'pending',
-      }),
-    ).toBe(false);
+    ).toBe(true);
+    expect(shouldReusePendingIshemaCollection({ providerStatus: 'failed' })).toBe(false);
+    expect(shouldReusePendingIshemaCollection({ providerStatus: 'success' })).toBe(false);
   });
 });
