@@ -28,6 +28,7 @@ import {
   Thermometer,
   TrendingDown,
   Loader2,
+  Lock,
 } from 'lucide-react';
 
 import toast from 'react-hot-toast';
@@ -43,8 +44,8 @@ import QuickBidModal from '../components/Fleet/QuickBidModal';
 import logoUrutiX from '../assets/logo-urutix.png';
 import { biddingAPI } from '../services/biddingApi';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { getAuctionBidWindow } from '../utils/bidValidation';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
-
 interface AuctionWithLoad {
   id: string;
   loadId: string;
@@ -92,6 +93,7 @@ interface CargoBid extends Cargo {
   estimatedDuration?: number;
   auctionId?: string;
   auctionType?: string;
+  auctionStatus?: string;
   auctionStart?: string;
   auctionEnd?: string;
   reservePrice?: number;
@@ -175,14 +177,21 @@ const FleetBidsPage: React.FC = () => {
   const loadBids = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch auctions from API
+      // Open auctions only (ACTIVE + SCHEDULED that haven't ended)
       const response = await biddingAPI.getAuctions({ status: 'ACTIVE' });
-      console.log('✅ Auctions loaded:', response.data);
-      
-      const auctions: AuctionWithLoad[] = response.data || [];
+      const raw = response?.data;
+      const auctions: AuctionWithLoad[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.auctions)
+          ? raw.auctions
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
       
       // Transform auctions to CargoBid format
-      const transformedBids: CargoBid[] = auctions.map((auction) => {
+      const transformedBids: CargoBid[] = auctions
+        .filter((auction) => auction?.load)
+        .map((auction) => {
         const load = auction.load;
         const pickupLoc = load.locations?.find((loc: any) => loc.type === 'PICKUP');
         const deliveryLoc = load.locations?.find((loc: any) => loc.type === 'DELIVERY');
@@ -215,7 +224,7 @@ const FleetBidsPage: React.FC = () => {
           viewCount: load.viewCount || 0,
           createdAt: load.createdAt,
           updatedAt: load.updatedAt,
-          bidStatus: auction.status === 'ACTIVE' ? 'pending' : 'accepted',
+          bidStatus: auction.status === 'CLOSED' || auction.status === 'CANCELLED' ? 'accepted' : 'pending',
           cargoOwnerName: `${load.cargoOwner?.profile?.firstName || ''} ${load.cargoOwner?.profile?.lastName || ''}`.trim(),
           cargoOwnerPhone: load.cargoOwner?.phone || '',
           cargoOwnerEmail: load.cargoOwner?.email || '',
@@ -247,6 +256,7 @@ const FleetBidsPage: React.FC = () => {
           },
           cargoOwner: load.cargoOwner,
           auctionType: auction.auctionType,
+          auctionStatus: auction.status,
           auctionStart: auction.auctionStart,
           auctionEnd: auction.auctionEnd,
           reservePrice: auction.reservePrice != null ? parseFloat(auction.reservePrice) : undefined,
@@ -262,7 +272,6 @@ const FleetBidsPage: React.FC = () => {
         };
       });
       
-      console.log('✅ Transformed bids:', transformedBids);
       setBids(transformedBids);
     } catch (error: any) {
       console.error('❌ Error loading bids:', error);
@@ -325,6 +334,16 @@ const FleetBidsPage: React.FC = () => {
     return Boolean(selectedBid?.winningBidId) || loadCompetingBids.some((b) => b.status === 'ACCEPTED');
   }, [selectedBid?.winningBidId, loadCompetingBids]);
 
+  const selectedAuctionWindow = useMemo(() => {
+    if (!selectedBid) return null;
+    return getAuctionBidWindow({
+      status: selectedBid.auctionStatus || (hasWinningBid ? 'CLOSED' : 'ACTIVE'),
+      auctionStart: selectedBid.auctionStart,
+      auctionEnd: selectedBid.auctionEnd,
+      winningBidId: selectedBid.winningBidId,
+    });
+  }, [selectedBid, hasWinningBid]);
+
   const currentLowestBid = useMemo(() => {
     if (pendingCompetingBids.length > 0) return pendingCompetingBids[0].bidAmount;
     if (selectedBid?.currentHighestBid != null) return selectedBid.currentHighestBid;
@@ -332,6 +351,16 @@ const FleetBidsPage: React.FC = () => {
   }, [pendingCompetingBids, selectedBid?.currentHighestBid]);
 
   const handleQuickBid = (bid: CargoBid) => {
+    const window = getAuctionBidWindow({
+      status: bid.auctionStatus || 'ACTIVE',
+      auctionStart: bid.auctionStart,
+      auctionEnd: bid.auctionEnd,
+      winningBidId: bid.winningBidId,
+    });
+    if (!window.canBid) {
+      toast.error(window.message);
+      return;
+    }
     setBidCargo(bid);
     setShowQuickBidModal(true);
   };
@@ -822,6 +851,14 @@ const FleetBidsPage: React.FC = () => {
                         </p>
                       </div>
                     </div>
+                    {selectedAuctionWindow && !selectedAuctionWindow.canBid && (
+                      <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-100 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-900/20 px-4 py-3">
+                        <Lock size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                        <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                          {selectedAuctionWindow.message}
+                        </p>
+                      </div>
+                    )}
                   </section>
 
                   {/* Competing bids */}
@@ -1203,7 +1240,7 @@ const FleetBidsPage: React.FC = () => {
             )}
 
             <div className="px-6 sm:px-8 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col sm:flex-row gap-3 shrink-0">
-              {selectedBid?.bidStatus === 'pending' && !hasWinningBid && (
+              {selectedBid?.bidStatus === 'pending' && !hasWinningBid && selectedAuctionWindow?.canBid && (
                 <button
                   onClick={() => {
                     const bid = selectedBid;
@@ -1216,11 +1253,17 @@ const FleetBidsPage: React.FC = () => {
                   {currentLowestBid != null ? 'Bid to Beat Lowest' : 'Place Bid'}
                 </button>
               )}
+              {selectedBid?.bidStatus === 'pending' && !hasWinningBid && selectedAuctionWindow && !selectedAuctionWindow.canBid && (
+                <div className="flex-1 py-3.5 px-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 text-center text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-2">
+                  <Lock size={14} />
+                  {selectedAuctionWindow.state === 'not_started' ? 'Bidding opens at start time' : selectedAuctionWindow.label}
+                </div>
+              )}
               <button
                 onClick={() => setSelectedBid(null)}
                 className={cn(
                   'py-3.5 px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors',
-                  (selectedBid?.bidStatus !== 'pending' || hasWinningBid) && 'flex-1'
+                  (selectedBid?.bidStatus !== 'pending' || hasWinningBid || !selectedAuctionWindow?.canBid) && 'flex-1'
                 )}
               >
                 Close

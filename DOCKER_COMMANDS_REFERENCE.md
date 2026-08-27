@@ -123,7 +123,7 @@ docker-compose -f docker-compose.dev.yml exec postgres bash
 
 ```bash
 # On server (38.242.224.199)
-cd ~/urutix-smart-logistics
+
 
 # Start all services
 docker-compose -f docker-compose.production.yml up -d

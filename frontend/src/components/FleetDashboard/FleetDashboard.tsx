@@ -692,7 +692,15 @@ export const FleetDashboard: React.FC = () => {
                 )}
                 {activeTab === 'bids' ? (
                   navPerms.canAccessBidding ? (
-                    <BiddingDashboard userRole={user?.role === 'TRUCK_OWNER' ? 'TRUCK_OWNER' : 'CARGO_OWNER'} />
+                    <BiddingDashboard
+                      userRole={
+                        user?.role === 'TRUCK_OWNER' ||
+                        user?.role === 'FLEET_MANAGER' ||
+                        user?.role === 'FLEET_OWNER'
+                          ? 'TRUCK_OWNER'
+                          : 'CARGO_OWNER'
+                      }
+                    />
                   ) : (
                     <div className="p-16 text-center space-y-2">
                       <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Bidding access denied</p>

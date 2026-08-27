@@ -208,23 +208,42 @@ export class BiddingService {
       throw new BadRequestException('No auction found for this load');
     }
 
-    // Check if auction is active or if scheduled auction start time has passed
+    // Check if auction is within the bidding window [auctionStart, auctionEnd]
     const now = new Date();
     const auctionStart = auction.auctionStart ? new Date(auction.auctionStart) : null;
-    const isAuctionActive = auction.status === AuctionStatus.ACTIVE ||
-      (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart <= now);
+    const auctionEnd = auction.auctionEnd ? new Date(auction.auctionEnd) : null;
 
-    if (!isAuctionActive) {
-      // If scheduled but not started yet, provide helpful error message
-      if (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart > now) {
-        throw new BadRequestException(
-          `Auction has not started yet. It will start on ${auctionStart.toLocaleString()}`
-        );
-      }
+    if (
+      auction.status === AuctionStatus.CLOSED ||
+      auction.status === AuctionStatus.CANCELLED ||
+      auction.status === AuctionStatus.PAUSED
+    ) {
+      throw new BadRequestException(
+        `Bidding is not allowed — this auction is ${auction.status.toLowerCase()}`,
+      );
+    }
+
+    if (auctionStart && auctionStart > now) {
+      throw new BadRequestException(
+        `Auction has not started yet. Bidding opens on ${auctionStart.toLocaleString()}`,
+      );
+    }
+
+    if (auctionEnd && auctionEnd <= now) {
+      throw new BadRequestException(
+        `Auction has ended. Bidding closed on ${auctionEnd.toLocaleString()}`,
+      );
+    }
+
+    const isInBiddingPeriod =
+      auction.status === AuctionStatus.ACTIVE ||
+      auction.status === AuctionStatus.SCHEDULED;
+
+    if (!isInBiddingPeriod) {
       throw new BadRequestException('No active auction for this load');
     }
 
-    // If auction is SCHEDULED but start time has passed, update it to ACTIVE
+    // If auction is SCHEDULED but start time has passed, promote it to ACTIVE
     if (auction.status === AuctionStatus.SCHEDULED && auctionStart && auctionStart <= now) {
       auction.status = AuctionStatus.ACTIVE;
       await this.auctionRepository.save(auction);
@@ -1381,11 +1400,39 @@ export class BiddingService {
   }
 
   async getAuctions(tenantId: string, status?: string, userId?: string, role?: string): Promise<Auction[]> {
+    const now = new Date();
+    const isTruckSide =
+      role === UserRole.TRUCK_OWNER ||
+      role === 'TRUCK_OWNER' ||
+      role === UserRole.FLEET_MANAGER ||
+      role === 'FLEET_MANAGER';
+
+    // Keep list accurate even if the cron hasn't run yet
+    try {
+      await this.auctionRepository
+        .createQueryBuilder()
+        .update(Auction)
+        .set({ status: AuctionStatus.ACTIVE })
+        .where('status = :scheduled', { scheduled: AuctionStatus.SCHEDULED })
+        .andWhere('auctionStart <= :now', { now })
+        .execute();
+
+      await this.auctionRepository
+        .createQueryBuilder()
+        .update(Auction)
+        .set({ status: AuctionStatus.CLOSED })
+        .where('status = :active', { active: AuctionStatus.ACTIVE })
+        .andWhere('auctionEnd <= :now', { now })
+        .execute();
+    } catch (err) {
+      console.warn('[BiddingService] Failed to sync auction statuses before list:', err);
+    }
+
     // Build query to filter by tenantId through load relationship and include cargo owner with profile
     // Note: Using relation name directly without alias to ensure proper mapping
     const queryBuilder = this.auctionRepository
       .createQueryBuilder('auction')
-      .leftJoinAndSelect('auction.load', 'load')
+      .innerJoinAndSelect('auction.load', 'load')
       .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
       .leftJoinAndSelect('cargoOwner.profile', 'profile');
 
@@ -1399,7 +1446,21 @@ export class BiddingService {
       queryBuilder.where('load.tenantId = :tenantId', { tenantId });
     }
 
-    if (status && status !== 'all') {
+    const normalizedStatus = (status || '').toUpperCase();
+
+    if (normalizedStatus === 'OPEN' || (isTruckSide && !status)) {
+      // Truck owners' default board: open auctions only (not closed/past)
+      queryBuilder.andWhere('auction.status IN (:...openStatuses)', {
+        openStatuses: [AuctionStatus.ACTIVE, AuctionStatus.SCHEDULED],
+      });
+      queryBuilder.andWhere('auction.auctionEnd > :now', { now });
+    } else if (normalizedStatus === 'ACTIVE') {
+      // Include SCHEDULED so newly created auctions appear immediately
+      queryBuilder.andWhere('auction.status IN (:...activeStatuses)', {
+        activeStatuses: [AuctionStatus.ACTIVE, AuctionStatus.SCHEDULED],
+      });
+      queryBuilder.andWhere('auction.auctionEnd > :now', { now });
+    } else if (status && status !== 'all') {
       queryBuilder.andWhere('auction.status = :status', { status });
     }
 
@@ -1798,8 +1859,13 @@ export class BiddingService {
         .getMany();
     }
     
-    // For truck owners, return their submitted bids
-    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
+    // For truck owners / fleet managers, return their submitted bids (same tenant only)
+    if (
+      role === UserRole.TRUCK_OWNER ||
+      role === 'TRUCK_OWNER' ||
+      role === UserRole.FLEET_MANAGER ||
+      role === 'FLEET_MANAGER'
+    ) {
       return this.bidRepository
         .createQueryBuilder('bid')
         .leftJoinAndSelect('bid.load', 'load')
@@ -1924,8 +1990,8 @@ export class BiddingService {
       };
     }
     
-    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
-      // Truck Owner Stats
+    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER' || role === UserRole.FLEET_MANAGER || role === 'FLEET_MANAGER') {
+      // Truck Owner Stats (same-tenant auctions & bids only)
       const myBids = await this.bidRepository
         .createQueryBuilder('bid')
         .leftJoinAndSelect('bid.load', 'load')
@@ -1936,17 +2002,21 @@ export class BiddingService {
       const totalBids = myBids.length;
       const activeBids = myBids.filter(b => b.status === BidStatus.PENDING).length;
       const wonBids = myBids.filter(b => b.status === BidStatus.ACCEPTED).length;
+      const pastBids = myBids.filter(b => b.status !== BidStatus.ACCEPTED).length;
       const totalValue = myBids
         .filter(b => b.status === BidStatus.ACCEPTED || b.status === BidStatus.PENDING)
         .reduce((sum, b) => sum + (parseFloat(String(b.bidAmount)) || 0), 0);
 
       const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
 
-      // Get available active auctions for truck owners to bid on
+      // Get available open auctions for truck owners to bid on (same tenant only)
       const activeAuctions = await this.auctionRepository
         .createQueryBuilder('auction')
-        .leftJoinAndSelect('auction.load', 'load')
-        .where('auction.status = :status', { status: AuctionStatus.ACTIVE })
+        .innerJoinAndSelect('auction.load', 'load')
+        .where('auction.status IN (:...statuses)', {
+          statuses: [AuctionStatus.ACTIVE, AuctionStatus.SCHEDULED],
+        })
+        .andWhere('auction.auctionEnd > :now', { now: new Date() })
         .andWhere('load.tenantId = :tenantId', { tenantId })
         .getMany();
 
@@ -1957,11 +2027,13 @@ export class BiddingService {
       const trends = this.calculateBidTrends(myBids);
 
       return {
-        totalAuctions: activeAuctions.length, // Available auctions to bid on
-        participatedAuctions, // Auctions they've already bid on
-        activeBids, // My active bids
-        totalValue, // Total value of my bids
-        successRate, // My win rate
+        totalAuctions: activeAuctions.length, // Open auctions to bid on (same tenant)
+        participatedAuctions,
+        activeBids, // Pending bids
+        pastBids, // All non-completed bids
+        completedBids: wonBids, // Accepted / won
+        totalValue,
+        successRate,
         trends
       };
     } else {

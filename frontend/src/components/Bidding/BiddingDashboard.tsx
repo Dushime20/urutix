@@ -23,8 +23,11 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useNavigationPermissions } from '../../hooks/useNavigationPermissions';
 
 interface BiddingDashboardProps {
-  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN';
+  userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'ADMIN' | 'SUPER_ADMIN' | 'FLEET_MANAGER' | 'FLEET_OWNER';
 }
+
+const isTruckSideRole = (role: BiddingDashboardProps['userRole']) =>
+  role === 'TRUCK_OWNER' || role === 'FLEET_MANAGER' || role === 'FLEET_OWNER';
 
 const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
   const location = useLocation();
@@ -35,18 +38,28 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     canManageBids,
     isLoading: permsLoading,
   } = useNavigationPermissions();
-  const [activeTab, setActiveTab] = useState(
-    userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' 
-      ? 'all-bids' 
-      : userRole === 'CARGO_OWNER' 
-        ? 'my-auctions' 
-        : 'auctions'
-  );
+
+  const resolveDefaultTab = () => {
+    if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') return 'all-bids';
+    if (userRole === 'CARGO_OWNER') return 'my-auctions';
+    // Truck / fleet: Open Auctions on /bids, past/completed via query or /my-bids
+    const path = location.pathname || '';
+    const viewParam = new URLSearchParams(location.search).get('view');
+    if (viewParam === 'bids' || viewParam === 'completed' || viewParam === 'accepted' || viewParam === 'analytics') {
+      return viewParam === 'accepted' ? 'completed' : viewParam;
+    }
+    if (path.includes('/my-bids')) return 'bids';
+    return 'auctions';
+  };
+
+  const [activeTab, setActiveTab] = useState(resolveDefaultTab);
   const [error, setError] = useState<string | null>(null);
 
   const { data: stats = {
     totalAuctions: 0,
     activeBids: 0,
+    pastBids: 0,
+    completedBids: 0,
   }, isLoading: loading, isError } = useQuery({
     queryKey: queryKeys.bidding.stats,
     queryFn: async () => {
@@ -68,19 +81,27 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     const searchParams = new URLSearchParams(location.search);
     const viewParam = searchParams.get('view');
     if (viewParam) {
-      setActiveTab(viewParam);
+      setActiveTab(viewParam === 'accepted' ? 'completed' : viewParam);
+      return;
     }
-  }, [location.search]);
+    // Keep Available vs Past Bids aligned with the route
+    if (isTruckSideRole(userRole)) {
+      if (location.pathname.includes('/my-bids')) {
+        setActiveTab('bids');
+      } else if (location.pathname.includes('/fleet/bids')) {
+        setActiveTab('auctions');
+      }
+    }
+  }, [location.pathname, location.search, userRole]);
 
+  // Do NOT auto-switch truck owners to Past Bids when auctions:view is missing —
+  // that hid new auctions and made the board look like history-only.
   useEffect(() => {
     if (permsLoading) return;
-    if (userRole === 'TRUCK_OWNER' && activeTab === 'auctions' && !canViewAuctions) {
-      setActiveTab('bids');
-    }
     if (userRole === 'CARGO_OWNER' && activeTab === 'create' && !canCreateAuction) {
       setActiveTab('my-auctions');
     }
-  }, [permsLoading, userRole, activeTab, canViewAuctions, canCreateAuction]);
+  }, [permsLoading, userRole, activeTab, canCreateAuction]);
 
   if (!permsLoading && !canAccessBidding) {
     return (
@@ -175,6 +196,12 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
 
   const renderTruckOwnerTabs = () => (
     <div className="space-y-6 sm:space-y-8">
+      <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/60 dark:bg-blue-950/20 px-4 py-3">
+        <p className="text-[10px] sm:text-xs font-bold text-[#345E85] dark:text-blue-300 uppercase tracking-widest">
+          Same-tenant auctions only — you only see open auctions created in your organization
+        </p>
+      </div>
+
       <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-between items-center bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full overflow-hidden">
         <nav className="flex items-center gap-1 sm:gap-2 p-1 overflow-x-auto scrollbar-hide w-full">
           {canViewAuctions && (
@@ -188,12 +215,12 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             )}
           >
             <Gavel size={14} />
-            Available
+            Open Auctions
             <span className={cn(
               "px-2 py-0.5 rounded-lg text-[9px] font-black ml-1",
               activeTab === 'auctions' ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
             )}>
-              {stats.totalAuctions}
+              {stats.totalAuctions ?? 0}
             </span>
           </button>
           )}
@@ -212,20 +239,26 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
               "px-2 py-0.5 rounded-lg text-[9px] font-black ml-1",
               activeTab === 'bids' ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
             )}>
-              {stats.activeBids}
+              {stats.pastBids ?? stats.activeBids ?? 0}
             </span>
           </button>
           <button
-            onClick={() => setActiveTab('accepted')}
+            onClick={() => setActiveTab('completed')}
             className={cn(
               "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
-              activeTab === 'accepted'
+              activeTab === 'completed'
                 ? "bg-emerald-500 text-white shadow-xl shadow-emerald-900/10"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             )}
           >
             <CheckCircle size={14} />
-            Accepted Bids
+            Completed
+            <span className={cn(
+              "px-2 py-0.5 rounded-lg text-[9px] font-black ml-1",
+              activeTab === 'completed' ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+            )}>
+              {stats.completedBids ?? 0}
+            </span>
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
@@ -250,7 +283,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       )}>
         {activeTab === 'auctions' && (
           canViewAuctions ? (
-            <AuctionList userRole={userRole} />
+            <AuctionList userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole} />
           ) : (
             <div className="py-16 text-center space-y-2">
               <AlertCircle className="mx-auto text-slate-400" size={28} />
@@ -259,9 +292,23 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
             </div>
           )
         )}
-        {activeTab === 'bids' && <BidHistory userRole={userRole} />}
-        {activeTab === 'accepted' && <BidHistory userRole={userRole} initialStatusFilter="ACCEPTED" />}
-        {activeTab === 'analytics' && <BidAnalytics userRole={userRole} />}
+        {activeTab === 'bids' && (
+          <BidHistory
+            userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole}
+            scope="past"
+            emptyTitle="No past bids yet"
+            emptyDescription="Bids you place that are pending, rejected, withdrawn, or expired will show here."
+          />
+        )}
+        {(activeTab === 'completed' || activeTab === 'accepted') && (
+          <BidHistory
+            userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole}
+            scope="completed"
+            emptyTitle="No completed bids"
+            emptyDescription="Accepted / won bids for your tenant loads will appear here."
+          />
+        )}
+        {activeTab === 'analytics' && <BidAnalytics userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole} />}
       </div>
     </div>
   );
@@ -339,7 +386,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
               ? 'System-wide bidding analytics & monitoring'
               : userRole === 'CARGO_OWNER'
                 ? 'Marketplace-driven cargo allocation & pricing control'
-                : 'Competitive bidding workflow & discovery mechanisms'}
+                : 'Open auctions in your tenant · past bids · completed wins'}
           </p>
         </div>
       </div>

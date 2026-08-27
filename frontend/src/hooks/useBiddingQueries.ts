@@ -95,6 +95,8 @@ export type BidHistoryFilters = {
   dateRange?: string;
   minAmount?: string;
   maxAmount?: string;
+  /** past = non-accepted bids; completed = accepted only; all = everything */
+  scope?: 'all' | 'past' | 'completed';
 };
 
 export function useBidHistoryQuery(
@@ -110,6 +112,14 @@ export function useBidHistoryQuery(
           : await biddingAPI.getMyBids();
       const bidsData = (response as any).data ?? response;
       let filteredBids = Array.isArray(bidsData) ? bidsData : [];
+
+      if (filters.scope === 'completed') {
+        filteredBids = filteredBids.filter((bid: { status: string }) => bid.status === 'ACCEPTED');
+      } else if (filters.scope === 'past') {
+        // Past = placed bids that are not completed wins
+        filteredBids = filteredBids.filter((bid: { status: string }) => bid.status !== 'ACCEPTED');
+      }
+
       if (filters.status && filters.status !== 'all') {
         filteredBids = filteredBids.filter((bid: { status: string }) => bid.status === filters.status);
       }

@@ -79,9 +79,19 @@ interface Bid {
 interface BidHistoryProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER' | 'ADMIN' | 'SUPER_ADMIN';
   initialStatusFilter?: string;
+  /** past = non-accepted; completed = accepted wins; all = everything */
+  scope?: 'all' | 'past' | 'completed';
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
-const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }) => {
+const BidHistory: React.FC<BidHistoryProps> = ({
+  userRole,
+  initialStatusFilter,
+  scope = 'all',
+  emptyTitle,
+  emptyDescription,
+}) => {
   const { compactIn: fmtBid, format: fmtFull } = useCurrencyFormat();
   const formatCurrency = (amount: number, _currency?: string) => fmtFull(amount);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
@@ -91,9 +101,14 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
     dateRange: 'all',
     minAmount: '',
     maxAmount: '',
+    scope,
   });
   const { confirm, DialogComponent } = useConfirmDialog();
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
+
+  React.useEffect(() => {
+    setFilters((prev) => ({ ...prev, scope, status: initialStatusFilter ?? prev.status }));
+  }, [scope, initialStatusFilter]);
 
   const {
     data: bids = [],
@@ -377,7 +392,14 @@ const BidHistory: React.FC<BidHistoryProps> = ({ userRole, initialStatusFilter }
           <div className="w-16 h-16 bg-slate-50 dark:bg-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <History size={24} className="text-slate-400 dark:text-slate-600" />
           </div>
-          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500">No bidding history found</p>
+          <p className="text-[10px] font-black text-slate-700 dark:text-slate-300">
+            {emptyTitle || 'No bidding history found'}
+          </p>
+          {emptyDescription && (
+            <p className="mt-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 normal-case tracking-normal">
+              {emptyDescription}
+            </p>
+          )}
         </div>
       ) : (
         <>

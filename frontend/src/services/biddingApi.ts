@@ -207,8 +207,9 @@ import {
   validateBidAmount as validateAuctionBidAmount,
   getSuggestedBidAmount,
   getBidConstraintHint,
+  getAuctionBidWindow,
 } from '../utils/bidValidation';
-export type { AuctionBidRules } from '../utils/bidValidation';
+export type { AuctionBidRules, AuctionBidWindow } from '../utils/bidValidation';
 
 // Helper functions for common operations
 export const biddingHelpers = {
@@ -257,6 +258,8 @@ export const biddingHelpers = {
   getSuggestedBidAmount,
 
   getBidConstraintHint,
+
+  getAuctionBidWindow,
 
   // Get status color for badges
   getStatusColor: (status: string) => {

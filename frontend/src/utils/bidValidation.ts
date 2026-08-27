@@ -128,3 +128,96 @@ export function validateBidAmount(
 
   return null;
 }
+
+export type AuctionBidWindowState = 'open' | 'not_started' | 'ended' | 'closed' | 'cancelled' | 'paused';
+
+export interface AuctionBidWindowInput {
+  status?: string;
+  auctionStart?: string | Date | null;
+  auctionEnd?: string | Date | null;
+  winningBidId?: string | null;
+}
+
+export interface AuctionBidWindow {
+  canBid: boolean;
+  state: AuctionBidWindowState;
+  /** Short UI label for buttons / badges */
+  label: string;
+  /** Longer explanation for banners */
+  message: string;
+  opensAt?: Date | null;
+  closesAt?: Date | null;
+}
+
+/** Bidding is allowed only during [auctionStart, auctionEnd], even if status is still SCHEDULED. */
+export function getAuctionBidWindow(auction: AuctionBidWindowInput, now = new Date()): AuctionBidWindow {
+  const status = (auction.status || '').toUpperCase();
+  const opensAt = auction.auctionStart ? new Date(auction.auctionStart) : null;
+  const closesAt = auction.auctionEnd ? new Date(auction.auctionEnd) : null;
+
+  if (status === 'CANCELLED') {
+    return {
+      canBid: false,
+      state: 'cancelled',
+      label: 'Cancelled',
+      message: 'This auction was cancelled. Bidding is closed.',
+      opensAt,
+      closesAt,
+    };
+  }
+
+  if (status === 'CLOSED' || auction.winningBidId) {
+    return {
+      canBid: false,
+      state: 'closed',
+      label: 'Closed',
+      message: 'This auction is closed. Bidding is no longer available.',
+      opensAt,
+      closesAt,
+    };
+  }
+
+  if (status === 'PAUSED') {
+    return {
+      canBid: false,
+      state: 'paused',
+      label: 'Paused',
+      message: 'This auction is paused. Bidding will resume when it is reactivated.',
+      opensAt,
+      closesAt,
+    };
+  }
+
+  if (closesAt && !Number.isNaN(closesAt.getTime()) && closesAt.getTime() <= now.getTime()) {
+    return {
+      canBid: false,
+      state: 'ended',
+      label: 'Ended',
+      message: `Bidding closed on ${closesAt.toLocaleString()}.`,
+      opensAt,
+      closesAt,
+    };
+  }
+
+  if (opensAt && !Number.isNaN(opensAt.getTime()) && opensAt.getTime() > now.getTime()) {
+    return {
+      canBid: false,
+      state: 'not_started',
+      label: 'Opens soon',
+      message: `Visible now — bidding opens on ${opensAt.toLocaleString()}.`,
+      opensAt,
+      closesAt,
+    };
+  }
+
+  return {
+    canBid: true,
+    state: 'open',
+    label: 'Bid now',
+    message: closesAt
+      ? `Bidding is open until ${closesAt.toLocaleString()}.`
+      : 'Bidding is open.',
+    opensAt,
+    closesAt,
+  };
+}

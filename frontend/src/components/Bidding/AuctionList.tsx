@@ -112,7 +112,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
   const [filters, setFilters] = useState({
-    status: 'all',
+    // Truck owners should land on open auctions, not closed/past ones
+    status: userRole === 'TRUCK_OWNER' || userRole === 'BROKER' ? 'ACTIVE' : 'all',
     auctionType: 'all',
     minValue: '',
     maxValue: '',
@@ -153,6 +154,21 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const openDetailsModal = (auction: Auction) => {
     setDetailsAuction(auction);
     setShowDetailsModal(true);
+  };
+
+  const isBiddingOpen = (auction: Auction | null | undefined) =>
+    !!auction && biddingHelpers.getAuctionBidWindow(auction).canBid;
+
+  const getBidWindow = (auction: Auction | null | undefined) =>
+    auction ? biddingHelpers.getAuctionBidWindow(auction) : null;
+
+  const guardBidAction = (auction: Auction, action: () => void) => {
+    const window = biddingHelpers.getAuctionBidWindow(auction);
+    if (!window.canBid) {
+      toast.error(window.message);
+      return;
+    }
+    action();
   };
 
   // Bid States
@@ -310,6 +326,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const submitQuickBid = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedAuction) return;
+    const window = biddingHelpers.getAuctionBidWindow(selectedAuction);
+    if (!window.canBid) {
+      toast.error(window.message);
+      return;
+    }
     const amountNum = Number(quickBidAmount);
     if (!amountNum || amountNum <= 0) {
       toast.error('Enter a valid bid amount');
@@ -359,6 +380,11 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   const placeBid = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!selectedAuction) return;
+    const window = biddingHelpers.getAuctionBidWindow(selectedAuction);
+    if (!window.canBid) {
+      toast.error(window.message);
+      return;
+    }
     const amountNum = Number(bidAmount);
     if (!amountNum || amountNum <= 0) {
       toast.error('Enter a valid bid amount');
@@ -452,7 +478,13 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   };
 
   const renderFilters = () => (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 mb-8 shadow-sm">
+    <div className="space-y-4 mb-8">
+      {userRole === 'TRUCK_OWNER' && (
+        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">
+          Open auctions created in your tenant — place a bid to compete
+        </p>
+      )}
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
       <div className="flex flex-col lg:flex-row gap-6 items-center">
         <div className="relative flex-1 w-full group">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600 group-focus-within:text-[#345E85] dark:group-focus-within:text-blue-400 transition-colors" />
@@ -500,6 +532,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 
@@ -589,14 +622,24 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
         </div>
 
+        {!isBiddingOpen(auction) && getBidWindow(auction)?.state === 'not_started' && (
+          <div className="mb-3 flex items-start gap-2 rounded-xl border border-amber-100 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-900/20 px-3 py-2">
+            <Lock size={12} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="text-[9px] sm:text-[10px] font-bold text-amber-700 dark:text-amber-300 leading-snug">
+              Visible now — bidding opens {formatDate(auction.auctionStart)}
+            </p>
+          </div>
+        )}
+
         <div className={`grid gap-2 sm:gap-3 ${userRole === 'BROKER' || !canCreateBid ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {userRole !== 'BROKER' && canCreateBid && (
             <button
-              onClick={() => openBidModal(auction)}
-              disabled={auction.status !== 'ACTIVE'}
+              onClick={() => guardBidAction(auction, () => openBidModal(auction))}
+              disabled={!isBiddingOpen(auction)}
+              title={getBidWindow(auction)?.message}
               className="py-3 sm:py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-all active:scale-95 truncate disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-800"
             >
-              Custom
+              {getBidWindow(auction)?.state === 'not_started' ? 'Opens Soon' : 'Custom'}
             </button>
           )}
           {userRole !== 'BROKER' && !canCreateBid && (
@@ -800,8 +843,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     <div className="flex items-center justify-end gap-2">
                       {userRole !== 'BROKER' && canCreateBid && (
                         <button
-                          onClick={() => openBidModal(auction)}
-                          disabled={auction.status !== 'ACTIVE'}
+                          onClick={() => guardBidAction(auction, () => openBidModal(auction))}
+                          disabled={!isBiddingOpen(auction)}
+                          title={getBidWindow(auction)?.message}
                           className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all bg-slate-900 text-white hover:bg-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900"
                         >
                           <Gavel size={14} />
@@ -837,9 +881,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
                 </p>
               </div>
-              {selectedAuction.status !== 'ACTIVE' && (
-                <div className="absolute top-8 right-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-800">
-                  Status: {selectedAuction.status}
+              {!isBiddingOpen(selectedAuction) && (
+                <div className="absolute top-8 right-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-800 max-w-xs text-right">
+                  {getBidWindow(selectedAuction)?.label || selectedAuction.status}
                 </div>
               )}
             </div>
@@ -854,7 +898,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     type="number"
                     value={quickBidAmount}
                     onChange={(e) => setQuickBidAmount(e.target.value)}
-                    className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
+                    disabled={!isBiddingOpen(selectedAuction)}
+                    className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all disabled:opacity-50"
                     placeholder="0.00"
                   />
                 </div>
@@ -950,9 +995,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
             {/* Footer Actions */}
             <div className="p-10 pt-0 flex flex-col gap-4">
-              {selectedAuction.status !== 'ACTIVE' && (
-                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full">
-                  Bidding available on ACTIVE auctions only.
+              {!isBiddingOpen(selectedAuction) && (
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full normal-case tracking-normal">
+                  {getBidWindow(selectedAuction)?.message || 'Bidding is not open yet.'}
                 </p>
               )}
               <div className="flex items-center justify-end gap-4 w-full">
@@ -968,7 +1013,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                 </button>
                 <button
                   type="submit"
-                  disabled={!quickBidAmount || !proposedPickupDate || !proposedDeliveryDate || selectedAuction.status !== 'ACTIVE'}
+                  disabled={!quickBidAmount || !proposedPickupDate || !proposedDeliveryDate || !isBiddingOpen(selectedAuction)}
                   className="px-10 py-4 bg-[#345E85] text-white rounded-xl text-base font-bold hover:bg-[#2a4d6d] transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Submit Bid
@@ -996,9 +1041,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
                 </p>
               </div>
-              {selectedAuction.status !== 'ACTIVE' && (
-                <div className="absolute top-8 right-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-800">
-                  Status: {selectedAuction.status}
+              {!isBiddingOpen(selectedAuction) && (
+                <div className="absolute top-8 right-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-800 max-w-xs text-right">
+                  {getBidWindow(selectedAuction)?.label || selectedAuction.status}
                 </div>
               )}
             </div>
@@ -1013,7 +1058,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all"
+                    disabled={!isBiddingOpen(selectedAuction)}
+                    className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all disabled:opacity-50"
                     placeholder="0.00"
                     min={1}
                   />
@@ -1193,9 +1239,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
             {/* Footer Actions */}
             <div className="p-10 pt-0 flex flex-col gap-4">
-              {selectedAuction.status !== 'ACTIVE' && (
-                <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full">
-                  Bidding available on ACTIVE auctions only.
+              {!isBiddingOpen(selectedAuction) && (
+                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full normal-case tracking-normal">
+                  {getBidWindow(selectedAuction)?.message || 'Bidding is not open yet.'}
                 </p>
               )}
               <div className="flex items-center justify-end gap-4 w-full">
@@ -1208,7 +1254,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                 </button>
                 <button
                   type="submit"
-                  disabled={!bidAmount || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate || selectedAuction.status !== 'ACTIVE'}
+                  disabled={!bidAmount || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate || !isBiddingOpen(selectedAuction)}
                   className="px-10 py-4 bg-[#345E85] text-white rounded-xl text-base font-bold hover:bg-[#2a4d6d] transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Submit Bid
@@ -1347,9 +1393,9 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
 
             {/* Footer Actions */}
             <div className="px-4 sm:px-8 py-4 sm:py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col gap-3 shrink-0">
-              {detailsAuction.status !== 'ACTIVE' && (
-                <p className="text-[8px] sm:text-[9px] font-bold text-amber-500 uppercase tracking-wider sm:tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg sm:rounded-xl py-2">
-                  Bidding available on ACTIVE auctions only — this auction is {detailsAuction.status}
+              {!isBiddingOpen(detailsAuction) && (
+                <p className="text-[8px] sm:text-[9px] font-bold text-amber-600 uppercase tracking-wider sm:tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg sm:rounded-xl py-2 normal-case tracking-normal">
+                  {getBidWindow(detailsAuction)?.message || `Bidding is not open — status: ${detailsAuction.status}`}
                 </p>
               )}
               {(userRole === 'TRUCK_OWNER' || userRole === 'BROKER') && (
@@ -1357,12 +1403,15 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                   {userRole !== 'BROKER' && canCreateBid && (
                     <button
                       type="button"
-                      onClick={() => { setShowDetailsModal(false); openBidModal(detailsAuction); }}
-                      disabled={detailsAuction.status !== 'ACTIVE'}
+                      onClick={() => guardBidAction(detailsAuction, () => { setShowDetailsModal(false); openBidModal(detailsAuction); })}
+                      disabled={!isBiddingOpen(detailsAuction)}
+                      title={getBidWindow(detailsAuction)?.message}
                       className="flex-1 py-3 sm:py-4 bg-slate-900 dark:bg-slate-800 text-white rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wide sm:tracking-widest hover:bg-black dark:hover:bg-slate-700 transition-all shadow-lg active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
                     >
                       <Gavel size={13} className="shrink-0" /> 
-                      <span className="truncate">Custom Bid</span>
+                      <span className="truncate">
+                        {getBidWindow(detailsAuction)?.state === 'not_started' ? 'Opens Soon' : 'Custom Bid'}
+                      </span>
                     </button>
                   )}
                   <button

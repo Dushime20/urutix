@@ -5,7 +5,11 @@ const UnifiedBiddingManagement = () => {
     const { user } = useAuth();
 
     const userRole =
-        user?.role === "TRUCK_OWNER" ? "TRUCK_OWNER" : "CARGO_OWNER";
+        user?.role === "TRUCK_OWNER" ||
+        user?.role === "FLEET_MANAGER" ||
+        user?.role === "FLEET_OWNER"
+            ? "TRUCK_OWNER"
+            : "CARGO_OWNER";
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
