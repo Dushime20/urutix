@@ -103,17 +103,24 @@ interface Auction {
 interface AuctionListProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER' | 'ADMIN' | 'SUPER_ADMIN';
   showWatchedOnly?: boolean;
+  /** live = bidding open now; scheduled = upcoming (visible, locked); open = both */
+  board?: 'live' | 'scheduled' | 'open';
 }
 
-const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = false }) => {
+const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = false, board = 'open' }) => {
   const { can, isFeatureEnabled, isLoading: permsLoading } = usePermission();
   const canViewAuctions = can('auctions:view') && isFeatureEnabled('auctions:view');
   const canCreateBid = can('bids:create') && isFeatureEnabled('bids:create');
   const [selectedAuction, setSelectedAuction] = useState<Auction | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
   const [filters, setFilters] = useState({
-    // Truck owners should land on open auctions, not closed/past ones
-    status: userRole === 'TRUCK_OWNER' || userRole === 'BROKER' ? 'ACTIVE' : 'all',
+    // Live board prefers ACTIVE; Scheduled prefers SCHEDULED; otherwise open mix
+    status:
+      board === 'scheduled'
+        ? 'SCHEDULED'
+        : board === 'live' || userRole === 'TRUCK_OWNER' || userRole === 'BROKER'
+          ? 'ACTIVE'
+          : 'all',
     auctionType: 'all',
     minValue: '',
     maxValue: '',
@@ -210,6 +217,23 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       setFilters(prev => ({ ...prev, showWatchedOnly: true }));
     }
   }, [showWatchedOnly]);
+
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      status: board === 'scheduled' ? 'SCHEDULED' : board === 'live' || board === 'open' ? 'ACTIVE' : prev.status || 'ACTIVE',
+    }));
+  }, [board]);
+
+  const boardAuctions = React.useMemo(() => {
+    if (board === 'open') return auctions;
+    return auctions.filter((auction) => {
+      const window = biddingHelpers.getAuctionBidWindow(auction);
+      if (board === 'live') return window.canBid;
+      if (board === 'scheduled') return window.state === 'not_started';
+      return true;
+    });
+  }, [auctions, board]);
 
   const handleExport = async () => {
     try {
@@ -481,7 +505,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     <div className="space-y-4 mb-8">
       {userRole === 'TRUCK_OWNER' && (
         <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">
-          Open auctions created in your tenant — place a bid to compete
+          Available auctions in your tenant — bid when live; scheduled stay visible until start
         </p>
       )}
     <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
@@ -496,7 +520,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mr-2" />
             <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total:</span>
-            <span className="text-sm font-black text-[#345E85] dark:text-blue-400">{auctions.length}</span>
+            <span className="text-sm font-black text-[#345E85] dark:text-blue-400">{boardAuctions.length}</span>
           </div>
         </div>
 
@@ -724,7 +748,7 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
           <div>
             <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">
-              Watched Auctions <span className="text-red-400 font-light ml-2">({auctions.length} total)</span>
+              Watched Auctions <span className="text-red-400 font-light ml-2">({boardAuctions.length} total)</span>
             </h3>
           </div>
         </div>
@@ -747,23 +771,25 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
         </div>
       )}
 
-      {auctions.length === 0 ? (
+      {boardAuctions.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
           <div className="flex items-center gap-2">
             <Gavel className="text-gray-400 flex-shrink-0" />
-            <span className="text-xs sm:text-sm text-gray-800 break-words">No auctions found matching your criteria.</span>
+            <span className="text-xs sm:text-sm text-gray-800 break-words">
+              No available auctions right now. New live and scheduled auctions in your tenant will show here.
+            </span>
           </div>
         </div>
       ) : (
         <>
           {viewMode === 'card' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {auctions.map(renderAuctionCard)}
+              {boardAuctions.map(renderAuctionCard)}
             </div>
           ) : (
             <StandardDataTable
               embedded
-              data={auctions}
+              data={boardAuctions}
               getRowId={(a) => a.id}
               searchable={false}
               pagination={false}

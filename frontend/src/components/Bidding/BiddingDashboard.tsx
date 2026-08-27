@@ -8,7 +8,7 @@ import {
   AlertCircle,
   Shield,
   CheckCircle,
-  History as HistoryIcon
+  History as HistoryIcon,
 } from 'lucide-react';
 import { biddingAPI } from '../../services/biddingApi';
 import AuctionList from './AuctionList';
@@ -45,11 +45,13 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     // Truck / fleet: Open Auctions on /bids, past/completed via query or /my-bids
     const path = location.pathname || '';
     const viewParam = new URLSearchParams(location.search).get('view');
-    if (viewParam === 'bids' || viewParam === 'completed' || viewParam === 'accepted' || viewParam === 'analytics') {
-      return viewParam === 'accepted' ? 'completed' : viewParam;
+    if (viewParam === 'bids' || viewParam === 'completed' || viewParam === 'accepted' || viewParam === 'analytics' || viewParam === 'auctions' || viewParam === 'live' || viewParam === 'scheduled') {
+      if (viewParam === 'accepted') return 'completed';
+      if (viewParam === 'live' || viewParam === 'scheduled' || viewParam === 'auctions') return 'available';
+      return viewParam;
     }
     if (path.includes('/my-bids')) return 'bids';
-    return 'auctions';
+    return 'available';
   };
 
   const [activeTab, setActiveTab] = useState(resolveDefaultTab);
@@ -89,7 +91,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
       if (location.pathname.includes('/my-bids')) {
         setActiveTab('bids');
       } else if (location.pathname.includes('/fleet/bids')) {
-        setActiveTab('auctions');
+        setActiveTab('available');
       }
     }
   }, [location.pathname, location.search, userRole]);
@@ -194,40 +196,44 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
     </div>
   );
 
-  const renderTruckOwnerTabs = () => (
+  const renderTruckOwnerTabs = () => {
+    const truckRole = isTruckSideRole(userRole) ? 'TRUCK_OWNER' as const : userRole;
+    const auctionTabsLocked = !canViewAuctions;
+
+    return (
     <div className="space-y-6 sm:space-y-8">
       <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/60 dark:bg-blue-950/20 px-4 py-3">
         <p className="text-[10px] sm:text-xs font-bold text-[#345E85] dark:text-blue-300 uppercase tracking-widest">
-          Same-tenant auctions only — you only see open auctions created in your organization
+          Same-tenant auctions only — live ones are open to bid; scheduled ones stay visible until start time
         </p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 sm:gap-6 justify-between items-center bg-white dark:bg-slate-900 p-2 sm:p-3 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm w-full overflow-hidden">
         <nav className="flex items-center gap-1 sm:gap-2 p-1 overflow-x-auto scrollbar-hide w-full">
-          {canViewAuctions && (
           <button
-            onClick={() => setActiveTab('auctions')}
+            onClick={() => setActiveTab('available')}
             className={cn(
-              "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
-              activeTab === 'auctions'
+              "px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+              activeTab === 'available' || activeTab === 'auctions' || activeTab === 'live' || activeTab === 'scheduled'
                 ? "bg-[#345E85] text-white shadow-xl shadow-blue-900/10"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             )}
           >
             <Gavel size={14} />
-            Open Auctions
+            Available Auctions
             <span className={cn(
               "px-2 py-0.5 rounded-lg text-[9px] font-black ml-1",
-              activeTab === 'auctions' ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+              activeTab === 'available' || activeTab === 'auctions' || activeTab === 'live' || activeTab === 'scheduled'
+                ? "bg-white/20 text-white"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-400"
             )}>
               {stats.totalAuctions ?? 0}
             </span>
           </button>
-          )}
           <button
             onClick={() => setActiveTab('bids')}
             className={cn(
-              "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+              "px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
               activeTab === 'bids'
                 ? "bg-[#345E85] text-white shadow-xl shadow-blue-900/10"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -245,7 +251,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
           <button
             onClick={() => setActiveTab('completed')}
             className={cn(
-              "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+              "px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
               activeTab === 'completed'
                 ? "bg-emerald-500 text-white shadow-xl shadow-emerald-900/10"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -263,7 +269,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
           <button
             onClick={() => setActiveTab('analytics')}
             className={cn(
-              "px-4 sm:px-8 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
+              "px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-[1.8rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2 sm:gap-3 transition-all duration-300 whitespace-nowrap flex-1 md:flex-none justify-center md:justify-start",
               activeTab === 'analytics'
                 ? "bg-indigo-600 text-white shadow-xl shadow-indigo-900/10"
                 : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -281,20 +287,20 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
           ? ""
           : "bg-white dark:bg-slate-900 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm"
       )}>
-        {activeTab === 'auctions' && (
-          canViewAuctions ? (
-            <AuctionList userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole} />
-          ) : (
+        {(activeTab === 'available' || activeTab === 'auctions' || activeTab === 'live' || activeTab === 'scheduled') && (
+          auctionTabsLocked ? (
             <div className="py-16 text-center space-y-2">
               <AlertCircle className="mx-auto text-slate-400" size={28} />
               <p className="text-sm font-bold text-slate-700">Cannot view auctions</p>
               <p className="text-xs text-slate-500">Your account does not have the auctions:view permission.</p>
             </div>
+          ) : (
+            <AuctionList userRole={truckRole} board="open" />
           )
         )}
         {activeTab === 'bids' && (
           <BidHistory
-            userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole}
+            userRole={truckRole}
             scope="past"
             emptyTitle="No past bids yet"
             emptyDescription="Bids you place that are pending, rejected, withdrawn, or expired will show here."
@@ -302,16 +308,17 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
         )}
         {(activeTab === 'completed' || activeTab === 'accepted') && (
           <BidHistory
-            userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole}
+            userRole={truckRole}
             scope="completed"
             emptyTitle="No completed bids"
             emptyDescription="Accepted / won bids for your tenant loads will appear here."
           />
         )}
-        {activeTab === 'analytics' && <BidAnalytics userRole={isTruckSideRole(userRole) ? 'TRUCK_OWNER' : userRole} />}
+        {activeTab === 'analytics' && <BidAnalytics userRole={truckRole} />}
       </div>
     </div>
-  );
+    );
+  };
 
   const renderAdminTabs = () => (
     <div className="space-y-6 sm:space-y-8">
@@ -386,7 +393,7 @@ const BiddingDashboard: React.FC<BiddingDashboardProps> = ({ userRole }) => {
               ? 'System-wide bidding analytics & monitoring'
               : userRole === 'CARGO_OWNER'
                 ? 'Marketplace-driven cargo allocation & pricing control'
-                : 'Open auctions in your tenant · past bids · completed wins'}
+                : 'Available auctions in your tenant · past bids · completed wins'}
           </p>
         </div>
       </div>

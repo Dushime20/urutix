@@ -2010,7 +2010,7 @@ export class BiddingService {
       const successRate = totalBids > 0 ? Math.round((wonBids / totalBids) * 100) : 0;
 
       // Get available open auctions for truck owners to bid on (same tenant only)
-      const activeAuctions = await this.auctionRepository
+      const openAuctions = await this.auctionRepository
         .createQueryBuilder('auction')
         .innerJoinAndSelect('auction.load', 'load')
         .where('auction.status IN (:...statuses)', {
@@ -2020,6 +2020,16 @@ export class BiddingService {
         .andWhere('load.tenantId = :tenantId', { tenantId })
         .getMany();
 
+      const nowTs = Date.now();
+      const liveAuctions = openAuctions.filter((a) => {
+        const start = a.auctionStart ? new Date(a.auctionStart).getTime() : 0;
+        return start <= nowTs;
+      }).length;
+      const scheduledAuctions = openAuctions.filter((a) => {
+        const start = a.auctionStart ? new Date(a.auctionStart).getTime() : 0;
+        return start > nowTs;
+      }).length;
+
       // Auctions they've already participated in
       const participatedAuctions = new Set(myBids.map(b => b.loadId)).size;
 
@@ -2027,11 +2037,13 @@ export class BiddingService {
       const trends = this.calculateBidTrends(myBids);
 
       return {
-        totalAuctions: activeAuctions.length, // Open auctions to bid on (same tenant)
+        totalAuctions: openAuctions.length,
+        liveAuctions,
+        scheduledAuctions,
         participatedAuctions,
-        activeBids, // Pending bids
-        pastBids, // All non-completed bids
-        completedBids: wonBids, // Accepted / won
+        activeBids,
+        pastBids,
+        completedBids: wonBids,
         totalValue,
         successRate,
         trends
