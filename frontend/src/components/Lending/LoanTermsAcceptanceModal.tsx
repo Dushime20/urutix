@@ -36,6 +36,8 @@ const LoanTermsAcceptanceModal: React.FC<Props> = ({ loanId, onClose, onAccepted
   }, [loanId]);
 
   const currency = disclosure?.currency ?? 'RWF';
+  const financingType = disclosure?.financing_type || disclosure?.policy?.financing_type || 'CARGO_OWNER';
+  const isTruckOwnerTrip = financingType === 'TRUCK_OWNER_TRIP';
   const isCounterOffer = Boolean(
     disclosure?.is_counter_offer
     || disclosure?.is_partial_offer
@@ -159,7 +161,9 @@ const LoanTermsAcceptanceModal: React.FC<Props> = ({ loanId, onClose, onAccepted
                 <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${
                   isCounterOffer ? 'text-orange-700' : 'text-[#345E85]'
                 }`}>
-                  {isCounterOffer ? 'Counter-Offer Disclosure' : 'Loan Terms Disclosure'}
+                  {isTruckOwnerTrip
+                    ? (isCounterOffer ? 'Truck Owner Trip · Counter-Offer' : 'Truck Owner Trip Financing')
+                    : (isCounterOffer ? 'Counter-Offer Disclosure' : 'Loan Terms Disclosure')}
                 </p>
                 <h2 className="text-2xl font-black text-slate-900">
                   {isCounterOffer ? 'Agree or Reject Counter-Offer' : 'Review & Accept Offer'}

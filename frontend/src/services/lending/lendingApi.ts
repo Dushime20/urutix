@@ -10,6 +10,8 @@ export interface LoanRequest {
   approved_amount?: number;
   /** ISO 4217 currency code (e.g. RWF, USD) */
   currency?: string;
+  /** Financing direction on the Liquidity Exchange */
+  financing_type?: 'CARGO_OWNER' | 'TRUCK_OWNER_TRIP';
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'failed' | 'defaulted';
   terms_offered_at?: string | null;
   borrower_accepted_at?: string | null;
@@ -33,7 +35,6 @@ export interface LoanRequest {
   effective_annual_rate?: number;
   risk_score?: number;
   risk_level?: string;
-  loan_term_months?: number;
   purpose?: string;
   cargo_type?: string;
   pickup_location?: string;
@@ -94,6 +95,9 @@ export interface CreateLoanRequestDto {
   due_date?: string;
   /** ISO 4217 currency code for the loan amounts — always sent from the frontend and persisted. */
   currency: string;
+  /** Financing direction — defaults to CARGO_OWNER on the backend when omitted */
+  financing_type?: 'CARGO_OWNER' | 'TRUCK_OWNER_TRIP';
+  purpose?: string;
   metadata?: any;
 }
 

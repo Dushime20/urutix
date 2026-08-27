@@ -167,12 +167,16 @@ const UnifiedFinancialManagement = () => {
       icon: Wallet,
       description: "Manage your payment methods",
     }] : []),
-    // Only show Loan Requests tab for cargo owners and lenders (NOT for truck owners/fleet owners)
-    ...((user?.role === 'CARGO_OWNER' || user?.role === 'LENDER') ? [{
+    // Loan Requests tab: cargo owners, truck/fleet owners, and lenders
+    ...((user?.role === 'CARGO_OWNER' || user?.role === 'LENDER' || user?.role === 'TRUCK_OWNER' || user?.role === 'FLEET_MANAGER' || location.pathname.includes('/fleet')) ? [{
       id: "loans" as TabType,
-      label: "Loan Requests",
+      label: user?.role === 'TRUCK_OWNER' || location.pathname.includes('/fleet')
+        ? "Trip Financing"
+        : "Loan Requests",
       icon: DollarSign,
-      description: "Manage cargo-based loan requests",
+      description: user?.role === 'TRUCK_OWNER' || location.pathname.includes('/fleet')
+        ? "Request and manage trip working-capital financing"
+        : "Manage cargo-based loan requests",
     }] : []),
     // Driver Advances tab — fleet/truck owners only
     ...(location.pathname.includes("/fleet") ? [{

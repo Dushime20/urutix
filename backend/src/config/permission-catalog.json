@@ -143,7 +143,7 @@
     ],
     "CARGO_RECEIVER": ["receivers:inspect", "receivers:view", "cargo:view_own", "trips:confirm_epod"],
     "CUSTOMS_OFFICER": ["customs:view", "customs:create", "customs:update"],
-    "FLEET_MANAGER": ["fleet:view", "fleet:edit", "trips:assign_driver", "trips:start", "trips:complete"],
+    "FLEET_MANAGER": ["fleet:view", "fleet:edit", "trips:assign_driver", "trips:start", "trips:complete", "lending:view_own", "lending:create_request"],
     "FLEET_DISPATCHER": ["trips:assign_driver", "trips:start", "trips:complete", "fleet:view"],
     "PARKING_RESERVATION_MANAGER": [
       "parking:view", "parking:view_details", "parking:review", "parking:approve",

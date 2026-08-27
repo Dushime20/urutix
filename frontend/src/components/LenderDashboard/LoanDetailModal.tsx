@@ -64,17 +64,28 @@ const LoanDetailModal: React.FC<LoanDetailModalProps> = ({ loan, onClose }) => {
         {/* Content */}
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Status Badge */}
-          <div className="flex items-center justify-between">
-            <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider border ${getStatusColor(loan.status)}`}>
-              {loan.status === 'approved' || loan.status === 'repaid' ? (
-                <CheckCircle className="w-4 h-4" />
-              ) : loan.status === 'rejected' ? (
-                <AlertCircle className="w-4 h-4" />
-              ) : (
-                <FileText className="w-4 h-4" />
-              )}
-              {loan.status}
-            </span>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider border ${getStatusColor(loan.status)}`}>
+                {loan.status === 'approved' || loan.status === 'repaid' ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : loan.status === 'rejected' ? (
+                  <AlertCircle className="w-4 h-4" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                {loan.status}
+              </span>
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                (loan.financing_type || loan.metadata?.financing_type) === 'TRUCK_OWNER_TRIP'
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-slate-100 text-slate-700 border-slate-200'
+              }`}>
+                {(loan.financing_type || loan.metadata?.financing_type) === 'TRUCK_OWNER_TRIP'
+                  ? 'Truck Owner Trip Financing'
+                  : 'Cargo Owner Financing'}
+              </span>
+            </div>
             {loan.risk_score && (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Risk Score:</span>

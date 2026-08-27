@@ -19,7 +19,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In, ILike } from 'typeorm';
 import { Lender, LenderStatus } from '../../entities/lender.entity';
 import { LenderPolicy } from '../../entities/lender-policy.entity';
-import { LoanRequest, LoanRequestStatus } from '../../entities/loan-request.entity';
+import {
+  LoanRequest,
+  LoanRequestStatus,
+  FinancingType,
+} from '../../entities/loan-request.entity';
 import {
   LoanDisbursement,
   DisbursementStatus,
@@ -710,6 +714,115 @@ export class LendingService {
     return null;
   }
 
+  /**
+   * Resolve financing direction from DTO (or default to cargo-owner product).
+   */
+  private resolveFinancingType(
+    createLoanDto: CreateLoanRequestDto,
+  ): FinancingType {
+    const raw =
+      createLoanDto.financing_type ||
+      (createLoanDto.metadata as any)?.financing_type;
+    if (raw === FinancingType.TRUCK_OWNER_TRIP || raw === 'TRUCK_OWNER_TRIP') {
+      return FinancingType.TRUCK_OWNER_TRIP;
+    }
+    return FinancingType.CARGO_OWNER;
+  }
+
+  private isTruckOwnerTripFinancing(loan: Pick<LoanRequest, 'financing_type' | 'purpose'>): boolean {
+    return (
+      loan.financing_type === FinancingType.TRUCK_OWNER_TRIP ||
+      loan.purpose === 'truck_owner_trip_financing'
+    );
+  }
+
+  /**
+   * Validate truck-owner trip financing eligibility against the transport contract.
+   * Reuses trip → truck ownership resolution already used for disbursement beneficiaries.
+   */
+  private async validateTruckOwnerTripEligibility(
+    createdBy: string,
+    tripId: string,
+    cargoId: string,
+    tenantId: string,
+    requestedAmount: number,
+  ): Promise<{ trip: Trip; transportValue: number }> {
+    const requester = await this.userRepository.findOne({
+      where: { id: createdBy },
+    });
+    if (!requester) {
+      throw new BadRequestException('Requester account not found.');
+    }
+    if (requester.status && requester.status !== UserStatus.ACTIVE) {
+      throw new BadRequestException('Your account is not active. Financing is unavailable.');
+    }
+    if (
+      requester.role !== UserRole.TRUCK_OWNER &&
+      requester.role !== UserRole.FLEET_MANAGER &&
+      requester.role !== UserRole.ADMIN &&
+      requester.role !== UserRole.SUPER_ADMIN &&
+      requester.role !== UserRole.TENANT_ADMIN
+    ) {
+      throw new BadRequestException(
+        'Only truck owners (or authorized fleet managers) can request truck-owner trip financing.',
+      );
+    }
+
+    const trip = await this.dataSource.getRepository(Trip).findOne({
+      where: { id: tripId },
+      relations: ['load'],
+    });
+    if (!trip) {
+      throw new BadRequestException('Transport trip not found for this financing request.');
+    }
+    if (trip.tenantId && trip.tenantId !== tenantId) {
+      throw new BadRequestException('Trip does not belong to your tenant.');
+    }
+
+    const tripLoadId = trip.loadId || (trip as any).load?.id;
+    if (cargoId && tripLoadId && cargoId !== tripLoadId) {
+      throw new BadRequestException(
+        'Selected cargo does not match the transport trip on this financing request.',
+      );
+    }
+
+    const cancelledStatuses = ['CANCELLED', 'CANCELED'];
+    if (cancelledStatuses.includes(String(trip.status || '').toUpperCase())) {
+      throw new BadRequestException('Cannot finance a cancelled transport trip.');
+    }
+
+    const truckOwnerPayment = await this.resolveTruckOwnerPaymentInfo(tripId);
+    if (!truckOwnerPayment.ownerId) {
+      throw new BadRequestException(
+        'No truck is assigned to this trip yet. Assign a truck before requesting trip financing.',
+      );
+    }
+    if (
+      truckOwnerPayment.ownerId !== createdBy &&
+      requester.role !== UserRole.ADMIN &&
+      requester.role !== UserRole.SUPER_ADMIN &&
+      requester.role !== UserRole.TENANT_ADMIN
+    ) {
+      throw new BadRequestException(
+        'You can only request trip financing for transport contracts assigned to your trucks.',
+      );
+    }
+
+    const transportValue = Number(
+      trip.agreedPrice ||
+        (trip as any).load?.offeredPrice ||
+        (trip as any).load?.value ||
+        0,
+    );
+    if (transportValue > 0 && requestedAmount > transportValue) {
+      throw new BadRequestException(
+        `Requested financing (${requestedAmount}) cannot exceed the transport contract value (${transportValue}).`,
+      );
+    }
+
+    return { trip, transportValue };
+  }
+
   // Loan Request Management
   async createLoanRequest(
     createLoanDto: CreateLoanRequestDto,
@@ -718,6 +831,8 @@ export class LendingService {
     this.logger.log(
       `Creating loan request for tenant: ${createLoanDto.tenant_id}, amount: ${createLoanDto.requested_amount}`,
     );
+
+    const financingType = this.resolveFinancingType(createLoanDto);
 
     // Validate requested_split sums to requested_amount
     if (Array.isArray(createLoanDto.requested_split)) {
@@ -735,6 +850,22 @@ export class LendingService {
       }
     }
 
+    // Truck-owner product: validate trip ownership / contract eligibility first
+    if (financingType === FinancingType.TRUCK_OWNER_TRIP) {
+      if (!createLoanDto.trip_id) {
+        throw new BadRequestException(
+          'trip_id is required for truck-owner trip financing.',
+        );
+      }
+      await this.validateTruckOwnerTripEligibility(
+        createdBy,
+        createLoanDto.trip_id,
+        createLoanDto.cargo_id,
+        createLoanDto.tenant_id,
+        createLoanDto.requested_amount,
+      );
+    }
+
     // Enhanced validation
     await this.validateCreditLimit(
       createLoanDto.tenant_id,
@@ -742,12 +873,21 @@ export class LendingService {
       createLoanDto.lender_id,
     );
 
+    const defaultPurpose =
+      financingType === FinancingType.TRUCK_OWNER_TRIP
+        ? 'truck_owner_trip_financing'
+        : 'cargo_financing';
+    const resolvedPurpose =
+      createLoanDto.purpose ||
+      (createLoanDto.metadata as any)?.purpose ||
+      defaultPurpose;
+
     if (createLoanDto.lender_id) {
       this.logger.log(`Validating specified lender: ${createLoanDto.lender_id}`);
       await this.validateLenderAvailability(createLoanDto.lender_id, createLoanDto.requested_amount, {
         tenantId: createLoanDto.tenant_id,
-        purpose: (createLoanDto as any).purpose,
-        currency: (createLoanDto as any).currency,
+        purpose: resolvedPurpose,
+        currency: createLoanDto.currency,
         collateralValue: (createLoanDto as any).collateral_value,
         kycVerified: (createLoanDto as any).kyc_verified,
       });
@@ -755,9 +895,9 @@ export class LendingService {
       this.logger.log(`No lender specified, will attempt automatic assignment`);
     }
 
-    // ── RULE 1: One loan per trip (invoice/trip financing standard) ───────
-    // A trip can only be financed once. If an active loan already exists
-    // for this trip_id, block the new request immediately.
+    // ── RULE 1: One active financing per trip (prevents CO + TO conflict) ──
+    // A trip can only have one active financing facility. Applies to both
+    // cargo-owner and truck-owner products.
     if (createLoanDto.trip_id) {
       const activeTripLoan = await this.loanRequestRepository.findOne({
         where: {
@@ -770,10 +910,11 @@ export class LendingService {
         },
       });
       if (activeTripLoan) {
+        const existingType = activeTripLoan.financing_type || FinancingType.CARGO_OWNER;
         throw new BadRequestException(
-          `Trip already has an active loan ` +
+          `Trip already has an active ${existingType === FinancingType.TRUCK_OWNER_TRIP ? 'truck-owner' : 'cargo-owner'} financing ` +
           `(${activeTripLoan.loan_number || activeTripLoan.id.slice(0, 8)}). ` +
-          `A trip can only be financed once.`,
+          `A transport contract cannot hold conflicting financing.`,
         );
       }
     }
@@ -864,7 +1005,8 @@ export class LendingService {
       borrower_id: borrower?.id ?? null,
       due_date: dueDate,
       loan_number: loanNumber,
-      purpose: (createLoanDto as any).purpose ?? 'cargo_financing',
+      financing_type: financingType,
+      purpose: resolvedPurpose,
       currency: loanCurrency,
       kyc_verified: (createLoanDto as any).kyc_verified ?? false,
       grace_period_end: gracePeriodEnd,
@@ -872,6 +1014,11 @@ export class LendingService {
       origination_fee_amount: originationFeeAmount,
       days_past_due: 0,
       ifrs9_stage: 1,
+      metadata: {
+        ...(createLoanDto.metadata || {}),
+        financing_type: financingType,
+        purpose: resolvedPurpose,
+      },
     });
 
     // Save with retry — if a stale sequence value somehow produces a loan_number
@@ -947,7 +1094,10 @@ export class LendingService {
         const requesterUser = await this.userRepository.findOne({ where: { id: createdBy }, relations: ['profile'] });
         const requesterName = requesterUser?.profile
           ? `${requesterUser.profile.firstName || ''} ${requesterUser.profile.lastName || ''}`.trim() || requesterUser.email
-          : requesterUser?.email || 'A cargo owner';
+          : requesterUser?.email ||
+            (financingType === FinancingType.TRUCK_OWNER_TRIP
+              ? 'A truck owner'
+              : 'A cargo owner');
         // Find lender's user account to notify
         const lenderUser = await this.userRepository.findOne({ where: { email: lender?.contact_email, role: UserRole.LENDER } });
         if (lenderUser) {
@@ -1103,12 +1253,15 @@ export class LendingService {
       idempotency_key: idempotencyKey,
       created_by: createdBy,
       status: LoanRequestStatus.PENDING,
+      financing_type: FinancingType.CARGO_OWNER,
+      purpose: 'cargo_financing',
       metadata: {
         auto_created: true,
         trigger: 'cargo_loaded',
         created_at: new Date().toISOString(),
         selected_lender: lenderId || null, // Store original ID (could be User ID) in metadata
         financing_basis: 'trip_or_load_value',
+        financing_type: FinancingType.CARGO_OWNER,
       },
     });
 
@@ -1848,22 +2001,35 @@ export class LendingService {
         : 0;
 
     const beneficiaryPayment = await this.resolveTruckOwnerPaymentInfo(loan.trip_id);
+    const isTruckOwnerFinancing = this.isTruckOwnerTripFinancing(loan);
 
-    const rulesAndRegulations = [
-      'This offer is a formal credit disclosure. No funds are disbursed until you agree.',
-      'Interest is calculated on the offered principal for the stated term (APR disclosed above).',
-      'Repayment is due by the stated due date / instalment schedule. Late payment may incur fees after any grace period.',
-      'Funds are disbursed to the nominated service provider (e.g. transporter) on your behalf once you agree and the lender pays.',
-      'You may reject this offer; the lender may then revise terms or close the application.',
-      'Personal and cargo data used for this assessment is processed for credit underwriting and AML/KYC compliance.',
-      'This facility is subject to the lender’s active interest-rate and risk policy in force at offer time.',
-    ];
+    const rulesAndRegulations = isTruckOwnerFinancing
+      ? [
+          'This offer is a formal credit disclosure for truck-owner trip financing. No funds are disbursed until you agree.',
+          'Interest is calculated on the offered principal for the stated term (APR disclosed above).',
+          'Repayment is due by the stated due date / instalment schedule. Late payment may incur fees after any grace period.',
+          'Funds are released to your fleet payment account as working capital to execute the transport contract.',
+          'You remain responsible for completing the trip. Freight payment from the cargo owner is separate from this financing facility.',
+          'You may reject this offer; the lender may then revise terms or close the application.',
+          'Personal, fleet, and trip data used for this assessment is processed for credit underwriting and AML/KYC compliance.',
+          'This facility is subject to the lender’s active interest-rate and risk policy in force at offer time.',
+        ]
+      : [
+          'This offer is a formal credit disclosure. No funds are disbursed until you agree.',
+          'Interest is calculated on the offered principal for the stated term (APR disclosed above).',
+          'Repayment is due by the stated due date / instalment schedule. Late payment may incur fees after any grace period.',
+          'Funds are disbursed to the nominated service provider (e.g. transporter) on your behalf once you agree and the lender pays.',
+          'You may reject this offer; the lender may then revise terms or close the application.',
+          'Personal and cargo data used for this assessment is processed for credit underwriting and AML/KYC compliance.',
+          'This facility is subject to the lender’s active interest-rate and risk policy in force at offer time.',
+        ];
 
     return {
       loan_id: loan.id,
       loan_number: loan.loan_number,
       status: loan.status,
       currency: loan.currency,
+      financing_type: loan.financing_type || FinancingType.CARGO_OWNER,
       requested_amount: loan.requested_amount,
       approved_amount: approvedAmount,
       interest_amount: interestAmount,
@@ -1888,7 +2054,10 @@ export class LendingService {
         risk_score: loan.risk_score ?? loan.metadata?.risk_score ?? null,
         risk_tier: loan.risk_tier ?? loan.metadata?.risk_level ?? null,
         currency: loan.currency,
-        purpose: loan.purpose || 'Cargo financing',
+        purpose:
+          loan.purpose ||
+          (isTruckOwnerFinancing ? 'Truck owner trip financing' : 'Cargo financing'),
+        financing_type: loan.financing_type || FinancingType.CARGO_OWNER,
       },
       repayment_schedule: repaymentSchedule,
       rules_and_regulations: rulesAndRegulations,
@@ -2873,8 +3042,10 @@ export class LendingService {
       await import('../../entities/payment.entity');
 
     const { loan, lockedAmount, beneficiaries, tripId, lenderUserId, processedPaymentId } = ctx;
+    const isTruckOwnerFinancing = this.isTruckOwnerTripFinancing(loan);
 
     try {
+      // Notify the borrower (cargo owner OR truck owner depending on financing type)
       await this.loanNotificationService.notifyCargoOwnerLoanDisbursed(
         loan.created_by,
         loan.tenant_id,
@@ -2886,7 +3057,9 @@ export class LendingService {
       const truckOwnerId =
         beneficiaries.find((b: any) => b.recipientId)?.recipientId ??
         beneficiaries.find((b: any) => b.id)?.id;
-      if (truckOwnerId) {
+      // For cargo-owner financing, also notify the truck owner that they were paid on behalf.
+      // For truck-owner trip financing, borrower === payee — skip duplicate notify.
+      if (truckOwnerId && !isTruckOwnerFinancing && truckOwnerId !== loan.created_by) {
         await this.loanNotificationService.notifyTruckOwnerLenderPaid(
           truckOwnerId,
           loan.tenant_id,
@@ -2901,35 +3074,44 @@ export class LendingService {
 
     if (!tripId) return;
 
-    const cargoOwnerId = loan.created_by;
-    const existingTripPayment = await manager.findOne(PaymentEntity, {
-      where: {
-        tripId,
-        payerId: cargoOwnerId,
-        paymentType: PmtType.TRIP_PAYMENT,
-        status: PmtStatus.PENDING,
-      } as any,
-    });
-    if (existingTripPayment) {
-      existingTripPayment.status = PmtStatus.CANCELLED;
-      (existingTripPayment.metadata as any) = {
-        ...(existingTripPayment.metadata || {}),
-        cancelledReason: 'Replaced by lender disbursement obligation',
-        loanId: loan.id,
-        cancelledAt: new Date().toISOString(),
-      };
-      await manager.save(PaymentEntity, existingTripPayment);
+    // Cargo-owner financing replaces the cargo→carrier trip payment with a loan repayment obligation.
+    // Truck-owner trip financing does NOT cancel the cargo owner's transport payment —
+    // that freight receivable remains and funds trip execution / repayment capacity.
+    if (!isTruckOwnerFinancing) {
+      const cargoOwnerId = loan.created_by;
+      const existingTripPayment = await manager.findOne(PaymentEntity, {
+        where: {
+          tripId,
+          payerId: cargoOwnerId,
+          paymentType: PmtType.TRIP_PAYMENT,
+          status: PmtStatus.PENDING,
+        } as any,
+      });
+      if (existingTripPayment) {
+        existingTripPayment.status = PmtStatus.CANCELLED;
+        (existingTripPayment.metadata as any) = {
+          ...(existingTripPayment.metadata || {}),
+          cancelledReason: 'Replaced by lender disbursement obligation',
+          loanId: loan.id,
+          cancelledAt: new Date().toISOString(),
+        };
+        await manager.save(PaymentEntity, existingTripPayment);
+      }
     }
 
     const dueDate = loan.due_date ? new Date(loan.due_date) : null;
     if (!dueDate) return;
 
+    // Repayment obligation payer = borrower (created_by):
+    //   CARGO_OWNER product → cargo owner repays
+    //   TRUCK_OWNER_TRIP     → truck owner repays from trip earnings
+    const borrowerId = loan.created_by;
     const obligationAmount =
       Number(loan.approved_amount) + Number(loan.interest_amount || 0);
     const obligationPayment = manager.create(PaymentEntity, {
       tripId,
       tenantId: loan.tenant_id,
-      payerId: cargoOwnerId,
+      payerId: borrowerId,
       payeeId: lenderUserId,
       amount: obligationAmount,
       currency: this.requireCurrency(loan.currency, `loan ${loan.id}`),
@@ -2937,15 +3119,20 @@ export class LendingService {
       paymentType: PmtType.TRIP_PAYMENT,
       status: PmtStatus.PENDING,
       dueDate,
-      description: `Loan repayment to lender — ${loan.loan_number || loan.id.slice(0, 8)}`,
+      description: isTruckOwnerFinancing
+        ? `Truck-owner trip financing repayment — ${loan.loan_number || loan.id.slice(0, 8)}`
+        : `Loan repayment to lender — ${loan.loan_number || loan.id.slice(0, 8)}`,
       referenceNumber: `LREP-OBL-${loan.id.slice(-8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`,
       metadata: {
         isLoanRepaymentObligation: true,
         isLenderPayment: false,
+        financingType: loan.financing_type || FinancingType.CARGO_OWNER,
         loanId: loan.id,
         lenderName: loan.lender?.name ?? null,
         lenderId: loan.lender_id,
-        cargoOwnerId,
+        cargoOwnerId: isTruckOwnerFinancing ? null : borrowerId,
+        truckOwnerId: isTruckOwnerFinancing ? borrowerId : null,
+        borrowerId,
         originalDisbursementPaymentId: processedPaymentId,
         paymentSource: 'lender_disbursement',
         automaticallyCreated: true,
@@ -4748,7 +4935,8 @@ export class LendingService {
   }
 
   private generateIdempotencyKey(createLoanDto: CreateLoanRequestDto): string {
-    const data = `${createLoanDto.tenant_id}-${createLoanDto.cargo_id}-${createLoanDto.trip_id}-${createLoanDto.requested_amount}`;
+    const financingType = this.resolveFinancingType(createLoanDto);
+    const data = `${createLoanDto.tenant_id}-${createLoanDto.cargo_id}-${createLoanDto.trip_id}-${createLoanDto.requested_amount}-${financingType}`;
     return crypto.createHash('sha256').update(data).digest('hex');
   }
 
@@ -4772,14 +4960,18 @@ export class LendingService {
     });
   }
 
-  /** Get all loan requests created by a specific user (cargo owner) */
+  /** Get all loan requests created by a specific user (cargo owner or truck owner) */
   async getMyLoanRequests(userId: string, tenantId: string): Promise<any[]> {
     const loans = await this.loanRequestRepository.find({
       where: { created_by: userId, tenant_id: tenantId },
       relations: ['lender', 'disbursements', 'repayments'],
       order: { created_at: 'DESC' },
     });
-    return loans.map((loan) => ({ ...loan, ...buildLoanWorkflowView(loan) }));
+    return loans.map((loan) => ({
+      ...loan,
+      financing_type: loan.financing_type || FinancingType.CARGO_OWNER,
+      ...buildLoanWorkflowView(loan),
+    }));
   }
 
   /**

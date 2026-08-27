@@ -30,6 +30,7 @@ interface LoanRequest {
   requested_amount: number; approved_amount?: number;
   interest_amount?: number;
   currency?: string;
+  financing_type?: 'CARGO_OWNER' | 'TRUCK_OWNER_TRIP';
   status: 'pending' | 'approved' | 'rejected' | 'disbursed' | 'repaid' | 'overdue';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   created_at: string; due_date?: string;
@@ -319,8 +320,10 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
       requested_split: [{ type: form.beneficiary_type, id: form.beneficiary_id.trim(), amount }],
       lender_id: form.lender_id,
       currency: requestCurrency,
+      financing_type: 'CARGO_OWNER',
+      purpose: form.purpose || form.beneficiary_type || 'cargo_financing',
       ...(form.due_date && { due_date: form.due_date }),
-      metadata: { purpose: form.purpose || form.beneficiary_type },
+      metadata: { purpose: form.purpose || form.beneficiary_type, financing_type: 'CARGO_OWNER' },
     };
     
     try {
@@ -347,8 +350,8 @@ const CargoOwnerLoanRequestModal: React.FC<LoanRequestFormModalProps> = ({ onClo
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
         <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Cargo Financing</p>
-            <h3 className="text-xl font-black text-white tracking-tight">New Loan Request</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Cargo Owner Financing</p>
+            <h3 className="text-xl font-black text-white tracking-tight">Request Trip Financing</h3>
           </div>
           <button onClick={onClose} className="h-9 w-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
             <X size={16} />
@@ -626,13 +629,18 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
     const ACTIVE_TRIP_STATUSES = ['IN_PROGRESS', 'PLANNED', 'DELAYED'];
     const isCargoOwner = user?.role === 'CARGO_OWNER';
 
-    api.get('/trips', { params: { page: 1, limit: 100 } })
-      .then(async (tripsRes) => {
+    Promise.all([
+      api.get('/trips', { params: { page: 1, limit: 100 } }),
+      lendingApi.getActiveFinancedIds().catch(() => ({ tripIds: [] as string[], cargoIds: [] as string[] })),
+    ])
+      .then(async ([tripsRes, financed]) => {
         const rawTrips = tripsRes.data?.data || tripsRes.data?.trips || tripsRes.data?.items || tripsRes.data || [];
         const tripsList: any[] = Array.isArray(rawTrips) ? rawTrips : [];
 
+        const financedTripIds = new Set(financed.tripIds || []);
         const activeTrips = tripsList.filter((t: any) =>
-          ACTIVE_TRIP_STATUSES.includes((t.status || '').toUpperCase())
+          ACTIVE_TRIP_STATUSES.includes((t.status || '').toUpperCase()) &&
+          !financedTripIds.has(t.id)
         );
         const activeLoadIds = new Set(
           activeTrips.map((t: any) => t.loadId || t.load_id || t.load?.id).filter(Boolean)
@@ -730,9 +738,14 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
       created_by: userId,
       requested_split: [{ type: form.beneficiary_type, id: form.beneficiary_id.trim(), amount }],
       currency: requestCurrency,
+      financing_type: 'TRUCK_OWNER_TRIP',
+      purpose: form.purpose || form.beneficiary_type || 'truck_owner_trip_financing',
       ...(form.lender_id && { lender_id: form.lender_id }),
       ...(form.due_date   && { due_date: form.due_date }),
-      metadata: { purpose: form.purpose || form.beneficiary_type },
+      metadata: {
+        purpose: form.purpose || form.beneficiary_type,
+        financing_type: 'TRUCK_OWNER_TRIP',
+      },
     };
     try {
       setSubmitting(true);
@@ -758,8 +771,8 @@ const LoanRequestFormModal: React.FC<LoanRequestFormModalProps> = ({ onClose, on
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[80vh]">
         <div className="bg-[#345E85] px-8 py-6 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Fleet Financing</p>
-            <h3 className="text-xl font-black text-white tracking-tight">New Loan Request</h3>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Truck Owner Trip Financing</p>
+            <h3 className="text-xl font-black text-white tracking-tight">Request Trip Financing</h3>
           </div>
           <button onClick={onClose} className="h-9 w-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
             <X size={16} />
@@ -1028,12 +1041,23 @@ const TruckOwnerLoanRequestsView: React.FC<{
     },
     {
       key: 'purpose',
-      label: 'Purpose',
-      render: (_v, req) => (
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize">
-          {req.purpose || 'Fleet financing'}
-        </p>
-      ),
+      label: 'Type / Purpose',
+      render: (_v, req) => {
+        const financingType = (req as any).financing_type || req.metadata?.financing_type || 'CARGO_OWNER';
+        const isTruck = financingType === 'TRUCK_OWNER_TRIP';
+        return (
+          <div className="space-y-1">
+            <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+              isTruck ? 'bg-amber-50 text-amber-800' : 'bg-slate-100 text-slate-700'
+            }`}>
+              {isTruck ? 'Truck Owner Trip' : 'Cargo Owner'}
+            </span>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 capitalize">
+              {req.purpose || (isTruck ? 'Trip financing' : 'Cargo financing')}
+            </p>
+          </div>
+        );
+      },
     },
     {
       key: 'requested_split',
@@ -1166,7 +1190,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
             My Loan <span className="text-[#2c5173]">Requests</span>
           </h2>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-            Fleet financing & advance management
+            Trip financing & advance management
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -1175,7 +1199,7 @@ const TruckOwnerLoanRequestsView: React.FC<{
           </button>
           <button onClick={onNewRequest}
             className="flex items-center gap-2 px-6 py-3 bg-[#2c5173] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1e3850] transition-all shadow-lg shadow-[#2c5173]/20 active:scale-95">
-            <Plus size={14} /> Request Loan
+            <Plus size={14} /> Request Trip Financing
           </button>
         </div>
       </div>
@@ -1218,11 +1242,11 @@ const TruckOwnerLoanRequestsView: React.FC<{
             <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
               <FileText size={24} className="text-slate-400" />
             </div>
-            <p className="text-slate-900 dark:text-white font-black text-lg mb-1">No loan requests yet</p>
-            <p className="text-slate-400 text-sm mb-6">Submit your first loan request to get started</p>
+            <p className="text-slate-900 dark:text-white font-black text-lg mb-1">No financing requests yet</p>
+            <p className="text-slate-400 text-sm mb-6">Request trip financing against an eligible transport contract</p>
             <button onClick={onNewRequest}
               className="flex items-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-blue-100">
-              <Plus size={14} /> Request Loan
+              <Plus size={14} /> Request Trip Financing
             </button>
           </div>
         ) : (
@@ -1357,25 +1381,14 @@ const EnhancedLoanRequestsPage: React.FC = () => {
     if (!user?.tenantId || !accessToken) { setFetching(false); return; }
     setFetching(true); setError(null);
     try {
-      // Use the dedicated my-loans endpoint for cargo owners (returns only their own loans)
-      let raw: any[];
-      if (isCargoOwner) {
-        const res = await api.get('/lending/my-loans');
-        raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-      } else {
-        const tenantRaw = await lendingApi.getTenantLoans(user.tenantId);
-        raw = Array.isArray(tenantRaw) ? tenantRaw : ((tenantRaw as any)?.data || []);
-      }
+      // Both cargo owners and truck owners use my-loans (own requests only)
+      const res = await api.get('/lending/my-loans');
+      const raw: any[] = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       const data: any[] = raw;
-
-      // For non-cargo-owners, still filter by created_by
-      const userLoans = isCargoOwner
-        ? data
-        : data.filter((req: any) => req.created_by === user.id || req.createdBy === user.id);
 
       // Enrich each loan with cargo and lender details in parallel
       const mapped: LoanRequest[] = await Promise.all(
-        userLoans.map(async (req: any) => {
+        data.map(async (req: any) => {
           let cargoLabel = '';
           let cargoType = 'General Cargo';
           let lenderName = '';
@@ -1398,6 +1411,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
             interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
             currency: req.currency || 'RWF',
+            financing_type: req.financing_type || req.metadata?.financing_type || 'CARGO_OWNER',
             status: req.status || 'pending',
             priority: 'medium' as const,
             created_at: req.created_at || req.createdAt || new Date().toISOString(),
@@ -1417,7 +1431,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             risk_score: req.risk_score != null ? Number(req.risk_score) : null,
             credit_score: req.borrower?.credit_score ?? null,
             interest_rate: req.interest_rate != null ? Number(req.interest_rate) : null,
-            purpose: req.metadata?.purpose || req.metadata?.note || cargoType,
+            purpose: req.purpose || req.metadata?.purpose || req.metadata?.note || cargoType,
             lender_id: lenderId,
             lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
             processing_fee: 0,
@@ -1496,6 +1510,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             approved_amount: req.approved_amount != null ? Number(req.approved_amount) : undefined,
             interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
             currency: req.currency || 'RWF',
+            financing_type: req.financing_type || req.metadata?.financing_type || 'CARGO_OWNER',
             status: req.status || 'pending',
             priority: 'medium' as const,
             created_at: req.created_at || req.createdAt || new Date().toISOString(),
@@ -1515,7 +1530,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
             risk_score: req.risk_score != null ? Number(req.risk_score) : null,
             credit_score: req.borrower?.credit_score ?? null,
             interest_rate: req.interest_rate != null ? Number(req.interest_rate) : null,
-            purpose: req.metadata?.purpose || req.metadata?.note || cargoType,
+            purpose: req.purpose || req.metadata?.purpose || req.metadata?.note || cargoType,
             lender_id: lenderId,
             lender: lenderName ? { id: lenderId, name: lenderName, type: 'bank', email: '', phone: '' } : undefined,
             processing_fee: 0,
@@ -1618,6 +1633,7 @@ const EnhancedLoanRequestsPage: React.FC = () => {
               approved_amount: req.approved_amount || req.approvedAmount,
               interest_amount: req.interest_amount != null ? Number(req.interest_amount) : (req.interestAmount != null ? Number(req.interestAmount) : undefined),
               currency: req.currency || 'RWF',
+              financing_type: req.financing_type || req.metadata?.financing_type || 'CARGO_OWNER',
               status: req.status || 'pending',
               priority: req.priority || 'medium', created_at: req.created_at || req.createdAt,
               due_date: req.due_date || req.dueDate,

@@ -21,6 +21,17 @@ export enum LoanRequestStatus {
   DEFAULTED = 'defaulted',
 }
 
+/**
+ * Financing direction on the Logistics Liquidity Exchange.
+ * Both products share the same loan_requests infrastructure.
+ */
+export enum FinancingType {
+  /** Cargo owner borrows so lender can pay the truck owner for transport */
+  CARGO_OWNER = 'CARGO_OWNER',
+  /** Truck owner borrows working capital against an accepted transport contract */
+  TRUCK_OWNER_TRIP = 'TRUCK_OWNER_TRIP',
+}
+
 @Entity('loan_requests')
 @Index(['tenant_id', 'status'])
 @Index(['lender_id', 'created_at'])
@@ -107,6 +118,17 @@ export class LoanRequest {
   /** Loan purpose — IFRS 9 / Basel classification */
   @Column({ type: 'varchar', length: 100, nullable: true })
   purpose: string;
+
+  /**
+   * Financing direction: cargo-owner transport payment vs truck-owner trip working capital.
+   * Defaults to CARGO_OWNER for backward compatibility with existing loans.
+   */
+  @Column({
+    type: 'varchar',
+    length: 32,
+    default: FinancingType.CARGO_OWNER,
+  })
+  financing_type: FinancingType;
 
   /** KYC verification confirmed before origination (AML/CTF compliance) */
   @Column({ type: 'boolean', default: false })

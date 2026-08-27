@@ -26,6 +26,12 @@ export enum BeneficiaryType {
   OTHER = 'other',
 }
 
+/** Financing direction — must match FinancingType on LoanRequest entity */
+export enum FinancingTypeDto {
+  CARGO_OWNER = 'CARGO_OWNER',
+  TRUCK_OWNER_TRIP = 'TRUCK_OWNER_TRIP',
+}
+
 export class BeneficiaryDto {
   @IsEnum(BeneficiaryType, { message: 'Invalid beneficiary type' })
   @IsNotEmpty({ message: 'Beneficiary type is required' })
@@ -84,6 +90,19 @@ export class CreateLoanRequestDto {
   @IsUppercase()
   @Length(3, 3, { message: 'currency must be a 3-letter ISO 4217 code (e.g. RWF, USD)' })
   currency: string;
+
+  /**
+   * Financing direction. Defaults to CARGO_OWNER when omitted (legacy clients).
+   * TRUCK_OWNER_TRIP = truck owner working capital against an accepted trip.
+   */
+  @IsEnum(FinancingTypeDto, { message: 'financing_type must be CARGO_OWNER or TRUCK_OWNER_TRIP' })
+  @IsOptional()
+  financing_type?: FinancingTypeDto;
+
+  /** Human-readable purpose note (fuel, driver, trip ops, etc.) */
+  @IsString()
+  @IsOptional()
+  purpose?: string;
 
   @IsOptional()
   metadata?: Record<string, any>;

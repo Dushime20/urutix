@@ -117,8 +117,19 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                     wf.awaiting_borrower_response || wf.ready_to_disburse || row.status === 'disbursed'
                 );
                 const loanCurrency = row.currency || 'RWF';
+                const financingType = row.financing_type || row.metadata?.financing_type || 'CARGO_OWNER';
+                const isTruckOwnerTrip = financingType === 'TRUCK_OWNER_TRIP';
                 return (
                     <div className="space-y-1">
+                        <span
+                          className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
+                            isTruckOwnerTrip
+                              ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                          }`}
+                        >
+                          {isTruckOwnerTrip ? 'Truck Owner Trip' : 'Cargo Owner'}
+                        </span>
                         {showOffered ? (
                             <>
                                 <p className="font-bold text-slate-900 dark:text-white text-sm">
@@ -324,8 +335,16 @@ const LoanRequestsEnlite: React.FC<LoanRequestsEnliteProps> = ({
                 loading={loading}
                 getRowId={(row) => row.id}
                 searchPlaceholder={t('Search loans…')}
-                searchKeys={['borrower_name', 'borrower_company', 'id', 'cargo_type', 'status']}
+                searchKeys={['borrower_name', 'borrower_company', 'id', 'cargo_type', 'status', 'financing_type']}
                 filters={[
+                    {
+                        key: 'financing_type',
+                        label: t('Financing Type'),
+                        options: [
+                            { value: 'CARGO_OWNER', label: 'Cargo Owner Financing' },
+                            { value: 'TRUCK_OWNER_TRIP', label: 'Truck Owner Trip Financing' },
+                        ],
+                    },
                     {
                         key: 'status',
                         label: t('Status'),

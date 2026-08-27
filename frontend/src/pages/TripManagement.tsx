@@ -1,5 +1,6 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   Truck,
   User,
@@ -19,6 +20,7 @@ import {
   Phone,
   Camera,
   PenLine,
+  CircleDollarSign,
 } from 'lucide-react';
 import { tripsAPI } from '../services/api';
 import api from '../services/api';
@@ -28,6 +30,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { cn } from '../utils/cn';
 import ModernLoader from '../components/common/ModernLoader';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
+import { useAuth } from '../contexts/AuthContext';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
 
 /**
@@ -77,6 +80,12 @@ interface SortConfig {
 
 const TripManagement: React.FC = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const isTruckOwner =
+    user?.role === 'TRUCK_OWNER' ||
+    user?.role === 'FLEET_MANAGER' ||
+    user?.role === 'FLEET_OWNER';
   const [filter, setFilter] = useState<'all' | 'planned' | 'in_progress' | 'completed' | 'cancelled'>('all');
   const [search, setSearch] = useState('');
   const [assigningDriver, setAssigningDriver] = useState(false);
@@ -858,6 +867,19 @@ const TripManagement: React.FC = () => {
                     <DR label="Profit Margin" value={raw.profitMargin ? `${raw.profitMargin}%` : '—'} />
                     <DR label="Fuel Efficiency" value={raw.fuelEfficiency ? `${raw.fuelEfficiency} L/100km` : '—'} />
                   </div>
+                  {isTruckOwner &&
+                    ['PLANNED', 'IN_PROGRESS', 'DELAYED'].includes(
+                      String(selectedTrip.status || '').toUpperCase(),
+                    ) && (
+                      <button
+                        type="button"
+                        onClick={() => navigate('/dashboard/fleet/loan-requests')}
+                        className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#345E85] text-white text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                      >
+                        <CircleDollarSign size={14} />
+                        Request Trip Financing
+                      </button>
+                    )}
                 </TSection>
 
                 {/* ── Performance ── */}

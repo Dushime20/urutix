@@ -464,12 +464,13 @@ export class LendingController {
   // ===== LOAN REQUEST ENDPOINTS =====
 
   @Post('lending/loan-requests')
-  @Roles(UserRole.CARGO_OWNER)
+  @Roles(UserRole.CARGO_OWNER, UserRole.TRUCK_OWNER, UserRole.FLEET_MANAGER)
   @UseGuards(PermissionsGuard)
   @RequirePermissions('lending:create_request')
   @ApiOperation({
     summary: 'Create loan request',
-    description: 'Create a new loan request for cargo transportation financing. Only Cargo Owners can request loans.',
+    description:
+      'Create a financing request for cargo-owner transport payment financing or truck-owner trip working capital. Use financing_type to select the product.',
   })
   @ApiBody({ type: CreateLoanRequestDto })
   @ApiResponse({
@@ -567,8 +568,8 @@ export class LendingController {
   }
 
   @Get('lending/my-loans')
-  @Roles(UserRole.CARGO_OWNER)
-  @ApiOperation({ summary: 'Get my loan requests (Cargo Owner)' })
+  @Roles(UserRole.CARGO_OWNER, UserRole.TRUCK_OWNER, UserRole.FLEET_MANAGER)
+  @ApiOperation({ summary: 'Get my loan requests (borrower — cargo owner or truck owner)' })
   async getMyLoanRequests(@Request() req: any) {
     const userId = req.user?.userId || req.user?.id;
     const tenantId = req.user?.tenantId;
@@ -577,11 +578,11 @@ export class LendingController {
   }
 
   @Get('lending/active-financed-ids')
-  @Roles(UserRole.CARGO_OWNER)
+  @Roles(UserRole.CARGO_OWNER, UserRole.TRUCK_OWNER, UserRole.FLEET_MANAGER)
   @ApiOperation({
     summary: 'Get trip/cargo IDs with an active loan',
     description:
-      'Returns trip and cargo IDs that already have a pending, approved, or disbursed loan. Used by cargo owners to filter eligible cargo in New Loan Request.',
+      'Returns trip and cargo IDs that already have a pending, approved, or disbursed loan. Used by borrowers to filter eligible cargo/trips in New Loan Request.',
   })
   @ApiResponse({
     status: 200,
