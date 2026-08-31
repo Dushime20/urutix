@@ -5,6 +5,7 @@ import { Load } from '../../entities/load.entity';
 import { Truck } from '../../entities/truck.entity';
 import { Driver } from '../../entities/driver.entity';
 import { User } from '../../entities/user.entity';
+import { AuditEvent } from '../../entities/audit-event.entity';
 import { TenantSubscription } from '../../entities/tenant-subscription.entity';
 import { SubscriptionPlan } from '../../entities/subscription-plan.entity';
 import { CreditAccount } from '../../entities/credit-account.entity';
@@ -21,6 +22,7 @@ import { TripsController } from './trips.controller';
 import { EpodService } from './epod.service';
 import { EpodController } from './epod.controller';
 import { TripCompletionService } from './services/trip-completion.service';
+import { TripOverdueSchedulerService } from './services/trip-overdue-scheduler.service';
 
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CreditService } from '../../services/credit.service';
@@ -32,7 +34,7 @@ import { PreTripInspectionModule } from '../drivers/pre-trip-inspection.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Trip, Load, Truck, Driver, UserProfile, User,
+      Trip, Load, Truck, Driver, UserProfile, User, AuditEvent,
       TenantSubscription, SubscriptionPlan,
       CreditAccount, CreditTransaction, FeatureCreditCost,
       Epod, Invoice, InvoiceItem, Payment, TripLocation,
@@ -43,8 +45,14 @@ import { PreTripInspectionModule } from '../drivers/pre-trip-inspection.module';
     AvailabilityModule,
     PreTripInspectionModule,
   ],
-  providers: [TripsService, CreditService, EpodService, TripCompletionService],
+  providers: [
+    TripsService,
+    CreditService,
+    EpodService,
+    TripCompletionService,
+    TripOverdueSchedulerService,
+  ],
   controllers: [TripsController, EpodController],
-  exports: [TripsService, EpodService, TripCompletionService],
+  exports: [TripsService, EpodService, TripCompletionService, TripOverdueSchedulerService],
 })
 export class TripsModule {}

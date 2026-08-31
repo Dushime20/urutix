@@ -53,7 +53,7 @@ const CityField: React.FC<{
             setQ(e.target.value);
             if (value) onChange(null);
           }}
-          placeholder="e.g. Kigali"
+          placeholder="Search any city worldwide"
           className={`${inputClass} pl-9`}
         />
       </div>
@@ -252,7 +252,7 @@ const AvailableSpacePage: React.FC = () => {
         <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Trucks with unused space</h2>
         {offers.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-8 text-sm text-slate-400">
-            No leftover listings yet. Try Kigali → Nairobi, or create a full load if you need an exclusive truck.
+            No leftover listings on this route yet. Try another origin and destination, or create a full load if you need an exclusive truck.
           </div>
         ) : (
           offers.map((offer) => (

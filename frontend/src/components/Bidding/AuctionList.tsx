@@ -694,7 +694,10 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     );
   }
 
-  if (loading || permsLoading) {
+  // Keep open bid/details modals mounted during refresh so background loading
+  // does not tear down the portal and reopen the dialog.
+  const isBidUiOpen = showBidModal || showQuickBidModal || showDetailsModal;
+  if ((loading || permsLoading) && !isBidUiOpen) {
     return (
       <div className="text-center py-8 sm:py-12">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

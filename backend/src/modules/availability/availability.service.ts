@@ -79,6 +79,7 @@ const ACTIVE_STATUSES: TripStatus[] = [
   TripStatus.PLANNED,
   TripStatus.IN_PROGRESS,
   TripStatus.DELAYED,
+  TripStatus.OVERDUE,
 ];
 
 const TERMINAL_STATUSES: TripStatus[] = [
@@ -233,6 +234,21 @@ export class AvailabilityService {
       return null;
     }
 
+    const overdue = currentTrip?.status === TripStatus.OVERDUE;
+    if (overdue) {
+      return {
+        type: 'TRUCK',
+        resourceId: truckId,
+        conflictingTripId: truck.currentTripId || 'status-block',
+        conflictingCargoId: currentLoad?.id || VehicleStatus.IN_TRANSIT,
+        existingPickup: effectiveWindow.pickupDateTime,
+        existingDelivery: freeFrom,
+        effectiveWindow,
+        auditReason:
+          'Truck is assigned to an overdue trip and remains unavailable until that trip is completed.',
+      };
+    }
+
     return {
       type: 'TRUCK',
       resourceId: truckId,
@@ -283,6 +299,19 @@ export class AvailabilityService {
 
       if (!effectiveWindow.isBlocking) continue;
 
+      if (trip?.status === TripStatus.OVERDUE) {
+        return {
+          type: 'TRUCK',
+          resourceId: truckId,
+          conflictingTripId: reservation.tripId,
+          conflictingCargoId: reservation.cargoId,
+          existingPickup: effectiveWindow.pickupDateTime,
+          existingDelivery: effectiveWindow.deliveryDateTime,
+          effectiveWindow,
+          auditReason: this.buildAuditMessage(effectiveWindow, trip, load),
+        };
+      }
+
       const overlaps = this.availabilityEngine.schedulesOverlap(
         effectiveWindow.pickupDateTime,
         effectiveWindow.deliveryDateTime,
@@ -320,7 +349,7 @@ export class AvailabilityService {
         `Truck is available for assignments after actual completion.`
       );
     }
-    if (trip?.status === TripStatus.IN_PROGRESS || load?.status === 'IN_TRANSIT') {
+    if (trip?.status === TripStatus.IN_PROGRESS || trip?.status === TripStatus.OVERDUE || load?.status === 'IN_TRANSIT') {
       return (
         `Truck assigned to active trip. ` +
         `Trip completion estimated: ${plannedEnd}` +

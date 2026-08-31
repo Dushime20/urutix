@@ -1,22 +1,37 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets, IsNull } from 'typeorm';
+import { Repository, Brackets, In, IsNull } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import { Load } from '../../entities/load.entity';
 import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { Driver, DriverStatus } from '../../entities/driver.entity';
-import { User } from '../../entities/user.entity';
+import { User, UserRole, UserStatus } from '../../entities/user.entity';
 import { TenantSubscription } from '../../entities/tenant-subscription.entity';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { getEnvConfig } from '../../config/env.config';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
+import { ReportTripDelayDto } from './dto/report-trip-delay.dto';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationCategory, NotificationChannel, NotificationPriority, EntityType } from '../../entities/notification.entity';
 import { CreditService } from '../../services/credit.service';
-import { UserRole } from '../../entities/user.entity';
 import { SubscriptionStatus } from '../../entities/tenant-subscription.entity';
+import {
+  AuditEvent,
+  AuditAction,
+  AuditEntityType,
+} from '../../entities/audit-event.entity';
+import {
+  applyCompleteTransition,
+  applyDelayReport,
+  enrichTripOverdueFields,
+  formatTripDateTime,
+  hasOverdueTransitionRecord,
+  OVERDUE_ISSUE_TYPE,
+  SYSTEM_ACTOR_ID,
+  SYSTEM_ACTOR_NAME,
+} from './trip-overdue.util';
 import { EmailService } from '../auth/services/email.service';
 import { EmergencyRematchService } from '../matching/services/emergency-rematch.service';
 import { TripLocation } from '../tracking/entities/trip-location.entity';
@@ -43,6 +58,8 @@ export class TripsService {
     private readonly tenantSubscriptionRepository: Repository<TenantSubscription>,
     @InjectRepository(UserProfile)
     private readonly userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(AuditEvent)
+    private readonly auditEventRepository: Repository<AuditEvent>,
     private readonly notificationService: NotificationService,
     private readonly creditService: CreditService,
     private readonly eventEmitter: EventEmitter2,
@@ -166,7 +183,7 @@ export class TripsService {
         .getManyAndCount();
 
       return {
-        trips,
+        trips: trips.map((trip) => enrichTripOverdueFields(trip) as Trip),
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -183,13 +200,14 @@ export class TripsService {
   async findOne(id: string, tenantId: string): Promise<Trip> {
     const trip = await this.tripRepository.findOne({
       where: { id, tenantId },
+      relations: ['truck', 'driver', 'load', 'pickupLocation', 'deliveryLocation', 'epod'],
     });
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
     }
 
-    return trip;
+    return enrichTripOverdueFields(trip) as Trip;
   }
 
   async assignDriver(id: string, driverId: string, tenantId: string): Promise<Trip> {
@@ -248,12 +266,15 @@ export class TripsService {
   }
 
   async getActiveTrips(tenantId: string): Promise<Trip[]> {
-    return this.tripRepository.find({
+    const trips = await this.tripRepository.find({
       where: {
         tenantId,
-        status: TripStatus.IN_PROGRESS,
+        status: In([TripStatus.IN_PROGRESS, TripStatus.OVERDUE, TripStatus.DELAYED]),
       },
+      relations: ['truck', 'driver', 'load'],
+      order: { plannedEndTime: 'ASC' },
     });
+    return trips.map((trip) => enrichTripOverdueFields(trip) as Trip);
   }
 
   async getMyTrips(
@@ -278,8 +299,11 @@ export class TripsService {
       .orderBy('trip.plannedStartTime', 'DESC')
       .getMany();
 
-    const active = trips.filter((t) => t.status === TripStatus.IN_PROGRESS);
-    const current = active[0] || null;
+    const active = trips.filter(
+      (t) => t.status === TripStatus.IN_PROGRESS || t.status === TripStatus.OVERDUE,
+    );
+    const current =
+      active.find((t) => t.status === TripStatus.OVERDUE) || active[0] || null;
 
     const upcoming = trips.filter(
       (t) => t.status === TripStatus.PLANNED || t.status === TripStatus.DELAYED,
@@ -289,16 +313,40 @@ export class TripsService {
       (t) => t.status === TripStatus.COMPLETED || t.status === TripStatus.CANCELLED,
     );
 
-    return { current, active, upcoming, history };
+    return {
+      current: current ? (enrichTripOverdueFields(current) as Trip) : null,
+      active: active.map((trip) => enrichTripOverdueFields(trip) as Trip),
+      upcoming: upcoming.map((trip) => enrichTripOverdueFields(trip) as Trip),
+      history: history.map((trip) => enrichTripOverdueFields(trip) as Trip),
+    };
   }
 
   async updateTripStatus(
     id: string,
     updateTripStatusDto: UpdateTripStatusDto,
     tenantId: string,
+    actor?: { userId?: string; name?: string; role?: string },
   ): Promise<Trip> {
-    const trip = await this.findOne(id, tenantId);
+    if (updateTripStatusDto.status === TripStatus.COMPLETED) {
+      return this.completeTrip(id, tenantId, actor);
+    }
+
+    const trip = await this.tripRepository.findOne({ where: { id, tenantId } });
+    if (!trip) {
+      throw new NotFoundException('Trip not found');
+    }
     const oldStatus = trip.status;
+
+    if (oldStatus === TripStatus.OVERDUE && updateTripStatusDto.status === TripStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        'An overdue trip cannot be resumed. Complete the trip or report a delay.',
+      );
+    }
+    if (oldStatus === TripStatus.OVERDUE && updateTripStatusDto.status === TripStatus.DELAYED) {
+      throw new BadRequestException(
+        'An overdue trip cannot be paused. Complete the trip or report a delay.',
+      );
+    }
 
     if (
       updateTripStatusDto.status === TripStatus.IN_PROGRESS &&
@@ -334,6 +382,16 @@ export class TripsService {
         this.logger.error(`Failed to reconcile reservation for trip ${savedTrip.id}: ${err.message}`),
       );
 
+    if (oldStatus !== savedTrip.status) {
+      this.recordTripStatusAudit(
+        savedTrip,
+        oldStatus,
+        savedTrip.status,
+        actor,
+        `Trip status changed from ${oldStatus} to ${savedTrip.status}`,
+      ).catch((err) => this.logger.error(`Failed to write trip audit: ${err.message}`));
+    }
+
     // CREDIT DEDUCTION: Deduct credits only on the very first start (PLANNED → IN_PROGRESS).
     // DELAYED → IN_PROGRESS (resume) must NOT re-deduct.
     if (
@@ -343,7 +401,6 @@ export class TripsService {
       this.logger.log(`[TripsService] Trip ${savedTrip.id} status changed from PLANNED to IN_PROGRESS - initiating credit deduction`);
       this.deductCreditsForTripStart(savedTrip.id, tenantId).catch(err => {
         this.logger.error(`❌ [TripsService] Credit deduction FAILED for trip ${savedTrip.id}: ${err.message}`, err.stack);
-        // TODO: Add to retry queue or alert system
       });
     } else {
       this.logger.log(`[TripsService] Trip ${savedTrip.id} status changed from ${oldStatus} to ${updateTripStatusDto.status} - no credit deduction needed`);
@@ -351,48 +408,26 @@ export class TripsService {
 
     // Send notification if status changed to IN_PROGRESS (Loaded)
     if (updateTripStatusDto.status === TripStatus.IN_PROGRESS && oldStatus !== TripStatus.IN_PROGRESS) {
-      // Update truck → IN_TRANSIT and driver → IN_TRANSIT (fire-and-forget)
       this.updateTruckAndDriverOnStart(savedTrip).catch(err =>
         this.logger.error(`Failed to update truck/driver status on trip start: ${err.message}`, err.stack)
       );
 
-      // Emit event for notification system
       this.emitTripStartedEvent(savedTrip).catch(err => 
         this.logger.error(`Failed to emit trip.started event: ${err.message}`, err.stack)
       );
       
-      // Legacy notification (can be removed once event system is verified)
       this.sendLoadedNotification(savedTrip.id, tenantId).catch(err => console.error('Failed to send loaded notification', err));
-    }
-
-    // Send notification if status changed to COMPLETED
-    if (updateTripStatusDto.status === TripStatus.COMPLETED && oldStatus !== TripStatus.COMPLETED) {
-      // Revert truck → AVAILABLE and driver → ACTIVE
-      this.updateTruckAndDriverOnEnd(savedTrip).catch(err =>
-        this.logger.error(`Failed to update truck/driver status on trip complete: ${err.message}`, err.stack)
-      );
-      // Release scheduling reservation
-      this.availabilityService?.releaseReservation(savedTrip.id, 'Trip completed').catch(err =>
-        this.logger.error(`Failed to release reservation on complete: ${err.message}`)
-      );
-
-      // Emit event — TripNotificationListener and CargoNotificationListener handle all recipients
-      this.emitTripCompletedEvent(savedTrip).catch(err =>
-        this.logger.error(`Failed to emit trip.completed event: ${err.message}`, err.stack)
-      );
     }
 
     // Emergency re-match: trigger when post-acceptance trip is cancelled
     if (
       updateTripStatusDto.status === TripStatus.CANCELLED &&
-      [TripStatus.PLANNED, TripStatus.IN_PROGRESS].includes(oldStatus) &&
+      [TripStatus.PLANNED, TripStatus.IN_PROGRESS, TripStatus.OVERDUE, TripStatus.DELAYED].includes(oldStatus) &&
       this.emergencyRematchService
     ) {
-      // Revert truck → AVAILABLE and driver → ACTIVE on cancellation
       this.updateTruckAndDriverOnEnd(savedTrip).catch(err =>
         this.logger.error(`Failed to revert truck/driver status on cancel: ${err.message}`, err.stack)
       );
-      // Release scheduling reservation immediately
       this.availabilityService?.releaseReservation(savedTrip.id, 'Trip cancelled').catch(err =>
         this.logger.error(`Failed to release reservation on cancel: ${err.message}`)
       );
@@ -400,7 +435,6 @@ export class TripsService {
       this.emergencyRematchService.triggerEmergencyRematch(savedTrip.id).catch(err =>
         this.logger.error(`Emergency rematch failed for trip ${savedTrip.id}: ${err.message}`)
       );
-      // Apply penalty to the truck owner
       if (savedTrip.truckId) {
         const truck = await this.truckRepository.findOne({ where: { id: savedTrip.truckId } });
         if (truck?.ownerId) {
@@ -411,12 +445,261 @@ export class TripsService {
       }
     }
 
-    return savedTrip;
+    return enrichTripOverdueFields(savedTrip) as Trip;
+  }
+
+  /**
+   * Complete a trip with row-level locking so a concurrent overdue scan
+   * cannot leave the row in a corrupt state. Valid finals: COMPLETED or OVERDUE.
+   */
+  async completeTrip(
+    id: string,
+    tenantId: string,
+    actor?: { userId?: string; name?: string; role?: string },
+  ): Promise<Trip> {
+    const savedTrip = await this.tripRepository.manager.transaction(async (manager) => {
+      const trip = await manager
+        .createQueryBuilder(Trip, 'trip')
+        .setLock('pessimistic_write')
+        .where('trip.id = :id', { id })
+        .andWhere('trip.tenantId = :tenantId', { tenantId })
+        .getOne();
+
+      if (!trip) {
+        throw new NotFoundException('Trip not found');
+      }
+
+      const oldStatus = trip.status;
+      const plannedEndTime = trip.plannedEndTime;
+      const result = applyCompleteTransition(trip, new Date());
+      if (result.error) {
+        throw new BadRequestException(result.error);
+      }
+      if (!result.changed) {
+        return trip;
+      }
+      // Never overwrite the original expected end time.
+      trip.plannedEndTime = plannedEndTime;
+      const saved = await manager.save(Trip, trip);
+      await this.recordTripStatusAudit(
+        saved,
+        oldStatus,
+        TripStatus.COMPLETED,
+        actor,
+        oldStatus === TripStatus.OVERDUE
+          ? 'Driver completed an overdue trip'
+          : 'Driver confirmed completion',
+        manager.getRepository(AuditEvent),
+      );
+      return saved;
+    });
+
+    this.availabilityService
+      ?.reconcileReservationForTrip(savedTrip.id, 'Trip status → COMPLETED')
+      .catch((err) =>
+        this.logger.error(`Failed to reconcile reservation for trip ${savedTrip.id}: ${err.message}`),
+      );
+
+    if (savedTrip.status === TripStatus.COMPLETED) {
+      this.updateTruckAndDriverOnEnd(savedTrip).catch((err) =>
+        this.logger.error(`Failed to update truck/driver status on trip complete: ${err.message}`, err.stack),
+      );
+      this.availabilityService?.releaseReservation(savedTrip.id, 'Trip completed').catch((err) =>
+        this.logger.error(`Failed to release reservation on complete: ${err.message}`),
+      );
+      this.emitTripCompletedEvent(savedTrip).catch((err) =>
+        this.logger.error(`Failed to emit trip.completed event: ${err.message}`, err.stack),
+      );
+      this.trackingGateway?.broadcastTripStatus(savedTrip.id, {
+        status: TripStatus.COMPLETED,
+        actualEndTime: savedTrip.actualEndTime,
+        completedAt: savedTrip.completedAt,
+      }).catch?.(() => undefined);
+    }
+
+    return enrichTripOverdueFields(savedTrip) as Trip;
+  }
+
+  async getOverdueTrips(
+    tenantId: string,
+    options?: { userId?: string; role?: string },
+  ): Promise<Trip[]> {
+    const qb = this.tripRepository
+      .createQueryBuilder('trip')
+      .leftJoinAndSelect('trip.truck', 'truck')
+      .leftJoinAndSelect('trip.driver', 'driver')
+      .leftJoinAndSelect('trip.load', 'load')
+      .where('trip.tenantId = :tenantId', { tenantId })
+      .andWhere('trip.status = :status', { status: TripStatus.OVERDUE })
+      .orderBy('trip.plannedEndTime', 'ASC');
+
+    const role = options?.role;
+    const userId = options?.userId;
+    if (role === UserRole.DRIVER && userId) {
+      qb.andWhere('driver.userId = :userId', { userId });
+    } else if (role === UserRole.BROKER && userId) {
+      qb.andWhere('load.brokerId = :userId', { userId });
+    } else if (role === UserRole.CARGO_OWNER && userId) {
+      qb.andWhere('load.cargoOwnerId = :userId', { userId });
+    } else if (role === UserRole.TRUCK_OWNER && userId) {
+      qb.andWhere('truck.ownerId = :userId', { userId });
+    }
+
+    const trips = await qb.getMany();
+    return trips.map((trip) => enrichTripOverdueFields(trip) as Trip);
+  }
+
+  async reportDelay(
+    id: string,
+    dto: ReportTripDelayDto,
+    tenantId: string,
+    actor: { userId: string; role?: string; name?: string },
+  ): Promise<Trip> {
+    const savedTrip = await this.tripRepository.manager.transaction(async (manager) => {
+      const trip = await manager
+        .createQueryBuilder(Trip, 'trip')
+        .leftJoinAndSelect('trip.driver', 'driver')
+        .setLock('pessimistic_write')
+        .where('trip.id = :id', { id })
+        .andWhere('trip.tenantId = :tenantId', { tenantId })
+        .getOne();
+
+      if (!trip) {
+        throw new NotFoundException('Trip not found');
+      }
+
+      if (actor.role === UserRole.DRIVER) {
+        const assigned = trip.driver?.userId === actor.userId || trip.driverId === actor.userId;
+        if (!assigned) {
+          throw new ForbiddenException('You can only report a delay on your assigned trip');
+        }
+      }
+
+      const result = applyDelayReport(
+        trip,
+        {
+          delayReason: dto.delayReason,
+          delayDescription: dto.delayDescription,
+          newEstimatedArrival: dto.newEstimatedArrival,
+          reportedBy: actor.userId,
+        },
+        new Date(),
+      );
+      if (result.error) {
+        throw new BadRequestException(result.error);
+      }
+
+      const saved = await manager.save(Trip, trip);
+      await this.recordTripStatusAudit(
+        saved,
+        saved.status,
+        saved.status,
+        actor,
+        `Delay reported: ${dto.delayReason}`,
+        manager.getRepository(AuditEvent),
+      );
+      return saved;
+    });
+
+    if (savedTrip.truckId && savedTrip.estimatedEndTime) {
+      this.truckRepository
+        .update(
+          { id: savedTrip.truckId, currentTripId: savedTrip.id },
+          { estimatedAvailableTime: savedTrip.estimatedEndTime as Date },
+        )
+        .catch((err) =>
+          this.logger.error(`Failed to extend truck ETA after delay report: ${err.message}`),
+        );
+    }
+
+    this.emitTripDelayReportedEvent(savedTrip, actor).catch((err) =>
+      this.logger.error(`Failed to emit trip.delay.reported: ${err.message}`),
+    );
+    this.trackingGateway?.broadcastTripStatus(savedTrip.id, {
+      status: savedTrip.status,
+      delayReason: savedTrip.delayReason,
+      estimatedArrival: savedTrip.estimatedEndTime,
+    }).catch?.(() => undefined);
+
+    return enrichTripOverdueFields(savedTrip) as Trip;
+  }
+
+  /**
+   * After the scheduler atomically sets OVERDUE, attach audit + issues + notify once.
+   * Idempotent: a second call on the same trip will not re-audit or re-notify.
+   * If the driver completed the trip between the status UPDATE and this call,
+   * the row is skipped so we never notify overdue on a COMPLETED trip.
+   */
+  async finalizeOverdueTransitions(tripIds: string[], now: Date = new Date()): Promise<void> {
+    if (!tripIds.length) return;
+
+    for (const tripId of tripIds) {
+      try {
+        const finalized = await this.tripRepository.manager.transaction(async (manager) => {
+          const trip = await manager
+            .createQueryBuilder(Trip, 'trip')
+            .leftJoinAndSelect('trip.driver', 'driver')
+            .leftJoinAndSelect('trip.truck', 'truck')
+            .leftJoinAndSelect('trip.load', 'load')
+            .setLock('pessimistic_write')
+            .where('trip.id = :id', { id: tripId })
+            .andWhere('trip.status = :status', { status: TripStatus.OVERDUE })
+            .getOne();
+
+          if (!trip) {
+            return null;
+          }
+          if (hasOverdueTransitionRecord(trip.issuesReported)) {
+            return null;
+          }
+
+          const issues = Array.isArray(trip.issuesReported) ? [...trip.issuesReported] : [];
+          issues.push({
+            type: OVERDUE_ISSUE_TYPE,
+            previousStatus: TripStatus.IN_PROGRESS,
+            newStatus: TripStatus.OVERDUE,
+            reason: 'Expected completion time reached',
+            changedBy: SYSTEM_ACTOR_NAME,
+            plannedEndTime: trip.plannedEndTime
+              ? new Date(trip.plannedEndTime).toISOString()
+              : undefined,
+            at: now.toISOString(),
+          });
+          trip.issuesReported = issues;
+          trip.onTimePerformance = false;
+          const saved = await manager.save(Trip, trip);
+
+          await this.recordTripStatusAudit(
+            saved,
+            TripStatus.IN_PROGRESS,
+            TripStatus.OVERDUE,
+            { userId: SYSTEM_ACTOR_ID, name: SYSTEM_ACTOR_NAME, role: SYSTEM_ACTOR_NAME },
+            'Expected completion time reached',
+            manager.getRepository(AuditEvent),
+          );
+          return saved;
+        });
+
+        if (!finalized) continue;
+
+        await this.emitTripOverdueEvent(finalized);
+        this.trackingGateway?.broadcastTripStatus(finalized.id, {
+          status: TripStatus.OVERDUE,
+          plannedEndTime: finalized.plannedEndTime,
+        }).catch?.(() => undefined);
+      } catch (err: any) {
+        this.logger.error(
+          `Failed to finalize overdue transition for trip ${tripId}: ${err.message}`,
+          err.stack,
+        );
+      }
+    }
   }
 
   /**
    * When driver starts a trip: set truck → IN_TRANSIT, driver → IN_TRANSIT.
-   * Also stamp estimatedAvailableTime so future loads can be matched/bid after this trip ends.
+   * Stamp estimatedAvailableTime for bidding time-windows only.
+   * Smart Matching does not score or rank IN_TRANSIT trucks.
    */
   private async updateTruckAndDriverOnStart(trip: Trip): Promise<void> {
     if (trip.truckId) {
@@ -499,8 +782,8 @@ export class TripsService {
     const trip = await this.tripRepository.findOne({ where: { id: tripId, tenantId } });
     if (!trip) throw new NotFoundException('Trip not found');
 
-    // Only allow location updates on active trips
-    if (trip.status !== TripStatus.IN_PROGRESS) {
+    // Location updates stay on operational hauling trips (not pause/break).
+    if (trip.status !== TripStatus.IN_PROGRESS && trip.status !== TripStatus.OVERDUE) {
       throw new BadRequestException('Cannot update location: trip is not in progress');
     }
 
@@ -592,6 +875,9 @@ export class TripsService {
     const inProgressTrips = trips.filter(
       (t) => t.status === TripStatus.IN_PROGRESS,
     ).length;
+    const overdueTrips = trips.filter(
+      (t) => t.status === TripStatus.OVERDUE,
+    ).length;
     const plannedTrips = trips.filter(
       (t) => t.status === TripStatus.PLANNED,
     ).length;
@@ -600,6 +886,7 @@ export class TripsService {
       totalTrips,
       completedTrips,
       inProgressTrips,
+      overdueTrips,
       plannedTrips,
       completionRate: totalTrips > 0 ? (completedTrips / totalTrips) * 100 : 0,
     };
@@ -886,6 +1173,160 @@ export class TripsService {
       this.logger.log(`Emitted trip.completed event for trip ${trip.id}`);
     } catch (error) {
       this.logger.error(`Failed to emit trip.completed event: ${error.message}`, error.stack);
+    }
+  }
+
+  private async recordTripStatusAudit(
+    trip: Trip,
+    previousStatus: TripStatus | string,
+    newStatus: TripStatus | string,
+    actor?: { userId?: string; name?: string; role?: string },
+    reason?: string,
+    repo?: Repository<AuditEvent>,
+  ): Promise<void> {
+    const auditRepo = repo || this.auditEventRepository;
+
+    const actorId = actor?.userId || SYSTEM_ACTOR_ID;
+    const actorName = actor?.name || SYSTEM_ACTOR_NAME;
+    const actorRole = actor?.role || SYSTEM_ACTOR_NAME;
+
+    try {
+      const event = auditRepo.create({
+        loadId: trip.loadId,
+        entityType: AuditEntityType.TRIP,
+        entityId: trip.id,
+        action: AuditAction.STATUS_CHANGE,
+        actorId,
+        actorName,
+        actorRole,
+        description: `Trip status changed from ${previousStatus} to ${newStatus}`,
+        reason: reason || `Trip status changed from ${previousStatus} to ${newStatus}`,
+        before: { status: previousStatus },
+        after: { status: newStatus },
+        changes: [
+          {
+            field: 'status',
+            oldValue: previousStatus,
+            newValue: newStatus,
+            type: 'modified',
+          },
+        ],
+        metadata: {
+          tripId: trip.id,
+          tripNumber: trip.tripNumber,
+          tenantId: trip.tenantId,
+          plannedEndTime: trip.plannedEndTime,
+          actualEndTime: trip.actualEndTime,
+          completedAt: trip.completedAt,
+        },
+      });
+      await auditRepo.save(event);
+    } catch (error: any) {
+      this.logger.error(`Failed to persist trip status audit for ${trip.id}: ${error.message}`);
+    }
+  }
+
+  private async emitTripOverdueEvent(trip: Trip): Promise<void> {
+    try {
+      const load =
+        trip.load ||
+        (trip.loadId ? await this.loadRepository.findOne({ where: { id: trip.loadId } }) : null);
+      const truck =
+        trip.truck ||
+        (trip.truckId ? await this.truckRepository.findOne({ where: { id: trip.truckId } }) : null);
+      const driver =
+        trip.driver ||
+        (trip.driverId ? await this.driverRepository.findOne({ where: { id: trip.driverId } }) : null);
+
+      const driverName = driver
+        ? `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver'
+        : 'Driver';
+      const expectedLabel = formatTripDateTime(trip.plannedEndTime);
+
+      const tenantAdmins = await this.userRepository.find({
+        where: {
+          tenantId: trip.tenantId,
+          role: UserRole.TENANT_ADMIN,
+          status: UserStatus.ACTIVE,
+        },
+        select: ['id'],
+      });
+
+      this.eventEmitter.emit('trip.overdue', {
+        tripId: trip.id,
+        tripNumber: trip.tripNumber,
+        loadId: trip.loadId,
+        tenantId: trip.tenantId,
+        driverId: driver?.userId || trip.driverId,
+        driverName,
+        cargoOwnerId: load?.cargoOwnerId,
+        truckOwnerId: truck?.ownerId,
+        brokerId: load?.brokerId,
+        tenantAdminIds: tenantAdmins.map((u) => u.id),
+        cargoTitle: load?.title,
+        plannedEndTime: trip.plannedEndTime,
+        expectedCompletionLabel: expectedLabel,
+        truckPlate: truck?.plateNumber,
+      });
+
+      this.logger.log(`Emitted trip.overdue event for trip ${trip.id}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to emit trip.overdue event: ${error.message}`, error.stack);
+    }
+  }
+
+  private async emitTripDelayReportedEvent(
+    trip: Trip,
+    actor: { userId?: string; name?: string; role?: string },
+  ): Promise<void> {
+    try {
+      const load =
+        trip.load ||
+        (trip.loadId ? await this.loadRepository.findOne({ where: { id: trip.loadId } }) : null);
+      const truck =
+        trip.truck ||
+        (trip.truckId ? await this.truckRepository.findOne({ where: { id: trip.truckId } }) : null);
+      const driver =
+        trip.driver ||
+        (trip.driverId ? await this.driverRepository.findOne({ where: { id: trip.driverId } }) : null);
+
+      const driverName = driver
+        ? `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver'
+        : 'Driver';
+
+      const tenantAdmins = await this.userRepository.find({
+        where: {
+          tenantId: trip.tenantId,
+          role: UserRole.TENANT_ADMIN,
+          status: UserStatus.ACTIVE,
+        },
+        select: ['id'],
+      });
+
+      this.eventEmitter.emit('trip.delay.reported', {
+        tripId: trip.id,
+        tripNumber: trip.tripNumber,
+        loadId: trip.loadId,
+        tenantId: trip.tenantId,
+        status: trip.status,
+        driverId: driver?.userId || trip.driverId,
+        driverName,
+        cargoOwnerId: load?.cargoOwnerId,
+        truckOwnerId: truck?.ownerId,
+        brokerId: load?.brokerId,
+        tenantAdminIds: tenantAdmins.map((u) => u.id),
+        cargoTitle: load?.title,
+        delayReason: trip.delayReason,
+        delayDescription: trip.delayDescription,
+        newEstimatedArrival: trip.estimatedEndTime,
+        reportedBy: actor.userId,
+        expectedCompletionLabel: formatTripDateTime(trip.plannedEndTime),
+        newEtaLabel: formatTripDateTime(trip.estimatedEndTime),
+      });
+
+      this.logger.log(`Emitted trip.delay.reported event for trip ${trip.id}`);
+    } catch (error: any) {
+      this.logger.error(`Failed to emit trip.delay.reported: ${error.message}`, error.stack);
     }
   }
 

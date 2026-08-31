@@ -49,6 +49,9 @@ import { DriverDocuments } from '../../components/DriverDashboard/DriverDocument
 import { MonthlyLeaderboard } from '../../components/DriverDashboard/MonthlyLeaderboard';
 import { IncidentReportModal } from '../../components/DriverDashboard/IncidentReportModal';
 import { ProofOfDelivery } from '../../components/DriverDashboard/ProofOfDelivery';
+import { ReportTripDelayModal } from '../../components/DriverDashboard/ReportTripDelayModal';
+import { OverdueTripBanner } from '../../components/DriverDashboard/OverdueTripBanner';
+import { isOverdueTripStatus, TRIP_OVERDUE_QUERY_KEYS } from '../../utils/overdueTrip';
 import { RewardsTimeline } from '../../components/DriverDashboard/RewardsTimeline';
 import { MaintenanceHealth } from '../../components/DriverDashboard/MaintenanceHealth';
 import { MyTruck } from '../../components/DriverDashboard/MyTruck';
@@ -75,6 +78,7 @@ const DriverDashboard: React.FC = () => {
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showRelayModal, setShowRelayModal] = useState(false);
   const [showPostTripModal, setShowPostTripModal] = useState(false);
+  const [showDelayModal, setShowDelayModal] = useState(false);
   const [initialMessengerRecipient, setInitialMessengerRecipient] = useState<string | undefined>(undefined);
   const location = useLocation();
 
@@ -409,8 +413,10 @@ const DriverDashboard: React.FC = () => {
                         <div className="flex flex-wrap gap-x-4 gap-y-3 mb-4">
                           <div>
                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5"><TranslatedText text="Status" /></p>
-                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">
-                              {currentTrip.status.replace('_', ' ')}
+                            <p className={`text-xs font-bold uppercase ${
+                              isOverdueTripStatus(currentTrip.status) ? 'text-amber-700' : 'text-slate-700 dark:text-slate-300'
+                            }`}>
+                              {isOverdueTripStatus(currentTrip.status) ? 'Trip Overdue' : currentTrip.status.replace('_', ' ')}
                             </p>
                           </div>
                           {currentTrip.estimatedArrival && (
@@ -456,6 +462,18 @@ const DriverDashboard: React.FC = () => {
                       </div>
                       {/* Trip action buttons */}
                       <div className="flex items-center gap-3 mt-4">
+                        {isOverdueTripStatus(currentTrip.status) && (
+                          <div className="mb-4">
+                            <OverdueTripBanner
+                              tripNumber={currentTrip.tripNumber}
+                              expectedEnd={currentTrip.expectedEndAt || currentTrip.plannedEndTime || currentTrip.estimatedArrival}
+                              overdueDurationLabel={currentTrip.overdueDurationLabel}
+                              delayReason={currentTrip.delayReason}
+                              newEta={currentTrip.estimatedEndTime || currentTrip.estimatedArrival}
+                              delayReportedAt={currentTrip.delayReportedAt}
+                            />
+                          </div>
+                        )}
                         {currentTrip.status === 'PLANNED' && (
                           <button
                             onClick={() => handleTripAction('start')}
@@ -463,6 +481,22 @@ const DriverDashboard: React.FC = () => {
                           >
                             <TranslatedText text="Start Trip" />
                           </button>
+                        )}
+                        {isOverdueTripStatus(currentTrip.status) && (
+                          <>
+                            <button
+                              onClick={() => handleTripAction('complete')}
+                              className="bg-emerald-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors"
+                            >
+                              <TranslatedText text="Complete Trip" />
+                            </button>
+                            <button
+                              onClick={() => setShowDelayModal(true)}
+                              className="bg-amber-50 text-amber-700 border border-amber-100 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-colors"
+                            >
+                              <TranslatedText text="Report Delay" />
+                            </button>
+                          </>
                         )}
                         {currentTrip.status === 'IN_PROGRESS' && (
                           <>
@@ -567,6 +601,18 @@ const DriverDashboard: React.FC = () => {
           driverId={driver?.id || ''}
         />
       )}
+
+      <ReportTripDelayModal
+        isOpen={showDelayModal && !!currentTrip}
+        tripId={currentTrip?.id || ''}
+        tripNumber={currentTrip?.tripNumber}
+        onClose={() => setShowDelayModal(false)}
+        onSubmitted={() => {
+          TRIP_OVERDUE_QUERY_KEYS.forEach((key) =>
+            queryClient.invalidateQueries({ queryKey: [key] }),
+          );
+        }}
+      />
 
       <CommunicationRelay
         isOpen={showRelayModal}

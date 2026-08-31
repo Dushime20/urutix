@@ -392,12 +392,12 @@ export class MatchingService {
         requiresForklift: load.requiresForklift,
       });
 
-      // Get available trucks with enhanced filtering
-      const availableTrucks = await this.getAvailableTrucks(
+      // Get idle trucks only — IN_TRANSIT must never enter scoring or the #1 Best Match list
+      const availableTrucks = (await this.getAvailableTrucks(
         load,
         matchRequestDto,
         tenantId,
-      );
+      )).filter((truck) => this.isEligibleForSmartMatching(truck));
 
       console.log(`✅ Found ${availableTrucks.length} available trucks`);
 
@@ -710,27 +710,31 @@ export class MatchingService {
       const candidates = await this.loadMatchRepository.find({
         where: { loadId, tenantId, status: MatchStatus.POTENTIAL },
         order: { score: 'DESC' },
-        take: 5,
+        take: 20,
       });
 
       if (candidates.length === 0) return [];
 
-      return Promise.all(candidates.map(async (match, index) => {
+      const ranked: any[] = [];
+      for (const match of candidates) {
         const truck = await this.truckRepository.findOne({
           where: { id: match.truckId },
           relations: ['owner', 'owner.profile'],
         });
-        return {
+        // Drop persisted favorites whose truck is now on a trip
+        if (!truck || !this.isEligibleForSmartMatching(truck)) continue;
+        ranked.push({
           ...match,
-          rank: index + 1,
-          truck: truck || null,
-          ownerName: truck?.owner?.profile
+          truck,
+          ownerName: truck.owner?.profile
             ? `${truck.owner.profile.firstName || ''} ${truck.owner.profile.lastName || ''}`.trim() ||
               (truck.owner.profile as any).companyName || 'Unknown Carrier'
             : 'Unknown Carrier',
-          ownerVerified: (truck?.owner as any)?.status === 'ACTIVE',
-        };
-      }));
+          ownerVerified: (truck.owner as any)?.status === 'ACTIVE',
+        });
+      }
+
+      return ranked.slice(0, 5).map((match, index) => ({ ...match, rank: index + 1 }));
     } catch (error) {
       this.logger.error(`Error fetching candidates for load ${loadId}`, error);
       throw error;
@@ -1149,11 +1153,29 @@ export class MatchingService {
       const load = await this.loadRepository.findOne({ where: { id: loadId } });
       if (!load || load.status === LoadStatus.ASSIGNED) return;
 
-      // Find next best POTENTIAL match (highest score)
-      const nextMatch = await this.loadMatchRepository.findOne({
+      // Next idle POTENTIAL match only — skip IN_TRANSIT / busy trucks that were
+      // persisted as favorites before they started a trip.
+      const potentialMatches = await this.loadMatchRepository.find({
         where: { loadId, tenantId, status: MatchStatus.POTENTIAL },
         order: { score: 'DESC' },
       });
+
+      let nextMatch: LoadMatch | null = null;
+      let truck: Truck | null = null;
+      for (const candidate of potentialMatches) {
+        const candidateTruck = await this.truckRepository.findOne({
+          where: { id: candidate.truckId },
+          relations: ['owner'],
+        });
+        if (candidateTruck && this.isEligibleForSmartMatching(candidateTruck)) {
+          nextMatch = candidate;
+          truck = candidateTruck;
+          break;
+        }
+        this.logger.debug(
+          `Skipping POTENTIAL truck ${candidate.truckId} — status ${candidateTruck?.status ?? 'missing'} is not eligible for Smart Matching`,
+        );
+      }
 
       if (!nextMatch) {
         this.logger.warn(`⚠️ No next candidate found for load ${loadId} — revert to PUBLISHED`);
@@ -1170,10 +1192,6 @@ export class MatchingService {
       this.logger.log(`✅ Promoted next candidate truck ${nextMatch.truckId} for load ${loadId}`);
 
       // Notify the next truck owner
-      const truck = await this.truckRepository.findOne({
-        where: { id: nextMatch.truckId },
-        relations: ['owner'],
-      });
       if (truck?.owner) {
         await this.notificationService.createNotification({
           tenantId,
@@ -1639,21 +1657,20 @@ export class MatchingService {
       console.log('📦 Load weight:', load.weight);
       console.log('🏢 TenantId:', tenantId);
 
-      // AVAILABLE always; IN_TRANSIT allowed when cargo pickup is after the current trip ends.
-      // MAINTENANCE / OUT_OF_SERVICE are excluded. Schedule overlap is filtered below.
-      const matchableStatuses = [VehicleStatus.AVAILABLE, VehicleStatus.IN_TRANSIT];
+      // Smart Matching is for idle trucks only. IN_TRANSIT units are already on a trip
+      // and must not enter the score pool or become a top/favorite match.
       const queryBuilder = this.truckRepository
         .createQueryBuilder('truck')
         .where('truck.tenantId = :tenantId', { tenantId })
-        .andWhere('truck.status IN (:...matchableStatuses)', { matchableStatuses })
+        .andWhere('truck.status = :status', { status: VehicleStatus.AVAILABLE })
         .andWhere('truck.isActive = :isActive', { isActive: true });
 
       console.log('🔧 Query builder initialized with base conditions');
       console.log('🔧 Truck filters:', {
         tenantId,
-        statuses: matchableStatuses,
+        status: VehicleStatus.AVAILABLE,
         isActive: true,
-        note: 'AVAILABLE + IN_TRANSIT (time-windowed); MAINTENANCE/OUT_OF_SERVICE excluded',
+        note: 'AVAILABLE only; IN_TRANSIT / MAINTENANCE / OUT_OF_SERVICE excluded',
       });
 
       // Only add capacity filter if load.weight is valid
@@ -1798,7 +1815,6 @@ export class MatchingService {
       // ── Schedule-based availability filter ───────────────────────────────────
       // Exclude trucks that have a confirmed shipment whose window overlaps
       // the requested load's pickup → delivery period.
-      // Also exclude IN_TRANSIT trucks whose current trip ends after load pickup.
       const loadPickup   = load.pickupDate   ? new Date(load.pickupDate)   : null;
       const loadDelivery = load.deliveryDate ? new Date(load.deliveryDate) : null;
 
@@ -1810,29 +1826,17 @@ export class MatchingService {
         );
 
         const beforeCount = filteredTrucks.length;
-        const scheduleFiltered = filteredTrucks.filter((t) => {
-          if (busyTruckIds.has(t.id)) return false;
-
-          // Time-window: IN_TRANSIT truck is only eligible if cargo ships after it is free
-          if (t.status === VehicleStatus.IN_TRANSIT) {
-            const freeFrom = t.estimatedAvailableTime
-              ? new Date(t.estimatedAvailableTime)
-              : null;
-            if (!freeFrom || loadPickup.getTime() < freeFrom.getTime()) {
-              return false;
-            }
-          }
-          return true;
-        });
+        const scheduleFiltered = filteredTrucks.filter(
+          (t) => !busyTruckIds.has(t.id) && this.isEligibleForSmartMatching(t),
+        );
         console.log(
-          `📅 Schedule/time filter removed ${beforeCount - scheduleFiltered.length} truck(s) for window ` +
+          `📅 Schedule filter removed ${beforeCount - scheduleFiltered.length} truck(s) for window ` +
           `${loadPickup.toISOString()} → ${loadDelivery.toISOString()}`,
         );
         return scheduleFiltered;
       }
 
-      // No load window → keep AVAILABLE only (cannot safely schedule IN_TRANSIT)
-      return filteredTrucks.filter((t) => t.status === VehicleStatus.AVAILABLE);
+      return filteredTrucks.filter((t) => this.isEligibleForSmartMatching(t));
       // ─────────────────────────────────────────────────────────────────────────
     } catch (error) {
       console.error('❌ Error in getAvailableTrucks:', error);
@@ -2056,30 +2060,10 @@ export class MatchingService {
         return null;
       }
 
-      // 2. AVAILABILITY CONSTRAINT — time-windowed for IN_TRANSIT
-      if (truck.status !== VehicleStatus.AVAILABLE) {
-        if (truck.status === VehicleStatus.IN_TRANSIT) {
-          const loadPickup = load.pickupDate ? new Date(load.pickupDate) : null;
-          const freeFrom = truck.estimatedAvailableTime
-            ? new Date(truck.estimatedAvailableTime)
-            : null;
-          // Eligible only when cargo shipping starts after the current trip ends
-          const canTakeFutureLoad =
-            !!loadPickup &&
-            !!freeFrom &&
-            loadPickup.getTime() >= freeFrom.getTime();
-
-          if (!canTakeFutureLoad) {
-            this.logger.debug(
-              `❌ Rejected: IN_TRANSIT — cargo pickup ${loadPickup?.toISOString() ?? 'n/a'} ` +
-              `is not after free-from ${freeFrom?.toISOString() ?? 'unknown'}`,
-            );
-            return null;
-          }
-        } else {
-          this.logger.debug(`❌ Rejected: Status is ${truck.status}`);
-          return null;
-        }
+      // 2. AVAILABILITY CONSTRAINT — idle trucks only
+      if (!this.isEligibleForSmartMatching(truck)) {
+        this.logger.debug(`❌ Rejected: Status is ${truck.status} (IN_TRANSIT is not eligible for Smart Matching)`);
+        return null;
       }
 
       // 3. EQUIPMENT CONSTRAINT
@@ -2605,27 +2589,17 @@ export class MatchingService {
     }
   }
 
+  /**
+   * Smart Matching only considers idle trucks. A unit already on a trip
+   * (IN_TRANSIT) must not enter the score pool or become a top/favorite match.
+   */
+  private isEligibleForSmartMatching(truck: Pick<Truck, 'status'>): boolean {
+    return truck.status === VehicleStatus.AVAILABLE;
+  }
+
   private calculateAvailabilityScore(truck: Truck): number {
-    if (truck.status === VehicleStatus.AVAILABLE) return 1.0;
-
-    if (
-      truck.status === VehicleStatus.IN_TRANSIT &&
-      truck.estimatedAvailableTime
-    ) {
-      const hoursUntilAvailable =
-        (new Date(truck.estimatedAvailableTime).getTime() - Date.now()) /
-        (1000 * 60 * 60);
-
-      if (hoursUntilAvailable <= 0) return 0.95;
-      if (hoursUntilAvailable <= 6) return 0.8;
-      if (hoursUntilAvailable <= 12) return 0.65;
-      if (hoursUntilAvailable <= 24) return 0.5;
-      if (hoursUntilAvailable <= 48) return 0.35;
-      return 0.2;
-    }
-
-    if (truck.status === VehicleStatus.MAINTENANCE) return 0;
-    return 0;
+    // IN_TRANSIT / MAINTENANCE / OUT_OF_SERVICE never contribute to match score.
+    return this.isEligibleForSmartMatching(truck) ? 1.0 : 0;
   }
 
   // =====================================================
@@ -2995,13 +2969,9 @@ export class MatchingService {
       reasons.push('Basic GPS available');
     }
 
-    // 5. Availability
+    // 5. Availability — only idle trucks are scored, so this is binary
     if (availabilityScore >= 1.0) {
       reasons.push('Immediately available');
-    } else if (availabilityScore >= 0.8) {
-      reasons.push('Available soon');
-    } else if (availabilityScore >= 0.5) {
-      reasons.push('Available within hours');
     }
 
     // 6. Route compatibility

@@ -54,28 +54,31 @@ export class CreateCapacityOfferDto {
   @IsUUID()
   truckId: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
+  @ApiProperty({ description: 'Active trip carrying the partial load' })
   @IsUUID()
-  tripId?: string;
+  tripId: string;
 
-  @ApiProperty({ type: CapacityPlaceDto })
+  @ApiPropertyOptional({ type: CapacityPlaceDto, description: 'Derived from trip cargo when tripId is set' })
+  @IsOptional()
   @ValidateNested()
   @Type(() => CapacityPlaceDto)
-  origin: CapacityPlaceDto;
+  origin?: CapacityPlaceDto;
 
-  @ApiProperty({ type: CapacityPlaceDto })
+  @ApiPropertyOptional({ type: CapacityPlaceDto, description: 'Derived from trip cargo when tripId is set' })
+  @IsOptional()
   @ValidateNested()
   @Type(() => CapacityPlaceDto)
-  destination: CapacityPlaceDto;
+  destination?: CapacityPlaceDto;
 
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Derived from trip schedule when tripId is set' })
+  @IsOptional()
   @IsDateString()
-  departureAt: string;
+  departureAt?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional({ description: 'Derived from trip schedule when tripId is set' })
+  @IsOptional()
   @IsDateString()
-  arrivalAt: string;
+  arrivalAt?: string;
 
   @ApiPropertyOptional({ description: 'Leftover kg to sell. Defaults to unused truck capacity.' })
   @IsOptional()

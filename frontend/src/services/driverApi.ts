@@ -120,6 +120,18 @@ export interface Trip {
   deliveryTime: string;
   notes?: string;
   onTimePerformance?: boolean | null;
+  plannedEndTime?: string;
+  expectedEndAt?: string;
+  actualCompletedAt?: string;
+  overdueDurationMs?: number;
+  overdueDurationLabel?: string;
+  delayDurationMs?: number;
+  delayDurationLabel?: string;
+  delayReported?: boolean;
+  delayReason?: string;
+  delayDescription?: string;
+  delayReportedAt?: string;
+  estimatedEndTime?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   pod?: {
     recipientName: string;
@@ -182,6 +194,18 @@ function normalizeTrip(raw: any): Trip {
     estimatedArrival: raw.eta || raw.estimatedArrival || raw.plannedEndTime || deliveryEntry?.scheduledDate || load.deliveryDate || '',
     actualDeparture: raw.actualStartTime,
     actualArrival: raw.actualEndTime,
+    plannedEndTime: raw.plannedEndTime || raw.expectedEndAt,
+    expectedEndAt: raw.expectedEndAt || raw.plannedEndTime,
+    actualCompletedAt: raw.actualCompletedAt || raw.actualEndTime || raw.completedAt,
+    overdueDurationMs: Number(raw.overdueDurationMs || 0),
+    overdueDurationLabel: raw.overdueDurationLabel,
+    delayDurationMs: Number(raw.delayDurationMs || 0),
+    delayDurationLabel: raw.delayDurationLabel,
+    delayReported: !!raw.delayReported || !!raw.delayReportedAt,
+    delayReason: raw.delayReason,
+    delayDescription: raw.delayDescription,
+    delayReportedAt: raw.delayReportedAt,
+    estimatedEndTime: raw.estimatedEndTime,
     distance: (() => {
       const d = Number(raw.totalDistance || raw.distance || 0);
       if (d) return d;
@@ -518,6 +542,17 @@ class DriverApiService {
 
   async completeTrip(tripId: string): Promise<void> {
     await api.post(`/trips/${tripId}/complete`);
+  }
+
+  async reportDelay(
+    tripId: string,
+    payload: {
+      delayReason: string;
+      delayDescription?: string;
+      newEstimatedArrival: string;
+    },
+  ): Promise<void> {
+    await api.post(`/trips/${tripId}/delay`, payload);
   }
 
   async updateTripProgress(tripId: string, progress: number, location?: [number, number]): Promise<void> {

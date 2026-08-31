@@ -40,6 +40,9 @@ import { driverApi } from '../../services/driverApi';
 import { cn } from '../../utils/cn';
 import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
+import { OverdueTripBanner } from './OverdueTripBanner';
+import { ReportTripDelayModal } from './ReportTripDelayModal';
+import { isHaulingTripStatus, isOverdueTripStatus } from '../../utils/overdueTrip';
 
 // ── Fix Leaflet default icon in Vite/webpack builds ─────────────────────
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -107,13 +110,15 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
   const { tSync: t } = useTranslation();
   const [routePath, setRoutePath] = useState<[number, number][]>([]);
   const [ending, setEnding] = useState(false);
+  const [showDelayModal, setShowDelayModal] = useState(false);
   const [elapsed, setElapsed] = useState(0); // seconds since mount
   const startTimeRef = useRef(Date.now());
+  const overdue = isOverdueTripStatus(trip.status);
 
   const { isTracking, currentPosition, error, accuracy } = useGpsTracking({
     tripId: trip.id,
     driverId,
-    enabled: trip.status === 'IN_PROGRESS' || trip.status === 'in_progress',
+    enabled: isHaulingTripStatus(trip.status),
     intervalMs: 20_000,
   });
 
@@ -179,6 +184,12 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
       animate={{ opacity: 1, y: 0 }}
       className="space-y-3 sm:space-y-4"
     >
+      {overdue && (
+        <OverdueTripBanner
+          tripNumber={trip.tripNumber}
+          expectedEnd={trip.estimatedArrival}
+        />
+      )}
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -222,8 +233,17 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
           ) : (
             <CheckCircle className="w-4 h-4" />
           )}
-          <TranslatedText text="End Trip" />
+          <TranslatedText text="Complete Trip" />
         </button>
+        {overdue && (
+          <button
+            onClick={() => setShowDelayModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 bg-amber-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all active:scale-95 shadow-md w-full sm:w-auto"
+          >
+            <AlertTriangle className="w-4 h-4" />
+            <TranslatedText text="Report Delay" />
+          </button>
+        )}
       </div>
 
       {/* ── GPS error banner ─────────────────────────────────────────── */}
@@ -396,6 +416,12 @@ export const ActiveTripTracker: React.FC<ActiveTripTrackerProps> = ({
           )}
         </div>
       </div>
+      <ReportTripDelayModal
+        isOpen={showDelayModal}
+        tripId={trip.id}
+        tripNumber={trip.tripNumber}
+        onClose={() => setShowDelayModal(false)}
+      />
     </motion.div>
   );
 };

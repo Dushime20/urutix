@@ -1,8 +1,8 @@
 
-import { MatchingService } from './matching.service';
-import { Load } from '../../entities/load.entity';
-import { Truck, VehicleStatus } from '../../entities/truck.entity';
-import { MatchRequestDto } from './dto/match-request.dto';
+import { MatchingService } from '../matching.service';
+import { Load } from '../../../entities/load.entity';
+import { Truck, VehicleStatus } from '../../../entities/truck.entity';
+import { MatchRequestDto } from '../dto/match-request.dto';
 
 describe('MatchingService Algorithm', () => {
   let service: MatchingService;
@@ -11,6 +11,12 @@ describe('MatchingService Algorithm', () => {
   const mockTruckRepo: any = { find: jest.fn() };
   const mockDriverRepo: any = { findOne: jest.fn() };
   const mockLocationRepo: any = {};
+  const mockLoadMatchRepo: any = {};
+  const mockUserRepo: any = {};
+  const mockTenantSubRepo: any = {};
+  const mockPlanRepo: any = {};
+  const mockRouteRepo: any = {};
+  const mockRouteTruckRepo: any = { find: jest.fn().mockResolvedValue([]) };
   const mockCacheService: any = {};
   const mockMarketIntelligence: any = {
     getMarketConditions: jest.fn().mockReturnValue({}),
@@ -18,6 +24,7 @@ describe('MatchingService Algorithm', () => {
   const mockMlPrediction: any = {
     predictSuccessProbability: jest.fn().mockReturnValue(0.8),
   };
+  const unused: any = {};
 
   beforeEach(() => {
     service = new MatchingService(
@@ -25,9 +32,21 @@ describe('MatchingService Algorithm', () => {
       mockTruckRepo,
       mockDriverRepo,
       mockLocationRepo,
+      mockLoadMatchRepo,
+      mockUserRepo,
+      mockTenantSubRepo,
+      mockPlanRepo,
+      mockRouteRepo,
+      mockRouteTruckRepo,
       mockCacheService,
       mockMarketIntelligence,
       mockMlPrediction,
+      unused,
+      unused,
+      unused,
+      unused,
+      unused,
+      unused,
     );
   });
 
@@ -83,32 +102,51 @@ describe('MatchingService Algorithm', () => {
       expect(result).toBeNull();
     });
 
-    it('✅ accepts IN_TRANSIT truck when cargo pickup is after trip ends', async () => {
-      const incomingTruck = { 
-        ...baseTruck, 
+    it('❌ rejects IN_TRANSIT trucks even when cargo pickup is after the current trip ends', async () => {
+      const incomingTruck = {
+        ...baseTruck,
         status: VehicleStatus.IN_TRANSIT,
-        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60), // free in 1h
+        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60),
       };
       const futureLoad = {
         ...baseLoad,
-        pickupDate: new Date(Date.now() + 1000 * 60 * 60 * 3), // ships in 3h
+        pickupDate: new Date(Date.now() + 1000 * 60 * 60 * 3),
       };
       const result = await scoreTruck(incomingTruck, futureLoad);
-      expect(result).not.toBeNull();
+      expect(result).toBeNull();
     });
 
-    it('❌ rejects IN_TRANSIT truck when cargo pickup is before trip ends', async () => {
-      const incomingTruck = { 
-        ...baseTruck, 
+    it('❌ rejects IN_TRANSIT trucks when cargo pickup is before the current trip ends', async () => {
+      const incomingTruck = {
+        ...baseTruck,
         status: VehicleStatus.IN_TRANSIT,
-        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60 * 24), // free in 24h
+        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60 * 24),
       };
       const soonLoad = {
         ...baseLoad,
-        pickupDate: new Date(Date.now() + 1000 * 60 * 60), // ships in 1h
+        pickupDate: new Date(Date.now() + 1000 * 60 * 60),
       };
       const result = await scoreTruck(incomingTruck, soonLoad);
       expect(result).toBeNull();
+    });
+
+    it('does not give IN_TRANSIT trucks an availability score that can rank them as a favorite', () => {
+      const inTransitTruck = {
+        ...baseTruck,
+        status: VehicleStatus.IN_TRANSIT,
+        estimatedAvailableTime: new Date(Date.now() + 1000 * 60 * 60),
+      };
+      expect((service as any).isEligibleForSmartMatching(inTransitTruck)).toBe(false);
+      expect((service as any).isEligibleForSmartMatching(baseTruck)).toBe(true);
+      expect((service as any).calculateAvailabilityScore(inTransitTruck)).toBe(0);
+      expect((service as any).calculateAvailabilityScore(baseTruck)).toBe(1.0);
+    });
+
+    it('❌ rejects OUT_OF_SERVICE trucks from the score pool', async () => {
+      const parked = { ...baseTruck, status: VehicleStatus.OUT_OF_SERVICE };
+      const result = await scoreTruck(parked, baseLoad);
+      expect(result).toBeNull();
+      expect((service as any).calculateAvailabilityScore(parked)).toBe(0);
     });
 
     it('❌ rejects when EQUIPMENT (Refrigeration) missing', async () => {
@@ -139,9 +177,8 @@ describe('MatchingService Algorithm', () => {
     });
 
     it('❌ rejects when ROUTE (Distance) too far', async () => {
-      // Mock calculateDistance to return large value
-      jest.spyOn(service as any, 'calculateDistance').mockReturnValue(2000);
-      
+      jest.spyOn(service as any, 'calculateRouteDistance').mockReturnValue(2000);
+
       const localTruck = { ...baseTruck, routeCapabilities: { maxDistance: 100 } };
       const result = await scoreTruck(localTruck, baseLoad);
       expect(result).toBeNull();

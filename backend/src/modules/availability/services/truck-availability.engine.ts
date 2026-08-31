@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Trip, TripStatus } from '../../../entities/trip.entity';
+import { isIndefinitelyOccupyingStatus } from '../../trips/trip-overdue.util';
 import { Load, LoadStatus } from '../../../entities/load.entity';
 import { ShipmentReservation } from '../../../entities/shipment-reservation.entity';
 import { Truck, VehicleStatus } from '../../../entities/truck.entity';
@@ -70,6 +71,7 @@ const ACTIVE_TRIP_STATUSES: TripStatus[] = [
   TripStatus.PLANNED,
   TripStatus.IN_PROGRESS,
   TripStatus.DELAYED,
+  TripStatus.OVERDUE,
 ];
 
 const TERMINAL_TRIP_STATUSES: TripStatus[] = [
@@ -138,7 +140,10 @@ export class TruckAvailabilityEngine {
     }
     if (
       this.isTripStatusBlocking(trip?.status) &&
-      (this.isLoadStatusBlocking(load?.status) || trip?.status === TripStatus.IN_PROGRESS)
+      (this.isLoadStatusBlocking(load?.status) ||
+        trip?.status === TripStatus.IN_PROGRESS ||
+        trip?.status === TripStatus.OVERDUE ||
+        trip?.status === TripStatus.DELAYED)
     ) {
       return OperationalTripPhase.ACTIVE;
     }
@@ -217,12 +222,15 @@ export class TruckAvailabilityEngine {
 
     if (phase === OperationalTripPhase.ACTIVE) {
       const effectivePickup = actualPickup || plannedPickup;
-      const effectiveDelivery = new Date(
-        trip?.estimatedEndTime ||
-          trip?.estimatedArrival ||
-          trip?.eta ||
-          plannedDelivery,
-      );
+      // OVERDUE trips occupy the truck until completed — planned end is not a free-after time.
+      const effectiveDelivery = isIndefinitelyOccupyingStatus(trip?.status)
+        ? new Date('9999-12-31T23:59:59.000Z')
+        : new Date(
+            trip?.estimatedEndTime ||
+              trip?.estimatedArrival ||
+              trip?.eta ||
+              plannedDelivery,
+          );
       return {
         pickupDateTime: effectivePickup,
         deliveryDateTime: effectiveDelivery,
@@ -296,6 +304,7 @@ export class TruckAvailabilityEngine {
       existingReservation,
     );
     if (!existing.isBlocking) return false;
+    if (isIndefinitelyOccupyingStatus(existingTrip?.status)) return true;
     return this.schedulesOverlap(
       existing.pickupDateTime,
       existing.deliveryDateTime,

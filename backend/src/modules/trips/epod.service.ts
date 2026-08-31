@@ -85,8 +85,10 @@ export class EpodService {
       relations: ['load', 'truck'],
     });
     if (!trip) throw new NotFoundException('Trip not found');
-    if (trip.status !== TripStatus.IN_PROGRESS) {
-      throw new BadRequestException('ePOD can only be submitted for trips that are IN_PROGRESS');
+    if (trip.status !== TripStatus.IN_PROGRESS && trip.status !== TripStatus.OVERDUE) {
+      throw new BadRequestException(
+        'ePOD can only be submitted for trips that are IN_PROGRESS or OVERDUE',
+      );
     }
 
     // 2. Check for duplicate

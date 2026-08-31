@@ -29,6 +29,9 @@ import { cn } from '@/utils/cn';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import { getApiErrorMessage } from '../../config/errorMessages';
 import { ProofOfDelivery } from './ProofOfDelivery';
+import { ReportTripDelayModal } from './ReportTripDelayModal';
+import { OverdueTripBanner } from './OverdueTripBanner';
+import { isOverdueTripStatus, TRIP_OVERDUE_QUERY_KEYS } from '../../utils/overdueTrip';
 import {
   getInspectionStatusLabel,
   getInspectionStatusStyles,
@@ -84,6 +87,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'previous'>('active');
   const [selectedTripDetail, setSelectedTripDetail] = useState<string | null>(null);
   const [epodTrip, setEpodTrip] = useState<{ id: string; tripNumber?: string; cargoTitle?: string } | null>(null);
+  const [delayTrip, setDelayTrip] = useState<{ id: string; tripNumber?: string } | null>(null);
 
   const { data: driverProfile } = useQuery({
     queryKey: ['driver-profile', driverId],
@@ -374,6 +378,13 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                     icon: <CheckCircle size={14} />,
                     variant: 'success',
                     onClick: (trip) => handleCompleteTrip(trip),
+                  },
+                  {
+                    key: 'delay',
+                    label: 'Report Delay',
+                    icon: <AlertCircle size={14} />,
+                    hidden: (trip: Trip) => !isOverdueTripStatus(trip.status),
+                    onClick: (trip) => setDelayTrip({ id: trip.id, tripNumber: trip.tripNumber }),
                   },
                 ] as TableAction<Trip>[]}
                 ariaLabel="Active trips"
@@ -684,7 +695,7 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
       <AnimatePresence>
         {selectedTripDetail && detailTrip && (() => {
           const trip = detailTrip;
-          const isActive = trip.status === 'IN_PROGRESS';
+          const isActive = trip.status === 'IN_PROGRESS' || isOverdueTripStatus(trip.status);
           const priority = (trip as any).priority || 'MEDIUM';
 
           return (
@@ -1093,6 +1104,20 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                   {/* Actions */}
                   <div className="flex gap-3 pt-2">
                     {isActive ? (
+                      <>
+                        {isOverdueTripStatus(trip.status) && (
+                          <div className="mb-4">
+                            <OverdueTripBanner
+                              tripNumber={trip.tripNumber}
+                              expectedEnd={trip.expectedEndAt || trip.plannedEndTime || trip.estimatedArrival}
+                              overdueDurationLabel={trip.overdueDurationLabel}
+                              delayReason={trip.delayReason}
+                              delayDescription={trip.delayDescription}
+                              newEta={trip.estimatedEndTime || trip.estimatedArrival}
+                              delayReportedAt={trip.delayReportedAt}
+                            />
+                          </div>
+                        )}
                       <button
                         onClick={() => {
                           setSelectedTripDetail(null);
@@ -1101,8 +1126,21 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
                         className="flex-1 px-6 py-4 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-primary-600 transition-all active:scale-95"
                       >
                         <CheckCircle size={14} />
-                        <TranslatedText text="Complete" />
+                        <TranslatedText text="Complete Trip" />
                       </button>
+                      {isOverdueTripStatus(trip.status) && (
+                        <button
+                          onClick={() => {
+                            setSelectedTripDetail(null);
+                            setDelayTrip({ id: trip.id, tripNumber: trip.tripNumber });
+                          }}
+                          className="flex-1 px-6 py-4 bg-amber-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-amber-600 transition-all active:scale-95"
+                        >
+                          <AlertCircle size={14} />
+                          <TranslatedText text="Report Delay" />
+                        </button>
+                      )}
+                      </>
                     ) : (
                       <button
                         onClick={() => {
@@ -1175,6 +1213,19 @@ export const TripsManagement: React.FC<TripsManagementProps> = ({ driverId }) =>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ReportTripDelayModal
+        isOpen={!!delayTrip}
+        tripId={delayTrip?.id || ''}
+        tripNumber={delayTrip?.tripNumber}
+        onClose={() => setDelayTrip(null)}
+        onSubmitted={() => {
+          setDelayTrip(null);
+          TRIP_OVERDUE_QUERY_KEYS.forEach((key) =>
+            queryClient.invalidateQueries({ queryKey: [key] }),
+          );
+        }}
+      />
     </div>
   );
 };

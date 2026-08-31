@@ -23,7 +23,8 @@
       "./node_modules/@types",
       "./src/types",
       "./types"
-    ]
+    ],
+    "types": ["node", "jest"]
   },
   "include": [
     "src/**/*"
@@ -32,7 +33,6 @@
     "src/examples/**/*",
     "node_modules",
     "dist",
-    "test",
-    "**/*.spec.ts"
+    "test"
   ]
 }

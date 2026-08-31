@@ -579,7 +579,7 @@ const EnhancedJourneyFlow: React.FC = () => {
               </div>
             </div>
             <p className="text-sm text-slate-500 mb-4">
-              Use this when your cargo is smaller than a full truck. Example: a unit going Kigali → Nairobi with 40% empty. You pay leftover freight plus an 8% match fee.
+              Use this when your cargo is smaller than a full truck — e.g. a unit on any route with 40% empty space. You pay leftover freight plus an 8% match fee.
             </p>
             <button
               onClick={() => handleJourneySelection('book-space')}

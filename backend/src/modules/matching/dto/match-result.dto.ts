@@ -37,7 +37,7 @@ export class MatchResultDto {
   distanceScore: number; // 0-1 scale - Proximity to pickup (20%)
 
   @IsNumber()
-  availabilityScore: number; // 0-1 scale - Truck availability status (15%)
+  availabilityScore: number; // 0-1 scale - Idle AVAILABLE trucks only (15%)
 
   @IsNumber()
   gpsTrackingScore: number; // 0-1 scale - GPS availability for monitoring (10%)

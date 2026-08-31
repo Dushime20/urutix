@@ -167,11 +167,9 @@ The UrutiX matching algorithm is a comprehensive AI-powered system that matches 
 
 **Scoring**:
 - `AVAILABLE` → Score = 1.0
-- `IN_TRANSIT` (available in ≤2 hours) → Score = 0.9
-- `IN_TRANSIT` (available in ≤6 hours) → Score = 0.8
-- `IN_TRANSIT` (available in ≤12 hours) → Score = 0.6
-- `IN_TRANSIT` (available in ≤24 hours) → Score = 0.4
-- `MAINTENANCE` → Score = 0.1
+- `IN_TRANSIT` / `MAINTENANCE` / `OUT_OF_SERVICE` → Score = 0 (hard reject; never enter the score pool or become a top/favorite match)
+
+Smart Matching is for idle trucks only. A truck already on a trip must not be ranked against cargo that still needs a carrier.
 
 ### 11. Special Requirements Score (Weight: 10%)
 
@@ -251,7 +249,7 @@ Based on overall score:
    - If fails → Truck rejected (no score calculated)
 
 2. **Status Check**:
-   - Truck status must be `AVAILABLE` or `IN_TRANSIT`
+   - Truck status must be `AVAILABLE` (`IN_TRANSIT` is excluded from Smart Matching)
    - Load status must allow matching (`CREATED`, `PUBLISHED`, `PENDING_CONFIRMATION`)
 
 3. **Tenant Isolation**:
@@ -416,7 +414,7 @@ Body: {
 
 1. Check truck capacity vs load weight
 2. Verify equipment requirements are met
-3. Check truck status (must be AVAILABLE or IN_TRANSIT)
+3. Check truck status (must be AVAILABLE — IN_TRANSIT trucks are excluded)
 4. Verify tenant isolation
 5. Check distance constraints
 

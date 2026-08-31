@@ -638,7 +638,7 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">Unused capacity</p>
             <p className="text-sm font-black text-slate-900 dark:text-white mt-1">Sell leftover space on trucks that are not full</p>
-            <p className="text-xs text-slate-500 mt-1">If a unit is running Kigali → Nairobi with empty kg, list it. Listing is free; commission is charged on the match.</p>
+            <p className="text-xs text-slate-500 mt-1">List unused kg/m³ on any active route. Listing is free; commission is charged when space is matched.</p>
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl bg-[#345E85] text-white whitespace-nowrap">
             Sell capacity

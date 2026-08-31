@@ -4,6 +4,7 @@ import {
   corridorOverlaps,
   fitsRemaining,
   hardFilterOffer,
+  isLeftoverSellableSlice,
   nextOfferStatus,
   PLATFORM_CAPACITY_COMMISSION_RATE,
   quoteCommission,
@@ -123,5 +124,41 @@ describe('Airbnb leftover capacity — Kigali → Nairobi 40% empty', () => {
       'release',
     );
     expect(reserved.remainingWeightKg).toBe(11_200);
+  });
+
+  it('allows sell only partial loads on active trips', () => {
+    expect(
+      isLeftoverSellableSlice({
+        tripId: 'trip-1',
+        allocatedWeightKg: 16_800,
+        remainingWeightKg: 11_200,
+        utilizationPercent: 60,
+      }),
+    ).toBe(true);
+    expect(
+      isLeftoverSellableSlice({
+        tripId: null,
+        allocatedWeightKg: 0,
+        remainingWeightKg: 28_000,
+        utilizationPercent: 0,
+      }),
+    ).toBe(false);
+    expect(
+      isLeftoverSellableSlice({
+        tripId: 'trip-1',
+        allocatedWeightKg: 28_000,
+        remainingWeightKg: 0,
+        utilizationPercent: 100,
+      }),
+    ).toBe(false);
+    expect(
+      isLeftoverSellableSlice({
+        tripId: 'trip-1',
+        allocatedWeightKg: 16_800,
+        remainingWeightKg: 11_200,
+        utilizationPercent: 60,
+        existingOfferId: 'offer-1',
+      }),
+    ).toBe(false);
   });
 });

@@ -230,7 +230,7 @@ const JourneySelectionModal: React.FC<JourneySelectionModalProps> = ({
               </div>
             </div>
             <p className="text-sm text-slate-500 mb-4">
-              Best when your cargo is LTL-sized. A truck going Kigali → Nairobi with unused kg can take your slice. An 8% match fee is billed to you on the leftover booking.
+              Best when your cargo is LTL-sized. Book unused kg/m³ on a truck already going your route, anywhere in the world. An 8% match fee is billed to you on the leftover booking.
             </p>
             <button
               onClick={() => onJourneySelected('book-space')}

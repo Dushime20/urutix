@@ -248,7 +248,8 @@ export class TripCompletionService {
         }
       }
     } catch (err) {
-      this.logger.error(`Failed to mark load as DELIVERED during receiver confirmation: ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to mark load as DELIVERED during receiver confirmation: ${message}`);
       // Non-fatal — payment was already saved
     }
     // ─────────────────────────────────────────────────────────────────────────

@@ -13,6 +13,8 @@ import {
 import ActiveTrips from '../TenantDashboard/ActiveTrips';
 import { formatLocation } from '../../utils/formatLocation';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../EnliteUI/Tables';
+import { formatOverdueDateTime } from '../../utils/overdueTrip';
+import { AlertTriangle } from 'lucide-react';
 
 interface Trip {
   id: string;
@@ -66,7 +68,26 @@ const TenantAdminTrips: React.FC = () => {
     },
   });
 
+  const {
+    data: overdueTrips = [],
+    refetch: refetchOverdue,
+  } = useQuery({
+    queryKey: ['trips-overdue'],
+    queryFn: async () => {
+      try {
+        const response = await tripsAPI.getOverdue();
+        const data = response?.data?.data ?? response?.data ?? [];
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error fetching overdue trips:', error);
+        return [];
+      }
+    },
+    refetchInterval: 30000,
+  });
+
   const trips: Trip[] = Array.isArray(tripsData) ? tripsData : [];
+  const overdueList: any[] = Array.isArray(overdueTrips) ? overdueTrips : [];
 
   const columns: Column<Trip>[] = useMemo(() => [
     {
@@ -164,6 +185,54 @@ const TenantAdminTrips: React.FC = () => {
         </div>
       )}
 
+      {overdueList.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-amber-200 dark:border-amber-800 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                Overdue Trips
+              </h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                {overdueList.length} trip{overdueList.length === 1 ? '' : 's'} past expected completion
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            {overdueList.map((trip) => {
+              const driverName = trip.driver
+                ? `${trip.driver.firstName || ''} ${trip.driver.lastName || ''}`.trim()
+                : trip.driverName || 'N/A';
+              const truckPlate = trip.truck?.plateNumber || trip.truckNumber || 'N/A';
+              const cargo = trip.load?.title || trip.cargoType || 'Cargo';
+              return (
+                <div
+                  key={trip.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-amber-100 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/20"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      {trip.tripNumber || trip.id}
+                    </p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                      {driverName} · {truckPlate} · {cargo}
+                    </p>
+                    <p className="text-xs text-amber-800 dark:text-amber-200 mt-1">
+                      Expected: {formatOverdueDateTime(trip.plannedEndTime || trip.expectedEndAt)} · Overdue: {trip.overdueDurationLabel || '—'}
+                      {trip.delayReason ? ` · Delay: ${trip.delayReason}` : ''}
+                      {trip.estimatedEndTime ? ` · New ETA: ${formatOverdueDateTime(trip.estimatedEndTime)}` : ''}
+                    </p>
+                  </div>
+                  <StatusBadge status={trip.status} label="OVERDUE" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <StandardDataTable
         title="Trip Management"
         subtitle="Monitor and manage trips in your tenant"
@@ -171,7 +240,10 @@ const TenantAdminTrips: React.FC = () => {
         headerColor="primary"
         headerActions={
           <button
-            onClick={() => refetchTrips()}
+            onClick={() => {
+              refetchTrips();
+              refetchOverdue();
+            }}
             className="px-3 py-1.5 border border-gray-300 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-sm"
           >
             <FaSync className="w-3.5 h-3.5" />
@@ -198,6 +270,7 @@ const TenantAdminTrips: React.FC = () => {
               { value: 'delivered', label: 'Delivered' },
               { value: 'cancelled', label: 'Cancelled' },
               { value: 'delayed', label: 'Delayed' },
+              { value: 'OVERDUE', label: 'Overdue' },
             ],
           },
         ]}

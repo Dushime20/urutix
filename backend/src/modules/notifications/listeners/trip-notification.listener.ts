@@ -59,6 +59,40 @@ interface TruckOwnerAcceptedPayload {
   cargoTitle?: string;
 }
 
+interface TripOverduePayload {
+  tripId: string;
+  tripNumber: string;
+  loadId?: string;
+  tenantId: string;
+  driverId?: string;
+  driverName?: string;
+  cargoOwnerId?: string;
+  truckOwnerId?: string;
+  brokerId?: string;
+  tenantAdminIds?: string[];
+  cargoTitle?: string;
+  plannedEndTime?: Date | string;
+  expectedCompletionLabel?: string;
+  truckPlate?: string;
+}
+
+interface TripDelayReportedPayload {
+  tripId: string;
+  tripNumber: string;
+  tenantId: string;
+  status?: string;
+  driverId?: string;
+  driverName?: string;
+  cargoOwnerId?: string;
+  truckOwnerId?: string;
+  brokerId?: string;
+  tenantAdminIds?: string[];
+  cargoTitle?: string;
+  delayReason?: string;
+  newEstimatedArrival?: Date | string;
+  newEtaLabel?: string;
+}
+
 interface TripApprovedPayload {
   tripId: string;
   driverId: string;
@@ -554,6 +588,204 @@ export class TripNotificationListener {
         `Failed to send trip completed notification: ${error.message}`,
         error.stack,
       );
+    }
+  }
+
+  @OnEvent('trip.overdue')
+  async handleTripOverdue(payload: TripOverduePayload) {
+    this.logger.log(`Handling trip.overdue event for trip ${payload.tripId}`);
+    const expected = payload.expectedCompletionLabel || 'the expected completion time';
+    const tripRef = payload.tripNumber || payload.tripId;
+
+    const recipients: Array<{
+      userId: string;
+      title: string;
+      message: string;
+      actionUrl: string;
+    }> = [];
+
+    if (payload.driverId) {
+      recipients.push({
+        userId: payload.driverId,
+        title: '⚠️ Trip Overdue',
+        message: `Trip #${tripRef} was expected to be completed by ${expected}. Please complete the trip or report a delay.`,
+        actionUrl: '/dashboard/driver/trips',
+      });
+    }
+
+    for (const adminId of payload.tenantAdminIds || []) {
+      recipients.push({
+        userId: adminId,
+        title: '⚠️ Trip Overdue',
+        message: `Trip #${tripRef} assigned to driver ${payload.driverName || 'Unknown'} has exceeded its expected completion time. Expected completion: ${expected}. Current status: OVERDUE.`,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+
+    if (payload.brokerId) {
+      recipients.push({
+        userId: payload.brokerId,
+        title: '⚠️ Broker Trip Alert',
+        message: `Trip #${tripRef} associated with cargo ${payload.cargoTitle ? `"${payload.cargoTitle}"` : `#${payload.loadId || tripRef}`} is overdue. Driver: ${payload.driverName || 'Unknown'}. Expected completion: ${expected}.`,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+
+    if (payload.cargoOwnerId) {
+      recipients.push({
+        userId: payload.cargoOwnerId,
+        title: '⚠️ Cargo Delivery Delayed',
+        message: `Your cargo associated with trip #${tripRef} has exceeded its expected delivery time. The driver has been notified to provide an update.`,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+
+    if (payload.truckOwnerId) {
+      recipients.push({
+        userId: payload.truckOwnerId,
+        title: '⚠️ Trip Overdue',
+        message: `Trip #${tripRef}${payload.truckPlate ? ` on truck ${payload.truckPlate}` : ''} assigned to ${payload.driverName || 'the driver'} is overdue. Expected completion: ${expected}.`,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+
+    await this.sendUniqueTripNotifications(
+      payload.tenantId,
+      payload.tripId,
+      'TRIP_OVERDUE',
+      recipients,
+      {
+        tripNumber: payload.tripNumber,
+        plannedEndTime: payload.plannedEndTime,
+        driverName: payload.driverName,
+      },
+    );
+  }
+
+  @OnEvent('trip.delay.reported')
+  async handleTripDelayReported(payload: TripDelayReportedPayload) {
+    this.logger.log(`Handling trip.delay.reported event for trip ${payload.tripId}`);
+    const tripRef = payload.tripNumber || payload.tripId;
+    const eta = payload.newEtaLabel || 'a new estimated arrival';
+
+    const recipients: Array<{
+      userId: string;
+      title: string;
+      message: string;
+      actionUrl: string;
+    }> = [];
+
+    const stakeholderMessage =
+      `Trip #${tripRef} is overdue. Delay has been reported` +
+      (payload.delayReason ? ` (${payload.delayReason})` : '') +
+      `. New ETA: ${eta}.`;
+
+    for (const adminId of payload.tenantAdminIds || []) {
+      recipients.push({
+        userId: adminId,
+        title: 'Delay reported on overdue trip',
+        message: stakeholderMessage,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+    if (payload.brokerId) {
+      recipients.push({
+        userId: payload.brokerId,
+        title: 'Delay reported on overdue trip',
+        message: stakeholderMessage,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+    if (payload.cargoOwnerId) {
+      recipients.push({
+        userId: payload.cargoOwnerId,
+        title: 'Delivery update',
+        message: `The driver reported a delay on trip #${tripRef}. New ETA: ${eta}.`,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+    if (payload.truckOwnerId) {
+      recipients.push({
+        userId: payload.truckOwnerId,
+        title: 'Delay reported',
+        message: stakeholderMessage,
+        actionUrl: '/dashboard/trips',
+      });
+    }
+
+    await this.sendUniqueTripNotifications(
+      payload.tenantId,
+      payload.tripId,
+      `TRIP_DELAY_REPORT:${payload.newEstimatedArrival || ''}`,
+      recipients,
+      {
+        tripNumber: payload.tripNumber,
+        delayReason: payload.delayReason,
+        newEstimatedArrival: payload.newEstimatedArrival,
+      },
+    );
+  }
+
+  private async sendUniqueTripNotifications(
+    tenantId: string,
+    tripId: string,
+    eventKey: string,
+    recipients: Array<{ userId: string; title: string; message: string; actionUrl: string }>,
+    extraMetadata: Record<string, any> = {},
+  ): Promise<void> {
+    const seen = new Set<string>();
+    for (const recipient of recipients) {
+      if (!recipient.userId || seen.has(recipient.userId)) continue;
+      seen.add(recipient.userId);
+
+      try {
+        const existing = await this.notificationRepository
+          .createQueryBuilder('n')
+          .where('n.recipientId = :rid', { rid: recipient.userId })
+          .andWhere('n.entityId = :tripId', { tripId })
+          .andWhere(`n.metadata->>'overdueEvent' = :eventKey`, { eventKey })
+          .getOne();
+        if (existing) continue;
+
+        const notification = this.notificationRepository.create({
+          recipientId: recipient.userId,
+          tenantId,
+          notificationType: NotificationType.TRIP_STATUS,
+          category: NotificationCategory.TRIP,
+          priority: NotificationPriority.HIGH,
+          title: recipient.title,
+          message: recipient.message,
+          shortMessage: recipient.title,
+          entityType: EntityType.TRIP,
+          entityId: tripId,
+          channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+          status: NotificationStatus.SENT,
+          isRead: false,
+          requiresAction: true,
+          actionUrl: recipient.actionUrl,
+          actionText: 'View Trip',
+          metadata: {
+            tripId,
+            overdueEvent: eventKey,
+            ...extraMetadata,
+          },
+          userPreferences: {
+            emailEnabled: true,
+            smsEnabled: false,
+            pushEnabled: true,
+          },
+          analytics: {
+            openCount: 0,
+            clickCount: 0,
+          },
+        });
+        const saved = await this.notificationRepository.save(notification);
+        this.eventsGateway.emitNotification(recipient.userId, saved);
+      } catch (error: any) {
+        this.logger.error(
+          `Failed to send overdue/delay notification to ${recipient.userId}: ${error.message}`,
+        );
+      }
     }
   }
 }

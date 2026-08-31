@@ -18,6 +18,7 @@ const SCHEDULE_BLOCKING_STATUSES: TripStatus[] = [
   TripStatus.PLANNED,
   TripStatus.IN_PROGRESS,
   TripStatus.DELAYED,
+  TripStatus.OVERDUE,
 ];
 
 export interface DriverAssignmentCheckParams {
@@ -119,7 +120,7 @@ export class DriverSchedulingGuardService {
       where: {
         driverId,
         tenantId,
-        status: TripStatus.IN_PROGRESS,
+        status: In([TripStatus.IN_PROGRESS, TripStatus.OVERDUE]),
         id: Not(tripId),
       },
     });
@@ -266,7 +267,7 @@ export class DriverSchedulingGuardService {
       existingPickup: effectiveWindow.pickupDateTime,
       existingDelivery: effectiveWindow.deliveryDateTime,
       conflictType:
-        trip?.status === TripStatus.IN_PROGRESS
+        trip?.status === TripStatus.IN_PROGRESS || trip?.status === TripStatus.OVERDUE
           ? 'CONCURRENT_EXECUTION'
           : 'SCHEDULE_OVERLAP',
       effectiveWindow,

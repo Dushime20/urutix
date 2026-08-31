@@ -31,7 +31,13 @@ import { TranslatedText } from '../translated-text';
 import { useTranslation } from '../../hooks/useTranslation';
 import FuelEntryModal from '../FleetDashboard/Fuel/FuelEntryModal';
 import { ActiveTripTracker } from './ActiveTripTracker';
+import { ReportTripDelayModal } from './ReportTripDelayModal';
+import { OverdueTripBanner } from './OverdueTripBanner';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  isOverdueTripStatus,
+  TRIP_OVERDUE_QUERY_KEYS,
+} from '../../utils/overdueTrip';
 
 interface DriverTripsProps {
   driverId: string;
@@ -52,6 +58,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showFuelModal, setShowFuelModal] = useState(false);
   const [showLiveTracker, setShowLiveTracker] = useState(false);
+  const [showDelayModal, setShowDelayModal] = useState(false);
   const { user } = useAuth();
 
   // Fetch current trip
@@ -133,8 +140,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
   const completeTripMutation = useMutation({
     mutationFn: (tripId: string) => driverApi.completeTrip(tripId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['driver-current-trip'] });
-      queryClient.invalidateQueries({ queryKey: ['driver-trip-history'] });
+      TRIP_OVERDUE_QUERY_KEYS.forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
       toastActionSuccess(t('Trip completed successfully'), {
         id: 'trip-complete',
         suppressTypes: TRIP_COMPLETE_SUPPRESS_TYPES,
@@ -201,6 +207,8 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
       planned: 'bg-amber-50 text-amber-600 border-amber-100',
       cancelled: 'bg-rose-50 text-rose-600 border-rose-100',
       paused: 'bg-yellow-50 text-yellow-600 border-yellow-100',
+      delayed: 'bg-yellow-50 text-yellow-600 border-yellow-100',
+      overdue: 'bg-amber-50 text-amber-700 border-amber-200',
     };
 
     return (
@@ -253,8 +261,12 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 <div>
                   <div className="flex items-center gap-3 mb-1">
                     <h3 className="text-2xl font-black text-[#0f172a] uppercase tracking-tight"><TranslatedText text="Current Mission" /></h3>
-                    <span className="px-3 py-1 bg-primary-100 text-primary-600 text-[10px] font-black uppercase tracking-widest rounded-full">
-                      <TranslatedText text="In Progress" />
+                    <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full ${
+                      isOverdueTripStatus(currentTrip.status)
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-primary-100 text-primary-600'
+                    }`}>
+                      <TranslatedText text={isOverdueTripStatus(currentTrip.status) ? 'Trip Overdue' : 'In Progress'} />
                     </span>
                   </div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><TranslatedText text="Protocol ID:" /> #{currentTrip.tripNumber}</p>
@@ -262,7 +274,22 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
               </div>
 
               <div className="flex items-center gap-3">
-                {currentTrip.status?.toLowerCase() === 'in_progress' ? (
+                {isOverdueTripStatus(currentTrip.status) ? (
+                  <>
+                    <button
+                      onClick={() => handleTripAction(currentTrip.id, 'complete')}
+                      className="px-5 py-3 bg-primary-500 text-white hover:bg-primary-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-md shadow-primary-200"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> <TranslatedText text="Complete Trip" />
+                    </button>
+                    <button
+                      onClick={() => setShowDelayModal(true)}
+                      className="px-5 py-3 bg-amber-500 text-white hover:bg-amber-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors shadow-md"
+                    >
+                      <TranslatedText text="Report Delay" />
+                    </button>
+                  </>
+                ) : currentTrip.status?.toLowerCase() === 'in_progress' ? (
                   <>
                     <button
                       onClick={() => handleTripAction(currentTrip.id, 'pause')}
@@ -300,6 +327,20 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 </button>
               </div>
             </div>
+
+            {isOverdueTripStatus(currentTrip.status) && (
+              <div className="mb-8">
+                <OverdueTripBanner
+                  tripNumber={currentTrip.tripNumber}
+                  expectedEnd={currentTrip.expectedEndAt || currentTrip.plannedEndTime || currentTrip.estimatedArrival}
+                  overdueDurationLabel={currentTrip.overdueDurationLabel}
+                  delayReason={currentTrip.delayReason}
+                  delayDescription={currentTrip.delayDescription}
+                  newEta={currentTrip.estimatedEndTime || currentTrip.estimatedArrival}
+                  delayReportedAt={currentTrip.delayReportedAt}
+                />
+              </div>
+            )}
 
             {/* Progress */}
             {currentTrip.progress !== undefined && (
@@ -370,6 +411,7 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                 <option value="all">{t('Status: ALL')}</option>
                 <option value="scheduled">{t('Scheduled')}</option>
                 <option value="in_progress">{t('Active')}</option>
+                <option value="overdue">{t('Overdue')}</option>
                 <option value="completed">{t('Complete')}</option>
                 <option value="cancelled">{t('Voided')}</option>
               </select>
@@ -516,6 +558,22 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
                     <button onClick={() => handleTripAction(selectedTrip.id, 'start')} className="col-span-2 py-4 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-colors shadow-lg shadow-primary-200">
                       <TranslatedText text="Start Trip" />
                     </button>
+                  )}
+                  {isOverdueTripStatus(selectedTrip.status) && (
+                    <>
+                      <button onClick={() => handleTripAction(selectedTrip.id, 'complete')} className="py-4 bg-primary-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-600 transition-colors shadow-lg shadow-primary-200 flex items-center justify-center gap-2">
+                        <CheckCircle2 size={14} /> <TranslatedText text="Complete Trip" />
+                      </button>
+                      <button onClick={() => { setShowDetailsModal(false); setShowDelayModal(true); }} className="py-4 bg-amber-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
+                        <TranslatedText text="Report Delay" />
+                      </button>
+                      <button
+                        onClick={() => { setShowDetailsModal(false); setShowLiveTracker(true); }}
+                        className="py-4 bg-[#345E85] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#0f172a] transition-colors flex items-center justify-center gap-2 sm:col-span-2"
+                      >
+                        <Radio size={14} className="animate-pulse" /> <TranslatedText text="Open Live Map" />
+                      </button>
+                    </>
                   )}
                   {selectedTrip.status?.toLowerCase() === 'in_progress' && (
                     <>
@@ -676,6 +734,18 @@ const DriverTrips: React.FC<DriverTripsProps> = ({ driverId }) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ReportTripDelayModal
+        isOpen={showDelayModal}
+        tripId={(selectedTrip || currentTrip)?.id || ''}
+        tripNumber={(selectedTrip || currentTrip)?.tripNumber}
+        onClose={() => setShowDelayModal(false)}
+        onSubmitted={() => {
+          TRIP_OVERDUE_QUERY_KEYS.forEach((key) =>
+            queryClient.invalidateQueries({ queryKey: [key] }),
+          );
+        }}
+      />
     </div>
   );
 };

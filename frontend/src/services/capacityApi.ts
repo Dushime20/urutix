@@ -93,6 +93,8 @@ export interface SellableTruck {
   nameplateVolumeM3: number;
   tripId?: string | null;
   tripNumber?: string | null;
+  cargoTitle?: string | null;
+  loadedWeightKg?: number;
   corridor?: {
     origin: CapacityPlace;
     destination: CapacityPlace;
@@ -110,18 +112,8 @@ export interface SellableTruck {
 
 export interface CreateOfferPayload {
   truckId: string;
-  tripId?: string;
-  origin: CapacityPlace;
-  destination: CapacityPlace;
-  departureAt: string;
-  arrivalAt: string;
-  remainingWeightKg: number;
-  remainingVolumeM3?: number;
-  floorPrice?: number;
-  pricePerTonne?: number;
-  bookingMode?: 'INSTANT' | 'REQUEST';
-  notes?: string;
-  generalCargoOnly?: boolean;
+  tripId: string;
+  floorPrice: number;
 }
 
 const unwrap = <T>(payload: any): T => {

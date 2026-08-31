@@ -98,6 +98,7 @@ const Trips = () => {
               <option value="all">All Status</option>
               <option value="planned">Planned</option>
               <option value="in_progress">In Progress</option>
+              <option value="OVERDUE">Overdue</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>

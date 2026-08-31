@@ -27,6 +27,9 @@ import { cn } from '@/utils/cn';
 import { TranslatedText } from '../translated-text';
 import LocationIntelModal from '../Dashboard/Widgets/LocationIntelModal';
 import { CargoHealthModal } from './CargoHealthModal';
+import { OverdueTripBanner } from './OverdueTripBanner';
+import { ReportTripDelayModal } from './ReportTripDelayModal';
+import { isOverdueTripStatus } from '../../utils/overdueTrip';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import type { Trip as DriverTrip } from '../../services/driverApi';
 
@@ -39,6 +42,7 @@ interface CurrentTripProps {
   onResume?: () => void;
   onComplete?: () => void;
   onOpenRelay?: () => void;
+  onDelayReported?: () => void;
   hos?: {
     consecutiveDrivingHours: number;
     maxHoursPerShift: number;
@@ -81,12 +85,15 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
   onResume,
   onComplete,
   onOpenRelay,
+  onDelayReported,
   hos,
 }) => {
   const { format: formatCurrency } = useCurrencyFormat();
   const [isPaused, setIsPaused] = useState(false);
   const [showIntel, setShowIntel] = useState(false);
   const [showCargoDetails, setShowCargoDetails] = useState(false);
+  const [showDelayModal, setShowDelayModal] = useState(false);
+  const overdue = isOverdueTripStatus(trip.status);
 
   const cargo = trip.cargo;
   const startAt = trip.actualDeparture || trip.estimatedDeparture || trip.pickupTime || trip.scheduledDeparture;
@@ -187,8 +194,11 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
                 <span className="text-[10px] font-black text-[#2b5271] uppercase tracking-[0.3em]">
                   <TranslatedText text="Current Trip" />
                 </span>
-                {trip.status === 'IN_PROGRESS' && (
+                {trip.status === 'IN_PROGRESS' && !overdue && (
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+                {overdue && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
                 )}
               </div>
               <h2 className="text-2xl font-black text-white uppercase tracking-tight">
@@ -200,7 +210,9 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
           <div
             className={cn(
               'px-5 py-2.5 rounded-xl border font-black text-[10px] uppercase tracking-[0.2em]',
-              trip.status === 'IN_PROGRESS'
+              overdue
+                ? 'bg-amber-500/20 border-amber-400/40 text-amber-300'
+                : trip.status === 'IN_PROGRESS'
                 ? 'bg-[#2b5271]/20 border-[#2b5271]/30 text-[#2b5271]'
                 : 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400'
             )}
@@ -211,6 +223,17 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
       </div>
 
       <div className="p-10 space-y-10">
+        {overdue && (
+          <OverdueTripBanner
+            tripNumber={trip.tripNumber}
+            expectedEnd={trip.expectedEndAt || trip.plannedEndTime || trip.estimatedArrival}
+            overdueDurationLabel={trip.overdueDurationLabel}
+            delayReason={trip.delayReason}
+            delayDescription={trip.delayDescription}
+            newEta={trip.estimatedEndTime || trip.estimatedArrival}
+            delayReportedAt={trip.delayReportedAt}
+          />
+        )}
         {hos && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center justify-between p-6 bg-orange-50 dark:bg-orange-950/30 rounded-[2.5rem] border border-orange-100 dark:border-orange-900/50">
@@ -557,7 +580,7 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
 
         <div className="flex flex-wrap items-center justify-between gap-6 pt-10 border-t border-slate-50">
           <div className="flex items-center gap-4">
-            {trip.status === 'IN_PROGRESS' ? (
+            {(trip.status === 'IN_PROGRESS' || overdue) ? (
               <button
                 onClick={onComplete}
                 className="h-16 px-10 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-emerald-700 transition-all shadow-lg active:scale-95"
@@ -576,6 +599,15 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
               </button>
             )}
 
+            {overdue ? (
+              <button
+                onClick={() => setShowDelayModal(true)}
+                className="h-16 px-8 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all border active:scale-95 bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100"
+              >
+                <AlertTriangle size={16} />
+                <TranslatedText text="Report Delay" />
+              </button>
+            ) : (
             <button
               onClick={() => {
                 const newState = !isPaused;
@@ -593,6 +625,7 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
               {isPaused ? <Play size={16} /> : <Pause size={16} />}
               <TranslatedText text={isPaused ? 'Resume' : 'Pause'} />
             </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -619,6 +652,13 @@ export const CurrentTrip: React.FC<CurrentTripProps> = ({
           </div>
         </div>
       </div>
+      <ReportTripDelayModal
+        isOpen={showDelayModal}
+        tripId={trip.id}
+        tripNumber={trip.tripNumber}
+        onClose={() => setShowDelayModal(false)}
+        onSubmitted={() => onDelayReported?.()}
+      />
     </motion.div>
   );
 };

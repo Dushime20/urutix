@@ -28,6 +28,7 @@ import { TripStatus } from '../../entities/trip.entity';
 import { TripsService } from './trips.service';
 import { CreateTripDto, CreateTripResponseDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
+import { ReportTripDelayDto } from './dto/report-trip-delay.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
@@ -48,6 +49,7 @@ import {
   UserRole.TENANT_ADMIN,
   UserRole.CARGO_OWNER,
   UserRole.TRUCK_OWNER,
+  UserRole.BROKER,
   UserRole.FLEET_MANAGER,
   UserRole.FLEET_DISPATCHER,
   UserRole.DRIVER,
@@ -190,6 +192,27 @@ export class TripsController {
     };
   }
 
+  @Get('overdue')
+  @ApiOperation({
+    summary: 'Get overdue trips',
+    description:
+      'Retrieve trips whose expected completion time has passed without driver confirmation. Scoped by tenant and role.',
+  })
+  @ApiOkResponse({ description: 'Overdue trips retrieved successfully' })
+  async getOverdueTrips(@Request() req): Promise<ApiResponseDto> {
+    const trips = await this.tripsService.getOverdueTrips(req.user.tenantId, {
+      userId: req.user.userId,
+      role: req.user.role,
+    });
+    return {
+      success: true,
+      message: 'Overdue trips retrieved successfully',
+      data: trips,
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get trip by ID',
@@ -301,6 +324,11 @@ export class TripsController {
       id,
       updateTripStatusDto,
       req.user.tenantId,
+      {
+        userId: req.user.userId,
+        role: req.user.role,
+        name: req.user.email,
+      },
     );
     return {
       success: true,
@@ -323,6 +351,11 @@ export class TripsController {
       id,
       { status: TripStatus.COMPLETED, actualEndTime: new Date() },
       req.user.tenantId,
+      {
+        userId: req.user.userId,
+        role: req.user.role,
+        name: req.user.email,
+      },
     );
 
     // Emit trip.completed event for notifications
@@ -371,6 +404,11 @@ export class TripsController {
       id,
       { status: TripStatus.IN_PROGRESS, actualStartTime: new Date() },
       req.user.tenantId,
+      {
+        userId: req.user.userId,
+        role: req.user.role,
+        name: req.user.email,
+      },
     );
 
     // Emit trip.started event for notifications
@@ -399,6 +437,34 @@ export class TripsController {
     }
 
     return { success: true, message: 'Trip started successfully', data: trip, statusCode: 200, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/delay')
+  @ApiOperation({
+    summary: 'Report a trip delay',
+    description:
+      'Record a structured delay report with a new ETA. Does not complete the trip. Pause/resume and HOS breaks are separate actions.',
+  })
+  @ApiParam({ name: 'id', description: 'Trip ID' })
+  @ApiBody({ type: ReportTripDelayDto })
+  @ApiOkResponse({ description: 'Delay reported successfully' })
+  async reportDelay(
+    @Param('id') id: string,
+    @Body() dto: ReportTripDelayDto,
+    @Request() req,
+  ): Promise<ApiResponseDto> {
+    const trip = await this.tripsService.reportDelay(id, dto, req.user.tenantId, {
+      userId: req.user.userId,
+      role: req.user.role,
+      name: req.user.email,
+    });
+    return {
+      success: true,
+      message: 'Delay reported successfully',
+      data: trip,
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Post(':id/pause')

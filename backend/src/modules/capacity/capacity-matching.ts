@@ -1,6 +1,6 @@
 /**
  * Pure capacity-marketplace rules.
- * A truck 40% empty on Kigali → Nairobi can sell the leftover slice;
+ * A partially loaded truck on any corridor can sell its leftover slice;
  * the platform takes a visible commission on the matched remainder.
  */
 
@@ -112,6 +112,21 @@ export const remainingFromTrip = (
     allocatedVolumeM3: roundKg(alreadyAllocatedM3),
   };
 };
+
+/** Leftover marketplace: partial load on an active trip — not empty trucks or full trucks. */
+export const isLeftoverSellableSlice = (input: {
+  tripId?: string | null;
+  allocatedWeightKg: number;
+  remainingWeightKg: number;
+  utilizationPercent: number;
+  existingOfferId?: string | null;
+}): boolean =>
+  Boolean(input.tripId) &&
+  !input.existingOfferId &&
+  input.allocatedWeightKg > 0 &&
+  input.remainingWeightKg >= 50 &&
+  input.utilizationPercent > 0 &&
+  input.utilizationPercent < 100;
 
 const cityKey = (point?: Partial<GeoPoint> | null): string =>
   `${(point?.city || point?.name || '').trim().toLowerCase()}|${(point?.countryCode || point?.country || '')

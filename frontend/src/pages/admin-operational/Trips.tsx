@@ -104,6 +104,7 @@ const OperationalAdminTrips: React.FC = () => {
               { value: 'IN_PROGRESS', label: 'In Progress' },
               { value: 'COMPLETED', label: 'Completed' },
               { value: 'DELAYED', label: 'Delayed' },
+              { value: 'OVERDUE', label: 'Overdue' },
               { value: 'CANCELLED', label: 'Cancelled' },
             ],
           },

@@ -59,6 +59,8 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId, onTrackTrip }) => {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
+      case 'OVERDUE':
+        return 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800';
       case 'DELAYED':
         return 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800';
       case 'IN_PROGRESS':
@@ -72,6 +74,7 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ tenantId, onTrackTrip }) => {
 
   const statusLabel = (status: string) => {
     if (status === 'IN_PROGRESS') return tSync('In Transit');
+    if (status === 'OVERDUE') return tSync('Trip Overdue');
     return tSync(status);
   };
 

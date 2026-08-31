@@ -113,8 +113,13 @@ export const tripsAPI = {
   updateStatus: (id: string, data: any) => api.patch(`/trips/${id}/status`, data),
   getAnalytics: () => api.get('/trips/analytics/summary'),
   getActive: () => api.get('/trips/active'),
+  getOverdue: () => api.get('/trips/overdue'),
   start: (id: string) => api.post(`/trips/${id}/start`),
   complete: (id: string) => api.post(`/trips/${id}/complete`),
+  reportDelay: (
+    id: string,
+    data: { delayReason: string; delayDescription?: string; newEstimatedArrival: string },
+  ) => api.post(`/trips/${id}/delay`, data),
   assignDriver: (id: string, driverId: string) => api.patch(`/trips/${id}/assign-driver`, { driverId }),
 
   // ePOD

@@ -55,7 +55,7 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
     const [disabledFeatures, setDisabledFeatures] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchPermissions = async () => {
+    const fetchPermissions = async (opts?: { background?: boolean }) => {
         if (!user) {
             setPermissions([]);
             setDisabledFeatures([]);
@@ -64,7 +64,11 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
         }
 
         try {
-            setIsLoading(true);
+            // Background refresh (interval / focus) must not flip isLoading —
+            // consumers early-return on loading and would unmount open modals/dialogs.
+            if (!opts?.background) {
+                setIsLoading(true);
+            }
             const token = localStorage.getItem('accessToken');
             const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
@@ -119,7 +123,9 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
             setPermissions([]);
             setDisabledFeatures([]);
         } finally {
-            setIsLoading(false);
+            if (!opts?.background) {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -127,21 +133,25 @@ export const PermissionProvider = ({ children }: PermissionProviderProps) => {
         fetchPermissions();
         if (!user) return;
 
-        const interval = window.setInterval(() => {
-            fetchPermissions();
-        }, 20_000);
+        const refreshInBackground = () => {
+            void fetchPermissions({ background: true });
+        };
+
+        const interval = window.setInterval(refreshInBackground, 20_000);
 
         const onFocus = () => {
-            fetchPermissions();
+            refreshInBackground();
+        };
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'visible') onFocus();
         };
         window.addEventListener('focus', onFocus);
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') onFocus();
-        });
+        document.addEventListener('visibilitychange', onVisibilityChange);
 
         return () => {
             window.clearInterval(interval);
             window.removeEventListener('focus', onFocus);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
         };
     }, [user?.id]);
 

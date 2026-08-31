@@ -48,6 +48,7 @@ import {
   PLATFORM_CAPACITY_COMMISSION_RATE,
   quoteCommission,
   quoteFreight,
+  isLeftoverSellableSlice,
   remainingFromTrip,
   roundKg,
   roundMoney,
@@ -58,7 +59,7 @@ import {
   type SearchQuery,
 } from './capacity-matching';
 
-const ACTIVE_TRIP = [TripStatus.PLANNED, TripStatus.IN_PROGRESS, TripStatus.DELAYED];
+const ACTIVE_TRIP = [TripStatus.PLANNED, TripStatus.IN_PROGRESS, TripStatus.DELAYED, TripStatus.OVERDUE];
 const LIVE_BOOKING = [CapacityBookingStatus.REQUESTED, CapacityBookingStatus.CONFIRMED, CapacityBookingStatus.IN_TRANSIT];
 const OPEN_OFFER = [CapacityOfferStatus.OPEN, CapacityOfferStatus.PARTIALLY_BOOKED];
 /** Columns that exist on older truck tables — never SELECT the full entity. */
@@ -194,9 +195,11 @@ export class CapacityService implements OnModuleInit {
         const loadM3 = Number(trip?.load?.volume) || 0;
         const bookedKg = Number(offer?.allocatedWeightKg) || 0;
         const bookedM3 = Number(offer?.allocatedVolumeM3) || 0;
-        const slice = remainingFromTrip(nameplateKg, nameplateM3, loadKg + bookedKg, loadM3 + bookedM3);
-        const utilization = utilizationPercent(loadKg + bookedKg, nameplateKg);
-        return {
+        const allocatedKg = loadKg + bookedKg;
+        const allocatedM3 = loadM3 + bookedM3;
+        const slice = remainingFromTrip(nameplateKg, nameplateM3, allocatedKg, allocatedM3);
+        const utilization = utilizationPercent(allocatedKg, nameplateKg);
+        const row = {
           truckId: truck.id,
           plateNumber: truck.plateNumber,
           make: truck.make,
@@ -206,6 +209,8 @@ export class CapacityService implements OnModuleInit {
           nameplateVolumeM3: nameplateM3,
           tripId: trip?.id || null,
           tripNumber: trip?.tripNumber || null,
+          cargoTitle: trip?.load?.title || null,
+          loadedWeightKg: loadKg,
           corridor: trip
             ? {
                 origin: this.placeFromLoad(trip.load, 'origin'),
@@ -216,13 +221,30 @@ export class CapacityService implements OnModuleInit {
             : null,
           remainingWeightKg: offer ? Number(offer.remainingWeightKg) : slice.remainingWeightKg,
           remainingVolumeM3: offer ? Number(offer.remainingVolumeM3) : slice.remainingVolumeM3,
+          allocatedWeightKg: allocatedKg,
           utilizationPercent: utilization,
           emptyPercent: roundKg(100 - utilization),
-          canList: !offer && slice.remainingWeightKg >= 50 && utilization < 100,
+          canList: isLeftoverSellableSlice({
+            tripId: trip?.id,
+            allocatedWeightKg: allocatedKg,
+            remainingWeightKg: slice.remainingWeightKg,
+            utilizationPercent: utilization,
+            existingOfferId: offer?.id,
+          }),
           existingOfferId: offer?.id || null,
           suggestedFloorPrice: roundMoney(this.suggestFloor(slice.remainingWeightKg, trip)),
         };
-      });
+        return row;
+      })
+      .filter((row) =>
+        isLeftoverSellableSlice({
+          tripId: row.tripId,
+          allocatedWeightKg: row.allocatedWeightKg,
+          remainingWeightKg: row.remainingWeightKg,
+          utilizationPercent: row.utilizationPercent,
+          existingOfferId: row.existingOfferId,
+        }),
+      );
   }
 
   async createOffer(dto: CreateCapacityOfferDto, tenantId: string, ownerId: string) {
@@ -231,44 +253,72 @@ export class CapacityService implements OnModuleInit {
     if (![VehicleStatus.AVAILABLE, VehicleStatus.IN_TRANSIT].includes(truck.status)) {
       throw new BadRequestException('Only available or in-transit trucks can sell leftover space');
     }
-    if (new Date(dto.arrivalAt) <= new Date(dto.departureAt)) {
-      throw new BadRequestException('Arrival must be after departure');
-    }
 
     const live = await this.offerRepo.findOne({
       where: { tenantId, truckId: truck.id, status: In(OPEN_OFFER) },
     });
     if (live) throw new BadRequestException('This truck already has an open leftover-space listing');
 
-    let trip: Trip | null = null;
-    if (dto.tripId) {
-      trip = await this.tripRepo.findOne({
-        where: { id: dto.tripId, tenantId, truckId: truck.id },
-        relations: ['load'],
-      });
-      if (!trip) throw new NotFoundException('Trip not found for this truck');
-    }
+    const trip = await this.tripRepo.findOne({
+      where: { id: dto.tripId, tenantId, truckId: truck.id },
+      relations: ['load'],
+    });
+    if (!trip) throw new NotFoundException('Trip not found for this truck');
 
     const nameplateKg = Number(truck.capacityWeight) || 0;
     const nameplateM3 = Number(truck.capacityVolume) || 0;
     const allocatedKg = Number(trip?.load?.weight) || 0;
     const allocatedM3 = Number(trip?.load?.volume) || 0;
+    const utilization = utilizationPercent(allocatedKg, nameplateKg);
+    if (!trip) {
+      throw new BadRequestException('Only trucks on an active trip can sell leftover space');
+    }
+    if (allocatedKg <= 0) {
+      throw new BadRequestException('This truck has no cargo loaded yet — sell leftover space only on partially filled trips');
+    }
+    if (utilization >= 100) {
+      throw new BadRequestException('This truck is full — no leftover space to sell');
+    }
+
     const slice = suggestListedRemainder(nameplateKg, nameplateM3, allocatedKg, allocatedM3);
-    const listedWeightKg = roundKg(Math.min(dto.remainingWeightKg ?? slice.remainingWeightKg, slice.remainingWeightKg));
-    const listedVolumeM3 = roundKg(Math.min(dto.remainingVolumeM3 ?? slice.remainingVolumeM3, slice.remainingVolumeM3));
+    const listedWeightKg = roundKg(slice.remainingWeightKg);
+    const listedVolumeM3 = roundKg(slice.remainingVolumeM3);
     if (listedWeightKg < 50) {
       throw new BadRequestException('Need at least 50 kg of unused capacity to list');
+    }
+
+    const origin = this.placeFromLoad(trip.load, 'origin');
+    const destination = this.placeFromLoad(trip.load, 'destination');
+    if (!origin || !destination) {
+      throw new BadRequestException('Cargo on this trip is missing pickup or delivery location');
+    }
+    if ((!origin.lat && !origin.lng) || (!destination.lat && !destination.lng)) {
+      throw new BadRequestException('Cargo locations must include coordinates');
+    }
+
+    const departureAt = trip.plannedStartTime;
+    const arrivalAt = trip.plannedEndTime;
+    if (!departureAt || !arrivalAt) {
+      throw new BadRequestException('Trip schedule is incomplete');
+    }
+    if (new Date(arrivalAt) <= new Date(departureAt)) {
+      throw new BadRequestException('Trip arrival must be after departure');
+    }
+
+    const floorPrice = roundMoney(dto.floorPrice ?? this.suggestFloor(listedWeightKg, trip));
+    if (floorPrice <= 0) {
+      throw new BadRequestException('Set a price for the remaining space');
     }
 
     const offer = this.offerRepo.create({
       tenantId,
       ownerId,
       truckId: truck.id,
-      tripId: trip?.id || null,
-      origin: this.normalizePlace(dto.origin),
-      destination: this.normalizePlace(dto.destination),
-      departureAt: new Date(dto.departureAt),
-      arrivalAt: new Date(dto.arrivalAt),
+      tripId: trip.id,
+      origin: this.normalizePlace(origin),
+      destination: this.normalizePlace(destination),
+      departureAt: new Date(departureAt),
+      arrivalAt: new Date(arrivalAt),
       nameplateWeightKg: nameplateKg,
       nameplateVolumeM3: nameplateM3,
       listedWeightKg,
@@ -277,8 +327,10 @@ export class CapacityService implements OnModuleInit {
       remainingVolumeM3: listedVolumeM3,
       allocatedWeightKg: 0,
       allocatedVolumeM3: 0,
-      floorPrice: roundMoney(dto.floorPrice ?? this.suggestFloor(listedWeightKg, trip)),
-      pricePerTonne: dto.pricePerTonne ?? null,
+      floorPrice,
+      pricePerTonne:
+        dto.pricePerTonne ??
+        (listedWeightKg > 0 ? roundMoney(floorPrice / (listedWeightKg / 1000)) : null),
       pricePerM3: dto.pricePerM3 ?? null,
       currencyCode: (dto.currencyCode || trip?.currencyCode || 'USD').slice(0, 3),
       commissionRate: PLATFORM_CAPACITY_COMMISSION_RATE,
@@ -982,17 +1034,48 @@ export class CapacityService implements OnModuleInit {
     };
   }
 
+  private isCoordinateLabel(value?: string | null): boolean {
+    return !!value && /^Lat:\s*-?\d/i.test(value.trim());
+  }
+
+  private formatPlaceLabel(parts: {
+    name?: string;
+    city?: string;
+    country?: string;
+    address?: string;
+  }): string {
+    const city = parts.city?.trim();
+    const country = parts.country?.trim();
+    if (city && country) return `${city}, ${country}`;
+    if (city) return city;
+    const name = parts.name?.trim();
+    if (name && !this.isCoordinateLabel(name)) return name;
+    const address = parts.address?.trim();
+    if (address && !this.isCoordinateLabel(address)) return address;
+    if (country) return country;
+    return 'Location';
+  }
+
   private placeFromLoad(load: Load | undefined, side: 'origin' | 'destination'): CapacityPlace | null {
     if (!load) return null;
-    const loc = side === 'origin' ? load.origin : load.destination;
-    if (!loc) return null;
+    const addr = side === 'origin' ? load.origin : load.destination;
+    const routeLoc = side === 'origin' ? load.pickupLocation : load.deliveryLocation;
+    const data = routeLoc?.locationData;
+    const lat = Number(addr?.lat ?? data?.coordinates?.latitude) || 0;
+    const lng = Number(addr?.lng ?? data?.coordinates?.longitude) || 0;
+    const city = addr?.city || data?.city;
+    const country = addr?.country || data?.country;
+    const address = addr?.address || data?.address;
+    const name = this.formatPlaceLabel({ name: data?.name, city, country, address });
+    if (!lat && !lng && !city && !address) return null;
+    const readableAddress = address && !this.isCoordinateLabel(address) ? address : name;
     return {
-      name: loc.city || loc.address,
-      city: loc.city,
-      country: loc.country,
-      address: loc.address,
-      lat: Number(loc.lat) || 0,
-      lng: Number(loc.lng) || 0,
+      name,
+      city: city || name,
+      country,
+      address: readableAddress,
+      lat,
+      lng,
     };
   }
 

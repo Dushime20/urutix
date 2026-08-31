@@ -26,6 +26,8 @@ export enum TripStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   DELAYED = 'DELAYED',
+  /** Expected completion time passed without driver confirmation. Still operationally active. */
+  OVERDUE = 'OVERDUE',
 }
 
 @Entity('trips')
@@ -157,6 +159,19 @@ export class Trip {
 
   @Column('jsonb', { default: [] })
   issuesReported: any[];
+
+  /** Structured delay report submitted by the driver (does not complete the trip). */
+  @Column({ length: 80, nullable: true })
+  delayReason?: string;
+
+  @Column('text', { nullable: true })
+  delayDescription?: string;
+
+  @Column('timestamp with time zone', { nullable: true })
+  delayReportedAt?: Date;
+
+  @Column('uuid', { nullable: true })
+  delayReportedBy?: string;
 
   @CreateDateColumn()
   createdAt: Date;

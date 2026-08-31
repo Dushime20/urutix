@@ -97,7 +97,7 @@ export interface CargoMetrics {
   }>;
 }
 
-export type TripStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'DELAYED';
+export type TripStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'DELAYED' | 'OVERDUE';
 
 export const TripStatusMap = {
   PLANNED: 'PLANNED' as TripStatus,
