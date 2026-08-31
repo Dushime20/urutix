@@ -516,7 +516,7 @@ export class ParkingReservationListener {
     const to = phone?.trim();
     if (!to) return;
     try {
-      const body = `Nova Parking 365: ${notice.title}. Ref ${reservation.reservationReference}. ${notice.message}`;
+      const body = `UrutiX Parking: ${notice.title}. Ref ${reservation.reservationReference}. ${notice.message}`;
       await this.smsService.sendSms(to, body.slice(0, 320));
       this.logger.log(`Parking SMS sent for ${reservation.reservationReference} → ${to}`);
     } catch (error) {

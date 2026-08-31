@@ -3,7 +3,7 @@ import ParkingReservationsDashboard from '../parking/ParkingReservationsDashboar
 
 const AdminParkingReservations = () => {
   return (
-    <AdminPageLayout title="Parking Management" description="Nova Parking 365 reservation queue">
+    <AdminPageLayout title="Parking Management" description="UrutiX Parking reservation queue">
       <ParkingReservationsDashboard basePath="/admin/parking-reservations" />
     </AdminPageLayout>
   );

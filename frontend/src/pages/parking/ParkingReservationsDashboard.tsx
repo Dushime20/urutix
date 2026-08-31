@@ -144,7 +144,7 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
         <div>
           <h1 className="ui-page-title"><TranslatedText text="Parking Reservations" /></h1>
           <p className="ui-body-small mt-1">
-            <TranslatedText text="Review, assign, and process Nova Parking 365 reservation requests." />
+            <TranslatedText text="Review, assign, and process UrutiX Parking reservation requests." />
           </p>
         </div>
         <div className="flex items-center gap-2">

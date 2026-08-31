@@ -590,7 +590,7 @@ export class EmailService {
         note: options.note,
       }),
       textBody: options.textBody,
-      fromName: 'Nova Parking 365',
+      fromName: 'UrutiX Parking',
     });
   }
 

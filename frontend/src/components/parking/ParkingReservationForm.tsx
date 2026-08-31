@@ -338,7 +338,7 @@ export function ParkingReservationForm({
 
       <Section title="Authorization">
         <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-          <TranslatedText text="By submitting this reservation request, I confirm that the information provided is accurate and that this request represents my intent to do business with Nova Parking 365." />
+          <TranslatedText text="By submitting this reservation request, I confirm that the information provided is accurate and that this request represents my intent to do business with UrutiX Parking." />
         </p>
         <label className="flex items-start gap-3 mb-4">
           <input type="checkbox" className="mt-1 h-4 w-4 rounded border-slate-300 text-primary-600" {...form.register('agreementAccepted')} />
