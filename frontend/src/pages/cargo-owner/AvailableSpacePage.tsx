@@ -100,7 +100,6 @@ const AvailableSpacePage: React.FC = () => {
   const [title, setTitle] = useState(params.get('title') || 'General cargo');
   const [offers, setOffers] = useState<CapacityOffer[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [active, setActive] = useState<CapacityOffer | null>(null);
@@ -135,12 +134,11 @@ const AvailableSpacePage: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([capacityApi.marketplace({ weightKg, volumeM3, loadId }), capacityApi.bookings(), capacityApi.stats()])
-      .then(([rows, mine, totals]) => {
+    Promise.all([capacityApi.marketplace({ weightKg, volumeM3, loadId }), capacityApi.bookings()])
+      .then(([rows, mine]) => {
         if (cancelled) return;
         setOffers(rows);
         setBookings(mine);
-        setStats(totals);
       })
       .catch((err) => toast.error(apiError(err, 'Could not load available space')))
       .finally(() => {
@@ -182,14 +180,12 @@ const AvailableSpacePage: React.FC = () => {
       );
       setActive(null);
       setQuote(null);
-      const [rows, mine, totals] = await Promise.all([
+      const [rows, mine] = await Promise.all([
         capacityApi.marketplace({ weightKg, volumeM3, loadId }),
         capacityApi.bookings(),
-        capacityApi.stats(),
       ]);
       setOffers(rows);
       setBookings(mine);
-      setStats(totals);
     } catch (err: any) {
       toast.error(apiError(err, 'Could not book leftover space'));
     } finally {
@@ -218,22 +214,6 @@ const AvailableSpacePage: React.FC = () => {
         <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
           <TranslatedText text="Available space" />
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-          <TranslatedText text="Book unused space on a truck already going your way. Example: Kigali → Nairobi with 40% empty. You pay the leftover freight plus an 8% platform match fee." />
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {[
-          { label: 'Your bookings', value: stats?.bookings ?? liveBookings.length },
-          { label: 'Matched shipments', value: stats?.matchedShipments ?? 0 },
-          { label: 'Commission on leftover', value: compact(stats?.commissionPaid || 0) },
-        ].map((card) => (
-          <div key={card.label} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{card.label}</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{card.value}</p>
-          </div>
-        ))}
       </div>
 
       <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 md:p-8 space-y-5 shadow-sm">
