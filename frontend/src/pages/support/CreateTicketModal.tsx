@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   X, Headphones, ChevronDown, AlertTriangle, Upload, FileText,
@@ -326,9 +327,16 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
     refColCount === 2 ? 'grid-cols-1 sm:grid-cols-2' :
     'grid-cols-1 sm:grid-cols-3';
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-[9999] p-3 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-800 rounded-[24px] w-full max-w-2xl my-6 border border-gray-100 dark:border-slate-700">
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[400] flex items-start sm:items-center justify-center p-3 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-ticket-title"
+    >
+      <div className="bg-white dark:bg-slate-800 rounded-[24px] w-full max-w-2xl my-6 sm:my-0 border border-gray-100 dark:border-slate-700 shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
@@ -337,7 +345,7 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
               <Headphones className="w-4 h-4 text-[#2c5173]" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-gray-900 dark:text-white">Report an Issue</h2>
+              <h2 id="create-ticket-title" className="text-sm font-black text-gray-900 dark:text-white">Report an Issue</h2>
               <p className="text-[11px] text-gray-400">
                 {isLender
                   ? 'Submit a loan or lending-related support ticket'
@@ -561,7 +569,8 @@ const CreateTicketModal: React.FC<Props> = ({ onClose, onCreated }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

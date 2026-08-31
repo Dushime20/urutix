@@ -2,7 +2,7 @@
  * Sell leftover truck space — TRUCK_OWNER
  * Route: /dashboard/fleet/capacity
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -30,6 +30,8 @@ const toLocal = (iso?: string | Date | null) => {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
+
+const isCoordinateLabel = (name?: string | null) => !!name && /^Lat:\s*-?\d/i.test(name);
 
 const CityField: React.FC<{
   label: string;
@@ -104,7 +106,6 @@ const SellCapacityPage: React.FC = () => {
   const [sellable, setSellable] = useState<SellableTruck[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<SellableTruck | null>(null);
@@ -116,20 +117,18 @@ const SellCapacityPage: React.FC = () => {
   const [remainingVolumeM3, setRemainingVolumeM3] = useState(0);
   const [floorPrice, setFloorPrice] = useState(0);
   const [pricePerTonne, setPricePerTonne] = useState(160);
-  const [bookingMode, setBookingMode] = useState<'INSTANT' | 'REQUEST'>('INSTANT');
   const [notes, setNotes] = useState('');
+  const publishFormRef = useRef<HTMLElement>(null);
 
   const load = async () => {
-    const [inventory, listing, inbox, totals] = await Promise.all([
+    const [inventory, listing, inbox] = await Promise.all([
       capacityApi.sellable(),
       capacityApi.listOffers(),
       capacityApi.bookings(),
-      capacityApi.stats(),
     ]);
     setSellable(inventory);
     setOffers(listing);
     setBookings(inbox);
-    setStats(totals);
     const truckId = params.get('truckId');
     if (truckId) {
       const row = inventory.find((item) => item.truckId === truckId);
@@ -148,17 +147,37 @@ const SellCapacityPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [params.get('truckId')]);
+
+  const clearSelection = () => {
+    setSelected(null);
+    setOrigin(null);
+    setDestination(null);
+    setDepartureAt('');
+    setArrivalAt('');
+    setRemainingWeightKg(0);
+    setRemainingVolumeM3(0);
+    setFloorPrice(0);
+    setPricePerTonne(160);
+    setNotes('');
+  };
 
   const applySellable = (row: SellableTruck) => {
     setSelected(row);
     setRemainingWeightKg(Math.round(row.remainingWeightKg));
     setRemainingVolumeM3(Math.round(row.remainingVolumeM3 * 10) / 10);
     setFloorPrice(Math.round(row.suggestedFloorPrice));
-    if (row.corridor?.origin) setOrigin(row.corridor.origin);
-    if (row.corridor?.destination) setDestination(row.corridor.destination);
+    if (row.corridor?.origin && !isCoordinateLabel(row.corridor.origin.name)) setOrigin(row.corridor.origin);
+    else setOrigin(null);
+    if (row.corridor?.destination && !isCoordinateLabel(row.corridor.destination.name)) setDestination(row.corridor.destination);
+    else setDestination(null);
     if (row.corridor?.departureAt) setDepartureAt(toLocal(row.corridor.departureAt));
+    else setDepartureAt('');
     if (row.corridor?.arrivalAt) setArrivalAt(toLocal(row.corridor.arrivalAt));
+    else setArrivalAt('');
+    window.requestAnimationFrame(() => {
+      publishFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
   };
 
   const publish = async () => {
@@ -178,12 +197,13 @@ const SellCapacityPage: React.FC = () => {
         remainingVolumeM3,
         floorPrice,
         pricePerTonne,
-        bookingMode,
+        bookingMode: 'INSTANT',
         notes,
         generalCargoOnly: true,
       });
       toast.success('Leftover space is now for sale');
       setNotes('');
+      clearSelection();
       await load();
     } catch (err: any) {
       toast.error(apiError(err, 'Could not publish leftover space'));
@@ -213,23 +233,6 @@ const SellCapacityPage: React.FC = () => {
         <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
           <TranslatedText text="Sell capacity" />
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-          <TranslatedText text="A truck running Kigali → Nairobi with unused space can sell that leftover kg and m³. Listing is free. UrutiX takes a visible match commission from the cargo owner when space is booked." />
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'Open listings', value: stats?.openListings ?? 0 },
-          { label: 'Matched shipments', value: stats?.matchedShipments ?? 0 },
-          { label: 'Residual kg sold', value: Math.round(stats?.residualKgSold || 0).toLocaleString() },
-          { label: 'Commission accrued', value: compact(stats?.commissionAccrued || 0) },
-        ].map((card) => (
-          <div key={card.label} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{card.label}</p>
-            <p className="text-xl font-black text-slate-900 dark:text-white mt-1">{card.value}</p>
-          </div>
-        ))}
       </div>
 
       <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 space-y-4 shadow-sm">
@@ -280,8 +283,29 @@ const SellCapacityPage: React.FC = () => {
         )}
       </section>
 
-      <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 md:p-8 space-y-5 shadow-sm">
-        <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Publish leftover space</h2>
+      {selected ? (
+      <section
+        ref={publishFormRef}
+        className="bg-white dark:bg-slate-900 rounded-[2rem] border border-[#345E85]/30 dark:border-[#345E85]/40 p-6 md:p-8 space-y-5 shadow-sm"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Publish leftover space</h2>
+            <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+              {selected.plateNumber} · {selected.make} {selected.model}
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {Math.round(selected.remainingWeightKg).toLocaleString()} kg / {selected.remainingVolumeM3} m³ available
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#345E85]"
+          >
+            Change truck
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CityField label="Origin city" value={origin} onChange={setOrigin} />
           <CityField label="Destination city" value={destination} onChange={setDestination} />
@@ -310,22 +334,6 @@ const SellCapacityPage: React.FC = () => {
             <input type="number" min={0} value={pricePerTonne} onChange={(e) => setPricePerTonne(Number(e.target.value) || 0)} className={inputClass} />
           </label>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {(['INSTANT', 'REQUEST'] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setBookingMode(mode)}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${
-                bookingMode === mode
-                  ? 'bg-[#345E85] text-white border-[#345E85]'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-500'
-              }`}
-            >
-              {mode === 'INSTANT' ? 'Instant book' : 'Request to book'}
-            </button>
-          ))}
-        </div>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -348,6 +356,14 @@ const SellCapacityPage: React.FC = () => {
           <p className="text-xs text-amber-600">This truck is full or already listed. Pick another unit.</p>
         )}
       </section>
+      ) : (
+        <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 p-8 text-center">
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Select a truck to publish leftover space</p>
+          <p className="text-xs text-slate-500 mt-2 max-w-md mx-auto">
+            Choose one of your trucks above — the publish form opens with its corridor, dates, and remaining kg/m³ pre-filled.
+          </p>
+        </section>
+      )}
 
       {pending.length > 0 && (
         <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-amber-100 dark:border-amber-900/40 p-6 space-y-3">
