@@ -4962,16 +4962,129 @@ export class LendingService {
 
   /** Get all loan requests created by a specific user (cargo owner or truck owner) */
   async getMyLoanRequests(userId: string, tenantId: string): Promise<any[]> {
-    const loans = await this.loanRequestRepository.find({
-      where: { created_by: userId, tenant_id: tenantId },
-      relations: ['lender', 'disbursements', 'repayments'],
-      order: { created_at: 'DESC' },
-    });
-    return loans.map((loan) => ({
-      ...loan,
-      financing_type: loan.financing_type || FinancingType.CARGO_OWNER,
-      ...buildLoanWorkflowView(loan),
+    try {
+      const loans = await this.loanRequestRepository.find({
+        where: { created_by: userId, tenant_id: tenantId },
+        relations: ['lender', 'disbursements', 'repayments'],
+        order: { created_at: 'DESC' },
+      });
+      return loans.map((loan) => this.toBorrowerLoanDto(loan));
+    } catch (error) {
+      this.logger.error(
+        `getMyLoanRequests failed for user=${userId} tenant=${tenantId}: ${error.message}`,
+        error.stack,
+      );
+      try {
+        // Schema-drift fallback: SELECT * still works if a mapped column (e.g. financing_type)
+        // was deployed on the entity before the production SQL migration ran.
+        const rows = await this.loanRequestRepository.query(
+          `SELECT * FROM loan_requests
+           WHERE created_by = $1 AND tenant_id = $2
+           ORDER BY created_at DESC`,
+          [userId, tenantId],
+        );
+        this.logger.warn(
+          `getMyLoanRequests used schema-drift fallback; returning ${rows?.length ?? 0} row(s) without relations`,
+        );
+        return (rows || []).map((row: any) =>
+          this.toBorrowerLoanDto(this.normalizeRawLoanRow(row)),
+        );
+      } catch (fallbackError) {
+        this.logger.error(
+          `getMyLoanRequests fallback failed: ${fallbackError.message}`,
+          fallbackError.stack,
+        );
+        throw error;
+      }
+    }
+  }
+
+  private normalizeRawLoanRow(row: any): LoanRequest {
+    const metadata =
+      typeof row.metadata === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(row.metadata);
+            } catch {
+              return null;
+            }
+          })()
+        : row.metadata;
+    return {
+      ...row,
+      metadata,
+      financing_type: row.financing_type || FinancingType.CARGO_OWNER,
+      lender: null,
+      disbursements: [],
+      repayments: [],
+    } as LoanRequest;
+  }
+
+  private toBorrowerLoanDto(loan: LoanRequest): any {
+    const lender = loan.lender
+      ? {
+          id: loan.lender.id,
+          name: loan.lender.name,
+          contact_email: loan.lender.contact_email,
+          status: loan.lender.status,
+        }
+      : null;
+
+    const disbursements = (loan.disbursements || []).map((d: any) => ({
+      id: d.id,
+      loan_request_id: d.loan_request_id,
+      disbursement_date: d.disbursement_date,
+      beneficiaries: d.beneficiaries,
+      status: d.status,
+      amount: d.amount,
+      currency: d.currency,
+      interest_rate: d.interest_rate,
+      term_months: d.term_months,
+      created_at: d.created_at,
     }));
+
+    const repayments = (loan.repayments || []).map((r: any) => ({
+      id: r.id,
+      loan_request_id: r.loan_request_id,
+      amount: r.amount,
+      interest_paid: r.interest_paid,
+      principal_paid: r.principal_paid,
+      repayment_date: r.repayment_date,
+      currency: r.currency,
+      created_at: r.created_at,
+    }));
+
+    return {
+      id: loan.id,
+      tenant_id: loan.tenant_id,
+      cargo_id: loan.cargo_id,
+      trip_id: loan.trip_id,
+      lender_id: loan.lender_id,
+      requested_amount: loan.requested_amount,
+      approved_amount: loan.approved_amount,
+      status: loan.status,
+      interest_amount: loan.interest_amount,
+      due_date: loan.due_date,
+      created_by: loan.created_by,
+      borrower_id: loan.borrower_id,
+      rejection_reason: loan.rejection_reason,
+      requested_split: loan.requested_split,
+      metadata: loan.metadata,
+      loan_number: loan.loan_number,
+      purpose: loan.purpose,
+      financing_type: loan.financing_type || FinancingType.CARGO_OWNER,
+      currency: loan.currency || 'RWF',
+      terms_offered_at: loan.terms_offered_at,
+      borrower_accepted_at: loan.borrower_accepted_at,
+      terms_declined_at: loan.terms_declined_at,
+      loan_term_months: loan.loan_term_months,
+      created_at: loan.created_at,
+      updated_at: loan.updated_at,
+      lender,
+      disbursements,
+      repayments,
+      ...buildLoanWorkflowView(loan),
+    };
   }
 
   /**

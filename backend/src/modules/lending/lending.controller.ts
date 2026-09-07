@@ -573,6 +573,7 @@ export class LendingController {
   async getMyLoanRequests(@Request() req: any) {
     const userId = req.user?.userId || req.user?.id;
     const tenantId = req.user?.tenantId;
+    if (!userId) throw new BadRequestException('User ID is required');
     if (!tenantId) throw new BadRequestException('Tenant ID is required');
     return this.lendingService.getMyLoanRequests(userId, tenantId);
   }
