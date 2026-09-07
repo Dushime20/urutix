@@ -5,11 +5,8 @@ import {
   Trash2,
   CheckCircle,
   History,
-  DollarSign,
   Grid,
   Table,
-  Calendar,
-  X,
   Truck,
   Search,
   Clock
@@ -17,7 +14,7 @@ import {
 import { cn } from '@/utils/cn';
 import toast from 'react-hot-toast';
 import { toastActionSuccess, toastActionError, BID_ACCEPT_SUPPRESS_TYPES } from '../../utils/actionToast';
-import { createPortal } from 'react-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { calculateAdvancePayment, formatCurrency as formatCurrencyUtil, formatPercentage } from '../../utils/paymentCalculations';
 import {
@@ -515,174 +512,191 @@ const BidHistory: React.FC<BidHistoryProps> = ({
         </>
       )}
 
-       {/* Bid Details Modal */}
-      {showDetailsModal && selectedBid && createPortal(
-        <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-            <div className="p-10">
-              <div className="flex justify-between items-center mb-10">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl flex items-center justify-center shadow-sm">
-                    <History className="text-[#345E85] dark:text-blue-400" size={28} />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black text-[#0f172a] dark:text-slate-100 tracking-tight">Bid Intelligence</h3>
-                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mt-1">Full operational record</p>
-                  </div>
-                </div>
-                 <button
-                  type="button"
-                  onClick={() => setShowDetailsModal(false)}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400 dark:text-slate-500"
-                >
-                  <X size={20} />
-                </button>
+       {/* Bid Intelligence Modal */}
+      <Dialog
+        open={showDetailsModal && !!selectedBid}
+        onOpenChange={(open) => { if (!open) setShowDetailsModal(false); }}
+      >
+        <DialogContent className="max-w-3xl bg-white dark:bg-slate-900 rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
+          <DialogHeader className="p-6 pb-4 border-b border-slate-50 dark:border-slate-800">
+            <DialogTitle className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-[#345E85] dark:text-blue-400">
+                <History size={20} />
               </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Bid Intelligence</h2>
+                <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
+                  {selectedBid ? `Ref: ${selectedBid.id.slice(0, 12)}` : 'Full operational record'}
+                </p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
 
-               <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                <div className="bg-slate-50/50 dark:bg-slate-950/50 p-8 rounded-[2rem] border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
-                  <div className="absolute -right-8 -top-8 w-24 h-24 bg-white dark:bg-slate-900 rounded-full opacity-50 dark:opacity-20 group-hover:scale-150 transition-transform duration-700" />
-                  <div className="relative">
-                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Subject Entity</p>
-                    <h4 className="text-xl font-black text-[#0f172a] dark:text-slate-100">{selectedBid.load.title}</h4>
-                    <p className="text-xs font-black text-[#345E85] dark:text-blue-400 mt-1">{selectedBid.load.weight.toLocaleString()} KG PAYLOAD</p>
+          {selectedBid && (() => {
+            const paymentCalc = calculateAdvancePayment(
+              selectedBid.bidAmount,
+              selectedBid.advancePaymentPercentage,
+              selectedBid.requireAdvancePayment !== false,
+              selectedBid.bidCurrency
+            );
+            const truckOwnerName = `${selectedBid.truckOwner?.profile?.firstName || ''} ${selectedBid.truckOwner?.profile?.lastName || ''}`.trim() || '—';
+            const statusTone =
+              selectedBid.status === 'ACCEPTED' ? "bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300" :
+              selectedBid.status === 'PENDING' ? "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300" :
+              selectedBid.status === 'IN_PROGRESS' ? "bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300" :
+              "bg-slate-50 border-slate-100 text-slate-700 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300";
+
+            return (
+              <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                <div className={cn("p-4 rounded-2xl border flex items-center justify-between", statusTone)}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-white/80 dark:bg-slate-900/60 flex items-center justify-center border border-current">
+                      <History size={16} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider opacity-60">Status</p>
+                      <p className="text-sm font-black">{selectedBid.status.replace('_', ' ')}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black opacity-60 uppercase tracking-wider">Bid Amount</p>
+                    <p className="text-xs font-black">{formatCurrency(selectedBid.bidAmount, selectedBid.bidCurrency)}</p>
                   </div>
                 </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-6 bg-white dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Valuation</p>
-                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                      {formatCurrency(selectedBid.bidAmount, selectedBid.bidCurrency)}
-                    </p>
+                <BidTSection title="Shipment">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <BidDR label="Title" value={selectedBid.load?.title || '—'} />
+                    <BidDR label="Payload" value={selectedBid.load?.weight != null ? `${Number(selectedBid.load.weight).toLocaleString()} kg` : '—'} />
+                    <BidDR label="Cargo Value" value={selectedBid.load?.loadValue ? formatCurrency(selectedBid.load.loadValue, selectedBid.bidCurrency) : '—'} />
+                    <BidDR label="Auction Type" value={selectedBid.auction?.auctionType || '—'} />
+                    <BidDR label="Auction Status" value={selectedBid.auction?.status || '—'} />
+                    <BidDR label="Placed" value={formatDate(selectedBid.createdAt)} />
                   </div>
-                  <div className="p-6 bg-white dark:bg-slate-950 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-2">Operational Status</p>
-                    <div className="pt-1">{getStatusBadge(selectedBid.status)}</div>
+                </BidTSection>
+
+                <BidTSection title="Valuation">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <BidDR label="Bid Amount" value={formatCurrency(selectedBid.bidAmount, selectedBid.bidCurrency)} highlight />
+                    <BidDR label="Currency" value={selectedBid.bidCurrency || 'USD'} />
+                    <BidDR label="Status" value={selectedBid.status.replace('_', ' ')} />
+                    {selectedBid.successProbability != null && (
+                      <BidDR label="Win Probability" value={`${Math.round(selectedBid.successProbability)}%`} />
+                    )}
+                    <BidDR label="Counter Offer" value={selectedBid.isCounterOffer ? 'Yes' : 'No'} />
+                    <BidDR
+                      label="Advance Required"
+                      value={selectedBid.requireAdvancePayment !== false ? 'Yes' : 'No'}
+                    />
                   </div>
-                </div>
+                </BidTSection>
 
                 {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && selectedBid.status === 'ACCEPTED' && (
-                  <div className="space-y-4">
-                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400 rounded-xl flex items-center justify-center border border-blue-100 dark:border-blue-900/30">
-                        <DollarSign size={16} />
-                      </div>
-                      <h5 className="text-[10px] font-black text-[#0f172a] dark:text-slate-100 uppercase tracking-[0.2em]">Settlement breakdown</h5>
+                  <BidTSection title="Settlement Breakdown">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      <BidDR
+                        label="Advance Commitment"
+                        value={formatCurrencyUtil(paymentCalc.advanceAmount, paymentCalc.currency)}
+                        highlight
+                      />
+                      <BidDR
+                        label="Advance Share"
+                        value={paymentCalc.requireAdvancePayment ? `${formatPercentage(paymentCalc.advancePaymentPercentage)} of total` : '—'}
+                      />
+                      <BidDR
+                        label="Final Settlement"
+                        value={formatCurrencyUtil(paymentCalc.finalAmount, paymentCalc.currency)}
+                      />
+                      <BidDR
+                        label="Final Share"
+                        value={paymentCalc.requireAdvancePayment ? `${formatPercentage(100 - paymentCalc.advancePaymentPercentage)} of total` : '—'}
+                      />
                     </div>
-
-                    {(() => {
-                      const paymentCalc = calculateAdvancePayment(
-                        selectedBid.bidAmount,
-                        selectedBid.advancePaymentPercentage,
-                        selectedBid.requireAdvancePayment !== false,
-                        selectedBid.bidCurrency
-                      );
-
-                      return (
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="p-6 bg-emerald-50 dark:bg-emerald-900/10 rounded-[1.5rem] border border-emerald-100 dark:border-emerald-900/30">
-                            <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Advance Commitment</p>
-                            <p className="text-xl font-black text-emerald-700 dark:text-emerald-300">
-                              {formatCurrencyUtil(paymentCalc.advanceAmount, paymentCalc.currency)}
-                            </p>
-                            {paymentCalc.requireAdvancePayment && (
-                              <p className="text-[10px] font-black text-emerald-500/70 dark:text-emerald-400/50 uppercase tracking-tighter mt-1">
-                                {formatPercentage(paymentCalc.advancePaymentPercentage)} OF TOTAL
-                              </p>
-                            )}
-                          </div>
-                           <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] border border-slate-100 dark:border-slate-800">
-                            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Final Settlement</p>
-                            <p className="text-xl font-black text-[#0f172a] dark:text-slate-100">
-                              {formatCurrencyUtil(paymentCalc.finalAmount, paymentCalc.currency)}
-                            </p>
-                            {paymentCalc.requireAdvancePayment && (
-                              <p className="text-[10px] font-black text-slate-400/70 dark:text-slate-500/50 uppercase tracking-tighter mt-1">
-                                {formatPercentage(100 - paymentCalc.advancePaymentPercentage)} OF TOTAL
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+                  </BidTSection>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {selectedBid.proposedPickupDate && (
-                     <div className="space-y-2">
-                      <label className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Pickup Log</label>
-                      <div className="flex items-center gap-3 px-5 py-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs font-black text-[#0f172a] dark:text-slate-100 shadow-sm">
-                        <Calendar size={14} className="text-[#345E85] dark:text-blue-400" />
-                        {formatDate(selectedBid.proposedPickupDate)}
+                {(selectedBid.proposedPickupDate || selectedBid.proposedDeliveryDate) && (
+                  <BidTSection title="Route & Schedule">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="relative pl-6 space-y-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
+                        {selectedBid.proposedPickupDate && (
+                          <div className="relative">
+                            <div className="absolute -left-6 top-1 h-3 w-3 bg-white dark:bg-slate-950 border-2 border-emerald-500 rounded-full" />
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Pickup</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatDate(selectedBid.proposedPickupDate)}</p>
+                          </div>
+                        )}
+                        {selectedBid.proposedDeliveryDate && (
+                          <div className="relative">
+                            <div className="absolute -left-6 top-1 h-3 w-3 bg-white dark:bg-slate-950 border-2 border-rose-500 rounded-full" />
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Delivery</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatDate(selectedBid.proposedDeliveryDate)}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <BidDR label="Pickup Date" value={selectedBid.proposedPickupDate ? formatDate(selectedBid.proposedPickupDate) : '—'} />
+                        <BidDR label="Delivery Date" value={selectedBid.proposedDeliveryDate ? formatDate(selectedBid.proposedDeliveryDate) : '—'} />
+                        <BidDR label="Auction Closes" value={selectedBid.auction?.auctionEnd ? formatDate(selectedBid.auction.auctionEnd) : '—'} />
                       </div>
                     </div>
-                  )}
-                  {selectedBid.proposedDeliveryDate && (
-                     <div className="space-y-2">
-                      <label className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Delivery Log</label>
-                      <div className="flex items-center gap-3 px-5 py-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs font-black text-[#0f172a] dark:text-slate-100 shadow-sm">
-                        <Calendar size={14} className="text-[#345E85] dark:text-blue-400" />
-                        {formatDate(selectedBid.proposedDeliveryDate)}
-                      </div>
+                  </BidTSection>
+                )}
+
+                {selectedBid.bidNotes && (
+                  <BidTSection title="Notes">
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 leading-relaxed">{selectedBid.bidNotes}</p>
+                  </BidTSection>
+                )}
+
+                {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && selectedBid.truckOwner && (
+                  <BidTSection title="Carrier Contact">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      <BidDR label="Full Name" value={truckOwnerName} />
+                      <BidDR label="Email" value={selectedBid.truckOwner.email || '—'} />
+                      <BidDR label="Phone" value={selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone || '—'} />
+                      {selectedBid.truckOwner.profile?.companyName && (
+                        <BidDR label="Company" value={selectedBid.truckOwner.profile.companyName} />
+                      )}
                     </div>
-                  )}
+                  </BidTSection>
+                )}
+
+                <div className="flex justify-end pt-4 border-t border-slate-50 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowDetailsModal(false)}
+                    className="px-6 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
-
-                 {selectedBid.bidNotes && (
-                  <div className="space-y-2">
-                    <label className="block text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Contextual notes</label>
-                    <div className="p-6 bg-slate-50 dark:bg-slate-950 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 leading-relaxed italic border-l-4 border-l-[#345E85] dark:border-l-blue-400">
-                      "{selectedBid.bidNotes}"
-                    </div>
-                  </div>
-                )}
-
-                 {(userRole === 'CARGO_OWNER' || userRole === 'BROKER') && selectedBid.truckOwner && (
-                  <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-                    <h5 className="text-[10px] font-black text-[#0f172a] dark:text-slate-100 uppercase tracking-[0.2em] mb-6">Entity contact intelligence</h5>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                       <div className="flex flex-col gap-1">
-                        <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Full Name</p>
-                        <p className="text-xs font-black text-[#0f172a] dark:text-slate-100 uppercase">{selectedBid.truckOwner.profile?.firstName} {selectedBid.truckOwner.profile?.lastName}</p>
-                      </div>
-                      {selectedBid.truckOwner.email && (
-                        <div className="flex flex-col gap-1">
-                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Email Record</p>
-                          <a href={`mailto:${selectedBid.truckOwner.email}`} className="text-xs font-black text-[#345E85] dark:text-blue-400 hover:underline uppercase truncate">{selectedBid.truckOwner.email}</a>
-                        </div>
-                      )}
-                       {(selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone) && (
-                        <div className="flex flex-col gap-1">
-                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Comms Line</p>
-                          <p className="text-xs font-black text-[#0f172a] dark:text-slate-100">{selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
-
-               <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowDetailsModal(false)}
-                  className="px-10 py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-slate-900/10 dark:shadow-blue-500/20"
-                >
-                  Close Data Record
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Styled Confirmation Dialog */}
       {DialogComponent}
     </div>
   );
 };
+
+const BidTSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="space-y-3">
+    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</h3>
+    <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+      {children}
+    </div>
+  </div>
+);
+
+const BidDR = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <div className="flex flex-col gap-0.5 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+    <span className={`text-[11px] font-bold truncate ${highlight ? 'text-[#345E85]' : 'text-slate-800 dark:text-slate-200'}`}>{value}</span>
+  </div>
+);
 
 export default BidHistory; 

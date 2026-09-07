@@ -14,9 +14,6 @@ import {
   X,
   AlertCircle,
   Eye,
-  Truck,
-  CalendarCheck,
-  MapPin,
   Lock,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -36,6 +33,7 @@ import {
 } from '../../hooks/useBiddingQueries';
 import { StandardDataTable, type Column, type TableAction } from '../EnliteUI/Tables';
 import { usePermission } from '../../contexts/PermissionContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/Dialog';
 
 interface LoadLocation {
   id: string;
@@ -1049,172 +1047,187 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       )}
 
       {/* Custom Bid Modal — hidden for brokers */}
-      {showBidModal && selectedAuction && userRole !== 'BROKER' && createPortal(
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <form
-            onSubmit={placeBid}
-            className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-slate-800"
-          >
-            {/* Header */}
-            <div className="px-10 py-8 border-b border-gray-100 dark:border-slate-800 relative">
-              <h2 className="text-3xl font-extrabold text-[#111827] dark:text-slate-100 tracking-tight">Custom Bid</h2>
-              <div className="mt-2 space-y-1">
-                <p className="text-lg font-medium text-gray-600 dark:text-slate-400">{selectedAuction?.load?.title || 'Untitled Shipment'}</p>
-                <p className="text-sm text-gray-400 dark:text-slate-500 font-medium italic">
-                  Cargo Owner: {selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} {selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}
-                </p>
-              </div>
-              {!isBiddingOpen(selectedAuction) && (
-                <div className="absolute top-8 right-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl border border-amber-100 dark:border-amber-800 max-w-xs text-right">
-                  {getBidWindow(selectedAuction)?.label || selectedAuction.status}
+      <Dialog
+        open={showBidModal && !!selectedAuction && userRole !== 'BROKER'}
+        onOpenChange={(open) => { if (!open) setShowBidModal(false); }}
+      >
+        <DialogContent className="max-w-3xl bg-white dark:bg-slate-900 rounded-[32px] p-0 border-0 overflow-hidden shadow-2xl">
+          <form onSubmit={placeBid}>
+            <DialogHeader className="p-6 pb-4 border-b border-slate-50 dark:border-slate-800">
+              <DialogTitle className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-[#345E85] dark:text-blue-400">
+                  <Gavel size={20} />
                 </div>
-              )}
-            </div>
-
-            {/* Form Content */}
-            <div className="p-10 space-y-8 overflow-y-auto custom-scrollbar">
-              {/* Bid Amount */}
-              <div className="space-y-3">
-                <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Your Shipping Price (USD) *</label>
-                <div className="relative group">
-                  <input
-                    type="number"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    disabled={!isBiddingOpen(selectedAuction)}
-                    className="w-full h-16 px-6 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-2xl text-xl font-bold text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-[#345E85] dark:focus:border-blue-500 transition-all disabled:opacity-50"
-                    placeholder="0.00"
-                    min={1}
-                  />
-                </div>
-                <div className="flex flex-wrap items-center gap-3 text-xs font-medium">
-                  {selectedAuction.currentHighestBid ? (
-                    <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-lg border border-amber-100 dark:border-amber-800 font-bold">
-                      Current lowest: {formatCurrency(selectedAuction.currentHighestBid)} — bid lower to win
-                    </span>
-                  ) : (
-                    <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-800 font-bold">
-                      No bids yet — be first with your best price
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-gray-400 dark:text-slate-500 font-medium">
-                  The lowest bid wins. Enter the shipping price you are willing to charge.
-                </p>
-                {biddingHelpers.getBidConstraintHint(selectedAuction) && (
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
-                    {biddingHelpers.getBidConstraintHint(selectedAuction)}
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Custom Bid</h2>
+                  <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
+                    {selectedAuction?.load?.title || 'Untitled Shipment'}
                   </p>
-                )}
-              </div>
-
-              {/* Asset Allocation */}
-              <div className="bg-[#f0f9ff]/80 dark:bg-blue-900/10 p-8 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center justify-center text-[#0369a1] dark:text-blue-400">
-                    <Truck size={18} />
-                  </div>
-                  <h4 className="text-lg font-extrabold text-[#0369a1] dark:text-blue-400">Asset Selection</h4>
-                  <span className="ml-auto text-[9px] font-black text-[#0369a1]/60 dark:text-blue-400/60 uppercase tracking-widest">
-                    Only available for cargo dates
-                  </span>
                 </div>
+              </DialogTitle>
+            </DialogHeader>
 
-                {/* Availability-aware truck select — filtered to cargo date window */}
-                <AvailableTruckSelect
-                  pickupDateTime={proposedPickupDate}
-                  deliveryDateTime={proposedDeliveryDate}
-                  capacityWeight={selectedAuction?.load?.weight}
-                  value={selectedTruckId}
-                  onChange={(id) => {
-                    setSelectedTruckId(id);
-                    setSelectedDriverId('');
-                  }}
-                  label="Select Truck"
-                  required
-                />
-
-                {/* Drivers assigned to the selected truck, available for cargo dates */}
-                <AvailableDriverSelect
-                  pickupDateTime={proposedPickupDate}
-                  deliveryDateTime={proposedDeliveryDate}
-                  truckId={selectedTruckId || undefined}
-                  value={selectedDriverId}
-                  onChange={setSelectedDriverId}
-                  label="Select Driver"
-                />
-
-                {/* Live conflict checker — fires whenever truck/driver/dates change */}
-                <BidAvailabilityChecker
-                  truckId={selectedTruckId || undefined}
-                  driverId={selectedDriverId || undefined}
-                  pickupDateTime={proposedPickupDate || undefined}
-                  deliveryDateTime={proposedDeliveryDate || undefined}
-                />
-              </div>
-
-              {/* Delivery Schedule — read-only, sourced from cargo */}
-              <div className="bg-[#f0f9ff]/80 dark:bg-blue-900/10 p-8 rounded-[1.5rem] border border-blue-100 dark:border-blue-900/30 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl shadow-sm flex items-center justify-center text-[#0369a1] dark:text-blue-400">
-                    <CalendarCheck size={18} />
-                  </div>
-                  <h4 className="text-lg font-extrabold text-[#0369a1] dark:text-blue-400">Delivery Schedule</h4>
-                  <span className="ml-auto flex items-center gap-1 text-[9px] font-black text-[#0369a1]/60 dark:text-blue-400/60 uppercase tracking-widest">
-                    <Lock size={10} /> Set by cargo owner
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Pickup Date</p>
-                    <div className="flex items-center gap-3 h-14 px-4 bg-white/70 dark:bg-slate-900/70 border-2 border-blue-100 dark:border-blue-900/40 rounded-xl">
-                      <CalendarCheck size={16} className="text-[#0369a1] dark:text-blue-400 shrink-0" />
-                      <span className="text-sm font-bold text-gray-800 dark:text-slate-200">
-                        {proposedPickupDate
-                          ? new Date(proposedPickupDate).toLocaleString('en-US', {
-                              year: 'numeric', month: 'short', day: 'numeric',
-                              hour: '2-digit', minute: '2-digit',
-                            })
-                          : <span className="text-gray-400 italic font-medium">Not specified</span>}
-                      </span>
+            {selectedAuction && (
+              <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                <div className={cn(
+                  "p-4 rounded-2xl border flex items-center justify-between",
+                  isBiddingOpen(selectedAuction)
+                    ? "bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-300"
+                    : "bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-white/80 dark:bg-slate-900/60 flex items-center justify-center border border-current">
+                      {isBiddingOpen(selectedAuction) ? <Gavel size={16} /> : <Lock size={16} />}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider opacity-60">Status</p>
+                      <p className="text-sm font-black">
+                        {isBiddingOpen(selectedAuction)
+                          ? 'Bidding Open'
+                          : (getBidWindow(selectedAuction)?.label || selectedAuction.status)}
+                      </p>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-xs font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Delivery Date</p>
-                    <div className="flex items-center gap-3 h-14 px-4 bg-white/70 dark:bg-slate-900/70 border-2 border-blue-100 dark:border-blue-900/40 rounded-xl">
-                      <CalendarCheck size={16} className="text-[#0369a1] dark:text-blue-400 shrink-0" />
-                      <span className="text-sm font-bold text-gray-800 dark:text-slate-200">
-                        {proposedDeliveryDate
-                          ? new Date(proposedDeliveryDate).toLocaleString('en-US', {
-                              year: 'numeric', month: 'short', day: 'numeric',
-                              hour: '2-digit', minute: '2-digit',
-                            })
-                          : <span className="text-gray-400 italic font-medium">Not specified</span>}
-                      </span>
-                    </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black opacity-60 uppercase tracking-wider">Auction #</p>
+                    <p className="text-xs font-black">{selectedAuction.id?.slice(0, 12)}</p>
                   </div>
                 </div>
-                {/* Route info */}
-                {(selectedAuction?.load?.locations || selectedAuction?.load?.origin) && (
-                  <div className="flex items-start gap-3 pt-2">
-                    <MapPin size={14} className="text-[#0369a1] dark:text-blue-400 mt-0.5 shrink-0" />
-                    <p className="text-xs font-medium text-gray-500 dark:text-slate-400 leading-relaxed">
-                      {(() => {
-                        const pickup = selectedAuction.load.locations?.find((l: any) => l.type === 'PICKUP');
-                        const delivery = selectedAuction.load.locations?.find((l: any) => l.type === 'DELIVERY');
-                        const from = pickup?.locationData?.city || pickup?.locationData?.name || selectedAuction.load.origin?.city || '—';
-                        const to = delivery?.locationData?.city || delivery?.locationData?.name || selectedAuction.load.destination?.city || '—';
-                        return `${from} → ${to}`;
-                      })()}
+
+                <BidTSection title="Bid Amount">
+                  <div className="space-y-3">
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">
+                      Your Shipping Price (USD) *
+                    </label>
+                    <input
+                      type="number"
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      disabled={!isBiddingOpen(selectedAuction)}
+                      className="w-full h-11 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] transition-all disabled:opacity-50"
+                      placeholder="0.00"
+                      min={1}
+                    />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      <BidDR
+                        label="Current Lowest"
+                        value={selectedAuction.currentHighestBid ? formatCurrency(selectedAuction.currentHighestBid) : 'No bids yet'}
+                        highlight
+                      />
+                      <BidDR
+                        label="Strategy"
+                        value={selectedAuction.currentHighestBid ? 'Bid lower to win' : 'Be first'}
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-400 font-medium">
+                      The lowest bid wins. Enter the shipping price you are willing to charge.
                     </p>
+                    {biddingHelpers.getBidConstraintHint(selectedAuction) && (
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                        {biddingHelpers.getBidConstraintHint(selectedAuction)}
+                      </p>
+                    )}
                   </div>
-                )}
-              </div>
+                </BidTSection>
 
-              {/* Advance Payment Section */}
-              <div className="space-y-6">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center justify-center">
+                <BidTSection title="Vehicle & Driver">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                    Only assets available for cargo dates
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AvailableTruckSelect
+                      pickupDateTime={proposedPickupDate}
+                      deliveryDateTime={proposedDeliveryDate}
+                      capacityWeight={selectedAuction?.load?.weight}
+                      value={selectedTruckId}
+                      onChange={(id) => {
+                        setSelectedTruckId(id);
+                        setSelectedDriverId('');
+                      }}
+                      label="Select Truck"
+                      required
+                    />
+                    <AvailableDriverSelect
+                      pickupDateTime={proposedPickupDate}
+                      deliveryDateTime={proposedDeliveryDate}
+                      truckId={selectedTruckId || undefined}
+                      value={selectedDriverId}
+                      onChange={setSelectedDriverId}
+                      label="Select Driver"
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <BidAvailabilityChecker
+                      truckId={selectedTruckId || undefined}
+                      driverId={selectedDriverId || undefined}
+                      pickupDateTime={proposedPickupDate || undefined}
+                      deliveryDateTime={proposedDeliveryDate || undefined}
+                    />
+                  </div>
+                </BidTSection>
+
+                <BidTSection title="Route & Schedule">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="relative pl-6 space-y-6 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800">
+                      <div className="relative">
+                        <div className="absolute -left-6 top-1 h-3 w-3 bg-white dark:bg-slate-950 border-2 border-emerald-500 rounded-full" />
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Pickup</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          {getLocationString(selectedAuction.load, 'pickup')}
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          📅 {proposedPickupDate
+                            ? new Date(proposedPickupDate).toLocaleString('en-US', {
+                                year: 'numeric', month: 'short', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit',
+                              })
+                            : 'Not specified'}
+                        </p>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute -left-6 top-1 h-3 w-3 bg-white dark:bg-slate-950 border-2 border-rose-500 rounded-full" />
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">Delivery</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          {getLocationString(selectedAuction.load, 'delivery')}
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          📅 {proposedDeliveryDate
+                            ? new Date(proposedDeliveryDate).toLocaleString('en-US', {
+                                year: 'numeric', month: 'short', day: 'numeric',
+                                hour: '2-digit', minute: '2-digit',
+                              })
+                            : 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <BidDR
+                        label="Pickup Date"
+                        value={proposedPickupDate
+                          ? new Date(proposedPickupDate).toLocaleString('en-US', {
+                              month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                            })
+                          : '—'}
+                      />
+                      <BidDR
+                        label="Delivery Date"
+                        value={proposedDeliveryDate
+                          ? new Date(proposedDeliveryDate).toLocaleString('en-US', {
+                              month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                            })
+                          : '—'}
+                      />
+                      <BidDR
+                        label="Cargo Owner"
+                        value={`${selectedAuction?.load?.cargoOwner?.profile?.firstName || ''} ${selectedAuction?.load?.cargoOwner?.profile?.lastName || 'Admin'}`.trim()}
+                      />
+                      <BidDR label="Schedule" value="Set by cargo owner" />
+                    </div>
+                  </div>
+                </BidTSection>
+
+                <BidTSection title="Payment Terms">
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={requireAdvancePayment}
@@ -1222,72 +1235,67 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                         setRequireAdvancePayment(e.target.checked);
                         if (!e.target.checked) setAdvancePaymentPercentage('');
                       }}
-                      className="peer appearance-none w-6 h-6 border-2 border-gray-300 dark:border-slate-700 rounded-lg checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 text-[#345E85] focus:ring-[#345E85]"
                     />
-                    <svg className="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-base font-bold text-gray-700 dark:text-slate-300">Require advance payment before trip</span>
-                </label>
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">
+                      Require advance payment before trip
+                    </span>
+                  </label>
+                  {requireAdvancePayment && (
+                    <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2">
+                      <div className="col-span-1">
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                          Advance Payment %
+                        </label>
+                        <input
+                          type="number"
+                          value={advancePaymentPercentage}
+                          onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
+                          className="w-full h-11 px-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] transition-all"
+                          placeholder="e.g., 70"
+                        />
+                      </div>
+                      <BidDR label="Paid Upfront" value={advancePaymentPercentage ? `${advancePaymentPercentage}% of fee` : 'Optional'} />
+                    </div>
+                  )}
+                </BidTSection>
 
-                {requireAdvancePayment && (
-                  <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
-                    <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Advance Payment % (Optional)</label>
-                    <input
-                      type="number"
-                      value={advancePaymentPercentage}
-                      onChange={(e) => setAdvancePaymentPercentage(e.target.value)}
-                      className="w-full h-14 px-6 bg-white dark:bg-slate-950 border-2 border-gray-100 dark:border-slate-800 rounded-2xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition-all"
-                      placeholder="e.g., 70"
-                    />
-                    <p className="text-sm text-gray-400 dark:text-slate-500 leading-relaxed font-medium">
-                      Percentage of transportation fee to be paid upfront.
-                    </p>
-                  </div>
+                <BidTSection title="Notes">
+                  <textarea
+                    value={bidNotes}
+                    onChange={(e) => setBidNotes(e.target.value)}
+                    className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-[11px] font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#345E85]/20 focus:border-[#345E85] transition-all min-h-[96px] resize-none"
+                    placeholder="Add any additional notes..."
+                  />
+                </BidTSection>
+
+                {!isBiddingOpen(selectedAuction) && (
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full normal-case tracking-normal">
+                    {getBidWindow(selectedAuction)?.message || 'Bidding is not open yet.'}
+                  </p>
                 )}
-              </div>
 
-              {/* Notes */}
-              <div className="space-y-3">
-                <label className="block text-base font-bold text-gray-700 dark:text-slate-300">Notes</label>
-                <textarea
-                  value={bidNotes}
-                  onChange={(e) => setBidNotes(e.target.value)}
-                  className="w-full p-5 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl text-sm font-medium text-gray-900 dark:text-slate-100 focus:outline-none focus:border-[#345E85] dark:focus:border-blue-500 transition-all min-h-[120px] resize-none"
-                  placeholder="Add any additional notes..."
-                />
+                <div className="flex justify-end pt-4 border-t border-slate-50 dark:border-slate-800 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowBidModal(false)}
+                    className="px-6 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!bidAmount || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate || !isBiddingOpen(selectedAuction)}
+                    className="px-6 py-3 bg-[#345E85] hover:bg-[#2a4d6d] text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Submit Bid
+                  </button>
+                </div>
               </div>
-            </div>
-
-            {/* Footer Actions */}
-            <div className="p-10 pt-0 flex flex-col gap-4">
-              {!isBiddingOpen(selectedAuction) && (
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl py-3 w-full normal-case tracking-normal">
-                  {getBidWindow(selectedAuction)?.message || 'Bidding is not open yet.'}
-                </p>
-              )}
-              <div className="flex items-center justify-end gap-4 w-full">
-                <button
-                  type="button"
-                  onClick={() => setShowBidModal(false)}
-                  className="px-10 py-4 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 rounded-xl text-base font-bold hover:bg-gray-200 dark:hover:bg-slate-700 transition-all active:scale-95"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!bidAmount || !selectedTruckId || !proposedPickupDate || !proposedDeliveryDate || !isBiddingOpen(selectedAuction)}
-                  className="px-10 py-4 bg-[#345E85] text-white rounded-xl text-base font-bold hover:bg-[#2a4d6d] transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Submit Bid
-                </button>
-              </div>
-            </div>
+            )}
           </form>
-        </div>,
-        document.body
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Bid Details Modal */}
       {showDetailsModal && detailsAuction && createPortal(
@@ -1464,5 +1472,21 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     </div >
   );
 };
+
+const BidTSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="space-y-3">
+    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</h3>
+    <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
+      {children}
+    </div>
+  </div>
+);
+
+const BidDR = ({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) => (
+  <div className="flex flex-col gap-0.5 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+    <span className={`text-[11px] font-bold truncate ${highlight ? 'text-[#345E85]' : 'text-slate-800 dark:text-slate-200'}`}>{value}</span>
+  </div>
+);
 
 export default AuctionList;
