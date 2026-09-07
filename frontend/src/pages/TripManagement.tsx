@@ -22,8 +22,9 @@ import {
   PenLine,
   CircleDollarSign,
 } from 'lucide-react';
-import { tripsAPI } from '../services/api';
+import { tripsAPI, fleetAPI } from '../services/api';
 import api from '../services/api';
+import { loadsAPI } from '../services/load';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../config/errorMessages';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/Dialog';
@@ -287,21 +288,52 @@ const TripManagement: React.FC = () => {
     }
   };
 
+  const unwrapEntity = (res: any, key: string) => {
+    const d = res?.data ?? res;
+    if (d?.[key] && typeof d[key] === 'object') return d[key];
+    if (d?.data?.[key] && typeof d.data[key] === 'object') return d.data[key];
+    if (d?.data && typeof d.data === 'object' && !Array.isArray(d.data)) return d.data;
+    return d && typeof d === 'object' ? d : null;
+  };
+
   const handleSelectTrip = (trip: Trip) => {
     setSelectedTrip(trip);
     setShowAssignPanel(false);
     setSelectedDriverId('');
     setTruckDrivers([]);
-    // Use ePOD already embedded in the trip response — no extra API call needed
     const rawEpod = (trip as any)._raw?.epod ?? null;
     if (rawEpod) {
       setEpod(rawEpod);
     } else if (trip.status === 'COMPLETED') {
-      // Fallback: fetch separately for older trips not yet including epod in response
       fetchEpodForTrip(trip.id);
     } else {
       setEpod(null);
     }
+
+    const raw = (trip as any)._raw ?? {};
+    const truckId = trip.truckId || raw.truckId;
+    const driverId = trip.driverId || raw.driverId;
+    const loadId = raw.loadId || raw.load?.id;
+
+    Promise.all([
+      truckId ? fleetAPI.getTruckById(truckId).then((r) => unwrapEntity(r, 'truck')).catch(() => null) : Promise.resolve(null),
+      driverId ? fleetAPI.getDriverById(driverId).then((r) => unwrapEntity(r, 'driver')).catch(() => null) : Promise.resolve(null),
+      loadId ? loadsAPI.getById(loadId).then((r) => unwrapEntity(r, 'load')).catch(() => null) : Promise.resolve(null),
+    ]).then(([truck, driver, load]) => {
+      setSelectedTrip((prev) => {
+        if (!prev || prev.id !== trip.id) return prev;
+        const prevRaw = (prev as any)._raw ?? {};
+        return {
+          ...prev,
+          _raw: {
+            ...prevRaw,
+            truck: truck?.id || truck?.plateNumber ? { ...(prevRaw.truck || {}), ...truck } : prevRaw.truck,
+            driver: driver?.id || driver?.firstName ? { ...(prevRaw.driver || {}), ...driver } : prevRaw.driver,
+            load: load?.id || load?.title ? { ...(prevRaw.load || {}), ...load } : prevRaw.load,
+          },
+        } as Trip;
+      });
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -690,12 +722,109 @@ const TripManagement: React.FC = () => {
               const dt = new Date(d);
               return isNaN(dt.getTime()) ? '—' : dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             };
-            const fmtC = (v: any) => v != null && !isNaN(Number(v)) ? formatCurrency(Number(v)) : '—';
+            const fmtC = (v: any) => v != null && v !== '' && !isNaN(Number(v)) ? formatCurrency(Number(v)) : '—';
+            const fmtEnum = (v: any) => {
+              if (v == null || v === '') return '—';
+              return String(v).replace(/_/g, ' ');
+            };
+            const fmtNum = (v: any, suffix = '') => {
+              if (v == null || v === '' || isNaN(Number(v))) return '—';
+              return `${Number(v).toLocaleString()}${suffix}`;
+            };
+            const toCoord = (point: any): { lat: number; lng: number } | null => {
+              const lat = Number(point?.lat ?? point?.latitude ?? point?.locationData?.lat ?? point?.locationData?.latitude);
+              const lng = Number(point?.lng ?? point?.longitude ?? point?.locationData?.lng ?? point?.locationData?.longitude);
+              return Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0) ? { lat, lng } : null;
+            };
+            const haversineKm = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+              const R = 6371;
+              const dLat = (b.lat - a.lat) * Math.PI / 180;
+              const dLng = (b.lng - a.lng) * Math.PI / 180;
+              const h = Math.sin(dLat / 2) ** 2
+                + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+              return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+            };
 
             const pickupLoc = load.locations?.find((l: any) => l.type === 'PICKUP');
             const deliveryLoc = load.locations?.find((l: any) => l.type === 'DELIVERY');
             const pickupAddr = load.origin?.address || pickupLoc?.locationData?.address || selectedTrip.pickupLocation;
             const deliveryAddr = load.destination?.address || deliveryLoc?.locationData?.address || selectedTrip.deliveryLocation;
+
+            const storedDistance = raw.totalDistance ?? raw.distance;
+            const originCoord = toCoord(load.origin) || toCoord(pickupLoc);
+            const destCoord = toCoord(load.destination) || toCoord(deliveryLoc);
+            const computedDistance = originCoord && destCoord ? haversineKm(originCoord, destCoord) : null;
+            const distanceKm = storedDistance != null && storedDistance !== '' && !isNaN(Number(storedDistance))
+              ? Number(storedDistance)
+              : computedDistance;
+            const startForDuration = raw.actualStartTime || raw.plannedStartTime;
+            const endForDuration = raw.actualEndTime || raw.plannedEndTime;
+            const computedDurationHrs = startForDuration && endForDuration
+              ? (new Date(endForDuration).getTime() - new Date(startForDuration).getTime()) / 36e5
+              : null;
+            const durationHrs = raw.duration != null && raw.duration !== '' && !isNaN(Number(raw.duration))
+              ? Number(raw.duration)
+              : (computedDurationHrs != null && Number.isFinite(computedDurationHrs) && computedDurationHrs > 0 ? computedDurationHrs : null);
+            const avgSpeed = raw.averageSpeed != null && raw.averageSpeed !== '' && !isNaN(Number(raw.averageSpeed))
+              ? Number(raw.averageSpeed)
+              : (distanceKm != null && durationHrs != null && durationHrs > 0 ? distanceKm / durationHrs : null);
+            const isFragile = Boolean(load.isFragile) || String(load.cargoType || '').toUpperCase() === 'FRAGILE';
+
+            const num = (v: any): number | null => {
+              if (v == null || v === '') return null;
+              const n = Number(v);
+              return Number.isFinite(n) ? n : null;
+            };
+            const money = (v: number | null | undefined, estimated = false) => {
+              if (v == null || isNaN(Number(v))) return '—';
+              return `${formatCurrency(Number(v))}${estimated ? ' (est.)' : ''}`;
+            };
+            const sec = truck.securityFeatures || {};
+            const costs = truck.costStructure || {};
+            const hasGps = Boolean(truck.hasGps || sec.hasGps || sec.hasRealTimeTracking);
+            const hasTracking = Boolean(truck.hasTracking || sec.hasTracking || sec.hasTelematics);
+            const insuranceExp = truck.insuranceExpiry
+              || truck.complianceDocuments?.insurance?.expiryDate
+              || truck.insuranceAlerts?.[0]?.expiryDate
+              || truck.insuranceAlerts?.[0]?.endDate;
+            const driverName = [driver.firstName, driver.lastName].filter(Boolean).join(' ').trim()
+              || (selectedTrip.driverName !== 'Unassigned' ? selectedTrip.driverName : '');
+            const hasDriver = Boolean(driver.id || driver.firstName || driverName);
+
+            const agreed = num(selectedTrip.agreedPrice) ?? num(raw.agreedPrice) ?? num(load.offeredPrice) ?? 0;
+            const fuelEff = num(raw.fuelEfficiency) ?? num(truck.fuelEfficiency) ?? 6.5;
+            const fuelCostStored = num(raw.fuelCost);
+            const estimatedFuel = distanceKm != null
+              ? (distanceKm / 100) * fuelEff * 1.2 * (1 + (num(costs.fuelSurcharge) ?? 0) / 100)
+              : null;
+            const fuelCost = fuelCostStored ?? estimatedFuel ?? 0;
+            const tollsStored = num(raw.tollsCost);
+            const tollsCost = tollsStored ?? num(costs.tollSurcharge) ?? 0;
+            const otherExpenses = num(raw.otherExpenses) ?? 0;
+            const totalStored = num(raw.totalCost);
+            const perKm = num(costs.perKmRate) ?? 0;
+            const estimatedTotal = (fuelCost || 0) + (tollsCost || 0) + otherExpenses
+              + (distanceKm != null ? distanceKm * perKm : 0);
+            const totalCost = totalStored ?? estimatedTotal;
+            const marginStored = num(raw.profitMargin);
+            const profitMargin = marginStored ?? (agreed > 0 ? ((agreed - totalCost) / agreed) * 100 : 0);
+            const currency = raw.currencyCode || load.currencyCode || 'USD';
+
+            const actualEnd = raw.actualEndTime || raw.completedAt;
+            const onTimeLabel = (() => {
+              if (raw.onTimePerformance === true) return 'On time';
+              if (raw.onTimePerformance === false) return 'Late';
+              if (actualEnd && raw.plannedEndTime) {
+                return new Date(actualEnd).getTime() <= new Date(raw.plannedEndTime).getTime() ? 'On time' : 'Late';
+              }
+              const st = String(selectedTrip.status || '').toUpperCase();
+              if (st === 'OVERDUE' || st === 'DELAYED') return 'At risk';
+              if (st === 'IN_PROGRESS' || st === 'PLANNED') return 'In progress';
+              return 'Pending';
+            })();
+            const ownerRating = num(raw.cargoOwnerRating);
+            const drvRating = num(raw.driverRating) ?? num(driver.rating);
+            const issuesCount = Array.isArray(raw.issuesReported) ? raw.issuesReported.length : 0;
 
             return (
               <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
@@ -746,10 +875,10 @@ const TripManagement: React.FC = () => {
                       <DR label="Planned End" value={fmtDT(raw.plannedEndTime)} />
                       <DR label="Actual Start" value={fmtDT(raw.actualStartTime)} />
                       <DR label="Actual End" value={fmtDT(raw.actualEndTime)} />
-                      <DR label="ETA" value={fmtDT(raw.estimatedArrival ?? raw.eta)} />
-                      <DR label="Distance" value={raw.totalDistance ? `${raw.totalDistance} km` : raw.distance ? `${raw.distance} km` : '—'} />
-                      <DR label="Duration" value={raw.duration ? `${raw.duration} hrs` : '—'} />
-                      <DR label="Avg Speed" value={raw.averageSpeed ? `${raw.averageSpeed} km/h` : '—'} />
+                      <DR label="ETA" value={fmtDT(raw.estimatedArrival ?? raw.eta ?? raw.plannedEndTime)} />
+                      <DR label="Distance" value={distanceKm != null ? `${distanceKm.toFixed(1)} km` : '—'} />
+                      <DR label="Duration" value={durationHrs != null ? `${durationHrs.toFixed(1)} hrs` : '—'} />
+                      <DR label="Avg Speed" value={avgSpeed != null ? `${avgSpeed.toFixed(0)} km/h` : '—'} />
                     </div>
                   </div>
                 </TSection>
@@ -758,15 +887,15 @@ const TripManagement: React.FC = () => {
                 <TSection title="Cargo Information">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     <DR label="Title" value={load.title || '—'} />
-                    <DR label="Type" value={load.cargoType || '—'} />
-                    <DR label="Load Type" value={load.loadType || '—'} />
-                    <DR label="Weight" value={load.weight ? `${Number(load.weight).toLocaleString()} kg` : '—'} />
-                    <DR label="Volume" value={load.volume ? `${load.volume} m³` : '—'} />
-                    <DR label="Urgency" value={load.urgencyLevel || '—'} />
-                    <DR label="Packaging" value={load.packagingType || '—'} />
-                    <DR label="Pieces" value={load.numberOfPieces ? String(load.numberOfPieces) : '—'} />
-                    <DR label="Pallets" value={load.numberOfPallets ? String(load.numberOfPallets) : '—'} />
-                    <DR label="Fragile" value={load.isFragile ? '⚠️ Yes' : 'No'} />
+                    <DR label="Type" value={fmtEnum(load.cargoType)} />
+                    <DR label="Load Type" value={fmtEnum(load.loadType)} />
+                    <DR label="Weight" value={fmtNum(load.weight, ' kg')} />
+                    <DR label="Volume" value={fmtNum(load.volume, ' m³')} />
+                    <DR label="Urgency" value={fmtEnum(load.urgencyLevel)} />
+                    <DR label="Packaging" value={fmtEnum(load.packagingType)} />
+                    <DR label="Pieces" value={load.numberOfPieces != null && load.numberOfPieces !== '' ? String(load.numberOfPieces) : '—'} />
+                    <DR label="Pallets" value={load.numberOfPallets != null && load.numberOfPallets !== '' ? String(load.numberOfPallets) : '—'} />
+                    <DR label="Fragile" value={isFragile ? '⚠️ Yes' : 'No'} />
                     <DR label="Hazardous" value={load.isHazardous ? '☢️ Yes' : 'No'} />
                     <DR label="Refrigeration" value={load.requiresRefrigeration ? '❄️ Yes' : 'No'} />
                     <DR label="GPS Monitoring" value={load.requiresGpsMonitoring ? '✅ Yes' : 'No'} />
@@ -787,35 +916,35 @@ const TripManagement: React.FC = () => {
                     <div>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Truck</p>
                       <div className="grid grid-cols-2 gap-2">
-                        <DR label="Plate" value={truck.plateNumber || selectedTrip.truckPlate} />
+                        <DR label="Plate" value={truck.plateNumber || selectedTrip.truckPlate || '—'} />
                         <DR label="Make / Model" value={`${truck.make || ''} ${truck.model || ''}`.trim() || '—'} />
                         <DR label="Year" value={truck.year ? String(truck.year) : '—'} />
-                        <DR label="Type" value={truck.truckType || '—'} />
-                        <DR label="Fuel" value={truck.fuelType || '—'} />
-                        <DR label="Capacity" value={truck.capacityWeight ? `${Number(truck.capacityWeight).toLocaleString()} kg` : '—'} />
-                        <DR label="Mileage" value={truck.mileage ? `${truck.mileage.toLocaleString()} km` : '—'} />
-                        <DR label="GPS" value={truck.hasGps ? '✅ Yes' : '❌ No'} />
-                        <DR label="Tracking" value={truck.hasTracking ? '✅ Yes' : '❌ No'} />
-                        <DR label="Insurance Exp." value={fmtD(truck.insuranceExpiry)} />
+                        <DR label="Type" value={fmtEnum(truck.truckType)} />
+                        <DR label="Fuel" value={fmtEnum(truck.fuelType)} />
+                        <DR label="Capacity" value={fmtNum(truck.capacityWeight, ' kg')} />
+                        <DR label="Mileage" value={fmtNum(truck.mileage ?? 0, ' km')} />
+                        <DR label="GPS" value={hasGps ? '✅ Yes' : '❌ No'} />
+                        <DR label="Tracking" value={hasTracking ? '✅ Yes' : '❌ No'} />
+                        <DR label="Insurance Exp." value={fmtD(insuranceExp)} />
                         <DR label="Reg. Expiry" value={fmtD(truck.registrationExpiry)} />
                         <DR label="Roadworthy Exp." value={fmtD(truck.roadworthyCertExpiry)} />
                       </div>
                     </div>
                     <div>
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Driver</p>
-                      {driver.firstName ? (
+                      {hasDriver ? (
                         <div className="grid grid-cols-2 gap-2">
-                          <DR label="Name" value={`${driver.firstName} ${driver.lastName}`} />
+                          <DR label="Name" value={driverName || '—'} />
                           <DR label="Phone" value={driver.phone || '—'} />
                           <DR label="Email" value={driver.email || '—'} />
                           <DR label="License No." value={driver.licenseNumber || '—'} />
                           <DR label="License Exp." value={fmtD(driver.licenseExpiry)} />
-                          <DR label="Experience" value={driver.experience ? `${driver.experience} yrs` : '—'} />
-                          <DR label="Safety Score" value={driver.safetyScore ? `${driver.safetyScore}/100` : '—'} />
-                          <DR label="On-Time Rate" value={driver.onTimeDeliveryRate ? `${Number(driver.onTimeDeliveryRate).toFixed(1)}%` : '—'} />
-                          <DR label="Rating" value={driver.rating ? `${Number(driver.rating).toFixed(1)} ⭐` : '—'} />
-                          <DR label="Status" value={driver.availabilityStatus || driver.status || '—'} />
-                          <DR label="Hours This Week" value={driver.hoursWorkedThisWeek ? `${driver.hoursWorkedThisWeek} h` : '—'} />
+                          <DR label="Experience" value={driver.experience != null && driver.experience !== '' ? `${driver.experience} yrs` : '—'} />
+                          <DR label="Safety Score" value={`${Number(driver.safetyScore ?? 100)}/100`} />
+                          <DR label="On-Time Rate" value={`${Number(driver.onTimeDeliveryRate ?? 0).toFixed(1)}%`} />
+                          <DR label="Rating" value={drvRating != null && drvRating > 0 ? `${drvRating.toFixed(1)} ⭐` : 'Pending'} />
+                          <DR label="Status" value={fmtEnum(driver.availabilityStatus || driver.status) || '—'} />
+                          <DR label="Hours This Week" value={`${Number(driver.hoursWorkedThisWeek ?? 0)} h`} />
                           <DR label="Medical Cert Exp." value={fmtD(driver.medicalCertExpiry)} />
                         </div>
                       ) : (
@@ -867,15 +996,15 @@ const TripManagement: React.FC = () => {
                 {/* ── Financials ── */}
                 <TSection title="Financials">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    <DR label="Agreed Price" value={formatCurrency(selectedTrip.agreedPrice)} highlight />
-                    <DR label="Currency" value={raw.currencyCode || 'USD'} />
-                    <DR label="Payment Terms" value={load.paymentTerms || '—'} />
-                    <DR label="Fuel Cost" value={fmtC(raw.fuelCost)} />
-                    <DR label="Tolls Cost" value={fmtC(raw.tollsCost)} />
-                    <DR label="Other Expenses" value={fmtC(raw.otherExpenses)} />
-                    <DR label="Total Cost" value={fmtC(raw.totalCost)} />
-                    <DR label="Profit Margin" value={raw.profitMargin ? `${raw.profitMargin}%` : '—'} />
-                    <DR label="Fuel Efficiency" value={raw.fuelEfficiency ? `${raw.fuelEfficiency} L/100km` : '—'} />
+                    <DR label="Agreed Price" value={formatCurrency(agreed)} highlight />
+                    <DR label="Currency" value={currency} />
+                    <DR label="Payment Terms" value={fmtEnum(load.paymentTerms)} />
+                    <DR label="Fuel Cost" value={money(fuelCost, fuelCostStored == null)} />
+                    <DR label="Tolls Cost" value={money(tollsCost, tollsStored == null)} />
+                    <DR label="Other Expenses" value={money(otherExpenses, num(raw.otherExpenses) == null)} />
+                    <DR label="Total Cost" value={money(totalCost, totalStored == null)} />
+                    <DR label="Profit Margin" value={`${profitMargin.toFixed(1)}%${marginStored == null ? ' (est.)' : ''}`} />
+                    <DR label="Fuel Efficiency" value={`${Number(fuelEff).toFixed(1)} L/100km`} />
                   </div>
                   {isTruckOwner &&
                     ['PLANNED', 'IN_PROGRESS', 'DELAYED'].includes(
@@ -895,10 +1024,10 @@ const TripManagement: React.FC = () => {
                 {/* ── Performance ── */}
                 <TSection title="Performance & Feedback">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    <DR label="On-Time Performance" value={raw.onTimePerformance ? `${raw.onTimePerformance}%` : '—'} />
-                    <DR label="Cargo Owner Rating" value={raw.cargoOwnerRating ? `${raw.cargoOwnerRating} ⭐` : '—'} />
-                    <DR label="Driver Rating" value={raw.driverRating ? `${raw.driverRating} ⭐` : '—'} />
-                    <DR label="Issues Reported" value={raw.issuesReported?.length ? String(raw.issuesReported.length) : '0'} />
+                    <DR label="On-Time Performance" value={onTimeLabel} />
+                    <DR label="Cargo Owner Rating" value={ownerRating != null && ownerRating > 0 ? `${ownerRating} ⭐` : (String(selectedTrip.status).toUpperCase() === 'COMPLETED' ? 'Pending review' : 'Pending')} />
+                    <DR label="Driver Rating" value={drvRating != null && drvRating > 0 ? `${Number(drvRating).toFixed(1)} ⭐` : 'Pending'} />
+                    <DR label="Issues Reported" value={String(issuesCount)} />
                   </div>
                   {raw.notes && (
                     <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -910,6 +1039,12 @@ const TripManagement: React.FC = () => {
                     <div className="mt-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
                       <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">Cargo Owner Feedback</p>
                       <p className="text-xs text-blue-700 leading-relaxed">{raw.cargoOwnerFeedback}</p>
+                    </div>
+                  )}
+                  {raw.driverFeedback && (
+                    <div className="mt-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                      <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">Driver Feedback</p>
+                      <p className="text-xs text-emerald-700 leading-relaxed">{raw.driverFeedback}</p>
                     </div>
                   )}
                 </TSection>
