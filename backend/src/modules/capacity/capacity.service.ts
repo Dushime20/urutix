@@ -23,6 +23,7 @@ import { Truck, VehicleStatus } from '../../entities/truck.entity';
 import { Trip, TripStatus } from '../../entities/trip.entity';
 import {
   Load,
+  LoadLocation,
   LoadStatus,
   LoadType,
   CargoType,
@@ -74,6 +75,28 @@ const TRUCK_CARD_SELECT: (keyof Truck)[] = [
   'capacityVolume',
   'status',
   'currentDriverId',
+];
+/** Avoid SELECT * on trips/loads — production often lags entity columns (delay*, geometry, enums). */
+const TRIP_CARD_SELECT = [
+  'trip.id',
+  'trip.tenantId',
+  'trip.truckId',
+  'trip.loadId',
+  'trip.tripNumber',
+  'trip.status',
+  'trip.plannedStartTime',
+  'trip.plannedEndTime',
+  'trip.agreedPrice',
+  'trip.currencyCode',
+];
+const LOAD_CARD_SELECT = [
+  'load.id',
+  'load.title',
+  'load.weight',
+  'load.volume',
+  'load.origin',
+  'load.destination',
+  'load.locations',
 ];
 
 @Injectable()
@@ -176,17 +199,30 @@ export class CapacityService implements OnModuleInit {
   async sellable(tenantId: string, ownerId: string) {
     await this.expireStale(tenantId);
     const trucks = await this.findTrucks({ tenantId, ownerId });
-    const trips = await this.tripRepo.find({
-      where: { tenantId, status: In(ACTIVE_TRIP) },
-      relations: ['load'],
-    });
-    const liveOffers = await this.offerRepo.find({
-      where: { tenantId, ownerId, status: In(OPEN_OFFER) },
-    });
+    const liveTrucks = trucks.filter((truck) =>
+      [VehicleStatus.AVAILABLE, VehicleStatus.IN_TRANSIT].includes(truck.status),
+    );
+    let trips: Trip[] = [];
+    try {
+      trips = await this.findActiveTripsWithLoads(
+        tenantId,
+        liveTrucks.map((truck) => truck.id),
+      );
+    } catch (err: any) {
+      this.logger.error(`sellable trips query failed: ${err?.message}`);
+    }
+    let liveOffers: CapacityOffer[] = [];
+    try {
+      liveOffers = await this.offerRepo.find({
+        where: { tenantId, ownerId, status: In(OPEN_OFFER) },
+      });
+    } catch (err: any) {
+      this.logger.warn(`sellable offers query failed: ${err?.message}`);
+    }
 
-    return trucks
-      .filter((truck) => [VehicleStatus.AVAILABLE, VehicleStatus.IN_TRANSIT].includes(truck.status))
-      .map((truck) => {
+    const rows = [];
+    for (const truck of liveTrucks) {
+      try {
         const trip = trips.find((t) => t.truckId === truck.id);
         const offer = liveOffers.find((o) => o.truckId === truck.id);
         const nameplateKg = Number(truck.capacityWeight) || 0;
@@ -199,7 +235,7 @@ export class CapacityService implements OnModuleInit {
         const allocatedM3 = loadM3 + bookedM3;
         const slice = remainingFromTrip(nameplateKg, nameplateM3, allocatedKg, allocatedM3);
         const utilization = utilizationPercent(allocatedKg, nameplateKg);
-        const row = {
+        rows.push({
           truckId: truck.id,
           plateNumber: truck.plateNumber,
           make: truck.make,
@@ -233,18 +269,21 @@ export class CapacityService implements OnModuleInit {
           }),
           existingOfferId: offer?.id || null,
           suggestedFloorPrice: roundMoney(this.suggestFloor(slice.remainingWeightKg, trip)),
-        };
-        return row;
-      })
-      .filter((row) =>
-        isLeftoverSellableSlice({
-          tripId: row.tripId,
-          allocatedWeightKg: row.allocatedWeightKg,
-          remainingWeightKg: row.remainingWeightKg,
-          utilizationPercent: row.utilizationPercent,
-          existingOfferId: row.existingOfferId,
-        }),
-      );
+        });
+      } catch (err: any) {
+        this.logger.warn(`Skipping sellable truck ${truck.id}: ${err?.message}`);
+      }
+    }
+
+    return rows.filter((row) =>
+      isLeftoverSellableSlice({
+        tripId: row.tripId,
+        allocatedWeightKg: row.allocatedWeightKg,
+        remainingWeightKg: row.remainingWeightKg,
+        utilizationPercent: row.utilizationPercent,
+        existingOfferId: row.existingOfferId,
+      }),
+    );
   }
 
   async createOffer(dto: CreateCapacityOfferDto, tenantId: string, ownerId: string) {
@@ -259,10 +298,7 @@ export class CapacityService implements OnModuleInit {
     });
     if (live) throw new BadRequestException('This truck already has an open leftover-space listing');
 
-    const trip = await this.tripRepo.findOne({
-      where: { id: dto.tripId, tenantId, truckId: truck.id },
-      relations: ['load'],
-    });
+    const trip = await this.findTripWithLoad({ id: dto.tripId, tenantId, truckId: truck.id });
     if (!trip) throw new NotFoundException('Trip not found for this truck');
 
     const nameplateKg = Number(truck.capacityWeight) || 0;
@@ -847,14 +883,18 @@ export class CapacityService implements OnModuleInit {
   }
 
   private async expireStale(tenantId: string) {
-    await this.offerRepo
-      .createQueryBuilder()
-      .update(CapacityOffer)
-      .set({ status: CapacityOfferStatus.EXPIRED })
-      .where('"tenantId" = :tenantId', { tenantId })
-      .andWhere('"status" IN (:...status)', { status: OPEN_OFFER })
-      .andWhere('"departureAt" < :now', { now: new Date() })
-      .execute();
+    try {
+      await this.offerRepo
+        .createQueryBuilder()
+        .update(CapacityOffer)
+        .set({ status: CapacityOfferStatus.EXPIRED })
+        .where('"tenantId" = :tenantId', { tenantId })
+        .andWhere('"status" IN (:...status)', { status: OPEN_OFFER })
+        .andWhere('"departureAt" < :now', { now: new Date() })
+        .execute();
+    } catch (err: any) {
+      this.logger.warn(`Could not expire stale capacity offers: ${err?.message}`);
+    }
   }
 
   private async toSearchQuery(query: SearchCapacityDto, tenantId: string): Promise<SearchQuery> {
@@ -993,6 +1033,32 @@ export class CapacityService implements OnModuleInit {
     };
   }
 
+  private tripLoadQuery() {
+    return this.tripRepo
+      .createQueryBuilder('trip')
+      .leftJoin('trip.load', 'load')
+      .select(TRIP_CARD_SELECT)
+      .addSelect(LOAD_CARD_SELECT);
+  }
+
+  private findActiveTripsWithLoads(tenantId: string, truckIds: string[]) {
+    const ids = [...new Set(truckIds.filter(Boolean))];
+    if (!ids.length) return Promise.resolve([] as Trip[]);
+    return this.tripLoadQuery()
+      .where('trip.tenantId = :tenantId', { tenantId })
+      .andWhere('trip.truckId IN (:...ids)', { ids })
+      .andWhere('CAST(trip.status AS varchar) IN (:...status)', { status: ACTIVE_TRIP })
+      .getMany();
+  }
+
+  private findTripWithLoad(where: { id: string; tenantId: string; truckId: string }) {
+    return this.tripLoadQuery()
+      .where('trip.id = :id', { id: where.id })
+      .andWhere('trip.tenantId = :tenantId', { tenantId: where.tenantId })
+      .andWhere('trip.truckId = :truckId', { truckId: where.truckId })
+      .getOne();
+  }
+
   private findTrucks(where: FindOptionsWhere<Truck>) {
     return this.truckRepo.find({ where, select: TRUCK_CARD_SELECT });
   }
@@ -1056,10 +1122,16 @@ export class CapacityService implements OnModuleInit {
     return 'Location';
   }
 
+  private routeLocation(load: Load, side: 'origin' | 'destination'): LoadLocation | undefined {
+    const locations = Array.isArray(load.locations) ? load.locations : [];
+    const type = side === 'origin' ? 'PICKUP' : 'DELIVERY';
+    return locations.find((loc) => loc?.type === type);
+  }
+
   private placeFromLoad(load: Load | undefined, side: 'origin' | 'destination'): CapacityPlace | null {
     if (!load) return null;
     const addr = side === 'origin' ? load.origin : load.destination;
-    const routeLoc = side === 'origin' ? load.pickupLocation : load.deliveryLocation;
+    const routeLoc = this.routeLocation(load, side);
     const data = routeLoc?.locationData;
     const lat = Number(addr?.lat ?? data?.coordinates?.latitude) || 0;
     const lng = Number(addr?.lng ?? data?.coordinates?.longitude) || 0;

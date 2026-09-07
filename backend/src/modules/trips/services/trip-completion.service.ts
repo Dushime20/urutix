@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OnEvent } from '@nestjs/event-emitter';
 
@@ -307,24 +307,38 @@ export class TripCompletionService {
     cargoOwnerId: string,
     tenantId: string,
   ): Promise<Payment[]> {
-    return this.paymentRepository.find({
-      where: [
-        {
-          payerId: cargoOwnerId,
-          tenantId,
-          status: PaymentStatus.PENDING,
-          paymentType: PaymentType.TRIP_PAYMENT,
-        },
-        {
-          payerId: cargoOwnerId,
-          tenantId,
-          status: PaymentStatus.PROCESSING,
-          paymentType: PaymentType.TRIP_PAYMENT,
-        },
-      ],
-      relations: ['trip', 'trip.load'],
-      order: { dueDate: 'ASC', createdAt: 'ASC' },
-    });
+    return this.findPaymentsSafe(
+      (qb) =>
+        qb
+          .where('payment.payerId = :payerId', { payerId: cargoOwnerId })
+          .andWhere('payment.tenantId = :tenantId', { tenantId })
+          .andWhere('payment.paymentType = :paymentType', {
+            paymentType: PaymentType.TRIP_PAYMENT,
+          })
+          .andWhere('CAST(payment.status AS varchar) IN (:...statuses)', {
+            statuses: [PaymentStatus.PENDING, PaymentStatus.PROCESSING],
+          })
+          .orderBy('payment.dueDate', 'ASC', 'NULLS LAST')
+          .addOrderBy('payment.createdAt', 'ASC'),
+      () =>
+        this.paymentRepository.find({
+          where: [
+            {
+              payerId: cargoOwnerId,
+              tenantId,
+              status: PaymentStatus.PENDING,
+              paymentType: PaymentType.TRIP_PAYMENT,
+            },
+            {
+              payerId: cargoOwnerId,
+              tenantId,
+              status: PaymentStatus.PROCESSING,
+              paymentType: PaymentType.TRIP_PAYMENT,
+            },
+          ],
+          order: { dueDate: 'ASC', createdAt: 'ASC' },
+        }),
+    );
   }
 
   /**
@@ -335,24 +349,38 @@ export class TripCompletionService {
     truckOwnerId: string,
     tenantId: string,
   ): Promise<Payment[]> {
-    return this.paymentRepository.find({
-      where: [
-        {
-          payeeId: truckOwnerId,
-          tenantId,
-          status: PaymentStatus.PENDING,
-          paymentType: PaymentType.TRIP_PAYMENT,
-        },
-        {
-          payeeId: truckOwnerId,
-          tenantId,
-          status: PaymentStatus.PROCESSING,
-          paymentType: PaymentType.TRIP_PAYMENT,
-        },
-      ],
-      relations: ['trip', 'trip.load'],
-      order: { dueDate: 'ASC', createdAt: 'ASC' },
-    });
+    return this.findPaymentsSafe(
+      (qb) =>
+        qb
+          .where('payment.payeeId = :payeeId', { payeeId: truckOwnerId })
+          .andWhere('payment.tenantId = :tenantId', { tenantId })
+          .andWhere('payment.paymentType = :paymentType', {
+            paymentType: PaymentType.TRIP_PAYMENT,
+          })
+          .andWhere('CAST(payment.status AS varchar) IN (:...statuses)', {
+            statuses: [PaymentStatus.PENDING, PaymentStatus.PROCESSING],
+          })
+          .orderBy('payment.dueDate', 'ASC', 'NULLS LAST')
+          .addOrderBy('payment.createdAt', 'ASC'),
+      () =>
+        this.paymentRepository.find({
+          where: [
+            {
+              payeeId: truckOwnerId,
+              tenantId,
+              status: PaymentStatus.PENDING,
+              paymentType: PaymentType.TRIP_PAYMENT,
+            },
+            {
+              payeeId: truckOwnerId,
+              tenantId,
+              status: PaymentStatus.PROCESSING,
+              paymentType: PaymentType.TRIP_PAYMENT,
+            },
+          ],
+          order: { dueDate: 'ASC', createdAt: 'ASC' },
+        }),
+    );
   }
 
   /**
@@ -364,38 +392,48 @@ export class TripCompletionService {
     truckOwnerId: string,
     tenantId: string,
   ): Promise<Payment[]> {
-    // 1. payeeId-linked completed payments
-    const byPayeeId = await this.paymentRepository.find({
-      where: {
-        payeeId: truckOwnerId,
-        tenantId,
-        status: PaymentStatus.COMPLETED,
-      },
-      relations: ['trip', 'trip.load'],
-      order: { processedAt: 'DESC', createdAt: 'DESC' },
-    });
+    const byPayeeId = await this.findPaymentsSafe(
+      (qb) =>
+        qb
+          .where('payment.payeeId = :payeeId', { payeeId: truckOwnerId })
+          .andWhere('payment.tenantId = :tenantId', { tenantId })
+          .andWhere('CAST(payment.status AS varchar) = :status', {
+            status: PaymentStatus.COMPLETED,
+          })
+          .orderBy('payment.processedAt', 'DESC', 'NULLS LAST')
+          .addOrderBy('payment.createdAt', 'DESC'),
+      () =>
+        this.paymentRepository.find({
+          where: {
+            payeeId: truckOwnerId,
+            tenantId,
+            status: PaymentStatus.COMPLETED,
+          },
+          order: { processedAt: 'DESC', createdAt: 'DESC' },
+        }),
+    );
 
-    // 2. Lender disbursements matched by receiver phone (may not have payeeId set)
     const user = await this.userRepository.findOne({ where: { id: truckOwnerId } });
     let byPhone: Payment[] = [];
     if (user?.phone) {
       const digits = user.phone.replace(/\D/g, '');
-      byPhone = await this.paymentRepository
-        .createQueryBuilder('payment')
-        .leftJoinAndSelect('payment.trip', 'trip')
-        .leftJoinAndSelect('trip.load', 'load')
-        .where(`payment.metadata->>'isLenderPayment' = 'true'`)
-        .andWhere('payment.status = :status', { status: PaymentStatus.COMPLETED })
-        .andWhere(
-          `regexp_replace(payment.metadata->>'receiverPhoneNumber', '\\D', '', 'g') LIKE :phone`,
-          { phone: `%${digits.slice(-9)}` },
-        )
-        .orderBy('payment.processedAt', 'DESC')
-        .addOrderBy('payment.createdAt', 'DESC')
-        .getMany();
+      byPhone = await this.findPaymentsSafe(
+        (qb) =>
+          qb
+            .where(`payment.metadata->>'isLenderPayment' = 'true'`)
+            .andWhere('CAST(payment.status AS varchar) = :status', {
+              status: PaymentStatus.COMPLETED,
+            })
+            .andWhere(
+              `regexp_replace(payment.metadata->>'receiverPhoneNumber', '\\D', '', 'g') LIKE :phone`,
+              { phone: `%${digits.slice(-9)}` },
+            )
+            .orderBy('payment.processedAt', 'DESC', 'NULLS LAST')
+            .addOrderBy('payment.createdAt', 'DESC'),
+        () => Promise.resolve([]),
+      );
     }
 
-    // Merge and deduplicate
     const seen = new Set<string>();
     const merged: Payment[] = [];
     for (const p of [...byPayeeId, ...byPhone]) {
@@ -418,15 +456,26 @@ export class TripCompletionService {
     cargoOwnerId: string,
     tenantId: string,
   ): Promise<Payment[]> {
-    return this.paymentRepository.find({
-      where: {
-        payerId: cargoOwnerId,
-        tenantId,
-        status: PaymentStatus.COMPLETED,
-      },
-      relations: ['trip', 'trip.load'],
-      order: { processedAt: 'DESC', createdAt: 'DESC' },
-    });
+    return this.findPaymentsSafe(
+      (qb) =>
+        qb
+          .where('payment.payerId = :payerId', { payerId: cargoOwnerId })
+          .andWhere('payment.tenantId = :tenantId', { tenantId })
+          .andWhere('CAST(payment.status AS varchar) = :status', {
+            status: PaymentStatus.COMPLETED,
+          })
+          .orderBy('payment.processedAt', 'DESC', 'NULLS LAST')
+          .addOrderBy('payment.createdAt', 'DESC'),
+      () =>
+        this.paymentRepository.find({
+          where: {
+            payerId: cargoOwnerId,
+            tenantId,
+            status: PaymentStatus.COMPLETED,
+          },
+          order: { processedAt: 'DESC', createdAt: 'DESC' },
+        }),
+    );
   }
 
   /**
@@ -439,37 +488,43 @@ export class TripCompletionService {
     tenantId: string,
     status?: PaymentStatus,
   ): Promise<Payment[]> {
-    // 1. Normal payeeId-linked payments
-    const byPayeeId = await this.paymentRepository.find({
-      where: {
-        payeeId: truckOwnerId,
-        ...(status ? { status } : {}),
+    const byPayeeId = await this.findPaymentsSafe(
+      (qb) => {
+        qb.where('payment.payeeId = :payeeId', { payeeId: truckOwnerId });
+        if (status) {
+          qb.andWhere('CAST(payment.status AS varchar) = :status', { status });
+        }
+        return qb.orderBy('payment.createdAt', 'DESC');
       },
-      relations: ['trip', 'trip.load'],
-      order: { createdAt: 'DESC' },
-    });
+      () =>
+        this.paymentRepository.find({
+          where: {
+            payeeId: truckOwnerId,
+            ...(status ? { status } : {}),
+          },
+          order: { createdAt: 'DESC' },
+        }),
+    );
 
-    // 2. Lender disbursements matched by receiver phone
     const user = await this.userRepository.findOne({ where: { id: truckOwnerId } });
     let byPhone: Payment[] = [];
     if (user?.phone) {
-      // Normalise to digits only so 078... matches 25078...
       const digits = user.phone.replace(/\D/g, '');
-      byPhone = await this.paymentRepository
-        .createQueryBuilder('payment')
-        .leftJoinAndSelect('payment.trip', 'trip')
-        .leftJoinAndSelect('trip.load', 'load')
-        .where(`payment.metadata->>'isLenderPayment' = 'true'`)
-        .andWhere(
-          `regexp_replace(payment.metadata->>'receiverPhoneNumber', '\\D', '', 'g') LIKE :phone`,
-          { phone: `%${digits.slice(-9)}` },  // last 9 digits covers 078xxx and 25078xxx
-        )
-        .andWhere(status ? 'payment.status = :status' : '1=1', status ? { status } : {})
-        .orderBy('payment.createdAt', 'DESC')
-        .getMany();
+      byPhone = await this.findPaymentsSafe(
+        (qb) => {
+          qb.where(`payment.metadata->>'isLenderPayment' = 'true'`).andWhere(
+            `regexp_replace(payment.metadata->>'receiverPhoneNumber', '\\D', '', 'g') LIKE :phone`,
+            { phone: `%${digits.slice(-9)}` },
+          );
+          if (status) {
+            qb.andWhere('CAST(payment.status AS varchar) = :status', { status });
+          }
+          return qb.orderBy('payment.createdAt', 'DESC');
+        },
+        () => Promise.resolve([]),
+      );
     }
 
-    // Merge, deduplicate by id, sort newest first
     const seen = new Set<string>();
     const merged: Payment[] = [];
     for (const p of [...byPayeeId, ...byPhone]) {
@@ -477,5 +532,37 @@ export class TripCompletionService {
     }
     merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return merged;
+  }
+
+  /**
+   * Avoid SELECT * on trips/loads — production often lags entity columns
+   * (delayReason, geometry, OVERDUE enum). Payments stay fully selected.
+   */
+  private paymentsWithTripLoadQuery(): SelectQueryBuilder<Payment> {
+    return this.paymentRepository
+      .createQueryBuilder('payment')
+      .leftJoin('payment.trip', 'trip')
+      .leftJoin('trip.load', 'load')
+      .addSelect(['trip.id', 'trip.tripNumber', 'trip.status'])
+      .addSelect(['load.id', 'load.title', 'load.cargoType', 'load.origin', 'load.destination']);
+  }
+
+  private async findPaymentsSafe(
+    build: (qb: SelectQueryBuilder<Payment>) => SelectQueryBuilder<Payment>,
+    fallback: () => Promise<Payment[]>,
+  ): Promise<Payment[]> {
+    try {
+      return await build(this.paymentsWithTripLoadQuery()).getMany();
+    } catch (err: any) {
+      this.logger.error(
+        `Payment+trip query failed: ${err?.message}; retrying without trip join`,
+      );
+      try {
+        return await fallback();
+      } catch (fallbackErr: any) {
+        this.logger.error(`Payment fallback query failed: ${fallbackErr?.message}`);
+        return [];
+      }
+    }
   }
 }

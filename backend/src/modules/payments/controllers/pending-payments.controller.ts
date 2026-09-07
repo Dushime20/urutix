@@ -51,7 +51,7 @@ export class PendingPaymentsController {
     @Query('offset') offset?: number,
   ) {
     const pendingPayments = await this.tripCompletionService.getPendingPaymentsForCargoOwner(
-      req.user.userId,
+      req.user.userId || req.user.id,
       req.user.tenantId,
     );
 
@@ -63,8 +63,8 @@ export class PendingPaymentsController {
     }
 
     // Apply pagination
-    const startIndex = offset || 0;
-    const endIndex = limit ? startIndex + limit : undefined;
+    const startIndex = Number(offset) || 0;
+    const endIndex = limit ? startIndex + Number(limit) : undefined;
     const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
 
     // Calculate summary statistics
@@ -161,7 +161,7 @@ export class PendingPaymentsController {
     @Query('offset') offset?: number,
   ) {
     let payments = await this.tripCompletionService.getCompletedPaymentsForCargoOwner(
-      req.user.userId,
+      req.user.userId || req.user.id,
       req.user.tenantId,
     );
 
