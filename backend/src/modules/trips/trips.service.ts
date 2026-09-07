@@ -116,83 +116,169 @@ export class TripsService {
     userId?: string,
   ): Promise<{ trips: Trip[]; pagination: any }> {
     const { page = 1, limit = 10, status, search } = query;
-    const skip = (page - 1) * limit;
+    const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, parseInt(String(limit), 10) || 10));
+    const skip = (pageNum - 1) * limitNum;
 
     try {
-      const queryBuilder = this.tripRepository
-        .createQueryBuilder('trip')
-        .leftJoinAndSelect('trip.truck', 'truck')
-        .leftJoinAndSelect('trip.driver', 'driver')
-        .leftJoinAndSelect('trip.load', 'load')
-        .leftJoinAndSelect('trip.pickupLocation', 'pickupLocation')
-        .leftJoinAndSelect('trip.deliveryLocation', 'deliveryLocation')
-        .leftJoinAndSelect('trip.epod', 'epod'); // include ePOD submitted by driver
+      // Explicit selects only — never SELECT * on trips/trucks/drivers/locations.
+      // Production DBs often lag PostGIS geometry columns and newer trip delay fields,
+      // and SELECT * / leftJoinAndSelect pulls those and 500s the whole list.
+      const buildQuery = (includeEpod: boolean) => {
+        const queryBuilder = this.tripRepository
+          .createQueryBuilder('trip')
+          .leftJoin('trip.truck', 'truck')
+          .leftJoin('trip.driver', 'driver')
+          .leftJoin('trip.load', 'load')
+          .leftJoin('trip.pickupLocation', 'pickupLocation')
+          .leftJoin('trip.deliveryLocation', 'deliveryLocation')
+          .select([
+            'trip.id',
+            'trip.tenantId',
+            'trip.loadId',
+            'trip.truckId',
+            'trip.driverId',
+            'trip.tripNumber',
+            'trip.status',
+            'trip.plannedStartTime',
+            'trip.plannedEndTime',
+            'trip.actualStartTime',
+            'trip.estimatedEndTime',
+            'trip.actualEndTime',
+            'trip.agreedPrice',
+            'trip.currencyCode',
+            'trip.notes',
+            'trip.issuesReported',
+            'trip.eta',
+            'trip.estimatedArrival',
+            'trip.onTimePerformance',
+            'trip.completedAt',
+            'trip.createdAt',
+            'trip.updatedAt',
+            'truck.id',
+            'truck.plateNumber',
+            'truck.ownerId',
+            'truck.make',
+            'truck.model',
+            'truck.status',
+            'driver.id',
+            'driver.userId',
+            'driver.firstName',
+            'driver.lastName',
+            'driver.phone',
+            'driver.status',
+            'load.id',
+            'load.reference',
+            'load.title',
+            'load.cargoType',
+            'load.origin',
+            'load.destination',
+            'load.metadata',
+            'load.status',
+            'pickupLocation.id',
+            'pickupLocation.name',
+            'pickupLocation.city',
+            'pickupLocation.address',
+            'deliveryLocation.id',
+            'deliveryLocation.name',
+            'deliveryLocation.city',
+            'deliveryLocation.address',
+          ]);
 
-      // Filter by tenant and/or user
-      if (userId) {
-        // For specific user, show trips they own or are assigned to
-        queryBuilder.where('trip.tenantId = :tenantId', { tenantId })
-          .andWhere(
-            new Brackets((qb) => {
-              qb.where('truck.ownerId = :userId', { userId })
-                .orWhere('driver.userId = :userId', { userId });
-            })
-          );
-      } else {
-        // For no specific user, show all tenant trips
-        queryBuilder.where('trip.tenantId = :tenantId', { tenantId });
-      }
-
-      if (status) {
-        // Guard: only pass values that are valid members of TripStatus enum.
-        // Invalid values (e.g. load statuses like ASSIGNED/PENDING) would cause
-        // a PostgreSQL "invalid input value for enum trips_status_enum" error.
-        const VALID_TRIP_STATUSES = Object.values(TripStatus) as string[];
-        const rawStatuses: string[] = Array.isArray(status)
-          ? status
-          : status.split(',').map((s: string) => s.trim()).filter(Boolean);
-        const statuses = rawStatuses.filter((s) => VALID_TRIP_STATUSES.includes(s));
-
-        if (statuses.length === 1) {
-          queryBuilder.andWhere('trip.status = :status', { status: statuses[0] });
-        } else if (statuses.length > 1) {
-          queryBuilder.andWhere('trip.status IN (:...statuses)', { statuses });
+        if (includeEpod) {
+          queryBuilder
+            .leftJoin('trip.epod', 'epod')
+            .addSelect([
+              'epod.id',
+              'epod.status',
+              'epod.recipientName',
+              'epod.signatureFileUrl',
+              'epod.photoUrls',
+              'epod.deliveredAt',
+              'epod.submittedAt',
+            ]);
         }
-        // If all provided statuses were invalid, skip the filter (return all statuses)
-        // and log a warning so it surfaces in monitoring.
-        if (statuses.length === 0 && rawStatuses.length > 0) {
-          this.logger.warn(
-            `[TripsService] findAll received unrecognised trip status values: [${rawStatuses.join(', ')}] — filter ignored.`,
+
+        if (userId) {
+          queryBuilder
+            .where('trip.tenantId = :tenantId', { tenantId })
+            .andWhere(
+              new Brackets((qb) => {
+                qb.where('truck.ownerId = :userId', { userId }).orWhere(
+                  'driver.userId = :userId',
+                  { userId },
+                );
+              }),
+            );
+        } else {
+          queryBuilder.where('trip.tenantId = :tenantId', { tenantId });
+        }
+
+        if (status) {
+          // Guard: only pass values that are valid members of TripStatus enum.
+          // Invalid values (e.g. load statuses like ASSIGNED/PENDING) would cause
+          // a PostgreSQL "invalid input value for enum trips_status_enum" error.
+          const VALID_TRIP_STATUSES = Object.values(TripStatus) as string[];
+          const rawStatuses: string[] = Array.isArray(status)
+            ? status
+            : status.split(',').map((s: string) => s.trim()).filter(Boolean);
+          const statuses = rawStatuses.filter((s) =>
+            VALID_TRIP_STATUSES.includes(s),
+          );
+
+          if (statuses.length === 1) {
+            queryBuilder.andWhere('trip.status = :status', {
+              status: statuses[0],
+            });
+          } else if (statuses.length > 1) {
+            queryBuilder.andWhere('trip.status IN (:...statuses)', {
+              statuses,
+            });
+          }
+          if (statuses.length === 0 && rawStatuses.length > 0) {
+            this.logger.warn(
+              `[TripsService] findAll received unrecognised trip status values: [${rawStatuses.join(', ')}] — filter ignored.`,
+            );
+          }
+        }
+
+        if (search) {
+          queryBuilder.andWhere(
+            '(trip.tripNumber ILIKE :search OR trip.notes ILIKE :search)',
+            {
+              search: `%${search}%`,
+            },
           );
         }
-      }
 
-      if (search) {
-        queryBuilder.andWhere(
-          '(trip.tripNumber ILIKE :search OR trip.notes ILIKE :search)',
-          {
-            search: `%${search}%`,
-          },
+        return queryBuilder
+          .orderBy('trip.createdAt', 'DESC')
+          .skip(skip)
+          .take(limitNum);
+      };
+
+      let trips: Trip[];
+      let total: number;
+      try {
+        [trips, total] = await buildQuery(true).getManyAndCount();
+      } catch (epodErr: any) {
+        this.logger.warn(
+          `[TripsService] findAll with ePOD join failed (${epodErr?.message}); retrying without ePOD`,
         );
+        [trips, total] = await buildQuery(false).getManyAndCount();
       }
-
-      const [trips, total] = await queryBuilder
-        .orderBy('trip.createdAt', 'DESC')
-        .skip(skip)
-        .take(limit)
-        .getManyAndCount();
 
       return {
         trips: trips.map((trip) => enrichTripOverdueFields(trip) as Trip),
         pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
+          page: pageNum,
+          limit: limitNum,
           total,
-          totalPages: Math.ceil(total / limit),
+          totalPages: Math.ceil(total / limitNum),
         },
       };
     } catch (error) {
-      console.error('Error fetching trips:', error);
+      this.logger.error('Error fetching trips:', error);
       throw error;
     }
   }
