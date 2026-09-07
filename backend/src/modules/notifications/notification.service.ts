@@ -894,52 +894,86 @@ export class NotificationService {
   }
 
   /**
-   * Bulk mark notifications as read
+   * Mark every unread notification for the current user as read.
+   */
+  async markAllAsRead(
+    userId: string,
+    tenantId: string,
+    options?: NotificationQueryOptions,
+  ): Promise<{ count: number }> {
+    const recipientId = options?.recipientId || userId;
+    if (!recipientId) {
+      return { count: 0 };
+    }
+
+    const where: Record<string, unknown> = {
+      recipientId,
+      isRead: false,
+    };
+    if (!options?.isPlatformAdmin && tenantId) {
+      where.tenantId = tenantId;
+    }
+
+    try {
+      const result = await this.notificationRepository.update(where, {
+        isRead: true,
+        readAt: new Date(),
+        status: NotificationStatus.READ,
+        updatedAt: new Date(),
+      });
+      return { count: result.affected || 0 };
+    } catch (error: any) {
+      console.error('[markAllAsRead] Error:', error.message);
+      throw new BadRequestException(
+        `Failed to mark notifications as read: ${error.message}`,
+      );
+    }
+  }
+
+  /**
+   * Bulk mark notifications as read.
+   * An empty ID list marks all unread notifications for the user.
    */
   async bulkMarkAsRead(
     notificationIds: string[],
     userId: string,
     tenantId: string,
+    options?: NotificationQueryOptions,
   ): Promise<Notification[]> {
-    console.log(`[bulkMarkAsRead] Called with ${notificationIds.length} IDs for user ${userId}`);
-    
-    // 1. Handle empty array
     if (!notificationIds || notificationIds.length === 0) {
+      await this.markAllAsRead(userId, tenantId, {
+        ...options,
+        recipientId: options?.recipientId || userId,
+      });
       return [];
     }
-    
-    // 2. Filter for valid UUIDs only to prevent DB errors
+
     const validUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const validIds = notificationIds.filter(id => validUuidRegex.test(id));
 
     if (validIds.length === 0) {
-      console.warn(`[bulkMarkAsRead] No valid UUIDs provided`);
       return [];
     }
 
     try {
-      // 3. Efficient bulk update
-      const result = await this.notificationRepository.update(
-        { 
-          id: In(validIds)
-          // Relaxing checks slightly to ensure update works, tenantId safe
-        },
-        { 
-          isRead: true, 
-          readAt: new Date(),
-          updatedAt: new Date()
-        }
-      );
-      
-      console.log(`[bulkMarkAsRead] Successfully marked ${result.affected} notifications as read`);
+      const where: Record<string, unknown> = {
+        id: In(validIds),
+        recipientId: userId,
+      };
+      if (!options?.isPlatformAdmin && tenantId) {
+        where.tenantId = tenantId;
+      }
 
-      // Return mock array of length 'affected' to satisfy controller signature
-      // without needing a second SELECT query
+      const result = await this.notificationRepository.update(where, {
+        isRead: true,
+        readAt: new Date(),
+        status: NotificationStatus.READ,
+        updatedAt: new Date(),
+      });
+
       return new Array(result.affected || 0).fill({} as Notification);
-
     } catch (error: any) {
       console.error('[bulkMarkAsRead] Error:', error.message);
-      // Return empty array on error to prevent 500
       return [];
     }
   }

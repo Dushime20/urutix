@@ -143,12 +143,7 @@ export const useNotifications = () => {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const unreadIds = (apiNotifications as any[])
-        .filter((n: any) => !isNotificationRead(n))
-        .map((n: any) => n.id);
-      if (unreadIds.length === 0) return;
-      await notificationsAPI.bulkMarkAsRead(unreadIds);
-      // Optimistic update
+      await notificationsAPI.markAllAsRead();
       queryClient.setQueryData(['notifications', user?.id], (old: any[]) =>
         (old || []).map((n: any) => ({
           ...n,
@@ -158,10 +153,12 @@ export const useNotifications = () => {
         }))
       );
       queryClient.setQueryData(['notifications-unread-count', user?.id], { count: 0 });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', user?.id] });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
-  }, [user?.id, queryClient, apiNotifications]);
+  }, [user?.id, queryClient]);
 
   const removeNotification = useCallback(async (notificationId: string) => {
     try {

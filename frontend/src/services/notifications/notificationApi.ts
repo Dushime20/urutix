@@ -299,7 +299,13 @@ export class NotificationApiService {
     return response.data;
   }
 
-  // Bulk mark notifications as read
+  // Mark all unread notifications for the current user as read
+  async markAllAsRead(): Promise<{ count: number; message: string }> {
+    const response = await api.post(`${this.baseUrl}/my/read-all`);
+    return response.data;
+  }
+
+  // Bulk mark notifications as read. Empty list marks all unread.
   async bulkMarkAsRead(notificationIds: string[]): Promise<Notification[]> {
     const response = await api.post(`${this.baseUrl}/bulk/read`, {
       notificationIds,

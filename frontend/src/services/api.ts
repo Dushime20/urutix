@@ -241,7 +241,7 @@ export const notificationsAPI = {
   update: (id: string, data: any) => api.patch(`/notifications/${id}`, data),
   delete: (id: string) => api.delete(`/notifications/${id}`),
   markAsRead: (id: string) => api.post(`/notifications/${id}/read`),
-  markAllAsRead: () => api.post('/notifications/bulk/read', { notificationIds: [] }), // bulk with empty = mark all
+  markAllAsRead: () => api.post('/notifications/my/read-all'),
   bulkMarkAsRead: (ids: string[]) => api.post('/notifications/bulk/read', { notificationIds: ids }),
   archive: (id: string) => api.patch(`/notifications/${id}/archive`),
   getUnreadCount: () => api.get('/notifications/my/unread-count'),

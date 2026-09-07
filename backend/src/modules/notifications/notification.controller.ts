@@ -360,6 +360,39 @@ export class NotificationController {
     }
   }
 
+  @Post('my/read-all')
+  @Roles(...MY_NOTIFICATION_ROLES)
+  @ApiOperation({
+    summary: 'Mark all notifications as read',
+    description:
+      'Mark every unread notification for the currently authenticated user as read',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'All notifications marked as read',
+    schema: {
+      type: 'object',
+      properties: {
+        count: { type: 'number' },
+        message: { type: 'string' },
+      },
+    },
+  })
+  async markAllAsRead(
+    @CurrentUser() user: any,
+  ): Promise<{ count: number; message: string }> {
+    const { userId, tenantId, isPlatformAdmin } = this.platformQuery(user);
+    const result = await this.notificationService.markAllAsRead(
+      userId,
+      tenantId,
+      { isPlatformAdmin, recipientId: userId },
+    );
+    return {
+      count: result.count,
+      message: `${result.count} notifications marked as read`,
+    };
+  }
+
   @Get('entity/:entityType/:entityId')
   @Roles(
     UserRole.ADMIN,
@@ -483,6 +516,42 @@ export class NotificationController {
     );
   }
 
+  @Post('bulk/read')
+  @Roles(...MY_NOTIFICATION_ROLES)
+  @ApiOperation({
+    summary: 'Bulk mark notifications as read',
+    description:
+      'Mark multiple notifications as read. An empty notificationIds array marks all unread notifications for the current user.',
+  })
+  @ApiBody({
+    description: 'Notification IDs to mark as read',
+    schema: {
+      type: 'object',
+      properties: {
+        notificationIds: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Notifications marked as read successfully',
+    type: [Notification],
+  })
+  async bulkMarkAsRead(
+    @Body() body: { notificationIds?: string[] },
+    @CurrentUser() user: any,
+  ): Promise<Notification[]> {
+    const { userId, tenantId, isPlatformAdmin } = this.platformQuery(user);
+    const ids = Array.isArray(body?.notificationIds) ? body.notificationIds : [];
+    return this.notificationService.bulkMarkAsRead(ids, userId, tenantId, {
+      isPlatformAdmin,
+      recipientId: userId,
+    });
+  }
+
   @Post(':id/read')
   @Roles(...MY_NOTIFICATION_ROLES)
   @ApiOperation({
@@ -504,50 +573,6 @@ export class NotificationController {
       isPlatformAdmin,
       recipientId: userId,
     });
-  }
-
-  @Post('bulk/read')
-  @Roles(...MY_NOTIFICATION_ROLES)
-  @ApiOperation({
-    summary: 'Bulk mark notifications as read',
-    description: 'Mark multiple notifications as read at once',
-  })
-  @ApiBody({
-    description: 'Notification IDs to mark as read',
-    schema: {
-      type: 'object',
-      properties: {
-        notificationIds: {
-          type: 'array',
-          items: { type: 'string' },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Notifications marked as read successfully',
-    type: [Notification],
-  })
-  async bulkMarkAsRead(
-    @Body() body: { notificationIds: string[] },
-    @CurrentUser() user: any,
-  ): Promise<Notification[]> {
-    try {
-      if (!body.notificationIds || !Array.isArray(body.notificationIds)) {
-        console.warn('[bulkMarkAsRead] Invalid body format');
-        return [];
-      }
-
-      return await this.notificationService.bulkMarkAsRead(
-        body.notificationIds,
-        user.userId,
-        user.tenantId,
-      );
-    } catch (error) {
-      console.error('[bulkMarkAsRead] Controller Error:', error);
-      return [];
-    }
   }
 
   @Post('bulk/status')

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
 import { notificationApi } from '../services/notifications/notificationApi';
 import type { Notification } from '../services/notifications/notificationApi';
 import { useAuth } from './AuthContext';
@@ -24,6 +25,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -90,17 +92,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const unreadIds = notifications.filter(n => !n.isRead && !n.readAt).map(n => n.id);
-      if (unreadIds.length === 0) return;
-      await notificationApi.bulkMarkAsRead(unreadIds);
+      await notificationApi.markAllAsRead();
       setNotifications(prev =>
         prev.map(n => ({ ...n, readAt: new Date().toISOString(), status: 'READ', isRead: true }))
       );
       setUnreadCount(0);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     } catch (err: any) {
       console.error('Error marking all as read:', err);
     }
-  }, [notifications]);
+  }, [queryClient]);
 
   const deleteNotification = useCallback(async (id: string) => {
     try {
