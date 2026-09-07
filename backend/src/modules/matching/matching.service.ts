@@ -642,37 +642,103 @@ export class MatchingService {
   }
 
   /**
-   * Get all persisted matches for a cargo owner (ACCEPTED + REQUESTED + POTENTIAL).
-   * POTENTIAL = top-5 candidates the engine persisted after scoring (score >= 0.60).
-   * These are the candidates the cargo owner should review and select from.
+   * Get REQUESTED + ACCEPTED matches for a cargo owner.
+   *
+   * Production DBs often lag entity columns (trip delay fields, PostGIS geometry,
+   * OVERDUE enum, KYC profile columns). Never SELECT * on trips/trucks/loads/profiles.
    */
   async getMatchesForCargoOwner(cargoOwnerId: string, tenantId: string): Promise<any[]> {
     try {
-      // Only smart-matching loads — exclude bidding/auction cargo and loads with matching disabled
-      const loads = await this.loadRepository.find({
-        where: { cargoOwnerId, tenantId, autoMatchEnabled: true },
-        select: ['id'],
-      });
+      const loadQb = this.loadRepository
+        .createQueryBuilder('load')
+        .select('load.id')
+        .where('load.cargoOwnerId = :cargoOwnerId', { cargoOwnerId })
+        .andWhere('load.autoMatchEnabled = true');
+      if (tenantId) {
+        loadQb.andWhere('load.tenantId = :tenantId', { tenantId });
+      }
+      const loads = await loadQb.getMany();
       if (loads.length === 0) return [];
 
-      let loadIds = loads.map(l => l.id);
+      let loadIds = loads.map((l) => l.id);
 
       // Publish-for-bid journey creates auctions; those loads must not appear on Accepted Matches
-      const auctionRepo = this.loadRepository.manager.getRepository(Auction);
-      const auctioned = await auctionRepo.find({
-        where: { loadId: In(loadIds) },
-        select: ['id', 'loadId'],
-      });
-      if (auctioned.length > 0) {
-        const auctionedIds = new Set(auctioned.map(a => a.loadId));
-        loadIds = loadIds.filter(id => !auctionedIds.has(id));
+      try {
+        const auctioned = await this.loadRepository.manager
+          .createQueryBuilder(Auction, 'auction')
+          .select(['auction.id', 'auction.loadId'])
+          .where('auction.loadId IN (:...loadIds)', { loadIds })
+          .getMany();
+        if (auctioned.length > 0) {
+          const auctionedIds = new Set(auctioned.map((a) => a.loadId));
+          loadIds = loadIds.filter((id) => !auctionedIds.has(id));
+        }
+      } catch (err: any) {
+        this.logger.warn(`Auction filter skipped for cargo owner matches: ${err?.message}`);
       }
       if (loadIds.length === 0) return [];
 
-      // Truck responses only (Accepted Matches page):
-      //   REQUESTED — cargo owner sent a request, waiting for truck owner
-      //   ACCEPTED  — truck owner accepted
-      const matches = await this.loadMatchRepository.find({
+      const matches = await this.findRequestedAcceptedMatches(loadIds);
+      if (matches.length === 0) return [];
+
+      const matchLoadIds = [...new Set(matches.map((m) => m.loadId).filter(Boolean))];
+      const truckIds = [...new Set(matches.map((m) => m.truckId).filter(Boolean))];
+
+      const loadById = await this.loadCargoOwnerMatchLoads(matchLoadIds);
+      const { truckById, profileByUserId } = await this.loadCargoOwnerMatchTrucks(truckIds);
+      const tripByLoadId = await this.loadCargoOwnerMatchTrips(matchLoadIds);
+
+      return matches.map((match) => {
+        const truck = truckById.get(match.truckId);
+        const profile = truck?.ownerId ? profileByUserId.get(truck.ownerId) : undefined;
+        const trip = tripByLoadId.get(match.loadId);
+        return {
+          id: match.id,
+          tenantId: match.tenantId,
+          loadId: match.loadId,
+          truckId: match.truckId,
+          score: match.score != null ? Number(match.score) : match.score,
+          status: match.status,
+          matchDetails: match.matchDetails,
+          createdAt: match.createdAt,
+          updatedAt: match.updatedAt,
+          load: loadById.get(match.loadId) || null,
+          truck: truck
+            ? {
+                id: truck.id,
+                plateNumber: truck.plateNumber,
+                make: truck.make,
+                model: truck.model,
+                truckType: truck.truckType,
+                capacityWeight: truck.capacityWeight != null ? Number(truck.capacityWeight) : truck.capacityWeight,
+                hasGps: truck.hasGps,
+                hasRefrigeration: truck.hasRefrigeration,
+                owner: profile
+                  ? {
+                      profile: {
+                        firstName: profile.firstName,
+                        lastName: profile.lastName,
+                        companyName: profile.companyName,
+                      },
+                    }
+                  : undefined,
+              }
+            : null,
+          trip: trip || null,
+        };
+      });
+    } catch (error: any) {
+      this.logger.error(
+        `Error finding matches for cargo owner ${cargoOwnerId}: ${error?.message}`,
+        error?.stack,
+      );
+      throw error;
+    }
+  }
+
+  private async findRequestedAcceptedMatches(loadIds: string[]): Promise<LoadMatch[]> {
+    try {
+      return await this.loadMatchRepository.find({
         where: [
           { loadId: In(loadIds), status: MatchStatus.REQUESTED },
           { loadId: In(loadIds), status: MatchStatus.ACCEPTED },
@@ -680,24 +746,177 @@ export class MatchingService {
         order: { score: 'DESC', createdAt: 'DESC' },
         take: 100,
       });
-
-      // Enrich with load and truck details
-      const enriched = await Promise.all(matches.map(async (match) => {
-        const load = await this.loadRepository.findOne({ where: { id: match.loadId } });
-        const truck = await this.truckRepository.findOne({
-          where: { id: match.truckId },
-          relations: ['owner', 'owner.profile'],
-        });
-        const tripRepo = this.loadRepository.manager.getRepository(Trip);
-        const trip = await tripRepo.findOne({ where: { loadId: match.loadId } });
-        return { ...match, load: load || null, truck: truck || null, trip: trip || null };
-      }));
-
-      return enriched;
-    } catch (error) {
-      this.logger.error(`Error finding matches for cargo owner ${cargoOwnerId}`, error);
-      throw error;
+    } catch (err: any) {
+      this.logger.warn(
+        `load_matches ORM query failed: ${err?.message}; retrying with explicit column SQL`,
+      );
     }
+
+    const snakeSql = `
+      SELECT id, tenant_id AS "tenantId", load_id AS "loadId", truck_id AS "truckId",
+             score, status, match_details AS "matchDetails",
+             created_at AS "createdAt", updated_at AS "updatedAt"
+      FROM load_matches
+      WHERE load_id = ANY($1::uuid[])
+        AND status::text IN ('REQUESTED', 'ACCEPTED')
+      ORDER BY score DESC NULLS LAST, created_at DESC
+      LIMIT 100`;
+    const camelSql = `
+      SELECT id, "tenantId", "loadId", "truckId", score, status, "matchDetails",
+             "createdAt", "updatedAt"
+      FROM load_matches
+      WHERE "loadId" = ANY($1::uuid[])
+        AND status::text IN ('REQUESTED', 'ACCEPTED')
+      ORDER BY score DESC NULLS LAST, "createdAt" DESC
+      LIMIT 100`;
+
+    try {
+      return await this.loadMatchRepository.query(snakeSql, [loadIds]);
+    } catch (snakeErr: any) {
+      this.logger.warn(`load_matches snake_case query failed: ${snakeErr?.message}`);
+      return this.loadMatchRepository.query(camelSql, [loadIds]);
+    }
+  }
+
+  private async loadCargoOwnerMatchLoads(loadIds: string[]): Promise<Map<string, any>> {
+    const map = new Map<string, any>();
+    if (loadIds.length === 0) return map;
+    const selectFull = [
+      'load.id',
+      'load.title',
+      'load.cargoType',
+      'load.weight',
+      'load.offeredPrice',
+      'load.autoMatchEnabled',
+      'load.origin',
+      'load.destination',
+      'load.locations',
+      'load.pickupDate',
+      'load.deliveryDate',
+    ];
+    const selectMinimal = [
+      'load.id',
+      'load.title',
+      'load.cargoType',
+      'load.weight',
+      'load.offeredPrice',
+      'load.autoMatchEnabled',
+      'load.locations',
+      'load.pickupDate',
+      'load.deliveryDate',
+    ];
+    try {
+      const rows = await this.loadRepository
+        .createQueryBuilder('load')
+        .select(selectFull)
+        .where('load.id IN (:...ids)', { ids: loadIds })
+        .getMany();
+      rows.forEach((row) => map.set(row.id, row));
+    } catch (err: any) {
+      this.logger.warn(`Load enrichment (full) failed: ${err?.message}; retrying without origin/destination`);
+      try {
+        const rows = await this.loadRepository
+          .createQueryBuilder('load')
+          .select(selectMinimal)
+          .where('load.id IN (:...ids)', { ids: loadIds })
+          .getMany();
+        rows.forEach((row) => map.set(row.id, row));
+      } catch (fallbackErr: any) {
+        this.logger.warn(`Load enrichment skipped: ${fallbackErr?.message}`);
+      }
+    }
+    return map;
+  }
+
+  private async loadCargoOwnerMatchTrucks(truckIds: string[]): Promise<{
+    truckById: Map<string, any>;
+    profileByUserId: Map<string, { firstName?: string; lastName?: string; companyName?: string }>;
+  }> {
+    const truckById = new Map<string, any>();
+    const profileByUserId = new Map<string, { firstName?: string; lastName?: string; companyName?: string }>();
+    if (truckIds.length === 0) return { truckById, profileByUserId };
+
+    const selectFull = [
+      'truck.id',
+      'truck.plateNumber',
+      'truck.make',
+      'truck.model',
+      'truck.truckType',
+      'truck.capacityWeight',
+      'truck.hasGps',
+      'truck.hasRefrigeration',
+      'truck.ownerId',
+    ];
+    const selectMinimal = ['truck.id', 'truck.plateNumber', 'truck.make', 'truck.model', 'truck.ownerId'];
+
+    try {
+      const rows = await this.truckRepository
+        .createQueryBuilder('truck')
+        .select(selectFull)
+        .where('truck.id IN (:...ids)', { ids: truckIds })
+        .getMany();
+      rows.forEach((row) => truckById.set(row.id, row));
+    } catch (err: any) {
+      this.logger.warn(`Truck enrichment (full) failed: ${err?.message}; retrying with minimal columns`);
+      try {
+        const rows = await this.truckRepository
+          .createQueryBuilder('truck')
+          .select(selectMinimal)
+          .where('truck.id IN (:...ids)', { ids: truckIds })
+          .getMany();
+        rows.forEach((row) => truckById.set(row.id, row));
+      } catch (fallbackErr: any) {
+        this.logger.warn(`Truck enrichment skipped: ${fallbackErr?.message}`);
+        return { truckById, profileByUserId };
+      }
+    }
+
+    const ownerIds = [...new Set([...truckById.values()].map((t) => t.ownerId).filter(Boolean))];
+    if (ownerIds.length === 0) return { truckById, profileByUserId };
+
+    try {
+      const profiles = await this.loadRepository.manager
+        .createQueryBuilder(UserProfile, 'profile')
+        .select(['profile.userId', 'profile.firstName', 'profile.lastName', 'profile.companyName'])
+        .where('profile.userId IN (:...ids)', { ids: ownerIds })
+        .getMany();
+      profiles.forEach((p) =>
+        profileByUserId.set(p.userId, {
+          firstName: p.firstName,
+          lastName: p.lastName,
+          companyName: p.companyName,
+        }),
+      );
+    } catch (err: any) {
+      this.logger.warn(`Owner profile enrichment skipped: ${err?.message}`);
+    }
+
+    return { truckById, profileByUserId };
+  }
+
+  private async loadCargoOwnerMatchTrips(
+    loadIds: string[],
+  ): Promise<Map<string, { id: string; loadId: string; status: string; agreedPrice?: number }>> {
+    const map = new Map<string, { id: string; loadId: string; status: string; agreedPrice?: number }>();
+    if (loadIds.length === 0) return map;
+    try {
+      const trips = await this.loadRepository.manager
+        .createQueryBuilder(Trip, 'trip')
+        .select(['trip.id', 'trip.loadId', 'trip.status', 'trip.agreedPrice'])
+        .where('trip.loadId IN (:...ids)', { ids: loadIds })
+        .getMany();
+      trips.forEach((t) =>
+        map.set(t.loadId, {
+          id: t.id,
+          loadId: t.loadId,
+          status: t.status,
+          agreedPrice: t.agreedPrice != null ? Number(t.agreedPrice) : undefined,
+        }),
+      );
+    } catch (err: any) {
+      this.logger.warn(`Trip enrichment skipped: ${err?.message}`);
+    }
+    return map;
   }
 
   /**

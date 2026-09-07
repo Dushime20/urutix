@@ -338,7 +338,11 @@ export class MatchingController {
       const matches = await this.matchingService.getMatchesForCargoOwner(userId, tenantId);
       return { message: 'Matches retrieved successfully', data: matches, count: matches.length };
     } catch (error) {
-      this.logger.error('Error in getMatchesForCargoOwner', error);
+      if (error instanceof BadRequestException) throw error;
+      this.logger.error(
+        `Error in getMatchesForCargoOwner: ${error?.message}`,
+        error?.stack,
+      );
       throw new InternalServerErrorException('Failed to retrieve matches');
     }
   }
