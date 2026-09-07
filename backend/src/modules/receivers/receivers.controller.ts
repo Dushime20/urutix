@@ -15,7 +15,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Epod } from '../../entities/epod.entity';
-import { CargoInspection } from '../../entities/cargo-inspection.entity';
+import { CargoInspection, CargoInspectionType } from '../../entities/cargo-inspection.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -293,6 +293,9 @@ export class ReceiversController {
         .leftJoinAndSelect('inspection.receiver', 'receiver')
         .leftJoinAndSelect('receiver.profile', 'profile')
         .where('inspection.loadId IN (:...loadIds)', { loadIds })
+        .andWhere('inspection.inspectionType = :inspectionType', {
+          inspectionType: CargoInspectionType.DELIVERY,
+        })
         .orderBy('inspection.createdAt', 'DESC')
         .getMany();
     }

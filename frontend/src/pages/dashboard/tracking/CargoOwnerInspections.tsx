@@ -21,9 +21,19 @@ import api from "@/services/api";
 import { cn } from "@/utils/cn";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
 
+type InspectionStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "DISPUTED"
+  | "FAILED"
+  | "AWAITING_RESOLUTION"
+  | "READY_FOR_RE_INSPECTION"
+  | "APPROVED";
+
 interface Inspection {
   id: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "DISPUTED";
+  status: InspectionStatus;
   loadId: string;
   loadTitle: string;
   loadReference?: string;
@@ -79,12 +89,18 @@ interface InspectionsResponse {
   };
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { color: string; icon: typeof Clock; label: string }> = {
   PENDING: { color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock, label: "Pending" },
   IN_PROGRESS: { color: "bg-blue-100 text-blue-700 border-blue-200", icon: ClipboardCheck, label: "In Progress" },
   COMPLETED: { color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle, label: "Completed" },
   DISPUTED: { color: "bg-rose-100 text-rose-700 border-rose-200", icon: XCircle, label: "Disputed" },
+  FAILED: { color: "bg-rose-100 text-rose-700 border-rose-200", icon: AlertTriangle, label: "Failed" },
+  AWAITING_RESOLUTION: { color: "bg-amber-100 text-amber-800 border-amber-200", icon: AlertTriangle, label: "Awaiting Resolution" },
+  READY_FOR_RE_INSPECTION: { color: "bg-indigo-100 text-indigo-700 border-indigo-200", icon: ClipboardCheck, label: "Ready for Re-Inspection" },
+  APPROVED: { color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle, label: "Approved" },
 };
+
+const defaultStatus = { color: "bg-slate-100 text-slate-600 border-slate-200", icon: Clock, label: "Unknown" };
 
 const CargoOwnerInspections = () => {
   const [search, setSearch] = useState("");
@@ -202,7 +218,7 @@ const CargoOwnerInspections = () => {
       ) : (
         <div className="space-y-4">
           {filteredInspections.map((inspection) => {
-            const status = statusConfig[inspection.status];
+            const status = statusConfig[inspection.status] ?? defaultStatus;
             const StatusIcon = status.icon;
             const isExpanded = expandedInspections.has(inspection.id);
 
@@ -301,7 +317,7 @@ const CargoOwnerInspections = () => {
                         )}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {inspection.checklist.map((item) => (
+                        {(inspection.checklist || []).map((item) => (
                           <div
                             key={item.id}
                             className={cn(
