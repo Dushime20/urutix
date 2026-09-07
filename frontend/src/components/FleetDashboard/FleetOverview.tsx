@@ -31,6 +31,18 @@ import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
+function trendFromChange(change: number | null | undefined): {
+  trend?: string;
+  trendDirection?: 'up' | 'down' | 'neutral';
+} {
+  if (change == null || Number.isNaN(Number(change))) return {};
+  const n = Number(change);
+  return {
+    trend: `${Math.abs(Math.round(n))}%`,
+    trendDirection: n > 0 ? 'up' : n < 0 ? 'down' : 'neutral',
+  };
+}
+
 function TrendBadge({ value, suffix = '%' }: { value: number; suffix?: string }) {
   const up = value >= 0;
   return (
@@ -355,15 +367,18 @@ function AlertsPanel({ trucks, drivers }: { trucks: any[]; drivers: any[] }) {
 
 function RevenueTrendChart({ analytics }: { analytics: any }) {
   const { compact: fmt } = useCurrencyFormat();
-  // Build 7-day mock trend from analytics data (real data would come from API)
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const base = analytics?.totalRevenue ? analytics.totalRevenue / 7 : 50000;
-  const data = useMemo(() => days.map((d, i) => ({
-    day: d,
-    value: Math.round(base * (0.7 + Math.random() * 0.6)),
-  })), [base]);
+  const data = useMemo(() => {
+    if (Array.isArray(analytics?.revenueTrend) && analytics.revenueTrend.length > 0) {
+      return analytics.revenueTrend.map((d: any) => ({
+        day: d.name || d.day,
+        value: Number(d.revenue) || 0,
+      }));
+    }
+    return [];
+  }, [analytics?.revenueTrend]);
 
   const max = Math.max(...data.map(d => d.value), 1);
+  const change = analytics?.revenueChangePercent;
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5">
@@ -371,10 +386,10 @@ function RevenueTrendChart({ analytics }: { analytics: any }) {
         <div>
           <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Revenue Trend</p>
           <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">
-            {analytics?.totalRevenue ? fmt(analytics.totalRevenue) : 'RWF 0'}
+            {fmt(Number(analytics?.totalRevenue) || 0)}
           </p>
         </div>
-        <TrendBadge value={12} />
+        {change != null && <TrendBadge value={Math.round(Number(change))} />}
       </div>
       <div className="flex items-end gap-1.5 h-20">
         {data.map((d, i) => {
@@ -556,14 +571,8 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
     return { available, inTransit, maintenance, outOfService, utilization, totalRevenue, totalTrips, avgRating };
   }, [trucks, drivers, analytics]);
 
-  // Sparkline data (simulated weekly trend)
-  const revSpark = useMemo(() => Array.from({ length: 7 }, (_, i) =>
-    Math.round((truckStats.totalRevenue / 7) * (0.6 + Math.random() * 0.8))
-  ), [truckStats.totalRevenue]);
-
-  const tripSpark = useMemo(() => Array.from({ length: 7 }, (_, i) =>
-    Math.round((truckStats.totalTrips / 7) * (0.5 + Math.random() * 1))
-  ), [truckStats.totalTrips]);
+  const revenueTrend = trendFromChange(analytics?.revenueChangePercent);
+  const tripsTrend = trendFromChange(analytics?.tripsChangePercent);
 
   if (loading) {
     return (
@@ -603,8 +612,6 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
           icon={<Activity size={24} />}
           color="primary"
           variant="classic"
-          trend={truckStats.utilization > 60 ? '5%' : '3%'}
-          trendDirection={truckStats.utilization > 60 ? 'up' : 'down'}
         />
         <StatCard
           title="Total Revenue"
@@ -613,8 +620,8 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
           icon={<DollarSign size={24} />}
           color="primary"
           variant="classic"
-          trend="12%"
-          trendDirection="up"
+          trend={revenueTrend.trend}
+          trendDirection={revenueTrend.trendDirection}
         />
         <StatCard
           title="Total Trips"
@@ -623,8 +630,8 @@ export const FleetOverview: React.FC<FleetOverviewProps> = ({
           icon={<Package size={24} />}
           color="primary"
           variant="classic"
-          trend="8%"
-          trendDirection="up"
+          trend={tripsTrend.trend}
+          trendDirection={tripsTrend.trendDirection}
           onClick={() => navigate('/dashboard/fleet/trips')}
         />
       </div>

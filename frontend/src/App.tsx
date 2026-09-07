@@ -488,6 +488,7 @@ function App() {
                       <Route path="tracking" element={<LiveTracking />} />
                       <Route path="tracking/trips/:tripId" element={<TripTracking />} />
                       <Route path="trip-tracking/:tripId" element={<TripTracking />} />
+                      <Route path="trips" element={<TripManagement />} />
                       <Route path="disputes" element={<UserDisputesPage />} />
                       <Route path="parking-reservations" element={<MyParkingReservations basePath="/dashboard/fleet/parking-reservations" />} />
                       <Route path="parking-reservations/:id" element={<MyParkingReservations basePath="/dashboard/fleet/parking-reservations" />} />

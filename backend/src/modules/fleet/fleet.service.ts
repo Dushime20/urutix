@@ -3162,8 +3162,11 @@ export class FleetService {
   async getFleetAnalytics(tenantId: string, userId: string, userRole?: string) {
     try {
       console.log('📊 FleetService: Fetching enhanced analytics...', { tenantId, userId, userRole });
-      
-      const trucks = await this.findAllTrucks(tenantId, userId);
+
+      const isAdminRole = this.isFleetStaffOrAdmin(userRole);
+      const ownerId = isAdminRole ? undefined : userId;
+
+      const trucks = await this.findAllTrucks(tenantId, ownerId);
       const drivers = await this.findAllDrivers(tenantId, userId, {}, userRole);
 
       const totalTrucks = trucks?.length || 0;
@@ -3195,8 +3198,20 @@ export class FleetService {
       });
       const cargoTypeCoverage = Object.entries(cargoTypeMap).map(([name, value]) => ({ name, value }));
 
-      // Revenue vs Cost Trend (Last 7 days)
-      const revenueTrend = await this.calculateRevenueTrend(tenantId);
+      const emptyTripStats = {
+        totalRevenue: 0,
+        totalTrips: 0,
+        revenueChangePercent: null as number | null,
+        tripsChangePercent: null as number | null,
+      };
+      const tripStats = await this.calculateTripRevenueStats(tenantId, ownerId).catch((err) => {
+        this.logger.error('❌ Error calculating trip revenue stats:', err);
+        return emptyTripStats;
+      });
+      const revenueTrend = await this.calculateRevenueTrend(tenantId, ownerId).catch((err) => {
+        this.logger.error('❌ Error calculating revenue trend:', err);
+        return [];
+      });
 
       return {
         totalTrucks,
@@ -3209,6 +3224,10 @@ export class FleetService {
         utilizationRate,
         cargoTypeCoverage,
         revenueTrend,
+        totalRevenue: tripStats.totalRevenue,
+        totalTrips: tripStats.totalTrips,
+        revenueChangePercent: tripStats.revenueChangePercent,
+        tripsChangePercent: tripStats.tripsChangePercent,
       };
     } catch (error) {
       this.logger.error('❌ Error calculating getFleetAnalytics:', error);
@@ -3223,12 +3242,93 @@ export class FleetService {
         utilizationRate: 0,
         cargoTypeCoverage: [],
         revenueTrend: [],
+        totalRevenue: 0,
+        totalTrips: 0,
+        revenueChangePercent: null,
+        tripsChangePercent: null,
         isPartial: true
       };
     }
   }
 
-  private async calculateRevenueTrend(tenantId: string): Promise<any[]> {
+  private isFleetStaffOrAdmin(role?: string): boolean {
+    const normalized = String(role || '').toUpperCase().trim();
+    return [
+      'TENANT_ADMIN',
+      'ADMIN',
+      'SUPER_ADMIN',
+      'FLEET_MANAGER',
+      'FLEET_DISPATCHER',
+      'FLEET_ACCOUNTANT',
+      'FLEET_SAFETY_OFFICER',
+    ].includes(normalized);
+  }
+
+  private percentChange(current: number, previous: number): number | null {
+    if (previous === 0 && current === 0) return null;
+    if (previous === 0) return current > 0 ? 100 : null;
+    return Math.round(((current - previous) / previous) * 100);
+  }
+
+  /**
+   * All-time trip counts and completed-trip earnings for the owner's fleet.
+   * Truck.totalRevenue / Truck.totalTrips are not kept in sync, so this reads trips directly.
+   */
+  private async calculateTripRevenueStats(
+    tenantId: string,
+    ownerId?: string,
+  ): Promise<{
+    totalRevenue: number;
+    totalTrips: number;
+    revenueChangePercent: number | null;
+    tripsChangePercent: number | null;
+  }> {
+    const now = new Date();
+    const last30 = new Date(now);
+    last30.setDate(last30.getDate() - 30);
+    const prev60 = new Date(now);
+    prev60.setDate(prev60.getDate() - 60);
+
+    const rows = await this.dataSource.query(
+      `SELECT
+         COUNT(tr.id)::int AS "totalTrips",
+         COALESCE(SUM(CASE WHEN tr.status = 'COMPLETED' THEN tr."agreedPrice" ELSE 0 END), 0)::numeric AS "totalRevenue",
+         COUNT(*) FILTER (WHERE tr."createdAt" >= $3)::int AS "tripsRecent",
+         COUNT(*) FILTER (WHERE tr."createdAt" >= $4 AND tr."createdAt" < $3)::int AS "tripsPrevious",
+         COALESCE(SUM(tr."agreedPrice") FILTER (
+           WHERE tr.status = 'COMPLETED' AND tr."createdAt" >= $3
+         ), 0)::numeric AS "revenueRecent",
+         COALESCE(SUM(tr."agreedPrice") FILTER (
+           WHERE tr.status = 'COMPLETED' AND tr."createdAt" >= $4 AND tr."createdAt" < $3
+         ), 0)::numeric AS "revenuePrevious"
+       FROM trips tr
+       INNER JOIN trucks t ON t.id = tr."truckId"
+       WHERE tr."tenantId" = $1
+         AND tr.deleted_at IS NULL
+         AND t.deleted_at IS NULL
+         AND ($2::uuid IS NULL OR t."ownerId" = $2)`,
+      [tenantId, ownerId ?? null, last30, prev60],
+    );
+
+    const row = rows[0] || {};
+    const totalRevenue = Number(row.totalRevenue || 0);
+    const totalTrips = Number(row.totalTrips || 0);
+
+    return {
+      totalRevenue,
+      totalTrips,
+      revenueChangePercent: this.percentChange(
+        Number(row.revenueRecent || 0),
+        Number(row.revenuePrevious || 0),
+      ),
+      tripsChangePercent: this.percentChange(
+        Number(row.tripsRecent || 0),
+        Number(row.tripsPrevious || 0),
+      ),
+    };
+  }
+
+  private async calculateRevenueTrend(tenantId: string, ownerId?: string): Promise<any[]> {
     const days = 7;
     const trend = [];
     const now = new Date();
@@ -3239,29 +3339,47 @@ export class FleetService {
       const dateStr = d.toISOString().split('T')[0];
       const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
 
-      // Revenue from payments (tenantId, createdAt)
       const revenueResult = await this.dataSource.query(
-        `SELECT SUM(amount) as total FROM payments WHERE "tenantId" = $1 AND DATE("createdAt") = $2 AND status = 'completed'`,
-        [tenantId, dateStr]
+        `SELECT COALESCE(SUM(tr."agreedPrice"), 0) as total, COUNT(tr.id)::int as trips
+         FROM trips tr
+         INNER JOIN trucks t ON t.id = tr."truckId"
+         WHERE tr."tenantId" = $1
+           AND DATE(tr."createdAt") = $2
+           AND tr.status = 'COMPLETED'
+           AND tr.deleted_at IS NULL
+           AND t.deleted_at IS NULL
+           AND ($3::uuid IS NULL OR t."ownerId" = $3)`,
+        [tenantId, dateStr, ownerId ?? null],
       );
 
-      // Costs from fuel and maintenance logs
       const fuelCostResult = await this.dataSource.query(
-        `SELECT SUM(total_cost) as total FROM fuel_logs WHERE "tenant_id" = $1 AND DATE(fuel_date) = $2`,
-        [tenantId, dateStr]
-      );
-      
+        `SELECT SUM(fl.total_cost) as total
+         FROM fuel_logs fl
+         INNER JOIN trucks t ON t.id = fl.truck_id
+         WHERE fl."tenant_id" = $1
+           AND DATE(fl.fuel_date) = $2
+           AND ($3::uuid IS NULL OR t."ownerId" = $3)`,
+        [tenantId, dateStr, ownerId ?? null],
+      ).catch(() => [{ total: 0 }]);
+
       const maintCostResult = await this.dataSource.query(
-        `SELECT SUM(cost) as total FROM maintenance_logs WHERE "tenantId" = $1 AND DATE("createdAt") = $2`,
-        [tenantId, dateStr]
-      );
+        `SELECT SUM(ml.cost) as total
+         FROM maintenance_logs ml
+         INNER JOIN trucks t ON t.id = ml."truckId"
+         WHERE ml."tenantId" = $1
+           AND DATE(ml."createdAt") = $2
+           AND ($3::uuid IS NULL OR t."ownerId" = $3)`,
+        [tenantId, dateStr, ownerId ?? null],
+      ).catch(() => [{ total: 0 }]);
 
       const revenue = Number(revenueResult[0]?.total || 0);
+      const trips = Number(revenueResult[0]?.trips || 0);
       const cost = Number(fuelCostResult[0]?.total || 0) + Number(maintCostResult[0]?.total || 0);
 
       trend.push({
         name: dayLabel,
         revenue,
+        trips,
         cost,
         profit: revenue - cost
       });

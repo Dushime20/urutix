@@ -142,7 +142,11 @@ export class TripsController {
     @Query() query: any,
     @Request() req,
   ): Promise<PaginatedResponseDto> {
-    const result = await this.tripsService.findAll(query, req.user.tenantId);
+    const role = String(req.user?.role || '').toUpperCase();
+    const userId = ['TRUCK_OWNER', 'DRIVER'].includes(role)
+      ? req.user.userId
+      : undefined;
+    const result = await this.tripsService.findAll(query, req.user.tenantId, userId);
     return {
       success: true,
       message: 'Trips retrieved successfully',

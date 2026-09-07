@@ -103,8 +103,16 @@ const TripManagement: React.FC = () => {
     queryKey: ['trips'],
     queryFn: () => tripsAPI.getAll({ limit: 100 }),
     select: (response) => {
-      // Map the API response to the component's Trip interface
-      return response.data.data.map((trip: any) => {
+      const payload = response?.data;
+      const rows = Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.trips)
+          ? payload.trips
+          : Array.isArray(payload)
+            ? payload
+            : [];
+
+      return rows.map((trip: any) => {
         // Extract pickup location from multiple possible sources
         const getPickupLocation = () => {
           // 1. Check trip's pickupLocation relation
@@ -530,7 +538,9 @@ const TripManagement: React.FC = () => {
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">No trips found</h3>
           <p className="text-slate-500 dark:text-slate-400 font-medium max-w-xs mx-auto">
-            Try adjusting filters or search terms to find what you're looking for.
+            {trips.length === 0
+              ? 'Trips will appear here once loads are assigned to your trucks.'
+              : 'Try adjusting filters or search terms to find what you are looking for.'}
           </p>
         </div>
       ) : (

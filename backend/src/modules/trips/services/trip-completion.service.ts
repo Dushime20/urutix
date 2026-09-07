@@ -193,6 +193,17 @@ export class TripCompletionService {
     const savedPayment = await this.paymentRepository.save(payment);
     this.logger.log(`Created pending payment ${savedPayment.id} for trip ${tripId}`);
 
+    // Keep truck KPI counters in sync for future completions.
+    // Dashboard analytics still read trips directly so historical rows are counted.
+    if (trip.truckId) {
+      try {
+        await this.truckRepository.increment({ id: trip.truckId }, 'totalTrips', 1);
+        await this.truckRepository.increment({ id: trip.truckId }, 'totalRevenue', paymentAmount);
+      } catch (err: any) {
+        this.logger.warn(`Failed to update truck stats for ${trip.truckId}: ${err?.message}`);
+      }
+    }
+
     // Send professional payment notifications using PaymentNotificationService
     await this.paymentNotificationService.sendPaymentCreatedNotifications(
       savedPayment,
