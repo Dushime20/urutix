@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not } from 'typeorm';
+import { Repository, In, QueryFailedError } from 'typeorm';
 import {
   ShipmentReservation,
   ReservationStatus,
@@ -270,9 +270,7 @@ export class AvailabilityService {
     deliveryDateTime: Date,
     excludeTripId?: string,
   ): Promise<ConflictInfo | null> {
-    const activeReservations = await this.reservationRepo.find({
-      where: { truckId, status: ReservationStatus.ACTIVE },
-    });
+    const activeReservations = await this.findActiveReservations({ truckId });
 
     for (const reservation of activeReservations) {
       if (excludeTripId && reservation.tripId === excludeTripId) continue;
@@ -641,7 +639,15 @@ export class AvailabilityService {
       qb.andWhere('truck.ownerId = :ownerId', { ownerId });
     }
 
-    return qb.getMany();
+    try {
+      return await qb.getMany();
+    } catch (error) {
+      this.logger.error(
+        `getAvailableTrucks truck query failed: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   /**
@@ -670,17 +676,21 @@ export class AvailabilityService {
       }
     }
 
-    const busyReservations = await this.reservationRepo
-      .createQueryBuilder('r')
-      .select('r.driverId', 'driverId')
-      .where('r.tenantId = :tenantId', { tenantId })
-      .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-      .andWhere('r.driverId IS NOT NULL')
-      .andWhere('r.pickupDateTime < :deliveryDateTime', { deliveryDateTime })
-      .andWhere('r.deliveryDateTime > :pickupDateTime', { pickupDateTime })
-      .getRawMany<{ driverId: string }>();
-
-    const busyDriverIds = busyReservations.map(r => r.driverId).filter(Boolean);
+    let busyDriverIds: string[] = [];
+    try {
+      const busyReservations = await this.reservationRepo
+        .createQueryBuilder('r')
+        .select('r.driverId', 'driverId')
+        .where('r.tenantId = :tenantId', { tenantId })
+        .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
+        .andWhere('r.driverId IS NOT NULL')
+        .andWhere('r.pickupDateTime < :deliveryDateTime', { deliveryDateTime })
+        .andWhere('r.deliveryDateTime > :pickupDateTime', { pickupDateTime })
+        .getRawMany<{ driverId: string }>();
+      busyDriverIds = busyReservations.map(r => r.driverId).filter(Boolean);
+    } catch (error) {
+      if (!this.isMissingReservationSchema(error)) throw error;
+    }
 
     const qb = this.driverRepo
       .createQueryBuilder('driver')
@@ -714,9 +724,7 @@ export class AvailabilityService {
     pickupDateTime: Date,
     deliveryDateTime: Date,
   ): Promise<Set<string>> {
-    const activeReservations = await this.reservationRepo.find({
-      where: { tenantId, status: ReservationStatus.ACTIVE },
-    });
+    const activeReservations = await this.findActiveReservations({ tenantId });
 
     const busyIds = new Set<string>();
 
@@ -761,9 +769,7 @@ export class AvailabilityService {
     pickupDateTime: Date,
     deliveryDateTime: Date,
   ): Promise<Set<string>> {
-    const activeReservations = await this.reservationRepo.find({
-      where: { tenantId, status: ReservationStatus.ACTIVE },
-    });
+    const activeReservations = await this.findActiveReservations({ tenantId });
 
     const busyIds = new Set<string>();
 
@@ -875,5 +881,52 @@ export class AvailabilityService {
 
     this.logger.log(`Backfill complete for tenant ${tenantId}: created ${created} reservations`);
     return created;
+  }
+
+  /**
+   * Load ACTIVE reservations without crashing when the table/enum is missing
+   * (production DBs that never received migration 088).
+   */
+  private async findActiveReservations(where: {
+    tenantId?: string;
+    truckId?: string;
+    driverId?: string;
+  }): Promise<ShipmentReservation[]> {
+    try {
+      return await this.reservationRepo.find({
+        where: { ...where, status: ReservationStatus.ACTIVE },
+      });
+    } catch (error) {
+      if (this.isMissingReservationSchema(error)) {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  private isMissingReservationSchema(error: unknown): boolean {
+    const driverError = (
+      error as QueryFailedError & { driverError?: { code?: string; message?: string } }
+    )?.driverError;
+    const code = driverError?.code || (error as { code?: string }).code;
+    // 42P01 undefined_table, 42704 undefined_object (enum type)
+    if (code === '42P01' || code === '42704') {
+      this.logger.error(
+        'shipment_reservations schema is missing. Apply backend/migrations/088_create_shipment_reservations_if_missing.sql. Availability will treat resources as free until the table exists.',
+      );
+      return true;
+    }
+    const message = `${driverError?.message || ''} ${error instanceof Error ? error.message : error}`;
+    const missing =
+      /does not exist/i.test(message) &&
+      (/shipment_reservations/i.test(message) ||
+        /reservation_status/i.test(message) ||
+        /shipment_reservations_status_enum/i.test(message));
+    if (missing) {
+      this.logger.error(
+        'shipment_reservations schema is missing. Apply backend/migrations/088_create_shipment_reservations_if_missing.sql. Availability will treat resources as free until the table exists.',
+      );
+    }
+    return missing;
   }
 }

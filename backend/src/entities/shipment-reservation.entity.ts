@@ -53,6 +53,7 @@ export class ShipmentReservation {
   @Column({
     type: 'enum',
     enum: ReservationStatus,
+    enumName: 'reservation_status',
     default: ReservationStatus.ACTIVE,
   })
   status: ReservationStatus;

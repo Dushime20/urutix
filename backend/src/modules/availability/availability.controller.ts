@@ -4,11 +4,15 @@ import {
   Query,
   Request,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
   Post,
   Body,
   HttpCode,
   HttpStatus,
   Param,
+  Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,8 +31,11 @@ import {
 @ApiTags('Availability')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 @Controller('availability')
 export class AvailabilityController {
+  private readonly logger = new Logger(AvailabilityController.name);
+
   constructor(private readonly availabilityService: AvailabilityService) {}
 
   // ─── GET /availability/trucks ────────────────────────────────────────────────
@@ -46,6 +53,14 @@ export class AvailabilityController {
     @Query() query: TruckAvailabilityQueryDto,
     @Request() req,
   ) {
+    const pickupDateTime = new Date(query.pickupDateTime);
+    const deliveryDateTime = new Date(query.deliveryDateTime);
+    if (Number.isNaN(pickupDateTime.getTime()) || Number.isNaN(deliveryDateTime.getTime())) {
+      throw new BadRequestException(
+        'pickupDateTime and deliveryDateTime must be valid ISO-8601 dates',
+      );
+    }
+
     const tenantId = req.user.tenantId;
     const role: string = req.user.role ?? '';
 
@@ -55,22 +70,30 @@ export class AvailabilityController {
         ? req.user.userId
         : undefined;
 
-    const trucks = await this.availabilityService.getAvailableTrucks({
-      tenantId,
-      pickupDateTime:   new Date(query.pickupDateTime),
-      deliveryDateTime: new Date(query.deliveryDateTime),
-      capacityWeight:   query.capacityWeight,
-      truckType:        query.truckType,
-      ownerId,
-    });
+    try {
+      const trucks = await this.availabilityService.getAvailableTrucks({
+        tenantId,
+        pickupDateTime,
+        deliveryDateTime,
+        capacityWeight: query.capacityWeight,
+        truckType: query.truckType,
+        ownerId,
+      });
 
-    return {
-      success: true,
-      message: `${trucks.length} available truck(s) found`,
-      data: trucks,
-      statusCode: 200,
-      timestamp: new Date().toISOString(),
-    };
+      return {
+        success: true,
+        message: `${trucks.length} available truck(s) found`,
+        data: trucks,
+        statusCode: 200,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(
+        `GET /availability/trucks failed: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   // ─── GET /availability/drivers ───────────────────────────────────────────────
