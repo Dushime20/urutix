@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ArrowRight,
@@ -34,7 +34,7 @@ import {
   useToggleAuctionWatch,
   useSubmitBidMutation,
 } from '../../hooks/useBiddingQueries';
-import { StandardDataTable, type Column } from '../EnliteUI/Tables';
+import { StandardDataTable, type Column, type TableAction } from '../EnliteUI/Tables';
 import { usePermission } from '../../contexts/PermissionContext';
 
 interface LoadLocation {
@@ -126,7 +126,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     maxValue: '',
     showWatchedOnly: false,
   });
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('table');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [detailsAuction, setDetailsAuction] = useState<Auction | null>(null);
 
@@ -234,6 +235,22 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
       return true;
     });
   }, [auctions, board]);
+
+  const displayedAuctions = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return boardAuctions;
+    return boardAuctions.filter((auction) => {
+      const title = (auction.load?.title || '').toLowerCase();
+      const pickup = getLocationString(auction.load, 'pickup').toLowerCase();
+      const delivery = getLocationString(auction.load, 'delivery').toLowerCase();
+      return (
+        title.includes(q) ||
+        pickup.includes(q) ||
+        delivery.includes(q) ||
+        auction.id.toLowerCase().includes(q)
+      );
+    });
+  }, [boardAuctions, searchQuery]);
 
   const handleExport = async () => {
     try {
@@ -501,34 +518,130 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     });
   };
 
+  const tableColumns: Column<Auction>[] = useMemo(() => [
+    {
+      key: 'load.title',
+      label: 'Context',
+      sortable: true,
+      alwaysVisible: true,
+      render: (_: any, auction: Auction) => (
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0">
+            <Gavel size={20} className="text-[#345E85] dark:text-blue-400" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-black text-[#0f172a] dark:text-slate-100 leading-tight truncate">
+              {auction.load?.title || 'Unknown Cargo'}
+            </p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">
+              Ref: {auction.id.slice(0, 8)}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'route',
+      label: 'Route',
+      render: (_: any, auction: Auction) => (
+        <div className="flex flex-col">
+          <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+            {getLocationString(auction.load, 'pickup')}
+          </span>
+          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight italic">to</span>
+          <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+            {getLocationString(auction.load, 'delivery')}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'currentHighestBid',
+      label: 'Financials',
+      sortable: true,
+      render: (_: any, auction: Auction) => (
+        <div>
+          {auction.currentHighestBid ? (
+            <>
+              <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(auction.currentHighestBid)}
+              </div>
+              <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase mt-1">
+                {auction.totalBids} BID{auction.totalBids === 1 ? '' : 'S'}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-black text-slate-400 dark:text-slate-500 italic">No bids yet</div>
+              <div className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase mt-1">
+                Open
+              </div>
+            </>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_: any, auction: Auction) => (
+        <div className="flex flex-col gap-1.5">
+          {getStatusBadge(auction.status)}
+          {getAuctionTypeBadge(auction.auctionType)}
+        </div>
+      ),
+    },
+    {
+      key: 'auctionEnd',
+      label: 'Timeline',
+      sortable: true,
+      render: (end: string) => (
+        <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
+          <Clock size={12} />
+          <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(end)}</span>
+        </div>
+      ),
+    },
+  ], []);
+
+  const tableActions: TableAction<Auction>[] = useMemo(() => [
+    {
+      key: 'details',
+      label: 'Details',
+      icon: <Eye size={14} />,
+      onClick: (auction) => openDetailsModal(auction),
+    },
+    {
+      key: 'bid',
+      label: 'Place bid',
+      icon: <Gavel size={14} />,
+      variant: 'success',
+      hidden: () => userRole === 'BROKER' || !canCreateBid,
+      disabled: (auction) => !isBiddingOpen(auction),
+      onClick: (auction) => guardBidAction(auction, () => openBidModal(auction)),
+    },
+  ], [userRole, canCreateBid]);
+
   const renderFilters = () => (
-    <div className="space-y-4 mb-8">
-      {userRole === 'TRUCK_OWNER' && (
-        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest px-1">
-          Available auctions in your tenant — bid when live; scheduled stay visible until start
-        </p>
-      )}
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-      <div className="flex flex-col lg:flex-row gap-6 items-center">
-        <div className="relative flex-1 w-full group">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 dark:text-slate-600 group-focus-within:text-[#345E85] dark:group-focus-within:text-blue-400 transition-colors" />
+    <div className="bg-slate-50/50 dark:bg-slate-900/50 p-4 rounded-[2rem] border border-slate-100 dark:border-slate-800 mb-8">
+      <div className="flex flex-col lg:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
-            placeholder="SEARCH MARKETPLACE: ID, LOCATION, TYPE..."
-            className="w-full h-16 pl-14 pr-32 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white dark:focus:bg-slate-900 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="SEARCH AUCTIONS BY CARGO, ROUTE OR ID..."
+            className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-slate-100 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50"
           />
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mr-2" />
-            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total:</span>
-            <span className="text-sm font-black text-[#345E85] dark:text-blue-400">{boardAuctions.length}</span>
-          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="h-16 pl-8 pr-12 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-500/5 appearance-none cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition-all min-w-[160px]"
+            className="px-6 py-3.5 text-[10px] font-black uppercase tracking-widest bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 shadow-sm appearance-none cursor-pointer pr-10 min-w-[140px]"
           >
             <option value="all">Any Status</option>
             <option value="ACTIVE">Active</option>
@@ -539,145 +652,144 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           <button
             onClick={() => setFilters({ ...filters, showWatchedOnly: !filters.showWatchedOnly })}
             className={cn(
-              "w-16 h-16 rounded-3xl border transition-all flex items-center justify-center shadow-sm",
+              "p-3.5 rounded-2xl border transition-all flex items-center justify-center shadow-sm",
               filters.showWatchedOnly
-                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-500 dark:text-amber-400 shadow-amber-900/5'
-                : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-600 hover:text-amber-400 dark:hover:text-amber-300'
+                ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-500 dark:text-amber-400'
+                : 'bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-600 hover:text-amber-400'
             )}
+            title="Watched only"
           >
-            <Star size={20} className={filters.showWatchedOnly ? 'fill-current' : ''} />
+            <Star size={16} className={filters.showWatchedOnly ? 'fill-current' : ''} />
           </button>
 
           <button
             onClick={handleExport}
-            className="h-16 w-16 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-600 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#345E85] dark:hover:text-blue-400 transition-all shadow-sm flex items-center justify-center"
+            className="p-3.5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-600 hover:text-[#345E85] dark:hover:text-blue-400 transition-all shadow-sm"
+            title="Export"
           >
-            <Download size={20} />
+            <Download size={16} />
           </button>
+
+          <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2 hidden lg:block" />
+
+          <div className="flex items-center gap-1 bg-white dark:bg-slate-950 p-1 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+            <button
+              onClick={() => setViewMode('card')}
+              className={cn(
+                "p-2 rounded-xl transition-all",
+                viewMode === 'card'
+                  ? "bg-slate-900 dark:bg-blue-600 text-white shadow-lg"
+                  : "text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400"
+              )}
+              title="Card view"
+            >
+              <Grid size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={cn(
+                "p-2 rounded-xl transition-all",
+                viewMode === 'table'
+                  ? "bg-slate-900 dark:bg-blue-600 text-white shadow-lg"
+                  : "text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400"
+              )}
+              title="Table view"
+            >
+              <Table size={18} />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 
   const renderAuctionCard = (auction: Auction) => (
-    <div key={auction.id} className="relative group bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[3rem] p-1 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl hover:border-blue-100 dark:hover:border-blue-900 transition-all duration-500 overflow-hidden flex flex-col">
-      <div className="p-4 sm:p-8 pb-3 sm:pb-4 flex-1">
-        <div className="flex justify-between items-start mb-4 sm:mb-6 gap-2">
-          <div className="flex flex-wrap gap-2 flex-1 min-w-0">
+    <div key={auction.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-slate-900 dark:hover:border-blue-900/50 overflow-hidden transition-all duration-300 group flex flex-col shadow-sm">
+      <div className="p-6 flex-1">
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex flex-wrap gap-2">
             {getStatusBadge(auction.status)}
             {getAuctionTypeBadge(auction.auctionType)}
           </div>
           <button
             onClick={() => toggleWatch(auction.id)}
             className={cn(
-              "w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all shadow-sm shrink-0",
+              "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
               watchedAuctions.has(auction.id)
-                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-500 dark:text-amber-400 border border-amber-100 dark:border-amber-800'
-                : 'bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-slate-300 dark:text-slate-600 hover:text-amber-500 dark:hover:text-amber-400 hover:border-amber-100 dark:hover:border-amber-800 hover:bg-white dark:hover:bg-slate-900'
+                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-500 dark:text-amber-400'
+                : 'bg-slate-50 dark:bg-slate-950 text-slate-400 dark:text-slate-600 hover:text-amber-500'
             )}
+            title={watchedAuctions.has(auction.id) ? 'Unwatch' : 'Watch'}
           >
-            <Star size={18} className={watchedAuctions.has(auction.id) ? 'fill-current' : ''} />
+            <Star size={16} className={watchedAuctions.has(auction.id) ? 'fill-current' : ''} />
           </button>
         </div>
 
-        <div className="space-y-3 sm:space-y-4">
-          <div>
-            <h3 className="text-base sm:text-xl font-black text-slate-900 dark:text-slate-100 group-hover:text-[#345E85] dark:group-hover:text-blue-400 transition-colors line-clamp-2 sm:line-clamp-1 break-words" title={auction.load?.title || 'Unknown Cargo'}>
-              {auction.load?.title || 'Unknown Cargo'}
-            </h3>
-            <p className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] sm:tracking-[0.2em] mt-2 bg-slate-50 dark:bg-slate-950 w-fit px-2 py-1 rounded break-all">LOG ID: {auction.id?.slice(0, 8) || 'N/A'}</p>
-          </div>
-
-          <div className="py-4 sm:py-6 border-y border-slate-50 dark:border-slate-800 space-y-3 sm:space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-col items-start gap-1 min-w-0">
-                <span className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider sm:tracking-widest">
-                  {auction.currentHighestBid ? 'Lowest Bid So Far' : 'Open for Bids'}
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 italic truncate w-full">
-                  {auction.currentHighestBid
-                    ? formatCurrency(auction.currentHighestBid)
-                    : '—'}
-                </span>
-                {auction.currentHighestBid && (
-                  <span className="text-[7px] sm:text-[8px] font-bold text-amber-500 dark:text-amber-400 truncate w-full">
-                    Bid lower to win
-                  </span>
-                )}
-                {!auction.currentHighestBid && (
-                  <span className="text-[7px] sm:text-[8px] font-bold text-emerald-500 dark:text-emerald-400 truncate w-full">
-                    Be first — bid your best price
-                  </span>
-                )}
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-[8px] sm:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider sm:tracking-widest block mb-1">Payload</span>
-                <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100">{auction.load?.weight?.toLocaleString() || '0'} KG</span>
-              </div>
-            </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 sm:py-4 px-3 sm:px-5 bg-slate-50/80 dark:bg-slate-950/80 rounded-xl sm:rounded-2xl">
-              <div className="flex-1 min-w-0">
-                <p className="text-[7px] sm:text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider sm:tracking-widest mb-1.5 sm:mb-1">Route Vector</p>
-                <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-col sm:flex-row">
-                  <span className="text-[10px] sm:text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase break-words line-clamp-1" title={getLocationString(auction.load, 'pickup')}>
-                    {getLocationString(auction.load, 'pickup').split(',')[0]}
-                  </span>
-                  <ArrowRight size={10} className="text-slate-300 dark:text-slate-600 shrink-0 rotate-90 sm:rotate-0" />
-                  <span className="text-[10px] sm:text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase break-words line-clamp-1" title={getLocationString(auction.load, 'delivery')}>
-                    {getLocationString(auction.load, 'delivery').split(',')[0]}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="mb-4">
+          <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-blue-400 transition-colors uppercase italic">
+            {auction.load?.title || 'Unknown Cargo'}
+          </h3>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest leading-none">
+            Weight: {(auction.load?.weight ?? 0).toLocaleString()} kg
+          </p>
         </div>
-      </div>
 
-      <div className="px-4 sm:px-8 pb-4 sm:pb-8 pt-3 sm:pt-4 bg-slate-50/30 dark:bg-slate-950/30">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2">
-          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
-            <Clock size={11} className="shrink-0" />
-            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest truncate">{formatDate(auction.auctionEnd)}</span>
+        <div className="mb-4 pt-4 border-t border-slate-50 dark:border-slate-800">
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 leading-none">Route</p>
+          <p className="text-xs font-black text-slate-900 dark:text-slate-100">
+            {getLocationString(auction.load, 'pickup').split(',')[0]}
+            <span className="text-slate-400 dark:text-slate-500 font-bold mx-1.5">→</span>
+            {getLocationString(auction.load, 'delivery').split(',')[0]}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50 dark:border-slate-800">
+          <div>
+            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 leading-none">
+              {auction.currentHighestBid ? 'Lowest Bid' : 'Bid Amount'}
+            </p>
+            <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+              {auction.currentHighestBid ? formatCurrency(auction.currentHighestBid) : '—'}
+            </p>
           </div>
-          <div className="text-left sm:text-right">
-            <span className="text-[9px] sm:text-[10px] font-black text-slate-900 dark:text-slate-100 tracking-tight sm:tracking-tighter">{auction.totalBids} ACTIVE OFFERS</span>
+          <div className="text-right">
+            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 leading-none">Ends</p>
+            <p className="text-[10px] font-black text-slate-900 dark:text-slate-100">{formatDate(auction.auctionEnd)}</p>
           </div>
         </div>
 
         {!isBiddingOpen(auction) && getBidWindow(auction)?.state === 'not_started' && (
-          <div className="mb-3 flex items-start gap-2 rounded-xl border border-amber-100 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-900/20 px-3 py-2">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-100 dark:border-amber-800 bg-amber-50/80 dark:bg-amber-900/20 px-3 py-2">
             <Lock size={12} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-            <p className="text-[9px] sm:text-[10px] font-bold text-amber-700 dark:text-amber-300 leading-snug">
-              Visible now — bidding opens {formatDate(auction.auctionStart)}
+            <p className="text-[10px] font-bold text-amber-700 dark:text-amber-300 leading-snug">
+              Bidding opens {formatDate(auction.auctionStart)}
             </p>
           </div>
         )}
+      </div>
 
-        <div className={`grid gap-2 sm:gap-3 ${userRole === 'BROKER' || !canCreateBid ? 'grid-cols-1' : 'grid-cols-2'}`}>
+      <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => openDetailsModal(auction)}
+          className="flex items-center gap-2 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+        >
+          <Eye size={14} />
+          Details
+        </button>
+        <div className="flex gap-2">
           {userRole !== 'BROKER' && canCreateBid && (
             <button
+              type="button"
               onClick={() => guardBidAction(auction, () => openBidModal(auction))}
               disabled={!isBiddingOpen(auction)}
               title={getBidWindow(auction)?.message}
-              className="py-3 sm:py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-200 dark:hover:border-slate-600 transition-all active:scale-95 truncate disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-slate-800"
+              className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {getBidWindow(auction)?.state === 'not_started' ? 'Opens Soon' : 'Custom'}
+              <Gavel size={14} />
+              {getBidWindow(auction)?.state === 'not_started' ? 'Soon' : 'Bid'}
             </button>
           )}
-          {userRole !== 'BROKER' && !canCreateBid && (
-            <p className="col-span-full text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 text-center">
-              Cargo bidding is currently unavailable. Please contact your administrator for more information.
-            </p>
-          )}
-          <button
-            onClick={() => openDetailsModal(auction)}
-            className="py-3 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-[#345E85] dark:text-blue-400 rounded-xl sm:rounded-2xl text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-[0.15em] hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-100 dark:hover:border-blue-800 transition-all active:scale-95 flex items-center justify-center gap-1.5"
-          >
-            <Eye size={11} className="shrink-0" /> 
-            <span className="truncate">Full Details</span>
-          </button>
         </div>
       </div>
     </div>
@@ -700,8 +812,8 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
   if ((loading || permsLoading) && !isBidUiOpen) {
     return (
       <div className="text-center py-8 sm:py-12">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <p className="mt-3 text-xs sm:text-sm text-gray-600">Loading auctions...</p>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400"></div>
+        <p className="mt-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400">Loading auctions...</p>
       </div>
     );
   }
@@ -710,40 +822,6 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
     <div className="auction-list">
       {renderFilters()}
 
-      {/* View Mode Toggle & Actions */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-black text-[10px] uppercase tracking-wider group"
-        >
-          <Download size={14} className="group-hover:translate-y-0.5 transition-transform" />
-          Export Data
-        </button>
-
-        <div className="flex items-center gap-1 bg-gray-50/50 dark:bg-slate-950/50 p-1 rounded-xl border border-gray-100 dark:border-slate-800 shadow-inner">
-          <button
-            onClick={() => setViewMode('card')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'card'
-              ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-black/5 dark:ring-blue-500/20'
-              : 'text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300'
-              }`}
-          >
-            <Grid size={14} />
-            Cards
-          </button>
-          <button
-            onClick={() => setViewMode('table')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all ${viewMode === 'table'
-              ? 'bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 shadow-sm ring-1 ring-black/5 dark:ring-blue-500/20'
-              : 'text-gray-500 dark:text-slate-500 hover:text-gray-900 dark:hover:text-slate-300'
-              }`}
-          >
-            <Table size={14} />
-            Table
-          </button>
-        </div>
-      </div>
-
       {filters.showWatchedOnly && (
         <div className="bg-red-50/50 border border-red-100 px-4 py-3 rounded-xl mb-6 flex items-center gap-3">
           <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
@@ -751,146 +829,62 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
           </div>
           <div>
             <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">
-              Watched Auctions <span className="text-red-400 font-light ml-2">({boardAuctions.length} total)</span>
+              Watched Auctions <span className="text-red-400 font-light ml-2">({displayedAuctions.length} total)</span>
             </h3>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-100 p-4 rounded-xl mb-6 flex items-center gap-3">
-          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-            <AlertCircle className="text-red-600" size={18} />
+        <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-lg p-3 sm:p-4 mb-3 sm:mb-6">
+          <div className="flex items-start sm:items-center">
+            <div className="flex-shrink-0 mt-0.5 sm:mt-0">
+              <AlertCircle className="text-red-400 dark:text-red-500" size={18} />
+            </div>
+            <div className="ml-2 flex-1 min-w-0">
+              <h3 className="text-xs sm:text-sm font-medium text-red-800 dark:text-red-400 break-words">{error}</h3>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xs font-black text-red-900 uppercase tracking-tight italic">{error}</h3>
-          </div>
-          <button
-            onClick={() => setError(null)}
-            className="p-1 text-red-400 hover:text-red-600 rounded-lg transition-colors border border-red-100 rounded-lg"
-          >
-            <X size={16} />
-          </button>
         </div>
       )}
 
-      {boardAuctions.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
-          <div className="flex items-center gap-2">
-            <Gavel className="text-gray-400 flex-shrink-0" />
-            <span className="text-xs sm:text-sm text-gray-800 break-words">
-              No available auctions right now. New live and scheduled auctions in your tenant will show here.
-            </span>
+      {displayedAuctions.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center uppercase tracking-widest">
+          <div className="w-16 h-16 bg-slate-50 dark:bg-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Gavel size={24} className="text-slate-400 dark:text-slate-600" />
           </div>
+          <p className="text-[10px] font-black text-slate-700 dark:text-slate-300">
+            No available auctions
+          </p>
+          <p className="mt-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 normal-case tracking-normal">
+            New live and scheduled auctions in your tenant will show here.
+          </p>
         </div>
       ) : (
         <>
-          {viewMode === 'card' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {boardAuctions.map(renderAuctionCard)}
-            </div>
-          ) : (
-            <StandardDataTable
+          {viewMode === 'table' ? (
+            <StandardDataTable<Auction>
               embedded
-              data={boardAuctions}
-              getRowId={(a) => a.id}
-              searchable={false}
-              pagination={false}
+              columns={tableColumns}
+              data={displayedAuctions}
+              getRowId={(row) => row.id}
+              searchable
+              searchPlaceholder="Search auctions…"
+              searchKeys={['id', 'status', 'load.title']}
+              pagination
+              pageSize={10}
+              columnVisibility
+              stickyHeader
+              striped
+              hoverable
               emptyMessage="No auctions found matching your criteria."
-              columns={[
-                {
-                  key: 'load',
-                  label: 'Auction / Load',
-                  render: (_: any, auction: Auction) => (
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-gray-900 dark:bg-slate-950 rounded-xl flex items-center justify-center shrink-0">
-                        <Gavel size={18} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-gray-900 dark:text-slate-100 leading-tight">{auction.load?.title || 'Unknown Cargo'}</p>
-                        <div className="mt-1">{getStatusBadge(auction.status)}</div>
-                      </div>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'route',
-                  label: 'Route',
-                  render: (_: any, auction: Auction) => (
-                    <div className="flex flex-col">
-                      <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'pickup')}</span>
-                      <span className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tight italic">to</span>
-                      <span className="text-xs font-black text-gray-900 dark:text-slate-100">{getLocationString(auction.load, 'delivery')}</span>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'weight',
-                  label: 'Type / weight',
-                  render: (_: any, auction: Auction) => (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-black text-gray-900 dark:text-slate-100">{auction.load?.weight?.toLocaleString() || '0'} kg</span>
-                      <div>{getAuctionTypeBadge(auction.auctionType)}</div>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'currentHighestBid',
-                  label: 'Current Bid',
-                  render: (_: any, auction: Auction) => (
-                    <div>
-                      {auction.currentHighestBid ? (
-                        <>
-                          <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(auction.currentHighestBid)}</div>
-                          <div className="text-[9px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-tight mt-0.5">Lowest so far — bid lower</div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="text-sm font-black text-slate-400 dark:text-slate-500 italic">No bids yet</div>
-                          <div className="text-[9px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-tight mt-0.5">Be first — bid your best</div>
-                        </>
-                      )}
-                      <div className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter mt-0.5">{auction.totalBids} total bids</div>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'auctionEnd',
-                  label: 'Time Left',
-                  render: (end: string) => (
-                    <div className="flex items-center gap-2 text-gray-500 dark:text-slate-500">
-                      <Clock size={12} />
-                      <span className="text-[10px] font-black uppercase tracking-tight">{formatDate(end)}</span>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'actions',
-                  label: 'Action',
-                  align: 'right',
-                  render: (_: any, auction: Auction) => (
-                    <div className="flex items-center justify-end gap-2">
-                      {userRole !== 'BROKER' && canCreateBid && (
-                        <button
-                          onClick={() => guardBidAction(auction, () => openBidModal(auction))}
-                          disabled={!isBiddingOpen(auction)}
-                          title={getBidWindow(auction)?.message}
-                          className="px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all bg-slate-900 text-white hover:bg-black shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-900"
-                        >
-                          <Gavel size={14} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => openDetailsModal(auction)}
-                        className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-[#345E85] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all"
-                      >
-                        <Eye size={16} />
-                      </button>
-                    </div>
-                  ),
-                },
-              ] as Column<Auction>[]}
+              rowActions={tableActions}
+              ariaLabel="Available auctions"
             />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayedAuctions.map(renderAuctionCard)}
+            </div>
           )}
         </>
       )}

@@ -16,6 +16,28 @@ export enum OperationalTripPhase {
 
 export type AvailabilityTimeSource = 'PLANNED' | 'ACTUAL' | 'ESTIMATED';
 
+/**
+ * Scheduling fields only. findOne() without select expands to every Trip column
+ * (delayReason, currentLocation geometry, ratings) and 500s when production
+ * schema lags the entity. These columns are sufficient for occupancy windows.
+ */
+export const AVAILABILITY_TRIP_SELECT: (keyof Trip)[] = [
+  'id',
+  'loadId',
+  'truckId',
+  'driverId',
+  'tripNumber',
+  'status',
+  'plannedStartTime',
+  'plannedEndTime',
+  'actualStartTime',
+  'actualEndTime',
+  'estimatedEndTime',
+  'estimatedArrival',
+  'eta',
+  'completedAt',
+];
+
 export interface EffectiveAvailabilityWindow {
   pickupDateTime: Date;
   deliveryDateTime: Date;

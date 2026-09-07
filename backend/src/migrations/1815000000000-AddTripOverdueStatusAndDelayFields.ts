@@ -1,5 +1,10 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
+/**
+ * Production migrate.js applies backend/migrations/*.sql (see 089).
+ * This TypeORM migration covers environments that run src/migrations instead.
+ * Fully idempotent — safe if 089 already applied the same schema.
+ */
 export class AddTripOverdueStatusAndDelayFields1815000000000
   implements MigrationInterface
 {
@@ -8,7 +13,17 @@ export class AddTripOverdueStatusAndDelayFields1815000000000
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       DO $$ BEGIN
-        ALTER TYPE "public"."trips_status_enum" ADD VALUE IF NOT EXISTS 'OVERDUE';
+        IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'trips_status_enum') THEN
+          ALTER TYPE "public"."trips_status_enum" ADD VALUE IF NOT EXISTS 'OVERDUE';
+        END IF;
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+    `);
+    await queryRunner.query(`
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'trip_status') THEN
+          ALTER TYPE "public"."trip_status" ADD VALUE IF NOT EXISTS 'OVERDUE';
+        END IF;
       EXCEPTION WHEN duplicate_object THEN NULL;
       END $$;
     `);

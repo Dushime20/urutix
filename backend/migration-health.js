@@ -115,6 +115,13 @@ const MIGRATION_HEALTH = {
       return indexExists(client, 'idx_auctions_type_status');
     },
   },
+  '089_add_trip_overdue_status_and_delay_fields.sql': {
+    description: 'trips.delayReason and OVERDUE status for availability/delay reporting',
+    verify: async (client) => {
+      if (!(await tableExists(client, 'trips'))) return true;
+      return columnExists(client, 'trips', 'delayReason');
+    },
+  },
   '058_create_cargo_inspections.sql': {
     description: 'cargo_inspections table for delivery and pre-trip inspections',
     verify: async (client) => {

@@ -18,6 +18,7 @@ import {
   TruckAvailabilityEngine,
   EffectiveAvailabilityWindow,
   OperationalTripPhase,
+  AVAILABILITY_TRIP_SELECT,
 } from './services/truck-availability.engine';
 import { DriverSchedulingGuardService } from './services/driver-scheduling-guard.service';
 
@@ -203,7 +204,7 @@ export class AvailabilityService {
     let currentLoad: Load | null = null;
 
     if (truck.currentTripId) {
-      currentTrip = await this.tripRepo.findOne({ where: { id: truck.currentTripId } });
+      currentTrip = await this.loadTripForScheduling(truck.currentTripId);
       if (currentTrip?.loadId) {
         currentLoad = await this.loadRepo.findOne({ where: { id: currentTrip.loadId } });
       }
@@ -276,7 +277,7 @@ export class AvailabilityService {
       if (excludeTripId && reservation.tripId === excludeTripId) continue;
 
       const [trip, load] = await Promise.all([
-        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
+        this.loadTripForScheduling(reservation.tripId),
         this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
       ]);
 
@@ -461,7 +462,7 @@ export class AvailabilityService {
     const truck = await this.truckRepo.findOne({ where: { id: truckId } });
     if (!truck?.currentTripId || !newLoad) return;
 
-    const currentTrip = await this.tripRepo.findOne({ where: { id: truck.currentTripId } });
+    const currentTrip = await this.loadTripForScheduling(truck.currentTripId);
     if (!currentTrip) return;
 
     const previousLoad = await this.loadRepo.findOne({ where: { id: currentTrip.loadId } });
@@ -493,7 +494,7 @@ export class AvailabilityService {
    * Called on trip start, delivery, completion, cancellation, and schedule changes.
    */
   async reconcileReservationForTrip(tripId: string, reason: string): Promise<void> {
-    const trip = await this.tripRepo.findOne({ where: { id: tripId } });
+    const trip = await this.loadTripForScheduling(tripId);
     if (!trip) return;
 
     const load = trip.loadId
@@ -730,7 +731,7 @@ export class AvailabilityService {
 
     for (const reservation of activeReservations) {
       const [trip, load] = await Promise.all([
-        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
+        this.loadTripForScheduling(reservation.tripId),
         this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
       ]);
 
@@ -777,7 +778,7 @@ export class AvailabilityService {
       if (!reservation.driverId) continue;
 
       const [trip, load] = await Promise.all([
-        this.tripRepo.findOne({ where: { id: reservation.tripId } }),
+        this.loadTripForScheduling(reservation.tripId),
         this.loadRepo.findOne({ where: { id: reservation.cargoId } }),
       ]);
 
@@ -853,6 +854,7 @@ export class AvailabilityService {
   async backfillReservationsFromTrips(tenantId: string): Promise<number> {
     const activeTrips = await this.tripRepo.find({
       where: { tenantId, status: In(ACTIVE_STATUSES) },
+      select: AVAILABILITY_TRIP_SELECT,
     });
 
     let created = 0;
@@ -881,6 +883,14 @@ export class AvailabilityService {
 
     this.logger.log(`Backfill complete for tenant ${tenantId}: created ${created} reservations`);
     return created;
+  }
+
+  /** Occupancy window fields only — never SELECT delay/geometry columns. */
+  private loadTripForScheduling(id: string): Promise<Trip | null> {
+    return this.tripRepo.findOne({
+      where: { id },
+      select: AVAILABILITY_TRIP_SELECT,
+    });
   }
 
   /**

@@ -11,6 +11,7 @@ import {
 import {
   TruckAvailabilityEngine,
   EffectiveAvailabilityWindow,
+  AVAILABILITY_TRIP_SELECT,
 } from './truck-availability.engine';
 
 /** Trip statuses that reserve a driver's schedule until completed or cancelled. */
@@ -123,6 +124,7 @@ export class DriverSchedulingGuardService {
         status: In([TripStatus.IN_PROGRESS, TripStatus.OVERDUE]),
         id: Not(tripId),
       },
+      select: AVAILABILITY_TRIP_SELECT,
     });
 
     if (otherInProgress) {
@@ -133,7 +135,10 @@ export class DriverSchedulingGuardService {
       );
     }
 
-    const trip = await this.tripRepo.findOne({ where: { id: tripId, tenantId } });
+    const trip = await this.tripRepo.findOne({
+      where: { id: tripId, tenantId },
+      select: AVAILABILITY_TRIP_SELECT,
+    });
     if (!trip?.plannedStartTime || !trip.plannedEndTime) return;
 
     const conflict = await this.findDriverConflict({
@@ -212,6 +217,7 @@ export class DriverSchedulingGuardService {
         status: In(SCHEDULE_BLOCKING_STATUSES),
         ...(excludeTripId ? { id: Not(excludeTripId) } : {}),
       },
+      select: AVAILABILITY_TRIP_SELECT,
     });
 
     for (const trip of activeTrips) {
@@ -235,7 +241,7 @@ export class DriverSchedulingGuardService {
     reservation?: ShipmentReservation,
   ): Promise<DriverConflictDetail | null> {
     const [trip, load] = await Promise.all([
-      this.tripRepo.findOne({ where: { id: tripId } }),
+      this.tripRepo.findOne({ where: { id: tripId }, select: AVAILABILITY_TRIP_SELECT }),
       this.loadRepo.findOne({ where: { id: cargoId } }),
     ]);
 
