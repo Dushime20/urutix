@@ -70,6 +70,15 @@ describe('Airbnb leftover capacity — Kigali → Nairobi 40% empty', () => {
     expect(hardFilterOffer(leftover40, query)).toMatch(/corridor/i);
   });
 
+  it('filters by pickup location alone when delivery is omitted', () => {
+    expect(corridorOverlaps(leftover40, { origin: kigali })).toBe(true);
+    expect(corridorOverlaps(leftover40, { origin: kampala })).toBe(false);
+  });
+
+  it('keeps leftover listings when no pickup or delivery is provided', () => {
+    expect(corridorOverlaps(leftover40, {})).toBe(true);
+  });
+
   it('rejects a booking larger than remaining space', () => {
     expect(fitsRemaining(11_200, 30.4, 12_000, 10)).toBe(false);
     expect(

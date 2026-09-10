@@ -6,8 +6,8 @@ export interface CapacityPlace {
   country?: string;
   countryCode?: string;
   address?: string;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
 }
 
 export interface CapacityQuote {
@@ -124,6 +124,11 @@ const unwrap = <T>(payload: any): T => {
   return payload as T;
 };
 
+const compactParams = (params: Record<string, any>) =>
+  Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+  );
+
 export const capacityApi = {
   searchCities: (q: string) =>
     api.get('/capacity/cities', { params: { q } }).then((r) => {
@@ -148,7 +153,7 @@ export const capacityApi = {
     api.patch(`/capacity/offers/${id}`, payload).then((r) => unwrap<CapacityOffer>(r.data)),
   closeOffer: (id: string) => api.post(`/capacity/offers/${id}/close`).then((r) => unwrap(r.data)),
   marketplace: (params: Record<string, any>) =>
-    api.get('/capacity/marketplace', { params }).then((r) => {
+    api.get('/capacity/marketplace', { params: compactParams(params) }).then((r) => {
       const data = unwrap<CapacityOffer[]>(r.data);
       return Array.isArray(data) ? data : [];
     }),

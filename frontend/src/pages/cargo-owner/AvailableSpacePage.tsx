@@ -24,14 +24,44 @@ const apiError = (err: any, fallback: string) =>
 const inputClass =
   'w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent';
 
+const finiteNumber = (value: string | null) => {
+  if (value == null || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+};
+
+const toDatetimeLocal = (value: string | null) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value.length >= 16 ? value.slice(0, 16) : value;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const placeFromQuery = (params: URLSearchParams, side: 'pickup' | 'delivery'): CapacityPlace | null => {
+  const city =
+    side === 'pickup'
+      ? params.get('pickupLocation') || params.get('originCity') || params.get('pickupCity')
+      : params.get('deliveryLocation') || params.get('destinationCity') || params.get('deliveryCity');
+  const lat = finiteNumber(params.get(side === 'pickup' ? 'originLat' : 'destinationLat'));
+  const lng = finiteNumber(params.get(side === 'pickup' ? 'originLng' : 'destinationLng'));
+  if (!city && lat == null && lng == null) return null;
+  return {
+    name: city || '',
+    city: city || undefined,
+    lat,
+    lng,
+  };
+};
+
 const CityField: React.FC<{
   label: string;
   value?: CapacityPlace | null;
   onChange: (place: CapacityPlace | null) => void;
 }> = ({ label, value, onChange }) => {
-  const [q, setQ] = useState(value?.name || '');
+  const [q, setQ] = useState(value?.name || value?.city || '');
   const [hits, setHits] = useState<any[]>([]);
-  useEffect(() => setQ(value?.name || ''), [value?.name]);
+  useEffect(() => setQ(value?.name || value?.city || ''), [value?.name, value?.city]);
   useEffect(() => {
     if (q.trim().length < 2) {
       setHits([]);
@@ -42,6 +72,18 @@ const CityField: React.FC<{
     }, 250);
     return () => window.clearTimeout(t);
   }, [q]);
+  const commitTyped = (next: string) => {
+    setQ(next);
+    const trimmed = next.trim();
+    if (trimmed.length < 2) {
+      onChange(null);
+      return;
+    }
+    onChange({
+      name: trimmed,
+      city: trimmed,
+    });
+  };
   return (
     <label className="block relative">
       <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{label}</span>
@@ -49,15 +91,12 @@ const CityField: React.FC<{
         <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={q}
-          onChange={(e) => {
-            setQ(e.target.value);
-            if (value) onChange(null);
-          }}
+          onChange={(e) => commitTyped(e.target.value)}
           placeholder="Search any city worldwide"
           className={`${inputClass} pl-9`}
         />
       </div>
-      {hits.length > 0 && !value && (
+      {hits.length > 0 && !(value?.lat != null && q.trim() === (value.name || value.city || '')) && (
         <ul className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg overflow-hidden">
           {hits.map((city) => (
             <li key={`${city.name}-${city.lat}`}>
@@ -92,9 +131,9 @@ const AvailableSpacePage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { compact } = useCurrencyFormat();
-  const [origin, setOrigin] = useState<CapacityPlace | null>(null);
-  const [destination, setDestination] = useState<CapacityPlace | null>(null);
-  const [pickupAt, setPickupAt] = useState('');
+  const [origin, setOrigin] = useState<CapacityPlace | null>(() => placeFromQuery(params, 'pickup'));
+  const [destination, setDestination] = useState<CapacityPlace | null>(() => placeFromQuery(params, 'delivery'));
+  const [pickupAt, setPickupAt] = useState(() => toDatetimeLocal(params.get('pickupAt')));
   const [weightKg, setWeightKg] = useState(Number(params.get('weightKg')) || 4000);
   const [volumeM3, setVolumeM3] = useState(Number(params.get('volumeM3')) || 10);
   const [title, setTitle] = useState(params.get('title') || 'General cargo');
@@ -108,21 +147,29 @@ const AvailableSpacePage: React.FC = () => {
 
   const loadId = params.get('loadId') || undefined;
 
+  const marketplaceParams = () => {
+    const pickupLocation = origin?.name || origin?.city || origin?.address;
+    const deliveryLocation = destination?.name || destination?.city || destination?.address;
+    return {
+      pickupLocation,
+      deliveryLocation,
+      originCity: pickupLocation,
+      destinationCity: deliveryLocation,
+      originLat: origin?.lat,
+      originLng: origin?.lng,
+      destinationLat: destination?.lat,
+      destinationLng: destination?.lng,
+      pickupAt: pickupAt ? new Date(pickupAt).toISOString() : undefined,
+      weightKg,
+      volumeM3,
+      loadId,
+    };
+  };
+
   const search = async () => {
     setSearching(true);
     try {
-      const rows = await capacityApi.marketplace({
-        originCity: origin?.name || origin?.city,
-        destinationCity: destination?.name || destination?.city,
-        originLat: origin?.lat,
-        originLng: origin?.lng,
-        destinationLat: destination?.lat,
-        destinationLng: destination?.lng,
-        pickupAt: pickupAt ? new Date(pickupAt).toISOString() : undefined,
-        weightKg,
-        volumeM3,
-        loadId,
-      });
+      const rows = await capacityApi.marketplace(marketplaceParams());
       setOffers(rows);
       if (!rows.length) toast('No leftover space on that corridor yet', { icon: '📦' });
     } catch (err: any) {
@@ -134,7 +181,7 @@ const AvailableSpacePage: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([capacityApi.marketplace({ weightKg, volumeM3, loadId }), capacityApi.bookings()])
+    Promise.all([capacityApi.marketplace(marketplaceParams()), capacityApi.bookings()])
       .then(([rows, mine]) => {
         if (cancelled) return;
         setOffers(rows);
@@ -181,7 +228,7 @@ const AvailableSpacePage: React.FC = () => {
       setActive(null);
       setQuote(null);
       const [rows, mine] = await Promise.all([
-        capacityApi.marketplace({ weightKg, volumeM3, loadId }),
+        capacityApi.marketplace(marketplaceParams()),
         capacityApi.bookings(),
       ]);
       setOffers(rows);

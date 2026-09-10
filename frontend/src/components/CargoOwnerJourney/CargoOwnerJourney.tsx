@@ -196,11 +196,27 @@ const CargoOwnerJourney: React.FC = () => {
 
   const handleJourneySelection = (journey: 'smart-matching' | 'publish-bid' | 'assign-broker' | 'book-space') => {
     if (journey === 'book-space') {
-      const qs = new URLSearchParams({
-        loadId: cargoDetails?.id || '',
-        weightKg: String(cargoDetails?.weight || ''),
-        title: cargoDetails?.title || '',
-      });
+      const qs = new URLSearchParams();
+      if (cargoDetails?.id) qs.set('loadId', cargoDetails.id);
+      if (cargoDetails?.weight) qs.set('weightKg', String(cargoDetails.weight));
+      if (cargoDetails?.title) qs.set('title', cargoDetails.title);
+      const pickup = cargoDetails?.pickupLocation;
+      const delivery = cargoDetails?.deliveryLocation;
+      const pickupName = pickup?.city || pickup?.address;
+      const deliveryName = delivery?.city || delivery?.address;
+      if (pickupName) {
+        qs.set('pickupLocation', pickupName);
+        qs.set('originCity', pickupName);
+      }
+      if (deliveryName) {
+        qs.set('deliveryLocation', deliveryName);
+        qs.set('destinationCity', deliveryName);
+      }
+      if (pickup?.coordinates?.lat != null) qs.set('originLat', String(pickup.coordinates.lat));
+      if (pickup?.coordinates?.lng != null) qs.set('originLng', String(pickup.coordinates.lng));
+      if (delivery?.coordinates?.lat != null) qs.set('destinationLat', String(delivery.coordinates.lat));
+      if (delivery?.coordinates?.lng != null) qs.set('destinationLng', String(delivery.coordinates.lng));
+      if (cargoDetails?.pickupDate) qs.set('pickupAt', cargoDetails.pickupDate);
       navigate(`/dashboard/available-space?${qs.toString()}`);
       return;
     }

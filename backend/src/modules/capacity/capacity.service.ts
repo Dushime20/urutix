@@ -449,7 +449,7 @@ export class CapacityService implements OnModuleInit {
         const quote = hasSlice ? this.quoteFromOffer(offer, search.weightKg, search.volumeM3 || 0) : null;
         return { ...card, matchScore: score, matchReason: reason, quote, bookable: !reason };
       })
-      .filter((row) => row.matchScore > 0 || (!query.originCity && !query.destinationCity && !search.weightKg))
+      .filter((row) => row.matchScore > 0 || (!search.origin && !search.destination && !search.weightKg))
       .sort((a, b) => b.matchScore - a.matchScore);
   }
 
@@ -898,14 +898,16 @@ export class CapacityService implements OnModuleInit {
   }
 
   private async toSearchQuery(query: SearchCapacityDto, tenantId: string): Promise<SearchQuery> {
+    const originCity = query.originCity || query.pickupLocation || query.pickupCity;
+    const destinationCity = query.destinationCity || query.deliveryLocation || query.deliveryCity;
     let origin: any = query.originLat && query.originLng
-      ? { name: query.originCity || '', city: query.originCity, lat: query.originLat, lng: query.originLng }
+      ? { name: originCity || '', city: originCity, lat: query.originLat, lng: query.originLng }
       : null;
     let destination: any = query.destinationLat && query.destinationLng
-      ? { name: query.destinationCity || '', city: query.destinationCity, lat: query.destinationLat, lng: query.destinationLng }
+      ? { name: destinationCity || '', city: destinationCity, lat: query.destinationLat, lng: query.destinationLng }
       : null;
-    if (!origin && query.originCity) origin = { name: query.originCity, city: query.originCity };
-    if (!destination && query.destinationCity) destination = { name: query.destinationCity, city: query.destinationCity };
+    if (!origin && originCity) origin = { name: originCity, city: originCity };
+    if (!destination && destinationCity) destination = { name: destinationCity, city: destinationCity };
 
     let weightKg = query.weightKg || 0;
     let volumeM3 = query.volumeM3 || 0;

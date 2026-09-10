@@ -150,11 +150,34 @@ const EnhancedJourneyFlow: React.FC = () => {
 
   const handleJourneySelection = (journey: 'smart-matching' | 'publish-bid' | 'book-space') => {
     if (journey === 'book-space') {
-      const qs = new URLSearchParams({
-        loadId: cargoData?.id || '',
-        weightKg: String((cargoData as any)?.weight || ''),
-        title: (cargoData as any)?.title || '',
-      });
+      const qs = new URLSearchParams();
+      const cargo: any = cargoData;
+      if (cargo?.id) qs.set('loadId', cargo.id);
+      if (cargo?.weight) qs.set('weightKg', String(cargo.weight));
+      if (cargo?.title) qs.set('title', cargo.title);
+      const pickupLoc = cargo?.locations?.find((l: any) => l.type === 'PICKUP')?.locationData;
+      const deliveryLoc = cargo?.locations?.find((l: any) => l.type === 'DELIVERY')?.locationData;
+      const pickup = cargo?.pickupLocation || pickupLoc || cargo?.origin;
+      const delivery = cargo?.deliveryLocation || deliveryLoc || cargo?.destination;
+      const pickupName = pickup?.city || pickup?.name || pickup?.address;
+      const deliveryName = delivery?.city || delivery?.name || delivery?.address;
+      if (pickupName) {
+        qs.set('pickupLocation', String(pickupName));
+        qs.set('originCity', String(pickupName));
+      }
+      if (deliveryName) {
+        qs.set('deliveryLocation', String(deliveryName));
+        qs.set('destinationCity', String(deliveryName));
+      }
+      const pLat = pickup?.coordinates?.lat ?? pickup?.coordinates?.latitude ?? pickup?.lat;
+      const pLng = pickup?.coordinates?.lng ?? pickup?.coordinates?.longitude ?? pickup?.lng;
+      const dLat = delivery?.coordinates?.lat ?? delivery?.coordinates?.latitude ?? delivery?.lat;
+      const dLng = delivery?.coordinates?.lng ?? delivery?.coordinates?.longitude ?? delivery?.lng;
+      if (pLat != null && pLat !== '') qs.set('originLat', String(pLat));
+      if (pLng != null && pLng !== '') qs.set('originLng', String(pLng));
+      if (dLat != null && dLat !== '') qs.set('destinationLat', String(dLat));
+      if (dLng != null && dLng !== '') qs.set('destinationLng', String(dLng));
+      if (cargo?.pickupDate) qs.set('pickupAt', cargo.pickupDate);
       navigate(`/dashboard/available-space?${qs.toString()}`);
       return;
     }

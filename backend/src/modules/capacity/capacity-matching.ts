@@ -156,7 +156,12 @@ export const pointsMatch = (
 export const corridorOverlaps = (
   offer: Pick<OfferMatchInput, 'origin' | 'destination'>,
   query: Pick<SearchQuery, 'origin' | 'destination'>,
-): boolean => pointsMatch(offer.origin, query.origin) && pointsMatch(offer.destination, query.destination);
+): boolean => {
+  if (!query.origin && !query.destination) return true;
+  if (query.origin && !pointsMatch(offer.origin, query.origin)) return false;
+  if (query.destination && !pointsMatch(offer.destination, query.destination)) return false;
+  return true;
+};
 
 export const windowsOverlap = (
   departureAt: string | Date,

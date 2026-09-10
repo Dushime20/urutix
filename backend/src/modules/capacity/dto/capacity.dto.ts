@@ -191,6 +191,28 @@ export class SearchCapacityDto {
   @MaxLength(120)
   destinationCity?: string;
 
+  @ApiPropertyOptional({ description: 'Pickup city or address (alias of originCity)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  pickupLocation?: string;
+
+  @ApiPropertyOptional({ description: 'Delivery city or address (alias of destinationCity)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  deliveryLocation?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  pickupCity?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  deliveryCity?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
