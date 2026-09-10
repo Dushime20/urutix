@@ -58,6 +58,7 @@ import {
   suggestListedRemainder,
   tripWindowsOverlap,
   utilizationPercent,
+  windowsOverlap,
   type OfferMatchInput,
   type SearchQuery,
 } from './capacity-matching';
@@ -447,6 +448,8 @@ export class CapacityService implements OnModuleInit {
     });
     const trucks = await this.findTrucksByIds(tenantId, offers.map((o) => o.truckId));
     const search = await this.toSearchQuery(query, tenantId);
+    const browse =
+      !search.origin && !search.destination && !search.weightKg && !search.pickupAt;
     return offers
       .map((offer) => {
         const truck = trucks.find((t) => t.id === offer.truckId);
@@ -454,13 +457,25 @@ export class CapacityService implements OnModuleInit {
         const input = this.toMatchInput(offer);
         const hasSlice = Boolean(search.weightKg);
         const corridorOk = corridorOverlaps(input, search);
-        const reason = hasSlice ? hardFilterOffer(input, search) : corridorOk ? null : 'Cargo pickup/delivery are not on this truck working route';
-        const score = hasSlice ? scoreOffer(input, search) : corridorOk ? 70 : 0;
+        const windowOk = windowsOverlap(input.departureAt, input.arrivalAt, search.pickupAt);
+        const reason = browse
+          ? null
+          : hasSlice
+            ? hardFilterOffer(input, search)
+            : !corridorOk
+              ? 'Cargo pickup/delivery are not on this truck working route'
+              : !windowOk
+                ? 'Pickup window does not overlap the truck departure'
+                : null;
+        const score = browse ? 0 : hasSlice ? scoreOffer(input, search) : reason ? 0 : 70;
         const quote = hasSlice ? this.quoteFromOffer(offer, search.weightKg, search.volumeM3 || 0) : null;
         return { ...card, matchScore: score, matchReason: reason, quote, bookable: !reason };
       })
-      .filter((row) => row.matchScore > 0 || (!search.origin && !search.destination && !search.weightKg))
-      .sort((a, b) => b.matchScore - a.matchScore);
+      .filter((row) => browse || row.bookable)
+      .sort((a, b) => {
+        if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+        return new Date(a.departureAt).getTime() - new Date(b.departureAt).getTime();
+      });
   }
 
   async quote(offerId: string, dto: QuoteCapacityDto, tenantId: string) {

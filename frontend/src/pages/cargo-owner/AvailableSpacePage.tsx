@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../../components/translated-text';
 import {
@@ -127,6 +127,21 @@ const CityField: React.FC<{
   );
 };
 
+const formatWhen = (iso?: string | null) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+};
+
+const formatWindow = (from?: string | null, to?: string | null) => {
+  if (!from && !to) return '—';
+  return `${formatWhen(from)} → ${formatWhen(to)}`;
+};
+
 const AvailableSpacePage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -134,10 +149,12 @@ const AvailableSpacePage: React.FC = () => {
   const [origin, setOrigin] = useState<CapacityPlace | null>(() => placeFromQuery(params, 'pickup'));
   const [destination, setDestination] = useState<CapacityPlace | null>(() => placeFromQuery(params, 'delivery'));
   const [pickupAt, setPickupAt] = useState(() => toDatetimeLocal(params.get('pickupAt')));
-  const [weightKg, setWeightKg] = useState(Number(params.get('weightKg')) || 4000);
-  const [volumeM3, setVolumeM3] = useState(Number(params.get('volumeM3')) || 10);
+  const [weightKg, setWeightKg] = useState(Number(params.get('weightKg')) || 0);
+  const [volumeM3, setVolumeM3] = useState(Number(params.get('volumeM3')) || 0);
   const [title, setTitle] = useState(params.get('title') || 'General cargo');
+  const [catalog, setCatalog] = useState<CapacityOffer[]>([]);
   const [offers, setOffers] = useState<CapacityOffer[]>([]);
+  const [filtered, setFiltered] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -160,18 +177,40 @@ const AvailableSpacePage: React.FC = () => {
       destinationLat: destination?.lat,
       destinationLng: destination?.lng,
       pickupAt: pickupAt ? new Date(pickupAt).toISOString() : undefined,
-      weightKg,
-      volumeM3,
+      weightKg: weightKg > 0 ? weightKg : undefined,
+      volumeM3: volumeM3 > 0 ? volumeM3 : undefined,
       loadId,
     };
   };
 
+  const hasSearchFilters = () =>
+    Boolean(
+      origin?.name ||
+        origin?.city ||
+        destination?.name ||
+        destination?.city ||
+        pickupAt ||
+        weightKg > 0 ||
+        volumeM3 > 0 ||
+        loadId,
+    );
+
+  const showCatalog = (rows: CapacityOffer[]) => {
+    setOffers(rows);
+    setFiltered(false);
+  };
+
   const search = async () => {
+    if (!hasSearchFilters()) {
+      showCatalog(catalog);
+      return;
+    }
     setSearching(true);
     try {
       const rows = await capacityApi.marketplace(marketplaceParams());
       setOffers(rows);
-      if (!rows.length) toast('No leftover space on that corridor yet', { icon: '📦' });
+      setFiltered(true);
+      if (!rows.length) toast('No leftover space matches these filters', { icon: '📦' });
     } catch (err: any) {
       toast.error(apiError(err, 'Could not search leftover space'));
     } finally {
@@ -179,13 +218,30 @@ const AvailableSpacePage: React.FC = () => {
     }
   };
 
+  const clearFilters = () => {
+    setOrigin(null);
+    setDestination(null);
+    setPickupAt('');
+    setWeightKg(0);
+    setVolumeM3(0);
+    showCatalog(catalog);
+  };
+
   useEffect(() => {
     let cancelled = false;
-    Promise.all([capacityApi.marketplace(marketplaceParams()), capacityApi.bookings()])
-      .then(([rows, mine]) => {
+    Promise.all([capacityApi.marketplace({}), capacityApi.bookings()])
+      .then(async ([rows, mine]) => {
         if (cancelled) return;
-        setOffers(rows);
+        setCatalog(rows);
         setBookings(mine);
+        if (hasSearchFilters()) {
+          const matched = await capacityApi.marketplace(marketplaceParams());
+          if (cancelled) return;
+          setOffers(matched);
+          setFiltered(true);
+        } else {
+          showCatalog(rows);
+        }
       })
       .catch((err) => toast.error(apiError(err, 'Could not load available space')))
       .finally(() => {
@@ -197,6 +253,10 @@ const AvailableSpacePage: React.FC = () => {
   }, []);
 
   const openQuote = async (offer: CapacityOffer) => {
+    if (weightKg <= 0) {
+      toast.error('Enter cargo weight to book leftover space on this trip');
+      return;
+    }
     try {
       const priced = await capacityApi.quote(offer.id, { weightKg, volumeM3, cargoType: 'GENERAL' });
       setActive(offer);
@@ -227,11 +287,14 @@ const AvailableSpacePage: React.FC = () => {
       );
       setActive(null);
       setQuote(null);
-      const [rows, mine] = await Promise.all([
-        capacityApi.marketplace(marketplaceParams()),
+      const [rows, mine, all] = await Promise.all([
+        hasSearchFilters() ? capacityApi.marketplace(marketplaceParams()) : capacityApi.marketplace({}),
         capacityApi.bookings(),
+        capacityApi.marketplace({}),
       ]);
+      setCatalog(all);
       setOffers(rows);
+      setFiltered(hasSearchFilters());
       setBookings(mine);
     } catch (err: any) {
       toast.error(apiError(err, 'Could not book leftover space'));
@@ -265,6 +328,9 @@ const AvailableSpacePage: React.FC = () => {
 
       <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 md:p-8 space-y-5 shadow-sm">
         <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Find leftover space</h2>
+        <p className="text-xs text-slate-500">
+          All leftover trips are listed below. Use these filters to narrow the list, or pick a trip as it is.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <CityField label="Pickup city" value={origin} onChange={setOrigin} />
           <CityField label="Delivery city" value={destination} onChange={setDestination} />
@@ -278,28 +344,47 @@ const AvailableSpacePage: React.FC = () => {
           </label>
           <label>
             <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Weight kg</span>
-            <input type="number" min={1} value={weightKg} onChange={(e) => setWeightKg(Number(e.target.value) || 0)} className={inputClass} />
+            <input type="number" min={1} value={weightKg || ''} onChange={(e) => setWeightKg(Number(e.target.value) || 0)} className={inputClass} placeholder="Optional filter" />
           </label>
           <label>
             <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Volume m³</span>
-            <input type="number" min={0} step={0.1} value={volumeM3} onChange={(e) => setVolumeM3(Number(e.target.value) || 0)} className={inputClass} />
+            <input type="number" min={0} step={0.1} value={volumeM3 || ''} onChange={(e) => setVolumeM3(Number(e.target.value) || 0)} className={inputClass} placeholder="Optional filter" />
           </label>
         </div>
-        <button
-          type="button"
-          onClick={search}
-          disabled={searching}
-          className="px-6 py-3 rounded-xl bg-[#345E85] text-white text-sm font-black uppercase tracking-widest disabled:opacity-50"
-        >
-          {searching ? 'Searching…' : 'Search leftover space'}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={search}
+            disabled={searching}
+            className="px-6 py-3 rounded-xl bg-[#345E85] text-white text-sm font-black uppercase tracking-widest disabled:opacity-50"
+          >
+            {searching ? 'Searching…' : 'Filter leftover space'}
+          </button>
+          {filtered ? (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-black uppercase tracking-widest text-slate-500"
+            >
+              Show all leftover trips
+            </button>
+          ) : null}
+        </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Trucks with unused space</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Trucks with unused space per trip</h2>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">
+            {offers.length} leftover {offers.length === 1 ? 'trip' : 'trips'}
+            {filtered ? ' matching filters' : ' listed'}
+          </span>
+        </div>
         {offers.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-8 text-sm text-slate-400">
-            No leftover listings on this route yet. Try another origin and destination, or create a full load if you need an exclusive truck.
+            {filtered
+              ? 'No leftover trips match these filters. Show all leftover trips to pick from the full list.'
+              : 'No leftover space is listed yet. When a fleet publishes unused kg/m³ on a trip, it will show here for booking.'}
           </div>
         ) : (
           offers.map((offer) => (
@@ -307,8 +392,12 @@ const AvailableSpacePage: React.FC = () => {
               <div className="min-w-[220px]">
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">{offer.status.replace('_', ' ')}</p>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">{offer.corridor}</h3>
+                <p className="text-xs text-slate-500 mt-1 inline-flex items-center gap-1">
+                  <Calendar size={12} className="shrink-0" />
+                  {formatWindow(offer.departureAt, offer.arrivalAt)}
+                </p>
                 <p className="text-xs text-slate-500 mt-1">
-                  {offer.truck?.plateNumber || 'Truck'} · {Math.round(offer.remainingWeightKg).toLocaleString()} kg left · {offer.bookingMode === 'INSTANT' ? 'Instant book' : 'Request to book'}
+                  {offer.truck?.plateNumber || 'Truck'} · {Math.round(offer.remainingWeightKg).toLocaleString()} kg left · {offer.remainingVolumeM3} m³ · {offer.bookingMode === 'INSTANT' ? 'Instant book' : 'Request to book'}
                 </p>
                 <div className="mt-3 h-1.5 w-48 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <div className="h-full bg-[#345E85]" style={{ width: `${Math.min(100, offer.utilizationOfRemainder || 0)}%` }} />
