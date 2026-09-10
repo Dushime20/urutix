@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Load, LoadStatus } from '../../../entities/load.entity';
 import {
   AuditEvent,
@@ -20,6 +20,7 @@ import {
   TripEventType,
 } from '../../tracking/entities/trip-event.entity';
 import { User } from '../../../entities/user.entity';
+import { UserProfile } from '../../../entities/user-profile.entity';
 import {
   CargoHistoryActivityType,
   CargoHistoryItemDto,
@@ -53,51 +54,221 @@ export class LoadHistoryService {
     page: number = 1,
     limit: number = 50,
   ): Promise<CargoHistoryResponseDto> {
-    const load = await this.loadRepository.findOne({
-      where: { id: loadId, tenantId },
-      relations: ['broker', 'broker.profile', 'assignedDriver', 'assignedDriver.profile'],
-    });
+    const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, parseInt(String(limit), 10) || 50));
 
+    try {
+    const load = await this.findLoadForHistory(loadId, tenantId);
     if (!load) {
-      return { items: [], total: 0, page, limit };
+      return { items: [], total: 0, page: pageNum, limit: limitNum };
     }
 
+    // Explicit column lists — production often lags entity columns
+    // (trip delay*/geometry, KYC profile fields, extra audit columns).
+    // SELECT * / nested relations 500 the whole History tab.
     const [auditEvents, bids, trips, inspections, commissions] =
       await Promise.all([
-        this.auditEventRepository.find({
-          where: { loadId },
-          order: { createdAt: 'DESC' },
-        }),
-        this.bidRepository.find({
-          where: { loadId },
-          relations: ['truckOwner', 'truckOwner.profile'],
-          order: { createdAt: 'DESC' },
-          withDeleted: false,
-        }),
-        this.tripRepository.find({
-          where: { loadId },
-          order: { createdAt: 'DESC' },
-        }),
-        this.cargoInspectionRepository.find({
-          where: { loadId },
-          relations: ['driver', 'driver.profile', 'receiver', 'receiver.profile'],
-          order: { createdAt: 'DESC' },
-        }),
-        this.brokerCommissionRepository.find({
-          where: { loadId },
-          relations: ['broker', 'broker.profile'],
-          order: { createdAt: 'ASC' },
-        }),
+        this.firstSuccessful('audit events', [
+          () =>
+            this.auditEventRepository
+              .createQueryBuilder('event')
+              .select([
+                'event.id',
+                'event.loadId',
+                'event.entityType',
+                'event.entityId',
+                'event.action',
+                'event.actorId',
+                'event.actorName',
+                'event.actorRole',
+                'event.description',
+                'event.reason',
+                'event.before',
+                'event.after',
+                'event.changes',
+                'event.metadata',
+                'event.createdAt',
+              ])
+              .where('event.loadId = :loadId', { loadId })
+              .orderBy('event.createdAt', 'DESC')
+              .getMany(),
+          () =>
+            this.auditEventRepository
+              .createQueryBuilder('event')
+              .select([
+                'event.id',
+                'event.loadId',
+                'event.entityType',
+                'event.entityId',
+                'event.action',
+                'event.actorId',
+                'event.description',
+                'event.metadata',
+                'event.createdAt',
+              ])
+              .where('event.loadId = :loadId', { loadId })
+              .orderBy('event.createdAt', 'DESC')
+              .getMany(),
+        ]),
+        this.firstSuccessful('bids', [
+          () =>
+            this.bidRepository
+              .createQueryBuilder('bid')
+              .select([
+                'bid.id',
+                'bid.loadId',
+                'bid.truckOwnerId',
+                'bid.bidAmount',
+                'bid.bidCurrency',
+                'bid.status',
+                'bid.createdAt',
+                'bid.updatedAt',
+              ])
+              .where('bid.loadId = :loadId', { loadId })
+              .andWhere('bid.deletedAt IS NULL')
+              .orderBy('bid.createdAt', 'DESC')
+              .getMany(),
+          () =>
+            this.bidRepository
+              .createQueryBuilder('bid')
+              .select([
+                'bid.id',
+                'bid.loadId',
+                'bid.truckOwnerId',
+                'bid.bidAmount',
+                'bid.bidCurrency',
+                'bid.status',
+                'bid.createdAt',
+                'bid.updatedAt',
+              ])
+              .where('bid.loadId = :loadId', { loadId })
+              .orderBy('bid.createdAt', 'DESC')
+              .getMany(),
+        ]),
+        this.firstSuccessful('trips', [
+          () =>
+            this.tripRepository
+              .createQueryBuilder('trip')
+              .select([
+                'trip.id',
+                'trip.loadId',
+                'trip.driverId',
+                'trip.tripNumber',
+                'trip.status',
+                'trip.actualStartTime',
+                'trip.actualEndTime',
+                'trip.completedAt',
+                'trip.createdAt',
+                'trip.updatedAt',
+              ])
+              .where('trip.loadId = :loadId', { loadId })
+              .orderBy('trip.createdAt', 'DESC')
+              .getMany(),
+          () =>
+            this.tripRepository
+              .createQueryBuilder('trip')
+              .select([
+                'trip.id',
+                'trip.loadId',
+                'trip.driverId',
+                'trip.tripNumber',
+                'trip.status',
+                'trip.actualStartTime',
+                'trip.actualEndTime',
+                'trip.createdAt',
+                'trip.updatedAt',
+              ])
+              .where('trip.loadId = :loadId', { loadId })
+              .orderBy('trip.createdAt', 'DESC')
+              .getMany(),
+        ]),
+        this.firstSuccessful('inspections', [
+          () =>
+            this.cargoInspectionRepository
+              .createQueryBuilder('inspection')
+              .select([
+                'inspection.id',
+                'inspection.loadId',
+                'inspection.inspectionType',
+                'inspection.driverId',
+                'inspection.receiverId',
+                'inspection.status',
+                'inspection.decision',
+                'inspection.attemptNumber',
+                'inspection.createdAt',
+                'inspection.completedAt',
+              ])
+              .where('inspection.loadId = :loadId', { loadId })
+              .orderBy('inspection.createdAt', 'DESC')
+              .getMany(),
+        ]),
+        this.firstSuccessful('commissions', [
+          () =>
+            this.brokerCommissionRepository
+              .createQueryBuilder('commission')
+              .select([
+                'commission.id',
+                'commission.loadId',
+                'commission.brokerId',
+                'commission.commissionRate',
+                'commission.commissionAmount',
+                'commission.createdAt',
+              ])
+              .where('commission.loadId = :loadId', { loadId })
+              .orderBy('commission.createdAt', 'ASC')
+              .getMany(),
+        ]),
       ]);
 
     const tripIds = trips.map((t) => t.id);
     const tripEvents =
       tripIds.length > 0
-        ? await this.tripEventRepository.find({
-            where: { tripId: In(tripIds) },
-            order: { createdAt: 'DESC' },
-          })
+        ? await this.firstSuccessful('trip events', [
+            () =>
+              this.tripEventRepository
+                .createQueryBuilder('te')
+                .select([
+                  'te.id',
+                  'te.tripId',
+                  'te.driverId',
+                  'te.type',
+                  'te.title',
+                  'te.description',
+                  'te.createdAt',
+                  'te.metadata',
+                ])
+                .where('te.tripId IN (:...tripIds)', { tripIds })
+                .orderBy('te.createdAt', 'DESC')
+                .getMany(),
+            () =>
+              this.tripEventRepository
+                .createQueryBuilder('te')
+                .select([
+                  'te.id',
+                  'te.tripId',
+                  'te.driverId',
+                  'te.type',
+                  'te.title',
+                  'te.description',
+                  'te.createdAt',
+                ])
+                .where('te.tripId IN (:...tripIds)', { tripIds })
+                .orderBy('te.createdAt', 'DESC')
+                .getMany(),
+          ])
         : [];
+
+    const actorNames = await this.loadActorNames([
+      load.cargoOwnerId,
+      load.brokerId,
+      load.assignedCarrierId,
+      ...bids.map((b) => b.truckOwnerId),
+      ...commissions.map((c) => c.brokerId),
+      ...inspections.map((i) => i.driverId || i.receiverId),
+      ...trips.map((t) => t.driverId),
+      ...tripEvents.map((te) => te.driverId),
+      ...auditEvents.map((e) => e.actorId),
+    ]);
 
     const items: CargoHistoryItemDto[] = [];
     const seenKeys = new Set<string>();
@@ -112,12 +283,21 @@ export class LoadHistoryService {
 
     // 1. Audit events (canonical when present) — never collapse distinct audits
     for (const event of auditEvents) {
-      const mapped = this.mapAuditEvent(event);
-      pushUnique(mapped, [`audit:${event.id}`]);
+      try {
+        const mapped = this.mapAuditEvent(event);
+        if (!mapped) continue;
+        if (!mapped.actorName && event.actorId) {
+          mapped.actorName = actorNames.get(event.actorId);
+        }
+        pushUnique(mapped, [`audit:${event.id}`]);
+      } catch (err: any) {
+        this.logger.warn(`Skipping audit event ${event.id}: ${err?.message}`);
+      }
     }
 
     // 2. Load lifecycle timestamps
-    if (load.createdAt) {
+    const createdAtIso = this.toIso(load.createdAt);
+    if (createdAtIso) {
       pushUnique(
         {
           id: `load-created-${load.id}`,
@@ -128,7 +308,8 @@ export class LoadHistoryService {
             ? `Cargo "${load.title}" was created`
             : 'Cargo was created',
           actorId: load.cargoOwnerId,
-          createdAt: load.createdAt.toISOString(),
+          actorName: actorNames.get(load.cargoOwnerId),
+          createdAt: createdAtIso,
           source: 'load',
           entityType: AuditEntityType.LOAD,
           entityId: load.id,
@@ -138,7 +319,8 @@ export class LoadHistoryService {
       );
     }
 
-    if (load.publishedAt) {
+    const publishedAtIso = this.toIso(load.publishedAt);
+    if (publishedAtIso) {
       pushUnique(
         {
           id: `load-published-${load.id}`,
@@ -147,7 +329,8 @@ export class LoadHistoryService {
           title: 'Cargo published',
           description: 'Cargo was published and made available for matching',
           actorId: load.cargoOwnerId,
-          createdAt: load.publishedAt.toISOString(),
+          actorName: actorNames.get(load.cargoOwnerId),
+          createdAt: publishedAtIso,
           source: 'load',
           entityType: AuditEntityType.LOAD,
           entityId: load.id,
@@ -158,7 +341,9 @@ export class LoadHistoryService {
 
     // 3. Broker assignment via commission records (accurate timestamps)
     for (const commission of commissions) {
-      const brokerName = this.formatUserName(commission.broker);
+      const createdAt = this.toIso(commission.createdAt);
+      if (!createdAt) continue;
+      const brokerName = actorNames.get(commission.brokerId);
       pushUnique(
         {
           id: `broker-assign-${commission.id}`,
@@ -170,7 +355,7 @@ export class LoadHistoryService {
             : 'Cargo assigned to a broker',
           actorName: brokerName,
           actorId: commission.brokerId,
-          createdAt: commission.createdAt.toISOString(),
+          createdAt,
           source: 'commission',
           entityType: AuditEntityType.LOAD,
           entityId: load.id,
@@ -183,42 +368,47 @@ export class LoadHistoryService {
         },
         [
           `commission:assign:${commission.id}`,
-          `broker:assign:${commission.brokerId}:${commission.createdAt.toISOString()}`,
+          `broker:assign:${commission.brokerId}:${createdAt}`,
         ],
       );
     }
 
     // Fallback: broker currently assigned but no commission row
     if (load.brokerId && commissions.length === 0) {
-      const brokerName = this.formatUserName(load.broker);
-      pushUnique(
-        {
-          id: `broker-assign-fallback-${load.id}`,
-          activityType: 'broker_assigned',
-          action: AuditAction.ASSIGN,
-          title: 'Cargo assigned to broker',
-          description: brokerName
-            ? `Cargo assigned to broker ${brokerName}`
-            : 'Cargo assigned to a broker',
-          actorName: brokerName,
-          actorId: load.brokerId,
-          createdAt: (load.updatedAt || load.createdAt).toISOString(),
-          source: 'load',
-          entityType: AuditEntityType.LOAD,
-          entityId: load.id,
-          metadata: {
-            brokerId: load.brokerId,
+      const createdAt = this.toIso(load.updatedAt, load.createdAt);
+      if (createdAt) {
+        const brokerName = actorNames.get(load.brokerId);
+        pushUnique(
+          {
+            id: `broker-assign-fallback-${load.id}`,
             activityType: 'broker_assigned',
-            approximate: true,
+            action: AuditAction.ASSIGN,
+            title: 'Cargo assigned to broker',
+            description: brokerName
+              ? `Cargo assigned to broker ${brokerName}`
+              : 'Cargo assigned to a broker',
+            actorName: brokerName,
+            actorId: load.brokerId,
+            createdAt,
+            source: 'load',
+            entityType: AuditEntityType.LOAD,
+            entityId: load.id,
+            metadata: {
+              brokerId: load.brokerId,
+              activityType: 'broker_assigned',
+              approximate: true,
+            },
           },
-        },
-        [`broker:assign:fallback:${load.id}`],
-      );
+          [`broker:assign:fallback:${load.id}`],
+        );
+      }
     }
 
     // 4. Bids
     for (const bid of bids) {
-      const bidderName = this.formatUserName(bid.truckOwner);
+      const submittedAt = this.toIso(bid.createdAt);
+      if (!submittedAt) continue;
+      const bidderName = actorNames.get(bid.truckOwnerId);
       const amountLabel = `${bid.bidCurrency || 'USD'} ${Number(bid.bidAmount).toLocaleString()}`;
 
       pushUnique(
@@ -232,7 +422,7 @@ export class LoadHistoryService {
             : `A bid of ${amountLabel} was submitted`,
           actorId: bid.truckOwnerId,
           actorName: bidderName,
-          createdAt: bid.createdAt.toISOString(),
+          createdAt: submittedAt,
           source: 'bid',
           entityType: AuditEntityType.BID,
           entityId: bid.id,
@@ -246,7 +436,8 @@ export class LoadHistoryService {
         [`bid:submit:${bid.id}`],
       );
 
-      if (bid.status === BidStatus.ACCEPTED) {
+      const decidedAt = this.toIso(bid.updatedAt, bid.createdAt);
+      if (bid.status === BidStatus.ACCEPTED && decidedAt) {
         pushUnique(
           {
             id: `bid-accepted-${bid.id}`,
@@ -258,7 +449,7 @@ export class LoadHistoryService {
               : `Winning bid of ${amountLabel} was accepted`,
             actorId: bid.truckOwnerId,
             actorName: bidderName,
-            createdAt: bid.updatedAt.toISOString(),
+            createdAt: decidedAt,
             source: 'bid',
             entityType: AuditEntityType.BID,
             entityId: bid.id,
@@ -270,7 +461,7 @@ export class LoadHistoryService {
           },
           [`bid:accept:${bid.id}`],
         );
-      } else if (bid.status === BidStatus.REJECTED) {
+      } else if (bid.status === BidStatus.REJECTED && decidedAt) {
         pushUnique(
           {
             id: `bid-rejected-${bid.id}`,
@@ -282,7 +473,7 @@ export class LoadHistoryService {
               : 'A bid was rejected',
             actorId: bid.truckOwnerId,
             actorName: bidderName,
-            createdAt: bid.updatedAt.toISOString(),
+            createdAt: decidedAt,
             source: 'bid',
             entityType: AuditEntityType.BID,
             entityId: bid.id,
@@ -290,7 +481,7 @@ export class LoadHistoryService {
           },
           [`bid:reject:${bid.id}`],
         );
-      } else if (bid.status === BidStatus.WITHDRAWN) {
+      } else if (bid.status === BidStatus.WITHDRAWN && decidedAt) {
         pushUnique(
           {
             id: `bid-withdrawn-${bid.id}`,
@@ -302,7 +493,7 @@ export class LoadHistoryService {
               : 'A bid was withdrawn',
             actorId: bid.truckOwnerId,
             actorName: bidderName,
-            createdAt: bid.updatedAt.toISOString(),
+            createdAt: decidedAt,
             source: 'bid',
             entityType: AuditEntityType.BID,
             entityId: bid.id,
@@ -315,68 +506,76 @@ export class LoadHistoryService {
 
     // 5. Carrier assignment from load fields
     if (load.assignedCarrierId && load.status !== LoadStatus.DRAFT) {
-      const carrierName = this.formatUserName(load.assignedDriver);
-      pushUnique(
-        {
-          id: `carrier-assigned-${load.id}`,
-          activityType: 'carrier_assigned',
-          action: AuditAction.ASSIGN,
-          title: 'Carrier assigned',
-          description: carrierName
-            ? `Cargo assigned to carrier ${carrierName}`
-            : 'Carrier was assigned to this cargo',
-          actorId: load.assignedCarrierId,
-          actorName: carrierName,
-          createdAt: (load.updatedAt || load.createdAt).toISOString(),
-          source: 'load',
-          entityType: AuditEntityType.LOAD,
-          entityId: load.id,
-          metadata: {
-            assignedCarrierId: load.assignedCarrierId,
-            assignedTruckId: load.assignedTruckId,
+      const createdAt = this.toIso(load.updatedAt, load.createdAt);
+      if (createdAt) {
+        const carrierName = actorNames.get(load.assignedCarrierId);
+        pushUnique(
+          {
+            id: `carrier-assigned-${load.id}`,
             activityType: 'carrier_assigned',
-            approximate: true,
+            action: AuditAction.ASSIGN,
+            title: 'Carrier assigned',
+            description: carrierName
+              ? `Cargo assigned to carrier ${carrierName}`
+              : 'Carrier was assigned to this cargo',
+            actorId: load.assignedCarrierId,
+            actorName: carrierName,
+            createdAt,
+            source: 'load',
+            entityType: AuditEntityType.LOAD,
+            entityId: load.id,
+            metadata: {
+              assignedCarrierId: load.assignedCarrierId,
+              assignedTruckId: load.assignedTruckId,
+              activityType: 'carrier_assigned',
+              approximate: true,
+            },
           },
-        },
-        [`carrier:assign:${load.id}:${load.assignedCarrierId}`],
-      );
+          [`carrier:assign:${load.id}:${load.assignedCarrierId}`],
+        );
+      }
     }
 
     // 6. Inspections
     for (const inspection of inspections) {
-      const inspectorName = this.formatUserName(
-        inspection.driver || inspection.receiver,
-      );
+      const inspectorId = inspection.driverId || inspection.receiverId;
+      const inspectorName = inspectorId
+        ? actorNames.get(inspectorId)
+        : undefined;
       const typeLabel =
         inspection.inspectionType === CargoInspectionType.PRE_TRIP
           ? 'Pre-trip cargo inspection'
           : 'Delivery inspection';
 
-      pushUnique(
-        {
-          id: `inspection-started-${inspection.id}`,
-          activityType: 'inspection_started',
-          action: AuditAction.STATUS_CHANGE,
-          title: `${typeLabel} started`,
-          description: inspectorName
-            ? `${typeLabel} started by ${inspectorName}`
-            : `${typeLabel} started`,
-          actorId: inspection.driverId || inspection.receiverId,
-          actorName: inspectorName,
-          createdAt: inspection.createdAt.toISOString(),
-          source: 'inspection',
-          entityType: AuditEntityType.LOAD,
-          entityId: inspection.id,
-          metadata: {
-            inspectionType: inspection.inspectionType,
-            attemptNumber: inspection.attemptNumber,
+      const startedAt = this.toIso(inspection.createdAt);
+      if (startedAt) {
+        pushUnique(
+          {
+            id: `inspection-started-${inspection.id}`,
             activityType: 'inspection_started',
+            action: AuditAction.STATUS_CHANGE,
+            title: `${typeLabel} started`,
+            description: inspectorName
+              ? `${typeLabel} started by ${inspectorName}`
+              : `${typeLabel} started`,
+            actorId: inspectorId,
+            actorName: inspectorName,
+            createdAt: startedAt,
+            source: 'inspection',
+            entityType: AuditEntityType.LOAD,
+            entityId: inspection.id,
+            metadata: {
+              inspectionType: inspection.inspectionType,
+              attemptNumber: inspection.attemptNumber,
+              activityType: 'inspection_started',
+            },
           },
-        },
-        [`inspection:start:${inspection.id}`],
-      );
+          [`inspection:start:${inspection.id}`],
+        );
+      }
 
-      if (inspection.completedAt) {
+      const completedAt = this.toIso(inspection.completedAt);
+      if (completedAt) {
         const isFailed =
           inspection.status === InspectionStatus.FAILED ||
           inspection.decision === 'FAILED';
@@ -399,9 +598,9 @@ export class LoadHistoryService {
             description: inspectorName
               ? `${typeLabel} ${isFailed ? 'failed' : isApproved ? 'approved' : 'completed'} by ${inspectorName}`
               : `${typeLabel} ${isFailed ? 'failed' : isApproved ? 'approved' : 'completed'}`,
-            actorId: inspection.driverId || inspection.receiverId,
+            actorId: inspectorId,
             actorName: inspectorName,
-            createdAt: inspection.completedAt.toISOString(),
+            createdAt: completedAt,
             source: 'inspection',
             entityType: AuditEntityType.LOAD,
             entityId: inspection.id,
@@ -424,7 +623,8 @@ export class LoadHistoryService {
 
     // Pre-trip metadata timestamps (truck inspection / approval)
     const preTrip = (load.metadata as any)?.preTripInspection;
-    if (preTrip?.truckInspection?.completedAt) {
+    const truckInspectionAt = this.toIso(preTrip?.truckInspection?.completedAt);
+    if (truckInspectionAt) {
       pushUnique(
         {
           id: `truck-inspection-${load.id}-${preTrip.truckInspection.completedAt}`,
@@ -433,7 +633,8 @@ export class LoadHistoryService {
           title: 'Truck inspection completed',
           description: 'Pre-trip truck inspection was completed',
           actorId: preTrip.truckInspection.completedById,
-          createdAt: new Date(preTrip.truckInspection.completedAt).toISOString(),
+          actorName: actorNames.get(preTrip.truckInspection.completedById),
+          createdAt: truckInspectionAt,
           source: 'load',
           entityType: AuditEntityType.LOAD,
           entityId: load.id,
@@ -442,7 +643,8 @@ export class LoadHistoryService {
         [`truck-inspection:${load.id}:${preTrip.truckInspection.completedAt}`],
       );
     }
-    if (preTrip?.approvedAt) {
+    const approvedAt = this.toIso(preTrip?.approvedAt);
+    if (approvedAt) {
       pushUnique(
         {
           id: `inspection-approved-meta-${load.id}`,
@@ -451,7 +653,8 @@ export class LoadHistoryService {
           title: 'Pre-trip inspection approved',
           description: 'Cargo owner/broker approved the pre-trip inspection',
           actorId: preTrip.approvedById,
-          createdAt: new Date(preTrip.approvedAt).toISOString(),
+          actorName: actorNames.get(preTrip.approvedById),
+          createdAt: approvedAt,
           source: 'load',
           entityType: AuditEntityType.LOAD,
           entityId: load.id,
@@ -467,87 +670,107 @@ export class LoadHistoryService {
         load.status,
       )
     ) {
-      const loadingTime =
+      const loadingIso = this.toIso(
         trips.find((t) => t.actualStartTime)?.actualStartTime ||
-        trips[0]?.createdAt ||
-        load.updatedAt;
-      pushUnique(
-        {
-          id: `loading-${load.id}`,
-          activityType: 'loaded',
-          action: AuditAction.STATUS_CHANGE,
-          title: 'Cargo loaded',
-          description: 'Cargo loading was completed and status set to Loaded',
-          createdAt: loadingTime.toISOString(),
-          source: 'load',
-          entityType: AuditEntityType.LOAD,
-          entityId: load.id,
-          metadata: { activityType: 'loaded', status: LoadStatus.LOADED, approximate: true },
-        },
-        [`loading:loaded:${load.id}`],
+          trips[0]?.createdAt ||
+          load.updatedAt,
+        load.createdAt,
       );
+      if (loadingIso) {
+        pushUnique(
+          {
+            id: `loading-${load.id}`,
+            activityType: 'loaded',
+            action: AuditAction.STATUS_CHANGE,
+            title: 'Cargo loaded',
+            description: 'Cargo loading was completed and status set to Loaded',
+            createdAt: loadingIso,
+            source: 'load',
+            entityType: AuditEntityType.LOAD,
+            entityId: load.id,
+            metadata: { activityType: 'loaded', status: LoadStatus.LOADED, approximate: true },
+          },
+          [`loading:loaded:${load.id}`],
+        );
+      }
     }
 
     // 8. Trips
     for (const trip of trips) {
       if (trip.actualStartTime || trip.status === TripStatus.IN_PROGRESS || trip.status === TripStatus.COMPLETED) {
-        const startAt = trip.actualStartTime || trip.createdAt;
-        pushUnique(
-          {
-            id: `trip-started-${trip.id}`,
-            activityType: 'trip_started',
-            action: AuditAction.START,
-            title: 'Trip started',
-            description: trip.tripNumber
-              ? `Trip ${trip.tripNumber} started`
-              : 'Trip started — cargo is in transit',
-            actorId: trip.driverId,
-            createdAt: startAt.toISOString(),
-            source: 'trip',
-            entityType: AuditEntityType.TRIP,
-            entityId: trip.id,
-            metadata: {
-              tripId: trip.id,
-              tripNumber: trip.tripNumber,
+        const startAt = this.toIso(trip.actualStartTime, trip.createdAt);
+        if (startAt) {
+          pushUnique(
+            {
+              id: `trip-started-${trip.id}`,
               activityType: 'trip_started',
+              action: AuditAction.START,
+              title: 'Trip started',
+              description: trip.tripNumber
+                ? `Trip ${trip.tripNumber} started`
+                : 'Trip started — cargo is in transit',
+              actorId: trip.driverId,
+              actorName: actorNames.get(trip.driverId),
+              createdAt: startAt,
+              source: 'trip',
+              entityType: AuditEntityType.TRIP,
+              entityId: trip.id,
+              metadata: {
+                tripId: trip.id,
+                tripNumber: trip.tripNumber,
+                activityType: 'trip_started',
+              },
             },
-          },
-          [`trip:start:${trip.id}`],
-        );
+            [`trip:start:${trip.id}`],
+          );
+        }
       }
 
       if (trip.actualEndTime || trip.completedAt || trip.status === TripStatus.COMPLETED) {
-        const endAt = trip.actualEndTime || trip.completedAt || trip.updatedAt;
-        pushUnique(
-          {
-            id: `trip-completed-${trip.id}`,
-            activityType: 'delivered',
-            action: AuditAction.DELIVER,
-            title: 'Trip completed',
-            description: trip.tripNumber
-              ? `Trip ${trip.tripNumber} completed`
-              : 'Trip completed',
-            actorId: trip.driverId,
-            createdAt: endAt.toISOString(),
-            source: 'trip',
-            entityType: AuditEntityType.TRIP,
-            entityId: trip.id,
-            metadata: {
-              tripId: trip.id,
-              tripNumber: trip.tripNumber,
-              activityType: 'delivered',
-            },
-          },
-          [`trip:complete:${trip.id}`],
+        const endAt = this.toIso(
+          trip.actualEndTime || trip.completedAt || trip.updatedAt,
+          trip.createdAt,
         );
+        if (endAt) {
+          pushUnique(
+            {
+              id: `trip-completed-${trip.id}`,
+              activityType: 'delivered',
+              action: AuditAction.DELIVER,
+              title: 'Trip completed',
+              description: trip.tripNumber
+                ? `Trip ${trip.tripNumber} completed`
+                : 'Trip completed',
+              actorId: trip.driverId,
+              actorName: actorNames.get(trip.driverId),
+              createdAt: endAt,
+              source: 'trip',
+              entityType: AuditEntityType.TRIP,
+              entityId: trip.id,
+              metadata: {
+                tripId: trip.id,
+                tripNumber: trip.tripNumber,
+                activityType: 'delivered',
+              },
+            },
+            [`trip:complete:${trip.id}`],
+          );
+        }
       }
     }
 
     // 9. Trip events (pickup/delivery/loading/unloading style milestones)
     for (const te of tripEvents) {
-      const mapped = this.mapTripEvent(te);
-      if (!mapped) continue;
-      pushUnique(mapped, [`trip_event:${te.id}`, this.activityDedupeKey(mapped)]);
+      try {
+        const mapped = this.mapTripEvent(te);
+        if (!mapped) continue;
+        if (!mapped.actorName && te.driverId) {
+          mapped.actorName = actorNames.get(te.driverId);
+        }
+        pushUnique(mapped, [`trip_event:${te.id}`, this.activityDedupeKey(mapped)]);
+      } catch (err: any) {
+        this.logger.warn(`Skipping trip event ${te.id}: ${err?.message}`);
+      }
     }
 
     // Sort newest first
@@ -557,13 +780,23 @@ export class LoadHistoryService {
     );
 
     const total = items.length;
-    const start = (Math.max(page, 1) - 1) * limit;
-    const paged = items.slice(start, start + limit);
+    const start = (pageNum - 1) * limitNum;
+    const paged = items.slice(start, start + limitNum);
 
-    return { items: paged, total, page, limit };
+    return { items: paged, total, page: pageNum, limit: limitNum };
+    } catch (err: any) {
+      this.logger.error(
+        `Cargo history failed for load ${loadId}: ${err?.message}`,
+        err?.stack,
+      );
+      return { items: [], total: 0, page: pageNum, limit: limitNum };
+    }
   }
 
-  private mapAuditEvent(event: AuditEvent): CargoHistoryItemDto {
+  private mapAuditEvent(event: AuditEvent): CargoHistoryItemDto | null {
+    const createdAt = this.toIso(event.createdAt);
+    if (!createdAt) return null;
+
     const metaType = event.metadata?.activityType as
       | CargoHistoryActivityType
       | undefined;
@@ -571,7 +804,7 @@ export class LoadHistoryService {
       metaType || this.inferActivityTypeFromAudit(event);
 
     const changeSummary =
-      event.changes?.length > 0
+      Array.isArray(event.changes) && event.changes.length > 0
         ? event.changes
             .map((c) => `${c.field}: ${this.stringifyValue(c.oldValue)} → ${this.stringifyValue(c.newValue)}`)
             .join('; ')
@@ -580,7 +813,6 @@ export class LoadHistoryService {
     const description =
       event.description ||
       changeSummary ||
-      event.getChangeSummary?.() ||
       this.defaultDescription(activityType);
 
     return {
@@ -592,13 +824,15 @@ export class LoadHistoryService {
       actorId: event.actorId,
       actorName: event.actorName,
       actorRole: event.actorRole,
-      createdAt: event.createdAt.toISOString(),
+      createdAt,
       source: 'audit',
       entityType: event.entityType,
       entityId: event.entityId,
       metadata: {
         ...(event.metadata || {}),
-        ...(event.changes?.length ? { changes: event.changes } : {}),
+        ...(Array.isArray(event.changes) && event.changes.length
+          ? { changes: event.changes }
+          : {}),
         ...(event.before ? { before: event.before } : {}),
         ...(event.after ? { after: event.after } : {}),
         ...(event.reason ? { reason: event.reason } : {}),
@@ -652,6 +886,9 @@ export class LoadHistoryService {
       },
     };
 
+    const createdAt = this.toIso(te.createdAt);
+    if (!createdAt) return null;
+
     const mapped = typeMap[te.type];
     if (!mapped) {
       // Skip noisy ETA/weather/traffic noise from cargo history
@@ -672,7 +909,7 @@ export class LoadHistoryService {
         title: te.title || te.type,
         description: te.description || te.title,
         actorId: te.driverId,
-        createdAt: te.createdAt.toISOString(),
+        createdAt,
         source: 'trip_event',
         entityType: AuditEntityType.TRIP,
         entityId: te.tripId,
@@ -687,7 +924,7 @@ export class LoadHistoryService {
       title: te.title || mapped.title,
       description: te.description || mapped.title,
       actorId: te.driverId,
-      createdAt: te.createdAt.toISOString(),
+      createdAt,
       source: 'trip_event',
       entityType: AuditEntityType.TRIP,
       entityId: te.tripId,
@@ -783,19 +1020,142 @@ export class LoadHistoryService {
   }
 
   private activityDedupeKey(item: CargoHistoryItemDto): string {
-    const minute = item.createdAt.slice(0, 16);
+    const minute = String(item.createdAt || '').slice(0, 16);
     return `activity:${item.activityType}:${item.entityId || ''}:${minute}`;
   }
 
-  private formatUserName(user?: User | null): string | undefined {
-    if (!user) return undefined;
-    const profile = (user as any).profile;
-    const name = [profile?.firstName, profile?.lastName]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-    if (name) return name;
-    if (profile?.companyName) return profile.companyName;
-    return user.email || undefined;
+  private async findLoadForHistory(
+    loadId: string,
+    tenantId: string,
+  ): Promise<Load | null> {
+    const selectAttempts = [
+      [
+        'load.id',
+        'load.tenantId',
+        'load.title',
+        'load.cargoOwnerId',
+        'load.brokerId',
+        'load.assignedCarrierId',
+        'load.assignedTruckId',
+        'load.status',
+        'load.createdAt',
+        'load.updatedAt',
+        'load.publishedAt',
+        'load.metadata',
+      ],
+      [
+        'load.id',
+        'load.tenantId',
+        'load.title',
+        'load.cargoOwnerId',
+        'load.brokerId',
+        'load.assignedCarrierId',
+        'load.status',
+        'load.createdAt',
+        'load.updatedAt',
+      ],
+    ];
+
+    for (const select of selectAttempts) {
+      try {
+        return await this.loadRepository
+          .createQueryBuilder('load')
+          .select(select)
+          .where('load.id = :loadId', { loadId })
+          .andWhere('load.tenantId = :tenantId', { tenantId })
+          .getOne();
+      } catch (err: any) {
+        this.logger.warn(
+          `Cargo history load fetch failed: ${err?.message}`,
+        );
+      }
+    }
+    return null;
+  }
+
+  private async firstSuccessful<T>(
+    label: string,
+    attempts: Array<() => Promise<T[]>>,
+  ): Promise<T[]> {
+    let lastError: any;
+    for (const attempt of attempts) {
+      try {
+        return await attempt();
+      } catch (err: any) {
+        lastError = err;
+        this.logger.warn(`Cargo history ${label} query failed: ${err?.message}`);
+      }
+    }
+    this.logger.warn(
+      `Cargo history ${label} unavailable: ${lastError?.message || 'unknown error'}`,
+    );
+    return [];
+  }
+
+  private async loadActorNames(
+    userIds: Array<string | null | undefined>,
+  ): Promise<Map<string, string>> {
+    const names = new Map<string, string>();
+    const ids = [...new Set(userIds.filter((id): id is string => Boolean(id)))];
+    if (ids.length === 0) return names;
+
+    try {
+      const profiles = await this.loadRepository.manager
+        .createQueryBuilder(UserProfile, 'profile')
+        .select([
+          'profile.id',
+          'profile.userId',
+          'profile.firstName',
+          'profile.lastName',
+          'profile.companyName',
+        ])
+        .where('profile.userId IN (:...ids)', { ids })
+        .getMany();
+      for (const profile of profiles) {
+        const name = [profile.firstName, profile.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+        if (name) names.set(profile.userId, name);
+        else if (profile.companyName) names.set(profile.userId, profile.companyName);
+      }
+    } catch (err: any) {
+      this.logger.warn(`Cargo history profile names skipped: ${err?.message}`);
+    }
+
+    const missing = ids.filter((id) => !names.has(id));
+    if (missing.length === 0) return names;
+
+    try {
+      const users = await this.loadRepository.manager
+        .createQueryBuilder(User, 'user')
+        .select(['user.id', 'user.email'])
+        .where('user.id IN (:...ids)', { ids: missing })
+        .getMany();
+      for (const user of users) {
+        if (user.email) names.set(user.id, user.email);
+      }
+    } catch (err: any) {
+      this.logger.warn(`Cargo history user emails skipped: ${err?.message}`);
+    }
+
+    return names;
+  }
+
+  private toIso(value: unknown, fallback?: unknown): string | undefined {
+    const parsed = this.parseDate(value) || this.parseDate(fallback);
+    return parsed ? parsed.toISOString() : undefined;
+  }
+
+  private parseDate(value: unknown): Date | undefined {
+    if (!value) return undefined;
+    if (value instanceof Date) {
+      return Number.isNaN(value.getTime()) ? undefined : value;
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? undefined : date;
+    }
+    return undefined;
   }
 }

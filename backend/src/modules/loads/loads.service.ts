@@ -2275,8 +2275,31 @@ export class LoadsService {
     page: number;
     limit: number;
   }> {
-    await this.findOne(loadId, tenantId, null); // ensure load exists / tenant access
-    return this.loadHistoryService.getHistory(loadId, tenantId, page, limit);
+    try {
+      await this.findOne(loadId, tenantId, null); // ensure load exists / tenant access
+    } catch (err) {
+      if (err instanceof NotFoundException) {
+        throw err;
+      }
+      this.logger.warn(
+        `getLoadHistory findOne failed for ${loadId}; falling through to history query: ${(err as Error)?.message}`,
+      );
+    }
+
+    try {
+      return await this.loadHistoryService.getHistory(
+        loadId,
+        tenantId,
+        page,
+        limit,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Cargo history failed for load ${loadId}: ${(err as Error)?.message}`,
+        (err as Error)?.stack,
+      );
+      return { items: [], total: 0, page, limit };
+    }
   }
 
   /**

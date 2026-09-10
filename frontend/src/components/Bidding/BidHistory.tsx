@@ -29,6 +29,20 @@ import {
   type TableAction,
 } from '../EnliteUI/Tables';
 
+interface BidTruck {
+  id: string;
+  plateNumber: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  truckType?: string;
+  trailerType?: string;
+  capacityWeight?: number;
+  capacityVolume?: number;
+  status?: string;
+  color?: string;
+}
+
 interface Bid {
   id: string;
   loadId: string;
@@ -71,7 +85,21 @@ interface Bid {
       phone?: string;
     };
   };
+  truck?: BidTruck;
+  bidDetails?: {
+    truckSpecifications?: {
+      truckId?: string;
+      truckType?: string;
+      capacityWeight?: number;
+      capacityVolume?: number;
+      hasRefrigeration?: boolean;
+      hasHazmatPermit?: boolean;
+    };
+  };
 }
+
+const formatEnumLabel = (value?: string) =>
+  value ? value.replace(/_/g, ' ') : '—';
 
 interface BidHistoryProps {
   userRole: 'CARGO_OWNER' | 'TRUCK_OWNER' | 'BROKER' | 'ADMIN' | 'SUPER_ADMIN';
@@ -221,6 +249,24 @@ const BidHistory: React.FC<BidHistoryProps> = ({
         },
       });
     }
+
+    cols.push({
+      key: 'truck',
+      label: 'Truck',
+      render: (_: unknown, bid: Bid) => (
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
+            {bid.truck?.plateNumber || '—'}
+          </span>
+          {(bid.truck?.truckType || bid.bidDetails?.truckSpecifications?.truckType) && (
+            <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1 truncate">
+              {formatEnumLabel(bid.truck?.truckType || bid.bidDetails?.truckSpecifications?.truckType)}
+              {bid.status === 'ACCEPTED' ? ' · Assigned' : ''}
+            </span>
+          )}
+        </div>
+      ),
+    });
 
     cols.push(
       {
@@ -455,6 +501,17 @@ const BidHistory: React.FC<BidHistoryProps> = ({
                         </div>
                       )}
 
+                      {(bid.truck?.plateNumber || bid.bidDetails?.truckSpecifications?.truckType) && (
+                        <div className="mb-4 pt-4 border-t border-slate-50 dark:border-slate-800">
+                          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 leading-none">
+                            {bid.status === 'ACCEPTED' ? 'Winning Truck' : 'Proposed Truck'}
+                          </p>
+                          <p className="text-xs font-black text-slate-900 dark:text-slate-100">
+                            {bid.truck?.plateNumber || formatEnumLabel(bid.bidDetails?.truckSpecifications?.truckType)}
+                          </p>
+                        </div>
+                      )}
+
                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50 dark:border-slate-800">
                         <div>
                           <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 leading-none">Bid Amount</p>
@@ -657,6 +714,66 @@ const BidHistory: React.FC<BidHistoryProps> = ({
                       <BidDR label="Phone" value={selectedBid.truckOwner.profile?.phone || selectedBid.truckOwner.phone || '—'} />
                       {selectedBid.truckOwner.profile?.companyName && (
                         <BidDR label="Company" value={selectedBid.truckOwner.profile.companyName} />
+                      )}
+                    </div>
+                  </BidTSection>
+                )}
+
+                {(selectedBid.truck || selectedBid.bidDetails?.truckSpecifications) && (
+                  <BidTSection title={selectedBid.status === 'ACCEPTED' ? 'Winning Truck' : 'Proposed Truck'}>
+                    {selectedBid.status === 'ACCEPTED' && (
+                      <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mb-3">
+                        Assigned to ship this cargo after the bid was awarded.
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      <BidDR
+                        label="Plate Number"
+                        value={selectedBid.truck?.plateNumber || '—'}
+                        highlight={selectedBid.status === 'ACCEPTED'}
+                      />
+                      <BidDR
+                        label="Vehicle"
+                        value={
+                          [selectedBid.truck?.year, selectedBid.truck?.make, selectedBid.truck?.model]
+                            .filter(Boolean)
+                            .join(' ') || '—'
+                        }
+                      />
+                      <BidDR
+                        label="Type"
+                        value={formatEnumLabel(selectedBid.truck?.truckType || selectedBid.bidDetails?.truckSpecifications?.truckType)}
+                      />
+                      {(selectedBid.truck?.trailerType || selectedBid.truck?.color) && (
+                        <BidDR
+                          label={selectedBid.truck?.trailerType ? 'Trailer' : 'Color'}
+                          value={formatEnumLabel(selectedBid.truck?.trailerType || selectedBid.truck?.color)}
+                        />
+                      )}
+                      <BidDR
+                        label="Capacity"
+                        value={
+                          selectedBid.truck?.capacityWeight != null
+                            ? `${Number(selectedBid.truck.capacityWeight).toLocaleString()} kg`
+                            : selectedBid.bidDetails?.truckSpecifications?.capacityWeight != null
+                              ? `${Number(selectedBid.bidDetails.truckSpecifications.capacityWeight).toLocaleString()} kg`
+                              : '—'
+                        }
+                      />
+                      {(selectedBid.truck?.capacityVolume != null || selectedBid.bidDetails?.truckSpecifications?.capacityVolume != null) && (
+                        <BidDR
+                          label="Volume"
+                          value={`${Number(selectedBid.truck?.capacityVolume ?? selectedBid.bidDetails?.truckSpecifications?.capacityVolume).toLocaleString()} m³`}
+                        />
+                      )}
+                      {selectedBid.truck?.status && (
+                        <BidDR label="Truck Status" value={formatEnumLabel(selectedBid.truck.status)} />
+                      )}
+                      {selectedBid.bidDetails?.truckSpecifications?.hasRefrigeration && (
+                        <BidDR label="Refrigeration" value="Yes" />
+                      )}
+                      {selectedBid.bidDetails?.truckSpecifications?.hasHazmatPermit && (
+                        <BidDR label="Hazmat Permit" value="Yes" />
                       )}
                     </div>
                   </BidTSection>

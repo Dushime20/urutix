@@ -20,9 +20,23 @@ import { StandardDataTable, type Column } from '../EnliteUI/Tables';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BidDetails {
-  truckSpecifications?: { truckId?: string; truckType?: string; capacityWeight?: number };
+  truckSpecifications?: { truckId?: string; truckType?: string; capacityWeight?: number; capacityVolume?: number };
   driverInfo?: { driverId?: string; experience?: number; rating?: number };
   routeOptimization?: { estimatedDistance?: number; estimatedFuelCost?: number; estimatedTime?: number };
+}
+
+interface BidTruck {
+  id: string;
+  plateNumber: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  truckType?: string;
+  trailerType?: string;
+  capacityWeight?: number;
+  capacityVolume?: number;
+  status?: string;
+  color?: string;
 }
 
 interface Bid {
@@ -42,6 +56,7 @@ interface Bid {
     phone?: string;
   };
   bidDetails?: BidDetails;
+  truck?: BidTruck;
 }
 
 interface Auction {
@@ -244,22 +259,46 @@ function BidDetailModal({ bid, auction, onClose, onAccept, accepting, auctionClo
           </div>
 
           {/* Truck & Driver Info */}
-          {bid.bidDetails && (
+          {(bid.truck || bid.bidDetails) && (
             <div className="space-y-3">
-              {bid.bidDetails.truckSpecifications && (
-                <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4">
-                  <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Truck size={10} />Truck Details</p>
+              {(bid.truck || bid.bidDetails?.truckSpecifications) && (
+                <div className={cn(
+                  'rounded-xl p-4',
+                  isWinner
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800'
+                    : 'bg-slate-50 dark:bg-slate-800/60',
+                )}>
+                  <p className={cn(
+                    'text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5',
+                    isWinner ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500',
+                  )}>
+                    <Truck size={10} />{isWinner ? 'Winning Truck' : 'Truck Details'}
+                  </p>
+                  {isWinner && (
+                    <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mb-3">
+                      Assigned to ship this cargo after the bid was awarded.
+                    </p>
+                  )}
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    {bid.bidDetails.truckSpecifications.truckType && (
-                      <div><span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold block mb-0.5">Type</span><span className="font-bold text-slate-800 dark:text-slate-200">{bid.bidDetails.truckSpecifications.truckType}</span></div>
+                    {bid.truck?.plateNumber && (
+                      <div><span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold block mb-0.5">Plate</span><span className="font-black text-slate-800 dark:text-slate-200">{bid.truck.plateNumber}</span></div>
                     )}
-                    {bid.bidDetails.truckSpecifications.capacityWeight && (
-                      <div><span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold block mb-0.5">Capacity</span><span className="font-bold text-slate-800 dark:text-slate-200">{bid.bidDetails.truckSpecifications.capacityWeight.toLocaleString()} kg</span></div>
+                    {(bid.truck?.make || bid.truck?.model) && (
+                      <div><span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold block mb-0.5">Vehicle</span><span className="font-bold text-slate-800 dark:text-slate-200">{[bid.truck?.year, bid.truck?.make, bid.truck?.model].filter(Boolean).join(' ')}</span></div>
+                    )}
+                    {(bid.truck?.truckType || bid.bidDetails?.truckSpecifications?.truckType) && (
+                      <div><span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold block mb-0.5">Type</span><span className="font-bold text-slate-800 dark:text-slate-200">{(bid.truck?.truckType || bid.bidDetails?.truckSpecifications?.truckType || '').replace(/_/g, ' ')}</span></div>
+                    )}
+                    {(bid.truck?.capacityWeight != null || bid.bidDetails?.truckSpecifications?.capacityWeight) && (
+                      <div><span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold block mb-0.5">Capacity</span><span className="font-bold text-slate-800 dark:text-slate-200">{Number(bid.truck?.capacityWeight ?? bid.bidDetails?.truckSpecifications?.capacityWeight).toLocaleString()} kg</span></div>
+                    )}
+                    {bid.truck?.status && (
+                      <div><span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase font-bold block mb-0.5">Status</span><span className="font-bold text-slate-800 dark:text-slate-200">{bid.truck.status.replace(/_/g, ' ')}</span></div>
                     )}
                   </div>
                 </div>
               )}
-              {bid.bidDetails.driverInfo && (
+              {bid.bidDetails?.driverInfo && (
                 <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4">
                   <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5"><User size={10} />Driver Info</p>
                   <div className="grid grid-cols-2 gap-3 text-sm">
@@ -272,7 +311,7 @@ function BidDetailModal({ bid, auction, onClose, onAccept, accepting, auctionClo
                   </div>
                 </div>
               )}
-              {bid.bidDetails.routeOptimization && (
+              {bid.bidDetails?.routeOptimization && (
                 <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4">
                   <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Route Estimate</p>
                   <div className="grid grid-cols-3 gap-3 text-sm">

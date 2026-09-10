@@ -130,6 +130,20 @@ export interface CreateAuctionDto {
   };
 }
 
+export interface BidTruckSnapshot {
+  id: string;
+  plateNumber: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  truckType?: string;
+  trailerType?: string;
+  capacityWeight?: number;
+  capacityVolume?: number;
+  status?: string;
+  color?: string;
+}
+
 @Injectable()
 export class BiddingService {
   constructor(
@@ -554,11 +568,12 @@ export class BiddingService {
       throw new NotFoundException('Load not found');
     }
 
-    return this.bidRepository.find({
+    const bids = await this.bidRepository.find({
       where: { loadId },
-      relations: ['truckOwner', 'truckOwner.profile'],
+      relations: ['truckOwner', 'truckOwner.profile', 'load'],
       order: { createdAt: 'DESC' },
     });
+    return this.attachTrucksToBids(bids);
   }
 
   async updateBid(
@@ -621,6 +636,106 @@ export class BiddingService {
       cargoId: bid.loadId,
       truckOwnerId,
     });
+  }
+
+  private toTruckSnapshot(truck: Truck): BidTruckSnapshot {
+    return {
+      id: truck.id,
+      plateNumber: truck.plateNumber,
+      make: truck.make,
+      model: truck.model,
+      year: truck.year,
+      truckType: truck.truckType,
+      trailerType: truck.trailerType,
+      capacityWeight:
+        truck.capacityWeight != null ? Number(truck.capacityWeight) : undefined,
+      capacityVolume:
+        truck.capacityVolume != null ? Number(truck.capacityVolume) : undefined,
+      status: truck.status,
+      color: truck.color,
+    };
+  }
+
+  private resolveBidTruckId(bid: Bid): string | undefined {
+    const specId = bid.bidDetails?.truckSpecifications?.truckId;
+    const assignedId = bid.load?.assignedTruckId;
+    if (bid.status === BidStatus.ACCEPTED) {
+      return assignedId || specId;
+    }
+    return specId || assignedId;
+  }
+
+  private async attachTrucksToBids(bids: Bid[]): Promise<Bid[]> {
+    if (!bids.length) return bids;
+
+    const ids = [
+      ...new Set(
+        bids
+          .map((bid) => this.resolveBidTruckId(bid))
+          .filter((id): id is string => !!id),
+      ),
+    ];
+    if (!ids.length) return bids;
+
+    const trucks = await this.truckRepository.find({ where: { id: In(ids) } });
+    const byId = new Map(trucks.map((truck) => [truck.id, truck]));
+
+    for (const bid of bids) {
+      const truckId = this.resolveBidTruckId(bid);
+      const truck = truckId ? byId.get(truckId) : undefined;
+      if (truck) {
+        (bid as Bid & { truck?: BidTruckSnapshot }).truck =
+          this.toTruckSnapshot(truck);
+      }
+    }
+
+    return bids;
+  }
+
+  private async attachWinningTrucksToAuctions(
+    auctions: Auction[],
+  ): Promise<Auction[]> {
+    if (!auctions.length) return auctions;
+
+    const assignedIds = auctions
+      .map((auction) => auction.load?.assignedTruckId)
+      .filter((id): id is string => !!id);
+    const winningBidIds = auctions
+      .map((auction) => auction.winningBidId)
+      .filter((id): id is string => !!id);
+
+    let winningBids: Bid[] = [];
+    if (winningBidIds.length) {
+      winningBids = await this.bidRepository.find({
+        where: { id: In(winningBidIds) },
+      });
+    }
+    const bidById = new Map(winningBids.map((bid) => [bid.id, bid]));
+    const bidTruckIds = winningBids
+      .map((bid) => bid.bidDetails?.truckSpecifications?.truckId)
+      .filter((id): id is string => !!id);
+
+    const ids = [...new Set([...assignedIds, ...bidTruckIds])];
+    if (!ids.length) return auctions;
+
+    const trucks = await this.truckRepository.find({ where: { id: In(ids) } });
+    const byId = new Map(trucks.map((truck) => [truck.id, truck]));
+
+    for (const auction of auctions) {
+      const fromLoad = auction.load?.assignedTruckId;
+      const fromBid = auction.winningBidId
+        ? bidById.get(auction.winningBidId)?.bidDetails?.truckSpecifications
+            ?.truckId
+        : undefined;
+      const truckId = fromLoad || fromBid;
+      const truck = truckId ? byId.get(truckId) : undefined;
+      if (truck) {
+        (auction as Auction & { winningTruck?: BidTruckSnapshot }).winningTruck =
+          this.toTruckSnapshot(truck);
+      }
+    }
+
+    return auctions;
   }
 
   /**
@@ -1593,7 +1708,7 @@ export class BiddingService {
         } as any;
       } catch { }
     }
-    return auctions;
+    return this.attachWinningTrucksToAuctions(auctions);
   }
 
   async recordView(
@@ -1845,9 +1960,11 @@ export class BiddingService {
   }
 
   async getMyBids(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
+    let bids: Bid[];
+
     // TENANT_ADMIN and ADMIN see ALL bids in their tenant
     if (role === UserRole.TENANT_ADMIN || role === UserRole.ADMIN || role === 'TENANT_ADMIN' || role === 'ADMIN') {
-      return this.bidRepository
+      bids = await this.bidRepository
         .createQueryBuilder('bid')
         .leftJoinAndSelect('bid.load', 'load')
         .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
@@ -1857,16 +1974,13 @@ export class BiddingService {
         .where('load.tenantId = :tenantId', { tenantId })
         .orderBy('bid.createdAt', 'DESC')
         .getMany();
-    }
-    
-    // For truck owners / fleet managers, return their submitted bids (same tenant only)
-    if (
+    } else if (
       role === UserRole.TRUCK_OWNER ||
       role === 'TRUCK_OWNER' ||
       role === UserRole.FLEET_MANAGER ||
       role === 'FLEET_MANAGER'
     ) {
-      return this.bidRepository
+      bids = await this.bidRepository
         .createQueryBuilder('bid')
         .leftJoinAndSelect('bid.load', 'load')
         .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
@@ -1875,11 +1989,8 @@ export class BiddingService {
         .andWhere('load.tenantId = :tenantId', { tenantId })
         .orderBy('bid.createdAt', 'DESC')
         .getMany();
-    }
-
-    // For brokers, return bids on loads they are assigned to
-    if (role === UserRole.BROKER || role === 'BROKER') {
-      return this.bidRepository
+    } else if (role === UserRole.BROKER || role === 'BROKER') {
+      bids = await this.bidRepository
         .createQueryBuilder('bid')
         .leftJoinAndSelect('bid.load', 'load')
         .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
@@ -1889,72 +2000,34 @@ export class BiddingService {
         .where('load.brokerId = :userId', { userId })
         .orderBy('bid.createdAt', 'DESC')
         .getMany();
-    }
-    
-    // For cargo owners, return bids on their loads
-    return this.bidRepository
-      .createQueryBuilder('bid')
-      .leftJoinAndSelect('bid.load', 'load')
-      .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
-      .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
-      .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
-      .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
-      .where('load.cargoOwnerId = :userId', { userId })
-      .andWhere('load.tenantId = :tenantId', { tenantId })
-      .orderBy('bid.createdAt', 'DESC')
-      .getMany();
-  }
-
-  // Admin endpoint to get all bids in the system
-  async getAllBidsForAdmin(): Promise<Bid[]> {
-    return this.bidRepository.find({
-      relations: ['load', 'load.cargoOwner', 'load.cargoOwner.profile', 'truckOwner', 'truckOwner.profile'],
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async getBidHistory(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
-    // TENANT_ADMIN and ADMIN see ALL bids in their tenant
-    if (role === UserRole.TENANT_ADMIN || role === UserRole.ADMIN || role === 'TENANT_ADMIN' || role === 'ADMIN') {
-      return this.bidRepository
+    } else {
+      bids = await this.bidRepository
         .createQueryBuilder('bid')
         .leftJoinAndSelect('bid.load', 'load')
         .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
         .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
         .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
         .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
-        .where('load.tenantId = :tenantId', { tenantId })
-        .orderBy('bid.createdAt', 'DESC')
-        .getMany();
-    }
-    
-    // For truck owners, return their submitted bids
-    if (role === UserRole.TRUCK_OWNER || role === 'TRUCK_OWNER') {
-      return this.bidRepository
-        .createQueryBuilder('bid')
-        .leftJoinAndSelect('bid.load', 'load')
-        .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
-        .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
-        .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
-        .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
-        .where('bid.truckOwnerId = :userId', { userId })
+        .where('load.cargoOwnerId = :userId', { userId })
         .andWhere('load.tenantId = :tenantId', { tenantId })
         .orderBy('bid.createdAt', 'DESC')
         .getMany();
     }
-    
-    // For cargo owners, return bids on their loads/auctions
-    return this.bidRepository
-      .createQueryBuilder('bid')
-      .leftJoinAndSelect('bid.load', 'load')
-      .leftJoinAndSelect('load.cargoOwner', 'cargoOwner')
-      .leftJoinAndSelect('cargoOwner.profile', 'cargoOwnerProfile')
-      .leftJoinAndSelect('bid.truckOwner', 'truckOwner')
-      .leftJoinAndSelect('truckOwner.profile', 'truckOwnerProfile')
-      .where('load.cargoOwnerId = :userId', { userId })
-      .andWhere('load.tenantId = :tenantId', { tenantId })
-      .orderBy('bid.createdAt', 'DESC')
-      .getMany();
+
+    return this.attachTrucksToBids(bids);
+  }
+
+  // Admin endpoint to get all bids in the system
+  async getAllBidsForAdmin(): Promise<Bid[]> {
+    const bids = await this.bidRepository.find({
+      relations: ['load', 'load.cargoOwner', 'load.cargoOwner.profile', 'truckOwner', 'truckOwner.profile'],
+      order: { createdAt: 'DESC' },
+    });
+    return this.attachTrucksToBids(bids);
+  }
+
+  async getBidHistory(userId: string, tenantId: string, role?: string): Promise<Bid[]> {
+    return this.getMyBids(userId, tenantId, role);
   }
 
   async getDashboardStats(userId: string, tenantId: string, role?: string) {

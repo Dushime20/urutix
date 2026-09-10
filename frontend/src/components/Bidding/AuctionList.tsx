@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Eye,
   Lock,
+  Truck,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { biddingAPI, biddingHelpers } from '../../services/biddingApi';
@@ -65,9 +66,22 @@ interface Auction {
   minimumBidIncrement?: number;
   minimumBidDecrement?: number;
   totalBids: number;
-  uniqueBidders: number;
-  currentHighestBid?: number;
-  load: {
+    uniqueBidders: number;
+    currentHighestBid?: number;
+    winningBidId?: string | null;
+    winningTruck?: {
+      id: string;
+      plateNumber: string;
+      make?: string;
+      model?: string;
+      year?: number;
+      truckType?: string;
+      trailerType?: string;
+      capacityWeight?: number;
+      capacityVolume?: number;
+      status?: string;
+    };
+    load: {
     title: string;
     description: string;
     weight: number;
@@ -1417,6 +1431,55 @@ const AuctionList: React.FC<AuctionListProps> = ({ userRole, showWatchedOnly = f
                     <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 truncate">
                       {detailsAuction.load.cargoOwner.profile?.firstName} {detailsAuction.load.cargoOwner.profile?.lastName || 'Owner'}
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {detailsAuction.winningTruck && (
+                <div className="p-4 sm:p-5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-xl sm:rounded-2xl space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center">
+                      <Truck size={16} className="text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-[8px] sm:text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Winning Truck</p>
+                      <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100">
+                        {detailsAuction.winningTruck.plateNumber}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                    Assigned to ship this cargo after the bid was awarded.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-wider">Vehicle</p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {[detailsAuction.winningTruck.year, detailsAuction.winningTruck.make, detailsAuction.winningTruck.model].filter(Boolean).join(' ') || '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-wider">Type</p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {(detailsAuction.winningTruck.truckType || '—').replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-wider">Capacity</p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                        {detailsAuction.winningTruck.capacityWeight != null
+                          ? `${Number(detailsAuction.winningTruck.capacityWeight).toLocaleString()} kg`
+                          : '—'}
+                      </p>
+                    </div>
+                    {detailsAuction.winningTruck.status && (
+                      <div>
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-wider">Status</p>
+                        <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                          {detailsAuction.winningTruck.status.replace(/_/g, ' ')}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

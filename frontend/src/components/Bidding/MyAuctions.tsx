@@ -19,6 +19,7 @@ import {
     Package,
     TrendingDown,
     Info,
+    Truck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { toastActionSuccess, toastActionError, BID_ACCEPT_SUPPRESS_TYPES } from '../../utils/actionToast';
@@ -54,14 +55,43 @@ interface Bid {
     };
     bidDetails?: {
         truckSpecifications?: {
+            truckId?: string;
             truckType?: string;
             capacityWeight?: number;
+            capacityVolume?: number;
         };
         driverInfo?: {
             experience?: number;
             rating?: number;
         };
     };
+    truck?: {
+        id: string;
+        plateNumber: string;
+        make?: string;
+        model?: string;
+        year?: number;
+        truckType?: string;
+        trailerType?: string;
+        capacityWeight?: number;
+        capacityVolume?: number;
+        status?: string;
+        color?: string;
+    };
+}
+
+interface WinningTruck {
+    id: string;
+    plateNumber: string;
+    make?: string;
+    model?: string;
+    year?: number;
+    truckType?: string;
+    trailerType?: string;
+    capacityWeight?: number;
+    capacityVolume?: number;
+    status?: string;
+    color?: string;
 }
 
 interface Auction {
@@ -75,6 +105,7 @@ interface Auction {
     currentBestBid?: number;
     totalBids?: number;
     winningBidId?: string | null;
+    winningTruck?: WinningTruck;
     load?: {
         id: string;
         title?: string;
@@ -84,9 +115,13 @@ interface Auction {
         deliveryDate?: string;
         offeredPrice?: number;
         loadValue?: number;
+        assignedTruckId?: string;
     };
     bids?: Bid[];
 }
+
+const formatEnumLabel = (value?: string) =>
+    value ? value.replace(/_/g, ' ') : '—';
 
 const MyAuctions: React.FC = () => {
     const { compact: _fmtCompact } = useCurrencyFormat();
@@ -658,6 +693,12 @@ const MyAuctions: React.FC = () => {
                                                                         {bid.truckOwner?.profile?.companyName && (
                                                                             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">{bid.truckOwner.profile.companyName}</p>
                                                                         )}
+                                                                        {(bid.truck?.plateNumber || bid.bidDetails?.truckSpecifications?.truckType) && (
+                                                                            <p className="text-[10px] font-bold text-[#345E85] dark:text-blue-400 uppercase tracking-widest truncate mt-0.5">
+                                                                                {bid.status === 'ACCEPTED' ? 'Winning truck: ' : 'Truck: '}
+                                                                                {bid.truck?.plateNumber || formatEnumLabel(bid.bidDetails?.truckSpecifications?.truckType)}
+                                                                            </p>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -882,6 +923,41 @@ const MyAuctions: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {viewAuction.winningTruck && (
+                                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 space-y-3 border border-emerald-100 dark:border-emerald-800">
+                                    <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                                        <Truck size={12} /> Winning Truck
+                                    </p>
+                                    <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                                        Assigned to ship this cargo after the bid was awarded.
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Plate Number</p>
+                                            <p className="text-sm font-black text-slate-800 dark:text-slate-100">{viewAuction.winningTruck.plateNumber}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Vehicle</p>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                {[viewAuction.winningTruck.year, viewAuction.winningTruck.make, viewAuction.winningTruck.model].filter(Boolean).join(' ') || '—'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type</p>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatEnumLabel(viewAuction.winningTruck.truckType)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Capacity</p>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                {viewAuction.winningTruck.capacityWeight != null
+                                                    ? `${Number(viewAuction.winningTruck.capacityWeight).toLocaleString()} kg`
+                                                    : '—'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Footer */}
