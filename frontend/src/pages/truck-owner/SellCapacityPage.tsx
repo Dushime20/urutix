@@ -127,6 +127,15 @@ const SellCapacityPage: React.FC = () => {
     [bookings],
   );
 
+  const liveOffers = useMemo(
+    () => offers.filter((offer) => ['OPEN', 'PARTIALLY_BOOKED'].includes(offer.status)),
+    [offers],
+  );
+  const endedOffers = useMemo(
+    () => offers.filter((offer) => !['OPEN', 'PARTIALLY_BOOKED'].includes(offer.status)),
+    [offers],
+  );
+
   if (loading) return <p className="text-sm text-slate-500">Loading leftover capacity…</p>;
 
   return (
@@ -349,11 +358,18 @@ const SellCapacityPage: React.FC = () => {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Your listings</h2>
-        {offers.length === 0 ? (
-          <p className="text-sm text-slate-400">No leftover-space listings yet.</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Live leftover</h2>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">
+            Visible on Available space
+          </span>
+        </div>
+        {liveOffers.length === 0 ? (
+          <p className="text-sm text-slate-400">
+            No live leftover listings. Cargo owners only see leftover while the trip is still open.
+          </p>
         ) : (
-          offers.map((offer) => (
+          liveOffers.map((offer) => (
             <div key={offer.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-black text-slate-900 dark:text-white">{offer.corridor}</p>
@@ -364,19 +380,37 @@ const SellCapacityPage: React.FC = () => {
                   {formatWindow(offer.departureAt, offer.arrivalAt)}
                 </p>
               </div>
-              {['OPEN', 'PARTIALLY_BOOKED'].includes(offer.status) && (
-                <button
-                  type="button"
-                  onClick={() => capacityApi.closeOffer(offer.id).then(load).then(() => toast.success('Listing closed')).catch((err) => toast.error(apiError(err, 'Could not close')))}
-                  className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 inline-flex items-center gap-1"
-                >
-                  <X size={12} /> Close
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => capacityApi.closeOffer(offer.id).then(load).then(() => toast.success('Listing closed')).catch((err) => toast.error(apiError(err, 'Could not close')))}
+                className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 inline-flex items-center gap-1"
+              >
+                <X size={12} /> Close
+              </button>
             </div>
           ))
         )}
       </section>
+
+      {endedOffers.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-400">Ended listings</h2>
+          <p className="text-xs text-slate-400">
+            Expired or closed leftover is kept for your records. Cargo owners cannot see or book this space.
+          </p>
+          {endedOffers.map((offer) => (
+            <div key={offer.id} className="bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 opacity-70">
+              <p className="text-sm font-black text-slate-700 dark:text-slate-200">{offer.corridor}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {offer.truck?.plateNumber} · {Math.round(offer.remainingWeightKg).toLocaleString()} kg left · {offer.status.replace('_', ' ')}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {formatWindow(offer.departureAt, offer.arrivalAt)}
+              </p>
+            </div>
+          ))}
+        </section>
+      )}
     </div>
   );
 };

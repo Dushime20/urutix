@@ -915,7 +915,7 @@ export class CapacityService implements OnModuleInit {
         .set({ status: CapacityOfferStatus.EXPIRED })
         .where('"tenantId" = :tenantId', { tenantId })
         .andWhere('"status" IN (:...status)', { status: OPEN_OFFER })
-        .andWhere('"departureAt" < :now', { now: new Date() })
+        .andWhere('"arrivalAt" < :now', { now: new Date() })
         .execute();
     } catch (err: any) {
       this.logger.warn(`Could not expire stale capacity offers: ${err?.message}`);
