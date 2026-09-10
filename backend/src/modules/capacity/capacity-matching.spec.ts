@@ -19,6 +19,12 @@ const kigali = { name: 'Kigali', city: 'Kigali', country: 'Rwanda', countryCode:
 const nairobi = { name: 'Nairobi', city: 'Nairobi', country: 'Kenya', countryCode: 'KE', lat: -1.2921, lng: 36.8219 };
 const kampala = { name: 'Kampala', city: 'Kampala', country: 'Uganda', countryCode: 'UG', lat: 0.3476, lng: 32.5825 };
 
+/** Nyagatare → Cyangugu (Rusizi) working route with intermediate districts on the same corridor. */
+const nyagatare = { name: 'Nyagatare', city: 'Nyagatare', country: 'Rwanda', countryCode: 'RW', lat: -1.3089, lng: 30.3256 };
+const cyangugu = { name: 'Cyangugu', city: 'Cyangugu', country: 'Rwanda', countryCode: 'RW', lat: -2.4846, lng: 28.9076 };
+const kayonza = { name: 'Kayonza', city: 'Kayonza', country: 'Rwanda', countryCode: 'RW', lat: -1.8606, lng: 30.6503 };
+const nyamagabe = { name: 'Nyamagabe', city: 'Nyamagabe', country: 'Rwanda', countryCode: 'RW', lat: -2.4076, lng: 29.4672 };
+
 const leftover40: OfferMatchInput = {
   origin: kigali,
   destination: nairobi,
@@ -35,6 +41,12 @@ const leftover40: OfferMatchInput = {
   generalCargoOnly: true,
   allowMixing: true,
   status: 'OPEN',
+};
+
+const rwandaLeftover: OfferMatchInput = {
+  ...leftover40,
+  origin: nyagatare,
+  destination: cyangugu,
 };
 
 describe('Airbnb leftover capacity — Kigali → Nairobi 40% empty', () => {
@@ -67,11 +79,43 @@ describe('Airbnb leftover capacity — Kigali → Nairobi 40% empty', () => {
       volumeM3: 8,
       cargoType: 'GENERAL',
     };
-    expect(hardFilterOffer(leftover40, query)).toMatch(/corridor/i);
+    expect(hardFilterOffer(leftover40, query)).toMatch(/working route|corridor/i);
+  });
+
+  it('matches Kayonza → Nyamagabe on a Nyagatare → Cyangugu leftover truck', () => {
+    const query = {
+      origin: kayonza,
+      destination: nyamagabe,
+      weightKg: 4_000,
+      volumeM3: 10,
+      cargoType: 'GENERAL',
+    };
+    expect(corridorOverlaps(rwandaLeftover, query)).toBe(true);
+    expect(hardFilterOffer(rwandaLeftover, query)).toBeNull();
+    expect(scoreOffer(rwandaLeftover, query)).toBeGreaterThan(40);
+  });
+
+  it('rejects reverse-direction cargo on the same corridor', () => {
+    expect(
+      corridorOverlaps(rwandaLeftover, {
+        origin: cyangugu,
+        destination: nyagatare,
+      }),
+    ).toBe(false);
+  });
+
+  it('rejects cargo that leaves the truck working route', () => {
+    expect(
+      corridorOverlaps(rwandaLeftover, {
+        origin: kayonza,
+        destination: kampala,
+      }),
+    ).toBe(false);
   });
 
   it('filters by pickup location alone when delivery is omitted', () => {
     expect(corridorOverlaps(leftover40, { origin: kigali })).toBe(true);
+    expect(corridorOverlaps(rwandaLeftover, { origin: kayonza })).toBe(true);
     expect(corridorOverlaps(leftover40, { origin: kampala })).toBe(false);
   });
 

@@ -44,6 +44,7 @@ import {
 } from './dto/capacity.dto';
 import {
   applyBookingToSlice,
+  corridorOverlaps,
   hardFilterOffer,
   nextOfferStatus,
   PLATFORM_CAPACITY_COMMISSION_RATE,
@@ -440,11 +441,8 @@ export class CapacityService implements OnModuleInit {
         const card = this.decorateOffer(offer, truck);
         const input = this.toMatchInput(offer);
         const hasSlice = Boolean(search.weightKg);
-        const corridorOk =
-          (!search.origin && !search.destination) ||
-          ((!search.origin || this.cityHint(search.origin, offer.origin)) &&
-            (!search.destination || this.cityHint(search.destination, offer.destination)));
-        const reason = hasSlice ? hardFilterOffer(input, search) : corridorOk ? null : 'Corridor does not overlap this leftover space';
+        const corridorOk = corridorOverlaps(input, search);
+        const reason = hasSlice ? hardFilterOffer(input, search) : corridorOk ? null : 'Cargo pickup/delivery are not on this truck working route';
         const score = hasSlice ? scoreOffer(input, search) : corridorOk ? 70 : 0;
         const quote = hasSlice ? this.quoteFromOffer(offer, search.weightKg, search.volumeM3 || 0) : null;
         return { ...card, matchScore: score, matchReason: reason, quote, bookable: !reason };
