@@ -131,6 +131,21 @@ export const isLeftoverSellableSlice = (input: {
   input.utilizationPercent > 0 &&
   input.utilizationPercent < 100;
 
+/** Sequential trips on one truck can each sell leftover space; overlapping windows cannot. */
+export const tripWindowsOverlap = (
+  aStart?: Date | string | null,
+  aEnd?: Date | string | null,
+  bStart?: Date | string | null,
+  bEnd?: Date | string | null,
+): boolean => {
+  const startA = aStart ? new Date(aStart).getTime() : NaN;
+  const endA = aEnd ? new Date(aEnd).getTime() : NaN;
+  const startB = bStart ? new Date(bStart).getTime() : NaN;
+  const endB = bEnd ? new Date(bEnd).getTime() : NaN;
+  if ([startA, endA, startB, endB].some((value) => Number.isNaN(value))) return false;
+  return startA < endB && startB < endA;
+};
+
 const cityKey = (point?: Partial<GeoPoint> | null): string =>
   `${(point?.city || point?.name || '').trim().toLowerCase()}|${(point?.countryCode || point?.country || '')
     .trim()

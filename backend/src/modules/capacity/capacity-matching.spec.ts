@@ -11,6 +11,7 @@ import {
   quoteFreight,
   remainingFromTrip,
   scoreOffer,
+  tripWindowsOverlap,
   utilizationPercent,
   type OfferMatchInput,
 } from './capacity-matching';
@@ -213,5 +214,15 @@ describe('Airbnb leftover capacity — Kigali → Nairobi 40% empty', () => {
         existingOfferId: 'offer-1',
       }),
     ).toBe(false);
+  });
+
+  it('lets sequential trips on the same truck list leftover independently', () => {
+    const first = { start: '2026-10-10T06:00:00.000Z', end: '2026-10-12T18:00:00.000Z' };
+    const second = { start: '2026-10-15T06:00:00.000Z', end: '2026-10-17T18:00:00.000Z' };
+    const third = { start: '2026-10-20T06:00:00.000Z', end: '2026-10-22T18:00:00.000Z' };
+    expect(tripWindowsOverlap(first.start, first.end, second.start, second.end)).toBe(false);
+    expect(tripWindowsOverlap(second.start, second.end, third.start, third.end)).toBe(false);
+    expect(tripWindowsOverlap(first.start, first.end, third.start, third.end)).toBe(false);
+    expect(tripWindowsOverlap(first.start, first.end, '2026-10-11T08:00:00.000Z', '2026-10-13T18:00:00.000Z')).toBe(true);
   });
 });

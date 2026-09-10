@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, X } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../../components/translated-text';
 import { capacityApi, type SellableTruck } from '../../services/capacityApi';
@@ -30,6 +30,11 @@ const formatWhen = (iso?: string | null) => {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+};
+
+const formatWindow = (from?: string | null, to?: string | null) => {
+  if (!from && !to) return '—';
+  return `${formatWhen(from)} → ${formatWhen(to)}`;
 };
 
 const placeLabel = (side: 'origin' | 'destination', row: SellableTruck) => {
@@ -61,11 +66,14 @@ const SellCapacityPage: React.FC = () => {
     setSellable(inventory);
     setOffers(listing);
     setBookings(inbox);
+    const tripId = params.get('tripId');
     const truckId = params.get('truckId');
-    if (truckId) {
-      const row = inventory.find((item) => item.truckId === truckId);
-      if (row) applySellable(row);
-    }
+    const row = tripId
+      ? inventory.find((item) => item.tripId === tripId)
+      : truckId
+        ? inventory.find((item) => item.truckId === truckId)
+        : null;
+    if (row) applySellable(row);
   };
 
   useEffect(() => {
@@ -79,7 +87,7 @@ const SellCapacityPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [params.get('truckId')]);
+  }, [params.get('tripId'), params.get('truckId')]);
 
   const clearSelection = () => {
     setSelected(null);
@@ -95,7 +103,7 @@ const SellCapacityPage: React.FC = () => {
   };
 
   const publish = async () => {
-    if (!selected?.tripId) return toast.error('Choose a truck with leftover space on an active trip');
+    if (!selected?.tripId) return toast.error('Choose a trip with leftover space');
     if (floorPrice <= 0) return toast.error('Set a price for the remaining space');
     setSaving(true);
     try {
@@ -139,22 +147,22 @@ const SellCapacityPage: React.FC = () => {
 
       <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Trucks with leftover space</h2>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">Partial loads only</span>
+          <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Trips with leftover space</h2>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">One listing per trip</span>
         </div>
         {sellable.length === 0 ? (
           <p className="text-sm text-slate-400">
-            No partially loaded trucks on active trips right now. When a unit is running with unused kg/m³, it will show here.
+            No partially loaded trips right now. Each trip keeps its own dates, route, and leftover kg/m³ — list them separately even if they share a truck.
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {sellable.map((row) => (
               <button
-                key={row.truckId}
+                key={row.tripId || row.truckId}
                 type="button"
                 onClick={() => applySellable(row)}
                 className={`text-left rounded-2xl border p-4 transition-all ${
-                  selected?.truckId === row.truckId
+                  selected?.tripId === row.tripId
                     ? 'border-[#345E85] bg-blue-50/70 dark:bg-blue-900/20'
                     : 'border-slate-100 dark:border-slate-800 hover:border-[#345E85]/40'
                 }`}
@@ -166,6 +174,10 @@ const SellCapacityPage: React.FC = () => {
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
                       {placeLabel('origin', row)} → {placeLabel('destination', row)}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5 inline-flex items-center gap-1">
+                      <Calendar size={11} className="shrink-0" />
+                      {formatWindow(row.corridor?.departureAt, row.corridor?.arrivalAt)}
                     </p>
                     {row.cargoTitle ? (
                       <p className="text-[11px] text-slate-400 mt-0.5">{row.cargoTitle}</p>
@@ -202,18 +214,22 @@ const SellCapacityPage: React.FC = () => {
               {selected.cargoTitle ? (
                 <p className="text-xs text-slate-500 mt-0.5">Cargo: {selected.cargoTitle}</p>
               ) : null}
+              <p className="text-xs text-slate-400 mt-0.5 inline-flex items-center gap-1">
+                <Calendar size={11} />
+                {formatWindow(selected.corridor?.departureAt, selected.corridor?.arrivalAt)}
+              </p>
             </div>
             <button
               type="button"
               onClick={clearSelection}
               className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#345E85]"
             >
-              Change truck
+              Change trip
             </button>
           </div>
 
           <p className="text-xs text-slate-500">
-            Route, schedule, and remaining kg/m³ come from the active cargo on this trip. Set your price below.
+            This listing is only for this trip’s route and dates. Other trips on the same truck keep their own leftover space and can be listed separately.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,14 +304,14 @@ const SellCapacityPage: React.FC = () => {
             {saving ? 'Publishing…' : 'List remaining space'}
           </button>
           {selected && !selected.canList && (
-            <p className="text-xs text-amber-600">This truck cannot be listed right now. Pick another unit.</p>
+            <p className="text-xs text-amber-600">This trip cannot be listed right now. Pick another trip.</p>
           )}
         </section>
       ) : (
         <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 p-8 text-center">
-          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Select a truck to publish leftover space</p>
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Select a trip to publish leftover space</p>
           <p className="text-xs text-slate-500 mt-2 max-w-md mx-auto">
-            Trip route and remaining capacity are filled automatically from the cargo already on that truck.
+            The same truck can appear more than once when it has later trips with different dates and locations. Route and remaining capacity come from the cargo on that trip.
           </p>
         </section>
       )}
@@ -343,6 +359,9 @@ const SellCapacityPage: React.FC = () => {
                 <p className="text-sm font-black text-slate-900 dark:text-white">{offer.corridor}</p>
                 <p className="text-xs text-slate-500 mt-1">
                   {offer.truck?.plateNumber} · {Math.round(offer.remainingWeightKg).toLocaleString()} kg left · {offer.bookingMode} · {offer.status.replace('_', ' ')}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {formatWindow(offer.departureAt, offer.arrivalAt)}
                 </p>
               </div>
               {['OPEN', 'PARTIALLY_BOOKED'].includes(offer.status) && (

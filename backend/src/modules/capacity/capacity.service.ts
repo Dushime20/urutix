@@ -56,6 +56,7 @@ import {
   roundMoney,
   scoreOffer,
   suggestListedRemainder,
+  tripWindowsOverlap,
   utilizationPercent,
   type OfferMatchInput,
   type SearchQuery,
@@ -221,15 +222,17 @@ export class CapacityService implements OnModuleInit {
       this.logger.warn(`sellable offers query failed: ${err?.message}`);
     }
 
+    const truckById = new Map(liveTrucks.map((truck) => [truck.id, truck]));
     const rows = [];
-    for (const truck of liveTrucks) {
+    for (const trip of trips) {
+      const truck = truckById.get(trip.truckId);
+      if (!truck) continue;
       try {
-        const trip = trips.find((t) => t.truckId === truck.id);
-        const offer = liveOffers.find((o) => o.truckId === truck.id);
+        const offer = liveOffers.find((o) => o.tripId === trip.id);
         const nameplateKg = Number(truck.capacityWeight) || 0;
         const nameplateM3 = Number(truck.capacityVolume) || 0;
-        const loadKg = Number(trip?.load?.weight) || 0;
-        const loadM3 = Number(trip?.load?.volume) || 0;
+        const loadKg = Number(trip.load?.weight) || 0;
+        const loadM3 = Number(trip.load?.volume) || 0;
         const bookedKg = Number(offer?.allocatedWeightKg) || 0;
         const bookedM3 = Number(offer?.allocatedVolumeM3) || 0;
         const allocatedKg = loadKg + bookedKg;
@@ -244,25 +247,23 @@ export class CapacityService implements OnModuleInit {
           status: truck.status,
           nameplateWeightKg: nameplateKg,
           nameplateVolumeM3: nameplateM3,
-          tripId: trip?.id || null,
-          tripNumber: trip?.tripNumber || null,
-          cargoTitle: trip?.load?.title || null,
+          tripId: trip.id,
+          tripNumber: trip.tripNumber || null,
+          cargoTitle: trip.load?.title || null,
           loadedWeightKg: loadKg,
-          corridor: trip
-            ? {
-                origin: this.placeFromLoad(trip.load, 'origin'),
-                destination: this.placeFromLoad(trip.load, 'destination'),
-                departureAt: trip.plannedStartTime,
-                arrivalAt: trip.plannedEndTime,
-              }
-            : null,
+          corridor: {
+            origin: this.placeFromLoad(trip.load, 'origin'),
+            destination: this.placeFromLoad(trip.load, 'destination'),
+            departureAt: trip.plannedStartTime,
+            arrivalAt: trip.plannedEndTime,
+          },
           remainingWeightKg: offer ? Number(offer.remainingWeightKg) : slice.remainingWeightKg,
           remainingVolumeM3: offer ? Number(offer.remainingVolumeM3) : slice.remainingVolumeM3,
           allocatedWeightKg: allocatedKg,
           utilizationPercent: utilization,
           emptyPercent: roundKg(100 - utilization),
           canList: isLeftoverSellableSlice({
-            tripId: trip?.id,
+            tripId: trip.id,
             allocatedWeightKg: allocatedKg,
             remainingWeightKg: slice.remainingWeightKg,
             utilizationPercent: utilization,
@@ -272,7 +273,7 @@ export class CapacityService implements OnModuleInit {
           suggestedFloorPrice: roundMoney(this.suggestFloor(slice.remainingWeightKg, trip)),
         });
       } catch (err: any) {
-        this.logger.warn(`Skipping sellable truck ${truck.id}: ${err?.message}`);
+        this.logger.warn(`Skipping sellable trip ${trip.id}: ${err?.message}`);
       }
     }
 
@@ -294,22 +295,33 @@ export class CapacityService implements OnModuleInit {
       throw new BadRequestException('Only available or in-transit trucks can sell leftover space');
     }
 
-    const live = await this.offerRepo.findOne({
-      where: { tenantId, truckId: truck.id, status: In(OPEN_OFFER) },
-    });
-    if (live) throw new BadRequestException('This truck already has an open leftover-space listing');
-
     const trip = await this.findTripWithLoad({ id: dto.tripId, tenantId, truckId: truck.id });
     if (!trip) throw new NotFoundException('Trip not found for this truck');
 
+    const liveOnTrip = await this.offerRepo.findOne({
+      where: { tenantId, tripId: trip.id, status: In(OPEN_OFFER) },
+    });
+    if (liveOnTrip) {
+      throw new BadRequestException('This trip already has an open leftover-space listing');
+    }
+
+    const liveOnTruck = await this.offerRepo.find({
+      where: { tenantId, truckId: truck.id, status: In(OPEN_OFFER) },
+    });
+    const overlapping = liveOnTruck.find((offer) =>
+      tripWindowsOverlap(offer.departureAt, offer.arrivalAt, trip.plannedStartTime, trip.plannedEndTime),
+    );
+    if (overlapping) {
+      throw new BadRequestException(
+        'This truck already has leftover space listed on overlapping dates. Sequential trips can each be listed separately.',
+      );
+    }
+
     const nameplateKg = Number(truck.capacityWeight) || 0;
     const nameplateM3 = Number(truck.capacityVolume) || 0;
-    const allocatedKg = Number(trip?.load?.weight) || 0;
-    const allocatedM3 = Number(trip?.load?.volume) || 0;
+    const allocatedKg = Number(trip.load?.weight) || 0;
+    const allocatedM3 = Number(trip.load?.volume) || 0;
     const utilization = utilizationPercent(allocatedKg, nameplateKg);
-    if (!trip) {
-      throw new BadRequestException('Only trucks on an active trip can sell leftover space');
-    }
     if (allocatedKg <= 0) {
       throw new BadRequestException('This truck has no cargo loaded yet — sell leftover space only on partially filled trips');
     }
@@ -1048,6 +1060,7 @@ export class CapacityService implements OnModuleInit {
       .where('trip.tenantId = :tenantId', { tenantId })
       .andWhere('trip.truckId IN (:...ids)', { ids })
       .andWhere('CAST(trip.status AS varchar) IN (:...status)', { status: ACTIVE_TRIP })
+      .orderBy('trip.plannedStartTime', 'ASC')
       .getMany();
   }
 
