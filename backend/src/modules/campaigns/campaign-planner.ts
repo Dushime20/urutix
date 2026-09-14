@@ -11,8 +11,8 @@ export interface CorridorCity {
 }
 
 export { FTL_WEIGHT_KG, FTL_VOLUME_M3 };
-/** @deprecated Prefer ATRI regional cost × markup; kept for marketRates override clamp. */
-export const FTL_RATE_PER_KM = 1.85;
+/** @deprecated Prefer estimateLaneFreight shipper corridor rate; kept for marketRates override clamp. */
+export const FTL_RATE_PER_KM = 1.15;
 export const ADVANCE_RATIO = 0.7;
 export const INSURANCE_RATE = 0.0045;
 
@@ -141,7 +141,7 @@ export function buildCampaignPlan(intent: CampaignIntent) {
   const ftlCount = destinations.filter((d) => d.loadType === 'FTL').length;
   const crossBorderCount = destinations.filter((d) => d.crossBorder).length;
   const totalWeightKg = destinations.reduce((s, d) => s + d.weightKg, 0);
-  const rateSource = destinations[0]?.freightBreakdown?.rateSource || 'atri_regional';
+  const rateSource = destinations[0]?.freightBreakdown?.rateSource || 'shipper_corridor';
   const sampleRate = destinations[0]?.freightBreakdown?.costPerKmUsd;
 
   const operatorSteps = [
@@ -167,7 +167,7 @@ export function buildCampaignPlan(intent: CampaignIntent) {
       detail:
         rateSource === 'market_median'
           ? `Indicative freight from your tenant’s median offered lane rate (~$${sampleRate}/truck-km), road-km, FTL/LTL mix, fuel, and border fees.`
-          : `Indicative freight from ATRI operating cost × regional multiplier × carrier markup (~$${sampleRate}/truck-km), road-km, FTL/LTL mix, fuel, and border fees — not a binding bid.`,
+          : `Indicative freight from East Africa shipper corridor rates (~$${sampleRate}/truck-km), road-km, FTL/LTL mix, fuel, and border fees — a planning suggestion, not a binding bid.`,
     },
     {
       id: 'inventory',
@@ -270,7 +270,7 @@ export function buildCampaignPlan(intent: CampaignIntent) {
     freightMethod:
       rateSource === 'market_median'
         ? 'Indicative: tenant median $/truck-km × road distance × FTL trucks or LTL share + fuel + border'
-        : 'Indicative: ATRI cost × regional multiplier × 20% carrier markup × road distance × FTL/LTL + fuel + border',
+        : 'Indicative: East Africa shipper corridor $/truck-km × road distance × FTL/LTL + fuel + border',
     rates: {
       ftlWeightKg: ftlWeight,
       ftlVolumeM3: ftlVolume,
@@ -278,7 +278,7 @@ export function buildCampaignPlan(intent: CampaignIntent) {
       insuranceRate,
       advanceRatio,
       rateSource,
-      roadDistanceFactor: 1.25,
+      roadDistanceFactor: 1.15,
     },
   };
 }

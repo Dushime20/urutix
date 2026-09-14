@@ -2,11 +2,12 @@ import {
   estimateLaneFreight,
   ROAD_DISTANCE_FACTOR,
   CROSS_BORDER_FIXED_USD,
+  SHIPPER_RATE_USD_PER_KM,
+  shipperRegionalFactor,
 } from './campaign-freight';
-import { BASE_COST_USD_PER_KM, CARRIER_MARKUP_OVER_COST } from '../matching/constants/freight-rates.constants';
 
 describe('estimateLaneFreight', () => {
-  it('converts air distance to road-km and applies regional ATRI markup', () => {
+  it('prices a single FTL truck at shipper corridor rates — not US ATRI × Africa markup', () => {
     const quote = estimateLaneFreight({
       haversineKm: 800,
       weightKg: 28_000,
@@ -16,16 +17,20 @@ describe('estimateLaneFreight', () => {
       preferSharedTrucks: false,
     });
     expect(quote.roadKm).toBe(Math.round(800 * ROAD_DISTANCE_FACTOR));
-    expect(quote.rateSource).toBe('atri_regional');
+    expect(quote.rateSource).toBe('shipper_corridor');
     expect(quote.loadType).toBe('FTL');
+    expect(quote.trucksNeeded).toBe(1);
     expect(quote.crossBorderFixedUsd).toBe(CROSS_BORDER_FIXED_USD);
-    expect(quote.fuelSurchargeUsd).toBeGreaterThan(0);
-    expect(quote.estimatedFreight).toBeGreaterThan(quote.linehaulUsd);
-    const expectedRate = Number((BASE_COST_USD_PER_KM * Math.max(1.45, 1.35) * (1 + CARRIER_MARKUP_OVER_COST)).toFixed(2));
+    const expectedRate = Number(
+      (SHIPPER_RATE_USD_PER_KM * shipperRegionalFactor('RW', 'KE')).toFixed(2),
+    );
     expect(quote.costPerKmUsd).toBe(expectedRate);
+    // One Kigali→Nairobi-class truck should stay in a payable shipper range.
+    expect(quote.estimatedFreight).toBeGreaterThan(800);
+    expect(quote.estimatedFreight).toBeLessThan(2500);
   });
 
-  it('uses tenant market median when provided', () => {
+  it('uses tenant market median when provided (clamped)', () => {
     const quote = estimateLaneFreight({
       haversineKm: 400,
       weightKg: 5_000,
@@ -33,11 +38,24 @@ describe('estimateLaneFreight', () => {
       originCountryCode: 'KE',
       destinationCountryCode: 'KE',
       preferSharedTrucks: true,
-      marketRatePerKm: 2.1,
+      marketRatePerKm: 1.8,
     });
     expect(quote.rateSource).toBe('market_median');
-    expect(quote.costPerKmUsd).toBe(2.1);
+    expect(quote.costPerKmUsd).toBe(1.8);
     expect(quote.loadType).toBe('LTL');
     expect(quote.crossBorderFixedUsd).toBe(0);
+  });
+
+  it('does not explode multi-truck bulk into unaffordable single-load quotes', () => {
+    const quote = estimateLaneFreight({
+      haversineKm: 700,
+      weightKg: 84_000, // 3 × 28t trucks of cement
+      volumeM3: 90,
+      originCountryCode: 'RW',
+      destinationCountryCode: 'KE',
+      preferSharedTrucks: false,
+    });
+    expect(quote.trucksNeeded).toBe(3);
+    expect(quote.estimatedFreight).toBeLessThan(8_000);
   });
 });

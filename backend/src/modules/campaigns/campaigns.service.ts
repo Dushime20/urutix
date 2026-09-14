@@ -275,9 +275,9 @@ export class CampaignsService implements OnModuleInit {
     return {
       ftlWeightKg: FTL_WEIGHT_KG,
       ftlVolumeM3: FTL_VOLUME_M3,
-      // Only inject a live rate when we have enough priced loads; otherwise ATRI regional cost applies.
+      // Only inject a live rate when we have enough priced loads; otherwise shipper corridor rate applies.
       ...(hasMarket && mid != null
-        ? { ftlRatePerKm: Number(Math.max(0.4, Math.min(mid, 8)).toFixed(2)) }
+        ? { ftlRatePerKm: Number(Math.max(0.5, Math.min(mid, 2.2)).toFixed(2)) }
         : {}),
       insuranceRate: INSURANCE_RATE,
       advanceRatio: ADVANCE_RATIO,

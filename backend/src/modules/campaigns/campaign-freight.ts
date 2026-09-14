@@ -1,39 +1,44 @@
 /**
  * Campaign freight estimate — cargo-owner facing indicative quote.
  *
- * Built for international road corridors (not a binding carrier bid).
- * Formula mirrors industry practice:
- *   road km · regional operating cost · carrier markup · FTL trucks or LTL share
- *   + cross-border fees + fuel surcharge
+ * This is a marketplace planning number (what a shipper might offer),
+ * NOT full carrier operating-cost recovery (ATRI US × Africa × markup),
+ * which priced single loads unrealistically high (~$20k+).
  *
- * Sources aligned with matching constants:
- *   ATRI 2024 operating cost, IRU / World Bank regional multipliers.
+ * Formula:
+ *   roadKm × shipper $/truck-km × trucks (with fleet discount) or LTL share
+ *   + light fuel + border fees
  */
-import {
-  BASE_COST_USD_PER_KM,
-  CARRIER_MARKUP_OVER_COST,
-  DEFAULT_REGIONAL_MULTIPLIER,
-  MINIMUM_COST_USD,
-  REGIONAL_MULTIPLIERS,
-} from '../matching/constants/freight-rates.constants';
+import { MINIMUM_COST_USD, REGIONAL_MULTIPLIERS, DEFAULT_REGIONAL_MULTIPLIER } from '../matching/constants/freight-rates.constants';
 
-/** Haversine understates road distance; East/Central Africa corridors often ~20–35% longer. */
-export const ROAD_DISTANCE_FACTOR = 1.25;
+/** East Africa / corridor shipper-facing all-in truck rate (USD per truck-km). */
+export const SHIPPER_RATE_USD_PER_KM = 1.15;
+
+/** Haversine → road distance uplift (modest). */
+export const ROAD_DISTANCE_FACTOR = 1.15;
 
 /** Fixed border / customs handling fee per cross-border child load (USD). */
-export const CROSS_BORDER_FIXED_USD = 180;
+export const CROSS_BORDER_FIXED_USD = 100;
 
-/** Extra % of linehaul for cross-border dwell, bond, and informal corridor costs. */
-export const CROSS_BORDER_LINEHAUL_PCT = 0.12;
+/** Extra % of linehaul for cross-border dwell. */
+export const CROSS_BORDER_LINEHAUL_PCT = 0.08;
 
-/** Spot fuel / energy surcharge on linehaul (indicative). */
-export const FUEL_SURCHARGE_PCT = 0.08;
+/** Fuel already partly in shipper rate; keep a light surcharge. */
+export const FUEL_SURCHARGE_PCT = 0.05;
 
-/** LTL consolidation handling premium vs pure pro-rata FTL. */
-export const LTL_HANDLING_PCT = 0.15;
+/** LTL handling premium vs pro-rata FTL. */
+export const LTL_HANDLING_PCT = 0.12;
 
-/** Never bill LTL below this share of a full truck (handling floor). */
+/** Never bill LTL below this share of a full truck. */
 export const LTL_MIN_TRUCK_SHARE = 0.18;
+
+/** Bulk multi-truck discount (4% per extra truck, max 20%). */
+export const FLEET_DISCOUNT_PER_EXTRA_TRUCK = 0.04;
+export const FLEET_DISCOUNT_CAP = 0.2;
+
+/** Clamp live median so a bad history sample cannot explode quotes. */
+export const MARKET_RATE_MIN = 0.5;
+export const MARKET_RATE_MAX = 2.2;
 
 export const FTL_WEIGHT_KG = 28_000;
 export const FTL_VOLUME_M3 = 76;
@@ -56,7 +61,7 @@ export interface LaneFreightBreakdown {
   roadKm: number;
   regionalMultiplier: number;
   costPerKmUsd: number;
-  rateSource: 'market_median' | 'atri_regional';
+  rateSource: 'market_median' | 'shipper_corridor';
   trucksNeeded: number;
   utilization: number;
   loadType: 'FTL' | 'LTL';
@@ -74,13 +79,17 @@ export function regionalMultiplierFor(countryCode?: string): number {
   return REGIONAL_MULTIPLIERS[code] ?? DEFAULT_REGIONAL_MULTIPLIER;
 }
 
-/** For cross-border lanes use the higher-cost country (landlocked / weak roads drive price). */
-export function corridorRegionalMultiplier(originCode: string, destCode: string): number {
-  return Math.max(regionalMultiplierFor(originCode), regionalMultiplierFor(destCode));
+/**
+ * Narrow band around 1.0 so we do not stack US-cost × Africa poverty premium
+ * on top of an already East-Africa shipper rate.
+ */
+export function shipperRegionalFactor(originCode: string, destCode: string): number {
+  const raw = Math.max(regionalMultiplierFor(originCode), regionalMultiplierFor(destCode));
+  return Number(Math.min(1.15, Math.max(0.9, 0.75 + raw * 0.25)).toFixed(2));
 }
 
 export function roadKmFromHaversine(haversineKm: number): number {
-  return Math.max(Math.round(Math.max(haversineKm, 1) * ROAD_DISTANCE_FACTOR), 50);
+  return Math.max(Math.round(Math.max(haversineKm, 1) * ROAD_DISTANCE_FACTOR), 40);
 }
 
 export function estimateLaneFreight(input: LaneFreightInput): LaneFreightBreakdown {
@@ -92,17 +101,20 @@ export function estimateLaneFreight(input: LaneFreightInput): LaneFreightBreakdo
   const crossBorder =
     (input.originCountryCode || '').toUpperCase() !== (input.destinationCountryCode || '').toUpperCase();
 
-  const regionalMultiplier = corridorRegionalMultiplier(
+  const regionalMultiplier = shipperRegionalFactor(
     input.originCountryCode,
     input.destinationCountryCode,
   );
 
   const market = Number(input.marketRatePerKm);
-  const useMarket = Number.isFinite(market) && market >= 0.4 && market <= 8;
+  const useMarket =
+    Number.isFinite(market) && market >= MARKET_RATE_MIN && market <= MARKET_RATE_MAX;
   const costPerKmUsd = useMarket
     ? Number(market.toFixed(2))
-    : Number((BASE_COST_USD_PER_KM * regionalMultiplier * (1 + CARRIER_MARKUP_OVER_COST)).toFixed(2));
-  const rateSource: LaneFreightBreakdown['rateSource'] = useMarket ? 'market_median' : 'atri_regional';
+    : Number((SHIPPER_RATE_USD_PER_KM * regionalMultiplier).toFixed(2));
+  const rateSource: LaneFreightBreakdown['rateSource'] = useMarket
+    ? 'market_median'
+    : 'shipper_corridor';
 
   const utilByWeight = weightKg / ftlWeight;
   const utilByVolume = volumeM3 / ftlVolume;
@@ -118,10 +130,12 @@ export function estimateLaneFreight(input: LaneFreightInput): LaneFreightBreakdo
 
   let linehaulUsd: number;
   if (loadType === 'FTL') {
-    // Full truck(s) for the corridor — standard international FTL quoting.
-    linehaulUsd = trucksNeeded * roadKm * costPerKmUsd;
+    const fleetDiscount = Math.min(
+      FLEET_DISCOUNT_CAP,
+      Math.max(0, trucksNeeded - 1) * FLEET_DISCOUNT_PER_EXTRA_TRUCK,
+    );
+    linehaulUsd = trucksNeeded * roadKm * costPerKmUsd * (1 - fleetDiscount);
   } else {
-    // LTL: pay a share of one truck + handling premium (not a free empty backhaul).
     const truckShare = Math.max(utilization, LTL_MIN_TRUCK_SHARE);
     linehaulUsd = roadKm * costPerKmUsd * truckShare * (1 + LTL_HANDLING_PCT);
   }
@@ -140,7 +154,7 @@ export function estimateLaneFreight(input: LaneFreightInput): LaneFreightBreakdo
       ? `FTL: ${trucksNeeded} truck(s) × ${roadKm} road-km × $${costPerKmUsd}/km` +
         (crossBorder ? ` + border $${CROSS_BORDER_FIXED_USD}+${Math.round(CROSS_BORDER_LINEHAUL_PCT * 100)}%` : '') +
         ` + fuel ${Math.round(FUEL_SURCHARGE_PCT * 100)}%`
-      : `LTL: ${roadKm} road-km × $${costPerKmUsd}/km × ${Math.max(utilization, LTL_MIN_TRUCK_SHARE).toFixed(2)} util × ${1 + LTL_HANDLING_PCT} handling` +
+      : `LTL: ${roadKm} road-km × $${costPerKmUsd}/km × ${Math.max(utilization, LTL_MIN_TRUCK_SHARE).toFixed(2)} util` +
         (crossBorder ? ` + border` : '') +
         ` + fuel ${Math.round(FUEL_SURCHARGE_PCT * 100)}%`;
 
