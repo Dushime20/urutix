@@ -43,6 +43,16 @@ export class CampaignCityDto {
   lng: number;
 }
 
+export class CampaignDestinationOfferDto {
+  @IsString()
+  cityId: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  offeredPrice: number;
+}
+
 export class CampaignIntentDto {
   @ApiPropertyOptional({ example: 'I need 100,000 units of bottled water delivered from Kigali next month' })
   @IsOptional()
@@ -69,6 +79,20 @@ export class CampaignIntentDto {
   @Min(1)
   @Max(10_000_000)
   totalUnits?: number;
+
+  @ApiPropertyOptional({ description: 'Total cargo weight in tonnes (converted to kg server-side)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.001)
+  totalTonnes?: number;
+
+  @ApiPropertyOptional({ description: 'Total cargo weight in kg (preferred over inventing kg/unit)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  totalWeightKg?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -164,4 +188,14 @@ export class CampaignIntentDto {
   @IsString()
   @MaxLength(3)
   currencyCode?: string;
+
+  @ApiPropertyOptional({
+    type: [CampaignDestinationOfferDto],
+    description: 'Cargo-owner offered price per destination city (published on child loads)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CampaignDestinationOfferDto)
+  destinationOffers?: CampaignDestinationOfferDto[];
 }

@@ -38,6 +38,13 @@ const apiError = (err: any, fallback: string) =>
   err?.response?.data?.error ||
   fallback;
 
+/** Only trust an explicit total mass — never invent from a silent kg/unit default. */
+const tonnesFromIntent = (intent: any): number => {
+  if (!intent) return 0;
+  if (Number(intent.totalWeightKg) > 0) return Number(intent.totalWeightKg) / 1000;
+  return 0;
+};
+
 const DistributionCampaignPage: React.FC = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -47,6 +54,7 @@ const DistributionCampaignPage: React.FC = () => {
   const [prompt, setPrompt] = useState(EXAMPLE);
   const [originText, setOriginText] = useState('');
   const [budgetCap, setBudgetCap] = useState(0);
+  const [totalTonnes, setTotalTonnes] = useState<number | ''>('');
   const [goodsReady, setGoodsReady] = useState(false);
   const [campaign, setCampaign] = useState<any | null>(null);
   const [savedList, setSavedList] = useState<any[]>([]);
@@ -59,9 +67,29 @@ const DistributionCampaignPage: React.FC = () => {
   const { language } = useI18n();
   const [loading, setLoading] = useState(Boolean(existingId));
   const [selectedCities, setSelectedCities] = useState<CampaignCity[]>([]);
+  /** cityId → cargo-owner offered freight (published on loads). */
+  const [offeredPrices, setOfferedPrices] = useState<Record<string, number>>({});
 
   const plan = campaign?.plan;
   const origin = plan?.origin || campaign?.intent?.origin;
+  const currency = campaign?.intent?.currencyCode || 'USD';
+
+  const syncOffersFromPlan = (data: any, preserveEdits = false) => {
+    const rows = data?.plan?.destinations || [];
+    setOfferedPrices((prev) => {
+      const next: Record<string, number> = {};
+      for (const dest of rows) {
+        const id = dest.cityId;
+        if (!id) continue;
+        if (preserveEdits && Number(prev[id]) > 0) {
+          next[id] = prev[id];
+        } else {
+          next[id] = Math.round(Number(dest.offeredPrice || dest.estimatedFreight) || 0);
+        }
+      }
+      return next;
+    });
+  };
 
   const applyCampaign = (data: any, nextStep?: number) => {
     if (!data) return;
@@ -70,7 +98,10 @@ const DistributionCampaignPage: React.FC = () => {
     if (data.intent?.origin?.name) setOriginText(data.intent.origin.name);
     if (data.intent?.destinations?.length) setSelectedCities(data.intent.destinations);
     if (typeof data.intent?.budgetCap === 'number') setBudgetCap(data.intent.budgetCap);
+    const tonnes = tonnesFromIntent(data.intent);
+    setTotalTonnes(tonnes > 0 ? Number(tonnes.toFixed(3)) : '');
     setGoodsReady(Boolean(data.intent?.goodsReady));
+    syncOffersFromPlan(data, false);
     if (data.id) setParams({ id: data.id });
     if (typeof nextStep === 'number') {
       setStep(nextStep);
@@ -104,16 +135,32 @@ const DistributionCampaignPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existingId]);
 
+  const destinationOffers = () =>
+    Object.entries(offeredPrices)
+      .filter(([, price]) => Number(price) > 0)
+      .map(([cityId, offeredPrice]) => ({ cityId, offeredPrice: Math.round(Number(offeredPrice)) }));
+
+  const offeredFreightTotal = (plan?.destinations || []).reduce(
+    (sum: number, dest: any) => sum + (Number(offeredPrices[dest.cityId]) || Number(dest.offeredPrice) || Number(dest.estimatedFreight) || 0),
+    0,
+  );
+
   const payload = () => ({
     prompt: prompt.trim(),
     originText: originText.trim() || undefined,
     budgetCap: budgetCap || undefined,
+    totalTonnes: typeof totalTonnes === 'number' && totalTonnes > 0 ? totalTonnes : undefined,
     destinations: selectedCities,
+    destinationOffers: destinationOffers(),
   });
 
   const goPlan = async () => {
     if (prompt.trim().length < 12) {
       toast.error('Tell UrutiX what must move in one sentence');
+      return;
+    }
+    if (!(typeof totalTonnes === 'number' && totalTonnes > 0)) {
+      toast.error('Enter the actual cargo weight in tonnes');
       return;
     }
     if (selectedCities.length < 1) {
@@ -160,10 +207,39 @@ const DistributionCampaignPage: React.FC = () => {
     );
   };
 
-  const goApprove = () => setStep(2);
+  const goApprove = async () => {
+    const rows = plan?.destinations || [];
+    const missing = rows.filter((d: any) => !(Number(offeredPrices[d.cityId]) > 0));
+    if (missing.length) {
+      toast.error(`Set your offered price for: ${missing.map((d: any) => d.cityName).join(', ')}`);
+      return;
+    }
+    if (!campaign?.id) {
+      setStep(2);
+      return;
+    }
+    setPlanning(true);
+    try {
+      const data = await campaignsApi.update(campaign.id, payload());
+      applyCampaign(data, 2);
+    } catch (err: any) {
+      toast.error(apiError(err, 'Could not save offered prices'));
+    } finally {
+      setPlanning(false);
+    }
+  };
 
   const approveAndCreate = async () => {
     if (!campaign?.id) return;
+    if (!(typeof totalTonnes === 'number' && totalTonnes > 0) && !(Number(campaign?.intent?.totalWeightKg) > 0)) {
+      toast.error('Enter the actual cargo weight in tonnes before approving');
+      return;
+    }
+    const missing = (plan?.destinations || []).filter((d: any) => !(Number(offeredPrices[d.cityId]) > 0));
+    if (missing.length) {
+      toast.error(`Set your offered price for: ${missing.map((d: any) => d.cityName).join(', ')}`);
+      return;
+    }
     if (!goodsReady) {
       toast.error('Confirm goods are ready at your origin warehouse before committing loads');
       return;
@@ -308,6 +384,8 @@ const DistributionCampaignPage: React.FC = () => {
     setPrompt(EXAMPLE);
     setOriginText('');
     setBudgetCap(0);
+    setTotalTonnes('');
+    setOfferedPrices({});
     setSelectedCities([]);
     setGoodsReady(false);
     setStep(0);
@@ -445,7 +523,25 @@ const DistributionCampaignPage: React.FC = () => {
             )}
           </label>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field label="Actual cargo weight (tonnes) *">
+              <input
+                type="number"
+                min={0.001}
+                step="any"
+                value={totalTonnes}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setTotalTonnes(next === '' ? '' : Number(next));
+                }}
+                placeholder="e.g. 200"
+                className={inputClass}
+                required
+              />
+              <p className="mt-1.5 text-[11px] font-medium text-slate-400">
+                Enter the real total weight. Tonnes on the plan come from this — not an invented kg/unit.
+              </p>
+            </Field>
             <Field label="Warehouse city (optional — overrides “from”)">
               <input
                 value={originText}
@@ -472,7 +568,10 @@ const DistributionCampaignPage: React.FC = () => {
           />
 
           <div className="flex justify-end">
-            <PrimaryButton onClick={goPlan} disabled={planning || selectedCities.length < 1}>
+            <PrimaryButton
+              onClick={goPlan}
+              disabled={planning || selectedCities.length < 1 || !(typeof totalTonnes === 'number' && totalTonnes > 0)}
+            >
               {planning ? 'Building plan…' : 'Propose plan'} <ArrowRight size={16} />
             </PrimaryButton>
           </div>
@@ -504,21 +603,74 @@ const DistributionCampaignPage: React.FC = () => {
 
       {step === 1 && plan && (
         <section className="space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Kpi label="Tonnes" value={(plan.totalWeightKg / 1000).toFixed(1)} />
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <Kpi
+              label="Tonnes"
+              value={(plan.totalWeightKg / 1000).toFixed(1)}
+            />
             <Kpi label="Child loads" value={String(plan.destinations.length)} />
             <Kpi label="Shared / LTL" value={`${plan.sharedCapacityPct}%`} />
             <Kpi
-              label="Est. freight"
-              value={`${campaign?.intent?.currencyCode || 'USD'} ${plan.estimatedFreight.toLocaleString()}`}
-              warn={plan.overBudget}
+              label="Indicative freight"
+              value={`${currency} ${plan.estimatedFreight.toLocaleString()}`}
             />
+            <Kpi
+              label="Your offered total"
+              value={`${currency} ${Math.round(offeredFreightTotal).toLocaleString()}`}
+              warn={budgetCap > 0 && offeredFreightTotal + (plan.insurancePremium || 0) > budgetCap}
+            />
+          </div>
+          <p className="text-xs text-slate-500">
+            Tonnes = your entered cargo weight
+            {typeof totalTonnes === 'number' && totalTonnes > 0 ? ` (${totalTonnes} t)` : ''}
+            {campaign?.intent?.totalUnits && Number(campaign?.intent?.totalWeightKg) > 0
+              ? ` · ${Number(campaign.intent.kgPerUnit || 0).toFixed(3)} kg per unit across ${campaign.intent.totalUnits.toLocaleString()} units`
+              : ''}
+            .
+          </p>
+          <p className="text-xs text-slate-500">
+            Indicative freight is a market-based suggestion. Set your offered price per city —
+            that is what gets published on each cargo load for matching.
+            {plan.freightMethod ? ` ${plan.freightMethod}.` : ''}
+            {' '}Final paid amount can still change with bids.
+          </p>
+          {!(Number(campaign?.intent?.totalWeightKg) > 0) && (
+            <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              This plan was built without an explicit cargo weight. Enter the actual tonnes below and recalculate before you approve.
+            </div>
+          )}
+
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-4 md:p-5 shadow-sm">
+            <Field label="Update actual cargo weight (tonnes)">
+              <div className="flex flex-wrap items-end gap-3">
+                <input
+                  type="number"
+                  min={0.001}
+                  step="any"
+                  value={totalTonnes}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setTotalTonnes(next === '' ? '' : Number(next));
+                  }}
+                  className={`${inputClass} max-w-xs`}
+                />
+                <button
+                  type="button"
+                  onClick={goPlan}
+                  disabled={planning || selectedCities.length < 1 || !(typeof totalTonnes === 'number' && totalTonnes > 0)}
+                  className="text-[10px] font-black uppercase tracking-widest text-[#345E85] disabled:opacity-40"
+                >
+                  {planning ? 'Updating…' : 'Recalculate plan'}
+                </button>
+              </div>
+            </Field>
           </div>
 
           {plan.overBudget && (
             <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              Estimated freight plus cover is above your budget cap. Raise the cap or drop cities before you approve.
+              Your offered freight plus cover is above your budget cap. Raise the cap, lower offered prices, or drop cities before you approve.
             </div>
           )}
 
@@ -551,14 +703,15 @@ const DistributionCampaignPage: React.FC = () => {
                     <th className="px-6 py-3">City</th>
                     <th className="px-4 py-3">Units</th>
                     <th className="px-4 py-3">Tonnes</th>
-                    <th className="px-4 py-3">Km</th>
+                    <th className="px-4 py-3">Road km</th>
                     <th className="px-4 py-3">Mix</th>
                     <th className="px-4 py-3">Border</th>
-                    <th className="px-6 py-3 text-right">Freight</th>
+                    <th className="px-4 py-3 text-right">Indicative</th>
+                    <th className="px-6 py-3 text-right">Your offered price *</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {plan.destinations.map((dest) => (
+                  {plan.destinations.map((dest: any) => (
                     <tr key={dest.cityId} className="border-t border-slate-50 dark:border-slate-800">
                       <td className="px-6 py-3 font-bold text-slate-800 dark:text-slate-100">
                         {dest.cityName}
@@ -566,7 +719,14 @@ const DistributionCampaignPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">{dest.units.toLocaleString()}</td>
                       <td className="px-4 py-3">{(dest.weightKg / 1000).toFixed(1)}</td>
-                      <td className="px-4 py-3">{dest.distanceKm}</td>
+                      <td className="px-4 py-3">
+                        {dest.distanceKm}
+                        {dest.haversineKm ? (
+                          <span className="block text-[10px] font-medium text-slate-400">
+                            air {dest.haversineKm}
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`text-[10px] font-black uppercase tracking-widest ${dest.loadType === 'LTL' ? 'text-teal-600' : 'text-slate-500'}`}>
                           {dest.loadType}
@@ -575,7 +735,40 @@ const DistributionCampaignPage: React.FC = () => {
                       <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-400">
                         {dest.crossBorder ? 'Yes' : 'No'}
                       </td>
-                      <td className="px-6 py-3 text-right font-bold">{dest.estimatedFreight.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-500" title={dest.freightBreakdown?.method || ''}>
+                        {dest.estimatedFreight.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <span className="text-[10px] font-bold text-slate-400">{currency}</span>
+                          <input
+                            type="number"
+                            min={1}
+                            value={offeredPrices[dest.cityId] ?? dest.offeredPrice ?? dest.estimatedFreight ?? ''}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              setOfferedPrices((prev) => ({
+                                ...prev,
+                                [dest.cityId]: Number.isFinite(value) ? value : 0,
+                              }));
+                            }}
+                            className="w-28 px-2 py-1.5 text-sm font-bold text-right border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent"
+                            aria-label={`Offered price for ${dest.cityName}`}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="mt-1 text-[9px] font-black uppercase tracking-widest text-[#345E85]"
+                          onClick={() =>
+                            setOfferedPrices((prev) => ({
+                              ...prev,
+                              [dest.cityId]: Math.round(Number(dest.estimatedFreight) || 0),
+                            }))
+                          }
+                        >
+                          Use indicative
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -633,9 +826,13 @@ const DistributionCampaignPage: React.FC = () => {
             </li>
             <li className="flex gap-3">
               <Wallet className="text-[#345E85] shrink-0 mt-0.5" size={18} />
+              Your offered freight total {currency} {Math.round(offeredFreightTotal).toLocaleString()}
+              {plan.estimatedFreight
+                ? ` (indicative was ${currency} ${plan.estimatedFreight.toLocaleString()})`
+                : ''}
               {campaign?.intent?.fundOnEscrow
-                ? `About ${campaign?.intent?.currencyCode || 'USD'} ${plan.estimatedAdvance.toLocaleString()} trip advance if lenders fund escrow`
-                : 'No escrow advance requested'}
+                ? ` · ~${currency} ${Math.round(offeredFreightTotal * 0.7).toLocaleString()} trip advance if lenders fund escrow`
+                : ' · No escrow advance requested'}
             </li>
             <li className="flex gap-3">
               <Shield className="text-[#345E85] shrink-0 mt-0.5" size={18} />

@@ -37,11 +37,28 @@ describe('parseCampaignPrompt', () => {
     expect(parsed.countryHints.join(' ')).toMatch(/kenya/i);
     expect(parsed.productName).toMatch(/bottled water/i);
     expect(parsed.windowStart).toBeDefined();
+    expect(parsed.kgPerUnit).toBeUndefined();
+    expect(parsed.totalWeightKg).toBeUndefined();
   });
 
   it('reads named destination cities', () => {
     const parsed = parseCampaignPrompt('Move 5000 units from Nairobi to Mombasa, Kisumu and Kampala');
     expect(parsed.namedCities).toEqual(expect.arrayContaining(['Mombasa', 'Kisumu', 'Kampala']));
+  });
+
+  it('reads stated tonnes as total weight, not invented kg/unit', () => {
+    const parsed = parseCampaignPrompt(
+      'I need 100,000 units of bottled water, 200 tonnes, delivered from Kigali next month',
+    );
+    expect(parsed.totalUnits).toBe(100000);
+    expect(parsed.totalWeightKg).toBe(200_000);
+    expect(parsed.kgPerUnit).toBeUndefined();
+  });
+
+  it('reads explicit kg per unit only when said', () => {
+    const parsed = parseCampaignPrompt('Move 10,000 units at 2.5 kg per unit from Kigali');
+    expect(parsed.kgPerUnit).toBe(2.5);
+    expect(parsed.totalWeightKg).toBeUndefined();
   });
 });
 
@@ -72,6 +89,27 @@ describe('buildCampaignPlan', () => {
     expect(plan.destinations.find((d) => d.cityId === 'huye-rw')?.crossBorder).toBe(false);
     expect(plan.insurancePremium).toBe(Math.round(100_000 * 8 * 0.0045));
     expect(plan.estimatedAdvance).toBe(Math.round(plan.estimatedFreight * 0.7));
+  });
+
+  it('prices freight with road-km, regional cost, and border uplift — not bare haversine × 1.85', () => {
+    const plan = buildCampaignPlan(baseIntent());
+    const nairobi = plan.destinations.find((d) => d.cityId === 'nairobi-ke');
+    expect(nairobi).toBeDefined();
+    expect(nairobi!.distanceKm).toBeGreaterThan(nairobi!.haversineKm!);
+    expect(nairobi!.freightBreakdown?.crossBorderFixedUsd).toBeGreaterThan(0);
+    expect(nairobi!.freightBreakdown?.fuelSurchargeUsd).toBeGreaterThan(0);
+    expect(nairobi!.estimatedFreight).toBe(nairobi!.freightBreakdown?.estimatedFreight);
+    expect(plan.freightMethod).toMatch(/Indicative/i);
+    expect(plan.estimatedFreight).toBeGreaterThan(0);
+  });
+
+  it('defaults offeredPrice to indicative freight so cargo owners can override', () => {
+    const plan = buildCampaignPlan(baseIntent());
+    for (const dest of plan.destinations) {
+      expect(dest.offeredPrice).toBe(dest.estimatedFreight);
+      expect(dest.offeredPrice).toBeGreaterThan(0);
+    }
+    expect(plan.offeredFreightTotal).toBe(plan.estimatedFreight);
   });
 
   it('blocks over-budget plans', () => {

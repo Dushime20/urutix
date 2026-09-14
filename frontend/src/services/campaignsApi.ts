@@ -15,6 +15,13 @@ export interface CampaignPromptPayload {
   originText?: string;
   budgetCap?: number;
   goodsReady?: boolean;
+  /** Actual total cargo weight in tonnes entered by the cargo owner. */
+  totalTonnes?: number;
+  /** Actual total cargo weight in kg (alternative to totalTonnes). */
+  totalWeightKg?: number;
+  kgPerUnit?: number;
+  /** Cargo-owner offered price per destination (published on child loads). */
+  destinationOffers?: { cityId: string; offeredPrice: number }[];
   destinationCityIds?: string[];
   destinations?: CampaignCity[];
   preferSharedTrucks?: boolean;

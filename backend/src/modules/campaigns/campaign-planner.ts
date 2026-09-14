@@ -1,3 +1,5 @@
+import { estimateLaneFreight, FTL_VOLUME_M3, FTL_WEIGHT_KG } from './campaign-freight';
+
 export interface CorridorCity {
   id: string;
   name: string;
@@ -8,8 +10,8 @@ export interface CorridorCity {
   lng: number;
 }
 
-export const FTL_WEIGHT_KG = 28_000;
-export const FTL_VOLUME_M3 = 76;
+export { FTL_WEIGHT_KG, FTL_VOLUME_M3 };
+/** @deprecated Prefer ATRI regional cost × markup; kept for marketRates override clamp. */
 export const FTL_RATE_PER_KM = 1.85;
 export const ADVANCE_RATIO = 0.7;
 export const INSURANCE_RATE = 0.0045;
@@ -18,7 +20,10 @@ export interface CampaignIntent {
   prompt?: string;
   productName: string;
   totalUnits: number;
+  /** Real pack weight in kg. Must come from the cargo owner or derived from totalWeightKg. */
   kgPerUnit: number;
+  /** Explicit total shipment mass in kg when stated as tonnes/kg (optional source of truth). */
+  totalWeightKg?: number;
   m3PerUnit: number;
   valuePerUnit: number;
   origin: CorridorCity;
@@ -82,7 +87,7 @@ export function buildCampaignPlan(intent: CampaignIntent) {
   const spanDays = Math.max(Math.floor(spanMs / (24 * 60 * 60 * 1000)), destCities.length);
   const ftlWeight = intent.ftlWeightKg || FTL_WEIGHT_KG;
   const ftlVolume = intent.ftlVolumeM3 || FTL_VOLUME_M3;
-  const ratePerKm = intent.ftlRatePerKm || FTL_RATE_PER_KM;
+  const marketRatePerKm = intent.ftlRatePerKm;
   const insuranceRate = intent.insuranceRate ?? INSURANCE_RATE;
   const advanceRatio = intent.advanceRatio ?? ADVANCE_RATIO;
 
@@ -90,19 +95,20 @@ export function buildCampaignPlan(intent: CampaignIntent) {
     const extra = remainder > 0 ? 1 : 0;
     if (remainder > 0) remainder -= 1;
     const units = baseUnits + extra;
-    const weightKg = Math.max(Math.round(units * intent.kgPerUnit), 100);
-    const volumeM3 = Math.max(Number((units * (intent.m3PerUnit || 0.004)).toFixed(2)), 0.1);
-    const distanceKm = Math.max(haversineKm(origin.lat, origin.lng, city.lat, city.lng), 40);
-    const preferLtl =
-      intent.preferSharedTrucks &&
-      weightKg < ftlWeight * 0.7 &&
-      volumeM3 < ftlVolume * 0.7;
-    const loadType: 'FTL' | 'LTL' = preferLtl ? 'LTL' : 'FTL';
-    const utilization = Math.min(1, Math.max(weightKg / ftlWeight, volumeM3 / ftlVolume));
-    const estimatedFreight =
-      loadType === 'LTL'
-        ? Math.round(distanceKm * ratePerKm * Math.max(utilization, 0.18) * 1.12)
-        : Math.round(distanceKm * ratePerKm);
+    const weightKg = Math.max(Math.round(units * intent.kgPerUnit), 1);
+    const volumeM3 = Math.max(Number((units * (intent.m3PerUnit || 0)).toFixed(2)), 0.1);
+    const airKm = Math.max(haversineKm(origin.lat, origin.lng, city.lat, city.lng), 40);
+    const freight = estimateLaneFreight({
+      haversineKm: airKm,
+      weightKg,
+      volumeM3,
+      originCountryCode: origin.countryCode,
+      destinationCountryCode: city.countryCode,
+      preferSharedTrucks: intent.preferSharedTrucks,
+      marketRatePerKm,
+      ftlWeightKg: ftlWeight,
+      ftlVolumeM3: ftlVolume,
+    });
     const pickupOffset = Math.floor((index / cityCount) * Math.max(spanDays - 4, 1));
     return {
       cityId: city.id || citySlug(city.name, city.countryCode),
@@ -114,52 +120,165 @@ export function buildCampaignPlan(intent: CampaignIntent) {
       units,
       weightKg,
       volumeM3,
-      distanceKm,
-      loadType,
-      estimatedFreight,
+      distanceKm: freight.roadKm,
+      haversineKm: freight.haversineKm,
+      loadType: freight.loadType,
+      estimatedFreight: freight.estimatedFreight,
+      /** Cargo-owner offer; defaults to indicative freight until overridden. */
+      offeredPrice: freight.estimatedFreight,
+      freightBreakdown: freight,
       pickupDate: addDays(intent.windowStart, pickupOffset),
-      deliveryDate: addDays(intent.windowStart, pickupOffset + Math.max(2, Math.ceil(distanceKm / 450))),
+      deliveryDate: addDays(intent.windowStart, pickupOffset + Math.max(2, Math.ceil(freight.roadKm / 450))),
       crossBorder: (city.countryCode || '').toUpperCase() !== (origin.countryCode || '').toUpperCase(),
     };
   });
 
   const estimatedFreight = destinations.reduce((s, d) => s + d.estimatedFreight, 0);
+  const offeredFreightTotal = destinations.reduce((s, d) => s + (d.offeredPrice || d.estimatedFreight), 0);
   const cargoValue = intent.totalUnits * intent.valuePerUnit;
   const insurancePremium = intent.requireInsurance ? Math.round(cargoValue * insuranceRate) : 0;
   const ltlCount = destinations.filter((d) => d.loadType === 'LTL').length;
   const ftlCount = destinations.filter((d) => d.loadType === 'FTL').length;
   const crossBorderCount = destinations.filter((d) => d.crossBorder).length;
+  const totalWeightKg = destinations.reduce((s, d) => s + d.weightKg, 0);
+  const rateSource = destinations[0]?.freightBreakdown?.rateSource || 'atri_regional';
+  const sampleRate = destinations[0]?.freightBreakdown?.costPerKmUsd;
 
   const operatorSteps = [
-    { id: 'forecast', label: 'Forecast demand', layer: 'C', status: 'planned', detail: `Allocated ${intent.totalUnits} units across ${destinations.length} cities from the cargo owner intent.` },
-    { id: 'suppliers', label: 'Find suppliers', layer: 'D', status: 'partner', detail: 'Pickup is the cargo owner origin warehouse. Supplier purchase is not auto-bound.' },
-    { id: 'negotiate', label: 'Negotiate prices', layer: 'C', status: 'planned', detail: `Freight priced from live corridor distance at ${ratePerKm}/km.` },
-    { id: 'inventory', label: 'Order inventory', layer: 'D', status: intent.goodsReady ? 'ready' : 'queued', detail: intent.goodsReady ? 'Goods marked ready at origin.' : 'Approve blocked until goods are ready.' },
-    { id: 'financing', label: 'Arrange financing', layer: 'C', status: intent.fundOnEscrow ? 'planned' : 'queued', detail: intent.fundOnEscrow ? `Escrow advance ~${Math.round(advanceRatio * 100)}% per trip after a truck is assigned.` : 'Escrow funding off.' },
-    { id: 'transport', label: 'Book transportation', layer: 'C', status: 'ready', detail: 'Creates published child loads and requests AI matches.' },
-    { id: 'warehouses', label: 'Select warehouses', layer: 'C', status: 'planned', detail: `${origin.name} warehouse is the pickup hub.` },
-    { id: 'routes', label: 'Optimize routes', layer: 'C', status: 'planned', detail: `${ltlCount} shared LTL / ${ftlCount} exclusive FTL.` },
-    { id: 'customs', label: 'Handle customs', layer: 'C', status: crossBorderCount ? 'planned' : 'ready', detail: crossBorderCount ? `${crossBorderCount} cross-border loads flagged for a border pack.` : 'Domestic destinations only.' },
-    { id: 'insurance', label: 'Insure cargo', layer: 'C', status: intent.requireInsurance ? 'planned' : 'queued', detail: intent.requireInsurance ? `Cover quote ${insurancePremium}.` : 'Cover not requested.' },
-    { id: 'tracking', label: 'Track everything', layer: 'C', status: 'ready', detail: 'Child trips use existing GPS and ePOD once dispatched.' },
-    { id: 'payments', label: 'Manage payments', layer: 'C', status: 'planned', detail: 'Settlement remains per trip; campaign rolls up freight vs budget.' },
-    { id: 'reorder', label: 'Repeat this plan', layer: 'D', status: 'queued', detail: 'Clone next month as a new campaign. Goods auto-PO is not enabled.' },
+    {
+      id: 'forecast',
+      label: 'Forecast demand',
+      layer: 'C',
+      status: 'planned',
+      detail: `Allocated ${intent.totalUnits} units (${(totalWeightKg / 1000).toFixed(1)} t) across ${destinations.length} cities from the cargo owner weight.`,
+    },
+    {
+      id: 'suppliers',
+      label: 'Find suppliers',
+      layer: 'D',
+      status: 'partner',
+      detail: 'Pickup is the cargo owner origin warehouse. Supplier purchase is not auto-bound.',
+    },
+    {
+      id: 'negotiate',
+      label: 'Negotiate prices',
+      layer: 'C',
+      status: 'planned',
+      detail:
+        rateSource === 'market_median'
+          ? `Indicative freight from your tenant’s median offered lane rate (~$${sampleRate}/truck-km), road-km, FTL/LTL mix, fuel, and border fees.`
+          : `Indicative freight from ATRI operating cost × regional multiplier × carrier markup (~$${sampleRate}/truck-km), road-km, FTL/LTL mix, fuel, and border fees — not a binding bid.`,
+    },
+    {
+      id: 'inventory',
+      label: 'Order inventory',
+      layer: 'D',
+      status: intent.goodsReady ? 'ready' : 'queued',
+      detail: intent.goodsReady ? 'Goods marked ready at origin.' : 'Approve blocked until goods are ready.',
+    },
+    {
+      id: 'financing',
+      label: 'Arrange financing',
+      layer: 'C',
+      status: intent.fundOnEscrow ? 'planned' : 'queued',
+      detail: intent.fundOnEscrow
+        ? `Escrow advance ~${Math.round(advanceRatio * 100)}% per trip after a truck is assigned.`
+        : 'Escrow funding off.',
+    },
+    {
+      id: 'transport',
+      label: 'Book transportation',
+      layer: 'C',
+      status: 'ready',
+      detail: 'Creates published child loads and requests AI matches.',
+    },
+    {
+      id: 'warehouses',
+      label: 'Select warehouses',
+      layer: 'C',
+      status: 'planned',
+      detail: `${origin.name} warehouse is the pickup hub.`,
+    },
+    {
+      id: 'routes',
+      label: 'Optimize routes',
+      layer: 'C',
+      status: 'planned',
+      detail: `${ltlCount} shared LTL / ${ftlCount} exclusive FTL.`,
+    },
+    {
+      id: 'customs',
+      label: 'Handle customs',
+      layer: 'C',
+      status: crossBorderCount ? 'planned' : 'ready',
+      detail: crossBorderCount
+        ? `${crossBorderCount} cross-border loads flagged for a border pack.`
+        : 'Domestic destinations only.',
+    },
+    {
+      id: 'insurance',
+      label: 'Insure cargo',
+      layer: 'C',
+      status: intent.requireInsurance ? 'planned' : 'queued',
+      detail: intent.requireInsurance ? `Cover quote ${insurancePremium}.` : 'Cover not requested.',
+    },
+    {
+      id: 'tracking',
+      label: 'Track everything',
+      layer: 'C',
+      status: 'ready',
+      detail: 'Child trips use existing GPS and ePOD once dispatched.',
+    },
+    {
+      id: 'payments',
+      label: 'Manage payments',
+      layer: 'C',
+      status: 'planned',
+      detail: 'Settlement remains per trip; campaign rolls up freight vs budget.',
+    },
+    {
+      id: 'reorder',
+      label: 'Repeat this plan',
+      layer: 'D',
+      status: 'queued',
+      detail: 'Clone next month as a new campaign. Goods auto-PO is not enabled.',
+    },
   ];
 
   return {
-    origin: { id: origin.id, name: origin.name, country: origin.country, countryCode: origin.countryCode, lat: origin.lat, lng: origin.lng },
+    origin: {
+      id: origin.id,
+      name: origin.name,
+      country: origin.country,
+      countryCode: origin.countryCode,
+      lat: origin.lat,
+      lng: origin.lng,
+    },
     destinations,
-    totalWeightKg: destinations.reduce((s, d) => s + d.weightKg, 0),
+    totalWeightKg,
     totalVolumeM3: Number(destinations.reduce((s, d) => s + d.volumeM3, 0).toFixed(1)),
     ftlCount,
     ltlCount,
     sharedCapacityPct: destinations.length ? Math.round((ltlCount / destinations.length) * 100) : 0,
     estimatedFreight,
-    estimatedAdvance: intent.fundOnEscrow ? Math.round(estimatedFreight * advanceRatio) : 0,
+    offeredFreightTotal,
+    estimatedAdvance: intent.fundOnEscrow ? Math.round(offeredFreightTotal * advanceRatio) : 0,
     insurancePremium,
     cargoValue,
-    overBudget: intent.budgetCap > 0 && estimatedFreight + insurancePremium > intent.budgetCap,
+    overBudget: intent.budgetCap > 0 && offeredFreightTotal + insurancePremium > intent.budgetCap,
     operatorSteps,
-    rates: { ftlWeightKg: ftlWeight, ftlVolumeM3: ftlVolume, ftlRatePerKm: ratePerKm, insuranceRate, advanceRatio },
+    freightMethod:
+      rateSource === 'market_median'
+        ? 'Indicative: tenant median $/truck-km × road distance × FTL trucks or LTL share + fuel + border'
+        : 'Indicative: ATRI cost × regional multiplier × 20% carrier markup × road distance × FTL/LTL + fuel + border',
+    rates: {
+      ftlWeightKg: ftlWeight,
+      ftlVolumeM3: ftlVolume,
+      ftlRatePerKm: sampleRate,
+      insuranceRate,
+      advanceRatio,
+      rateSource,
+      roadDistanceFactor: 1.25,
+    },
   };
 }

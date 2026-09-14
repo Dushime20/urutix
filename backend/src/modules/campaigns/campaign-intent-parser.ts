@@ -1,7 +1,10 @@
 export interface ParsedCampaignPrompt {
   productName?: string;
   totalUnits?: number;
+  /** Explicit kg per unit from the prompt (never invented). */
   kgPerUnit?: number;
+  /** Explicit total shipment weight in kg (from tonnes/kg stated in the prompt). */
+  totalWeightKg?: number;
   valuePerUnit?: number;
   originText?: string;
   namedCities: string[];
@@ -57,8 +60,31 @@ export function parseCampaignPrompt(prompt: string): ParsedCampaignPrompt {
   const unitsMatch = text.match(/([\d,]{1,12})\s*(?:units?|pcs|pieces|cartons|crates|bags|pallets|bottles)/i);
   if (unitsMatch) parsed.totalUnits = Math.round(Number(unitsMatch[1].replace(/,/g, '')));
 
-  const kgMatch = text.match(/([\d.]+)\s*kg(?:s)?(?:\s+per\s+unit)?/i);
-  if (kgMatch) parsed.kgPerUnit = Number(kgMatch[1]);
+  // Total mass first (tonnes / tons / t) — never invent a pack weight.
+  const tonnesMatch = text.match(
+    /([\d,]{1,12}(?:\.\d+)?)\s*(?:metric\s+)?t(?:onnes?|ons?)\b/i,
+  );
+  if (tonnesMatch) {
+    parsed.totalWeightKg = Math.round(Number(tonnesMatch[1].replace(/,/g, '')) * 1000);
+  }
+
+  const totalKgMatch = text.match(
+    /([\d,]{1,12}(?:\.\d+)?)\s*kg(?:s)?\s+(?:total|altogether|in\s+total|gross|net)\b/i,
+  ) || text.match(
+    /(?:total|altogether|gross|net)\s+(?:weight\s+)?(?:of\s+)?([\d,]{1,12}(?:\.\d+)?)\s*kg(?:s)?\b/i,
+  );
+  if (!parsed.totalWeightKg && totalKgMatch) {
+    parsed.totalWeightKg = Math.round(Number(totalKgMatch[1].replace(/,/g, '')));
+  }
+
+  const kgPerUnitMatch = text.match(
+    /([\d,]{1,12}(?:\.\d+)?)\s*kg(?:s)?\s*(?:\/|\s+per\s+)\s*(?:unit|pc|piece|carton|crate|bag|pallet|bottle)\b/i,
+  ) || text.match(
+    /([\d,]{1,12}(?:\.\d+)?)\s*kg(?:s)?\s+each\b/i,
+  );
+  if (kgPerUnitMatch) {
+    parsed.kgPerUnit = Number(kgPerUnitMatch[1].replace(/,/g, ''));
+  }
 
   const valueMatch = text.match(/(?:value|worth)\s*(?:of\s*)?(?:USD|\$)?\s*([\d.]+)\s*(?:per\s+unit)?/i);
   if (valueMatch) parsed.valuePerUnit = Number(valueMatch[1]);

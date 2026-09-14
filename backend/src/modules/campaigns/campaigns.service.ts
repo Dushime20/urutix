@@ -22,7 +22,6 @@ import {
   buildCampaignPlan,
   CampaignIntent,
   CorridorCity,
-  FTL_RATE_PER_KM,
   FTL_VOLUME_M3,
   FTL_WEIGHT_KG,
   INSURANCE_RATE,
@@ -156,12 +155,48 @@ export class CampaignsService implements OnModuleInit {
       throw new BadRequestException('Say how many units to move, e.g. “100,000 units”.');
     }
 
+    // Prefer the cargo owner's actual total weight. Never invent a pack weight.
+    const dtoTonnes = Number(dto.totalTonnes);
+    const explicitTotalKg =
+      (Number.isFinite(Number(dto.totalWeightKg)) && Number(dto.totalWeightKg) > 0
+        ? Number(dto.totalWeightKg)
+        : null) ??
+      (Number.isFinite(dtoTonnes) && dtoTonnes > 0 ? Math.round(dtoTonnes * 1000) : null) ??
+      (parsed.totalWeightKg && parsed.totalWeightKg > 0 ? parsed.totalWeightKg : null) ??
+      (previous?.totalWeightKg && previous.totalWeightKg > 0 ? previous.totalWeightKg : null);
+
+    let kgPerUnit =
+      (Number.isFinite(Number(dto.kgPerUnit)) && Number(dto.kgPerUnit) > 0
+        ? Number(dto.kgPerUnit)
+        : null) ??
+      (parsed.kgPerUnit && parsed.kgPerUnit > 0 ? parsed.kgPerUnit : null) ??
+      null;
+
+    if (explicitTotalKg) {
+      kgPerUnit = Number((explicitTotalKg / totalUnits).toFixed(6));
+    } else if (!kgPerUnit && previous?.kgPerUnit && previous.kgPerUnit > 0) {
+      // Only reuse a previously entered real weight — skip the old silent default of 2.
+      const previousWasInvented =
+        !previous.totalWeightKg &&
+        Math.abs(previous.kgPerUnit - 2) < 1e-9;
+      if (!previousWasInvented) kgPerUnit = previous.kgPerUnit;
+    }
+
+    if (!kgPerUnit || kgPerUnit <= 0) {
+      throw new BadRequestException(
+        'Enter the actual cargo weight in tonnes (or kg), or say it in the prompt — e.g. “200 tonnes” or “2 kg per unit”.',
+      );
+    }
+
+    const totalWeightKg = explicitTotalKg || Math.round(totalUnits * kgPerUnit);
+
     return {
       prompt,
       productName: (dto.productName || parsed.productName || previous?.productName || 'General cargo').trim(),
       totalUnits,
-      kgPerUnit: dto.kgPerUnit || parsed.kgPerUnit || previous?.kgPerUnit || 2,
-      m3PerUnit: dto.m3PerUnit ?? previous?.m3PerUnit ?? 0.004,
+      kgPerUnit,
+      totalWeightKg,
+      m3PerUnit: dto.m3PerUnit ?? previous?.m3PerUnit ?? 0,
       valuePerUnit: dto.valuePerUnit ?? parsed.valuePerUnit ?? previous?.valuePerUnit ?? 0,
       origin,
       destinations,
@@ -230,11 +265,15 @@ export class CampaignsService implements OnModuleInit {
       if (km >= 30) perKm.push(price / km);
     }
     perKm.sort((a, b) => a - b);
-    const mid = perKm.length ? perKm[Math.floor(perKm.length / 2)] : FTL_RATE_PER_KM;
+    const hasMarket = perKm.length >= 5;
+    const mid = hasMarket ? perKm[Math.floor(perKm.length / 2)] : undefined;
     return {
       ftlWeightKg: FTL_WEIGHT_KG,
       ftlVolumeM3: FTL_VOLUME_M3,
-      ftlRatePerKm: Number(Math.max(0.4, Math.min(mid, 8)).toFixed(2)),
+      // Only inject a live rate when we have enough priced loads; otherwise ATRI regional cost applies.
+      ...(hasMarket && mid != null
+        ? { ftlRatePerKm: Number(Math.max(0.4, Math.min(mid, 8)).toFixed(2)) }
+        : {}),
       insuranceRate: INSURANCE_RATE,
       advanceRatio: ADVANCE_RATIO,
     };
@@ -256,17 +295,53 @@ export class CampaignsService implements OnModuleInit {
     return this.enrich(campaign);
   }
 
+  private applyOfferedPrices(
+    plan: ReturnType<typeof buildCampaignPlan>,
+    offers: { cityId: string; offeredPrice: number }[] | undefined,
+    budgetCap: number,
+  ) {
+    const offerMap = new Map(
+      (offers || [])
+        .filter((o) => o?.cityId && Number(o.offeredPrice) > 0)
+        .map((o) => [o.cityId, Math.round(Number(o.offeredPrice))]),
+    );
+    const destinations = plan.destinations.map((dest) => ({
+      ...dest,
+      offeredPrice: offerMap.get(dest.cityId) ?? dest.offeredPrice ?? dest.estimatedFreight,
+    }));
+    const missing = destinations.filter((d) => !(Number(d.offeredPrice) > 0));
+    if (missing.length) {
+      throw new BadRequestException(
+        `Set an offered price for every city (${missing.map((d) => d.cityName).join(', ')})`,
+      );
+    }
+    const offeredFreightTotal = destinations.reduce((s, d) => s + Number(d.offeredPrice), 0);
+    return {
+      ...plan,
+      destinations,
+      offeredFreightTotal,
+      estimatedAdvance: plan.estimatedAdvance
+        ? Math.round(offeredFreightTotal * (Number((plan as any).rates?.advanceRatio) || ADVANCE_RATIO))
+        : 0,
+      overBudget: budgetCap > 0 && offeredFreightTotal + plan.insurancePremium > budgetCap,
+    };
+  }
+
   async create(dto: CampaignIntentDto, tenantId: string, cargoOwnerId: string) {
     const previous = (dto as any).origin?.lat ? (dto as unknown as CampaignIntent) : undefined;
     const intent = await this.resolveIntent(dto, tenantId, cargoOwnerId, previous);
-    const plan = buildCampaignPlan(intent);
+    const plan = this.applyOfferedPrices(
+      buildCampaignPlan(intent),
+      dto.destinationOffers,
+      intent.budgetCap,
+    );
     const campaign = this.campaignRepo.create({
       tenantId,
       cargoOwnerId,
       status: DistributionCampaignStatus.PLANNED,
       productName: intent.productName,
       totalUnits: intent.totalUnits,
-      intent,
+      intent: { ...intent, destinationOffers: dto.destinationOffers || [] },
       plan,
       loadIds: [],
       execution: {},
@@ -277,10 +352,16 @@ export class CampaignsService implements OnModuleInit {
   async updatePlan(id: string, dto: CampaignIntentDto, tenantId: string, cargoOwnerId: string) {
     const campaign = await this.requireMutable(id, tenantId, cargoOwnerId);
     const intent = await this.resolveIntent(dto, tenantId, cargoOwnerId, campaign.intent as CampaignIntent);
-    campaign.intent = intent;
+    const previousOffers =
+      dto.destinationOffers ||
+      (campaign.intent as any)?.destinationOffers ||
+      (campaign.plan as any)?.destinations?.map((d: any) =>
+        d.offeredPrice > 0 ? { cityId: d.cityId, offeredPrice: d.offeredPrice } : null,
+      ).filter(Boolean);
+    campaign.intent = { ...intent, destinationOffers: previousOffers || [] };
     campaign.productName = intent.productName;
     campaign.totalUnits = intent.totalUnits;
-    campaign.plan = buildCampaignPlan(intent);
+    campaign.plan = this.applyOfferedPrices(buildCampaignPlan(intent), previousOffers, intent.budgetCap);
     campaign.status = DistributionCampaignStatus.PLANNED;
     return this.campaignRepo.save(campaign);
   }
@@ -312,9 +393,13 @@ export class CampaignsService implements OnModuleInit {
         throw new BadRequestException('Confirm goods are ready at the origin warehouse before approving');
       }
 
-      const plan = buildCampaignPlan(intent);
+      const plan = this.applyOfferedPrices(
+        buildCampaignPlan(intent),
+        dto.destinationOffers || (intent as any).destinationOffers,
+        intent.budgetCap,
+      );
       if (plan.overBudget) {
-        throw new BadRequestException('Estimated freight plus cover exceeds the budget cap');
+        throw new BadRequestException('Offered freight plus cover exceeds the budget cap');
       }
       if (!plan.destinations.length) {
         throw new BadRequestException('Plan has no destinations');
@@ -390,7 +475,12 @@ export class CampaignsService implements OnModuleInit {
         return step;
       });
 
-      campaign.intent = intent;
+      campaign.intent = {
+        ...intent,
+        destinationOffers: (dto.destinationOffers || (intent as any).destinationOffers || []).filter(
+          (o: any) => o?.cityId && Number(o.offeredPrice) > 0,
+        ),
+      };
       campaign.plan = { ...plan, destinations, operatorSteps: steps };
       campaign.loadIds = createdLoads.map((l) => l.id);
       campaign.status = createdLoads.length
@@ -543,7 +633,7 @@ export class CampaignsService implements OnModuleInit {
       pickupDate: dest.pickupDate,
       deliveryDate: dest.deliveryDate,
       loadValue: Math.max(dest.units * intent.valuePerUnit, 1),
-      offeredPrice: dest.estimatedFreight,
+      offeredPrice: Math.round(Number((dest as any).offeredPrice || dest.estimatedFreight)),
       currencyCode: intent.currencyCode,
       paymentTerms: PaymentTerms.NET_30,
       urgencyLevel: UrgencyLevel.NORMAL,
@@ -579,7 +669,7 @@ export class CampaignsService implements OnModuleInit {
       truckRequirements: {},
       carrierPreferences: {},
       costPreferences: {
-        maxBudget: dest.estimatedFreight,
+        maxBudget: Math.round(Number((dest as any).offeredPrice || dest.estimatedFreight)),
         requiresInsurance: intent.requireInsurance,
         requiresTracking: true,
       },
