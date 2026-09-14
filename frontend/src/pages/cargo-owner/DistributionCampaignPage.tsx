@@ -27,6 +27,8 @@ import { TranslatedText } from '../../components/translated-text';
 import { useI18n } from '../../contexts/i18n-context';
 import { campaignsApi } from '../../services/campaignsApi';
 import type { CampaignCity } from '../../services/campaignsApi';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import CurrencySelector from '../../components/common/CurrencySelector';
 
 const STEPS = ['Intent', 'Plan', 'Approve', 'Board'] as const;
 const EXAMPLE =
@@ -65,17 +67,43 @@ const DistributionCampaignPage: React.FC = () => {
   const listeningRef = useRef(false);
   const spokenBaseRef = useRef('');
   const { language } = useI18n();
+  const { format, convert, currency, currencyMeta, rates } = useCurrencyFormat();
   const [loading, setLoading] = useState(Boolean(existingId));
   const [selectedCities, setSelectedCities] = useState<CampaignCity[]>([]);
-  /** cityId → cargo-owner offered freight (published on loads). */
+  /** cityId → offered freight in the user's preferred currency (what they type). */
   const [offeredPrices, setOfferedPrices] = useState<Record<string, number>>({});
 
   const plan = campaign?.plan;
   const origin = plan?.origin || campaign?.intent?.origin;
-  const currency = campaign?.intent?.currencyCode || 'USD';
+  const moneyDecimals = currencyMeta?.decimals ?? 2;
+
+  const roundMoney = (value: number) => {
+    if (!Number.isFinite(value)) return 0;
+    if (moneyDecimals <= 0) return Math.round(value);
+    const factor = 10 ** moneyDecimals;
+    return Math.round(value * factor) / factor;
+  };
+
+  /** Indicative engine amounts are always USD. */
+  const moneyUsd = (usdAmount: number) => format(Number(usdAmount) || 0, 'USD');
+
+  /** Amounts already in preferred currency (offers / budget inputs). */
+  const moneyLocal = (amount: number) => format(Number(amount) || 0, currency);
+
+  const hasCustomOffers = (data: any) => {
+    const offers = data?.intent?.destinationOffers;
+    if (Array.isArray(offers) && offers.some((o: any) => Number(o?.offeredPrice) > 0)) return true;
+    return (data?.plan?.destinations || []).some(
+      (d: any) =>
+        Number(d.offeredPrice) > 0 &&
+        Math.abs(Number(d.offeredPrice) - Number(d.estimatedFreight)) > 1,
+    );
+  };
 
   const syncOffersFromPlan = (data: any, preserveEdits = false) => {
     const rows = data?.plan?.destinations || [];
+    const stored = String(data?.intent?.currencyCode || 'USD').toUpperCase();
+    const custom = hasCustomOffers(data);
     setOfferedPrices((prev) => {
       const next: Record<string, number> = {};
       for (const dest of rows) {
@@ -83,8 +111,12 @@ const DistributionCampaignPage: React.FC = () => {
         if (!id) continue;
         if (preserveEdits && Number(prev[id]) > 0) {
           next[id] = prev[id];
+          continue;
+        }
+        if (custom && Number(dest.offeredPrice) > 0) {
+          next[id] = roundMoney(convert(Number(dest.offeredPrice), stored));
         } else {
-          next[id] = Math.round(Number(dest.offeredPrice || dest.estimatedFreight) || 0);
+          next[id] = roundMoney(convert(Number(dest.estimatedFreight) || 0, 'USD'));
         }
       }
       return next;
@@ -97,7 +129,12 @@ const DistributionCampaignPage: React.FC = () => {
     if (data.intent?.prompt) setPrompt(data.intent.prompt);
     if (data.intent?.origin?.name) setOriginText(data.intent.origin.name);
     if (data.intent?.destinations?.length) setSelectedCities(data.intent.destinations);
-    if (typeof data.intent?.budgetCap === 'number') setBudgetCap(data.intent.budgetCap);
+    const stored = String(data.intent?.currencyCode || 'USD').toUpperCase();
+    if (typeof data.intent?.budgetCap === 'number' && data.intent.budgetCap > 0) {
+      setBudgetCap(roundMoney(convert(Number(data.intent.budgetCap), stored)));
+    } else {
+      setBudgetCap(0);
+    }
     const tonnes = tonnesFromIntent(data.intent);
     setTotalTonnes(tonnes > 0 ? Number(tonnes.toFixed(3)) : '');
     setGoodsReady(Boolean(data.intent?.goodsReady));
@@ -138,21 +175,37 @@ const DistributionCampaignPage: React.FC = () => {
   const destinationOffers = () =>
     Object.entries(offeredPrices)
       .filter(([, price]) => Number(price) > 0)
-      .map(([cityId, offeredPrice]) => ({ cityId, offeredPrice: Math.round(Number(offeredPrice)) }));
+      .map(([cityId, offeredPrice]) => ({ cityId, offeredPrice: roundMoney(Number(offeredPrice)) }));
 
-  const offeredFreightTotal = (plan?.destinations || []).reduce(
-    (sum: number, dest: any) => sum + (Number(offeredPrices[dest.cityId]) || Number(dest.offeredPrice) || Number(dest.estimatedFreight) || 0),
-    0,
-  );
+  const offeredFreightTotal = (plan?.destinations || []).reduce((sum: number, dest: any) => {
+    const typed = Number(offeredPrices[dest.cityId]);
+    if (typed > 0) return sum + typed;
+    return sum + roundMoney(convert(Number(dest.estimatedFreight) || 0, 'USD'));
+  }, 0);
+
+  const insurancePreferred = roundMoney(convert(Number(plan?.insurancePremium) || 0, 'USD'));
+  const spendAgainstCap = offeredFreightTotal + insurancePreferred;
 
   const payload = () => ({
     prompt: prompt.trim(),
     originText: originText.trim() || undefined,
-    budgetCap: budgetCap || undefined,
+    budgetCap: Number(budgetCap) > 0 ? Number(budgetCap) : 0,
     totalTonnes: typeof totalTonnes === 'number' && totalTonnes > 0 ? totalTonnes : undefined,
     destinations: selectedCities,
     destinationOffers: destinationOffers(),
+    currencyCode: currency,
   });
+
+  // When the user switches preferred currency, re-express offers from USD indicative (or stored).
+  useEffect(() => {
+    if (!campaign?.plan) return;
+    syncOffersFromPlan(campaign, false);
+    const stored = String(campaign.intent?.currencyCode || 'USD').toUpperCase();
+    if (typeof campaign.intent?.budgetCap === 'number' && campaign.intent.budgetCap > 0) {
+      setBudgetCap(roundMoney(convert(Number(campaign.intent.budgetCap), stored)));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currency, rates]);
 
   const goPlan = async () => {
     if (prompt.trim().length < 12) {
@@ -453,13 +506,16 @@ const DistributionCampaignPage: React.FC = () => {
             <TranslatedText text="You represent your company. Tell UrutiX what must move, then search and pick every destination city yourself. UrutiX will not auto-fill cities." />
           </p>
         </div>
-        <button
-          type="button"
-          onClick={startFresh}
-          className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#345E85] hover:text-[#345E85]"
-        >
-          <TranslatedText text="New intent" />
-        </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <CurrencySelector variant="compact" />
+            <button
+              type="button"
+              onClick={startFresh}
+              className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#345E85] hover:text-[#345E85]"
+            >
+              <TranslatedText text="New intent" />
+            </button>
+          </div>
       </div>
 
       <ol className="grid grid-cols-4 gap-2">
@@ -550,7 +606,7 @@ const DistributionCampaignPage: React.FC = () => {
                 className={inputClass}
               />
             </Field>
-            <Field label="Budget cap (optional, 0 = none)">
+            <Field label={`Budget cap in ${currency} (optional, 0 = none)`}>
               <input
                 type="number"
                 min={0}
@@ -667,7 +723,7 @@ const DistributionCampaignPage: React.FC = () => {
             </Field>
           </div>
 
-          {plan.overBudget && (
+          {budgetCap > 0 && spendAgainstCap > budgetCap && (
             <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
               Your offered freight plus cover is above your budget cap. Raise the cap, lower offered prices, or drop cities before you approve.
@@ -736,7 +792,7 @@ const DistributionCampaignPage: React.FC = () => {
                         {dest.crossBorder ? 'Yes' : 'No'}
                       </td>
                       <td className="px-4 py-3 text-right text-slate-500" title={dest.freightBreakdown?.method || ''}>
-                        {dest.estimatedFreight.toLocaleString()}
+                        {moneyUsd(dest.estimatedFreight)}
                       </td>
                       <td className="px-6 py-3 text-right">
                         <div className="inline-flex items-center gap-1.5 justify-end">
@@ -744,7 +800,8 @@ const DistributionCampaignPage: React.FC = () => {
                           <input
                             type="number"
                             min={1}
-                            value={offeredPrices[dest.cityId] ?? dest.offeredPrice ?? dest.estimatedFreight ?? ''}
+                            step={moneyDecimals > 0 ? 0.01 : 1}
+                            value={offeredPrices[dest.cityId] ?? ''}
                             onChange={(e) => {
                               const value = Number(e.target.value);
                               setOfferedPrices((prev) => ({
@@ -752,7 +809,7 @@ const DistributionCampaignPage: React.FC = () => {
                                 [dest.cityId]: Number.isFinite(value) ? value : 0,
                               }));
                             }}
-                            className="w-28 px-2 py-1.5 text-sm font-bold text-right border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent"
+                            className="w-32 px-2 py-1.5 text-sm font-bold text-right border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent"
                             aria-label={`Offered price for ${dest.cityName}`}
                           />
                         </div>
@@ -762,7 +819,7 @@ const DistributionCampaignPage: React.FC = () => {
                           onClick={() =>
                             setOfferedPrices((prev) => ({
                               ...prev,
-                              [dest.cityId]: Math.round(Number(dest.estimatedFreight) || 0),
+                              [dest.cityId]: roundMoney(convert(Number(dest.estimatedFreight) || 0, 'USD')),
                             }))
                           }
                         >
@@ -826,21 +883,46 @@ const DistributionCampaignPage: React.FC = () => {
             </li>
             <li className="flex gap-3">
               <Wallet className="text-[#345E85] shrink-0 mt-0.5" size={18} />
-              Your offered freight total {currency} {Math.round(offeredFreightTotal).toLocaleString()}
+              Your offered freight total {moneyLocal(offeredFreightTotal)}
               {plan.estimatedFreight
-                ? ` (indicative was ${currency} ${plan.estimatedFreight.toLocaleString()})`
+                ? ` (indicative ${moneyUsd(plan.estimatedFreight)})`
                 : ''}
               {campaign?.intent?.fundOnEscrow
-                ? ` · ~${currency} ${Math.round(offeredFreightTotal * 0.7).toLocaleString()} trip advance if lenders fund escrow`
+                ? ` · ~${moneyLocal(offeredFreightTotal * 0.7)} trip advance if lenders fund escrow`
                 : ' · No escrow advance requested'}
             </li>
             <li className="flex gap-3">
               <Shield className="text-[#345E85] shrink-0 mt-0.5" size={18} />
               {campaign?.intent?.requireInsurance
-                ? `Cargo cover quote ${campaign?.intent?.currencyCode || 'USD'} ${plan.insurancePremium.toLocaleString()}`
+                ? `Cargo cover quote ${moneyUsd(plan.insurancePremium)}`
                 : 'No cargo cover requested'}
             </li>
           </ul>
+
+          <Field label={`Budget cap in ${currency} (0 = no limit)`}>
+            <input
+              type="number"
+              min={0}
+              value={budgetCap}
+              onChange={(e) => setBudgetCap(Number(e.target.value) || 0)}
+              className={inputClass}
+            />
+            <p className="mt-1.5 text-[11px] font-medium text-slate-400">
+              Approve is blocked if offered freight + cover is above this amount.
+              {budgetCap > 0
+                ? ` Current cap: ${moneyLocal(Number(budgetCap))}.`
+                : ' No cap set.'}
+            </p>
+          </Field>
+
+          {budgetCap > 0 && spendAgainstCap > budgetCap && (
+            <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              Offered freight plus cover ({moneyLocal(spendAgainstCap)}) exceeds your
+              budget cap ({moneyLocal(Number(budgetCap))}). Raise the cap, set it to 0, or go
+              back and lower offered prices.
+            </div>
+          )}
 
           <Toggle
             label="Goods are ready at my origin warehouse"
@@ -853,7 +935,14 @@ const DistributionCampaignPage: React.FC = () => {
             <button type="button" onClick={() => setStep(1)} className="text-sm font-bold text-slate-500">
               Back
             </button>
-            <PrimaryButton onClick={approveAndCreate} disabled={approving || !goodsReady}>
+            <PrimaryButton
+              onClick={approveAndCreate}
+              disabled={
+                approving ||
+                !goodsReady ||
+                (budgetCap > 0 && spendAgainstCap > budgetCap)
+              }
+            >
               {approving ? 'Creating loads…' : 'Approve & create loads'}
             </PrimaryButton>
           </div>

@@ -27,6 +27,8 @@ export interface CampaignPromptPayload {
   preferSharedTrucks?: boolean;
   requireInsurance?: boolean;
   fundOnEscrow?: boolean;
+  /** ISO currency for offered prices / budget (defaults to cargo owner preferred). */
+  currencyCode?: string;
 }
 
 const unwrap = <T>(payload: any): T => {

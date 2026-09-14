@@ -10,6 +10,7 @@ import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { CampaignsController } from './campaigns.controller';
 import { CampaignsService } from './campaigns.service';
 import { CampaignGeoService } from './campaign-geo.service';
+import { CurrencyModule } from '../currency/currency.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CampaignGeoService } from './campaign-geo.service';
     MatchingModule,
     forwardRef(() => LoadsModule),
     EnhancedAuthModule,
+    CurrencyModule,
   ],
   controllers: [CampaignsController],
   providers: [CampaignsService, CampaignGeoService],

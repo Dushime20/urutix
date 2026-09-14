@@ -30,6 +30,7 @@ import {
 } from './campaign-planner';
 import { nextMonthWindow, parseCampaignPrompt } from './campaign-intent-parser';
 import { CampaignGeoService } from './campaign-geo.service';
+import { CurrencyService } from '../currency/currency.service';
 
 @Injectable()
 export class CampaignsService implements OnModuleInit {
@@ -48,6 +49,7 @@ export class CampaignsService implements OnModuleInit {
     private readonly loadsService: LoadsService,
     private readonly dataSource: DataSource,
     private readonly geo: CampaignGeoService,
+    private readonly currency: CurrencyService,
   ) {}
 
   async onModuleInit() {
@@ -204,7 +206,10 @@ export class CampaignsService implements OnModuleInit {
       destinationCityIds: destinations.map((city) => city.id),
       windowStart: dto.windowStart || parsed.windowStart || previous?.windowStart || fallbackWindow.windowStart,
       windowEnd: dto.windowEnd || parsed.windowEnd || previous?.windowEnd || fallbackWindow.windowEnd,
-      budgetCap: dto.budgetCap ?? parsed.budgetCap ?? previous?.budgetCap ?? 0,
+      budgetCap:
+        (dto as CampaignIntentDto).budgetCap !== undefined && (dto as CampaignIntentDto).budgetCap !== null
+          ? Math.max(0, Number((dto as CampaignIntentDto).budgetCap) || 0)
+          : parsed.budgetCap ?? previous?.budgetCap ?? 0,
       slaPercent: dto.slaPercent ?? previous?.slaPercent ?? 95,
       preferSharedTrucks: dto.preferSharedTrucks ?? parsed.preferSharedTrucks ?? previous?.preferSharedTrucks ?? true,
       requireInsurance: dto.requireInsurance ?? parsed.requireInsurance ?? previous?.requireInsurance ?? true,
@@ -295,20 +300,40 @@ export class CampaignsService implements OnModuleInit {
     return this.enrich(campaign);
   }
 
-  private applyOfferedPrices(
+  private async toCurrency(amountUsd: number, currencyCode: string): Promise<number> {
+    const code = (currencyCode || 'USD').toUpperCase();
+    if (!amountUsd || code === 'USD') return Math.round(Number(amountUsd) || 0);
+    try {
+      const result = await this.currency.convert(amountUsd, 'USD', code);
+      return Math.round(Number(result.convertedAmount) || 0);
+    } catch {
+      return Math.round(Number(amountUsd) || 0);
+    }
+  }
+
+  private async applyOfferedPrices(
     plan: ReturnType<typeof buildCampaignPlan>,
     offers: { cityId: string; offeredPrice: number }[] | undefined,
     budgetCap: number,
+    currencyCode: string,
   ) {
+    const code = (currencyCode || 'USD').toUpperCase();
     const offerMap = new Map(
       (offers || [])
         .filter((o) => o?.cityId && Number(o.offeredPrice) > 0)
         .map((o) => [o.cityId, Math.round(Number(o.offeredPrice))]),
     );
-    const destinations = plan.destinations.map((dest) => ({
-      ...dest,
-      offeredPrice: offerMap.get(dest.cityId) ?? dest.offeredPrice ?? dest.estimatedFreight,
-    }));
+
+    const destinations = [];
+    for (const dest of plan.destinations) {
+      let offeredPrice = offerMap.get(dest.cityId);
+      if (!(Number(offeredPrice) > 0)) {
+        // Default offer = indicative freight converted into the campaign currency.
+        offeredPrice = await this.toCurrency(dest.estimatedFreight, code);
+      }
+      destinations.push({ ...dest, offeredPrice });
+    }
+
     const missing = destinations.filter((d) => !(Number(d.offeredPrice) > 0));
     if (missing.length) {
       throw new BadRequestException(
@@ -316,24 +341,27 @@ export class CampaignsService implements OnModuleInit {
       );
     }
     const offeredFreightTotal = destinations.reduce((s, d) => s + Number(d.offeredPrice), 0);
+    const insuranceInCurrency = await this.toCurrency(plan.insurancePremium, code);
     return {
       ...plan,
       destinations,
       offeredFreightTotal,
+      insurancePremiumLocal: insuranceInCurrency,
       estimatedAdvance: plan.estimatedAdvance
         ? Math.round(offeredFreightTotal * (Number((plan as any).rates?.advanceRatio) || ADVANCE_RATIO))
         : 0,
-      overBudget: budgetCap > 0 && offeredFreightTotal + plan.insurancePremium > budgetCap,
+      overBudget: budgetCap > 0 && offeredFreightTotal + insuranceInCurrency > budgetCap,
     };
   }
 
   async create(dto: CampaignIntentDto, tenantId: string, cargoOwnerId: string) {
     const previous = (dto as any).origin?.lat ? (dto as unknown as CampaignIntent) : undefined;
     const intent = await this.resolveIntent(dto, tenantId, cargoOwnerId, previous);
-    const plan = this.applyOfferedPrices(
+    const plan = await this.applyOfferedPrices(
       buildCampaignPlan(intent),
       dto.destinationOffers,
       intent.budgetCap,
+      intent.currencyCode,
     );
     const campaign = this.campaignRepo.create({
       tenantId,
@@ -355,13 +383,20 @@ export class CampaignsService implements OnModuleInit {
     const previousOffers =
       dto.destinationOffers ||
       (campaign.intent as any)?.destinationOffers ||
-      (campaign.plan as any)?.destinations?.map((d: any) =>
-        d.offeredPrice > 0 ? { cityId: d.cityId, offeredPrice: d.offeredPrice } : null,
-      ).filter(Boolean);
+      (campaign.plan as any)?.destinations
+        ?.map((d: any) =>
+          d.offeredPrice > 0 ? { cityId: d.cityId, offeredPrice: d.offeredPrice } : null,
+        )
+        .filter(Boolean);
     campaign.intent = { ...intent, destinationOffers: previousOffers || [] };
     campaign.productName = intent.productName;
     campaign.totalUnits = intent.totalUnits;
-    campaign.plan = this.applyOfferedPrices(buildCampaignPlan(intent), previousOffers, intent.budgetCap);
+    campaign.plan = await this.applyOfferedPrices(
+      buildCampaignPlan(intent),
+      previousOffers,
+      intent.budgetCap,
+      intent.currencyCode,
+    );
     campaign.status = DistributionCampaignStatus.PLANNED;
     return this.campaignRepo.save(campaign);
   }
@@ -393,13 +428,17 @@ export class CampaignsService implements OnModuleInit {
         throw new BadRequestException('Confirm goods are ready at the origin warehouse before approving');
       }
 
-      const plan = this.applyOfferedPrices(
+      const plan = await this.applyOfferedPrices(
         buildCampaignPlan(intent),
         dto.destinationOffers || (intent as any).destinationOffers,
         intent.budgetCap,
+        intent.currencyCode,
       );
       if (plan.overBudget) {
-        throw new BadRequestException('Offered freight plus cover exceeds the budget cap');
+        const spend = plan.offeredFreightTotal + plan.insurancePremium;
+        throw new BadRequestException(
+          `Offered freight plus cover (${intent.currencyCode} ${spend.toLocaleString()}) exceeds the budget cap (${intent.currencyCode} ${intent.budgetCap.toLocaleString()}). Raise the cap, set it to 0 for no limit, or lower offered prices.`,
+        );
       }
       if (!plan.destinations.length) {
         throw new BadRequestException('Plan has no destinations');
