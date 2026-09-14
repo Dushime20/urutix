@@ -156,7 +156,7 @@ export class CampaignsService implements OnModuleInit {
     }
 
     // Prefer the cargo owner's actual total weight. Never invent a pack weight.
-    const dtoTonnes = Number(dto.totalTonnes);
+    const dtoTonnes = Number((dto as CampaignIntentDto).totalTonnes);
     const explicitTotalKg =
       (Number.isFinite(Number(dto.totalWeightKg)) && Number(dto.totalWeightKg) > 0
         ? Number(dto.totalWeightKg)
