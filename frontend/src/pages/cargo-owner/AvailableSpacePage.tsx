@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Search, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TranslatedText } from '../../components/translated-text';
 import {
@@ -14,6 +14,7 @@ import {
   type CapacityQuote,
 } from '../../services/capacityApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import ModernLoader from '../../components/common/ModernLoader';
 
 const apiError = (err: any, fallback: string) =>
   err?.response?.data?.message ||
@@ -21,8 +22,17 @@ const apiError = (err: any, fallback: string) =>
   err?.response?.data?.error ||
   fallback;
 
+const cardClass =
+  'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden';
+
 const inputClass =
-  'w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent';
+  'w-full h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#345E85] focus:border-[#345E85]';
+
+const ghostBtnClass =
+  'h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-[#345E85] hover:text-[#345E85]';
+
+const primaryBtnClass =
+  'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-[#345E85] text-white text-sm font-semibold hover:bg-[#2c5173] disabled:opacity-40 disabled:pointer-events-none';
 
 const finiteNumber = (value: string | null) => {
   if (value == null || value === '') return undefined;
@@ -53,6 +63,25 @@ const placeFromQuery = (params: URLSearchParams, side: 'pickup' | 'delivery'): C
     lng,
   };
 };
+
+const prettyStatus = (value?: string) =>
+  String(value || '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const StatusPill: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span className="inline-flex items-center h-6 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+    {children}
+  </span>
+);
+
+const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <label className="block">
+    <span className="ui-label mb-1.5">{label}</span>
+    {children}
+  </label>
+);
 
 const CityField: React.FC<{
   label: string;
@@ -86,23 +115,37 @@ const CityField: React.FC<{
   };
   return (
     <label className="block relative">
-      <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{label}</span>
+      <span className="ui-label mb-1.5">{label}</span>
       <div className="relative">
         <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={q}
           onChange={(e) => commitTyped(e.target.value)}
-          placeholder="Search any city worldwide"
+          placeholder="City"
           className={`${inputClass} pl-9`}
         />
+        {q && (
+          <button
+            type="button"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            onClick={() => {
+              setQ('');
+              setHits([]);
+              onChange(null);
+            }}
+            aria-label="Clear city"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
       {hits.length > 0 && !(value?.lat != null && q.trim() === (value.name || value.city || '')) && (
-        <ul className="absolute z-20 mt-1 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-lg overflow-hidden">
+        <ul className="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
           {hits.map((city) => (
             <li key={`${city.name}-${city.lat}`}>
               <button
                 type="button"
-                className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
                 onClick={() => {
                   onChange({
                     name: city.name,
@@ -116,8 +159,10 @@ const CityField: React.FC<{
                   setHits([]);
                 }}
               >
-                {city.name}
-                {city.country ? <span className="text-slate-400"> · {city.country}</span> : null}
+                <span className="font-medium text-slate-800 dark:text-slate-100">{city.name}</span>
+                {city.country ? (
+                  <span className="block text-xs text-slate-500">{city.country}</span>
+                ) : null}
               </button>
             </li>
           ))}
@@ -210,7 +255,7 @@ const AvailableSpacePage: React.FC = () => {
       const rows = await capacityApi.marketplace(marketplaceParams());
       setOffers(rows);
       setFiltered(true);
-      if (!rows.length) toast('No leftover space matches these filters', { icon: '📦' });
+      if (!rows.length) toast('No leftover space matches these filters');
     } catch (err: any) {
       toast.error(apiError(err, 'Could not search leftover space'));
     } finally {
@@ -250,6 +295,7 @@ const AvailableSpacePage: React.FC = () => {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openQuote = async (offer: CapacityOffer) => {
@@ -282,8 +328,8 @@ const AvailableSpacePage: React.FC = () => {
       });
       toast.success(
         result.status === 'CONFIRMED'
-          ? 'Space booked. Commission is on this leftover shipment.'
-          : 'Request sent to the truck owner.',
+          ? 'Space booked'
+          : 'Request sent to the truck owner',
       );
       setActive(null);
       setQuote(null);
@@ -308,175 +354,264 @@ const AvailableSpacePage: React.FC = () => {
     [bookings],
   );
 
-  if (loading) return <p className="text-sm text-slate-500">Loading available space…</p>;
+  if (loading) return <ModernLoader isLoading type="form" fields={6} />;
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div>
-        <button
-          type="button"
-          onClick={() => navigate('/dashboard')}
-          className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#345E85] mb-3"
-        >
-          <ArrowLeft size={12} />
-          <TranslatedText text="Overview" />
-        </button>
-        <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-          <TranslatedText text="Available space" />
-        </h1>
-      </div>
-
-      <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 md:p-8 space-y-5 shadow-sm">
-        <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Find leftover space</h2>
-        <p className="text-xs text-slate-500">
-          All leftover trips are listed below. Use these filters to narrow the list, or pick a trip as it is.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CityField label="Pickup city" value={origin} onChange={setOrigin} />
-          <CityField label="Delivery city" value={destination} onChange={setDestination} />
-          <label>
-            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Pickup window</span>
-            <input type="datetime-local" value={pickupAt} onChange={(e) => setPickupAt(e.target.value)} className={inputClass} />
-          </label>
-          <label>
-            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Cargo title</span>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
-          </label>
-          <label>
-            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Weight kg</span>
-            <input type="number" min={1} value={weightKg || ''} onChange={(e) => setWeightKg(Number(e.target.value) || 0)} className={inputClass} placeholder="Optional filter" />
-          </label>
-          <label>
-            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Volume m³</span>
-            <input type="number" min={0} step={0.1} value={volumeM3 || ''} onChange={(e) => setVolumeM3(Number(e.target.value) || 0)} className={inputClass} placeholder="Optional filter" />
-          </label>
-        </div>
-        <div className="flex flex-wrap gap-3">
+    <div className="max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex items-center gap-3">
           <button
             type="button"
-            onClick={search}
-            disabled={searching}
-            className="px-6 py-3 rounded-xl bg-[#345E85] text-white text-sm font-black uppercase tracking-widest disabled:opacity-50"
+            onClick={() => navigate('/dashboard')}
+            className="size-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#345E85] hover:text-[#345E85]"
+            aria-label="Back to overview"
           >
-            {searching ? 'Searching…' : 'Filter leftover space'}
+            <ArrowLeft size={16} />
           </button>
-          {filtered ? (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-black uppercase tracking-widest text-slate-500"
-            >
-              Show all leftover trips
+          <div className="min-w-0">
+            <h1 className="ui-page-title">
+              <TranslatedText text="Available space" />
+            </h1>
+          </div>
+        </div>
+        <p className="text-xs tabular-nums text-slate-500">
+          {offers.length} {offers.length === 1 ? 'trip' : 'trips'}
+          {filtered ? ' matched' : ''}
+        </p>
+      </header>
+
+      <section className={cardClass}>
+        <div className="p-5 md:p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CityField label="Pickup" value={origin} onChange={setOrigin} />
+            <CityField label="Delivery" value={destination} onChange={setDestination} />
+            <Field label="Pickup window">
+              <input
+                type="datetime-local"
+                value={pickupAt}
+                onChange={(e) => setPickupAt(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Cargo title">
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
+            </Field>
+            <Field label="Weight (kg)">
+              <input
+                type="number"
+                min={1}
+                value={weightKg || ''}
+                onChange={(e) => setWeightKg(Number(e.target.value) || 0)}
+                className={inputClass}
+                placeholder="Required to book"
+              />
+            </Field>
+            <Field label="Volume (m³)">
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                value={volumeM3 || ''}
+                onChange={(e) => setVolumeM3(Number(e.target.value) || 0)}
+                className={inputClass}
+                placeholder="Optional"
+              />
+            </Field>
+          </div>
+        </div>
+        <div className="px-5 md:px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-slate-500">Weight is required before booking.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {filtered && (
+              <button type="button" onClick={clearFilters} className={ghostBtnClass}>
+                Clear
+              </button>
+            )}
+            <button type="button" onClick={search} disabled={searching} className={primaryBtnClass}>
+              <Search size={14} />
+              {searching ? 'Searching…' : 'Filter'}
             </button>
-          ) : null}
+          </div>
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Trucks with unused space per trip</h2>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">
-            {offers.length} leftover {offers.length === 1 ? 'trip' : 'trips'}
-            {filtered ? ' matching filters' : ' listed'}
-          </span>
+      <section className={cardClass}>
+        <div className="px-5 py-3 md:px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <TranslatedText text="Open trips" />
+          </h2>
+          <span className="text-xs tabular-nums text-slate-500">{offers.length}</span>
         </div>
+
         {offers.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-8 text-sm text-slate-400">
-            {filtered
-              ? 'No leftover trips match these filters. Show all leftover trips to pick from the full list.'
-              : 'No leftover space is listed yet. When a fleet publishes unused kg/m³ on a trip, it will show here for booking.'}
+          <div className="px-5 py-12 md:px-6 text-center">
+            <p className="text-sm text-slate-500">
+              {filtered ? 'No trips match these filters.' : 'No leftover space listed yet.'}
+            </p>
           </div>
         ) : (
-          offers.map((offer) => (
-            <article key={offer.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-[220px]">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#345E85]">{offer.status.replace('_', ' ')}</p>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">{offer.corridor}</h3>
-                <p className="text-xs text-slate-500 mt-1 inline-flex items-center gap-1">
-                  <Calendar size={12} className="shrink-0" />
-                  {formatWindow(offer.departureAt, offer.arrivalAt)}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {offer.truck?.plateNumber || 'Truck'} · {Math.round(offer.remainingWeightKg).toLocaleString()} kg left · {offer.remainingVolumeM3} m³ · {offer.bookingMode === 'INSTANT' ? 'Instant book' : 'Request to book'}
-                </p>
-                <div className="mt-3 h-1.5 w-48 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div className="h-full bg-[#345E85]" style={{ width: `${Math.min(100, offer.utilizationOfRemainder || 0)}%` }} />
+          <ul>
+            {offers.map((offer) => (
+              <li
+                key={offer.id}
+                className="px-5 md:px-6 py-4 border-t border-slate-100 dark:border-slate-800 first:border-t-0 flex flex-wrap items-center justify-between gap-4"
+              >
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusPill>{prettyStatus(offer.status)}</StatusPill>
+                    <StatusPill>
+                      {offer.bookingMode === 'INSTANT' ? 'Instant' : 'Request'}
+                    </StatusPill>
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {offer.corridor}
+                  </h3>
+                  <p className="text-xs text-slate-500 inline-flex items-center gap-1.5">
+                    <Calendar size={12} className="shrink-0" />
+                    {formatWindow(offer.departureAt, offer.arrivalAt)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {offer.truck?.plateNumber || 'Truck'} ·{' '}
+                    {Math.round(offer.remainingWeightKg).toLocaleString()} kg ·{' '}
+                    {offer.remainingVolumeM3} m³
+                  </p>
+                  <div className="h-1 w-40 max-w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      className="h-full bg-[#345E85]"
+                      style={{ width: `${Math.min(100, offer.utilizationOfRemainder || 0)}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-400 uppercase tracking-widest font-black">From</p>
-                <p className="text-lg font-black text-slate-900 dark:text-white">
-                  {compact(offer.quote?.freightAmount || offer.floorPrice || 0)}
-                </p>
-                <p className="text-[11px] text-slate-500">{offer.commissionRate}% match fee on booking</p>
-                <button
-                  type="button"
-                  disabled={offer.bookable === false}
-                  onClick={() => openQuote(offer)}
-                  className="mt-3 px-4 py-2 rounded-xl bg-[#345E85] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
-                >
-                  {offer.bookable === false ? offer.matchReason || 'Does not fit' : 'Book this space'}
-                </button>
-              </div>
-            </article>
-          ))
+                <div className="text-right shrink-0 space-y-2">
+                  <div>
+                    <p className="ui-label mb-0.5">From</p>
+                    <p className="text-base font-semibold tabular-nums text-slate-900 dark:text-white">
+                      {compact(offer.quote?.freightAmount || offer.floorPrice || 0)}
+                    </p>
+                    <p className="text-[11px] text-slate-500">{offer.commissionRate}% fee</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={offer.bookable === false}
+                    onClick={() => openQuote(offer)}
+                    className={primaryBtnClass}
+                  >
+                    {offer.bookable === false ? offer.matchReason || 'Unavailable' : 'Book'}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
       {liveBookings.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-black uppercase tracking-widest text-slate-500">Your leftover-space bookings</h2>
-          {liveBookings.map((row) => (
-            <div key={row.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">{row.title || row.corridor}</p>
-                <p className="text-xs text-slate-500">
-                  {row.status} · {compact(row.freightAmount)} freight · {compact(row.commissionAmount)} fee
-                </p>
-              </div>
-              {['REQUESTED', 'CONFIRMED'].includes(row.status) && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    capacityApi
-                      .cancel(row.id)
-                      .then(() => capacityApi.bookings().then(setBookings))
-                      .then(() => toast.success('Booking released'))
-                      .catch((err) => toast.error(apiError(err, 'Could not cancel')))
-                  }
-                  className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          ))}
+        <section className={cardClass}>
+          <div className="px-5 py-3 md:px-6 border-b border-slate-200 dark:border-slate-800">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <TranslatedText text="Your bookings" />
+            </h2>
+          </div>
+          <ul>
+            {liveBookings.map((row) => (
+              <li
+                key={row.id}
+                className="px-5 md:px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 first:border-t-0 flex flex-wrap items-center justify-between gap-3"
+              >
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                      {row.title || row.corridor}
+                    </p>
+                    <StatusPill>{prettyStatus(row.status)}</StatusPill>
+                  </div>
+                  <p className="text-xs text-slate-500 tabular-nums">
+                    {compact(row.freightAmount)} freight · {compact(row.commissionAmount)} fee
+                  </p>
+                </div>
+                {['REQUESTED', 'CONFIRMED'].includes(row.status) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      capacityApi
+                        .cancel(row.id)
+                        .then(() => capacityApi.bookings().then(setBookings))
+                        .then(() => toast.success('Booking released'))
+                        .catch((err) => toast.error(apiError(err, 'Could not cancel')))
+                    }
+                    className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
       {active && quote && (
-        <div className="fixed inset-0 z-[400] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">Confirm leftover-space booking</h3>
-            <p className="text-sm text-slate-500">
-              {active.corridor} · {weightKg.toLocaleString()} kg on {active.truck?.plateNumber}
-            </p>
-            <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span>Leftover freight</span><strong>{compact(quote.freightAmount)}</strong></div>
-              <div className="flex justify-between"><span>Platform match fee ({quote.commissionRate}%)</span><strong>{compact(quote.commissionAmount)}</strong></div>
-              <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2 font-black">
-                <span>You pay</span><span>{compact(quote.totalDue)}</span>
+        <div className="fixed inset-0 z-[400] bg-black/40 flex items-center justify-center p-4">
+          <div className={`${cardClass} max-w-md w-full`}>
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Confirm booking</h3>
+                <p className="text-xs text-slate-500 mt-1 truncate">
+                  {active.corridor} · {weightKg.toLocaleString()} kg · {active.truck?.plateNumber}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActive(null);
+                  setQuote(null);
+                }}
+                className="size-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-2 text-sm">
+              <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
+                <span>Freight</span>
+                <strong className="tabular-nums text-slate-900 dark:text-white">
+                  {compact(quote.freightAmount)}
+                </strong>
+              </div>
+              <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
+                <span>Match fee ({quote.commissionRate}%)</span>
+                <strong className="tabular-nums text-slate-900 dark:text-white">
+                  {compact(quote.commissionAmount)}
+                </strong>
+              </div>
+              <div className="flex justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 font-semibold text-slate-900 dark:text-white">
+                <span>Total</span>
+                <span className="tabular-nums">{compact(quote.totalDue)}</span>
               </div>
             </div>
-            <p className="text-[11px] text-slate-400">
-              The match fee is billed to the cargo owner on this leftover shipment. The truck owner is not charged to list space.
-            </p>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => { setActive(null); setQuote(null); }} className="flex-1 py-3 rounded-xl border border-slate-200 text-[10px] font-black uppercase tracking-widest">
+            <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setActive(null);
+                  setQuote(null);
+                }}
+                className={`${ghostBtnClass} flex-1`}
+              >
                 Back
               </button>
-              <button type="button" disabled={booking} onClick={confirmBook} className="flex-1 py-3 rounded-xl bg-[#345E85] text-white text-[10px] font-black uppercase tracking-widest">
-                {booking ? 'Booking…' : active.bookingMode === 'INSTANT' ? 'Book now' : 'Request to book'}
+              <button
+                type="button"
+                disabled={booking}
+                onClick={confirmBook}
+                className={`${primaryBtnClass} flex-1`}
+              >
+                {booking
+                  ? 'Booking…'
+                  : active.bookingMode === 'INSTANT'
+                    ? 'Book now'
+                    : 'Request'}
               </button>
             </div>
           </div>

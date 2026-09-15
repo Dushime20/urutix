@@ -28,7 +28,6 @@ import { useI18n } from '../../contexts/i18n-context';
 import { campaignsApi } from '../../services/campaignsApi';
 import type { CampaignCity } from '../../services/campaignsApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
-import CurrencySelector from '../../components/common/CurrencySelector';
 import ModernLoader from '../../components/common/ModernLoader';
 
 const STEPS = ['Brief', 'Plan', 'Review', 'Board'] as const;
@@ -518,12 +517,9 @@ const DistributionCampaignPage: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <CurrencySelector variant="compact" />
-          <button type="button" onClick={startFresh} className={ghostBtnClass}>
-            <TranslatedText text="New campaign" />
-          </button>
-        </div>
+        <button type="button" onClick={startFresh} className={ghostBtnClass}>
+          <TranslatedText text="New campaign" />
+        </button>
       </header>
 
       <Stepper current={step} onGoTo={(index) => index < step && setStep(index)} />

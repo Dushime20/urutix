@@ -1,5 +1,6 @@
 import React from 'react';
 import { TranslatedText } from '../translated-text';
+import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import {
   X,
   Package,

@@ -114,6 +114,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Drafts & Templates', path: `${basePath}/cargos/list?status=DRAFT` },
             { label: 'Cargo Inspections', path: `${basePath}/customs-inspections` },
             { label: 'Invoice Vault', path: `${basePath}/invoices` },
+            { label: 'Financing', path: `${basePath}/loan-requests` },
             { label: 'Financial', path: `${basePath}/pending-payments` },
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
           ]
@@ -452,7 +453,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
       if (p.includes('/financial') || p.includes('/invoices') || p.includes('/payments') || p.includes('pending-payments') || p.includes('commissions')) {
         return navPerms.canAccessFinancial || navPerms.canAccessPayments;
       }
-      if (p.includes('/credits') || p.includes('line of credit') || p.includes('lending') || p.includes('/loans') || p.includes('/lender')) {
+      if (
+        p.includes('/credits') ||
+        p.includes('line of credit') ||
+        p.includes('lending') ||
+        p.includes('/loans') ||
+        p.includes('/loan-requests') ||
+        p.includes('/lender') ||
+        p.includes('financing')
+      ) {
         return navPerms.canManageLoans || navPerms.canAccessLenderPanel;
       }
       if (p.includes('analytics') || p.includes('/reports')) {

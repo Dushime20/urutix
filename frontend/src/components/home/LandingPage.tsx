@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import {
@@ -23,6 +23,7 @@ import {
   UserRound,
   Landmark,
   ChevronRight,
+  ChevronLeft,
   MapPinned,
   FileCheck2,
   CreditCard,
@@ -180,53 +181,200 @@ const FINANCE_ITEMS = [
   },
 ] as const
 
-function Hero() {
-  return (
-    <section id="home" className="relative min-h-[100svh] flex items-end lg:items-center pt-16 lg:pt-[4.25rem]">
-      <div
-        className="absolute inset-0 bg-primary-950"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1600&q=80')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-        aria-hidden
-      />
-      <div className="absolute inset-0 bg-primary-950/80" aria-hidden />
+const HERO_SLIDES = [
+  {
+    id: "network",
+    image:
+      "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1920&q=80",
+    headline: "The freight network for Africa’s shippers, fleets, and lenders",
+    support:
+      "Match loads, run auctions, track every trip, and settle with embedded finance—on one platform you can also white-label.",
+  },
+  {
+    id: "matching",
+    image:
+      "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1920&q=80",
+    headline: "Match capacity. Move cargo. Stay in control.",
+    support:
+      "Smart matching and transparent auctions put the right truck on the right lane—with live GPS and digital proof of delivery.",
+  },
+  {
+    id: "finance",
+    image:
+      "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1920&q=80",
+    headline: "Cash flow that moves with the load",
+    support:
+      "Credits, loans, and escrow sit inside the same journey as matching, tracking, and settlement.",
+  },
+] as const
 
-      <div className="relative z-10 w-full mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 py-16 lg:py-24">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-2xl"
-        >
-          <p className="font-manrope text-white text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight leading-none mb-5">
-            UrutiX
-          </p>
-          <h1 className="font-manrope text-xl sm:text-2xl lg:text-3xl font-semibold text-primary-100 tracking-tight leading-snug mb-4">
-            <TranslatedText text="The freight network for Africa’s shippers, fleets, and lenders" />
-          </h1>
-          <p className="text-primary-200 text-base sm:text-lg leading-relaxed mb-8 max-w-xl">
-            <TranslatedText text="Match loads, run auctions, track every trip, and settle with embedded finance—on one platform you can also white-label." />
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              to="/auth"
-              className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors"
-            >
-              <TranslatedText text="Join the network" />
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a
-              href="#marketplace"
-              className="inline-flex items-center gap-2 border border-white/30 hover:border-white/60 text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors"
-            >
-              <TranslatedText text="Launch your marketplace" />
-            </a>
+const HERO_QUICK_LINKS = [
+  { label: "Cargo owners", href: "#audiences", icon: Package },
+  { label: "Fleet owners", href: "#audiences", icon: Truck },
+  { label: "Drivers", href: "#audiences", icon: UserRound },
+  { label: "Brokers", href: "#audiences", icon: HeartHandshake },
+  { label: "Lenders", href: "#finance", icon: Landmark },
+  { label: "White-label", href: "#marketplace", icon: Building2 },
+] as const
+
+function Hero() {
+  const [slide, setSlide] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const current = HERO_SLIDES[slide]
+
+  useEffect(() => {
+    if (paused) return
+    const timer = window.setInterval(() => {
+      setSlide((prev) => (prev + 1) % HERO_SLIDES.length)
+    }, 6500)
+    return () => window.clearInterval(timer)
+  }, [paused])
+
+  const goTo = (index: number) => setSlide((index + HERO_SLIDES.length) % HERO_SLIDES.length)
+
+  return (
+    <section
+      id="home"
+      className="relative min-h-[100svh] flex flex-col justify-end pt-16 lg:pt-[4.25rem]"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Full-bleed photographic plane */}
+      <div className="absolute inset-0 bg-primary-950 overflow-hidden" aria-hidden>
+        <AnimatePresence mode="sync" initial={false}>
+          <motion.div
+            key={current.id}
+            initial={{ opacity: 0, scale: 1.06 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url('${current.image}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          />
+        </AnimatePresence>
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-primary-950/92 via-primary-950/72 to-primary-950/35"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-primary-950/90 via-transparent to-primary-950/40"
+          aria-hidden
+        />
+      </div>
+
+      <div className="relative z-10 w-full mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 pt-10 pb-6 lg:pt-16 lg:pb-8 flex-1 flex flex-col justify-end">
+        <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-end">
+          <div className="lg:col-span-7 xl:col-span-6">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={current.id}
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <p className="font-manrope text-white text-5xl sm:text-6xl lg:text-[4.25rem] font-extrabold tracking-tight leading-none mb-5">
+                  UrutiX
+                </p>
+                <h1 className="font-manrope text-xl sm:text-2xl lg:text-[1.85rem] font-semibold text-white tracking-tight leading-snug mb-4 max-w-xl">
+                  <TranslatedText text={current.headline} />
+                </h1>
+                <p className="text-primary-100/90 text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
+                  <TranslatedText text={current.support} />
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    to="/auth"
+                    className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
+                  >
+                    <TranslatedText text="Join the network" />
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <a
+                    href="#marketplace"
+                    className="inline-flex items-center gap-2 border border-white/35 hover:border-white/70 hover:bg-white/5 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
+                  >
+                    <TranslatedText text="Launch your marketplace" />
+                  </a>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Carousel controls */}
+            <div className="mt-10 flex items-center gap-4">
+              <div className="flex items-center gap-2" role="tablist" aria-label="Hero slides">
+                {HERO_SLIDES.map((item, index) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={index === slide}
+                    aria-label={`Show slide ${index + 1}`}
+                    onClick={() => goTo(index)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      index === slide
+                        ? "w-8 bg-primary-400"
+                        : "w-1.5 bg-white/40 hover:bg-white/70"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 ml-auto lg:ml-0">
+                <button
+                  type="button"
+                  onClick={() => goTo(slide - 1)}
+                  className="w-10 h-10 inline-flex items-center justify-center border border-white/25 text-white hover:bg-white/10 transition-colors"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goTo(slide + 1)}
+                  className="w-10 h-10 inline-flex items-center justify-center border border-white/25 text-white hover:bg-white/10 transition-colors"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
+      </div>
+
+      {/* Bottom quick-link strip — BK-style interactive tiles */}
+      <div className="relative z-10 w-full">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 pb-0">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 bg-white shadow-[0_-8px_40px_rgba(15,29,43,0.18)]"
+          >
+            {HERO_QUICK_LINKS.map((item) => {
+              const Icon = item.icon
+              return (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="group flex flex-col items-start gap-3 px-4 py-5 sm:px-5 sm:py-6 border-r border-b border-primary-100 last:border-r-0 sm:[&:nth-child(3n)]:border-r-0 lg:border-b-0 lg:[&:nth-child(3n)]:border-r lg:last:border-r-0 hover:bg-primary-50 transition-colors"
+                >
+                  <span className="w-9 h-9 inline-flex items-center justify-center bg-primary-50 text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors">
+                    <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                  </span>
+                  <span className="flex items-center gap-1 font-manrope text-sm font-bold text-primary-900">
+                    <TranslatedText text={item.label} />
+                    <ChevronRight className="w-3.5 h-3.5 text-primary-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                  </span>
+                </a>
+              )
+            })}
+          </motion.div>
+        </div>
       </div>
     </section>
   )
@@ -238,7 +386,7 @@ function AudiencesSection() {
   const Icon = current.icon
 
   return (
-    <section id="audiences" className="bg-white py-20 lg:py-28">
+    <section id="audiences" className="bg-white pt-14 lg:pt-20 pb-20 lg:pb-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         <div className="max-w-2xl mb-10 lg:mb-12">
           <p className="text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-3">

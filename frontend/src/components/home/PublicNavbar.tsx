@@ -129,19 +129,24 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
 
   const sectionHref = (hash: string) => (isHome ? hash : `/${hash}`)
 
+  const overHero = isHome && !solid
   const navItemClass = (active: boolean) =>
     `relative px-3.5 py-2 text-[13px] font-semibold tracking-tight rounded-md transition-colors ${
-      active
-        ? "text-primary-500"
-        : "text-primary-700 hover:text-primary-500 hover:bg-primary-50"
+      overHero
+        ? active
+          ? "text-white"
+          : "text-white/80 hover:text-white hover:bg-white/10"
+        : active
+          ? "text-primary-500"
+          : "text-primary-700 hover:text-primary-500 hover:bg-primary-50"
     }`
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         solid
-          ? "bg-white border-b border-primary-100"
-          : "bg-white/95 border-b border-transparent"
+          ? "bg-white border-b border-primary-100 shadow-sm"
+          : "bg-transparent border-b border-white/10"
       }`}
     >
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
@@ -154,7 +159,9 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
             <img
               src={logoUrutiX}
               alt="UrutiX"
-              className="h-9 sm:h-10 lg:h-11 w-auto object-contain transition-opacity group-hover:opacity-90"
+              className={`h-9 sm:h-10 lg:h-11 w-auto object-contain transition-all group-hover:opacity-90 ${
+                overHero ? "brightness-0 invert" : ""
+              }`}
             />
           </Link>
 
@@ -172,7 +179,9 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
                   {active && (
                     <motion.span
                       layoutId="nav-active"
-                      className="absolute left-3.5 right-3.5 -bottom-0.5 h-0.5 bg-primary-500"
+                      className={`absolute left-3.5 right-3.5 -bottom-0.5 h-0.5 ${
+                        overHero ? "bg-white" : "bg-primary-500"
+                      }`}
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -193,7 +202,9 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
                 {parkingActive && (
                   <motion.span
                     layoutId="nav-active"
-                    className="absolute left-3.5 right-3.5 -bottom-0.5 h-0.5 bg-primary-500"
+                    className={`absolute left-3.5 right-3.5 -bottom-0.5 h-0.5 ${
+                      overHero ? "bg-white" : "bg-primary-500"
+                    }`}
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -229,14 +240,22 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
           <div className="hidden md:flex items-center gap-2.5 lg:gap-3">
             <a
               href={`tel:${contact.phone}`}
-              className="hidden xl:inline-flex items-center gap-2 h-10 px-3 text-[13px] font-medium text-primary-700 border border-primary-100 hover:border-primary-300 hover:text-primary-500 transition-colors rounded-lg"
+              className={`hidden xl:inline-flex items-center gap-2 h-10 px-3 text-[13px] font-medium transition-colors rounded-lg ${
+                overHero
+                  ? "text-white/90 border border-white/25 hover:border-white/50 hover:bg-white/10"
+                  : "text-primary-700 border border-primary-100 hover:border-primary-300 hover:text-primary-500"
+              }`}
             >
-              <Phone className="w-3.5 h-3.5 text-primary-500" />
+              <Phone className={`w-3.5 h-3.5 ${overHero ? "text-white" : "text-primary-500"}`} />
               {contact.phone}
             </a>
 
-            <div className="flex items-center h-10 px-1 border border-primary-100 rounded-lg">
-              <LanguageSwitcher />
+            <div
+              className={`flex items-center h-10 px-1 rounded-lg ${
+                overHero ? "border border-white/25 bg-white/10" : "border border-primary-100"
+              }`}
+            >
+              <LanguageSwitcher variant={overHero ? "light" : "default"} />
             </div>
 
             {dashboardPath ? (
@@ -251,13 +270,17 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
               <>
                 <Link
                   to="/auth"
-                  className="inline-flex items-center h-10 px-3.5 text-[13px] font-semibold text-primary-700 border border-primary-200 hover:border-primary-400 hover:text-primary-500 transition-colors rounded-lg"
+                  className={`inline-flex items-center h-10 px-3.5 text-[13px] font-semibold transition-colors rounded-lg ${
+                    overHero
+                      ? "text-white border border-white/35 hover:bg-white/10"
+                      : "text-primary-700 border border-primary-200 hover:border-primary-400 hover:text-primary-500"
+                  }`}
                 >
                   <TranslatedText text="Sign in" />
                 </Link>
                 <Link
                   to="/auth"
-                  className="inline-flex items-center gap-1.5 h-10 bg-primary-500 hover:bg-primary-600 text-white text-[13px] font-semibold px-4 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1.5 h-10 bg-primary-500 hover:bg-primary-400 text-white text-[13px] font-semibold px-4 rounded-lg transition-colors"
                 >
                   <TranslatedText text="Get started" />
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -267,11 +290,17 @@ export function PublicNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean })
           </div>
 
           <div className="flex lg:hidden items-center gap-1.5">
-            <LanguageSwitcher />
+            <div className={overHero ? "rounded-lg bg-white/10 px-1" : undefined}>
+              <LanguageSwitcher variant={overHero ? "light" : "default"} />
+            </div>
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              className="inline-flex items-center justify-center w-10 h-10 text-primary-700 border border-primary-100 rounded-lg hover:bg-primary-50 transition-colors"
+              className={`inline-flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
+                overHero
+                  ? "text-white border border-white/30 hover:bg-white/10"
+                  : "text-primary-700 border border-primary-100 hover:bg-primary-50"
+              }`}
               aria-expanded={open}
               aria-controls="mobile-nav"
               aria-label={open ? "Close menu" : "Open menu"}
