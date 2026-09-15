@@ -39,6 +39,7 @@ import AgentPasswordSetup from './pages/AgentPasswordSetup';
 // Lazy load pages that use heavy libraries (charts/maps) to reduce initial bundle size
 // Analytics pages
 const UnifiedAnalyticsManagement = lazy(() => import('./pages/dashboard/analytics'));
+const CustomReportBuilder = lazy(() => import('./pages/dashboard/reports/CustomReportBuilder'));
 const PredictiveLogistics = lazy(() => import('./components/Analytics/PredictiveLogistics'));
 
 // Lazy load all page components to reduce initial bundle size
@@ -325,6 +326,7 @@ function App() {
                       <Route path="analytics/detailed" element={<UnifiedAnalyticsManagement />} />
                       <Route path="analytics/predictive" element={<PredictiveLogistics />} />
                       <Route path="analytics/financial" element={<UnifiedFinancialManagement />} />
+                      <Route path="reports/builder" element={<CustomReportBuilder />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<LiveTracking />} />
@@ -394,6 +396,7 @@ function App() {
                       <Route path="journey" element={<EnhancedJourneyFlow />} />
                       <Route path="tenant-dashboard" element={<TenantDashboardPage />} />
                       <Route path="analytics" element={<UnifiedAnalyticsManagement />} />
+                      <Route path="reports/builder" element={<CustomReportBuilder />} />
                       <Route path="reports" element={<UnifiedAnalyticsManagement />} />
                       <Route path="history" element={<UnifiedAnalyticsManagement />} />
                       <Route path="tracking" element={<LiveTracking />} />

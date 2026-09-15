@@ -109,7 +109,15 @@ const UnifiedAnalyticsManagement = () => {
             </p>
           </div>
 
-          <button className="flex items-center justify-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all w-full md:w-auto">
+          <button
+            type="button"
+            onClick={() => {
+              const pathParts = location.pathname.split('/').filter(Boolean);
+              const basePath = pathParts[0] ? `/${pathParts[0]}` : '/dashboard';
+              navigate(`${basePath}/reports/builder`);
+            }}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-[#345E85] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-900/10 hover:bg-slate-800 transition-all w-full md:w-auto"
+          >
             <Plus className="w-4 h-4" />
             Generate Report
           </button>

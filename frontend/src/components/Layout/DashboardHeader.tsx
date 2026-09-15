@@ -117,6 +117,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Financing', path: `${basePath}/loan-requests` },
             { label: 'Financial', path: `${basePath}/pending-payments` },
             { label: 'Financial Analytics', path: `${basePath}/analytics/financial` },
+            { label: 'Custom Reports', path: `${basePath}/reports/builder` },
           ]
         },
         {
