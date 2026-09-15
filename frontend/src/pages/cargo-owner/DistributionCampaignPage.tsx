@@ -9,14 +9,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
   Package,
   MapPin,
   Wallet,
   Shield,
   Truck,
   AlertTriangle,
-  ExternalLink,
   Mic,
   MicOff,
   Search,
@@ -29,8 +29,9 @@ import { campaignsApi } from '../../services/campaignsApi';
 import type { CampaignCity } from '../../services/campaignsApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import CurrencySelector from '../../components/common/CurrencySelector';
+import ModernLoader from '../../components/common/ModernLoader';
 
-const STEPS = ['Intent', 'Plan', 'Approve', 'Board'] as const;
+const STEPS = ['Brief', 'Plan', 'Review', 'Board'] as const;
 const EXAMPLE =
   'I need 100,000 units of bottled water delivered from Kigali next month';
 
@@ -39,6 +40,12 @@ const apiError = (err: any, fallback: string) =>
   (Array.isArray(err?.response?.data?.message) ? err.response.data.message[0] : null) ||
   err?.response?.data?.error ||
   fallback;
+
+const prettyStatus = (value?: string) =>
+  String(value || '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 
 /** Only trust an explicit total mass — never invent from a silent kg/unit default. */
 const tonnesFromIntent = (intent: any): number => {
@@ -53,7 +60,7 @@ const DistributionCampaignPage: React.FC = () => {
   const existingId = params.get('id');
 
   const [step, setStep] = useState(0);
-  const [prompt, setPrompt] = useState(EXAMPLE);
+  const [prompt, setPrompt] = useState('');
   const [originText, setOriginText] = useState('');
   const [budgetCap, setBudgetCap] = useState(0);
   const [totalTonnes, setTotalTonnes] = useState<number | ''>('');
@@ -185,6 +192,9 @@ const DistributionCampaignPage: React.FC = () => {
 
   const insurancePreferred = roundMoney(convert(Number(plan?.insurancePremium) || 0, 'USD'));
   const spendAgainstCap = offeredFreightTotal + insurancePreferred;
+  const overBudget = budgetCap > 0 && spendAgainstCap > budgetCap;
+  const canPropose =
+    !planning && selectedCities.length >= 1 && typeof totalTonnes === 'number' && totalTonnes > 0;
 
   const payload = () => ({
     prompt: prompt.trim(),
@@ -434,7 +444,7 @@ const DistributionCampaignPage: React.FC = () => {
 
   const startFresh = () => {
     setCampaign(null);
-    setPrompt(EXAMPLE);
+    setPrompt('');
     setOriginText('');
     setBudgetCap(0);
     setTotalTonnes('');
@@ -484,222 +494,191 @@ const DistributionCampaignPage: React.FC = () => {
   }, [step, campaign?.id]);
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Loading campaigns…</p>;
+    return <ModernLoader isLoading type="form" fields={6} />;
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+    <div className="max-w-6xl space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#345E85] mb-3"
+            className="size-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#345E85] hover:text-[#345E85]"
+            aria-label="Back to overview"
           >
-            <ArrowLeft size={12} />
-            <TranslatedText text="Overview" />
+            <ArrowLeft size={16} />
           </button>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-            <TranslatedText text="AI Distribution Planner" />
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-            <TranslatedText text="You represent your company. Tell UrutiX what must move, then search and pick every destination city yourself. UrutiX will not auto-fill cities." />
-          </p>
-        </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <CurrencySelector variant="compact" />
-            <button
-              type="button"
-              onClick={startFresh}
-              className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#345E85] hover:text-[#345E85]"
-            >
-              <TranslatedText text="New intent" />
-            </button>
+          <div className="min-w-0">
+            <h1 className="ui-page-title">
+              <TranslatedText text="Campaigns" />
+            </h1>
+            {campaign?.intent?.productName && step > 0 && (
+              <p className="ui-body-small truncate mt-0.5">{campaign.intent.productName}</p>
+            )}
           </div>
-      </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <CurrencySelector variant="compact" />
+          <button type="button" onClick={startFresh} className={ghostBtnClass}>
+            <TranslatedText text="New campaign" />
+          </button>
+        </div>
+      </header>
 
-      <ol className="grid grid-cols-4 gap-2">
-        {STEPS.map((label, index) => (
-          <li
-            key={label}
-            className={`rounded-2xl px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-widest border ${
-              index === step
-                ? 'bg-[#345E85] text-white border-[#345E85]'
-                : index < step
-                  ? 'bg-blue-50 dark:bg-blue-900/20 text-[#345E85] border-blue-100 dark:border-blue-900/40'
-                  : 'bg-white dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800'
-            }`}
-          >
-            {index + 1}. {label}
-          </li>
-        ))}
-      </ol>
+      <Stepper current={step} onGoTo={(index) => index < step && setStep(index)} />
 
       {step === 0 && (
-        <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 md:p-8 space-y-6 shadow-sm">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            <TranslatedText text="One sentence for what to move. You pick every destination city — UrutiX will not guess." />
-          </p>
+        <div className={`grid gap-5 ${savedList.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_272px]' : ''}`}>
+          <section className={cardClass}>
+            <div className="p-5 md:p-6 space-y-5">
+              <Field label="What to move">
+                <div className="relative">
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => {
+                      setPrompt(e.target.value);
+                      if (!listeningRef.current) spokenBaseRef.current = e.target.value;
+                    }}
+                    rows={3}
+                    className={`${inputClass} min-h-[92px] py-3 pr-12 resize-none`}
+                    placeholder={EXAMPLE}
+                    aria-label="What your company needs to move"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void startVoice()}
+                    className={`absolute top-2.5 right-2.5 size-8 inline-flex items-center justify-center rounded-md border ${
+                      listening
+                        ? 'border-[#345E85] bg-[#345E85] text-white'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#345E85] hover:text-[#345E85]'
+                    }`}
+                    title={listening ? 'Stop microphone' : 'Dictate brief'}
+                    aria-pressed={listening}
+                    aria-label={listening ? 'Stop microphone' : 'Start microphone'}
+                  >
+                    {listening ? <MicOff size={14} /> : <Mic size={14} />}
+                  </button>
+                </div>
+              </Field>
 
-          <label className="block">
-            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-              What does your company need to move?
-            </span>
-            <div className="relative">
-              <textarea
-                value={prompt}
-                onChange={(e) => {
-                  setPrompt(e.target.value);
-                  if (!listeningRef.current) spokenBaseRef.current = e.target.value;
-                }}
-                rows={4}
-                className={`${inputClass} pr-14 resize-none`}
-                placeholder={EXAMPLE}
-                aria-label="What your company needs to move"
-              />
-              <button
-                type="button"
-                onClick={() => void startVoice()}
-                className={`absolute top-3 right-3 p-2.5 rounded-full ${
-                  listening
-                    ? 'bg-rose-600 text-white animate-pulse'
-                    : 'bg-[#345E85] text-white hover:bg-[#2c5173]'
-                }`}
-                title={listening ? 'Stop microphone' : 'Speak — UrutiX will type what you say'}
-                aria-pressed={listening}
-                aria-label={listening ? 'Stop microphone' : 'Start microphone'}
-              >
-                {listening ? <MicOff size={16} /> : <Mic size={16} />}
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Field label="Weight (t)">
+                  <input
+                    type="number"
+                    min={0.001}
+                    step="any"
+                    value={totalTonnes}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setTotalTonnes(next === '' ? '' : Number(next));
+                    }}
+                    placeholder="0.00"
+                    className={inputClass}
+                    required
+                  />
+                </Field>
+                <Field label="Origin">
+                  <input
+                    value={originText}
+                    onChange={(e) => setOriginText(e.target.value)}
+                    placeholder="City"
+                    className={inputClass}
+                  />
+                </Field>
+                <Field label={`Budget (${currency})`}>
+                  <input
+                    type="number"
+                    min={0}
+                    value={budgetCap || ''}
+                    onChange={(e) => setBudgetCap(Number(e.target.value) || 0)}
+                    placeholder="Optional"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+
+              <CitySearchPicker selected={selectedCities} onAdd={addCity} onRemove={dropCity} />
             </div>
-            {listening && (
-              <p className="mt-2 text-xs font-bold text-rose-600">
-                Listening — say what you need. Tap the microphone to stop.
+
+            <div className="px-5 md:px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+              <p className="text-xs text-slate-500 tabular-nums">
+                {selectedCities.length} {selectedCities.length === 1 ? 'city' : 'cities'}
               </p>
-            )}
-          </label>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Actual cargo weight (tonnes) *">
-              <input
-                type="number"
-                min={0.001}
-                step="any"
-                value={totalTonnes}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setTotalTonnes(next === '' ? '' : Number(next));
-                }}
-                placeholder="e.g. 200"
-                className={inputClass}
-                required
-              />
-              <p className="mt-1.5 text-[11px] font-medium text-slate-400">
-                Enter the real total weight. Tonnes on the plan come from this — not an invented kg/unit.
-              </p>
-            </Field>
-            <Field label="Warehouse city (optional — overrides “from”)">
-              <input
-                value={originText}
-                onChange={(e) => setOriginText(e.target.value)}
-                placeholder="Any warehouse city worldwide"
-                className={inputClass}
-              />
-            </Field>
-            <Field label={`Budget cap in ${currency} (optional, 0 = none)`}>
-              <input
-                type="number"
-                min={0}
-                value={budgetCap}
-                onChange={(e) => setBudgetCap(Number(e.target.value) || 0)}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-
-          <CitySearchPicker
-            selected={selectedCities}
-            onAdd={addCity}
-            onRemove={dropCity}
-          />
-
-          <div className="flex justify-end">
-            <PrimaryButton
-              onClick={goPlan}
-              disabled={planning || selectedCities.length < 1 || !(typeof totalTonnes === 'number' && totalTonnes > 0)}
-            >
-              {planning ? 'Building plan…' : 'Propose plan'} <ArrowRight size={16} />
-            </PrimaryButton>
-          </div>
+              <PrimaryButton onClick={goPlan} disabled={!canPropose}>
+                {planning ? 'Building…' : 'Build plan'} <ArrowRight size={16} />
+              </PrimaryButton>
+            </div>
+          </section>
 
           {savedList.length > 0 && (
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                Your company plans
-              </p>
-              <div className="space-y-2">
-                {savedList.slice(0, 5).map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => openSaved(item)}
-                    className="w-full text-left px-4 py-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-[#345E85] flex items-center justify-between"
-                  >
-                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                      {item.intent?.productName || item.productName} · {(item.intent?.totalUnits || item.totalUnits || 0).toLocaleString()} units
-                    </span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{item.status}</span>
-                  </button>
-                ))}
+            <aside className={`${cardClass} h-fit`}>
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  <TranslatedText text="Recent" />
+                </h2>
               </div>
-            </div>
+              <ul>
+                {savedList.slice(0, 8).map((item) => {
+                  const active = campaign?.id === item.id;
+                  return (
+                    <li key={item.id} className="border-t border-slate-100 dark:border-slate-800 first:border-t-0">
+                      <button
+                        type="button"
+                        onClick={() => openSaved(item)}
+                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                          active ? 'bg-slate-50 dark:bg-slate-800/50' : ''
+                        }`}
+                      >
+                        <span className="block text-sm font-medium text-slate-900 dark:text-white truncate">
+                          {item.intent?.productName || item.productName || 'Untitled'}
+                        </span>
+                        <span className="mt-1 flex items-center justify-between gap-2">
+                          <span className="text-xs text-slate-500 tabular-nums">
+                            {(item.intent?.totalUnits || item.totalUnits || 0).toLocaleString()}
+                          </span>
+                          <StatusPill>{prettyStatus(item.status)}</StatusPill>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </aside>
           )}
-        </section>
+        </div>
       )}
 
       {step === 1 && plan && (
         <section className="space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <Kpi
-              label="Tonnes"
-              value={(plan.totalWeightKg / 1000).toFixed(1)}
-            />
-            <Kpi label="Child loads" value={String(plan.destinations.length)} />
-            <Kpi label="Shared / LTL" value={`${plan.sharedCapacityPct}%`} />
-            <Kpi
-              label="Indicative freight"
-              value={`${currency} ${plan.estimatedFreight.toLocaleString()}`}
-            />
-            <Kpi
-              label="Your offered total"
-              value={`${currency} ${Math.round(offeredFreightTotal).toLocaleString()}`}
-              warn={budgetCap > 0 && offeredFreightTotal + (plan.insurancePremium || 0) > budgetCap}
-            />
-          </div>
-          <p className="text-xs text-slate-500">
-            Tonnes = your entered cargo weight
-            {typeof totalTonnes === 'number' && totalTonnes > 0 ? ` (${totalTonnes} t)` : ''}
-            {campaign?.intent?.totalUnits && Number(campaign?.intent?.totalWeightKg) > 0
-              ? ` · ${Number(campaign.intent.kgPerUnit || 0).toFixed(3)} kg per unit across ${campaign.intent.totalUnits.toLocaleString()} units`
-              : ''}
-            .
-          </p>
-          <p className="text-xs text-slate-500">
-            Indicative freight is a market-based suggestion. Set your offered price per city —
-            that is what gets published on each cargo load for matching.
-            {plan.freightMethod ? ` ${plan.freightMethod}.` : ''}
-            {' '}Final paid amount can still change with bids.
-          </p>
-          {!(Number(campaign?.intent?.totalWeightKg) > 0) && (
-            <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              This plan was built without an explicit cargo weight. Enter the actual tonnes below and recalculate before you approve.
+          <div className={cardClass}>
+            <div className="grid grid-cols-2 lg:grid-cols-5 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-slate-800">
+              <Kpi label="Weight" value={`${(plan.totalWeightKg / 1000).toFixed(1)} t`} />
+              <Kpi label="Loads" value={String(plan.destinations.length)} />
+              <Kpi label="Shared" value={`${plan.sharedCapacityPct}%`} />
+              <Kpi label="Indicative" value={moneyUsd(plan.estimatedFreight)} />
+              <Kpi label="Offer" value={moneyLocal(offeredFreightTotal)} warn={overBudget} />
             </div>
+          </div>
+
+          {!(Number(campaign?.intent?.totalWeightKg) > 0) && (
+            <Notice>Enter tonnes and update the plan before review.</Notice>
+          )}
+          {overBudget && (
+            <Notice>Offer plus cover exceeds the budget cap.</Notice>
           )}
 
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-4 md:p-5 shadow-sm">
-            <Field label="Update actual cargo weight (tonnes)">
-              <div className="flex flex-wrap items-end gap-3">
+          <div className={cardClass}>
+            <div className="px-5 py-3 md:px-6 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <MapPin size={15} className="text-[#345E85] shrink-0" />
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                  {origin?.name}
+                  <span className="font-normal text-slate-400 mx-1.5">→</span>
+                  {plan.destinations.length} cities
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
                 <input
                   type="number"
                   min={0.001}
@@ -709,94 +688,73 @@ const DistributionCampaignPage: React.FC = () => {
                     const next = e.target.value;
                     setTotalTonnes(next === '' ? '' : Number(next));
                   }}
-                  className={`${inputClass} max-w-xs`}
+                  className={`${inputClass} w-24`}
+                  aria-label="Cargo weight in tonnes"
                 />
                 <button
                   type="button"
                   onClick={goPlan}
-                  disabled={planning || selectedCities.length < 1 || !(typeof totalTonnes === 'number' && totalTonnes > 0)}
-                  className="text-[10px] font-black uppercase tracking-widest text-[#345E85] disabled:opacity-40"
+                  disabled={!canPropose}
+                  className="h-10 px-3 text-sm font-medium text-[#345E85] hover:text-[#2c5173] disabled:opacity-40"
                 >
-                  {planning ? 'Updating…' : 'Recalculate plan'}
+                  {planning ? 'Updating…' : 'Update'}
                 </button>
               </div>
-            </Field>
-          </div>
+            </div>
 
-          {budgetCap > 0 && spendAgainstCap > budgetCap && (
-            <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              Your offered freight plus cover is above your budget cap. Raise the cap, lower offered prices, or drop cities before you approve.
-            </div>
-          )}
+            <details className="group border-b border-slate-200 dark:border-slate-800">
+              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden px-5 md:px-6 py-3 flex items-center justify-between gap-3 text-sm text-slate-600 dark:text-slate-300">
+                <span>
+                  Destinations
+                  <span className="ml-2 tabular-nums text-slate-400">{selectedCities.length}</span>
+                </span>
+                <ChevronDown size={14} className="text-slate-400 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="px-5 md:px-6 pb-4">
+                <CitySearchPicker selected={selectedCities} onAdd={addCity} onRemove={dropCity} compact />
+              </div>
+            </details>
 
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-              <MapPin size={16} className="text-[#345E85]" />
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">
-                {origin?.name} → {plan.destinations.length} cities
-              </h2>
-            </div>
-            <div className="px-6 py-4 border-b border-slate-50 dark:border-slate-800">
-              <CitySearchPicker
-                selected={selectedCities}
-                onAdd={addCity}
-                onRemove={dropCity}
-              />
-              <button
-                type="button"
-                onClick={goPlan}
-                disabled={planning || selectedCities.length < 1}
-                className="mt-3 text-[10px] font-black uppercase tracking-widest text-[#345E85]"
-              >
-                {planning ? 'Updating plan…' : 'Update plan with selected cities'}
-              </button>
-            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">
-                    <th className="px-6 py-3">City</th>
-                    <th className="px-4 py-3">Units</th>
-                    <th className="px-4 py-3">Tonnes</th>
-                    <th className="px-4 py-3">Road km</th>
-                    <th className="px-4 py-3">Mix</th>
-                    <th className="px-4 py-3">Border</th>
-                    <th className="px-4 py-3 text-right">Indicative</th>
-                    <th className="px-6 py-3 text-right">Your offered price *</th>
+                  <tr className="text-left ui-table-header border-b border-slate-200 dark:border-slate-800">
+                    <th className="px-5 md:px-6 py-2.5 font-medium">City</th>
+                    <th className="px-3 py-2.5 font-medium text-right">Units</th>
+                    <th className="px-3 py-2.5 font-medium text-right">t</th>
+                    <th className="px-3 py-2.5 font-medium text-right">Km</th>
+                    <th className="px-3 py-2.5 font-medium">Type</th>
+                    <th className="px-3 py-2.5 font-medium text-right">Indicative</th>
+                    <th className="px-5 md:px-6 py-2.5 font-medium text-right">Offer</th>
                   </tr>
                 </thead>
                 <tbody>
                   {plan.destinations.map((dest: any) => (
-                    <tr key={dest.cityId} className="border-t border-slate-50 dark:border-slate-800">
-                      <td className="px-6 py-3 font-bold text-slate-800 dark:text-slate-100">
-                        {dest.cityName}
-                        <span className="block text-[10px] font-medium text-slate-400">{dest.country}</span>
-                      </td>
-                      <td className="px-4 py-3">{dest.units.toLocaleString()}</td>
-                      <td className="px-4 py-3">{(dest.weightKg / 1000).toFixed(1)}</td>
-                      <td className="px-4 py-3">
-                        {dest.distanceKm}
-                        {dest.haversineKm ? (
-                          <span className="block text-[10px] font-medium text-slate-400">
-                            air {dest.haversineKm}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${dest.loadType === 'LTL' ? 'text-teal-600' : 'text-slate-500'}`}>
-                          {dest.loadType}
+                    <tr
+                      key={dest.cityId}
+                      className="border-t border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      <td className="px-5 md:px-6 py-3">
+                        <span className="block font-medium text-slate-900 dark:text-white">{dest.cityName}</span>
+                        <span className="block text-xs text-slate-500">
+                          {dest.country}
+                          {dest.crossBorder ? ' · Border' : ''}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-[10px] font-bold uppercase text-slate-400">
-                        {dest.crossBorder ? 'Yes' : 'No'}
+                      <td className="px-3 py-3 text-right tabular-nums">{dest.units.toLocaleString()}</td>
+                      <td className="px-3 py-3 text-right tabular-nums">{(dest.weightKg / 1000).toFixed(1)}</td>
+                      <td className="px-3 py-3 text-right tabular-nums">{dest.distanceKm}</td>
+                      <td className="px-3 py-3">
+                        <StatusPill>{dest.loadType}</StatusPill>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-500" title={dest.freightBreakdown?.method || ''}>
+                      <td
+                        className="px-3 py-3 text-right tabular-nums text-slate-500"
+                        title={dest.freightBreakdown?.method || ''}
+                      >
                         {moneyUsd(dest.estimatedFreight)}
                       </td>
-                      <td className="px-6 py-3 text-right">
-                        <div className="inline-flex items-center gap-1.5 justify-end">
-                          <span className="text-[10px] font-bold text-slate-400">{currency}</span>
+                      <td className="px-5 md:px-6 py-3">
+                        <div className="flex items-center justify-end gap-2">
                           <input
                             type="number"
                             min={1}
@@ -809,22 +767,22 @@ const DistributionCampaignPage: React.FC = () => {
                                 [dest.cityId]: Number.isFinite(value) ? value : 0,
                               }));
                             }}
-                            className="w-32 px-2 py-1.5 text-sm font-bold text-right border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent"
+                            className="w-28 h-9 px-2 text-sm text-right border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#345E85] focus:border-[#345E85]"
                             aria-label={`Offered price for ${dest.cityName}`}
                           />
+                          <button
+                            type="button"
+                            className="text-[11px] font-medium text-[#345E85] hover:text-[#2c5173] whitespace-nowrap"
+                            onClick={() =>
+                              setOfferedPrices((prev) => ({
+                                ...prev,
+                                [dest.cityId]: roundMoney(convert(Number(dest.estimatedFreight) || 0, 'USD')),
+                              }))
+                            }
+                          >
+                            Match
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          className="mt-1 text-[9px] font-black uppercase tracking-widest text-[#345E85]"
-                          onClick={() =>
-                            setOfferedPrices((prev) => ({
-                              ...prev,
-                              [dest.cityId]: roundMoney(convert(Number(dest.estimatedFreight) || 0, 'USD')),
-                            }))
-                          }
-                        >
-                          Use indicative
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -833,211 +791,272 @@ const DistributionCampaignPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 shadow-sm">
-            <h2 className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 mb-4">
-              Operator pipeline
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {plan.operatorSteps.map((op) => (
-                <div key={op.id} className="rounded-2xl border border-slate-100 dark:border-slate-800 p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{op.label}</p>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                      {op.layer === 'C' ? 'Freight' : 'Later'} · {op.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">{op.detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          {Array.isArray(plan.operatorSteps) && plan.operatorSteps.length > 0 && (
+            <details className={`group ${cardClass}`}>
+              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden px-5 md:px-6 py-3 flex items-center justify-between gap-3 text-sm text-slate-600 dark:text-slate-300">
+                <span>Pipeline</span>
+                <span className="inline-flex items-center gap-2 text-xs text-slate-400">
+                  {plan.operatorSteps.length}
+                  <ChevronDown size={14} className="transition-transform group-open:rotate-180" />
+                </span>
+              </summary>
+              <ul className="border-t border-slate-200 dark:border-slate-800">
+                {plan.operatorSteps.map((op: any) => (
+                  <li
+                    key={op.id}
+                    className="px-5 md:px-6 py-3 border-t border-slate-100 dark:border-slate-800 first:border-t-0"
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{op.label}</p>
+                      <StatusPill>{prettyStatus(op.status)}</StatusPill>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">{op.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
 
-          <div className="flex justify-between">
-            <button type="button" onClick={() => setStep(0)} className="text-sm font-bold text-slate-500">
-              Back
-            </button>
+          <StepFooter onBack={() => setStep(0)}>
             <PrimaryButton onClick={goApprove} disabled={planning}>
-              {planning ? 'Saving…' : 'Review & approve'} <ArrowRight size={16} />
+              {planning ? 'Saving…' : 'Continue'} <ArrowRight size={16} />
             </PrimaryButton>
-          </div>
+          </StepFooter>
         </section>
       )}
 
       {step === 2 && plan && (
-        <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 md:p-8 space-y-6 shadow-sm">
-          <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-            You approve before anything is committed
-          </h2>
-          <p className="text-sm text-slate-500">
-            Approving creates live child loads (one per city), requests AI truck matches, quotes cargo cover, flags escrow advances for after trip assignment, and marks cross-border loads for a customs pack. Supplier purchase orders are not created.
-          </p>
-
-          <ul className="space-y-3 text-sm">
-            <li className="flex gap-3">
-              <Package className="text-[#345E85] shrink-0 mt-0.5" size={18} />
-              {plan.destinations.length} loads from {origin?.name} for {campaign?.intent?.productName}
-            </li>
-            <li className="flex gap-3">
-              <Truck className="text-[#345E85] shrink-0 mt-0.5" size={18} />
-              {plan.ltlCount} shared / leftover-space movements, {plan.ftlCount} exclusive trucks
-            </li>
-            <li className="flex gap-3">
-              <Wallet className="text-[#345E85] shrink-0 mt-0.5" size={18} />
-              Your offered freight total {moneyLocal(offeredFreightTotal)}
-              {plan.estimatedFreight
-                ? ` (indicative ${moneyUsd(plan.estimatedFreight)})`
-                : ''}
-              {campaign?.intent?.fundOnEscrow
-                ? ` · ~${moneyLocal(offeredFreightTotal * 0.7)} trip advance if lenders fund escrow`
-                : ' · No escrow advance requested'}
-            </li>
-            <li className="flex gap-3">
-              <Shield className="text-[#345E85] shrink-0 mt-0.5" size={18} />
-              {campaign?.intent?.requireInsurance
-                ? `Cargo cover quote ${moneyUsd(plan.insurancePremium)}`
-                : 'No cargo cover requested'}
-            </li>
-          </ul>
-
-          <Field label={`Budget cap in ${currency} (0 = no limit)`}>
-            <input
-              type="number"
-              min={0}
-              value={budgetCap}
-              onChange={(e) => setBudgetCap(Number(e.target.value) || 0)}
-              className={inputClass}
-            />
-            <p className="mt-1.5 text-[11px] font-medium text-slate-400">
-              Approve is blocked if offered freight + cover is above this amount.
-              {budgetCap > 0
-                ? ` Current cap: ${moneyLocal(Number(budgetCap))}.`
-                : ' No cap set.'}
-            </p>
-          </Field>
-
-          {budgetCap > 0 && spendAgainstCap > budgetCap && (
-            <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              Offered freight plus cover ({moneyLocal(spendAgainstCap)}) exceeds your
-              budget cap ({moneyLocal(Number(budgetCap))}). Raise the cap, set it to 0, or go
-              back and lower offered prices.
+        <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className={cardClass}>
+            <div className="px-5 py-3 md:px-6 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                <TranslatedText text="Summary" />
+              </h2>
             </div>
-          )}
+            <dl>
+              <SummaryRow icon={Package} label="Loads">
+                {plan.destinations.length} from {origin?.name}
+                {campaign?.intent?.productName ? ` · ${campaign.intent.productName}` : ''}
+              </SummaryRow>
+              <SummaryRow icon={Truck} label="Mix">
+                {plan.ltlCount} shared · {plan.ftlCount} exclusive
+              </SummaryRow>
+              <SummaryRow icon={Wallet} label="Freight">
+                {moneyLocal(offeredFreightTotal)}
+                {plan.estimatedFreight ? ` · ${moneyUsd(plan.estimatedFreight)} indicative` : ''}
+                {campaign?.intent?.fundOnEscrow
+                  ? ` · ${moneyLocal(offeredFreightTotal * 0.7)} escrow`
+                  : ''}
+              </SummaryRow>
+              <SummaryRow icon={Shield} label="Cover">
+                {campaign?.intent?.requireInsurance
+                  ? moneyUsd(plan.insurancePremium)
+                  : 'Not requested'}
+              </SummaryRow>
+            </dl>
+          </div>
 
-          <Toggle
-            label="Goods are ready at my origin warehouse"
-            hint="Required. UrutiX will not place a supplier purchase order."
-            checked={goodsReady}
-            onChange={setGoodsReady}
-          />
+          <div className={`${cardClass} h-fit`}>
+            <div className="p-5 space-y-4">
+              <Field label={`Budget (${currency})`}>
+                <input
+                  type="number"
+                  min={0}
+                  value={budgetCap || ''}
+                  onChange={(e) => setBudgetCap(Number(e.target.value) || 0)}
+                  placeholder="Optional"
+                  className={inputClass}
+                />
+              </Field>
 
-          <div className="flex justify-between">
-            <button type="button" onClick={() => setStep(1)} className="text-sm font-bold text-slate-500">
-              Back
-            </button>
-            <PrimaryButton
-              onClick={approveAndCreate}
-              disabled={
-                approving ||
-                !goodsReady ||
-                (budgetCap > 0 && spendAgainstCap > budgetCap)
-              }
-            >
-              {approving ? 'Creating loads…' : 'Approve & create loads'}
-            </PrimaryButton>
+              {overBudget && (
+                <Notice>
+                  {moneyLocal(spendAgainstCap)} exceeds {moneyLocal(Number(budgetCap))}.
+                </Notice>
+              )}
+
+              <Toggle
+                label="Goods ready at origin"
+                checked={goodsReady}
+                onChange={setGoodsReady}
+              />
+
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                >
+                  Back
+                </button>
+                <PrimaryButton
+                  onClick={approveAndCreate}
+                  disabled={approving || !goodsReady || overBudget}
+                >
+                  {approving ? 'Creating…' : 'Approve'}
+                </PrimaryButton>
+              </div>
+            </div>
           </div>
         </section>
       )}
 
       {step === 3 && campaign && (
         <section className="space-y-4">
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-teal-600 mb-1">{campaign.status}</p>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                {campaign.loadIds?.length || 0} live loads in cargo inventory
+          <div className={`${cardClass} px-5 py-3.5 md:px-6 flex flex-wrap items-center justify-between gap-3`}>
+            <div className="flex items-center gap-3 min-w-0">
+              <StatusPill>{prettyStatus(campaign.status)}</StatusPill>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                {campaign.loadIds?.length || 0} loads
               </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Matching, escrow, cover, and border packs stay on each load. This board refreshes from the server.
-              </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={repeatPlan}
-                className="text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:border-[#345E85] hover:text-[#345E85]"
-              >
-                Repeat next window
-              </button>
-              <CheckCircle2 className="text-teal-600" size={32} />
-            </div>
+            <button type="button" onClick={repeatPlan} className={ghostBtnClass}>
+              Repeat
+            </button>
           </div>
 
           {campaign.live && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Kpi label="Live loads" value={String(campaign.live.loadCount ?? 0)} />
-              <Kpi label="Matches" value={String(campaign.live.matchesFound ?? 0)} />
-              <Kpi label="Trips" value={String(campaign.live.trips ?? 0)} />
-              <Kpi label="Delivered" value={String(campaign.live.delivered ?? 0)} />
+            <div className={cardClass}>
+              <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 dark:divide-slate-800">
+                <Kpi label="Live" value={String(campaign.live.loadCount ?? 0)} />
+                <Kpi label="Matches" value={String(campaign.live.matchesFound ?? 0)} />
+                <Kpi label="Trips" value={String(campaign.live.trips ?? 0)} />
+                <Kpi label="Delivered" value={String(campaign.live.delivered ?? 0)} />
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Jump to="/dashboard/cargos/list" label="Cargo inventory" />
-            <Jump to="/dashboard/smart-matching" label="Smart matching" />
-            <Jump to="/dashboard/loan-requests" label="Trip finance" />
-            <Jump to="/dashboard/tracking" label="Live tracking" />
-            <Jump to="/dashboard/payments" label="Payments" />
-            <Jump to="/dashboard/customs-inspections" label="Customs packs" />
-            <Jump to="/dashboard/epod-reports" label="ePOD" />
-            <Jump to="/dashboard/analytics/predictive" label="Lane forecast" />
+          <div className={cardClass}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left ui-table-header border-b border-slate-200 dark:border-slate-800">
+                    <th className="px-5 md:px-6 py-2.5 font-medium">City</th>
+                    <th className="px-3 py-2.5 font-medium">Load</th>
+                    <th className="px-3 py-2.5 font-medium">Matching</th>
+                    <th className="px-5 md:px-6 py-2.5 font-medium text-right" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {(campaign.plan?.destinations || []).map((dest: any) => (
+                    <tr
+                      key={dest.cityId}
+                      className="border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <td className="px-5 md:px-6 py-3">
+                        <span className="block font-medium text-slate-900 dark:text-white">{dest.cityName}</span>
+                        <span className="block text-xs text-slate-500">
+                          {(dest.units || 0).toLocaleString()} · {dest.loadType}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <StatusPill>
+                            {prettyStatus(dest.loadStatus) || (dest.loadId ? 'Created' : 'Pending')}
+                          </StatusPill>
+                          {dest.tripStatus ? <StatusPill>{prettyStatus(dest.tripStatus)}</StatusPill> : null}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <StatusPill>{prettyStatus(dest.matchingStatus) || '—'}</StatusPill>
+                          {typeof dest.matchCount === 'number' ? (
+                            <span className="text-xs tabular-nums text-slate-500">{dest.matchCount}</span>
+                          ) : null}
+                          {dest.financeStatus ? <StatusPill>{prettyStatus(dest.financeStatus)}</StatusPill> : null}
+                        </div>
+                      </td>
+                      <td className="px-5 md:px-6 py-3 text-right">
+                        {dest.loadId ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/dashboard/cargos/list?view=${dest.loadId}`)}
+                            className="text-sm font-medium text-[#345E85] hover:text-[#2c5173]"
+                          >
+                            Open
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 overflow-hidden">
-            {(campaign.plan?.destinations || []).map((dest) => (
-              <div
-                key={dest.cityId}
-                className="px-6 py-4 border-b border-slate-50 dark:border-slate-800 last:border-0 flex items-center justify-between gap-3"
-              >
-                <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-100">{dest.cityName}</p>
-                  <p className="text-[11px] text-slate-400">
-                    {(dest.units || 0).toLocaleString()} units · {dest.loadType}
-                    {dest.loadStatus ? ` · ${dest.loadStatus}` : ''}
-                    {dest.matchingStatus ? ` · ${dest.matchingStatus}` : ''}
-                    {typeof dest.matchCount === 'number' ? ` · ${dest.matchCount} matches` : ''}
-                    {dest.tripStatus ? ` · trip ${dest.tripStatus}` : ''}
-                    {dest.financeStatus ? ` · ${dest.financeStatus}` : ''}
-                  </p>
-                </div>
-                {dest.loadId ? (
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/dashboard/cargos/list?view=${dest.loadId}`)}
-                    className="text-[10px] font-black uppercase tracking-widest text-[#345E85]"
-                  >
-                    Open load
-                  </button>
-                ) : (
-                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Not created</span>
-                )}
-              </div>
-            ))}
-          </div>
+          <nav className="flex flex-wrap gap-2">
+            <Jump to="/dashboard/cargos/list" label="Inventory" />
+            <Jump to="/dashboard/smart-matching" label="Matching" />
+            <Jump to="/dashboard/loan-requests" label="Finance" />
+            <Jump to="/dashboard/tracking" label="Tracking" />
+            <Jump to="/dashboard/payments" label="Payments" />
+          </nav>
         </section>
       )}
     </div>
   );
 };
 
+const cardClass =
+  'bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden';
+
 const inputClass =
-  'w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#345E85] focus:border-transparent';
+  'w-full h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#345E85] focus:border-[#345E85]';
+
+const ghostBtnClass =
+  'h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:border-[#345E85] hover:text-[#345E85]';
+
+const StatusPill: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span className="inline-flex items-center h-6 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+    {children}
+  </span>
+);
+
+const Stepper: React.FC<{ current: number; onGoTo: (index: number) => void }> = ({
+  current,
+  onGoTo,
+}) => (
+  <nav aria-label="Campaign steps" className="border-b border-slate-200 dark:border-slate-800">
+    <ol className="flex">
+      {STEPS.map((label, index) => {
+        const done = index < current;
+        const active = index === current;
+        return (
+          <li key={label} className="flex-1 min-w-0">
+            <button
+              type="button"
+              disabled={!done}
+              onClick={() => done && onGoTo(index)}
+              className={`w-full pb-3 text-left border-b-2 -mb-px ${
+                active
+                  ? 'border-[#345E85] text-slate-900 dark:text-white'
+                  : done
+                    ? 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'
+                    : 'border-transparent text-slate-400 cursor-default'
+              }`}
+            >
+              <span className="block text-[11px] font-medium tracking-wider tabular-nums">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className={`block text-sm mt-0.5 truncate ${active ? 'font-semibold' : ''}`}>
+                {label}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  </nav>
+);
 
 const CitySearchPicker: React.FC<{
   selected: CampaignCity[];
   onAdd: (city: CampaignCity) => void;
   onRemove: (city: CampaignCity) => void;
-}> = ({ selected, onAdd, onRemove }) => {
+  compact?: boolean;
+}> = ({ selected, onAdd, onRemove, compact }) => {
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<CampaignCity[]>([]);
   const [searching, setSearching] = useState(false);
@@ -1068,22 +1087,23 @@ const CitySearchPicker: React.FC<{
 
   return (
     <div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-        Destination cities worldwide ({selected.length})
-      </p>
+      {!compact && (
+        <p className="ui-label mb-1.5">
+          Destinations
+          {selected.length > 0 ? ` · ${selected.length}` : ''}
+        </p>
+      )}
       <div className="relative">
-        <Search size={14} className="absolute left-3 top-3.5 text-slate-400" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search any city worldwide — Lagos, Dubai, Rotterdam, São Paulo…"
+          placeholder="Search cities"
           className={`${inputClass} pl-9`}
         />
         {query.trim().length >= 2 && (
-          <div className="absolute z-20 mt-1 w-full max-h-80 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-            {searching && (
-              <p className="px-4 py-2 text-xs text-slate-400">Searching live cities…</p>
-            )}
+          <div className="absolute z-20 mt-1 w-full max-h-72 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+            {searching && <p className="px-3 py-2.5 text-xs text-slate-400">Searching…</p>}
             {!searching &&
               hits.map((city) => (
                 <button
@@ -1094,28 +1114,28 @@ const CitySearchPicker: React.FC<{
                     setQuery('');
                     setHits([]);
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
-                  <span className="font-bold text-slate-800 dark:text-slate-100">{city.name}</span>
-                  <span className="block text-[11px] text-slate-400">
+                  <span className="font-medium text-slate-800 dark:text-slate-100">{city.name}</span>
+                  <span className="block text-xs text-slate-500">
                     {[city.region, city.country || city.countryCode].filter(Boolean).join(', ')}
                   </span>
                 </button>
               ))}
             {!searching && hits.length === 0 && (
-              <p className="px-4 py-2 text-xs text-slate-400">No match. Try another spelling.</p>
+              <p className="px-3 py-2.5 text-xs text-slate-400">No match</p>
             )}
           </div>
         )}
       </div>
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="flex flex-wrap gap-1.5 mt-3">
           {selected.map((city) => (
             <button
               key={city.id || `${city.name}-${city.lat}-${city.lng}`}
               type="button"
               onClick={() => onRemove(city)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold bg-[#345E85] text-white"
+              className="inline-flex items-center gap-1 h-7 px-2 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-[#345E85] hover:text-[#345E85]"
             >
               {[city.name, city.country || city.countryCode].filter(Boolean).join(', ')}
               <X size={12} />
@@ -1129,35 +1149,54 @@ const CitySearchPicker: React.FC<{
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <label className="block">
-    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{label}</span>
+    <span className="ui-label mb-1.5">{label}</span>
     {children}
   </label>
 );
 
 const Toggle: React.FC<{
   label: string;
-  hint: string;
   checked: boolean;
   onChange: (value: boolean) => void;
-}> = ({ label, hint, checked, onChange }) => (
-  <label className="flex items-start gap-3 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 cursor-pointer">
+}> = ({ label, checked, onChange }) => (
+  <label className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-2.5 cursor-pointer">
     <input
       type="checkbox"
-      className="mt-1 rounded border-slate-300 text-[#345E85] focus:ring-[#345E85]"
+      className="rounded border-slate-300 text-[#345E85] focus:ring-[#345E85]"
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
     />
-    <span>
-      <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">{label}</span>
-      <span className="block text-xs text-slate-400 mt-0.5">{hint}</span>
-    </span>
+    <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{label}</span>
   </label>
 );
 
 const Kpi: React.FC<{ label: string; value: string; warn?: boolean }> = ({ label, value, warn }) => (
-  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
-    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-    <p className={`text-xl font-black mt-1 ${warn ? 'text-amber-600' : 'text-slate-900 dark:text-white'}`}>{value}</p>
+  <div className="px-4 py-3.5">
+    <p className="ui-label mb-1">{label}</p>
+    <p className={`text-base font-semibold tracking-tight tabular-nums ${warn ? 'text-[#345E85]' : 'text-slate-900 dark:text-white'}`}>
+      {value}
+    </p>
+  </div>
+);
+
+const Notice: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="flex items-start gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm text-slate-700 dark:text-slate-200">
+    <AlertTriangle size={15} className="mt-0.5 shrink-0 text-slate-500" />
+    <p>{children}</p>
+  </div>
+);
+
+const SummaryRow: React.FC<{
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  children: React.ReactNode;
+}> = ({ icon: Icon, label, children }) => (
+  <div className="px-5 md:px-6 py-3.5 grid grid-cols-[72px_minmax(0,1fr)] gap-3 items-start border-t border-slate-100 dark:border-slate-800 first:border-t-0">
+    <dt className="flex items-center gap-2 text-xs font-medium text-slate-500">
+      <Icon size={14} className="text-slate-400" />
+      {label}
+    </dt>
+    <dd className="text-sm text-slate-800 dark:text-slate-100">{children}</dd>
   </div>
 );
 
@@ -1166,14 +1205,25 @@ const PrimaryButton: React.FC<{
   children: React.ReactNode;
   disabled?: boolean;
 }> = ({ onClick, children, disabled }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#345E85] text-white text-sm font-black uppercase tracking-widest hover:bg-[#2c5173] disabled:opacity-50"
-  >
+  <button type="button" onClick={onClick} disabled={disabled} className={primaryBtnClass}>
     {children}
   </button>
+);
+
+const primaryBtnClass =
+  'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-[#345E85] text-white text-sm font-semibold hover:bg-[#2c5173] disabled:opacity-40 disabled:pointer-events-none';
+
+const StepFooter: React.FC<{ onBack: () => void; children: React.ReactNode }> = ({ onBack, children }) => (
+  <div className="flex items-center justify-between">
+    <button
+      type="button"
+      onClick={onBack}
+      className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+    >
+      Back
+    </button>
+    {children}
+  </div>
 );
 
 const Jump: React.FC<{ to: string; label: string }> = ({ to, label }) => {
@@ -1182,10 +1232,10 @@ const Jump: React.FC<{ to: string; label: string }> = ({ to, label }) => {
     <button
       type="button"
       onClick={() => navigate(to)}
-      className="flex items-center justify-between gap-2 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-left text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#345E85]"
+      className="inline-flex items-center gap-0.5 h-8 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:border-[#345E85] hover:text-[#345E85]"
     >
       {label}
-      <ExternalLink size={12} className="text-slate-400" />
+      <ChevronRight size={14} />
     </button>
   );
 };
