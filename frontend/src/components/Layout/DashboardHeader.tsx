@@ -125,7 +125,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
           icon: Headphones,
           subItems: [
             { label: 'Report Issue', path: `${basePath}/support/new` },
-            { label: 'My Parking Reservations', path: `${basePath}/parking-reservations` },
           ]
         },
       ];
