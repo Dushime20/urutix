@@ -221,6 +221,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                             { label: 'Trucks', icon: Truck, path: '/admin/trucks' },
                                             { label: 'Loads', icon: Package, path: '/admin/loads' },
                                             { label: 'Trips', icon: Activity, path: '/admin/trips' },
+                                            { label: 'Parking', icon: FileCheck, path: '/admin/parking-reservations' },
                                         ]
                                     },
                                     {
@@ -261,7 +262,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                                         <div className="space-y-1">
                                             {category.items.map((item, itemIdx) => {
                                                 const Icon = item.icon;
-                                                const active = window.location.pathname === item.path;
+                                                const active = item.path === '/admin'
+                                                    ? window.location.pathname === item.path
+                                                    : window.location.pathname === item.path || window.location.pathname.startsWith(`${item.path}/`);
                                                 return (
                                                     <button
                                                         key={itemIdx}

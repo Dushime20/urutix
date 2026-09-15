@@ -135,7 +135,7 @@ function hydrate(data: Partial<ParkingFeeSchedule>, facility?: Partial<ParkingFe
   };
 }
 
-const ParkingFeeSettings = () => {
+const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
   const { can } = usePermission();
   const qc = useQueryClient();
   const { supportedCurrencies } = useCurrency();
@@ -470,26 +470,30 @@ const ParkingFeeSettings = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="ui-page-title"><TranslatedText text="Reservation Fees" /></h1>
-          <p className="ui-body-small mt-1">
-            <TranslatedText text="View saved fee schedules in the table. Use Add or Edit to open the configuration form." />
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <CurrencySelector variant="full" />
-          {canEdit && (
-            <button
-              type="button"
-              onClick={openCreate}
-              className="px-4 py-2 rounded-lg font-bold text-sm bg-primary-600 hover:bg-primary-700 text-white"
-            >
-              Add fee schedule
-            </button>
+      {(!embedded || canEdit) && (
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          {!embedded && (
+            <div>
+              <h1 className="ui-page-title"><TranslatedText text="Reservation Fees" /></h1>
+              <p className="ui-body-small mt-1">
+                <TranslatedText text="View saved fee schedules in the table. Use Add or Edit to open the configuration form." />
+              </p>
+            </div>
           )}
+          <div className={`flex items-center gap-2 ${embedded ? 'w-full justify-end' : ''}`}>
+            {!embedded && <CurrencySelector variant="full" />}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={openCreate}
+                className="px-4 py-2 rounded-lg font-bold text-sm bg-primary-600 hover:bg-primary-700 text-white"
+              >
+                Add fee schedule
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {!canEdit && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs font-semibold">

@@ -102,6 +102,7 @@ const FeatureControls = lazy(() => import('./pages/admin/FeatureControls'));
 const AdminParkingReservations = lazy(() => import('./pages/admin/AdminParkingReservations'));
 const ParkingReservationPage = lazy(() => import('./pages/ParkingReservation'));
 const ParkingReservationLookupPage = lazy(() => import('./pages/ParkingReservationLookup'));
+const ParkingManagementWorkspace = lazy(() => import('./components/parking/ParkingManagementWorkspace'));
 const ParkingReservationsDashboard = lazy(() => import('./pages/parking/ParkingReservationsDashboard'));
 const ParkingFeeSettings = lazy(() => import('./pages/parking/ParkingFeeSettings'));
 const MyParkingReservations = lazy(() => import('./pages/parking/MyParkingReservations'));
@@ -572,6 +573,7 @@ function App() {
                       <Route path="enhanced-permissions" element={<EnhancedPermissions />} />
                       <Route path="feature-controls" element={<FeatureControls />} />
                       <Route path="parking-reservations" element={<AdminParkingReservations />} />
+                      <Route path="parking-reservations/fees" element={<Navigate to="/admin/parking-reservations?tab=fees" replace />} />
                       <Route path="parking-reservations/:id" element={<AdminParkingReservations />} />
                       <Route path="activity-logs" element={<ActivityLogs />} />
                       <Route path="advanced-settings" element={<AdvancedSettings />} />
@@ -597,6 +599,7 @@ function App() {
                       <Route path="loads" element={<OperationalAdminLoads />} />
                       <Route path="disputes" element={<OperationalAdminDisputes />} />
                       <Route path="parking-reservations" element={<OperationalParkingReservations />} />
+                      <Route path="parking-reservations/fees" element={<Navigate to="/admin-operational/parking-reservations?tab=fees" replace />} />
                       <Route path="parking-reservations/:id" element={<OperationalParkingReservations />} />
                       <Route path="analytics" element={<OperationalAdminAnalytics />} />
                       <Route path="financial" element={<OperationalAdminFinancial />} />
@@ -684,8 +687,9 @@ function App() {
                       <Route path="resource-unavailable" element={<NotificationResourceUnavailablePage />} />
                       <Route path="support" element={<TenantSupportCenter />} />
                       <Route path="support/analytics" element={<SupportAnalyticsDashboard onBack={() => window.history.back()} />} />
-                      <Route path="parking-reservations" element={<ParkingReservationsDashboard basePath="/tenant-admin/parking-reservations" />} />
-                      <Route path="parking-reservations/:id" element={<ParkingReservationsDashboard basePath="/tenant-admin/parking-reservations" />} />
+                      <Route path="parking-reservations" element={<ParkingManagementWorkspace basePath="/tenant-admin/parking-reservations" title="Parking Management" description="Review reservation requests and manage facility pricing in this workspace." />} />
+                      <Route path="parking-reservations/fees" element={<Navigate to="/tenant-admin/parking-reservations?tab=fees" replace />} />
+                      <Route path="parking-reservations/:id" element={<ParkingManagementWorkspace basePath="/tenant-admin/parking-reservations" title="Parking Management" description="Review reservation requests and manage facility pricing in this workspace." />} />
                     </Route>
 
                     {/* Lender Routes */}

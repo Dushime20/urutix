@@ -1,10 +1,13 @@
 import OperationalPageLayout from '../../components/Admin/OperationalPageLayout';
-import ParkingReservationsDashboard from '../parking/ParkingReservationsDashboard';
+import ParkingManagementWorkspace from '../../components/parking/ParkingManagementWorkspace';
 
 const OperationalParkingReservations = () => {
   return (
-    <OperationalPageLayout title="Parking Reservations" description="Review and process truck parking requests">
-      <ParkingReservationsDashboard basePath="/admin-operational/parking-reservations" />
+    <OperationalPageLayout
+      title="Parking Management"
+      description="Review reservation requests and manage facility pricing without leaving this workspace."
+    >
+      <ParkingManagementWorkspace basePath="/admin-operational/parking-reservations" />
     </OperationalPageLayout>
   );
 };

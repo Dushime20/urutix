@@ -13,8 +13,15 @@ import { usePermission } from '../../contexts/PermissionContext';
 import { useParkingMoney } from '../../hooks/useParkingMoney';
 import CurrencySelector from '../../components/common/CurrencySelector';
 import { ParkingReservationDetailsModal } from '../../components/parking/ParkingReservationDetailsModal';
+import { parkingFeesPath } from '../../utils/parkingPaths';
 
-const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservations' }: { basePath?: string }) => {
+const ParkingReservationsDashboard = ({
+  basePath = '/dashboard/parking/reservations',
+  embedded = false,
+}: {
+  basePath?: string;
+  embedded?: boolean;
+}) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { can } = usePermission();
@@ -140,26 +147,28 @@ const ParkingReservationsDashboard = ({ basePath = '/dashboard/parking/reservati
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="ui-page-title"><TranslatedText text="Parking Reservations" /></h1>
-          <p className="ui-body-small mt-1">
-            <TranslatedText text="Review, assign, and process UrutiX Parking reservation requests." />
-          </p>
+      {!embedded && (
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="ui-page-title"><TranslatedText text="Parking Reservations" /></h1>
+            <p className="ui-body-small mt-1">
+              <TranslatedText text="Review, assign, and process UrutiX Parking reservation requests." />
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <CurrencySelector variant="full" />
+            {can('parking:manage_fees') && (
+              <button
+                type="button"
+                onClick={() => navigate(parkingFeesPath(basePath))}
+                className="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+              >
+                Configure reservation fees
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <CurrencySelector variant="full" />
-          {can('parking:manage_fees') && (
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard/parking/fees')}
-              className="px-4 py-2 rounded-lg font-bold text-sm bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-            >
-              Configure reservation fees
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6 gap-4">
         <StatCard title="Pending Review" value={stats?.pendingReview ?? 0} color="warning" variant="modern" icon={<Clock className="w-5 h-5" />} loading={statsQuery.isLoading} onClick={() => { setStatus('PENDING_REVIEW'); setPage(1); }} />
