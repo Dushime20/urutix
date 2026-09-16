@@ -47,7 +47,6 @@ import TenantUserManagement from './TenantUserManagement';
 import ActiveTrips from './ActiveTrips';
 import TenantSettings from './TenantSettings';
 import TenantBidding from './TenantBidding';
-import TruckOwnerBilling from '../../pages/tenant-admin/TruckOwnerBilling';
 import PurchaseCredits from '../../pages/subscription/PurchaseCredits';
 import BillingDashboard from '../../pages/subscription/BillingDashboard';
 import SubscriptionPlans from '../../pages/subscription/SubscriptionPlans';
@@ -78,7 +77,7 @@ ChartJS.register(
 interface TenantDashboardProps {
   tenantId?: string;
   className?: string;
-  defaultView?: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports';
+  defaultView?: 'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports';
 }
 
 const TenantDashboard: React.FC<TenantDashboardProps> = ({
@@ -88,7 +87,7 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
 }) => {
   const { tSync } = useTranslation();
   const [timeRange, setTimeRange] = useState('7d');
-  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'truck-owners' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports'>(defaultView);
+  const [selectedView, setSelectedView] = useState<'overview' | 'fleet' | 'cargo' | 'drivers' | 'financial' | 'operations' | 'users' | 'trips' | 'settings' | 'bidding' | 'purchase-credits' | 'billing' | 'subscription-plans' | 'communicate' | 'profile' | 'lenders' | 'kyc' | 'reports'>(defaultView);
   const [trackingActivity, setTrackingActivity] = useState<any>(null);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
 
@@ -369,18 +368,18 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="space-y-6"
+              className="space-y-12"
             >
               {/* 1. KPI strip */}
               <section>
-                <div className="flex items-end justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
                   <div>
-                    <p className="ui-label mb-0">
-                      <TranslatedText text="At a glance" />
+                    <h1 className="ui-page-title">
+                      <TranslatedText text="Tenant Admin Dashboard" />
+                    </h1>
+                    <p className="ui-body-small mt-1 normal-case">
+                      <TranslatedText text="Manage your organization's operations and performance" />
                     </p>
-                    <h2 className="ui-section-title normal-case">
-                      <TranslatedText text="Operations summary" />
-                    </h2>
                   </div>
                 </div>
                 <QuickStats metrics={data.metrics} />
@@ -543,12 +542,6 @@ const TenantDashboard: React.FC<TenantDashboardProps> = ({
           {!isLoading && selectedView === 'users' && tenantId && (
             <motion.div key="users" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <TenantUserManagement tenantId={tenantId} />
-            </motion.div>
-          )}
-
-          {!isLoading && selectedView === 'truck-owners' && (
-            <motion.div key="truck-owners" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <TruckOwnerBilling />
             </motion.div>
           )}
 

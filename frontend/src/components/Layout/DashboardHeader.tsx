@@ -385,7 +385,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ children }) => {
             { label: 'Cargo', path: '/tenant-admin/cargo' },
             { label: 'Drivers', path: '/tenant-admin/drivers' },
             { label: 'Routes', path: '/tenant-admin/routes' },
-            { label: 'Partners', path: '/tenant-admin/truck-owners' },
             { label: 'Users', path: '/tenant-admin/users' },
             { label: 'Parking Reservations', path: '/tenant-admin/parking-reservations' },
             { label: 'Reports', path: '/tenant-admin/reports' },
