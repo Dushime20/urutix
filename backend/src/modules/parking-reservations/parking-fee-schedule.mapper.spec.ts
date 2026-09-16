@@ -3,6 +3,7 @@ import {
   ParkingReservationFeeType,
 } from '../../entities/parking-reservation.entity';
 import {
+  applyFeeScheduleDto,
   applySystemFeesToQuoteInput,
   normalizeParkingSystemFees,
   quoteFromSchedule,
@@ -54,5 +55,26 @@ describe('parking system fees', () => {
       { enabled: false, reservationFeeType: ParkingReservationFeeType.FIXED, reservationFeeValue: 40, reservationFeeApplication: ParkingReservationFeeApplication.PER_SPACE },
     );
     expect(input.reservationFee).toBe(9);
+  });
+
+  it('ignores reservation fee fields on facility schedule updates', () => {
+    const schedule = {
+      reservationFeeType: ParkingReservationFeeType.FIXED,
+      reservationFeeValue: 0,
+      reservationFeeApplication: ParkingReservationFeeApplication.PER_RESERVATION,
+      monthlyRatePerSpace: 100,
+    } as any;
+
+    applyFeeScheduleDto(schedule, {
+      monthlyRatePerSpace: 150,
+      reservationFeeType: ParkingReservationFeeType.PERCENTAGE,
+      reservationFeeValue: 12,
+      reservationFeeApplication: ParkingReservationFeeApplication.PER_SPACE,
+    });
+
+    expect(schedule.monthlyRatePerSpace).toBe(150);
+    expect(schedule.reservationFeeType).toBe(ParkingReservationFeeType.FIXED);
+    expect(schedule.reservationFeeValue).toBe(0);
+    expect(schedule.reservationFeeApplication).toBe(ParkingReservationFeeApplication.PER_RESERVATION);
   });
 });

@@ -249,10 +249,7 @@ export function applyFeeScheduleDto(schedule: ParkingFeeSchedule, dto: UpdatePar
   if (dto.weeklyRate != null) schedule.weeklyRate = dto.weeklyRate;
   if (dto.longTermRate !== undefined) schedule.longTermRate = dto.longTermRate as any;
   if (dto.longTermMonths !== undefined) schedule.longTermMonths = dto.longTermMonths as any;
-  if (dto.reservationFeeType) assign('reservationFeeType', dto.reservationFeeType);
-  if (dto.reservationFeeValue != null) assign('reservationFeeValue', dto.reservationFeeValue as any);
-  else if (dto.reservationFee != null) assign('reservationFeeValue', dto.reservationFee as any);
-  if (dto.reservationFeeApplication) assign('reservationFeeApplication', dto.reservationFeeApplication);
+  // Reservation / admin fees are platform settings. Facility managers cannot set them here.
   if (dto.taxEnabled != null) assign('taxEnabled', dto.taxEnabled);
   if (dto.taxName) assign('taxName', dto.taxName);
   if (dto.taxPercent != null) {

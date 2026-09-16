@@ -3,7 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { parkingApi } from '../../services/parkingApi';
 import { getApiErrorMessage } from '../../config/errorMessages';
-import type { ParkingFeeSchedule, ParkingFeeScheduleStatus } from '../../types/parking';
+import type {
+  ParkingFeeSchedule,
+  ParkingFeeScheduleStatus,
+  ParkingReservationFeeApplication,
+  ParkingReservationFeeType,
+} from '../../types/parking';
 import { TranslatedText } from '../../components/translated-text';
 import { usePermission } from '../../contexts/PermissionContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
@@ -45,6 +50,17 @@ const LONG_TERM_DURATIONS = [
 ];
 
 const COUNTRIES = worldCountries();
+
+const RESERVATION_FEE_TYPE_LABELS: Record<ParkingReservationFeeType, string> = {
+  FIXED: 'Fixed amount',
+  PERCENTAGE: 'Percentage',
+};
+
+const RESERVATION_FEE_APPLICATION_LABELS: Record<ParkingReservationFeeApplication, string> = {
+  PER_RESERVATION: 'Once per reservation',
+  PER_SPACE: 'Once per truck space',
+  PERCENT_OF_SUBTOTAL: 'Percentage of parking subtotal',
+};
 
 const emptyForm: ParkingFeeSchedule = {
   id: '',
@@ -271,9 +287,6 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
     if (Number(form.maxSpaces || 1) < Number(form.minSpaces || 1)) return 'Maximum spaces must be greater than or equal to minimum spaces.';
     if (form.effectiveFrom && form.effectiveUntil && form.effectiveUntil < form.effectiveFrom) return 'Effective until must be on or after effective from.';
     if (Number(form.paymentDueDays) < 0) return 'Payment due days cannot be negative.';
-    if (form.reservationFeeType === 'PERCENTAGE' && Number(form.reservationFeeValue ?? form.reservationFee) > 100) {
-      return 'Percentage reservation fee must be between 0 and 100.';
-    }
     return null;
   };
 
@@ -289,9 +302,6 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
     weeklyRate: form.weeklyRate == null ? undefined : Number(form.weeklyRate),
     longTermRate: form.longTermRate == null ? null : Number(form.longTermRate),
     longTermMonths: form.longTermMonths == null ? null : Number(form.longTermMonths),
-    reservationFeeType: form.reservationFeeType,
-    reservationFeeValue: Number(form.reservationFeeValue ?? form.reservationFee),
-    reservationFeeApplication: form.reservationFeeApplication,
     taxEnabled: form.taxEnabled,
     taxName: form.taxName,
     taxPercent: Number(form.taxPercent),
@@ -368,6 +378,12 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const adminFees = systemFeesQuery.data;
+  const adminFeeType = adminFees?.reservationFeeType || 'FIXED';
+  const adminFeeValue = Number(adminFees?.reservationFeeValue ?? 0);
+  const adminFeeApplication = adminFees?.reservationFeeApplication || 'PER_RESERVATION';
+  const adminFeeApplied = Boolean(adminFees?.enabled);
+
   const preview = useMemo(
     () =>
       calculateParkingFeeQuote({
@@ -379,15 +395,15 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
           longTermRate: form.longTermRate,
           longTermMonths: form.longTermMonths,
         }),
-        reservationFee: Number(form.reservationFeeValue ?? form.reservationFee ?? 0),
-        reservationFeeType: form.reservationFeeType,
-        reservationFeeApplication: form.reservationFeeApplication,
+        reservationFee: adminFeeApplied ? adminFeeValue : 0,
+        reservationFeeType: adminFeeType,
+        reservationFeeApplication: adminFeeApplication,
         taxPercent: Number(form.taxPercent || 0),
         taxEnabled: form.taxEnabled,
         taxName: form.taxName,
         currency: form.currency,
       }),
-    [spaces, months, form],
+    [spaces, months, form, adminFeeApplied, adminFeeValue, adminFeeType, adminFeeApplication],
   );
 
   const columns: Column<ParkingFeeSchedule>[] = useMemo(() => [
@@ -423,10 +439,12 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
     {
       key: 'reservationFee',
       label: 'Admin fee',
-      render: (_v, row) =>
-        row.reservationFeeType === 'PERCENTAGE'
-          ? `${row.reservationFeeValue ?? row.reservationFee}%`
-          : money(row.reservationFeeValue ?? row.reservationFee, row.currency),
+      render: (_v, row) => {
+        if (!adminFeeApplied) return '—';
+        return adminFeeType === 'PERCENTAGE'
+          ? `${adminFeeValue}%`
+          : money(adminFeeValue, row.currency);
+      },
     },
     {
       key: 'taxPercent',
@@ -448,7 +466,7 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
       label: 'Effective',
       render: (_v, row) => `${String(row.effectiveFrom || '').slice(0, 10) || '—'} → ${row.effectiveUntil ? String(row.effectiveUntil).slice(0, 10) : 'Open'}`,
     },
-  ], [money]);
+  ], [adminFeeApplied, adminFeeType, adminFeeValue, money]);
 
   const rowActions: TableAction<ParkingFeeSchedule>[] = [
     { label: 'Edit', onClick: (row) => { void openEdit(row); } },
@@ -467,7 +485,6 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
   ];
 
   const status = (form.status || 'DRAFT') as ParkingFeeScheduleStatus;
-  const feeValue = form.reservationFeeValue ?? form.reservationFee;
   const showConverted = form.currency !== preferredCurrency;
 
   if (query.isLoading) return <ModernLoader isLoading text="Loading_Fee_Schedule" />;
@@ -725,32 +742,43 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
                   <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(form.longTermRate, form.currency)}</p>
                 )}
               </Field>
-              <Field label="Reservation / admin fee type">
-                <SearchableSelect
-                  value={form.reservationFeeType || 'FIXED'}
-                  onChange={(value) => patch({ reservationFeeType: value as ParkingFeeSchedule['reservationFeeType'] })}
-                  searchPlaceholder="Search fee type"
-                  options={[
-                    { value: 'FIXED', label: 'Fixed amount' },
-                    { value: 'PERCENTAGE', label: 'Percentage' },
-                  ]}
-                />
+              <Field
+                label="Reservation / admin fee type"
+                hint="Set by UrutiX admin. Parking managers can view this fee but cannot change it."
+              >
+                <ReadOnlyValue>
+                  {systemFeesQuery.isLoading
+                    ? 'Loading…'
+                    : RESERVATION_FEE_TYPE_LABELS[adminFeeType] || titleCase(adminFeeType)}
+                </ReadOnlyValue>
               </Field>
-              <Field label={form.reservationFeeType === 'PERCENTAGE' ? 'Fee value (%)' : `Fee value (${form.currency})`}>
-                <input type="number" min={0} step="0.01" className={inputClass} value={feeValue} onChange={(e) => patch({ reservationFeeValue: Number(e.target.value), reservationFee: Number(e.target.value) })} />
-                {showConverted && form.reservationFeeType === 'FIXED' && <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(feeValue, form.currency)}</p>}
+              <Field
+                label={adminFeeType === 'PERCENTAGE' ? 'Fee value (%)' : `Fee value (${form.currency})`}
+              >
+                <ReadOnlyValue>
+                  {systemFeesQuery.isLoading
+                    ? 'Loading…'
+                    : adminFeeType === 'PERCENTAGE'
+                      ? `${adminFeeValue}`
+                      : money(adminFeeValue, form.currency)}
+                </ReadOnlyValue>
+                {showConverted && adminFeeType === 'FIXED' && !systemFeesQuery.isLoading && (
+                  <p className="text-[11px] font-semibold text-slate-500 mt-1.5">≈ {converted(adminFeeValue, form.currency)}</p>
+                )}
               </Field>
-              <Field label="How the admin fee is charged">
-                <SearchableSelect
-                  value={form.reservationFeeApplication || 'PER_RESERVATION'}
-                  onChange={(value) => patch({ reservationFeeApplication: value as ParkingFeeSchedule['reservationFeeApplication'] })}
-                  searchPlaceholder="Search how the fee is charged"
-                  options={[
-                    { value: 'PER_RESERVATION', label: 'Once per reservation' },
-                    { value: 'PER_SPACE', label: 'Once per truck space' },
-                    { value: 'PERCENT_OF_SUBTOTAL', label: 'Percentage of parking subtotal' },
-                  ]}
-                />
+              <Field
+                label="How the admin fee is charged"
+                hint={
+                  adminFeeApplied
+                    ? 'This platform fee is billed with every reservation.'
+                    : 'UrutiX admin saved this setting. It is currently not applied to reservations.'
+                }
+              >
+                <ReadOnlyValue>
+                  {systemFeesQuery.isLoading
+                    ? 'Loading…'
+                    : RESERVATION_FEE_APPLICATION_LABELS[adminFeeApplication] || titleCase(adminFeeApplication)}
+                </ReadOnlyValue>
               </Field>
               <Field label="Charge tax / VAT">
                 <SearchableSelect
@@ -964,6 +992,17 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <span className="ui-label block mb-2">{label}</span>
       {children}
       {hint && <p className="mt-1.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">{hint}</p>}
+    </div>
+  );
+}
+
+function ReadOnlyValue({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className="ui-input flex min-h-[48px] items-center rounded-xl border bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700 dark:bg-slate-800/60 dark:text-slate-200"
+      aria-readonly="true"
+    >
+      {children}
     </div>
   );
 }

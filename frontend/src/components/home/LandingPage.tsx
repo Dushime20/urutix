@@ -215,17 +215,15 @@ const HERO_SLIDE_MS = 12000
 
 function Hero() {
   const [slide, setSlide] = useState(0)
-  const [paused, setPaused] = useState(false)
   const reduceMotion = useReducedMotion()
   const current = HERO_SLIDES[slide]
 
   useEffect(() => {
-    if (paused) return
-    const timer = window.setInterval(() => {
+    const timer = window.setTimeout(() => {
       setSlide((prev) => (prev + 1) % HERO_SLIDES.length)
     }, HERO_SLIDE_MS)
-    return () => window.clearInterval(timer)
-  }, [paused])
+    return () => window.clearTimeout(timer)
+  }, [slide])
 
   const goTo = (index: number) => setSlide((index + HERO_SLIDES.length) % HERO_SLIDES.length)
 
@@ -233,8 +231,6 @@ function Hero() {
     <section
       id="home"
       className="relative min-h-[100svh] flex flex-col justify-end pt-16 lg:pt-[4.25rem]"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
     >
       {/* Full-bleed photographic plane */}
       <div className="absolute inset-0 bg-primary-950 overflow-hidden" aria-hidden>
@@ -258,9 +254,9 @@ function Hero() {
                 ? { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
                 : {
                     opacity: { duration: 1.15, ease: [0.22, 1, 0.36, 1] },
-                    scale: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1], repeat: Infinity },
-                    x: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1], repeat: Infinity },
-                    y: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1], repeat: Infinity },
+                    scale: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1] },
+                    x: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1] },
+                    y: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1] },
                   }
             }
             className="absolute -inset-[8%] bg-cover bg-center will-change-transform"
