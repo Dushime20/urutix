@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, CheckCircle, ArrowRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ArrowRight, AlertCircle } from 'lucide-react';
 import { FaSpinner } from 'react-icons/fa';
 
 import logoUrutiXNew from '../assets/urutiX Logistics Logo (1).svg';
@@ -24,6 +24,7 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -33,15 +34,21 @@ const ForgotPassword = () => {
   const onSubmit = async (values: ForgotPasswordFormData) => {
     try {
       setIsLoading(true);
+      setSubmitError(null);
       const response = await authAPI.forgotPassword(values.email);
       setEmailSent(true);
-      toast.success(response.data?.message || tSync('Password reset email sent! Please check your inbox.'));
+      toast.success(
+        response.data?.message ||
+          tSync('Password reset email sent! Please check your inbox.'),
+      );
     } catch (error: any) {
       console.error('Forgot password error:', error);
-      // Even on error, show success message for security (don't reveal if email exists)
-      setEmailSent(true);
-      const errorMessage = error.response?.data?.message || tSync('If an account exists with this email, a password reset link has been sent.');
-      toast.success(errorMessage);
+      const errorMessage =
+        error.response?.data?.message ||
+        tSync('Unable to send password reset email. Please try again.');
+      setEmailSent(false);
+      setSubmitError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -98,15 +105,28 @@ const ForgotPassword = () => {
           <div className="px-6 pb-6">
             {!emailSent ? (
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {submitError && (
+                  <div className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3">
+                    <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-sm font-medium text-red-700">{submitError}</p>
+                  </div>
+                )}
+
                 <div>
                   <label htmlFor="email" className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">
                     <TranslatedText text="Email address" />
                   </label>
                   <div className="relative">
                     <input
-                      {...form.register('email')}
+                      {...form.register('email', {
+                        onChange: () => {
+                          if (submitError) setSubmitError(null);
+                        },
+                      })}
                       type="email"
-                      className="w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 placeholder:text-slate-400 placeholder:font-normal"
+                      className={`w-full px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 placeholder:text-slate-400 placeholder:font-normal ${
+                        submitError ? 'border-red-300' : 'border-slate-200'
+                      }`}
                       placeholder="Enter your email"
                       disabled={isLoading}
                     />
@@ -142,7 +162,7 @@ const ForgotPassword = () => {
                   <TranslatedText text="Check your email" />
                 </h3>
                 <p className="text-sm font-medium text-slate-500 mb-8 px-4">
-                  <TranslatedText text="If an account exists with this email, you will receive a password reset link shortly." />
+                  <TranslatedText text="A password reset link has been sent to your email address." />
                 </p>
                 <button
                   onClick={() => navigate('/auth')}
@@ -157,12 +177,15 @@ const ForgotPassword = () => {
         </div>
 
         {/* Additional Help */}
-        {!emailSent && (
+        {emailSent && (
           <div className="mt-6 text-center">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
               <TranslatedText text="Didn't receive the email? Check your spam folder or" />{' '}
               <button
-                onClick={() => setEmailSent(false)}
+                onClick={() => {
+                  setEmailSent(false);
+                  setSubmitError(null);
+                }}
                 className="text-primary-600 hover:text-primary-500 transition-colors"
               >
                 <TranslatedText text="try again" />
