@@ -26,6 +26,7 @@ import {
   ParkingReservationStatus,
 } from '../../entities/parking-reservation.entity';
 import { AuditLog, AuditAction } from '../../entities/audit-log.entity';
+import { SystemSettings } from '../../entities/system-settings.entity';
 import {
   AddParkingNoteDto,
   AssignParkingReservationDto,
@@ -44,6 +45,7 @@ import {
   SubmitParkingPaymentDto,
   UpdateParkingFacilityDto,
   UpdateParkingFeesDto,
+  UpdateParkingSystemFeesDto,
   WaiveParkingPaymentDto,
 } from './dto/parking-reservation.dto';
 import {
@@ -80,11 +82,14 @@ import {
 } from './parking-operator-identity';
 import {
   applyFeeScheduleDto,
+  applySystemFeesToQuoteInput,
   newDraftFromFacility,
+  normalizeParkingSystemFees,
   quoteFromSchedule,
   snapshotFromSchedule,
   syncFacilityFromSchedule,
   toFeeScheduleView,
+  type ParkingSystemFees,
 } from './parking-fee-schedule.mapper';
 
 const STAFF_ROLES = new Set<string>([
@@ -95,6 +100,8 @@ const STAFF_ROLES = new Set<string>([
 ]);
 
 const SEEDED_FACILITY_ID = '00000000-0000-0000-0000-000000000365';
+const PARKING_SYSTEM_FEES_CATEGORY = 'parking';
+const PARKING_SYSTEM_FEES_KEY = 'system_fees';
 
 const PLATFORM_STAFF_ROLES = new Set<string>([
   UserRole.SUPER_ADMIN,
@@ -112,6 +119,7 @@ type AuthUser = {
 @Injectable()
 export class ParkingReservationsService {
   private readonly logger = new Logger(ParkingReservationsService.name);
+  private parkingSystemFeesCache: { value: ParkingSystemFees; at: number } | null = null;
 
   constructor(
     @InjectRepository(ParkingReservation)
@@ -124,6 +132,8 @@ export class ParkingReservationsService {
     private readonly feeScheduleRepo: Repository<ParkingFeeSchedule>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepo: Repository<AuditLog>,
+    @InjectRepository(SystemSettings)
+    private readonly systemSettingsRepo: Repository<SystemSettings>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(Tenant)
@@ -156,6 +166,35 @@ export class ParkingReservationsService {
 
   private isTenantAdmin(role?: string): boolean {
     return this.normalizedRole(role) === UserRole.TENANT_ADMIN;
+  }
+
+  private assertPlatformStaff(user: AuthUser) {
+    this.assertStaff(user);
+    if (!this.isPlatformStaff(user.role)) {
+      throw new ForbiddenException('Only platform administrators can manage system parking fees.');
+    }
+  }
+
+  private assertFacilityFeeManager(user: AuthUser) {
+    this.assertStaff(user);
+    if (this.isPlatformStaff(user.role)) {
+      throw new ForbiddenException(
+        'Platform administrators set system parking fees. Facility pricing is managed by parking managers.',
+      );
+    }
+  }
+
+  private async getParkingSystemFees(): Promise<ParkingSystemFees> {
+    const now = Date.now();
+    if (this.parkingSystemFeesCache && now - this.parkingSystemFeesCache.at < 15_000) {
+      return this.parkingSystemFeesCache.value;
+    }
+    const row = await this.systemSettingsRepo.findOne({
+      where: { category: PARKING_SYSTEM_FEES_CATEGORY, key: PARKING_SYSTEM_FEES_KEY },
+    });
+    const value = normalizeParkingSystemFees(row?.value);
+    this.parkingSystemFeesCache = { value, at: now };
+    return value;
   }
 
   private async resolveActor(user: AuthUser): Promise<AuthUser> {
@@ -654,6 +693,7 @@ export class ParkingReservationsService {
 
   async listFeeSchedules(user: AuthUser) {
     this.assertStaff(user);
+    if (this.isPlatformStaff(user.role)) return [];
     const facility = await this.findManagerFacility(user, user.tenantId);
     if (!facility) return [];
     const schedules = await this.listSchedulesForFacility(facility.id);
@@ -671,7 +711,7 @@ export class ParkingReservationsService {
   }
 
   async updateFeeSchedule(dto: UpdateParkingFeesDto, user: AuthUser) {
-    this.assertStaff(user);
+    this.assertFacilityFeeManager(user);
     this.assertFeeScheduleDto(dto);
     const facility = await this.ensureManagerFacility(user, dto);
     let working: ParkingFeeSchedule | null = null;
@@ -740,7 +780,7 @@ export class ParkingReservationsService {
   }
 
   async activateFeeSchedule(id: string, user: AuthUser) {
-    this.assertStaff(user);
+    this.assertFacilityFeeManager(user);
     const facility = await this.requireStaffFacility(user);
     const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
     if (!schedule || schedule.parkingFacilityId !== facility.id) {
@@ -786,7 +826,7 @@ export class ParkingReservationsService {
   }
 
   async archiveFeeSchedule(id: string, user: AuthUser) {
-    this.assertStaff(user);
+    this.assertFacilityFeeManager(user);
     const facility = await this.requireStaffFacility(user);
     const schedule = await this.feeScheduleRepo.findOne({ where: { id } });
     if (!schedule || schedule.parkingFacilityId !== facility.id) {
@@ -798,6 +838,59 @@ export class ParkingReservationsService {
     const saved = await this.feeScheduleRepo.save(schedule);
     await this.auditFeeChange(user, facility, 'ARCHIVE', previous, { status: ParkingFeeScheduleStatus.ARCHIVED }, schedule.id);
     return toFeeScheduleView(saved, facility);
+  }
+
+  async getSystemFees(user: AuthUser) {
+    this.assertStaff(user);
+    return this.getParkingSystemFees();
+  }
+
+  async updateSystemFees(dto: UpdateParkingSystemFeesDto, user: AuthUser) {
+    this.assertPlatformStaff(user);
+    const next = normalizeParkingSystemFees(dto);
+    if (
+      (next.reservationFeeType === 'PERCENTAGE' ||
+        next.reservationFeeApplication === 'PERCENT_OF_SUBTOTAL') &&
+      next.reservationFeeValue > 100
+    ) {
+      throw new BadRequestException('Percentage reservation fee cannot exceed 100.');
+    }
+    let row = await this.systemSettingsRepo.findOne({
+      where: { category: PARKING_SYSTEM_FEES_CATEGORY, key: PARKING_SYSTEM_FEES_KEY },
+    });
+    if (!row) {
+      row = this.systemSettingsRepo.create({
+        category: PARKING_SYSTEM_FEES_CATEGORY,
+        key: PARKING_SYSTEM_FEES_KEY,
+        value: next,
+        dataType: 'json',
+        description: 'Platform-level parking reservation / administration fees',
+        isPublic: false,
+        updatedBy: this.actorId(user),
+      });
+    } else {
+      row.value = next;
+      row.updatedBy = this.actorId(user);
+    }
+    await this.systemSettingsRepo.save(row);
+    this.parkingSystemFeesCache = { value: next, at: Date.now() };
+    const userId = this.actorId(user);
+    if (userId) {
+      try {
+        await this.auditLogRepo.save(
+          this.auditLogRepo.create({
+            userId,
+            tenantId: user.tenantId || userId,
+            action: AuditAction.UPDATE,
+            description: 'Parking system fees updated',
+            metadata: { event: 'SYSTEM_FEES', next },
+          }),
+        );
+      } catch (error) {
+        this.logger.warn(`Failed to write parking system fee audit log: ${(error as Error).message}`);
+      }
+    }
+    return next;
   }
 
   async previewFeeQuote(dto: PreviewParkingQuoteDto, user?: AuthUser | null) {
@@ -826,13 +919,15 @@ export class ParkingReservationsService {
       maxContractMonths: schedule.maxContractMonths,
     });
     if (limitError) throw new BadRequestException(limitError);
-    const quote = quoteFromSchedule(schedule, dto.spaces, dto.months);
+    const systemFees = await this.getParkingSystemFees();
+    const quote = quoteFromSchedule(schedule, dto.spaces, dto.months, systemFees);
     return {
       ...quote,
       feeScheduleId: schedule.id,
       feeScheduleVersion: schedule.version,
       feeNotes: schedule.feeNotes || '',
       paymentInstructions: user ? schedule.paymentInstructions || '' : undefined,
+      systemFeesApplied: Boolean(systemFees.enabled),
     };
   }
 
@@ -876,13 +971,18 @@ export class ParkingReservationsService {
         hasActiveSchedule: false,
       };
     }
+    const systemFees = await this.getParkingSystemFees();
     return {
       ...location,
       currency: (schedule.currency || 'USD').toUpperCase(),
       monthlyRatePerSpace: toMoneyNumber(schedule.monthlyRatePerSpace),
-      reservationFeeType: schedule.reservationFeeType,
-      reservationFeeValue: toMoneyNumber(schedule.reservationFeeValue),
-      reservationFeeApplication: schedule.reservationFeeApplication,
+      reservationFeeType: systemFees.enabled ? systemFees.reservationFeeType : schedule.reservationFeeType,
+      reservationFeeValue: systemFees.enabled
+        ? toMoneyNumber(systemFees.reservationFeeValue)
+        : toMoneyNumber(schedule.reservationFeeValue),
+      reservationFeeApplication: systemFees.enabled
+        ? systemFees.reservationFeeApplication
+        : schedule.reservationFeeApplication,
       minSpaces: schedule.minSpaces,
       maxSpaces: schedule.maxSpaces,
       minContractMonths: schedule.minContractMonths,
@@ -984,18 +1084,29 @@ export class ParkingReservationsService {
     }
   }
 
-  buildFeeQuote(reservation: ParkingReservation, scheduleOrFacility: ParkingFeeSchedule | ParkingFacilityConfig) {
+  async buildFeeQuote(reservation: ParkingReservation, scheduleOrFacility: ParkingFeeSchedule | ParkingFacilityConfig) {
+    const systemFees = await this.getParkingSystemFees();
     if ('reservationFeeValue' in scheduleOrFacility) {
-      return quoteFromSchedule(scheduleOrFacility, reservation.truckSpacesRequested, reservation.contractMonths);
+      return quoteFromSchedule(
+        scheduleOrFacility,
+        reservation.truckSpacesRequested,
+        reservation.contractMonths,
+        systemFees,
+      );
     }
-    return calculateParkingFeeQuote({
-      spaces: reservation.truckSpacesRequested,
-      months: reservation.contractMonths,
-      monthlyRatePerSpace: toMoneyNumber(scheduleOrFacility.monthlyRatePerSpace),
-      reservationFee: toMoneyNumber(scheduleOrFacility.reservationFee),
-      taxPercent: toMoneyNumber(scheduleOrFacility.taxPercent),
-      currency: (scheduleOrFacility.currency || 'USD').toUpperCase(),
-    });
+    return calculateParkingFeeQuote(
+      applySystemFeesToQuoteInput(
+        {
+          spaces: reservation.truckSpacesRequested,
+          months: reservation.contractMonths,
+          monthlyRatePerSpace: toMoneyNumber(scheduleOrFacility.monthlyRatePerSpace),
+          reservationFee: toMoneyNumber(scheduleOrFacility.reservationFee),
+          taxPercent: toMoneyNumber(scheduleOrFacility.taxPercent),
+          currency: (scheduleOrFacility.currency || 'USD').toUpperCase(),
+        },
+        systemFees,
+      ),
+    );
   }
 
   private quoteFromSnapshot(reservation: ParkingReservation) {
@@ -1033,9 +1144,7 @@ export class ParkingReservationsService {
     const snapshotQuote = this.quoteFromSnapshot(reservation);
     const quote =
       snapshotQuote ||
-      (schedule
-        ? this.buildFeeQuote(reservation, schedule)
-        : this.buildFeeQuote(reservation, facility));
+      (await this.buildFeeQuote(reservation, schedule || facility));
     reservation.currency = quote.currency;
     reservation.occupancyAmount = quote.occupancyAmount;
     reservation.reservationFeeAmount = quote.reservationFeeAmount;
@@ -1045,8 +1154,11 @@ export class ParkingReservationsService {
     reservation.totalAmountDue = quote.totalAmount;
     reservation.invoiceNumber = invoiceNumberFor(reservation.reservationReference);
     const snapshot = (reservation.feeSnapshot || {}) as Record<string, unknown>;
+    const systemFees = await this.getParkingSystemFees();
     reservation.feeSnapshot = {
-      ...(schedule ? snapshotFromSchedule(schedule, quote) : { ...quote, monthlyRatePerSpace: quote.monthlyRatePerSpace }),
+      ...(schedule
+        ? snapshotFromSchedule(schedule, quote, systemFees)
+        : { ...quote, monthlyRatePerSpace: quote.monthlyRatePerSpace }),
       ...snapshot,
       ...quote,
     };
@@ -1179,8 +1291,9 @@ export class ParkingReservationsService {
       maxContractMonths: schedule.maxContractMonths,
     });
     if (limitError) throw new BadRequestException(limitError);
-    const quote = quoteFromSchedule(schedule, dto.truckSpacesRequested, dto.contractMonths);
-    const snapshot = snapshotFromSchedule(schedule, quote);
+    const systemFees = await this.getParkingSystemFees();
+    const quote = quoteFromSchedule(schedule, dto.truckSpacesRequested, dto.contractMonths, systemFees);
+    const snapshot = snapshotFromSchedule(schedule, quote, systemFees);
     const end = addMonths(start, dto.contractMonths);
     const capacity = await this.evaluateFacilityCapacity(
       facility,
@@ -1493,7 +1606,7 @@ export class ParkingReservationsService {
       const schedule = reservation.feeScheduleId
         ? await this.feeScheduleRepo.findOne({ where: { id: reservation.feeScheduleId } })
         : null;
-      feeQuote = this.buildFeeQuote(reservation, schedule || facility);
+      feeQuote = await this.buildFeeQuote(reservation, schedule || facility);
     }
 
     if (this.isStaff(user.role)) {

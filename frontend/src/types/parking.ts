@@ -107,6 +107,7 @@ export interface ParkingFeeQuote {
   feeScheduleId?: string;
   feeScheduleVersion?: number;
   feeNotes?: string;
+  systemFeesApplied?: boolean;
 }
 
 export type ParkingFeeScheduleStatus = 'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'EXPIRED' | 'ARCHIVED';
@@ -211,6 +212,13 @@ export interface ParkingPublicPricing {
   hasActiveSchedule: boolean;
   spaceType?: string;
   vehicleType?: string;
+}
+
+export interface ParkingSystemFees {
+  enabled: boolean;
+  reservationFeeType: ParkingReservationFeeType;
+  reservationFeeValue: number;
+  reservationFeeApplication: ParkingReservationFeeApplication;
 }
 
 export interface ParkingFacility {

@@ -5,7 +5,7 @@ const AdminParkingReservations = () => {
   return (
     <AdminPageLayout
       title="Parking Management"
-      description="Review reservation requests and manage facility pricing in one admin workspace."
+      description="Review reservation requests and set platform parking fees. Occupancy rates stay with each parking manager."
     >
       <ParkingManagementWorkspace basePath="/admin/parking-reservations" />
     </AdminPageLayout>

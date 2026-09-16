@@ -12,6 +12,7 @@ import { Tenant } from '../../entities/tenant.entity';
 import { Notification } from '../../entities/notification.entity';
 import { Driver } from '../../entities/driver.entity';
 import { AuditLog } from '../../entities/audit-log.entity';
+import { SystemSettings } from '../../entities/system-settings.entity';
 import { EnhancedAuthModule } from '../auth/enhanced-auth.module';
 import { EventsModule } from '../events/events.module';
 import { MessengerModule } from '../messenger/messenger.module';
@@ -34,6 +35,7 @@ import { ParkingReservationListener } from './listeners/parking-reservation.list
       Driver,
       ParkingFeeSchedule,
       AuditLog,
+      SystemSettings,
     ]),
     EnhancedAuthModule,
     EventsModule,

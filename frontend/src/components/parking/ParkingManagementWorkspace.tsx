@@ -1,7 +1,9 @@
 import { CircleDollarSign, ClipboardList } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { usePermission } from '../../contexts/PermissionContext';
 import {
+  parkingFeesAreSystemLevel,
   parkingWorkspaceHref,
   parkingWorkspaceTab,
   type ParkingWorkspaceTab,
@@ -10,6 +12,7 @@ import CurrencySelector from '../common/CurrencySelector';
 import { TranslatedText } from '../translated-text';
 import ParkingFeeSettings from '../../pages/parking/ParkingFeeSettings';
 import ParkingReservationsDashboard from '../../pages/parking/ParkingReservationsDashboard';
+import ParkingSystemFeesSettings from './ParkingSystemFeesSettings';
 
 interface ParkingManagementWorkspaceProps {
   basePath: string;
@@ -24,8 +27,10 @@ const ParkingManagementWorkspace = ({
 }: ParkingManagementWorkspaceProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const { can } = usePermission();
   const canManageFees = can('parking:manage_fees');
+  const systemFees = parkingFeesAreSystemLevel(user?.role);
   const activeTab: ParkingWorkspaceTab =
     canManageFees && parkingWorkspaceTab(location.search) === 'fees' ? 'fees' : 'queue';
 
@@ -43,7 +48,7 @@ const ParkingManagementWorkspace = ({
       ? [
           {
             id: 'fees' as const,
-            label: 'Pricing & fees',
+            label: systemFees ? 'System fees' : 'Pricing & fees',
             icon: CircleDollarSign,
           },
         ]
@@ -100,7 +105,7 @@ const ParkingManagementWorkspace = ({
       </div>
 
       {activeTab === 'fees' ? (
-        <ParkingFeeSettings embedded />
+        systemFees ? <ParkingSystemFeesSettings /> : <ParkingFeeSettings embedded />
       ) : (
         <ParkingReservationsDashboard basePath={basePath} embedded />
       )}

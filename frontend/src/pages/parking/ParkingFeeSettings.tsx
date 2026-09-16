@@ -156,6 +156,10 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
     queryKey: ['parking-facility'],
     queryFn: parkingApi.facility,
   });
+  const systemFeesQuery = useQuery({
+    queryKey: ['parking-system-fees'],
+    queryFn: parkingApi.getSystemFees,
+  });
 
   const rows = query.data || [];
   const facilityDefaults: Partial<ParkingFeeSchedule> = {
@@ -492,6 +496,12 @@ const ParkingFeeSettings = ({ embedded = false }: { embedded?: boolean }) => {
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {systemFeesQuery.data?.enabled && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-100">
+          <TranslatedText text="UrutiX applies a platform reservation fee on every booking. Set occupancy, tax, and contract limits here. Do not add a system fee schedule for parking space you do not own." />
         </div>
       )}
 

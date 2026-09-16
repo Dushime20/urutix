@@ -45,6 +45,7 @@ import {
   SubmitParkingPaymentDto,
   UpdateParkingFacilityDto,
   UpdateParkingFeesDto,
+  UpdateParkingSystemFeesDto,
   WaiveParkingPaymentDto,
 } from './dto/parking-reservation.dto';
 
@@ -225,6 +226,28 @@ export class ParkingReservationsController {
   @RequirePermissions('parking:view', 'parking:manage_fees')
   async fees(@Request() req) {
     return { success: true, data: await this.service.getFeeSchedule(req.user) };
+  }
+
+  @Get('fees/system')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(...STAFF_ROLES)
+  @RequirePermissions('parking:view', 'parking:manage_fees')
+  @ApiOperation({ summary: 'Get platform-level parking reservation fees' })
+  async systemFees(@Request() req) {
+    return { success: true, data: await this.service.getSystemFees(req.user) };
+  }
+
+  @Patch('fees/system')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @RequirePermissions('parking:manage_fees')
+  @UsePipes(pipe)
+  @ApiOperation({ summary: 'Set platform-level parking reservation fees' })
+  async updateSystemFees(@Body() dto: UpdateParkingSystemFeesDto, @Request() req) {
+    const data = await this.service.updateSystemFees(dto, req.user);
+    return { success: true, message: 'System parking fees updated.', data };
   }
 
   @Patch('fees')

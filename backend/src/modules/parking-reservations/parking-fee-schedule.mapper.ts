@@ -62,8 +62,68 @@ export function scheduleToQuoteInput(
   };
 }
 
-export function quoteFromSchedule(schedule: ParkingFeeSchedule, spaces: number, months: number) {
-  return calculateParkingFeeQuote(scheduleToQuoteInput(schedule, spaces, months));
+export type ParkingSystemFees = {
+  enabled: boolean;
+  reservationFeeType: ParkingReservationFeeType;
+  reservationFeeValue: number;
+  reservationFeeApplication: ParkingReservationFeeApplication;
+};
+
+export const DEFAULT_PARKING_SYSTEM_FEES: ParkingSystemFees = {
+  enabled: false,
+  reservationFeeType: ParkingReservationFeeType.FIXED,
+  reservationFeeValue: 20,
+  reservationFeeApplication: ParkingReservationFeeApplication.PER_RESERVATION,
+};
+
+const SYSTEM_FEE_TYPES = new Set<string>(Object.values(ParkingReservationFeeType));
+const SYSTEM_FEE_APPLICATIONS = new Set<string>(Object.values(ParkingReservationFeeApplication));
+
+export function normalizeParkingSystemFees(raw?: unknown): ParkingSystemFees {
+  const value = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const type = String(value.reservationFeeType || DEFAULT_PARKING_SYSTEM_FEES.reservationFeeType).toUpperCase();
+  const application = String(
+    value.reservationFeeApplication || DEFAULT_PARKING_SYSTEM_FEES.reservationFeeApplication,
+  ).toUpperCase();
+  const enabled = value.enabled === true || value.enabled === 'true';
+  return {
+    enabled,
+    reservationFeeType: SYSTEM_FEE_TYPES.has(type)
+      ? (type as ParkingReservationFeeType)
+      : ParkingReservationFeeType.FIXED,
+    reservationFeeValue: Math.max(
+      0,
+      toMoneyNumber(value.reservationFeeValue ?? value.reservationFee ?? DEFAULT_PARKING_SYSTEM_FEES.reservationFeeValue),
+    ),
+    reservationFeeApplication: SYSTEM_FEE_APPLICATIONS.has(application)
+      ? (application as ParkingReservationFeeApplication)
+      : ParkingReservationFeeApplication.PER_RESERVATION,
+  };
+}
+
+export function applySystemFeesToQuoteInput<T extends {
+  reservationFee: number;
+  reservationFeeType?: ParkingReservationFeeType;
+  reservationFeeApplication?: ParkingReservationFeeApplication;
+}>(input: T, systemFees?: ParkingSystemFees | null): T {
+  if (!systemFees?.enabled) return input;
+  return {
+    ...input,
+    reservationFee: toMoneyNumber(systemFees.reservationFeeValue),
+    reservationFeeType: systemFees.reservationFeeType,
+    reservationFeeApplication: systemFees.reservationFeeApplication,
+  };
+}
+
+export function quoteFromSchedule(
+  schedule: ParkingFeeSchedule,
+  spaces: number,
+  months: number,
+  systemFees?: ParkingSystemFees | null,
+) {
+  return calculateParkingFeeQuote(
+    applySystemFeesToQuoteInput(scheduleToQuoteInput(schedule, spaces, months), systemFees),
+  );
 }
 
 export function toFeeScheduleView(schedule: ParkingFeeSchedule, facility?: ParkingFacilityConfig) {
@@ -128,15 +188,22 @@ export function toFeeScheduleView(schedule: ParkingFeeSchedule, facility?: Parki
 export function snapshotFromSchedule(
   schedule: ParkingFeeSchedule,
   quote: ReturnType<typeof calculateParkingFeeQuote>,
+  systemFees?: ParkingSystemFees | null,
 ) {
+  const overlay = Boolean(systemFees?.enabled);
   return {
     ...quote,
     feeScheduleId: schedule.id,
     feeScheduleVersion: schedule.version,
     monthlyRatePerSpace: toMoneyNumber(schedule.monthlyRatePerSpace),
-    reservationFee: toMoneyNumber(schedule.reservationFeeValue),
-    reservationFeeType: schedule.reservationFeeType,
-    reservationFeeApplication: schedule.reservationFeeApplication,
+    reservationFee:
+      overlay && systemFees
+        ? toMoneyNumber(systemFees.reservationFeeValue)
+        : toMoneyNumber(schedule.reservationFeeValue),
+    reservationFeeType: overlay && systemFees ? systemFees.reservationFeeType : schedule.reservationFeeType,
+    reservationFeeApplication:
+      overlay && systemFees ? systemFees.reservationFeeApplication : schedule.reservationFeeApplication,
+    systemFeesApplied: overlay,
     taxEnabled: schedule.taxEnabled,
     taxName: schedule.taxName,
     feeNotes: schedule.feeNotes || '',

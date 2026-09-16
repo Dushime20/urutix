@@ -697,3 +697,20 @@ export class WaiveParkingPaymentDto {
   @MaxLength(1000)
   reason: string;
 }
+
+export class UpdateParkingSystemFeesDto {
+  @IsBoolean()
+  enabled: boolean;
+
+  @IsEnum(ParkingReservationFeeType)
+  reservationFeeType: ParkingReservationFeeType;
+
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(1000000)
+  reservationFeeValue: number;
+
+  @IsEnum(ParkingReservationFeeApplication)
+  reservationFeeApplication: ParkingReservationFeeApplication;
+}

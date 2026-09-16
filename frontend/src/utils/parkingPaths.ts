@@ -16,6 +16,10 @@ export function parkingFeesPath(basePath: string) {
   return parkingWorkspaceHref(basePath, 'fees');
 }
 
+export function parkingFeesAreSystemLevel(role?: string) {
+  return role === 'SUPER_ADMIN' || role === 'ADMIN';
+}
+
 export function parkingPortalHomeForRole(role?: string, onFees = false) {
   const tab: ParkingWorkspaceTab = onFees ? 'fees' : 'queue';
   if (role === 'SUPER_ADMIN') return parkingWorkspaceHref('/admin/parking-reservations', tab);

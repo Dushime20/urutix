@@ -10,6 +10,7 @@ import type {
   ParkingPublicPricing,
   ParkingReservation,
   ParkingReservationStats,
+  ParkingSystemFees,
 } from '../types/parking';
 
 type ApiEnvelope<T> = {
@@ -126,6 +127,16 @@ export const parkingApi = {
   listFeeSchedules: async () => {
     const response = await api.get<ApiEnvelope<ParkingFeeSchedule[]>>('/parking-reservations/fees/schedules');
     return response.data.data || [];
+  },
+
+  getSystemFees: async () => {
+    const response = await api.get<ApiEnvelope<ParkingSystemFees>>('/parking-reservations/fees/system');
+    return response.data.data;
+  },
+
+  updateSystemFees: async (payload: ParkingSystemFees) => {
+    const response = await api.patch<ApiEnvelope<ParkingSystemFees>>('/parking-reservations/fees/system', payload);
+    return response.data.data;
   },
 
   getFeeSchedule: async (id: string) => {
