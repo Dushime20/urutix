@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import {
   Phone,
   Mail,
@@ -181,30 +181,24 @@ const FINANCE_ITEMS = [
   },
 ] as const
 
+const HERO_COPY =
+  "UrutiX is a multi-tenant logistics and embedded-finance platform that turns Africa’s fragmented road-freight market into a single, financeable, data-rich digital network. It connects cargo owners, truck owners, drivers, brokers, fleet operators, lenders, fuel suppliers, and insurers in one ecosystem — and lets any logistics organization launch its own branded marketplace on a shared core."
+
 const HERO_SLIDES = [
   {
     id: "network",
     image:
       "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1920&q=80",
-    headline: "The freight network for Africa’s shippers, fleets, and lenders",
-    support:
-      "Match loads, run auctions, track every trip, and settle with embedded finance—on one platform you can also white-label.",
   },
   {
     id: "matching",
     image:
       "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1920&q=80",
-    headline: "Match capacity. Move cargo. Stay in control.",
-    support:
-      "Smart matching and transparent auctions put the right truck on the right lane—with live GPS and digital proof of delivery.",
   },
   {
     id: "finance",
     image:
       "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1920&q=80",
-    headline: "Cash flow that moves with the load",
-    support:
-      "Credits, loans, and escrow sit inside the same journey as matching, tracking, and settlement.",
   },
 ] as const
 
@@ -217,16 +211,19 @@ const HERO_QUICK_LINKS = [
   { label: "White-label", href: "#marketplace", icon: Building2 },
 ] as const
 
+const HERO_SLIDE_MS = 12000
+
 function Hero() {
   const [slide, setSlide] = useState(0)
   const [paused, setPaused] = useState(false)
+  const reduceMotion = useReducedMotion()
   const current = HERO_SLIDES[slide]
 
   useEffect(() => {
     if (paused) return
     const timer = window.setInterval(() => {
       setSlide((prev) => (prev + 1) % HERO_SLIDES.length)
-    }, 6500)
+    }, HERO_SLIDE_MS)
     return () => window.clearInterval(timer)
   }, [paused])
 
@@ -244,16 +241,30 @@ function Hero() {
         <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={current.id}
-            initial={{ opacity: 0, scale: 1.06 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: reduceMotion ? 1 : 1.08, x: 0, y: 0 }}
+            animate={
+              reduceMotion
+                ? { opacity: 1, scale: 1, x: 0, y: 0 }
+                : {
+                    opacity: 1,
+                    scale: [1.08, 1.2, 1.08],
+                    x: [0, 28, 0],
+                    y: [0, -18, 0],
+                  }
+            }
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url('${current.image}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
+            transition={
+              reduceMotion
+                ? { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+                : {
+                    opacity: { duration: 1.15, ease: [0.22, 1, 0.36, 1] },
+                    scale: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1], repeat: Infinity },
+                    x: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1], repeat: Infinity },
+                    y: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1], repeat: Infinity },
+                  }
+            }
+            className="absolute -inset-[8%] bg-cover bg-center will-change-transform"
+            style={{ backgroundImage: `url('${current.image}')` }}
           />
         </AnimatePresence>
         <div
@@ -268,41 +279,34 @@ function Hero() {
 
       <div className="relative z-10 w-full mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 pt-10 pb-6 lg:pt-16 lg:pb-8 flex-1 flex flex-col justify-end">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-end">
-          <div className="lg:col-span-7 xl:col-span-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={current.id}
-                initial={{ opacity: 0, y: 28 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <p className="font-manrope text-white text-5xl sm:text-6xl lg:text-[4.25rem] font-extrabold tracking-tight leading-none mb-5">
-                  UrutiX
-                </p>
-                <h1 className="font-manrope text-xl sm:text-2xl lg:text-[1.85rem] font-semibold text-white tracking-tight leading-snug mb-4 max-w-xl">
-                  <TranslatedText text={current.headline} />
-                </h1>
-                <p className="text-primary-100/90 text-base sm:text-lg leading-relaxed mb-8 max-w-lg">
-                  <TranslatedText text={current.support} />
-                </p>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Link
-                    to="/auth"
-                    className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
-                  >
-                    <TranslatedText text="Join the network" />
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                  <a
-                    href="#marketplace"
-                    className="inline-flex items-center gap-2 border border-white/35 hover:border-white/70 hover:bg-white/5 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
-                  >
-                    <TranslatedText text="Launch your marketplace" />
-                  </a>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+          <div className="lg:col-span-8 xl:col-span-7">
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <h1 className="font-manrope text-white text-5xl sm:text-6xl lg:text-[4.25rem] font-extrabold tracking-tight leading-none mb-5">
+                UrutiX
+              </h1>
+              <p className="font-manrope text-white text-base sm:text-lg lg:text-xl font-medium tracking-tight leading-relaxed mb-8 max-w-3xl">
+                <TranslatedText text={HERO_COPY} className="text-white" />
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  to="/auth"
+                  className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
+                >
+                  <TranslatedText text="Join the network" />
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <a
+                  href="#marketplace"
+                  className="inline-flex items-center gap-2 border border-white/35 hover:border-white/70 hover:bg-white/5 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
+                >
+                  <TranslatedText text="Launch your marketplace" />
+                </a>
+              </div>
+            </motion.div>
 
             {/* Carousel controls */}
             <div className="mt-10 flex items-center gap-4">
