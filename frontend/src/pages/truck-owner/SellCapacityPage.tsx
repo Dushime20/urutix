@@ -8,6 +8,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Calendar,
+  Check,
+  Eye,
   Inbox,
   MapPin,
   Package,
@@ -201,6 +203,9 @@ const SellCapacityPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<SellableTruck | null>(null);
   const [listingTab, setListingTab] = useState<'live' | 'ended'>('live');
+  const [pageTab, setPageTab] = useState<'sell' | 'requests'>('sell');
+  const [detailBooking, setDetailBooking] = useState<CapacityBooking | null>(null);
+  const [actingId, setActingId] = useState<string | null>(null);
   const publishFormRef = useRef<HTMLElement>(null);
 
   const tripId = params.get('tripId');
@@ -271,6 +276,166 @@ const SellCapacityPage: React.FC = () => {
   const pending = useMemo(
     () => bookings.filter((b) => b.status === 'REQUESTED'),
     [bookings],
+  );
+
+  const requestRows = useMemo(
+    () =>
+      bookings.filter((b) =>
+        ['REQUESTED', 'CONFIRMED', 'REJECTED', 'CANCELLED'].includes(b.status),
+      ),
+    [bookings],
+  );
+
+  const acceptRequest = async (booking: CapacityBooking) => {
+    setActingId(booking.id);
+    try {
+      await capacityApi.accept(booking.id);
+      toast.success('Cargo confirmed. Driver notified with pickup and delivery details.');
+      setDetailBooking(null);
+      await load();
+    } catch (err: any) {
+      toast.error(apiError(err, 'Accept failed'));
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const cancelRequest = async (booking: CapacityBooking) => {
+    setActingId(booking.id);
+    try {
+      await capacityApi.reject(booking.id, 'Cancelled by truck owner');
+      toast.success('Request cancelled');
+      setDetailBooking(null);
+      await load();
+    } catch (err: any) {
+      toast.error(apiError(err, 'Could not cancel request'));
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  const bookingPlace = (place?: CapacityBooking['origin']) => {
+    if (!place) return '—';
+    if (place.city && place.country) return `${place.city}, ${place.country}`;
+    return place.name || place.address || '—';
+  };
+
+  const requestStatusVariant = (status: string) => {
+    if (status === 'REQUESTED') return 'warning' as const;
+    if (status === 'CONFIRMED') return 'success' as const;
+    if (status === 'REJECTED' || status === 'CANCELLED') return 'error' as const;
+    return 'neutral' as const;
+  };
+
+  const requestColumns: Column<CapacityBooking>[] = useMemo(
+    () => [
+      {
+        key: 'title',
+        label: 'Cargo',
+        sortable: true,
+        render: (_: unknown, row: CapacityBooking) => (
+          <div className="min-w-[180px]">
+            <p className="ui-table-body">{row.load?.title || row.title || 'Leftover cargo'}</p>
+            <p className="ui-helper mt-0.5">
+              {Math.round(row.load?.weightKg || row.weightKg).toLocaleString()} kg
+              {(row.load?.volumeM3 || row.volumeM3)
+                ? ` · ${row.load?.volumeM3 || row.volumeM3} m³`
+                : ''}
+              {row.load?.cargoType ? ` · ${String(row.load.cargoType).replace(/_/g, ' ')}` : ''}
+            </p>
+          </div>
+        ),
+      },
+      {
+        key: 'offeredPrice',
+        label: 'Offered price',
+        sortable: true,
+        render: (_: unknown, row: CapacityBooking) => (
+          <div>
+            <p className="ui-table-body">{compact(row.offeredPrice || row.freightAmount || 0)}</p>
+            <p className="ui-helper mt-0.5">{row.commissionRate}% fee · {compact(row.commissionAmount)}</p>
+          </div>
+        ),
+      },
+      {
+        key: 'pickupDate',
+        label: 'Pickup / Delivery',
+        sortable: true,
+        render: (_: unknown, row: CapacityBooking) => (
+          <div className="min-w-[160px]">
+            <p className="ui-body-small inline-flex items-center gap-1">
+              <MapPin size={11} className="shrink-0" />
+              {row.pickupLabel || bookingPlace(row.load?.origin || row.origin)}
+            </p>
+            <p className="ui-helper mt-0.5">{formatWhen(row.pickupDate)}</p>
+            <p className="ui-body-small mt-1.5 inline-flex items-center gap-1">
+              <MapPin size={11} className="shrink-0" />
+              {row.deliveryLabel || bookingPlace(row.load?.destination || row.destination)}
+            </p>
+            <p className="ui-helper mt-0.5">{formatWhen(row.deliveryDate)}</p>
+          </div>
+        ),
+      },
+      {
+        key: 'truckPlate',
+        label: 'Truck',
+        sortable: true,
+        render: (_: unknown, row: CapacityBooking) => (
+          <div>
+            <p className="ui-table-body">{row.truckPlate || '—'}</p>
+            <p className="ui-helper mt-0.5">
+              {[row.truckMake, row.truckModel].filter(Boolean).join(' ') || row.corridor || 'Leftover listing'}
+            </p>
+          </div>
+        ),
+      },
+      {
+        key: 'status',
+        label: 'Status',
+        sortable: true,
+        render: (_: unknown, row: CapacityBooking) => (
+          <StatusBadge
+            label={row.status.replaceAll('_', ' ')}
+            variant={requestStatusVariant(row.status)}
+          />
+        ),
+      },
+    ],
+    [compact],
+  );
+
+  const requestActions: TableAction<CapacityBooking>[] = useMemo(
+    () => [
+      {
+        key: 'view',
+        label: 'View cargo',
+        icon: <Eye size={14} />,
+        onClick: (row) => setDetailBooking(row),
+      },
+      {
+        key: 'accept',
+        label: 'Accept',
+        icon: <Check size={14} />,
+        variant: 'success',
+        hidden: (row) => row.status !== 'REQUESTED',
+        disabled: (row) => actingId === row.id,
+        onClick: (row) => {
+          void acceptRequest(row);
+        },
+      },
+      {
+        key: 'cancel',
+        label: 'Cancel',
+        icon: <X size={14} />,
+        variant: 'danger',
+        hidden: (row) => row.status !== 'REQUESTED',
+        disabled: (row) => actingId === row.id,
+        onClick: (row) => {
+          void cancelRequest(row);
+        },
+      },
+    ],
+    [actingId],
   );
 
   const liveOffers = useMemo(
@@ -414,8 +579,38 @@ const SellCapacityPage: React.FC = () => {
           <TranslatedText text="Sell capacity" />
         </h1>
         <p className="ui-body-small mt-1 max-w-2xl">
-          List leftover kg and m³ on trips that are already moving. Cargo owners see live leftover on Available space.
+          List leftover kg and m³ on trips that are already moving. Review booking requests, cargo details, and offered prices before you confirm.
         </p>
+      </div>
+
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 w-fit">
+        <button
+          type="button"
+          onClick={() => setPageTab('sell')}
+          className={`px-4 py-2 rounded-lg ui-tab transition-colors ${
+            pageTab === 'sell'
+              ? 'bg-white dark:bg-slate-700 text-[#345E85] shadow-sm'
+              : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          Sell capacity
+        </button>
+        <button
+          type="button"
+          onClick={() => setPageTab('requests')}
+          className={`px-4 py-2 rounded-lg ui-tab transition-colors inline-flex items-center gap-2 ${
+            pageTab === 'requests'
+              ? 'bg-white dark:bg-slate-700 text-[#345E85] shadow-sm'
+              : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          Booking requests
+          {pending.length > 0 ? (
+            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">
+              {pending.length}
+            </span>
+          ) : null}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -443,16 +638,49 @@ const SellCapacityPage: React.FC = () => {
           color="success"
           variant="classic"
         />
-        <StatCard
-          title="Requests waiting"
-          value={pending.length}
-          subtitle={pending.length ? 'Accept or reject' : 'No pending requests'}
-          icon={<Inbox size={22} />}
-          color={pending.length ? 'warning' : 'secondary'}
-          variant="classic"
-        />
+        <button
+          type="button"
+          className="text-left"
+          onClick={() => setPageTab('requests')}
+        >
+          <StatCard
+            title="Requests waiting"
+            value={pending.length}
+            subtitle={pending.length ? 'Open booking requests tab' : 'No pending requests'}
+            icon={<Inbox size={22} />}
+            color={pending.length ? 'warning' : 'secondary'}
+            variant="classic"
+          />
+        </button>
       </div>
 
+      {pageTab === 'requests' ? (
+        <>
+          <StandardDataTable<CapacityBooking>
+            title="Leftover space booking requests"
+            subtitle="Cargo owners assigned unassigned cargo to your leftover listings. Review cargo details and the offered price, then accept or cancel."
+            icon={<Inbox size={18} />}
+            headerColor="default"
+            columns={requestColumns}
+            data={requestRows}
+            getRowId={(row) => row.id}
+            searchable
+            searchPlaceholder="Search cargo, truck, or corridor…"
+            searchKeys={['title', 'status', 'truckPlate', 'corridor', 'load.title']}
+            pagination
+            pageSize={8}
+            columnVisibility={false}
+            stickyHeader
+            striped
+            hoverable
+            emptyMessage="No leftover-space booking requests yet."
+            rowActions={requestActions}
+            ariaLabel="Leftover space booking requests"
+            onRowClick={(row) => setDetailBooking(row)}
+          />
+        </>
+      ) : (
+        <>
       <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 p-6 space-y-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -589,61 +817,21 @@ const SellCapacityPage: React.FC = () => {
 
       {pending.length > 0 && (
         <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-amber-100 dark:border-amber-900/40 p-6 space-y-4">
-          <div>
-            <h2 className="ui-section-title text-amber-600">Requests waiting</h2>
-            <p className="ui-body-small mt-1">
-              Cargo owners assigned cargo to leftover space. Confirm to notify the driver with pickup and delivery details.
-            </p>
-          </div>
-          {pending.map((booking) => (
-            <div
-              key={booking.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4"
-            >
-              <div className="min-w-[200px]">
-                <p className="ui-table-body">{booking.title || booking.corridor || 'Leftover-space request'}</p>
-                <p className="ui-body-small mt-1">
-                  {booking.weightKg.toLocaleString()} kg · offered {compact(booking.offeredPrice || booking.freightAmount)} · {booking.commissionRate}% fee
-                </p>
-                <p className="ui-helper mt-1 inline-flex items-center gap-1">
-                  <MapPin size={11} />
-                  {booking.pickupLabel || booking.origin?.name || 'Pickup'} at {formatWhen(booking.pickupDate)}
-                </p>
-                <p className="ui-helper mt-0.5 inline-flex items-center gap-1">
-                  <MapPin size={11} />
-                  {booking.deliveryLabel || booking.destination?.name || 'Delivery'} at {formatWhen(booking.deliveryDate)}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    capacityApi
-                      .accept(booking.id)
-                      .then(load)
-                      .then(() => toast.success('Cargo confirmed. Driver notified with pickup and delivery details.'))
-                      .catch((err) => toast.error(apiError(err, 'Accept failed')))
-                  }
-                  className="px-3 py-2 rounded-xl bg-emerald-600 text-white ui-button"
-                >
-                  Accept
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    capacityApi
-                      .reject(booking.id, 'Does not fit mix')
-                      .then(load)
-                      .then(() => toast.success('Request released'))
-                      .catch((err) => toast.error(apiError(err, 'Reject failed')))
-                  }
-                  className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 ui-button"
-                >
-                  Reject
-                </button>
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="ui-section-title text-amber-600">Requests waiting</h2>
+              <p className="ui-body-small mt-1">
+                {pending.length} leftover-space request{pending.length === 1 ? '' : 's'} need your decision.
+              </p>
             </div>
-          ))}
+            <button
+              type="button"
+              onClick={() => setPageTab('requests')}
+              className="px-4 py-2 rounded-xl bg-amber-500 text-white ui-button"
+            >
+              Open booking requests
+            </button>
+          </div>
         </section>
       )}
 
@@ -703,6 +891,146 @@ const SellCapacityPage: React.FC = () => {
           </div>
         }
       />
+        </>
+      )}
+
+      {detailBooking && (
+        <div className="fixed inset-0 z-[400] bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Cargo booking request</h3>
+                <p className="text-xs text-slate-500 mt-1 truncate">
+                  {detailBooking.truckPlate || 'Truck'} · {detailBooking.corridor || 'Leftover space'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailBooking(null)}
+                className="size-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-5 py-4 overflow-y-auto space-y-4 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge
+                  label={detailBooking.status.replaceAll('_', ' ')}
+                  variant={requestStatusVariant(detailBooking.status)}
+                />
+                <span className="text-xs text-slate-500">
+                  Requested {formatWhen(detailBooking.createdAt)}
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+                <p className="ui-label inline-flex items-center gap-1.5">
+                  <Package size={12} /> Cargo details
+                </p>
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  {detailBooking.load?.title || detailBooking.title || 'Leftover cargo'}
+                </p>
+                {detailBooking.load?.description ? (
+                  <p className="text-xs text-slate-500">{detailBooking.load.description}</p>
+                ) : null}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <p className="ui-label mb-0.5">Weight</p>
+                    <p className="font-medium text-slate-900 dark:text-white">
+                      {Math.round(detailBooking.load?.weightKg || detailBooking.weightKg).toLocaleString()} kg
+                    </p>
+                  </div>
+                  <div>
+                    <p className="ui-label mb-0.5">Volume</p>
+                    <p className="font-medium text-slate-900 dark:text-white">
+                      {detailBooking.load?.volumeM3 || detailBooking.volumeM3 || 0} m³
+                    </p>
+                  </div>
+                  <div>
+                    <p className="ui-label mb-0.5">Cargo type</p>
+                    <p className="font-medium text-slate-900 dark:text-white">
+                      {String(detailBooking.load?.cargoType || detailBooking.cargoType || 'GENERAL').replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="ui-label mb-0.5">Load status</p>
+                    <p className="font-medium text-slate-900 dark:text-white">
+                      {detailBooking.load?.status
+                        ? String(detailBooking.load.status).replace(/_/g, ' ')
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
+                <p className="ui-label">Pickup & delivery</p>
+                <p className="ui-body-small inline-flex items-start gap-1.5">
+                  <MapPin size={12} className="mt-0.5 shrink-0" />
+                  <span>
+                    {detailBooking.pickupLabel ||
+                      bookingPlace(detailBooking.load?.origin || detailBooking.origin)}
+                    <span className="block text-slate-500">{formatWhen(detailBooking.pickupDate)}</span>
+                  </span>
+                </p>
+                <p className="ui-body-small inline-flex items-start gap-1.5">
+                  <MapPin size={12} className="mt-0.5 shrink-0" />
+                  <span>
+                    {detailBooking.deliveryLabel ||
+                      bookingPlace(detailBooking.load?.destination || detailBooking.destination)}
+                    <span className="block text-slate-500">{formatWhen(detailBooking.deliveryDate)}</span>
+                  </span>
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
+                <p className="ui-label">Offered price</p>
+                <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white">
+                  {compact(detailBooking.offeredPrice || detailBooking.freightAmount || 0)}
+                </p>
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Match fee ({detailBooking.commissionRate}%)</span>
+                  <span className="tabular-nums">{compact(detailBooking.commissionAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-semibold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <span>Cargo owner total</span>
+                  <span className="tabular-nums">{compact(detailBooking.totalDue)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setDetailBooking(null)}
+                className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium flex-1"
+              >
+                Close
+              </button>
+              {detailBooking.status === 'REQUESTED' ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={actingId === detailBooking.id}
+                    onClick={() => void cancelRequest(detailBooking)}
+                    className="h-10 px-3 rounded-lg border border-rose-200 text-rose-600 text-sm font-semibold flex-1 disabled:opacity-50"
+                  >
+                    {actingId === detailBooking.id ? 'Working…' : 'Cancel request'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actingId === detailBooking.id}
+                    onClick={() => void acceptRequest(detailBooking)}
+                    className="h-10 px-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold flex-1 disabled:opacity-50"
+                  >
+                    {actingId === detailBooking.id ? 'Working…' : 'Accept'}
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

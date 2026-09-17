@@ -16,6 +16,7 @@ import {
 } from '../../services/capacityApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
 import ModernLoader from '../../components/common/ModernLoader';
+import { TruckFullProfile } from '../../components/FleetDashboard/TruckFullProfile';
 
 const apiError = (err: any, fallback: string) =>
   err?.response?.data?.message ||
@@ -218,6 +219,7 @@ const AvailableSpacePage: React.FC = () => {
   const [quote, setQuote] = useState<CapacityQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const applyCargo = (cargo: AssignableCargo) => {
     setSelectedCargoId(cargo.id);
@@ -297,12 +299,22 @@ const AvailableSpacePage: React.FC = () => {
     setModalMode(null);
     setQuote(null);
     setQuoting(false);
+    setDetailLoading(false);
   };
 
-  const openDetails = (offer: CapacityOffer) => {
+  const openDetails = async (offer: CapacityOffer) => {
     setActive(offer);
     setModalMode('details');
     setQuote(null);
+    setDetailLoading(true);
+    try {
+      const full = await capacityApi.getOffer(offer.id);
+      setActive(full);
+    } catch (err: any) {
+      toast.error(apiError(err, 'Could not load truck details'));
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const openBook = async (offer: CapacityOffer) => {
@@ -669,11 +681,20 @@ const AvailableSpacePage: React.FC = () => {
 
       {active && modalMode === 'details' && (
         <div className="fixed inset-0 z-[400] bg-black/40 flex items-center justify-center p-4">
-          <div className={`${cardClass} max-w-lg w-full max-h-[90vh] overflow-y-auto`}>
-            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
+          <div className={`${cardClass} max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col`}>
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 shrink-0">
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Truck details</h3>
-                <p className="text-xs text-slate-500 mt-1 truncate">{active.corridor}</p>
+                <p className="text-xs text-slate-500 mt-1 truncate">
+                  {active.truck?.plateNumber || 'Truck'}
+                  {active.truck?.make || active.truck?.model
+                    ? ` · ${[active.truck?.make, active.truck?.model, active.truck?.year]
+                        .filter(Boolean)
+                        .join(' ')}`
+                    : ''}
+                  {' · '}
+                  {active.corridor}
+                </p>
               </div>
               <button
                 type="button"
@@ -684,68 +705,68 @@ const AvailableSpacePage: React.FC = () => {
                 <X size={16} />
               </button>
             </div>
-            <div className="px-5 py-4 space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="px-5 py-4 overflow-y-auto space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-xs">
                 <div>
-                  <p className="ui-label mb-0.5">Plate</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
-                    {active.truck?.plateNumber || '—'}
+                  <p className="ui-label mb-0.5">Leftover weight</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {Math.round(active.remainingWeightKg).toLocaleString()} kg
                   </p>
                 </div>
                 <div>
-                  <p className="ui-label mb-0.5">Vehicle</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
-                    {[active.truck?.make, active.truck?.model].filter(Boolean).join(' ') || '—'}
+                  <p className="ui-label mb-0.5">Leftover volume</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {active.remainingVolumeM3} m³
                   </p>
                 </div>
                 <div>
-                  <p className="ui-label mb-0.5">Nameplate capacity</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
-                    {active.truck?.capacityWeight
-                      ? `${Math.round(active.truck.capacityWeight).toLocaleString()} kg`
-                      : '—'}
-                    {active.truck?.capacityVolume != null ? ` · ${active.truck.capacityVolume} m³` : ''}
+                  <p className="ui-label mb-0.5">Corridor</p>
+                  <p className="font-semibold text-slate-900 dark:text-white truncate" title={active.corridor}>
+                    {active.corridor}
                   </p>
                 </div>
                 <div>
-                  <p className="ui-label mb-0.5">Leftover space</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
-                    {Math.round(active.remainingWeightKg).toLocaleString()} kg · {active.remainingVolumeM3} m³
-                  </p>
-                </div>
-                <div>
-                  <p className="ui-label mb-0.5">Corridor origin</p>
-                  <p className="font-medium text-slate-900 dark:text-white">{placeLabel(active.origin)}</p>
-                </div>
-                <div>
-                  <p className="ui-label mb-0.5">Corridor destination</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
-                    {placeLabel(active.destination)}
-                  </p>
-                </div>
-                <div className="col-span-2">
                   <p className="ui-label mb-0.5">Trip window</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
+                  <p className="font-semibold text-slate-900 dark:text-white">
                     {formatWindow(active.departureAt, active.arrivalAt)}
                   </p>
                 </div>
                 <div>
-                  <p className="ui-label mb-0.5">Status</p>
-                  <p className="font-medium text-slate-900 dark:text-white">{prettyStatus(active.status)}</p>
+                  <p className="ui-label mb-0.5">Origin</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">{placeLabel(active.origin)}</p>
+                </div>
+                <div>
+                  <p className="ui-label mb-0.5">Destination</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {placeLabel(active.destination)}
+                  </p>
+                </div>
+                <div>
+                  <p className="ui-label mb-0.5">Listing status</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">{prettyStatus(active.status)}</p>
                 </div>
                 <div>
                   <p className="ui-label mb-0.5">Booking</p>
-                  <p className="font-medium text-slate-900 dark:text-white">Owner must confirm</p>
+                  <p className="font-semibold text-slate-900 dark:text-white">Owner must confirm</p>
                 </div>
-                {active.notes ? (
-                  <div className="col-span-2">
-                    <p className="ui-label mb-0.5">Notes</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{active.notes}</p>
-                  </div>
-                ) : null}
               </div>
+
+              {detailLoading ? (
+                <div className="py-12 text-center text-sm text-slate-500">Loading full truck information…</div>
+              ) : active.truck ? (
+                <TruckFullProfile truck={active.truck} compact />
+              ) : (
+                <p className="text-sm text-slate-500 py-8 text-center">Truck information is not available.</p>
+              )}
+
+              {active.notes ? (
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+                  <p className="ui-label mb-1">Listing notes</p>
+                  <p className="text-sm text-slate-800 dark:text-slate-200">{active.notes}</p>
+                </div>
+              ) : null}
             </div>
-            <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+            <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex gap-2 shrink-0">
               <button type="button" onClick={closeModal} className={`${ghostBtnClass} flex-1`}>
                 Close
               </button>

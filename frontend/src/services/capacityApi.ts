@@ -56,8 +56,26 @@ export interface CapacityOffer {
     plateNumber: string;
     make?: string;
     model?: string;
+    year?: number | null;
+    color?: string | null;
+    vin?: string | null;
+    status?: string;
+    truckType?: string | null;
+    trailerType?: string | null;
+    fuelType?: string | null;
     capacityWeight: number;
     capacityVolume: number;
+    maxLength?: number | null;
+    maxWidth?: number | null;
+    maxHeight?: number | null;
+    manufacturer?: string | null;
+    chassis?: string | null;
+    availabilityStatus?: string | null;
+    ownershipType?: string | null;
+    vehicleClass?: string | null;
+    chassisConfiguration?: string | null;
+    fleetGroup?: string | null;
+    [key: string]: any;
   } | null;
   bookings?: CapacityBooking[];
 }
@@ -87,6 +105,22 @@ export interface CapacityBooking {
   deliveryLabel?: string | null;
   origin?: CapacityPlace | null;
   destination?: CapacityPlace | null;
+  truckPlate?: string | null;
+  truckMake?: string | null;
+  truckModel?: string | null;
+  load?: {
+    id?: string | null;
+    title?: string | null;
+    description?: string | null;
+    weightKg?: number;
+    volumeM3?: number;
+    cargoType?: string | null;
+    status?: string | null;
+    pickupDate?: string | null;
+    deliveryDate?: string | null;
+    origin?: CapacityPlace | null;
+    destination?: CapacityPlace | null;
+  } | null;
   createdAt: string;
 }
 

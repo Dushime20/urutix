@@ -89,6 +89,75 @@ const TRUCK_CARD_SELECT: (keyof Truck)[] = [
   'status',
   'currentDriverId',
 ];
+/** Richer truck fields for leftover-space View details — fall back to card if a column is missing. */
+const TRUCK_DETAIL_SELECT: (keyof Truck)[] = [
+  ...TRUCK_CARD_SELECT,
+  'vin',
+  'year',
+  'color',
+  'manufacturer',
+  'chassis',
+  'truckType',
+  'trailerType',
+  'fuelType',
+  'availabilityStatus',
+  'ownershipType',
+  'vehicleClass',
+  'chassisConfiguration',
+  'fleetGroup',
+  'maxLength',
+  'maxWidth',
+  'maxHeight',
+  'hasSideRails',
+  'hasTarps',
+  'hasStraps',
+  'hasChains',
+  'hasWinch',
+  'hasRam',
+  'hasTailLift',
+  'hasSideLift',
+  'hasRollerBed',
+  'hasDropDeck',
+  'hasExtendable',
+  'hasLowbed',
+  'hasStepDeck',
+  'hasPowerOnly',
+  'hasContainerChassis',
+  'hasTanker',
+  'hasBulk',
+  'hasRefrigerated',
+  'hasHeated',
+  'hasVentilated',
+  'hasCurtainSide',
+  'hasBox',
+  'hasVan',
+  'hasPlatform',
+  'hasCarCarrier',
+  'hasHeavyHaul',
+  'hasOversized',
+  'hasHazmat',
+  'hasDangerousGoods',
+  'hasFoodGrade',
+  'hasPharmaceutical',
+  'hasLiquid',
+  'hasDryBulk',
+  'hasGas',
+  'hasChemical',
+  'hasWaste',
+  'hasReefer',
+  'hasFrozen',
+  'hasChilled',
+  'hasAmbient',
+  'hasControlledAtmosphere',
+  'hasHumidityControl',
+  'hasTemperatureMonitoring',
+  'hasGPS',
+  'hasTracking',
+  'hasTelematics',
+  'hasELD',
+  'hasDashCam',
+  'hasSafetyCameras',
+];
 /** Avoid SELECT * on trips/loads — production often lags entity columns (delay*, geometry, enums). */
 const TRIP_CARD_SELECT = [
   'trip.id',
@@ -116,6 +185,7 @@ const ASSIGNABLE_LOAD_SELECT: (keyof Load)[] = [
   'tenantId',
   'cargoOwnerId',
   'title',
+  'description',
   'weight',
   'volume',
   'origin',
@@ -442,12 +512,12 @@ export class CapacityService implements OnModuleInit {
     if (role === 'TRUCK_OWNER' && offer.ownerId !== userId) {
       throw new ForbiddenException('You can only view your own listings');
     }
-    const truck = await this.findTruck({ id: offer.truckId, tenantId });
+    const truck = await this.findTruckDetail({ id: offer.truckId, tenantId });
     const bookings =
       offer.ownerId === userId || ['ADMIN', 'SUPER_ADMIN', 'TENANT_ADMIN'].includes(role)
         ? await this.bookingRepo.find({ where: { offerId: offer.id, tenantId }, order: { createdAt: 'DESC' } })
         : [];
-    return { ...this.decorateOffer(offer, truck), bookings };
+    return { ...this.decorateOffer(offer, truck, true), bookings };
   }
 
   async updateOffer(id: string, dto: UpdateCapacityOfferDto, tenantId: string, ownerId: string) {
@@ -728,7 +798,23 @@ export class CapacityService implements OnModuleInit {
       where: { tenantId, offerId: In(offers.map((o) => o.id)) },
       order: { createdAt: 'DESC' },
     });
-    return bookings.map((b) => this.presentBooking(b, offers.find((o) => o.id === b.offerId)));
+    const loadIds = [...new Set(bookings.map((b) => b.loadId).filter(Boolean))] as string[];
+    const loads = loadIds.length
+      ? await this.loadRepo.find({
+          where: { tenantId, id: In(loadIds) },
+          select: ASSIGNABLE_LOAD_SELECT,
+        })
+      : [];
+    const trucks = await this.findTrucksByIds(
+      tenantId,
+      offers.map((o) => o.truckId),
+    );
+    return bookings.map((b) => {
+      const offer = offers.find((o) => o.id === b.offerId);
+      const load = loads.find((row) => row.id === b.loadId);
+      const truck = trucks.find((row) => row.id === offer?.truckId);
+      return this.presentBooking(b, offer, { load, truck });
+    });
   }
 
   async listCargoBookings(tenantId: string, cargoOwnerId: string) {
@@ -1146,7 +1232,7 @@ export class CapacityService implements OnModuleInit {
     };
   }
 
-  private decorateOffer(offer: CapacityOffer, truck?: Truck | null) {
+  private decorateOffer(offer: CapacityOffer, truck?: Truck | null, fullTruck = false) {
     const listed = Number(offer.listedWeightKg) || 1;
     const sold = Number(offer.allocatedWeightKg) || 0;
     return {
@@ -1162,17 +1248,44 @@ export class CapacityService implements OnModuleInit {
       utilizationOfRemainder: utilizationPercent(sold, listed),
       emptyPercent: utilizationPercent(Number(offer.remainingWeightKg), Number(offer.nameplateWeightKg)),
       corridor: `${offer.origin?.name} → ${offer.destination?.name}`,
-      truck: truck
-        ? {
-            id: truck.id,
-            plateNumber: truck.plateNumber,
-            make: truck.make,
-            model: truck.model,
-            capacityWeight: Number(truck.capacityWeight),
-            capacityVolume: Number(truck.capacityVolume),
-          }
-        : null,
+      truck: truck ? this.presentTruck(truck, fullTruck) : null,
     };
+  }
+
+  private presentTruck(truck: Truck, full = false) {
+    const card = {
+      id: truck.id,
+      plateNumber: truck.plateNumber,
+      make: truck.make,
+      model: truck.model,
+      year: (truck as any).year ?? null,
+      color: (truck as any).color ?? null,
+      vin: (truck as any).vin ?? null,
+      status: truck.status,
+      truckType: (truck as any).truckType ?? null,
+      trailerType: (truck as any).trailerType ?? null,
+      fuelType: (truck as any).fuelType ?? null,
+      capacityWeight: Number(truck.capacityWeight),
+      capacityVolume: Number(truck.capacityVolume),
+      maxLength: (truck as any).maxLength == null ? null : Number((truck as any).maxLength),
+      maxWidth: (truck as any).maxWidth == null ? null : Number((truck as any).maxWidth),
+      maxHeight: (truck as any).maxHeight == null ? null : Number((truck as any).maxHeight),
+      manufacturer: (truck as any).manufacturer ?? null,
+      chassis: (truck as any).chassis ?? null,
+      availabilityStatus: (truck as any).availabilityStatus ?? null,
+      ownershipType: (truck as any).ownershipType ?? null,
+      vehicleClass: (truck as any).vehicleClass ?? null,
+      chassisConfiguration: (truck as any).chassisConfiguration ?? null,
+      fleetGroup: (truck as any).fleetGroup ?? null,
+    };
+    if (!full) return card;
+    const capabilities: Record<string, boolean> = {};
+    for (const [key, value] of Object.entries(truck as any)) {
+      if (key.startsWith('has') && typeof value === 'boolean' && value) {
+        capabilities[key] = true;
+      }
+    }
+    return { ...card, ...capabilities };
   }
 
   private async decorateMany(offers: CapacityOffer[], tenantId: string) {
@@ -1189,9 +1302,15 @@ export class CapacityService implements OnModuleInit {
     }));
   }
 
-  private presentBooking(booking: CapacityBooking, offer?: CapacityOffer) {
+  private presentBooking(
+    booking: CapacityBooking,
+    offer?: CapacityOffer,
+    extras?: { load?: Load | null; truck?: Truck | null },
+  ) {
     const pickup = this.formatPlaceName(booking.origin) || offer?.origin?.name;
     const delivery = this.formatPlaceName(booking.destination) || offer?.destination?.name;
+    const load = extras?.load;
+    const truck = extras?.truck;
     return {
       ...booking,
       weightKg: Number(booking.weightKg),
@@ -1208,6 +1327,36 @@ export class CapacityService implements OnModuleInit {
       offerStatus: offer?.status,
       truckId: offer?.truckId,
       ownerId: offer?.ownerId,
+      truckPlate: truck?.plateNumber || null,
+      truckMake: truck?.make || null,
+      truckModel: truck?.model || null,
+      load: load
+        ? {
+            id: load.id,
+            title: load.title,
+            description: (load as any).description || null,
+            weightKg: Number(load.weight) || Number(booking.weightKg),
+            volumeM3: Number(load.volume) || Number(booking.volumeM3) || 0,
+            cargoType: load.cargoType || booking.cargoType,
+            status: load.status,
+            pickupDate: load.pickupDate || booking.pickupDate,
+            deliveryDate: load.deliveryDate || booking.deliveryDate,
+            origin: this.placeFromLoad(load, 'origin') || booking.origin || null,
+            destination: this.placeFromLoad(load, 'destination') || booking.destination || null,
+          }
+        : {
+            id: booking.loadId || null,
+            title: booking.title,
+            description: null,
+            weightKg: Number(booking.weightKg),
+            volumeM3: Number(booking.volumeM3) || 0,
+            cargoType: booking.cargoType,
+            status: null,
+            pickupDate: booking.pickupDate,
+            deliveryDate: booking.deliveryDate,
+            origin: booking.origin || null,
+            destination: booking.destination || null,
+          },
     };
   }
 
@@ -1244,6 +1393,15 @@ export class CapacityService implements OnModuleInit {
 
   private findTruck(where: FindOptionsWhere<Truck>) {
     return this.truckRepo.findOne({ where, select: TRUCK_CARD_SELECT });
+  }
+
+  private async findTruckDetail(where: FindOptionsWhere<Truck>) {
+    try {
+      return await this.truckRepo.findOne({ where, select: TRUCK_DETAIL_SELECT });
+    } catch (err: any) {
+      this.logger.warn(`Truck detail select failed, falling back to card fields: ${err?.message}`);
+      return this.findTruck(where);
+    }
   }
 
   private findTrucksByIds(tenantId: string, ids: string[]) {
