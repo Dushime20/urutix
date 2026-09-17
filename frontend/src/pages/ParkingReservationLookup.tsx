@@ -82,7 +82,7 @@ const ParkingReservationLookupPage = () => {
         className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
       />
 
-      <main className="relative z-10 pt-24 lg:pt-28 pb-16 px-4">
+      <main className="relative z-10 pt-8 lg:pt-10 pb-16 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             <div className="px-6 sm:px-8 pt-8 pb-4">

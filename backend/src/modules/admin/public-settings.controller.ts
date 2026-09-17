@@ -61,28 +61,28 @@ export class PublicSettingsController {
   }
 
   /**
-   * Priority: system_settings table → CONTACT_* env vars → empty strings.
-   * No hardcoded values — if nothing is configured, fields return empty.
+   * Public contact shown on the marketing site footer.
+   * Reads admin-saved rows from system_settings (category = contact).
    */
   @Get('contact')
   async getPublicContactSettings() {
     try {
-      const [phone, email, address] = await Promise.all([
-        this.settingsService.getSetting('contact', 'phone')
-          .catch(() => this.configService.get<string>('CONTACT_PHONE') || ''),
-        this.settingsService.getSetting('contact', 'email')
-          .catch(() => this.configService.get<string>('CONTACT_EMAIL') || ''),
-        this.settingsService.getSetting('contact', 'address')
-          .catch(() => this.configService.get<string>('CONTACT_ADDRESS') || ''),
-      ]);
-
-      return { phone, email, address };
+      const contact = await this.settingsService.getPublicContact();
+      return {
+        phone: contact.phone || this.configService.get<string>('CONTACT_PHONE') || '',
+        email: contact.email || this.configService.get<string>('CONTACT_EMAIL') || '',
+        address: contact.address || this.configService.get<string>('CONTACT_ADDRESS') || '',
+        workingHours: contact.workingHours || '',
+        chatPhone: contact.chatPhone || contact.phone || this.configService.get<string>('CONTACT_PHONE') || '',
+      };
     } catch (error) {
       this.logger.error(`Failed to load contact settings: ${error.message}`);
       return {
-        phone:   this.configService.get<string>('CONTACT_PHONE')   || '',
-        email:   this.configService.get<string>('CONTACT_EMAIL')   || '',
+        phone: this.configService.get<string>('CONTACT_PHONE') || '',
+        email: this.configService.get<string>('CONTACT_EMAIL') || '',
         address: this.configService.get<string>('CONTACT_ADDRESS') || '',
+        workingHours: '',
+        chatPhone: this.configService.get<string>('CONTACT_PHONE') || '',
       };
     }
   }

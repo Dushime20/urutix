@@ -192,36 +192,94 @@ export class SystemSettingsService implements OnModuleInit {
 
         for (const [key, value] of Object.entries(settings)) {
             try {
-                const setting = await this.updateSetting(category, key, { value, updatedBy });
-                updated.push(setting);
+                const saved = await this.upsertSetting(category, key, value, {
+                    isPublic: category === 'contact' ? true : undefined,
+                    updatedBy,
+                });
+                updated.push(saved);
             } catch (error) {
-                if (error instanceof NotFoundException) {
-                    // Row doesn't exist yet — create it (first save from UI)
-                    try {
-                        const dataType = typeof value === 'boolean' ? 'boolean'
-                            : typeof value === 'number' ? 'number'
-                            : typeof value === 'object' && value !== null ? 'json'
-                            : 'string';
-
-                        const created = await this.createSetting({
-                            category,
-                            key,
-                            value,
-                            dataType,
-                            isPublic: true,
-                            updatedBy,
-                        });
-                        updated.push(created);
-                    } catch (createError) {
-                        console.error(`Failed to create ${category}:${key}`, createError);
-                    }
-                } else {
-                    console.error(`Failed to update ${category}:${key}`, error);
-                }
+                console.error(`Failed to upsert ${category}:${key}`, error);
             }
         }
 
         return updated;
+    }
+
+    /**
+     * Create or update a setting without throwing when the row is missing.
+     */
+    async upsertSetting(
+        category: string,
+        key: string,
+        value: any,
+        extras?: { isPublic?: boolean; description?: string; updatedBy?: string },
+    ): Promise<SystemSettings> {
+        const existing = await this.settingsRepository.findOne({ where: { category, key } });
+        const dataType = typeof value === 'boolean' ? 'boolean'
+            : typeof value === 'number' ? 'number'
+            : typeof value === 'object' && value !== null ? 'json'
+            : 'string';
+
+        if (existing) {
+            existing.value = value;
+            existing.dataType = dataType;
+            if (extras?.isPublic !== undefined) existing.isPublic = extras.isPublic;
+            if (extras?.description !== undefined) existing.description = extras.description;
+            if (extras?.updatedBy) existing.updatedBy = extras.updatedBy;
+            const saved = await this.settingsRepository.save(existing);
+            const cacheKey = `${category}:${key}`;
+            this.settingsCache.set(cacheKey, this.parseValue(saved));
+            this.cacheExpiry.set(cacheKey, Date.now() + this.CACHE_TTL);
+            return saved;
+        }
+
+        return this.createSetting({
+            category,
+            key,
+            value,
+            dataType,
+            isPublic: extras?.isPublic ?? true,
+            description: extras?.description,
+            updatedBy: extras?.updatedBy,
+        });
+    }
+
+    private unwrapPublicValue(value: any): string {
+        if (value == null) return '';
+        if (typeof value === 'string') return value.trim();
+        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+        if (typeof value === 'object') {
+            if (typeof value.value === 'string' || typeof value.value === 'number') {
+                return String(value.value).trim();
+            }
+            return '';
+        }
+        return String(value).trim();
+    }
+
+    /**
+     * Public marketing-site contact (phone, email, address, hours, chat).
+     */
+    async getPublicContact(): Promise<{
+        phone: string;
+        email: string;
+        address: string;
+        workingHours: string;
+        chatPhone: string;
+    }> {
+        const rows = await this.settingsRepository.find({ where: { category: 'contact' } });
+        const map: Record<string, string> = {};
+        for (const row of rows) {
+            map[row.key] = this.unwrapPublicValue(this.parseValue(row));
+        }
+
+        return {
+            phone: map.phone || '',
+            email: map.email || '',
+            address: map.address || '',
+            workingHours: map.workingHours || map.working_hours || '',
+            chatPhone: map.chatPhone || map.chat_phone || map.phone || '',
+        };
     }
 
     /**

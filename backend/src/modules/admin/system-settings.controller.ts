@@ -95,6 +95,7 @@ export class SystemSettingsController {
      * NestJS matching "bulk" as the :category param and "contact" as :key.
      */
     @Put('bulk/:category')
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     async updateCategorySettings(
         @Param('category') category: string,
         @Body() settings: Record<string, any>,

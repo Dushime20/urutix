@@ -10,10 +10,6 @@ import {
   Package,
   Gavel,
   CheckCircle2,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Instagram,
   Route,
   ShieldCheck,
   Wallet,
@@ -28,9 +24,9 @@ import {
   FileCheck2,
   CreditCard,
   BadgeCheck,
-  Sparkles,
+  MessageCircle,
+  Clock,
 } from "lucide-react"
-import logoUrutiX from "../../assets/urutiX Logistics Logo (1).svg"
 import { TranslatedText } from "@/components/translated-text"
 import { useContactSettings } from "@/hooks/useContactSettings"
 import { PublicNavbar } from "./PublicNavbar"
@@ -48,6 +44,7 @@ const AUDIENCES = [
       "Settle with invoices, escrow, or financing options",
     ],
     cta: "Ship with UrutiX",
+    tile: "bg-primary-500 text-white",
   },
   {
     id: "fleet",
@@ -61,6 +58,7 @@ const AUDIENCES = [
       "Access credits and loans tied to real work",
     ],
     cta: "Grow your fleet ops",
+    tile: "bg-primary-900 text-white",
   },
   {
     id: "driver",
@@ -74,6 +72,7 @@ const AUDIENCES = [
       "Track earnings and performance history",
     ],
     cta: "Drive with UrutiX",
+    tile: "bg-primary-100 text-primary-900",
   },
   {
     id: "broker",
@@ -87,6 +86,7 @@ const AUDIENCES = [
       "Verify insurance and compliance readiness",
     ],
     cta: "Broker on UrutiX",
+    tile: "bg-primary-700 text-white",
   },
   {
     id: "lender",
@@ -100,6 +100,7 @@ const AUDIENCES = [
       "Serve transporters inside the logistics network",
     ],
     cta: "Lend on UrutiX",
+    tile: "bg-primary-50 text-primary-900",
   },
 ] as const
 
@@ -109,24 +110,28 @@ const JOURNEY_STEPS = [
     title: "Post the load",
     desc: "Cargo owners publish origin, destination, cargo type, and requirements—or use templates for repeat lanes.",
     icon: Package,
+    image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=1200&q=80",
   },
   {
     step: "02",
     title: "Match or auction",
     desc: "UrutiX recommends capacity with smart matching, or you open a reverse/forward auction for competitive bids.",
     icon: Gavel,
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&q=80",
   },
   {
     step: "03",
     title: "Assign & move",
     desc: "Confirm truck and driver, start the trip, and monitor GPS, geofences, and operational status in real time.",
     icon: MapPinned,
+    image: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1200&q=80",
   },
   {
     step: "04",
     title: "Deliver & settle",
     desc: "Capture digital POD, close the journey, settle payments—and unlock credits or financing when needed.",
     icon: FileCheck2,
+    image: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1200&q=80",
   },
 ] as const
 
@@ -168,16 +173,64 @@ const FINANCE_ITEMS = [
     icon: CreditCard,
     title: "Credits marketplace",
     desc: "Fleets buy credits to bid, match, and start trips. Tenants control pricing and availability.",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80",
+    href: "#finance",
   },
   {
     icon: Wallet,
     title: "Working capital loans",
     desc: "Lenders fund transporters against real platform activity—not paperwork alone.",
+    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
+    href: "#finance",
   },
   {
     icon: BadgeCheck,
     title: "Escrow & settlement",
     desc: "Hold and release funds against verified milestones so shippers and carriers stay aligned.",
+    image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200&q=80",
+    href: "#finance",
+  },
+] as const
+
+const GET_DOING = [
+  {
+    title: "You're in control of every load",
+    desc: "Post loads once, reach vetted capacity, and manage matching, tracking, and settlement in one place.",
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1400&q=80",
+    href: "#audiences",
+  },
+  {
+    title: "Keep trucks moving across the network",
+    desc: "Discover loads that fit your routes and assets, then run trips with GPS, ETA, and digital proof of delivery.",
+    image: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1400&q=80",
+    href: "#how-it-works",
+  },
+  {
+    title: "Why wait on cash when finance is built in?",
+    desc: "Credits, loans, escrow, and settlements sit inside the same freight workflow as matching and delivery.",
+    image: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1400&q=80",
+    href: "#finance",
+  },
+] as const
+
+const EXPAND_CARDS = [
+  {
+    title: "Marketplace",
+    desc: "Match cargo to capacity by route fit, asset type, proximity, and performance.",
+    image: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=1200&q=80",
+    href: "#platform",
+  },
+  {
+    title: "UrutiX App",
+    desc: "The services you use in one place—loads, trips, parking, and finance, no more chasing calls.",
+    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=1200&q=80",
+    href: "/auth",
+  },
+  {
+    title: "Truck Parking",
+    desc: "Reserve a bay, look up your booking, and keep your fleet moving between trips.",
+    image: "https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=1200&q=80",
+    href: "/parking-reservation",
   },
 ] as const
 
@@ -187,31 +240,22 @@ const HERO_COPY =
 const HERO_SLIDES = [
   {
     id: "network",
-    image:
-      "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1920&q=80",
+    title: "UrutiX",
+    image: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=1920&q=80",
   },
   {
     id: "matching",
-    image:
-      "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1920&q=80",
+    title: "Smart matching",
+    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1920&q=80",
   },
   {
     id: "finance",
-    image:
-      "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1920&q=80",
+    title: "Embedded finance",
+    image: "https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?w=1920&q=80",
   },
 ] as const
 
-const HERO_QUICK_LINKS = [
-  { label: "Cargo owners", href: "#audiences", icon: Package },
-  { label: "Fleet owners", href: "#audiences", icon: Truck },
-  { label: "Drivers", href: "#audiences", icon: UserRound },
-  { label: "Brokers", href: "#audiences", icon: HeartHandshake },
-  { label: "Lenders", href: "#finance", icon: Landmark },
-  { label: "White-label", href: "#marketplace", icon: Building2 },
-] as const
-
-const HERO_SLIDE_MS = 12000
+const HERO_SLIDE_MS = 8000
 
 function Hero() {
   const [slide, setSlide] = useState(0)
@@ -228,205 +272,142 @@ function Hero() {
   const goTo = (index: number) => setSlide((index + HERO_SLIDES.length) % HERO_SLIDES.length)
 
   return (
-    <section
-      id="home"
-      className="relative min-h-[100svh] flex flex-col justify-end pt-16 lg:pt-[4.25rem]"
-    >
-      {/* Full-bleed photographic plane */}
-      <div className="absolute inset-0 bg-primary-950 overflow-hidden" aria-hidden>
+    <section id="home" className="relative">
+      <div className="relative h-[660px] lg:h-[760px] overflow-hidden">
         <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={current.id}
-            initial={{ opacity: 0, scale: reduceMotion ? 1 : 1.08, x: 0, y: 0 }}
-            animate={
-              reduceMotion
-                ? { opacity: 1, scale: 1, x: 0, y: 0 }
-                : {
-                    opacity: 1,
-                    scale: [1.08, 1.2, 1.08],
-                    x: [0, 28, 0],
-                    y: [0, -18, 0],
-                  }
-            }
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={
-              reduceMotion
-                ? { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
-                : {
-                    opacity: { duration: 1.15, ease: [0.22, 1, 0.36, 1] },
-                    scale: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1] },
-                    x: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1] },
-                    y: { duration: 12, ease: "easeInOut", times: [0, 0.5, 1] },
-                  }
-            }
-            className="absolute -inset-[8%] bg-cover bg-center will-change-transform"
+            transition={{ duration: reduceMotion ? 0.35 : 0.7 }}
+            className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url('${current.image}')` }}
           />
         </AnimatePresence>
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-primary-950/92 via-primary-950/72 to-primary-950/35"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-primary-950/90 via-transparent to-primary-950/40"
-          aria-hidden
-        />
-      </div>
+        <div className="absolute inset-0" style={{ boxShadow: "inset 0px -200px 100px 0px rgba(15,29,43,0.85)" }} />
 
-      <div className="relative z-10 w-full mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 pt-10 pb-6 lg:pt-16 lg:pb-8 flex-1 flex flex-col justify-end">
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-end">
-          <div className="lg:col-span-8 xl:col-span-7">
-            <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        <div className="relative z-10 h-full flex flex-col justify-end pb-36 lg:pb-40">
+          <div className="w-[84%] max-w-[574px] ml-[8%] mr-[8%]">
+            <p className="text-white text-sm lg:text-base leading-6 mb-2">
+              <TranslatedText text={current.title === "UrutiX" ? "Logistics & embedded finance" : current.title} />
+            </p>
+            <h1 className="font-manrope text-white text-[40px] leading-[40px] lg:text-[64px] lg:leading-[64px] font-extrabold m-0">
+              UrutiX
+            </h1>
+            <p className="text-white text-base lg:text-2xl lg:leading-[26px] mt-3 mb-0 max-w-xl line-clamp-4">
+              <TranslatedText text={HERO_COPY} className="text-white" />
+            </p>
+          </div>
+        </div>
+
+        <div className="absolute z-20 left-[7.5%] bottom-[118px] flex items-center gap-1.5" role="tablist" aria-label="Hero slides">
+          {HERO_SLIDES.map((item, index) => {
+            const active = index === slide
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={`Show slide ${index + 1}`}
+                onClick={() => goTo(index)}
+                className={`relative w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center ${
+                  active ? "border-primary-400" : "border-transparent"
+                }`}
+              >
+                <span className={`block w-2.5 h-2.5 rounded-full ${active ? "bg-primary-950" : "bg-[#909090]"}`} />
+              </button>
+            )
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => goTo(slide - 1)}
+          className="absolute z-20 left-3 top-1/2 -translate-y-1/2 w-10 h-10 text-white/80 hover:text-white"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="w-8 h-8" />
+        </button>
+        <button
+          type="button"
+          onClick={() => goTo(slide + 1)}
+          className="absolute z-20 right-3 top-1/2 -translate-y-1/2 w-10 h-10 text-white/80 hover:text-white"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="w-8 h-8" />
+        </button>
+
+        <div className="absolute z-20 left-[2%] w-[96%] bottom-10 rounded-lg bg-white/30 backdrop-blur-[30px] px-6 py-6 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to="/auth"
+              className="inline-flex items-center justify-center min-w-[216px] border-2 border-white text-white bg-transparent hover:bg-primary-500 hover:border-primary-500 font-medium uppercase text-sm leading-4 px-6 py-3 rounded-full transition-all"
             >
-              <h1 className="font-manrope text-white text-5xl sm:text-6xl lg:text-[4.25rem] font-extrabold tracking-tight leading-none mb-5">
-                UrutiX
-              </h1>
-              <p className="font-manrope text-white text-base sm:text-lg lg:text-xl font-medium tracking-tight leading-relaxed mb-8 max-w-3xl">
-                <TranslatedText text={HERO_COPY} className="text-white" />
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  to="/auth"
-                  className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
-                >
-                  <TranslatedText text="Join the network" />
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-                <a
-                  href="#marketplace"
-                  className="inline-flex items-center gap-2 border border-white/35 hover:border-white/70 hover:bg-white/5 text-white font-semibold px-6 py-3.5 rounded-md text-sm transition-colors"
-                >
-                  <TranslatedText text="Launch your marketplace" />
-                </a>
-              </div>
-            </motion.div>
-
-            {/* Carousel controls */}
-            <div className="mt-10 flex items-center gap-4">
-              <div className="flex items-center gap-2" role="tablist" aria-label="Hero slides">
-                {HERO_SLIDES.map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={index === slide}
-                    aria-label={`Show slide ${index + 1}`}
-                    onClick={() => goTo(index)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      index === slide
-                        ? "w-8 bg-primary-400"
-                        : "w-1.5 bg-white/40 hover:bg-white/70"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="hidden sm:flex items-center gap-1.5 ml-auto lg:ml-0">
-                <button
-                  type="button"
-                  onClick={() => goTo(slide - 1)}
-                  className="w-10 h-10 inline-flex items-center justify-center border border-white/25 text-white hover:bg-white/10 transition-colors"
-                  aria-label="Previous slide"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goTo(slide + 1)}
-                  className="w-10 h-10 inline-flex items-center justify-center border border-white/25 text-white hover:bg-white/10 transition-colors"
-                  aria-label="Next slide"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+              <TranslatedText text="Join the network" />
+            </Link>
+            <a
+              href="#marketplace"
+              className="inline-flex items-center justify-center min-w-[216px] border-2 border-white text-white bg-transparent hover:bg-white hover:text-primary-900 font-medium uppercase text-sm leading-4 px-6 py-3 rounded-full transition-all"
+            >
+              <TranslatedText text="Launch your marketplace" />
+            </a>
           </div>
         </div>
       </div>
-
-      {/* Bottom quick-link strip — BK-style interactive tiles */}
-      <div className="relative z-10 w-full">
-        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 pb-0">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 bg-white shadow-[0_-8px_40px_rgba(15,29,43,0.18)]"
-          >
-            {HERO_QUICK_LINKS.map((item) => {
-              const Icon = item.icon
-              return (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="group flex flex-col items-start gap-3 px-4 py-5 sm:px-5 sm:py-6 border-r border-b border-primary-100 last:border-r-0 sm:[&:nth-child(3n)]:border-r-0 lg:border-b-0 lg:[&:nth-child(3n)]:border-r lg:last:border-r-0 hover:bg-primary-50 transition-colors"
-                >
-                  <span className="w-9 h-9 inline-flex items-center justify-center bg-primary-50 text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors">
-                    <Icon className="w-[18px] h-[18px]" strokeWidth={1.75} />
-                  </span>
-                  <span className="flex items-center gap-1 font-manrope text-sm font-bold text-primary-900">
-                    <TranslatedText text={item.label} />
-                    <ChevronRight className="w-3.5 h-3.5 text-primary-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                  </span>
-                </a>
-              )
-            })}
-          </motion.div>
-        </div>
-      </div>
+      <div className="relative z-10 h-5 -mt-5 bg-white rounded-t-2xl" aria-hidden />
     </section>
   )
 }
 
-function AudiencesSection() {
+function TopDeals() {
   const [active, setActive] = useState<(typeof AUDIENCES)[number]["id"]>("cargo")
   const current = AUDIENCES.find((a) => a.id === active) ?? AUDIENCES[0]
   const Icon = current.icon
 
   return (
-    <section id="audiences" className="bg-white pt-14 lg:pt-20 pb-20 lg:pb-28">
+    <section id="audiences" className="bg-white py-14 lg:py-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-10 lg:mb-12">
-          <p className="text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-3">
-            <TranslatedText text="Who it’s for" />
-          </p>
-          <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-primary-900 tracking-tight leading-tight mb-3">
-            <TranslatedText text="Built for every side of the freight deal" />
-          </h2>
-          <p className="text-primary-600/80 text-base leading-relaxed">
-            <TranslatedText text="Choose your role to see how UrutiX fits your day-to-day—then start in the right workspace." />
-          </p>
+        <div className="flex items-end justify-between gap-4 mb-8">
+          <div>
+            <p className="text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-2">
+              <TranslatedText text="Who it’s for" />
+            </p>
+            <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-primary-900 tracking-tight">
+              <TranslatedText text="Top deals" />
+            </h2>
+          </div>
+          <a
+            href="#platform"
+            className="text-xs font-bold uppercase tracking-wider text-primary-500 hover:text-primary-700"
+          >
+            <TranslatedText text="All deals" />
+          </a>
         </div>
 
-        {/* Interactive role tabs */}
-        <div
-          className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-thin"
-          role="tablist"
-          aria-label="Audience roles"
-        >
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4 mb-8">
           {AUDIENCES.map((role) => {
             const selected = role.id === active
-            const RoleIcon = role.icon
             return (
               <button
                 key={role.id}
                 type="button"
-                role="tab"
-                aria-selected={selected}
                 onClick={() => setActive(role.id)}
-                className={`shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-colors ${
-                  selected
-                    ? "bg-primary-500 border-primary-500 text-white"
-                    : "bg-white border-primary-200 text-primary-700 hover:border-primary-400 hover:text-primary-500"
+                className={`${role.tile} rounded-[1.75rem] min-h-[7.5rem] sm:min-h-[8.5rem] px-5 py-5 text-left font-manrope text-xl sm:text-2xl font-extrabold leading-tight shadow-sm ring-offset-2 transition-transform hover:-translate-y-0.5 ${
+                  selected ? "ring-2 ring-primary-500" : ""
                 }`}
               >
-                <RoleIcon className="w-4 h-4" />
                 <TranslatedText text={role.label} />
               </button>
             )
           })}
+          <a
+            href="#marketplace"
+            className="bg-primary-600 text-white rounded-[1.75rem] min-h-[7.5rem] sm:min-h-[8.5rem] px-5 py-5 font-manrope text-xl sm:text-2xl font-extrabold leading-tight shadow-sm hover:-translate-y-0.5 transition-transform flex items-end"
+          >
+            <TranslatedText text="White-label" />
+          </a>
         </div>
 
         <AnimatePresence mode="wait">
@@ -436,12 +417,11 @@ function AudiencesSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
-            className="border border-primary-100 bg-primary-50 p-6 sm:p-8 lg:p-10"
-            role="tabpanel"
+            className="rounded-[2rem] bg-primary-50 p-6 sm:p-8 lg:p-10"
           >
             <div className="grid lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-5">
-                <div className="w-12 h-12 flex items-center justify-center bg-primary-500 text-white mb-5">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary-500 text-white mb-5">
                   <Icon className="w-6 h-6" strokeWidth={1.75} />
                 </div>
                 <h3 className="font-manrope text-2xl font-bold text-primary-900 mb-3">
@@ -449,18 +429,15 @@ function AudiencesSection() {
                 </h3>
                 <Link
                   to="/auth"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-primary-500 hover:text-primary-600 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-primary-500 hover:text-primary-700"
                 >
                   <TranslatedText text={current.cta} />
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
-              <ul className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
+              <ul className="lg:col-span-7 grid sm:grid-cols-2 gap-3">
                 {current.points.map((point) => (
-                  <li
-                    key={point}
-                    className="flex gap-3 bg-white border border-primary-100 p-4"
-                  >
+                  <li key={point} className="flex gap-3 bg-white rounded-2xl p-4">
                     <CheckCircle2 className="w-4 h-4 text-primary-500 shrink-0 mt-0.5" />
                     <span className="text-sm text-primary-800 leading-relaxed">
                       <TranslatedText text={point} />
@@ -476,19 +453,56 @@ function AudiencesSection() {
   )
 }
 
+function GetDoingSection() {
+  return (
+    <section className="bg-[#F4F7FA] py-16 lg:py-24">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-primary-900 tracking-tight mb-10">
+          <TranslatedText text="Get doing with UrutiX" />
+        </h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {GET_DOING.map((card) => (
+            <a
+              key={card.title}
+              href={card.href}
+              className="group bg-white rounded-[1.75rem] overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="aspect-[16/10] overflow-hidden">
+                <img
+                  src={card.image}
+                  alt=""
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="p-6">
+                <h3 className="font-manrope text-xl font-bold text-primary-900 mb-2 leading-snug">
+                  <TranslatedText text={card.title} />
+                </h3>
+                <p className="text-sm text-primary-600/80 leading-relaxed">
+                  <TranslatedText text={card.desc} />
+                </p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function HowItWorksSection() {
   const [activeStep, setActiveStep] = useState(0)
   const step = JOURNEY_STEPS[activeStep]
   const StepIcon = step.icon
 
   return (
-    <section id="how-it-works" className="bg-primary-50 py-20 lg:py-28 border-y border-primary-100">
+    <section id="how-it-works" className="bg-white py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-12">
+        <div className="max-w-2xl mb-10">
           <p className="text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-3">
             <TranslatedText text="How it works" />
           </p>
-          <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-primary-900 tracking-tight leading-tight mb-3">
+          <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-primary-900 tracking-tight leading-tight mb-3">
             <TranslatedText text="From load post to settlement—one clear journey" />
           </h2>
           <p className="text-primary-600/80 text-base leading-relaxed">
@@ -496,8 +510,8 @@ function HowItWorksSection() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-10">
-          <div className="lg:col-span-5 space-y-2">
+        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8">
+          <div className="lg:col-span-4 space-y-3">
             {JOURNEY_STEPS.map((item, index) => {
               const selected = index === activeStep
               return (
@@ -505,21 +519,15 @@ function HowItWorksSection() {
                   key={item.step}
                   type="button"
                   onClick={() => setActiveStep(index)}
-                  className={`w-full text-left border px-4 py-4 transition-colors ${
-                    selected
-                      ? "bg-primary-500 border-primary-500 text-white"
-                      : "bg-white border-primary-100 text-primary-800 hover:border-primary-300"
+                  className={`w-full text-left rounded-[1.5rem] px-5 py-4 transition-colors ${
+                    selected ? "bg-primary-500 text-white" : "bg-primary-50 text-primary-900 hover:bg-primary-100"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`font-manrope text-sm font-bold tracking-wider ${
-                        selected ? "text-primary-100" : "text-primary-400"
-                      }`}
-                    >
+                    <span className={`font-manrope text-sm font-bold ${selected ? "text-white/70" : "text-primary-400"}`}>
                       {item.step}
                     </span>
-                    <span className="font-semibold text-sm sm:text-base">
+                    <span className="font-semibold">
                       <TranslatedText text={item.title} />
                     </span>
                   </div>
@@ -535,20 +543,25 @@ function HowItWorksSection() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.25 }}
-              className="lg:col-span-7 bg-white border border-primary-100 p-7 sm:p-9 flex flex-col justify-center min-h-[240px]"
+              className="lg:col-span-8 rounded-[2rem] overflow-hidden bg-primary-50"
             >
-              <div className="w-12 h-12 flex items-center justify-center bg-primary-500 text-white mb-6">
-                <StepIcon className="w-6 h-6" strokeWidth={1.75} />
+              <div className="grid sm:grid-cols-2 h-full">
+                <div className="min-h-[220px] bg-cover bg-center" style={{ backgroundImage: `url('${step.image}')` }} />
+                <div className="p-7 sm:p-9 flex flex-col justify-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary-500 text-white mb-5">
+                    <StepIcon className="w-6 h-6" strokeWidth={1.75} />
+                  </div>
+                  <p className="text-primary-400 text-xs font-bold uppercase tracking-[0.16em] mb-2">
+                    <TranslatedText text={`Step ${step.step}`} />
+                  </p>
+                  <h3 className="font-manrope text-2xl font-bold text-primary-900 mb-3">
+                    <TranslatedText text={step.title} />
+                  </h3>
+                  <p className="text-primary-600/80 text-base leading-relaxed">
+                    <TranslatedText text={step.desc} />
+                  </p>
+                </div>
               </div>
-              <p className="text-primary-400 text-xs font-bold uppercase tracking-[0.16em] mb-2">
-                <TranslatedText text={`Step ${step.step}`} />
-              </p>
-              <h3 className="font-manrope text-2xl font-bold text-primary-900 mb-3">
-                <TranslatedText text={step.title} />
-              </h3>
-              <p className="text-primary-600/80 text-base leading-relaxed max-w-xl">
-                <TranslatedText text={step.desc} />
-              </p>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -559,13 +572,13 @@ function HowItWorksSection() {
 
 function PlatformSection() {
   return (
-    <section id="platform" className="bg-white py-20 lg:py-28">
+    <section id="platform" className="bg-[#F4F7FA] py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-12">
+        <div className="max-w-2xl mb-10">
           <p className="text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-3">
             <TranslatedText text="Platform" />
           </p>
-          <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-primary-900 tracking-tight leading-tight mb-3">
+          <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-primary-900 tracking-tight leading-tight mb-3">
             <TranslatedText text="Everything needed to run modern road freight" />
           </h2>
           <p className="text-primary-600/80 text-base leading-relaxed">
@@ -573,7 +586,7 @@ function PlatformSection() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-primary-100 border border-primary-100">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {PILLARS.map((item, i) => (
             <motion.div
               key={item.title}
@@ -581,12 +594,12 @@ function PlatformSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.35, delay: i * 0.05 }}
-              className="bg-white p-7 group hover:bg-primary-50 transition-colors"
+              className="bg-white rounded-[1.75rem] p-7 group hover:shadow-md transition-shadow"
             >
-              <div className="w-10 h-10 flex items-center justify-center border border-primary-200 text-primary-500 mb-5 group-hover:bg-primary-500 group-hover:border-primary-500 group-hover:text-white transition-colors">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary-50 text-primary-500 mb-5 group-hover:bg-primary-500 group-hover:text-white transition-colors">
                 <item.icon className="w-5 h-5" strokeWidth={1.75} />
               </div>
-              <h3 className="font-manrope text-base font-bold text-primary-900 mb-2">
+              <h3 className="font-manrope text-lg font-bold text-primary-900 mb-2">
                 <TranslatedText text={item.title} />
               </h3>
               <p className="text-sm text-primary-600/75 leading-relaxed">
@@ -600,85 +613,49 @@ function PlatformSection() {
   )
 }
 
-function FinanceSection() {
-  const [openIndex, setOpenIndex] = useState(0)
-
+function PromoCards() {
   return (
-    <section id="finance" className="bg-primary-950 py-20 lg:py-28">
+    <section id="finance" className="bg-white py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-12 gap-10 lg:gap-14">
-          <div className="lg:col-span-5">
-            <p className="text-primary-300 text-xs font-bold uppercase tracking-[0.18em] mb-3">
-              <TranslatedText text="Embedded finance" />
-            </p>
-            <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight mb-4">
-              <TranslatedText text="Cash flow that moves with the load" />
-            </h2>
-            <p className="text-primary-200/80 text-base leading-relaxed mb-8">
-              <TranslatedText text="African freight stalls on payment cycles. UrutiX keeps liquidity inside the same journey as matching, tracking, and delivery." />
-            </p>
-            <Link
-              to="/auth"
-              className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-400 text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors"
-            >
-              <TranslatedText text="Explore finance tools" />
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+        <div className="max-w-2xl mb-10">
+          <p className="text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-3">
+            <TranslatedText text="Embedded finance" />
+          </p>
+          <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-primary-900 tracking-tight leading-tight mb-3">
+            <TranslatedText text="Cash flow that moves with the load" />
+          </h2>
+          <p className="text-primary-600/80 text-base leading-relaxed">
+            <TranslatedText text="African freight stalls on payment cycles. UrutiX keeps liquidity inside the same journey as matching, tracking, and delivery." />
+          </p>
+        </div>
 
-          <div className="lg:col-span-7 space-y-3">
-            {FINANCE_ITEMS.map((item, index) => {
-              const open = openIndex === index
-              const ItemIcon = item.icon
-              return (
-                <button
-                  key={item.title}
-                  type="button"
-                  onClick={() => setOpenIndex(index)}
-                  className={`w-full text-left border p-5 sm:p-6 transition-colors ${
-                    open
-                      ? "bg-primary-900 border-primary-700"
-                      : "bg-transparent border-primary-800 hover:border-primary-600"
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`w-10 h-10 shrink-0 flex items-center justify-center ${
-                        open ? "bg-primary-500 text-white" : "border border-primary-700 text-primary-300"
-                      }`}
-                    >
-                      <ItemIcon className="w-5 h-5" strokeWidth={1.75} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="font-manrope text-base sm:text-lg font-bold text-white">
-                          <TranslatedText text={item.title} />
-                        </h3>
-                        <ChevronRight
-                          className={`w-4 h-4 text-primary-400 shrink-0 transition-transform ${
-                            open ? "rotate-90" : ""
-                          }`}
-                        />
-                      </div>
-                      <AnimatePresence initial={false}>
-                        {open && (
-                          <motion.p
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="text-sm text-primary-200/80 leading-relaxed mt-2 overflow-hidden"
-                          >
-                            <TranslatedText text={item.desc} />
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {FINANCE_ITEMS.map((item) => (
+            <a
+              key={item.title}
+              href={item.href}
+              className="group rounded-[1.75rem] overflow-hidden bg-primary-50 hover:shadow-md transition-shadow"
+            >
+              <div className="aspect-[16/9] overflow-hidden">
+                <img
+                  src={item.image}
+                  alt=""
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="p-6">
+                <h3 className="font-manrope text-xl font-bold text-primary-900 mb-2">
+                  <TranslatedText text={item.title} />
+                </h3>
+                <p className="text-sm text-primary-600/80 leading-relaxed mb-4">
+                  <TranslatedText text={item.desc} />
+                </p>
+                <span className="text-xs font-bold uppercase tracking-wider text-primary-500">
+                  <TranslatedText text="Read more" />
+                </span>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </section>
@@ -694,16 +671,15 @@ function MarketplaceSection() {
   ]
 
   return (
-    <section id="marketplace" className="bg-white py-20 lg:py-28">
+    <section id="marketplace" className="bg-[#F4F7FA] py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="border border-primary-100 bg-primary-50 overflow-hidden">
+        <div className="rounded-[2rem] overflow-hidden bg-white shadow-sm">
           <div className="grid lg:grid-cols-2">
             <div className="p-8 sm:p-10 lg:p-14">
-              <div className="inline-flex items-center gap-2 text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-4">
-                <Sparkles className="w-3.5 h-3.5" />
+              <p className="text-primary-500 text-xs font-bold uppercase tracking-[0.18em] mb-4">
                 <TranslatedText text="For logistics operators" />
-              </div>
-              <h2 className="font-manrope text-3xl lg:text-4xl font-bold text-primary-900 tracking-tight leading-tight mb-4">
+              </p>
+              <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-primary-900 tracking-tight leading-tight mb-4">
                 <TranslatedText text="Run your own branded freight marketplace" />
               </h2>
               <p className="text-primary-600/80 text-base leading-relaxed mb-8">
@@ -721,15 +697,14 @@ function MarketplaceSection() {
               </ul>
               <Link
                 to="/auth"
-                className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors"
+                className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white font-bold uppercase tracking-wider text-xs px-7 py-3.5 rounded-full transition-colors"
               >
                 <TranslatedText text="Talk to us about white-label" />
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
-            {/* Interactive product glimpse */}
-            <div className="bg-primary-950 p-8 sm:p-10 lg:p-12 flex items-center border-t lg:border-t-0 lg:border-l border-primary-900">
+            <div className="bg-primary-950 p-8 sm:p-10 lg:p-12 flex items-center">
               <div className="w-full space-y-3">
                 <p className="text-primary-300 text-xs font-bold uppercase tracking-[0.16em] mb-4">
                   <TranslatedText text="Workspace preview" />
@@ -746,8 +721,7 @@ function MarketplaceSection() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.08 }}
-                    whileHover={{ x: 4 }}
-                    className="flex items-center justify-between gap-4 border border-primary-800 bg-primary-900/60 px-4 py-3.5 cursor-default"
+                    className="flex items-center justify-between gap-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3.5"
                   >
                     <span className="text-sm text-primary-100 font-medium">
                       <TranslatedText text={row.label} />
@@ -766,7 +740,85 @@ function MarketplaceSection() {
   )
 }
 
-function TrustSection() {
+function ExpandWorld() {
+  return (
+    <section className="bg-white py-16 lg:py-24">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <h2 className="font-manrope text-3xl lg:text-4xl font-extrabold text-primary-900 tracking-tight mb-10">
+          <TranslatedText text="Expand your world" />
+        </h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {EXPAND_CARDS.map((card) => {
+            const inner = (
+              <>
+                <div className="aspect-[16/10] overflow-hidden">
+                  <img
+                    src={card.image}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="font-manrope text-2xl font-extrabold text-primary-900 mb-2">
+                    <TranslatedText text={card.title} />
+                  </h3>
+                  <p className="text-sm text-primary-600/80 leading-relaxed">
+                    <TranslatedText text={card.desc} />
+                  </p>
+                </div>
+              </>
+            )
+            const className =
+              "group bg-[#F4F7FA] rounded-[1.75rem] overflow-hidden hover:shadow-md transition-shadow"
+            return card.href.startsWith("/") ? (
+              <Link key={card.title} to={card.href} className={className}>
+                {inner}
+              </Link>
+            ) : (
+              <a key={card.title} href={card.href} className={className}>
+                {inner}
+              </a>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function HelpBar() {
+  const links = [
+    { label: "Help", href: "#contact" },
+    { label: "Getting started", href: "/auth" },
+    { label: "Truck parking", href: "/parking-reservation" },
+  ]
+
+  return (
+    <section className="bg-white">
+      <div className="mx-auto w-[88%] max-w-[1200px] px-0">
+        <div className="flex flex-wrap items-center gap-x-10 gap-y-3 py-6">
+          {links.map((item) =>
+            item.href.startsWith("/") ? (
+              <Link
+                key={item.label}
+                to={item.href}
+                className="text-sm font-medium text-[#202020] hover:text-primary-500"
+              >
+                <TranslatedText text={item.label} />
+              </Link>
+            ) : (
+              <a key={item.label} href={item.href} className="text-sm font-medium text-[#202020] hover:text-primary-500">
+                <TranslatedText text={item.label} />
+              </a>
+            )
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function MostViewed() {
   const items = [
     { title: "Role-based access", desc: "Shipper, fleet, driver, broker, lender, and admin workspaces." },
     { title: "Digital POD", desc: "Confirm delivery with records ready for settlement and audit." },
@@ -775,11 +827,14 @@ function TrustSection() {
   ]
 
   return (
-    <section className="bg-white pb-8 lg:pb-12">
+    <section className="bg-white py-14 lg:py-16">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-primary-100 border border-primary-100">
+        <h2 className="font-manrope text-2xl font-extrabold text-primary-900 tracking-tight mb-6">
+          <TranslatedText text="Most viewed topics" />
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {items.map((item) => (
-            <div key={item.title} className="bg-white p-6">
+            <div key={item.title} className="rounded-[1.5rem] bg-primary-50 p-5">
               <h3 className="font-manrope text-sm font-bold text-primary-900 mb-1.5">
                 <TranslatedText text={item.title} />
               </h3>
@@ -796,11 +851,11 @@ function TrustSection() {
 
 function CtaBand() {
   return (
-    <section className="bg-white py-16 lg:py-20">
+    <section className="bg-white pb-16 lg:pb-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="bg-primary-500 px-8 py-12 lg:px-14 lg:py-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+        <div className="bg-primary-500 rounded-[2rem] px-8 py-12 lg:px-14 lg:py-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
           <div className="max-w-xl">
-            <h2 className="font-manrope text-2xl lg:text-3xl font-bold text-white tracking-tight mb-3">
+            <h2 className="font-manrope text-2xl lg:text-3xl font-extrabold text-white tracking-tight mb-3">
               <TranslatedText text="Ready to move freight on UrutiX?" />
             </h2>
             <p className="text-primary-100 text-base leading-relaxed">
@@ -810,14 +865,14 @@ function CtaBand() {
           <div className="flex flex-wrap gap-3 shrink-0">
             <Link
               to="/auth"
-              className="inline-flex items-center justify-center gap-2 bg-white hover:bg-primary-50 text-primary-700 font-semibold px-6 py-3.5 rounded-lg text-sm transition-colors"
+              className="inline-flex items-center justify-center gap-2 bg-white hover:bg-primary-50 text-primary-700 font-bold uppercase tracking-wider text-xs px-7 py-3.5 rounded-full transition-colors"
             >
               <TranslatedText text="Create account" />
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
               href="#contact"
-              className="inline-flex items-center justify-center gap-2 border border-white/40 hover:border-white text-white font-semibold px-6 py-3.5 rounded-lg text-sm transition-colors"
+              className="inline-flex items-center justify-center gap-2 border border-white/50 hover:bg-white/10 text-white font-bold uppercase tracking-wider text-xs px-7 py-3.5 rounded-full transition-colors"
             >
               <TranslatedText text="Contact sales" />
             </a>
@@ -830,107 +885,176 @@ function CtaBand() {
 
 function Footer() {
   const { contact } = useContactSettings()
+  const [panel, setPanel] = useState<"contact" | "sites" | null>("contact")
+  const chatPhone = contact.chatPhone || contact.phone
+  const hasContact =
+    Boolean(contact.phone || contact.email || chatPhone || contact.address || contact.workingHours)
+
+  const moreSites = [
+    { label: "Who it’s for", href: "#audiences" },
+    { label: "How it works", href: "#how-it-works" },
+    { label: "Platform", href: "#platform" },
+    { label: "Finance", href: "#finance" },
+    { label: "White-label", href: "#marketplace" },
+    { label: "Truck parking", href: "/parking-reservation" },
+  ]
+
+  const socials = [
+    { label: "Facebook", href: "#" },
+    { label: "Instagram", href: "#" },
+    { label: "Twitter", href: "#" },
+    { label: "LinkedIn", href: "#" },
+  ]
+
+  const Badge = ({ children, href }: { children: string; href: string }) => (
+    <a
+      href={href}
+      className="inline-block bg-primary-500 text-white rounded px-2 py-1 text-sm font-bold break-all"
+    >
+      {children}
+    </a>
+  )
 
   return (
-    <footer id="contact" className="bg-primary-950 pt-16 pb-8">
-      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-          <div>
-            <img
-              src={logoUrutiX}
-              alt="UrutiX"
-              className="h-9 w-auto brightness-0 invert mb-5 object-contain"
-            />
-            <p className="text-primary-300/70 text-sm leading-relaxed mb-6 max-w-xs">
-              <TranslatedText text="Africa’s smart logistics platform for matching, visibility, and embedded finance across road freight." />
-            </p>
-            <div className="flex gap-2">
-              {[Facebook, Twitter, Linkedin, Instagram].map((Icon, i) => (
+    <footer id="contact" className="bg-primary-950 text-white rounded-t-2xl mt-24 pt-16 pb-8">
+      <div className="mx-auto w-[88%] max-w-[1200px]">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-10 pb-8 border-b-2 border-white/10">
+          <a
+            href="/parking-reservation"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white hover:text-primary-300"
+          >
+            <MapPin className="w-5 h-5 text-primary-400" />
+            <TranslatedText text="Coverage map" />
+          </a>
+          <button
+            type="button"
+            onClick={() => setPanel((p) => (p === "contact" ? null : "contact"))}
+            className="inline-flex items-center gap-2 text-sm font-bold text-white"
+          >
+            <MessageCircle className="w-5 h-5 text-primary-400" />
+            <TranslatedText text="Contact Us" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setPanel((p) => (p === "sites" ? null : "sites"))}
+            className="inline-flex items-center gap-2 text-sm font-bold text-white"
+          >
+            <Building2 className="w-5 h-5 text-primary-400" />
+            <TranslatedText text="More sites" />
+          </button>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 lg:ml-auto">
+            {socials.map((item) => (
+              <li key={item.label}>
                 <a
-                  key={i}
-                  href="#"
-                  className="w-9 h-9 border border-primary-800 flex items-center justify-center text-primary-400 hover:text-white hover:border-primary-500 hover:bg-primary-500 transition-colors"
-                  aria-label="Social link"
+                  href={item.href}
+                  className="text-primary-400 text-[13px] font-bold uppercase hover:text-white relative after:absolute after:left-0 after:top-6 after:h-px after:w-0 hover:after:w-full after:bg-primary-400 after:transition-all"
                 >
-                  <Icon className="w-4 h-4" />
+                  {item.label}
                 </a>
-              ))}
-            </div>
-          </div>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          <div>
-            <p className="text-white text-sm font-semibold mb-4">
-              <TranslatedText text="Product" />
-            </p>
-            <ul className="space-y-2.5">
-              {[
-                { label: "Who it’s for", href: "#audiences" },
-                { label: "How it works", href: "#how-it-works" },
-                { label: "Platform", href: "#platform" },
-                { label: "Finance", href: "#finance" },
-                { label: "White-label", href: "#marketplace" },
-              ].map((item) => (
-                <li key={item.href}>
-                  <a href={item.href} className="text-primary-300/60 text-sm hover:text-primary-200 transition-colors">
+        {panel === "contact" && (
+          <div className="grid sm:grid-cols-2 gap-x-12 gap-y-8 py-10">
+            {!hasContact && (
+              <p className="sm:col-span-2 text-sm text-white/70">
+                <TranslatedText text="Contact details will appear here once they are saved in Admin → Profile → Platform." />
+              </p>
+            )}
+            {contact.phone && (
+              <div className="flex items-start gap-4">
+                <Phone className="w-10 h-10 text-white shrink-0 mt-1" />
+                <div>
+                  <p className="text-xs uppercase font-normal mb-2">
+                    <TranslatedText text="Call Toll Free" />
+                  </p>
+                  <Badge href={`tel:${contact.phone}`}>{contact.phone}</Badge>
+                </div>
+              </div>
+            )}
+            {contact.email && (
+              <div className="flex items-start gap-4">
+                <Mail className="w-8 h-8 text-white shrink-0 mt-1" />
+                <div>
+                  <p className="text-xs uppercase font-normal mb-2">
+                    <TranslatedText text="Email" />
+                  </p>
+                  <Badge href={`mailto:${contact.email}`}>{contact.email}</Badge>
+                </div>
+              </div>
+            )}
+            {chatPhone && (
+              <div className="flex items-start gap-4">
+                <MessageCircle className="w-8 h-8 text-white shrink-0 mt-1" />
+                <div>
+                  <p className="text-xs uppercase font-normal mb-2">
+                    <TranslatedText text="Chat support" />
+                  </p>
+                  <Badge href={`tel:${chatPhone}`}>{chatPhone}</Badge>
+                </div>
+              </div>
+            )}
+            {(contact.address || contact.workingHours) && (
+              <div>
+                {contact.address && (
+                  <>
+                    <p className="text-xs uppercase font-bold mb-2">
+                      <TranslatedText text="Physical address" />
+                    </p>
+                    <p className="text-sm text-white/90">{contact.address}</p>
+                  </>
+                )}
+                {contact.workingHours && (
+                  <>
+                    <p className="text-xs uppercase font-bold mt-4 mb-2 inline-flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5" />
+                      <TranslatedText text="Working hours" />
+                    </p>
+                    <p className="text-sm text-white/90">{contact.workingHours}</p>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {panel === "sites" && (
+          <ul className="flex flex-wrap gap-x-10 gap-y-4 py-10">
+            {moreSites.map((item) => (
+              <li key={item.label}>
+                {item.href.startsWith("/") ? (
+                  <Link to={item.href} className="text-sm text-white hover:text-primary-400 capitalize">
+                    <TranslatedText text={item.label} />
+                  </Link>
+                ) : (
+                  <a href={item.href} className="text-sm text-white hover:text-primary-400 capitalize">
                     <TranslatedText text={item.label} />
                   </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-white text-sm font-semibold mb-4">
-              <TranslatedText text="Get started" />
-            </p>
-            <ul className="space-y-2.5">
-              {["Cargo owners", "Fleet owners", "Drivers", "Brokers", "Lenders"].map((item) => (
-                <li key={item}>
-                  <Link to="/auth" className="text-primary-300/60 text-sm hover:text-primary-200 transition-colors">
-                    <TranslatedText text={item} />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-white text-sm font-semibold mb-4">
-              <TranslatedText text="Contact" />
-            </p>
-            <ul className="space-y-3.5">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-primary-400 shrink-0 mt-0.5" />
-                <span className="text-primary-300/60 text-sm">{contact.address}</span>
+                )}
               </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-primary-400 shrink-0" />
-                <a href={`tel:${contact.phone}`} className="text-primary-300/60 text-sm hover:text-primary-200 transition-colors">
-                  {contact.phone}
-                </a>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-primary-400 shrink-0" />
-                <a href={`mailto:${contact.email}`} className="text-primary-300/60 text-sm hover:text-primary-200 transition-colors">
-                  {contact.email}
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-primary-900 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-primary-400/50 text-xs">
-            © {new Date().getFullYear()} UrutiX. <TranslatedText text="All rights reserved." />
-          </p>
-          <div className="flex gap-5">
-            {["Privacy Policy", "Terms of Service", "Cookies"].map((item) => (
-              <a key={item} href="#" className="text-primary-400/50 text-xs hover:text-primary-300 transition-colors">
-                <TranslatedText text={item} />
-              </a>
             ))}
-          </div>
+            {["Cargo owners", "Fleet owners", "Drivers", "Brokers", "Lenders"].map((item) => (
+              <li key={item}>
+                <Link to="/auth" className="text-sm text-white hover:text-primary-400 capitalize">
+                  <TranslatedText text={item} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="flex flex-wrap items-center gap-x-10 gap-y-3 pt-8 border-t-2 border-white/10">
+          {["Terms & Conditions", "Privacy Policy", "Cookies"].map((item) => (
+            <a key={item} href="#" className="text-sm text-white hover:text-primary-400">
+              <TranslatedText text={item} />
+            </a>
+          ))}
         </div>
+        <p className="text-white text-xs uppercase mt-8">
+          © {new Date().getFullYear()} UrutiX. <TranslatedText text="All rights reserved." />
+        </p>
       </div>
     </footer>
   )
@@ -941,12 +1065,15 @@ export function LandingPage() {
     <div className="min-h-screen font-sans antialiased bg-white text-primary-900">
       <PublicNavbar />
       <Hero />
-      <AudiencesSection />
+      <TopDeals />
+      <GetDoingSection />
       <HowItWorksSection />
       <PlatformSection />
-      <FinanceSection />
+      <PromoCards />
       <MarketplaceSection />
-      <TrustSection />
+      <ExpandWorld />
+      <HelpBar />
+      <MostViewed />
       <CtaBand />
       <Footer />
     </div>

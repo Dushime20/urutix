@@ -95,6 +95,8 @@ const AdminAccountHub: React.FC = () => {
     phone: '',
     email: '',
     address: '',
+    workingHours: '',
+    chatPhone: '',
   });
   const [savingContact, setSavingContact] = useState(false);
 
@@ -150,6 +152,8 @@ const AdminAccountHub: React.FC = () => {
           phone: contactRes.data.phone || '',
           email: contactRes.data.email || '',
           address: contactRes.data.address || '',
+          workingHours: contactRes.data.workingHours || '',
+          chatPhone: contactRes.data.chatPhone || contactRes.data.phone || '',
         });
       }
     } catch (err) {
@@ -676,6 +680,24 @@ const AdminAccountHub: React.FC = () => {
                           value={contactSettings.address}
                           onChange={(e) => setContactSettings((c) => ({ ...c, address: e.target.value }))}
                           placeholder="Kigali, Rwanda · Nairobi, Kenya"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Chat / WhatsApp</label>
+                        <input
+                          className={inputCls}
+                          value={contactSettings.chatPhone}
+                          onChange={(e) => setContactSettings((c) => ({ ...c, chatPhone: e.target.value }))}
+                          placeholder="+250788309463"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Working hours</label>
+                        <input
+                          className={inputCls}
+                          value={contactSettings.workingHours}
+                          onChange={(e) => setContactSettings((c) => ({ ...c, workingHours: e.target.value }))}
+                          placeholder="Monday – Friday 8AM – 6PM"
                         />
                       </div>
                     </div>

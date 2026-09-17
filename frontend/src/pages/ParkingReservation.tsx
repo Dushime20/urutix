@@ -21,7 +21,7 @@ const ParkingReservationPage = () => {
         className="pointer-events-none select-none fixed inset-0 w-full h-full object-cover opacity-10 z-0"
       />
 
-      <main className="relative z-10 pt-24 lg:pt-28 pb-16">
+      <main className="relative z-10 pt-8 lg:pt-10 pb-16">
         <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             <div className="px-6 sm:px-8 pt-8 pb-4">
