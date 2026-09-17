@@ -19,7 +19,6 @@ import {
   UserRound,
   Landmark,
   ChevronRight,
-  ChevronLeft,
   MapPinned,
   FileCheck2,
   CreditCard,
@@ -285,10 +284,11 @@ function Hero() {
             style={{ backgroundImage: `url('${current.image}')` }}
           />
         </AnimatePresence>
-        <div className="absolute inset-0" style={{ boxShadow: "inset 0px -200px 100px 0px rgba(15,29,43,0.85)" }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-950/75 via-primary-950/35 to-transparent" />
+        <div className="absolute inset-0" style={{ boxShadow: "inset 0px -160px 80px 0px rgba(15,29,43,0.7)" }} />
 
-        <div className="relative z-10 h-full flex flex-col justify-end pb-36 lg:pb-40">
-          <div className="w-[84%] max-w-[574px] ml-[8%] mr-[8%]">
+        <div className="relative z-10 h-full flex flex-col justify-center">
+          <div className="w-[84%] max-w-[640px] ml-[8%] mr-[8%]">
             <p className="text-white text-sm lg:text-base leading-6 mb-2">
               <TranslatedText text={current.title === "UrutiX" ? "Logistics & embedded finance" : current.title} />
             </p>
@@ -321,23 +321,6 @@ function Hero() {
             )
           })}
         </div>
-
-        <button
-          type="button"
-          onClick={() => goTo(slide - 1)}
-          className="absolute z-20 left-3 top-1/2 -translate-y-1/2 w-10 h-10 text-white/80 hover:text-white"
-          aria-label="Previous slide"
-        >
-          <ChevronLeft className="w-8 h-8" />
-        </button>
-        <button
-          type="button"
-          onClick={() => goTo(slide + 1)}
-          className="absolute z-20 right-3 top-1/2 -translate-y-1/2 w-10 h-10 text-white/80 hover:text-white"
-          aria-label="Next slide"
-        >
-          <ChevronRight className="w-8 h-8" />
-        </button>
 
         <div className="absolute z-20 left-[2%] w-[96%] bottom-10 rounded-lg bg-white/30 backdrop-blur-[30px] px-6 py-6 text-center">
           <div className="flex flex-wrap items-center justify-center gap-3">
