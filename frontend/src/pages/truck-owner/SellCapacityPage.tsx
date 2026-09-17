@@ -3,6 +3,7 @@
  * Route: /dashboard/fleet/capacity
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -352,7 +353,7 @@ const SellCapacityPage: React.FC = () => {
         sortable: true,
         render: (_: unknown, row: CapacityBooking) => (
           <div>
-            <p className="ui-table-body">{compact(row.offeredPrice || row.freightAmount || 0)}</p>
+            <p className="ui-table-body">{compact(row.offeredPrice || row.freightAmount || 0, row.currencyCode || 'USD')}</p>
             <p className="ui-helper mt-0.5">{row.commissionRate}% fee · {compact(row.commissionAmount)}</p>
           </div>
         ),
@@ -894,143 +895,152 @@ const SellCapacityPage: React.FC = () => {
         </>
       )}
 
-      {detailBooking && (
-        <div className="fixed inset-0 z-[400] bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Cargo booking request</h3>
-                <p className="text-xs text-slate-500 mt-1 truncate">
-                  {detailBooking.truckPlate || 'Truck'} · {detailBooking.corridor || 'Leftover space'}
-                </p>
+      {detailBooking &&
+        createPortal(
+          <div className="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Cargo booking request</h3>
+                  <p className="text-xs text-slate-500 mt-1 truncate">
+                    {detailBooking.truckPlate || 'Truck'} · {detailBooking.corridor || 'Leftover space'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDetailBooking(null)}
+                  className="size-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700"
+                  aria-label="Close"
+                >
+                  <X size={16} />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setDetailBooking(null)}
-                className="size-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700"
-                aria-label="Close"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className="px-5 py-4 overflow-y-auto space-y-4 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge
-                  label={detailBooking.status.replaceAll('_', ' ')}
-                  variant={requestStatusVariant(detailBooking.status)}
-                />
-                <span className="text-xs text-slate-500">
-                  Requested {formatWhen(detailBooking.createdAt)}
-                </span>
-              </div>
+              <div className="px-5 py-4 overflow-y-auto space-y-4 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge
+                    label={detailBooking.status.replaceAll('_', ' ')}
+                    variant={requestStatusVariant(detailBooking.status)}
+                  />
+                  <span className="text-xs text-slate-500">
+                    Requested {formatWhen(detailBooking.createdAt)}
+                  </span>
+                </div>
 
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
-                <p className="ui-label inline-flex items-center gap-1.5">
-                  <Package size={12} /> Cargo details
-                </p>
-                <p className="font-semibold text-slate-900 dark:text-white">
-                  {detailBooking.load?.title || detailBooking.title || 'Leftover cargo'}
-                </p>
-                {detailBooking.load?.description ? (
-                  <p className="text-xs text-slate-500">{detailBooking.load.description}</p>
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+                  <p className="ui-label inline-flex items-center gap-1.5">
+                    <Package size={12} /> Cargo details
+                  </p>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {detailBooking.load?.title || detailBooking.title || 'Leftover cargo'}
+                  </p>
+                  {detailBooking.load?.description ? (
+                    <p className="text-xs text-slate-500">{detailBooking.load.description}</p>
+                  ) : null}
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="ui-label mb-0.5">Weight</p>
+                      <p className="font-medium text-slate-900 dark:text-white">
+                        {Math.round(detailBooking.load?.weightKg || detailBooking.weightKg).toLocaleString()} kg
+                      </p>
+                    </div>
+                    <div>
+                      <p className="ui-label mb-0.5">Volume</p>
+                      <p className="font-medium text-slate-900 dark:text-white">
+                        {detailBooking.load?.volumeM3 || detailBooking.volumeM3 || 0} m³
+                      </p>
+                    </div>
+                    <div>
+                      <p className="ui-label mb-0.5">Cargo type</p>
+                      <p className="font-medium text-slate-900 dark:text-white">
+                        {String(detailBooking.load?.cargoType || detailBooking.cargoType || 'GENERAL').replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="ui-label mb-0.5">Load status</p>
+                      <p className="font-medium text-slate-900 dark:text-white">
+                        {detailBooking.load?.status
+                          ? String(detailBooking.load.status).replace(/_/g, ' ')
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
+                  <p className="ui-label">Pickup & delivery</p>
+                  <p className="ui-body-small inline-flex items-start gap-1.5">
+                    <MapPin size={12} className="mt-0.5 shrink-0" />
+                    <span>
+                      {detailBooking.pickupLabel ||
+                        bookingPlace(detailBooking.load?.origin || detailBooking.origin)}
+                      <span className="block text-slate-500">{formatWhen(detailBooking.pickupDate)}</span>
+                    </span>
+                  </p>
+                  <p className="ui-body-small inline-flex items-start gap-1.5">
+                    <MapPin size={12} className="mt-0.5 shrink-0" />
+                    <span>
+                      {detailBooking.deliveryLabel ||
+                        bookingPlace(detailBooking.load?.destination || detailBooking.destination)}
+                      <span className="block text-slate-500">{formatWhen(detailBooking.deliveryDate)}</span>
+                    </span>
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
+                  <p className="ui-label">Offered price</p>
+                  <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white">
+                    {compact(
+                      detailBooking.offeredPrice || detailBooking.freightAmount || 0,
+                      detailBooking.currencyCode || 'USD',
+                    )}
+                  </p>
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Match fee ({detailBooking.commissionRate}%)</span>
+                    <span className="tabular-nums">
+                      {compact(detailBooking.commissionAmount, detailBooking.currencyCode || 'USD')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <span>Cargo owner total</span>
+                    <span className="tabular-nums">
+                      {compact(detailBooking.totalDue, detailBooking.currencyCode || 'USD')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setDetailBooking(null)}
+                  className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium flex-1"
+                >
+                  Close
+                </button>
+                {detailBooking.status === 'REQUESTED' ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={actingId === detailBooking.id}
+                      onClick={() => void cancelRequest(detailBooking)}
+                      className="h-10 px-3 rounded-lg border border-rose-200 text-rose-600 text-sm font-semibold flex-1 disabled:opacity-50"
+                    >
+                      {actingId === detailBooking.id ? 'Working…' : 'Cancel request'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actingId === detailBooking.id}
+                      onClick={() => void acceptRequest(detailBooking)}
+                      className="h-10 px-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold flex-1 disabled:opacity-50"
+                    >
+                      {actingId === detailBooking.id ? 'Working…' : 'Accept'}
+                    </button>
+                  </>
                 ) : null}
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <p className="ui-label mb-0.5">Weight</p>
-                    <p className="font-medium text-slate-900 dark:text-white">
-                      {Math.round(detailBooking.load?.weightKg || detailBooking.weightKg).toLocaleString()} kg
-                    </p>
-                  </div>
-                  <div>
-                    <p className="ui-label mb-0.5">Volume</p>
-                    <p className="font-medium text-slate-900 dark:text-white">
-                      {detailBooking.load?.volumeM3 || detailBooking.volumeM3 || 0} m³
-                    </p>
-                  </div>
-                  <div>
-                    <p className="ui-label mb-0.5">Cargo type</p>
-                    <p className="font-medium text-slate-900 dark:text-white">
-                      {String(detailBooking.load?.cargoType || detailBooking.cargoType || 'GENERAL').replace(/_/g, ' ')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="ui-label mb-0.5">Load status</p>
-                    <p className="font-medium text-slate-900 dark:text-white">
-                      {detailBooking.load?.status
-                        ? String(detailBooking.load.status).replace(/_/g, ' ')
-                        : '—'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
-                <p className="ui-label">Pickup & delivery</p>
-                <p className="ui-body-small inline-flex items-start gap-1.5">
-                  <MapPin size={12} className="mt-0.5 shrink-0" />
-                  <span>
-                    {detailBooking.pickupLabel ||
-                      bookingPlace(detailBooking.load?.origin || detailBooking.origin)}
-                    <span className="block text-slate-500">{formatWhen(detailBooking.pickupDate)}</span>
-                  </span>
-                </p>
-                <p className="ui-body-small inline-flex items-start gap-1.5">
-                  <MapPin size={12} className="mt-0.5 shrink-0" />
-                  <span>
-                    {detailBooking.deliveryLabel ||
-                      bookingPlace(detailBooking.load?.destination || detailBooking.destination)}
-                    <span className="block text-slate-500">{formatWhen(detailBooking.deliveryDate)}</span>
-                  </span>
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-2">
-                <p className="ui-label">Offered price</p>
-                <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white">
-                  {compact(detailBooking.offeredPrice || detailBooking.freightAmount || 0)}
-                </p>
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>Match fee ({detailBooking.commissionRate}%)</span>
-                  <span className="tabular-nums">{compact(detailBooking.commissionAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm font-semibold text-slate-900 dark:text-white pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <span>Cargo owner total</span>
-                  <span className="tabular-nums">{compact(detailBooking.totalDue)}</span>
-                </div>
               </div>
             </div>
-            <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setDetailBooking(null)}
-                className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium flex-1"
-              >
-                Close
-              </button>
-              {detailBooking.status === 'REQUESTED' ? (
-                <>
-                  <button
-                    type="button"
-                    disabled={actingId === detailBooking.id}
-                    onClick={() => void cancelRequest(detailBooking)}
-                    className="h-10 px-3 rounded-lg border border-rose-200 text-rose-600 text-sm font-semibold flex-1 disabled:opacity-50"
-                  >
-                    {actingId === detailBooking.id ? 'Working…' : 'Cancel request'}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={actingId === detailBooking.id}
-                    onClick={() => void acceptRequest(detailBooking)}
-                    className="h-10 px-3 rounded-lg bg-emerald-600 text-white text-sm font-semibold flex-1 disabled:opacity-50"
-                  >
-                    {actingId === detailBooking.id ? 'Working…' : 'Accept'}
-                  </button>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

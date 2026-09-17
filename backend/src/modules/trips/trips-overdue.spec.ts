@@ -97,7 +97,6 @@ describe('TripsService overdue workflow', () => {
     tripRepository.manager.transaction.mockImplementation(async (cb: any) => {
       const manager = {
         createQueryBuilder: () => ({
-          leftJoinAndSelect: jest.fn().mockReturnThis(),
           setLock: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnThis(),
           andWhere: jest.fn().mockReturnThis(),
@@ -105,10 +104,10 @@ describe('TripsService overdue workflow', () => {
             id: 'trip-1',
             tenantId: 'tenant-a',
             status: TripStatus.OVERDUE,
-            driver: { userId: 'other-driver' },
-            driverId: 'other-driver',
+            driverId: 'driver-row-other',
           }),
         }),
+        findOne: jest.fn().mockResolvedValue({ id: 'driver-row-other', userId: 'other-driver' }),
       };
       return cb(manager);
     });
@@ -168,7 +167,6 @@ describe('TripsService overdue workflow', () => {
       .mockImplementationOnce(async (cb: any) => {
         const manager = {
           createQueryBuilder: () => ({
-            leftJoinAndSelect: jest.fn().mockReturnThis(),
             setLock: jest.fn().mockReturnThis(),
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
@@ -185,7 +183,6 @@ describe('TripsService overdue workflow', () => {
       .mockImplementationOnce(async (cb: any) => {
         const manager = {
           createQueryBuilder: () => ({
-            leftJoinAndSelect: jest.fn().mockReturnThis(),
             setLock: jest.fn().mockReturnThis(),
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
@@ -202,7 +199,6 @@ describe('TripsService overdue workflow', () => {
       .mockImplementationOnce(async (cb: any) => {
         const manager = {
           createQueryBuilder: () => ({
-            leftJoinAndSelect: jest.fn().mockReturnThis(),
             setLock: jest.fn().mockReturnThis(),
             where: jest.fn().mockReturnThis(),
             andWhere: jest.fn().mockReturnThis(),
@@ -211,6 +207,12 @@ describe('TripsService overdue workflow', () => {
         };
         return cb(manager);
       });
+
+    tripRepository.createQueryBuilder = jest.fn(() => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({ ...overdueTrip, issuesReported: savedIssues || [] }),
+    }));
 
     await service.finalizeOverdueTransitions(['trip-1']);
     await service.finalizeOverdueTransitions(['trip-1']);

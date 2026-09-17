@@ -21,6 +21,7 @@ import {
   Camera,
   PenLine,
   CircleDollarSign,
+  Ban,
 } from 'lucide-react';
 import { tripsAPI, fleetAPI } from '../services/api';
 import api from '../services/api';
@@ -33,6 +34,7 @@ import ModernLoader from '../components/common/ModernLoader';
 import { useCurrencyFormat } from '../hooks/useCurrencyFormat';
 import { useAuth } from '../contexts/AuthContext';
 import { StandardDataTable, StatusBadge, type Column, type TableAction } from '../components/EnliteUI/Tables';
+import TripLifecycleActionModal, { type TripLifecycleAction } from '../components/trips/TripLifecycleActionModal';
 
 /**
  * Build a full URL for a backend-served file.
@@ -99,6 +101,23 @@ const TripManagement: React.FC = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [epod, setEpod] = useState<any>(null);
   const [epodLoading, setEpodLoading] = useState(false);
+  const [lifecycleAction, setLifecycleAction] = useState<TripLifecycleAction | null>(null);
+  const [lifecycleTrip, setLifecycleTrip] = useState<Trip | null>(null);
+
+  const isOperationalTrip = (status?: string) => {
+    const s = String(status || '').toUpperCase();
+    return s === 'PLANNED' || s === 'IN_PROGRESS' || s === 'DELAYED' || s === 'OVERDUE';
+  };
+
+  const isCompletableTrip = (status?: string) => {
+    const s = String(status || '').toUpperCase();
+    return s === 'IN_PROGRESS' || s === 'DELAYED' || s === 'OVERDUE';
+  };
+
+  const openLifecycleAction = (trip: Trip, action: TripLifecycleAction) => {
+    setLifecycleTrip(trip);
+    setLifecycleAction(action);
+  };
 
   const { data: tripsData, isLoading: loading, error } = useQuery({
     queryKey: ['trips'],
@@ -184,8 +203,12 @@ const TripManagement: React.FC = () => {
 
   // Filter Logic
   const filteredTrips = trips.filter((trip: Trip) => {
-    // Status Filter
-    if (filter !== 'all' && trip.status.toLowerCase() !== filter) return false;
+    const status = String(trip.status || '').toLowerCase();
+    if (filter === 'in_progress') {
+      if (!['in_progress', 'delayed', 'overdue'].includes(status)) return false;
+    } else if (filter !== 'all' && status !== filter) {
+      return false;
+    }
 
     // Search Filter
     if (search) {
@@ -343,6 +366,7 @@ const TripManagement: React.FC = () => {
       case 'PLANNED': return 'bg-amber-100 text-amber-700';
       case 'CANCELLED': return 'bg-rose-100 text-rose-700';
       case 'DELAYED': return 'bg-orange-100 text-orange-700';
+      case 'OVERDUE': return 'bg-rose-100 text-rose-700';
       default: return 'bg-slate-100 text-slate-600';
     }
   };
@@ -352,8 +376,9 @@ const TripManagement: React.FC = () => {
       case 'COMPLETED': return <CheckCircle className="text-emerald-500" size={16} />;
       case 'IN_PROGRESS': return <Truck className="text-blue-500" size={16} />;
       case 'PLANNED': return <Clock className="text-amber-500" size={16} />;
-      case 'CANCELLED': return <AlertTriangle className="text-rose-500" size={16} />;
+      case 'CANCELLED': return <Ban className="text-rose-500" size={16} />;
       case 'DELAYED': return <AlertTriangle className="text-orange-500" size={16} />;
+      case 'OVERDUE': return <AlertTriangle className="text-rose-500" size={16} />;
       default: return <Clock className="text-slate-400" size={16} />;
     }
   };
@@ -462,6 +487,22 @@ const TripManagement: React.FC = () => {
 
   const tripRowActions = useMemo<TableAction<Trip>[]>(() => [
     {
+      key: 'complete',
+      label: 'Complete Trip',
+      icon: <CheckCircle size={14} />,
+      variant: 'success',
+      hidden: (trip) => !isTruckOwner || !isCompletableTrip(trip.status),
+      onClick: (trip) => openLifecycleAction(trip, 'complete'),
+    },
+    {
+      key: 'cancel',
+      label: 'Stop Trip',
+      icon: <Ban size={14} />,
+      variant: 'danger',
+      hidden: (trip) => !isTruckOwner || !isOperationalTrip(trip.status),
+      onClick: (trip) => openLifecycleAction(trip, 'cancel'),
+    },
+    {
       key: 'epod',
       label: 'View ePOD',
       icon: <FileText size={14} />,
@@ -474,7 +515,7 @@ const TripManagement: React.FC = () => {
       icon: <Eye size={14} />,
       onClick: (trip) => handleSelectTrip(trip),
     },
-  ], []);
+  ], [isTruckOwner]);
 
   if (loading) {
     return <ModernLoader isLoading={true} type="dashboard" showStats={true} />;
@@ -491,7 +532,7 @@ const TripManagement: React.FC = () => {
           <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#345E85] dark:text-blue-400">Logistics</h2>
         </div>
         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Trip Management</h1>
-        <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Monitor active trips, schedule shipments, and track fleet performance.</p>
+        <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Monitor active trips, complete deliveries, or stop a trip if something happens during shipping.</p>
       </div>
 
       {/* Filters and View Toggle */}
@@ -512,7 +553,7 @@ const TripManagement: React.FC = () => {
           <div className="flex items-center gap-3 overflow-x-auto pb-1 lg:pb-0">
             {/* Status Filter */}
             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950 p-1 rounded-xl border border-slate-100 dark:border-slate-800">
-              {(['all', 'planned', 'in_progress', 'completed'] as const).map((statusOption) => (
+              {(['all', 'planned', 'in_progress', 'completed', 'cancelled'] as const).map((statusOption) => (
                 <button
                   key={statusOption}
                   onClick={() => setFilter(statusOption)}
@@ -661,6 +702,29 @@ const TripManagement: React.FC = () => {
                       {formatCurrency(trip.agreedPrice)}
                     </div>
                   </div>
+
+                  {isTruckOwner && (isCompletableTrip(trip.status) || isOperationalTrip(trip.status)) && (
+                    <div className="relative z-20 mt-4 flex gap-2">
+                      {isCompletableTrip(trip.status) && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); openLifecycleAction(trip, 'complete'); }}
+                          className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Complete
+                        </button>
+                      )}
+                      {isOperationalTrip(trip.status) && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); openLifecycleAction(trip, 'cancel'); }}
+                          className="flex-1 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-black uppercase tracking-widest"
+                        >
+                          Stop
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   <button
                     onClick={() => handleSelectTrip(trip)}
@@ -825,6 +889,9 @@ const TripManagement: React.FC = () => {
             const ownerRating = num(raw.cargoOwnerRating);
             const drvRating = num(raw.driverRating) ?? num(driver.rating);
             const issuesCount = Array.isArray(raw.issuesReported) ? raw.issuesReported.length : 0;
+            const lastStop = Array.isArray(raw.issuesReported)
+              ? [...raw.issuesReported].reverse().find((issue: any) => issue?.type === 'TRIP_CANCELLED')
+              : null;
 
             return (
               <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
@@ -834,6 +901,8 @@ const TripManagement: React.FC = () => {
                   "p-4 rounded-2xl border flex items-center justify-between",
                   selectedTrip.status === 'COMPLETED' ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
                   selectedTrip.status === 'IN_PROGRESS' ? "bg-blue-50 border-blue-100 text-blue-700" :
+                  selectedTrip.status === 'CANCELLED' ? "bg-rose-50 border-rose-100 text-rose-700" :
+                  selectedTrip.status === 'OVERDUE' || selectedTrip.status === 'DELAYED' ? "bg-orange-50 border-orange-100 text-orange-700" :
                   "bg-amber-50 border-amber-100 text-amber-700"
                 )}>
                   <div className="flex items-center gap-3">
@@ -1007,7 +1076,7 @@ const TripManagement: React.FC = () => {
                     <DR label="Fuel Efficiency" value={`${Number(fuelEff).toFixed(1)} L/100km`} />
                   </div>
                   {isTruckOwner &&
-                    ['PLANNED', 'IN_PROGRESS', 'DELAYED'].includes(
+                    ['PLANNED', 'IN_PROGRESS', 'DELAYED', 'OVERDUE'].includes(
                       String(selectedTrip.status || '').toUpperCase(),
                     ) && (
                       <button
@@ -1028,7 +1097,16 @@ const TripManagement: React.FC = () => {
                     <DR label="Cargo Owner Rating" value={ownerRating != null && ownerRating > 0 ? `${ownerRating} ⭐` : (String(selectedTrip.status).toUpperCase() === 'COMPLETED' ? 'Pending review' : 'Pending')} />
                     <DR label="Driver Rating" value={drvRating != null && drvRating > 0 ? `${Number(drvRating).toFixed(1)} ⭐` : 'Pending'} />
                     <DR label="Issues Reported" value={String(issuesCount)} />
+                    {lastStop && (
+                      <DR label="Stop Reason" value={lastStop.cancelReason || 'Stopped'} />
+                    )}
                   </div>
+                  {lastStop?.cancelDescription && (
+                    <div className="mt-2 p-3 bg-rose-50 rounded-xl border border-rose-100">
+                      <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Stop Circumstance</p>
+                      <p className="text-xs text-rose-700 leading-relaxed">{lastStop.cancelDescription}</p>
+                    </div>
+                  )}
                   {raw.notes && (
                     <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Notes</p>
@@ -1182,7 +1260,25 @@ const TripManagement: React.FC = () => {
                   </TSection>
                 )}
 
-                <div className="flex justify-end pt-4 border-t border-slate-50">
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4 border-t border-slate-50">
+                  {isTruckOwner && isOperationalTrip(selectedTrip.status) && (
+                    <button
+                      type="button"
+                      onClick={() => openLifecycleAction(selectedTrip, 'cancel')}
+                      className="px-6 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-sm transition-colors inline-flex items-center justify-center gap-2"
+                    >
+                      <Ban size={16} /> Stop Trip
+                    </button>
+                  )}
+                  {isTruckOwner && isCompletableTrip(selectedTrip.status) && (
+                    <button
+                      type="button"
+                      onClick={() => openLifecycleAction(selectedTrip, 'complete')}
+                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-colors inline-flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={16} /> Complete Trip
+                    </button>
+                  )}
                   <button onClick={() => { setSelectedTrip(null); setTruckDrivers([]); setSelectedDriverId(''); setShowAssignPanel(false); }}
                     className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors">
                     Close
@@ -1193,6 +1289,24 @@ const TripManagement: React.FC = () => {
           })()}
         </DialogContent>
       </Dialog>
+
+      {lifecycleAction && lifecycleTrip && (
+        <TripLifecycleActionModal
+          isOpen
+          action={lifecycleAction}
+          tripId={lifecycleTrip.id}
+          tripNumber={lifecycleTrip.tripNumber}
+          onClose={() => {
+            setLifecycleAction(null);
+            setLifecycleTrip(null);
+          }}
+          onSubmitted={() => {
+            queryClient.invalidateQueries({ queryKey: ['trips'] });
+            setSelectedTrip(null);
+            setEpod(null);
+          }}
+        />
+      )}
     </div>
   );
 };

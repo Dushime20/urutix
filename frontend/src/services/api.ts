@@ -115,7 +115,10 @@ export const tripsAPI = {
   getActive: () => api.get('/trips/active'),
   getOverdue: () => api.get('/trips/overdue'),
   start: (id: string) => api.post(`/trips/${id}/start`),
-  complete: (id: string) => api.post(`/trips/${id}/complete`),
+  complete: (id: string, data?: { circumstance?: string; notes?: string }) =>
+    api.post(`/trips/${id}/complete`, data || {}),
+  cancel: (id: string, data: { cancelReason: string; cancelDescription?: string }) =>
+    api.post(`/trips/${id}/cancel`, data),
   reportDelay: (
     id: string,
     data: { delayReason: string; delayDescription?: string; newEstimatedArrival: string },

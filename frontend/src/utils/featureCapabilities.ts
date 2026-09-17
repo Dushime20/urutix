@@ -35,7 +35,7 @@ export const FEATURE_CAPABILITIES: Record<FeatureArea, string[]> = {
     'bids:manage',
   ],
   matching: ['matching:request', 'matching:respond', 'matching:view_results'],
-  trips: ['trips:view', 'trips:view_assigned', 'trips:start', 'trips:complete'],
+  trips: ['trips:view', 'trips:view_assigned', 'trips:start', 'trips:complete', 'trips:cancel'],
   lending: ['lending:view', 'lending:view_own', 'lending:create_request', 'lending:approve'],
   brokers: ['brokers:view', 'brokers:assign'],
   customs: ['customs:view', 'customs:create', 'customs:update'],

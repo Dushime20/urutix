@@ -164,12 +164,14 @@ const TRIP_CARD_SELECT = [
   'trip.tenantId',
   'trip.truckId',
   'trip.loadId',
+  'trip.driverId',
   'trip.tripNumber',
   'trip.status',
   'trip.plannedStartTime',
   'trip.plannedEndTime',
   'trip.agreedPrice',
   'trip.currencyCode',
+  'trip.notes',
 ];
 const LOAD_CARD_SELECT = [
   'load.id',
@@ -677,7 +679,8 @@ export class CapacityService implements OnModuleInit {
       if (reason) throw new BadRequestException(reason);
       if (weightKg <= 0) throw new BadRequestException('Cargo weight is required to book leftover space');
 
-      const priced = this.quoteFromOffer(offer, weightKg, volumeM3, dto.offeredPrice);
+      const bookingCurrency = (dto.currencyCode || offer.currencyCode || 'USD').slice(0, 3).toUpperCase();
+      const priced = this.quoteFromOffer(offer, weightKg, volumeM3, dto.offeredPrice, bookingCurrency);
 
       const reserved = applyBookingToSlice(
         {
@@ -726,7 +729,7 @@ export class CapacityService implements OnModuleInit {
         freightAmount: priced.freightAmount,
         commissionRate: priced.commissionRate,
         commissionAmount: priced.commissionAmount,
-        currencyCode: offer.currencyCode,
+        currencyCode: bookingCurrency,
         commissionStatus: CapacityCommissionStatus.PENDING,
         status: CapacityBookingStatus.REQUESTED,
         origin,
@@ -766,8 +769,12 @@ export class CapacityService implements OnModuleInit {
       return this.presentBooking(booking, offer);
     });
 
-    await this.notifyDriverOfConfirmedCargo(presented, tenantId);
-    await this.notifyCargoOwnerOfDecision(presented, tenantId, 'accepted');
+    try {
+      await this.notifyDriverOfConfirmedCargo(presented, tenantId);
+      await this.notifyCargoOwnerOfDecision(presented, tenantId, 'accepted');
+    } catch (err: any) {
+      this.logger.warn(`Capacity accept notifications failed: ${err?.message}`);
+    }
     return presented;
   }
 
@@ -888,6 +895,7 @@ export class CapacityService implements OnModuleInit {
     load.assignedTruckId = truck.id;
     load.assignedCarrierId = offer.ownerId;
     load.offeredPrice = Number(booking.freightAmount);
+    load.currencyCode = booking.currencyCode || offer.currencyCode || load.currencyCode;
     load.metadata = {
       ...(load.metadata || {}),
       capacityOfferId: offer.id,
@@ -905,7 +913,7 @@ export class CapacityService implements OnModuleInit {
       payerId: cargoOwnerId,
       payeeId: offer.ownerId,
       amount: Number(booking.freightAmount),
-      currency: offer.currencyCode,
+      currency: booking.currencyCode || offer.currencyCode || 'USD',
       paymentMethod: PaymentMethod.BANK_TRANSFER,
       paymentType: PaymentType.TRIP_PAYMENT,
       status: PaymentStatus.PENDING,
@@ -919,7 +927,7 @@ export class CapacityService implements OnModuleInit {
       tripId: trip.id,
       payerId: cargoOwnerId,
       amount: Number(booking.commissionAmount),
-      currency: offer.currencyCode,
+      currency: booking.currencyCode || offer.currencyCode || 'USD',
       paymentMethod: PaymentMethod.BANK_TRANSFER,
       paymentType: PaymentType.SERVICE_FEE,
       status: PaymentStatus.PENDING,
@@ -938,8 +946,14 @@ export class CapacityService implements OnModuleInit {
     booking.freightPaymentId = savedFreight.id;
     booking.commissionPaymentId = savedCommission.id;
     booking.commissionStatus = CapacityCommissionStatus.PENDING;
-    trip.agreedPrice = roundMoney(Number(trip.agreedPrice || 0) + Number(booking.freightAmount));
-    await manager.save(trip);
+    const nextAgreed = roundMoney(Number(trip.agreedPrice || 0) + Number(booking.freightAmount));
+    trip.agreedPrice = nextAgreed;
+    await manager
+      .createQueryBuilder()
+      .update(Trip)
+      .set({ agreedPrice: nextAgreed })
+      .where('id = :id', { id: trip.id })
+      .execute();
     await manager.save(booking);
   }
 
@@ -1012,7 +1026,7 @@ export class CapacityService implements OnModuleInit {
       deliveryDate: delivery,
       loadValue: dto.loadValue || Number(booking.freightAmount),
       offeredPrice: Number(booking.freightAmount),
-      currencyCode: offer.currencyCode,
+      currencyCode: booking.currencyCode || offer.currencyCode,
       paymentTerms: PaymentTerms.NET_30,
       urgencyLevel: UrgencyLevel.NORMAL,
       packagingType: PackagingType.PALLETIZED,
@@ -1060,13 +1074,27 @@ export class CapacityService implements OnModuleInit {
     tenantId: string,
   ): Promise<Trip> {
     if (offer.tripId) {
-      const existing = await manager.findOne(Trip, { where: { id: offer.tripId, tenantId } });
+      // Explicit select only — never SELECT */save full Trip (PostGIS + delay columns break prod).
+      const existing = await manager
+        .createQueryBuilder(Trip, 'trip')
+        .select(TRIP_CARD_SELECT)
+        .where('trip.id = :id', { id: offer.tripId })
+        .andWhere('trip.tenantId = :tenantId', { tenantId })
+        .getOne();
       if (existing) {
-        if (!existing.driverId && truck.currentDriverId) {
-          existing.driverId = truck.currentDriverId;
-        }
+        const driverId = existing.driverId || truck.currentDriverId || null;
         this.attachExtraCargoStop(existing, offer, booking, load, truck);
-        return manager.save(existing);
+        await manager
+          .createQueryBuilder()
+          .update(Trip)
+          .set({
+            driverId,
+            notes: existing.notes || null,
+          })
+          .where('id = :id', { id: existing.id })
+          .execute();
+        existing.driverId = driverId;
+        return existing;
       }
     }
     const trip = manager.create(Trip, {
@@ -1079,7 +1107,7 @@ export class CapacityService implements OnModuleInit {
       plannedStartTime: offer.departureAt,
       plannedEndTime: offer.arrivalAt,
       agreedPrice: Number(booking.freightAmount),
-      currencyCode: offer.currencyCode,
+      currencyCode: booking.currencyCode || offer.currencyCode,
       notes: `Shared-capacity trip ${offer.origin.name} → ${offer.destination.name}`,
     });
     return manager.save(trip);
@@ -1192,7 +1220,13 @@ export class CapacityService implements OnModuleInit {
     return o.includes(q) || q.includes(o);
   }
 
-  private quoteFromOffer(offer: CapacityOffer, weightKg: number, volumeM3: number, offeredPrice?: number) {
+  private quoteFromOffer(
+    offer: CapacityOffer,
+    weightKg: number,
+    volumeM3: number,
+    offeredPrice?: number,
+    currencyCode?: string,
+  ) {
     const suggestedFreight = quoteFreight(this.toMatchInput(offer), weightKg, volumeM3);
     const freightAmount = resolveOfferedFreight(suggestedFreight, offeredPrice);
     const commission = quoteCommission(freightAmount, Number(offer.commissionRate));
@@ -1203,7 +1237,7 @@ export class CapacityService implements OnModuleInit {
       commissionRate: commission.rate,
       commissionAmount: commission.amount,
       totalDue: roundMoney(freightAmount + commission.amount),
-      currencyCode: offer.currencyCode,
+      currencyCode: (currencyCode || offer.currencyCode || 'USD').slice(0, 3).toUpperCase(),
       payer: 'CARGO_OWNER' as const,
       commissionPayee: 'PLATFORM',
       remainingWeightKg: Number(offer.remainingWeightKg),
@@ -1644,6 +1678,14 @@ export class CapacityService implements OnModuleInit {
   }
 
   private async notifyDriverOfConfirmedCargo(booking: any, tenantId: string) {
+    try {
+      await this.notifyDriverOfConfirmedCargoUnsafe(booking, tenantId);
+    } catch (err: any) {
+      this.logger.warn(`Driver leftover-cargo notification failed: ${err?.message}`);
+    }
+  }
+
+  private async notifyDriverOfConfirmedCargoUnsafe(booking: any, tenantId: string) {
     const truck = booking.truckId ? await this.findTruck({ id: booking.truckId, tenantId }) : null;
     const trip = booking.tripId
       ? await this.tripRepo.findOne({ where: { id: booking.tripId, tenantId }, select: ['id', 'driverId', 'tripNumber'] })

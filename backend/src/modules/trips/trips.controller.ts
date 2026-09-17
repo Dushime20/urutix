@@ -29,6 +29,8 @@ import { TripsService } from './trips.service';
 import { CreateTripDto, CreateTripResponseDto } from './dto/create-trip.dto';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { ReportTripDelayDto } from './dto/report-trip-delay.dto';
+import { CancelTripDto } from './dto/cancel-trip.dto';
+import { CompleteTripDto } from './dto/complete-trip.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/guards/roles.guard';
 import { UserRole } from '../../entities/user.entity';
@@ -354,31 +356,34 @@ export class TripsController {
   @RequirePermissions('trips:complete')
   @ApiOperation({ summary: 'Complete a trip', description: 'Mark a trip as COMPLETED' })
   @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
+  @ApiBody({ type: CompleteTripDto, required: false })
   @ApiOkResponse({ description: 'Trip completed successfully' })
-  async complete(@Param('id') id: string, @Request() req): Promise<ApiResponseDto> {
-    const trip = await this.tripsService.updateTripStatus(
+  async complete(
+    @Param('id') id: string,
+    @Body() body: CompleteTripDto = {},
+    @Request() req,
+  ): Promise<ApiResponseDto> {
+    const trip = await this.tripsService.completeTrip(
       id,
-      { status: TripStatus.COMPLETED, actualEndTime: new Date() },
       req.user.tenantId,
       {
         userId: req.user.userId,
         role: req.user.role,
         name: req.user.email,
       },
+      body,
     );
 
-    // Emit trip.completed event for notifications
     try {
       if (trip.load) {
         const pickupLocation = trip.load.locations?.find(loc => loc.type === 'PICKUP');
         const deliveryLocation = trip.load.locations?.find(loc => loc.type === 'DELIVERY');
-        
-        // Calculate duration if we have start and end times
+
         let duration = null;
         if (trip.actualStartTime && trip.actualEndTime) {
-          duration = (new Date(trip.actualEndTime).getTime() - new Date(trip.actualStartTime).getTime()) / 1000; // in seconds
+          duration = (new Date(trip.actualEndTime).getTime() - new Date(trip.actualStartTime).getTime()) / 1000;
         }
-        
+
         this.eventEmitter.emit('trip.completed', {
           tripId: trip.id,
           cargoOwnerId: trip.load.cargoOwnerId,
@@ -400,6 +405,36 @@ export class TripsController {
     }
 
     return { success: true, message: 'Trip completed successfully', data: trip, statusCode: 200, timestamp: new Date().toISOString() };
+  }
+
+  @Post(':id/cancel')
+  @UseGuards(PermissionsGuard)
+  @RequirePermissions('trips:cancel')
+  @ApiOperation({
+    summary: 'Stop / cancel a trip',
+    description:
+      'Stop a trip due to an event or circumstance during the shipping period (breakdown, accident, cargo damage, customer cancellation, etc.).',
+  })
+  @ApiParam({ name: 'id', description: 'Trip ID', example: 'trip-uuid' })
+  @ApiBody({ type: CancelTripDto })
+  @ApiOkResponse({ description: 'Trip stopped successfully' })
+  async cancel(
+    @Param('id') id: string,
+    @Body() dto: CancelTripDto,
+    @Request() req,
+  ): Promise<ApiResponseDto> {
+    const trip = await this.tripsService.cancelTrip(id, dto, req.user.tenantId, {
+      userId: req.user.userId,
+      role: req.user.role,
+      name: req.user.email,
+    });
+    return {
+      success: true,
+      message: 'Trip stopped successfully',
+      data: trip,
+      statusCode: 200,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Post(':id/start')

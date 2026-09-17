@@ -15,6 +15,8 @@ import {
   type CapacityQuote,
 } from '../../services/capacityApi';
 import { useCurrencyFormat } from '../../hooks/useCurrencyFormat';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import PaymentCurrencySelect from '../../components/common/PaymentCurrencySelect';
 import ModernLoader from '../../components/common/ModernLoader';
 import { TruckFullProfile } from '../../components/FleetDashboard/TruckFullProfile';
 
@@ -197,7 +199,8 @@ type ModalMode = 'details' | 'book' | null;
 const AvailableSpacePage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { compact } = useCurrencyFormat();
+  const { compact, formatIn, rates } = useCurrencyFormat();
+  const { preferredCurrency } = useCurrency();
   const [origin, setOrigin] = useState<CapacityPlace | null>(() => placeFromQuery(params, 'pickup'));
   const [destination, setDestination] = useState<CapacityPlace | null>(() => placeFromQuery(params, 'delivery'));
   const [pickupAt, setPickupAt] = useState(() => toDatetimeLocal(params.get('pickupAt')));
@@ -208,6 +211,7 @@ const AvailableSpacePage: React.FC = () => {
   const [cargos, setCargos] = useState<AssignableCargo[]>([]);
   const [selectedCargoId, setSelectedCargoId] = useState(params.get('loadId') || '');
   const [offeredPrice, setOfferedPrice] = useState(0);
+  const [offerCurrency, setOfferCurrency] = useState(preferredCurrency || 'USD');
   const [catalog, setCatalog] = useState<CapacityOffer[]>([]);
   const [offers, setOffers] = useState<CapacityOffer[]>([]);
   const [filtered, setFiltered] = useState(false);
@@ -220,6 +224,15 @@ const AvailableSpacePage: React.FC = () => {
   const [quoting, setQuoting] = useState(false);
   const [booking, setBooking] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const convertBetween = (amount: number, from: string, to: string) => {
+    if (!amount || from === to) return amount || 0;
+    const fromRate = from === 'USD' ? 1 : rates[from] ?? 1;
+    const toRate = to === 'USD' ? 1 : rates[to] ?? 1;
+    return Math.round(((amount / fromRate) * toRate) * 100) / 100;
+  };
+
+  const moneyInOffer = (amount: number) => formatIn(amount, offerCurrency, offerCurrency);
 
   const applyCargo = (cargo: AssignableCargo) => {
     setSelectedCargoId(cargo.id);
@@ -322,6 +335,8 @@ const AvailableSpacePage: React.FC = () => {
     setModalMode('book');
     setQuote(null);
     setOfferedPrice(0);
+    const currency = preferredCurrency || offer.currencyCode || 'USD';
+    setOfferCurrency(currency);
     try {
       const assignable = await capacityApi.assignableCargos();
       setCargos(assignable);
@@ -331,7 +346,7 @@ const AvailableSpacePage: React.FC = () => {
         null;
       if (preselected) {
         applyCargo(preselected);
-        await refreshQuote(offer, preselected);
+        await refreshQuote(offer, preselected, currency);
       } else {
         setSelectedCargoId('');
       }
@@ -340,7 +355,11 @@ const AvailableSpacePage: React.FC = () => {
     }
   };
 
-  const refreshQuote = async (offer: CapacityOffer, cargo: AssignableCargo) => {
+  const refreshQuote = async (
+    offer: CapacityOffer,
+    cargo: AssignableCargo,
+    currency = offerCurrency,
+  ) => {
     const kg = Number(cargo.weightKg) || 0;
     if (kg <= 0) {
       setQuote(null);
@@ -365,13 +384,20 @@ const AvailableSpacePage: React.FC = () => {
             : undefined,
       });
       setQuote(priced);
-      setOfferedPrice(Number(priced.suggestedFreight || priced.freightAmount) || 0);
+      const listingCurrency = priced.currencyCode || offer.currencyCode || 'USD';
+      const suggested = Number(priced.suggestedFreight || priced.freightAmount) || 0;
+      setOfferedPrice(convertBetween(suggested, listingCurrency, currency));
     } catch (err: any) {
       setQuote(null);
       toast.error(apiError(err, 'This leftover space cannot take that cargo'));
     } finally {
       setQuoting(false);
     }
+  };
+
+  const changeOfferCurrency = (code: string) => {
+    setOfferedPrice((prev) => convertBetween(prev, offerCurrency, code));
+    setOfferCurrency(code);
   };
 
   useEffect(() => {
@@ -426,6 +452,7 @@ const AvailableSpacePage: React.FC = () => {
         pickupDate: pickupAt ? new Date(pickupAt).toISOString() : undefined,
         deliveryDate: deliveryAt ? new Date(deliveryAt).toISOString() : undefined,
         offeredPrice,
+        currencyCode: offerCurrency,
       });
       toast.success('Request sent to the truck owner. They must confirm before the driver is assigned.');
       closeModal();
@@ -456,11 +483,14 @@ const AvailableSpacePage: React.FC = () => {
   );
 
   const offerPreview = useMemo(() => {
-    const freight = offeredPrice > 0 ? offeredPrice : Number(quote?.suggestedFreight || quote?.freightAmount || 0);
+    const listingCurrency = quote?.currencyCode || active?.currencyCode || 'USD';
+    const suggestedRaw = Number(quote?.suggestedFreight || quote?.freightAmount || 0);
+    const suggested = convertBetween(suggestedRaw, listingCurrency, offerCurrency);
+    const freight = offeredPrice > 0 ? offeredPrice : suggested;
     const rate = Number(quote?.commissionRate || 8);
     const fee = Math.round(((freight * rate) / 100) * 100) / 100;
-    return { freight, fee, total: Math.round((freight + fee) * 100) / 100, rate };
-  }, [offeredPrice, quote]);
+    return { freight, fee, total: Math.round((freight + fee) * 100) / 100, rate, suggested };
+  }, [offeredPrice, quote, offerCurrency, active?.currencyCode, rates]);
 
   const selectedCargo = useMemo(
     () => cargos.find((cargo) => cargo.id === selectedCargoId) || null,
@@ -651,7 +681,8 @@ const AvailableSpacePage: React.FC = () => {
                     <StatusPill>{prettyStatus(row.status)}</StatusPill>
                   </div>
                   <p className="text-xs text-slate-500 tabular-nums">
-                    Offered {compact(row.offeredPrice || row.freightAmount)} · {compact(row.commissionAmount)} fee
+                    Offered {compact(row.offeredPrice || row.freightAmount, row.currencyCode || 'USD')} ·{' '}
+                    {compact(row.commissionAmount, row.currencyCode || 'USD')} fee
                     {row.pickupLabel || row.origin?.name
                       ? ` · Pickup ${row.pickupLabel || row.origin?.name}`
                       : ''}
@@ -896,41 +927,49 @@ const AvailableSpacePage: React.FC = () => {
                 </div>
               ) : null}
 
-              <Field label="Your offered price">
-                <input
-                  type="number"
-                  min={1}
-                  value={offeredPrice || ''}
-                  onChange={(e) => setOfferedPrice(Number(e.target.value) || 0)}
-                  className={inputClass}
-                  disabled={!selectedCargoId}
+              <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(9rem,11rem)] gap-3">
+                <Field label={`Your offered price (${offerCurrency})`}>
+                  <input
+                    type="number"
+                    min={1}
+                    value={offeredPrice || ''}
+                    onChange={(e) => setOfferedPrice(Number(e.target.value) || 0)}
+                    className={inputClass}
+                    disabled={!selectedCargoId}
+                  />
+                </Field>
+                <PaymentCurrencySelect
+                  value={offerCurrency}
+                  onChange={changeOfferCurrency}
+                  label="Currency"
+                  layout="block"
                 />
-                <p className="ui-helper mt-1.5">
-                  {quoting
-                    ? 'Updating quote…'
-                    : quote
-                      ? `Suggested from listing: ${compact(quote.suggestedFreight || quote.freightAmount)}. Truck owner reviews your offer.`
-                      : 'Select cargo to get a suggested price.'}
-                </p>
-              </Field>
+              </div>
+              <p className="ui-helper -mt-1">
+                {quoting
+                  ? 'Updating quote…'
+                  : quote
+                    ? `Suggested from listing: ${moneyInOffer(offerPreview.suggested)}. Truck owner reviews your offer.`
+                    : 'Select cargo to get a suggested price.'}
+              </p>
 
               {selectedCargoId && quote ? (
                 <div className="space-y-2">
                   <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
                     <span>Offered freight</span>
                     <strong className="tabular-nums text-slate-900 dark:text-white">
-                      {compact(offerPreview.freight)}
+                      {moneyInOffer(offerPreview.freight)}
                     </strong>
                   </div>
                   <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
                     <span>Match fee ({offerPreview.rate}%)</span>
                     <strong className="tabular-nums text-slate-900 dark:text-white">
-                      {compact(offerPreview.fee)}
+                      {moneyInOffer(offerPreview.fee)}
                     </strong>
                   </div>
                   <div className="flex justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 font-semibold text-slate-900 dark:text-white">
                     <span>Total</span>
-                    <span className="tabular-nums">{compact(offerPreview.total)}</span>
+                    <span className="tabular-nums">{moneyInOffer(offerPreview.total)}</span>
                   </div>
                 </div>
               ) : null}

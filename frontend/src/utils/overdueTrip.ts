@@ -14,6 +14,34 @@ export const DELAY_REASONS = [
 
 export type DelayReason = (typeof DELAY_REASONS)[number];
 
+export const CANCEL_REASONS = [
+  'Vehicle Breakdown',
+  'Accident',
+  'Cargo Damaged',
+  'Cargo Lost or Stolen',
+  'Customer Cancelled',
+  'Consignee Refused Delivery',
+  'Weather / Force Majeure',
+  'Road Closure',
+  'Security Incident',
+  'Driver Unavailable',
+  'Border / Customs Refusal',
+  'Load Cancelled by Shipper',
+  'Other',
+] as const;
+
+export type CancelReason = (typeof CANCEL_REASONS)[number];
+
+export const COMPLETE_CIRCUMSTANCES = [
+  'Cargo delivered successfully',
+  'Delivered without ePOD / signature',
+  'Owner confirmed delivery',
+  'Partial delivery completed',
+  'Other',
+] as const;
+
+export type CompleteCircumstance = (typeof COMPLETE_CIRCUMSTANCES)[number];
+
 export const TRIP_OVERDUE_QUERY_KEYS = [
   'driver-current-trip',
   'driver-active-trips',

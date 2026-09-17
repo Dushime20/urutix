@@ -38,6 +38,7 @@ export interface CapacityOffer {
   remainingVolumeM3: number;
   allocatedWeightKg: number;
   floorPrice: number;
+  currencyCode?: string;
   pricePerTonne?: number | null;
   commissionRate: number;
   bookingMode: 'INSTANT' | 'REQUEST';

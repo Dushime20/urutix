@@ -301,6 +301,12 @@ export class QuoteCapacityDto {
   @IsNumber()
   @Min(1)
   offeredPrice?: number;
+
+  @ApiPropertyOptional({ description: 'ISO 4217 currency for the offered freight (defaults to offer currency)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(3)
+  currencyCode?: string;
 }
 
 export class BookCapacityDto extends QuoteCapacityDto {

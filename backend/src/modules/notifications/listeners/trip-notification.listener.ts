@@ -49,6 +49,19 @@ interface TripCompletedPayload {
   completedAt: Date;
 }
 
+interface TripCancelledPayload {
+  tripId: string;
+  driverId?: string;
+  driverName?: string;
+  cargoOwnerId?: string;
+  truckOwnerId?: string;
+  tenantId: string;
+  cargoTitle?: string;
+  cancelReason?: string;
+  cancelDescription?: string;
+  cancelledAt: Date;
+}
+
 interface TruckOwnerAcceptedPayload {
   assignmentId: string;
   tripId: string;
@@ -586,6 +599,86 @@ export class TripNotificationListener {
     } catch (error) {
       this.logger.error(
         `Failed to send trip completed notification: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  @OnEvent('trip.cancelled')
+  async handleTripCancelled(payload: TripCancelledPayload) {
+    this.logger.log(`Handling trip.cancelled event for trip ${payload.tripId}`);
+    const reason = payload.cancelReason || 'an operational circumstance';
+    const detail = payload.cancelDescription ? ` ${payload.cancelDescription}` : '';
+    const cargoLabel = payload.cargoTitle ? ` for "${payload.cargoTitle}"` : '';
+
+    const recipients: Array<{
+      id?: string;
+      title: string;
+      message: string;
+      actionUrl: string;
+    }> = [
+      {
+        id: payload.cargoOwnerId,
+        title: 'Trip Stopped',
+        message: `The trip${cargoLabel} was stopped due to ${reason}.${detail}`,
+        actionUrl: '/dashboard/loads',
+      },
+      {
+        id: payload.truckOwnerId,
+        title: 'Trip Stopped',
+        message: `Trip${cargoLabel} was stopped due to ${reason}.${detail}`,
+        actionUrl: '/dashboard/trips',
+      },
+      {
+        id: payload.driverId,
+        title: 'Trip Stopped',
+        message: `Your trip${cargoLabel} was stopped due to ${reason}.${detail} Return to base unless dispatched otherwise.`,
+        actionUrl: '/dashboard/driver/trips',
+      },
+    ];
+
+    try {
+      for (const recipient of recipients) {
+        if (!recipient.id || recipient.id === 'unknown') continue;
+        const notification = this.notificationRepository.create({
+          recipientId: recipient.id,
+          tenantId: payload.tenantId,
+          notificationType: NotificationType.TRIP_CANCELLED,
+          category: NotificationCategory.TRIP,
+          priority: NotificationPriority.HIGH,
+          title: recipient.title,
+          message: recipient.message,
+          shortMessage: 'Trip stopped',
+          entityType: EntityType.TRIP,
+          entityId: payload.tripId,
+          channels: [NotificationChannel.IN_APP, NotificationChannel.PUSH],
+          status: NotificationStatus.SENT,
+          isRead: false,
+          requiresAction: true,
+          actionUrl: recipient.actionUrl,
+          actionText: 'View Details',
+          metadata: {
+            tripId: payload.tripId,
+            cancelReason: payload.cancelReason,
+            cancelDescription: payload.cancelDescription,
+            cancelledAt: payload.cancelledAt,
+          },
+          userPreferences: {
+            emailEnabled: true,
+            smsEnabled: false,
+            pushEnabled: true,
+          },
+          analytics: {
+            openCount: 0,
+            clickCount: 0,
+          },
+        });
+        const saved = await this.notificationRepository.save(notification);
+        this.eventsGateway.emitNotification(recipient.id, saved);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send trip cancelled notification: ${error.message}`,
         error.stack,
       );
     }

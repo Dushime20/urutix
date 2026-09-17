@@ -3,6 +3,7 @@ import {
   applyCompleteTransition,
   applyDelayReport,
   applyOverdueTransition,
+  applyCancelTransition,
   DELAY_REASONS,
   formatDurationMs,
   hasOverdueTransitionRecord,
@@ -155,5 +156,34 @@ describe('trip-overdue.util', () => {
     expect(formatDurationMs(2 * 60 * 60 * 1000 + 15 * 60 * 1000)).toBe(
       '2 hours 15 minutes',
     );
+  });
+
+  it('stops an in-progress trip with a shipping circumstance', () => {
+    const trip = {
+      status: TripStatus.IN_PROGRESS,
+      issuesReported: [] as any[],
+      notes: undefined as string | undefined,
+    };
+    const result = applyCancelTransition(
+      trip,
+      {
+        cancelReason: 'Vehicle Breakdown',
+        cancelDescription: 'Engine failed near the border',
+        cancelledBy: 'owner-1',
+      },
+      now,
+    );
+    expect(result.changed).toBe(true);
+    expect(trip.status).toBe(TripStatus.CANCELLED);
+    expect(trip.issuesReported[0].type).toBe('TRIP_CANCELLED');
+    expect(trip.issuesReported[0].cancelReason).toBe('Vehicle Breakdown');
+    expect(trip.notes).toContain('Vehicle Breakdown');
+  });
+
+  it('rejects completing a cancelled trip', () => {
+    const trip = { status: TripStatus.CANCELLED };
+    const result = applyCompleteTransition(trip, now);
+    expect(result.changed).toBe(false);
+    expect(result.error).toMatch(/cancelled/i);
   });
 });

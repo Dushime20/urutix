@@ -538,6 +538,7 @@ export class CapabilityService {
       'cargo:publish': 'Publishing cargo is currently unavailable. Please contact your administrator for more information.',
       'trips:start': 'Starting trips is currently unavailable. Please contact your administrator for more information.',
       'trips:complete': 'Completing trips is currently unavailable. Please contact your administrator for more information.',
+      'trips:cancel': 'Stopping trips is currently unavailable. Please contact your administrator for more information.',
       'trips:assign_driver': 'Driver assignment is currently unavailable. Please contact your administrator for more information.',
       'brokers:assign': 'Broker assignment is currently unavailable. Please contact your administrator for more information.',
       'lending:create_request': 'Lender financing is currently unavailable. Please contact your administrator for more information.',

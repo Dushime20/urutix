@@ -12,6 +12,8 @@ import { CreateTripDto } from './dto/create-trip.dto';
 import { getEnvConfig } from '../../config/env.config';
 import { UpdateTripStatusDto } from './dto/update-trip-status.dto';
 import { ReportTripDelayDto } from './dto/report-trip-delay.dto';
+import { CancelTripDto } from './dto/cancel-trip.dto';
+import { CompleteTripDto } from './dto/complete-trip.dto';
 import { UserProfile } from '../../entities/user-profile.entity';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType, NotificationCategory, NotificationChannel, NotificationPriority, EntityType } from '../../entities/notification.entity';
@@ -23,14 +25,18 @@ import {
   AuditEntityType,
 } from '../../entities/audit-event.entity';
 import {
+  applyCancelTransition,
+  applyCompleteDetails,
   applyCompleteTransition,
   applyDelayReport,
   enrichTripOverdueFields,
   formatTripDateTime,
   hasOverdueTransitionRecord,
+  OPERATIONAL_TRIP_STATUSES,
   OVERDUE_ISSUE_TYPE,
   SYSTEM_ACTOR_ID,
   SYSTEM_ACTOR_NAME,
+  validateCompleteDetails,
 } from './trip-overdue.util';
 import { EmailService } from '../auth/services/email.service';
 import { EmergencyRematchService } from '../matching/services/emergency-rematch.service';
@@ -567,30 +573,8 @@ export class TripsService {
       this.sendLoadedNotification(savedTrip.id, tenantId).catch(err => console.error('Failed to send loaded notification', err));
     }
 
-    // Emergency re-match: trigger when post-acceptance trip is cancelled
-    if (
-      updateTripStatusDto.status === TripStatus.CANCELLED &&
-      [TripStatus.PLANNED, TripStatus.IN_PROGRESS, TripStatus.OVERDUE, TripStatus.DELAYED].includes(oldStatus) &&
-      this.emergencyRematchService
-    ) {
-      this.updateTruckAndDriverOnEnd(savedTrip).catch(err =>
-        this.logger.error(`Failed to revert truck/driver status on cancel: ${err.message}`, err.stack)
-      );
-      this.availabilityService?.releaseReservation(savedTrip.id, 'Trip cancelled').catch(err =>
-        this.logger.error(`Failed to release reservation on cancel: ${err.message}`)
-      );
-      this.logger.warn(`Post-acceptance cancellation detected for trip ${savedTrip.id} — triggering emergency rematch`);
-      this.emergencyRematchService.triggerEmergencyRematch(savedTrip.id).catch(err =>
-        this.logger.error(`Emergency rematch failed for trip ${savedTrip.id}: ${err.message}`)
-      );
-      if (savedTrip.truckId) {
-        const truck = await this.truckRepository.findOne({ where: { id: savedTrip.truckId } });
-        if (truck?.ownerId) {
-          this.emergencyRematchService.applyCancellationPenalty(truck.ownerId, tenantId).catch(err =>
-            this.logger.error(`Penalty application failed: ${err.message}`)
-          );
-        }
-      }
+    if (updateTripStatusDto.status === TripStatus.CANCELLED) {
+      this.triggerCancellationEffects(savedTrip, oldStatus, tenantId);
     }
 
     return enrichTripOverdueFields(savedTrip) as Trip;
@@ -604,7 +588,13 @@ export class TripsService {
     id: string,
     tenantId: string,
     actor?: { userId?: string; name?: string; role?: string },
+    details?: CompleteTripDto,
   ): Promise<Trip> {
+    const detailsError = validateCompleteDetails(details || {});
+    if (detailsError) {
+      throw new BadRequestException(detailsError);
+    }
+
     const savedTrip = await this.tripRepository.manager.transaction(async (manager) => {
       const trip = await manager
         .createQueryBuilder(Trip, 'trip')
@@ -628,15 +618,29 @@ export class TripsService {
       }
       // Never overwrite the original expected end time.
       trip.plannedEndTime = plannedEndTime;
+      applyCompleteDetails(
+        trip,
+        {
+          circumstance: details?.circumstance,
+          notes: details?.notes,
+          completedBy: actor?.userId || SYSTEM_ACTOR_ID,
+        },
+        new Date(),
+      );
       const saved = await manager.save(Trip, trip);
+      const fleetRole = ['TRUCK_OWNER', 'FLEET_MANAGER', 'FLEET_DISPATCHER', 'FLEET_OWNER'].includes(
+        String(actor?.role || '').toUpperCase(),
+      );
       await this.recordTripStatusAudit(
         saved,
         oldStatus,
         TripStatus.COMPLETED,
         actor,
         oldStatus === TripStatus.OVERDUE
-          ? 'Driver completed an overdue trip'
-          : 'Driver confirmed completion',
+          ? `${fleetRole ? 'Fleet owner' : 'Driver'} completed an overdue trip`
+          : fleetRole
+            ? 'Fleet owner confirmed completion'
+            : 'Driver confirmed completion',
         manager.getRepository(AuditEvent),
       );
       return saved;
@@ -666,6 +670,60 @@ export class TripsService {
     }
 
     return enrichTripOverdueFields(savedTrip) as Trip;
+  }
+
+  async cancelTrip(
+    id: string,
+    dto: CancelTripDto,
+    tenantId: string,
+    actor?: { userId?: string; name?: string; role?: string },
+  ): Promise<Trip> {
+    const saved = await this.tripRepository.manager.transaction(async (manager) => {
+      const trip = await manager
+        .createQueryBuilder(Trip, 'trip')
+        .setLock('pessimistic_write')
+        .where('trip.id = :id', { id })
+        .andWhere('trip.tenantId = :tenantId', { tenantId })
+        .getOne();
+
+      if (!trip) {
+        throw new NotFoundException('Trip not found');
+      }
+
+      const oldStatus = trip.status;
+      const result = applyCancelTransition(
+        trip,
+        {
+          cancelReason: dto.cancelReason,
+          cancelDescription: dto.cancelDescription,
+          cancelledBy: actor?.userId || SYSTEM_ACTOR_ID,
+        },
+        new Date(),
+      );
+      if (result.error) {
+        throw new BadRequestException(result.error);
+      }
+      if (!result.changed) {
+        return { trip, oldStatus, changed: false };
+      }
+
+      const savedTrip = await manager.save(Trip, trip);
+      await this.recordTripStatusAudit(
+        savedTrip,
+        oldStatus,
+        TripStatus.CANCELLED,
+        actor,
+        `Trip stopped: ${dto.cancelReason}${dto.cancelDescription ? ` — ${dto.cancelDescription}` : ''}`,
+        manager.getRepository(AuditEvent),
+      );
+      return { trip: savedTrip, oldStatus, changed: true };
+    });
+
+    if (saved.changed) {
+      this.triggerCancellationEffects(saved.trip, saved.oldStatus, tenantId);
+    }
+
+    return enrichTripOverdueFields(saved.trip) as Trip;
   }
 
   async getOverdueTrips(
@@ -706,7 +764,6 @@ export class TripsService {
     const savedTrip = await this.tripRepository.manager.transaction(async (manager) => {
       const trip = await manager
         .createQueryBuilder(Trip, 'trip')
-        .leftJoinAndSelect('trip.driver', 'driver')
         .setLock('pessimistic_write')
         .where('trip.id = :id', { id })
         .andWhere('trip.tenantId = :tenantId', { tenantId })
@@ -717,7 +774,14 @@ export class TripsService {
       }
 
       if (actor.role === UserRole.DRIVER) {
-        const assigned = trip.driver?.userId === actor.userId || trip.driverId === actor.userId;
+        let assigned = trip.driverId === actor.userId;
+        if (!assigned && trip.driverId) {
+          const driver = await manager.findOne(Driver, {
+            where: { id: trip.driverId },
+            select: ['id', 'userId'],
+          });
+          assigned = driver?.userId === actor.userId;
+        }
         if (!assigned) {
           throw new ForbiddenException('You can only report a delay on your assigned trip');
         }
@@ -784,11 +848,9 @@ export class TripsService {
     for (const tripId of tripIds) {
       try {
         const finalized = await this.tripRepository.manager.transaction(async (manager) => {
+          // Lock the trip row only — Postgres rejects FOR UPDATE with LEFT JOIN nullable sides.
           const trip = await manager
             .createQueryBuilder(Trip, 'trip')
-            .leftJoinAndSelect('trip.driver', 'driver')
-            .leftJoinAndSelect('trip.truck', 'truck')
-            .leftJoinAndSelect('trip.load', 'load')
             .setLock('pessimistic_write')
             .where('trip.id = :id', { id: tripId })
             .andWhere('trip.status = :status', { status: TripStatus.OVERDUE })
@@ -830,7 +892,15 @@ export class TripsService {
 
         if (!finalized) continue;
 
-        await this.emitTripOverdueEvent(finalized);
+        const withRelations = await this.tripRepository
+          .createQueryBuilder('trip')
+          .leftJoinAndSelect('trip.driver', 'driver')
+          .leftJoinAndSelect('trip.truck', 'truck')
+          .leftJoinAndSelect('trip.load', 'load')
+          .where('trip.id = :id', { id: finalized.id })
+          .getOne();
+
+        await this.emitTripOverdueEvent(withRelations || finalized);
         this.trackingGateway?.broadcastTripStatus(finalized.id, {
           status: TripStatus.OVERDUE,
           plannedEndTime: finalized.plannedEndTime,
@@ -1321,6 +1391,89 @@ export class TripsService {
       this.logger.log(`Emitted trip.completed event for trip ${trip.id}`);
     } catch (error) {
       this.logger.error(`Failed to emit trip.completed event: ${error.message}`, error.stack);
+    }
+  }
+
+  private triggerCancellationEffects(
+    savedTrip: Trip,
+    oldStatus: TripStatus | string,
+    tenantId: string,
+  ): void {
+    if (!OPERATIONAL_TRIP_STATUSES.includes(oldStatus as TripStatus)) {
+      return;
+    }
+
+    this.updateTruckAndDriverOnEnd(savedTrip).catch((err) =>
+      this.logger.error(`Failed to revert truck/driver status on cancel: ${err.message}`, err.stack),
+    );
+    this.availabilityService?.releaseReservation(savedTrip.id, 'Trip cancelled').catch((err) =>
+      this.logger.error(`Failed to release reservation on cancel: ${err.message}`),
+    );
+    this.emitTripCancelledEvent(savedTrip).catch((err) =>
+      this.logger.error(`Failed to emit trip.cancelled event: ${err.message}`, err.stack),
+    );
+    this.trackingGateway
+      ?.broadcastTripStatus(savedTrip.id, {
+        status: TripStatus.CANCELLED,
+        actualEndTime: savedTrip.actualEndTime,
+      })
+      .catch?.(() => undefined);
+
+    if (!this.emergencyRematchService) return;
+
+    this.logger.warn(
+      `Post-acceptance cancellation detected for trip ${savedTrip.id} — triggering emergency rematch`,
+    );
+    this.emergencyRematchService.triggerEmergencyRematch(savedTrip.id).catch((err) =>
+      this.logger.error(`Emergency rematch failed for trip ${savedTrip.id}: ${err.message}`),
+    );
+    if (savedTrip.truckId) {
+      this.truckRepository
+        .findOne({ where: { id: savedTrip.truckId } })
+        .then((truck) => {
+          if (truck?.ownerId) {
+            return this.emergencyRematchService!.applyCancellationPenalty(truck.ownerId, tenantId);
+          }
+        })
+        .catch((err) => this.logger.error(`Penalty application failed: ${err.message}`));
+    }
+  }
+
+  private async emitTripCancelledEvent(trip: Trip): Promise<void> {
+    try {
+      const [load, truck, driver] = await Promise.all([
+        trip.loadId ? this.loadRepository.findOne({ where: { id: trip.loadId } }) : null,
+        trip.truckId ? this.truckRepository.findOne({ where: { id: trip.truckId } }) : null,
+        trip.driverId
+          ? this.userRepository.findOne({ where: { id: trip.driverId }, relations: ['profile'] })
+          : null,
+      ]);
+
+      const driverName = driver?.profile
+        ? `${driver.profile.firstName || ''} ${driver.profile.lastName || ''}`.trim() || driver.email
+        : 'Driver';
+
+      const cancelIssue = Array.isArray(trip.issuesReported)
+        ? [...trip.issuesReported].reverse().find((issue) => issue?.type === 'TRIP_CANCELLED')
+        : null;
+
+      this.eventEmitter.emit('trip.cancelled', {
+        tripId: trip.id,
+        loadId: trip.loadId,
+        driverId: trip.driverId,
+        driverName,
+        cargoOwnerId: load?.cargoOwnerId,
+        truckOwnerId: truck?.ownerId,
+        tenantId: trip.tenantId,
+        cargoTitle: load?.title || load?.cargoType,
+        cancelReason: cancelIssue?.cancelReason,
+        cancelDescription: cancelIssue?.cancelDescription,
+        cancelledAt: trip.actualEndTime || new Date(),
+      });
+
+      this.logger.log(`Emitted trip.cancelled event for trip ${trip.id}`);
+    } catch (error) {
+      this.logger.error(`Failed to emit trip.cancelled event: ${error.message}`, error.stack);
     }
   }
 

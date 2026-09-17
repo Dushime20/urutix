@@ -6,6 +6,8 @@ export const SYSTEM_ACTOR_NAME = 'SYSTEM';
 
 export const OVERDUE_ISSUE_TYPE = 'OVERDUE_TRANSITION';
 export const DELAY_REPORT_ISSUE_TYPE = 'DELAY_REPORT';
+export const TRIP_CANCEL_ISSUE_TYPE = 'TRIP_CANCELLED';
+export const TRIP_COMPLETE_ISSUE_TYPE = 'TRIP_COMPLETED';
 
 export const OVERDUE_BATCH_SIZE = 100;
 
@@ -24,6 +26,36 @@ export const DELAY_REASONS = [
 ] as const;
 
 export type DelayReason = (typeof DELAY_REASONS)[number];
+
+/** Circumstances that can force a trip to stop during the shipping period. */
+export const CANCEL_REASONS = [
+  'Vehicle Breakdown',
+  'Accident',
+  'Cargo Damaged',
+  'Cargo Lost or Stolen',
+  'Customer Cancelled',
+  'Consignee Refused Delivery',
+  'Weather / Force Majeure',
+  'Road Closure',
+  'Security Incident',
+  'Driver Unavailable',
+  'Border / Customs Refusal',
+  'Load Cancelled by Shipper',
+  'Other',
+] as const;
+
+export type CancelReason = (typeof CANCEL_REASONS)[number];
+
+/** Why a fleet owner is marking a trip complete without driver ePOD. */
+export const COMPLETE_CIRCUMSTANCES = [
+  'Cargo delivered successfully',
+  'Delivered without ePOD / signature',
+  'Owner confirmed delivery',
+  'Partial delivery completed',
+  'Other',
+] as const;
+
+export type CompleteCircumstance = (typeof COMPLETE_CIRCUMSTANCES)[number];
 
 /** Trip is still occupying the truck/driver until completed or cancelled. */
 export const OPERATIONAL_TRIP_STATUSES: TripStatus[] = [
@@ -68,6 +100,7 @@ export interface OverdueMutableTrip {
   delayDescription?: string | null;
   delayReportedAt?: Date | string | null;
   delayReportedBy?: string | null;
+  notes?: string | null;
 }
 
 export interface DelayReportInput {
@@ -75,6 +108,18 @@ export interface DelayReportInput {
   delayDescription?: string;
   newEstimatedArrival: Date | string;
   reportedBy: string;
+}
+
+export interface CancelTripInput {
+  cancelReason: string;
+  cancelDescription?: string;
+  cancelledBy: string;
+}
+
+export interface CompleteTripDetailsInput {
+  circumstance?: string;
+  notes?: string;
+  completedBy: string;
 }
 
 export interface TransitionResult {
@@ -231,6 +276,106 @@ export function applyCompleteTransition(
   trip.actualEndTime = now;
   trip.completedAt = now;
   trip.onTimePerformance = !completedLate;
+  return { changed: true };
+}
+
+export function validateCancelReport(input: {
+  cancelReason?: string;
+  cancelDescription?: string;
+}): string | null {
+  const reason = (input.cancelReason || '').trim();
+  if (!reason) return 'A stop reason is required';
+  if (!(CANCEL_REASONS as readonly string[]).includes(reason)) {
+    return 'Invalid stop reason';
+  }
+  if (reason === 'Other' && !(input.cancelDescription || '').trim()) {
+    return 'Please describe the circumstance when the reason is Other';
+  }
+  return null;
+}
+
+export function validateCompleteDetails(input: {
+  circumstance?: string;
+  notes?: string;
+}): string | null {
+  const circumstance = (input.circumstance || '').trim();
+  if (!circumstance) return null;
+  if (!(COMPLETE_CIRCUMSTANCES as readonly string[]).includes(circumstance)) {
+    return 'Invalid completion circumstance';
+  }
+  if (circumstance === 'Other' && !(input.notes || '').trim()) {
+    return 'Please describe the circumstance when Other is selected';
+  }
+  return null;
+}
+
+export function applyCompleteDetails(
+  trip: OverdueMutableTrip,
+  input: CompleteTripDetailsInput,
+  now: Date = new Date(),
+): void {
+  const circumstance = (input.circumstance || '').trim();
+  const notes = (input.notes || '').trim();
+  if (!circumstance && !notes) return;
+
+  const issues = Array.isArray(trip.issuesReported) ? [...trip.issuesReported] : [];
+  issues.push({
+    type: TRIP_COMPLETE_ISSUE_TYPE,
+    circumstance: circumstance || null,
+    notes: notes || null,
+    completedBy: input.completedBy,
+    at: now.toISOString(),
+  });
+  trip.issuesReported = issues;
+
+  if (notes) {
+    const prefix = circumstance ? `[${circumstance}] ${notes}` : notes;
+    trip.notes = trip.notes ? `${trip.notes}\n${prefix}` : prefix;
+  } else if (circumstance) {
+    trip.notes = trip.notes ? `${trip.notes}\n[${circumstance}]` : `[${circumstance}]`;
+  }
+}
+
+export function applyCancelTransition(
+  trip: OverdueMutableTrip,
+  input: CancelTripInput,
+  now: Date = new Date(),
+): TransitionResult {
+  const validationError = validateCancelReport(input);
+  if (validationError) return { changed: false, error: validationError };
+
+  if (trip.status === TripStatus.COMPLETED) {
+    return { changed: false, error: 'Cannot stop a completed trip' };
+  }
+  if (trip.status === TripStatus.CANCELLED) {
+    return { changed: false };
+  }
+  if (!OPERATIONAL_TRIP_STATUSES.includes(trip.status as TripStatus)) {
+    return {
+      changed: false,
+      error: `Cannot stop a trip in status ${trip.status}`,
+    };
+  }
+
+  const previous = trip.status;
+  trip.status = TripStatus.CANCELLED;
+  trip.actualEndTime = now;
+
+  const reason = input.cancelReason.trim();
+  const description = (input.cancelDescription || '').trim() || null;
+  const issues = Array.isArray(trip.issuesReported) ? [...trip.issuesReported] : [];
+  issues.push({
+    type: TRIP_CANCEL_ISSUE_TYPE,
+    previousStatus: previous,
+    cancelReason: reason,
+    cancelDescription: description,
+    cancelledBy: input.cancelledBy,
+    at: now.toISOString(),
+  });
+  trip.issuesReported = issues;
+
+  const note = description ? `[Stopped: ${reason}] ${description}` : `[Stopped: ${reason}]`;
+  trip.notes = trip.notes ? `${trip.notes}\n${note}` : note;
   return { changed: true };
 }
 
