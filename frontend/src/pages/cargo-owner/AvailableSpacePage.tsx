@@ -188,6 +188,11 @@ const formatWindow = (from?: string | null, to?: string | null) => {
   return `${formatWhen(from)} → ${formatWhen(to)}`;
 };
 
+const placeLabel = (place?: CapacityPlace | null) =>
+  place?.name || place?.city || place?.address || '—';
+
+type ModalMode = 'details' | 'book' | null;
+
 const AvailableSpacePage: React.FC = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -209,10 +214,10 @@ const AvailableSpacePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [active, setActive] = useState<CapacityOffer | null>(null);
+  const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [quote, setQuote] = useState<CapacityQuote | null>(null);
+  const [quoting, setQuoting] = useState(false);
   const [booking, setBooking] = useState(false);
-
-  const loadId = selectedCargoId || params.get('loadId') || undefined;
 
   const applyCargo = (cargo: AssignableCargo) => {
     setSelectedCargoId(cargo.id);
@@ -240,7 +245,6 @@ const AvailableSpacePage: React.FC = () => {
       pickupAt: pickupAt ? new Date(pickupAt).toISOString() : undefined,
       weightKg: weightKg > 0 ? weightKg : undefined,
       volumeM3: volumeM3 > 0 ? volumeM3 : undefined,
-      loadId,
     };
   };
 
@@ -252,8 +256,7 @@ const AvailableSpacePage: React.FC = () => {
         destination?.city ||
         pickupAt ||
         weightKg > 0 ||
-        volumeM3 > 0 ||
-        loadId,
+        volumeM3 > 0,
     );
 
   const showCatalog = (rows: CapacityOffer[]) => {
@@ -283,9 +286,80 @@ const AvailableSpacePage: React.FC = () => {
     setOrigin(null);
     setDestination(null);
     setPickupAt('');
+    setDeliveryAt('');
     setWeightKg(0);
     setVolumeM3(0);
     showCatalog(catalog);
+  };
+
+  const closeModal = () => {
+    setActive(null);
+    setModalMode(null);
+    setQuote(null);
+    setQuoting(false);
+  };
+
+  const openDetails = (offer: CapacityOffer) => {
+    setActive(offer);
+    setModalMode('details');
+    setQuote(null);
+  };
+
+  const openBook = async (offer: CapacityOffer) => {
+    setActive(offer);
+    setModalMode('book');
+    setQuote(null);
+    setOfferedPrice(0);
+    try {
+      const assignable = await capacityApi.assignableCargos();
+      setCargos(assignable);
+      const preselected =
+        assignable.find((cargo) => cargo.id === selectedCargoId) ||
+        assignable.find((cargo) => cargo.id === params.get('loadId')) ||
+        null;
+      if (preselected) {
+        applyCargo(preselected);
+        await refreshQuote(offer, preselected);
+      } else {
+        setSelectedCargoId('');
+      }
+    } catch (err: any) {
+      toast.error(apiError(err, 'Could not load unassigned cargo'));
+    }
+  };
+
+  const refreshQuote = async (offer: CapacityOffer, cargo: AssignableCargo) => {
+    const kg = Number(cargo.weightKg) || 0;
+    if (kg <= 0) {
+      setQuote(null);
+      return;
+    }
+    setQuoting(true);
+    try {
+      const priced = await capacityApi.quote(offer.id, {
+        weightKg: kg,
+        volumeM3: Number(cargo.volumeM3) || 0,
+        cargoType: cargo.cargoType || 'GENERAL',
+        origin:
+          cargo.origin?.lat != null && cargo.origin?.lng != null ? cargo.origin : undefined,
+        destination:
+          cargo.destination?.lat != null && cargo.destination?.lng != null
+            ? cargo.destination
+            : undefined,
+        pickupAt: cargo.pickupDate
+          ? new Date(cargo.pickupDate).toISOString()
+          : pickupAt
+            ? new Date(pickupAt).toISOString()
+            : undefined,
+      });
+      setQuote(priced);
+      setOfferedPrice(Number(priced.suggestedFreight || priced.freightAmount) || 0);
+    } catch (err: any) {
+      setQuote(null);
+      toast.error(apiError(err, 'This leftover space cannot take that cargo'));
+    } finally {
+      setQuoting(false);
+    }
   };
 
   useEffect(() => {
@@ -317,36 +391,10 @@ const AvailableSpacePage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const openQuote = async (offer: CapacityOffer) => {
-    if (!selectedCargoId) {
-      toast.error('Assign a cargo to this leftover-space truck before booking');
-      return;
-    }
-    if (weightKg <= 0) {
-      toast.error('Enter cargo weight to book leftover space on this trip');
-      return;
-    }
-    try {
-      const priced = await capacityApi.quote(offer.id, {
-        weightKg,
-        volumeM3,
-        cargoType: 'GENERAL',
-        origin: origin?.lat != null && origin?.lng != null ? origin : undefined,
-        destination: destination?.lat != null && destination?.lng != null ? destination : undefined,
-        pickupAt: pickupAt ? new Date(pickupAt).toISOString() : undefined,
-      });
-      setActive(offer);
-      setQuote(priced);
-      setOfferedPrice(Number(priced.suggestedFreight || priced.freightAmount) || 0);
-    } catch (err: any) {
-      toast.error(apiError(err, 'This leftover space cannot take that cargo'));
-    }
-  };
-
   const confirmBook = async () => {
     if (!active) return;
     if (!selectedCargoId) {
-      toast.error('Assign a cargo to this leftover-space truck before booking');
+      toast.error('Select an unassigned cargo to book this leftover space');
       return;
     }
     if (offeredPrice <= 0) {
@@ -368,8 +416,7 @@ const AvailableSpacePage: React.FC = () => {
         offeredPrice,
       });
       toast.success('Request sent to the truck owner. They must confirm before the driver is assigned.');
-      setActive(null);
-      setQuote(null);
+      closeModal();
       const [rows, mine, all, assignable] = await Promise.all([
         hasSearchFilters() ? capacityApi.marketplace(marketplaceParams()) : capacityApi.marketplace({}),
         capacityApi.bookings(),
@@ -399,9 +446,14 @@ const AvailableSpacePage: React.FC = () => {
   const offerPreview = useMemo(() => {
     const freight = offeredPrice > 0 ? offeredPrice : Number(quote?.suggestedFreight || quote?.freightAmount || 0);
     const rate = Number(quote?.commissionRate || 8);
-    const fee = Math.round((freight * rate) / 100 * 100) / 100;
+    const fee = Math.round(((freight * rate) / 100) * 100) / 100;
     return { freight, fee, total: Math.round((freight + fee) * 100) / 100, rate };
   }, [offeredPrice, quote]);
+
+  const selectedCargo = useMemo(
+    () => cargos.find((cargo) => cargo.id === selectedCargoId) || null,
+    [cargos, selectedCargoId],
+  );
 
   if (loading) return <ModernLoader isLoading type="form" fields={6} />;
 
@@ -434,24 +486,6 @@ const AvailableSpacePage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <CityField label="Pickup" value={origin} onChange={setOrigin} />
             <CityField label="Delivery" value={destination} onChange={setDestination} />
-            <Field label="Assign cargo">
-              <select
-                value={selectedCargoId}
-                onChange={(e) => {
-                  const next = cargos.find((cargo) => cargo.id === e.target.value);
-                  if (next) applyCargo(next);
-                  else setSelectedCargoId('');
-                }}
-                className={inputClass}
-              >
-                <option value="">Select cargo to assign</option>
-                {cargos.map((cargo) => (
-                  <option key={cargo.id} value={cargo.id}>
-                    {cargo.title} · {Math.round(cargo.weightKg).toLocaleString()} kg
-                  </option>
-                ))}
-              </select>
-            </Field>
             <Field label="Pickup window">
               <input
                 type="datetime-local"
@@ -460,17 +494,6 @@ const AvailableSpacePage: React.FC = () => {
                 className={inputClass}
               />
             </Field>
-            <Field label="Delivery window">
-              <input
-                type="datetime-local"
-                value={deliveryAt}
-                onChange={(e) => setDeliveryAt(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Cargo title">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />
-            </Field>
             <Field label="Weight (kg)">
               <input
                 type="number"
@@ -478,7 +501,7 @@ const AvailableSpacePage: React.FC = () => {
                 value={weightKg || ''}
                 onChange={(e) => setWeightKg(Number(e.target.value) || 0)}
                 className={inputClass}
-                placeholder="Required to book"
+                placeholder="Optional filter"
               />
             </Field>
             <Field label="Volume (m³)">
@@ -496,19 +519,7 @@ const AvailableSpacePage: React.FC = () => {
         </div>
         <div className="px-5 md:px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-slate-500">
-            Assign a cargo, then open a leftover truck to set your offered price. The truck owner must confirm.
-            {cargos.length === 0 ? (
-              <>
-                {' '}
-                <button
-                  type="button"
-                  className="font-medium text-[#345E85] hover:underline"
-                  onClick={() => navigate('/dashboard/cargos/create')}
-                >
-                  Create cargo
-                </button>
-              </>
-            ) : null}
+            Filter leftover trucks, then use Book to assign unassigned cargo and set your offered price.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {filtered && (
@@ -582,14 +593,24 @@ const AvailableSpacePage: React.FC = () => {
                     </p>
                     <p className="text-[11px] text-slate-500">{offer.commissionRate}% fee</p>
                   </div>
-                  <button
-                    type="button"
-                    disabled={offer.bookable === false}
-                    onClick={() => openQuote(offer)}
-                    className={primaryBtnClass}
-                  >
-                    {offer.bookable === false ? offer.matchReason || 'Unavailable' : 'View details'}
-                  </button>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={offer.bookable === false}
+                      onClick={() => openDetails(offer)}
+                      className={ghostBtnClass}
+                    >
+                      View details
+                    </button>
+                    <button
+                      type="button"
+                      disabled={offer.bookable === false}
+                      onClick={() => openBook(offer)}
+                      className={primaryBtnClass}
+                    >
+                      {offer.bookable === false ? offer.matchReason || 'Unavailable' : 'Book'}
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
@@ -646,22 +667,17 @@ const AvailableSpacePage: React.FC = () => {
         </section>
       )}
 
-      {active && quote && (
+      {active && modalMode === 'details' && (
         <div className="fixed inset-0 z-[400] bg-black/40 flex items-center justify-center p-4">
           <div className={`${cardClass} max-w-lg w-full max-h-[90vh] overflow-y-auto`}>
             <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Leftover truck details</h3>
-                <p className="text-xs text-slate-500 mt-1 truncate">
-                  {active.corridor} · {active.truck?.plateNumber}
-                </p>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Truck details</h3>
+                <p className="text-xs text-slate-500 mt-1 truncate">{active.corridor}</p>
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setActive(null);
-                  setQuote(null);
-                }}
+                onClick={closeModal}
                 className="size-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700"
                 aria-label="Close"
               >
@@ -669,14 +685,26 @@ const AvailableSpacePage: React.FC = () => {
               </button>
             </div>
             <div className="px-5 py-4 space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="ui-label mb-0.5">Truck</p>
+                  <p className="ui-label mb-0.5">Plate</p>
                   <p className="font-medium text-slate-900 dark:text-white">
                     {active.truck?.plateNumber || '—'}
-                    {active.truck?.make || active.truck?.model
-                      ? ` · ${[active.truck?.make, active.truck?.model].filter(Boolean).join(' ')}`
-                      : ''}
+                  </p>
+                </div>
+                <div>
+                  <p className="ui-label mb-0.5">Vehicle</p>
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    {[active.truck?.make, active.truck?.model].filter(Boolean).join(' ') || '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="ui-label mb-0.5">Nameplate capacity</p>
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    {active.truck?.capacityWeight
+                      ? `${Math.round(active.truck.capacityWeight).toLocaleString()} kg`
+                      : '—'}
+                    {active.truck?.capacityVolume != null ? ` · ${active.truck.capacityVolume} m³` : ''}
                   </p>
                 </div>
                 <div>
@@ -685,29 +713,167 @@ const AvailableSpacePage: React.FC = () => {
                     {Math.round(active.remainingWeightKg).toLocaleString()} kg · {active.remainingVolumeM3} m³
                   </p>
                 </div>
+                <div>
+                  <p className="ui-label mb-0.5">Corridor origin</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{placeLabel(active.origin)}</p>
+                </div>
+                <div>
+                  <p className="ui-label mb-0.5">Corridor destination</p>
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    {placeLabel(active.destination)}
+                  </p>
+                </div>
                 <div className="col-span-2">
                   <p className="ui-label mb-0.5">Trip window</p>
                   <p className="font-medium text-slate-900 dark:text-white">
                     {formatWindow(active.departureAt, active.arrivalAt)}
                   </p>
                 </div>
+                <div>
+                  <p className="ui-label mb-0.5">Status</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{prettyStatus(active.status)}</p>
+                </div>
+                <div>
+                  <p className="ui-label mb-0.5">Booking</p>
+                  <p className="font-medium text-slate-900 dark:text-white">Owner must confirm</p>
+                </div>
+                {active.notes ? (
+                  <div className="col-span-2">
+                    <p className="ui-label mb-0.5">Notes</p>
+                    <p className="font-medium text-slate-900 dark:text-white">{active.notes}</p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+              <button type="button" onClick={closeModal} className={`${ghostBtnClass} flex-1`}>
+                Close
+              </button>
+              <button
+                type="button"
+                disabled={active.bookable === false}
+                onClick={() => openBook(active)}
+                className={`${primaryBtnClass} flex-1`}
+              >
+                Book this space
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {active && modalMode === 'book' && (
+        <div className="fixed inset-0 z-[400] bg-black/40 flex items-center justify-center p-4">
+          <div className={`${cardClass} max-w-lg w-full max-h-[90vh] overflow-y-auto`}>
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Book leftover space</h3>
+                <p className="text-xs text-slate-500 mt-1 truncate">
+                  {active.truck?.plateNumber || 'Truck'} · {active.corridor}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="size-8 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4 text-sm">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 text-xs space-y-1">
+                <p className="font-medium text-slate-900 dark:text-white inline-flex items-center gap-1.5">
+                  <Truck size={12} />
+                  {active.truck?.plateNumber || 'Truck'}
+                  {active.truck?.make || active.truck?.model
+                    ? ` · ${[active.truck?.make, active.truck?.model].filter(Boolean).join(' ')}`
+                    : ''}
+                </p>
+                <p className="text-slate-500">
+                  {Math.round(active.remainingWeightKg).toLocaleString()} kg leftover · {active.remainingVolumeM3}{' '}
+                  m³ · {formatWindow(active.departureAt, active.arrivalAt)}
+                </p>
               </div>
 
-              <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-1.5">
-                <p className="ui-label inline-flex items-center gap-1.5">
-                  <Package size={12} /> Cargo assigned
-                </p>
-                <p className="font-medium text-slate-900 dark:text-white">{title}</p>
-                <p className="text-xs text-slate-500">
-                  {weightKg.toLocaleString()} kg
-                  {volumeM3 ? ` · ${volumeM3} m³` : ''}
-                  {' · Pickup '}
-                  {origin?.name || origin?.city || '—'} at {formatWhen(pickupAt ? new Date(pickupAt).toISOString() : null)}
-                  {' · Delivery '}
-                  {destination?.name || destination?.city || '—'} at{' '}
-                  {formatWhen(deliveryAt ? new Date(deliveryAt).toISOString() : null)}
-                </p>
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <p className="ui-label mb-0">Unassigned cargo</p>
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-[#345E85] hover:underline"
+                    onClick={() => navigate('/dashboard/cargos/create')}
+                  >
+                    Create cargo
+                  </button>
+                </div>
+                {cargos.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 px-4 py-8 text-center">
+                    <Package size={22} className="mx-auto text-slate-300 mb-2" />
+                    <p className="text-sm text-slate-600 dark:text-slate-300">No unassigned cargo</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Create a cargo first, then assign it to this leftover truck.
+                    </p>
+                  </div>
+                ) : (
+                  <ul className="max-h-56 overflow-auto rounded-lg border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
+                    {cargos.map((cargo) => {
+                      const selected = cargo.id === selectedCargoId;
+                      return (
+                        <li key={cargo.id}>
+                          <button
+                            type="button"
+                            className={`w-full text-left px-3 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
+                              selected ? 'bg-[#345E85]/[0.06] ring-inset ring-1 ring-[#345E85]/30' : ''
+                            }`}
+                            onClick={() => {
+                              applyCargo(cargo);
+                              if (active) void refreshQuote(active, cargo);
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                                  {cargo.title}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  {Math.round(cargo.weightKg).toLocaleString()} kg
+                                  {cargo.volumeM3 ? ` · ${cargo.volumeM3} m³` : ''}
+                                  {' · '}
+                                  {cargo.corridor}
+                                </p>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  Pickup {formatWhen(cargo.pickupDate ? String(cargo.pickupDate) : null)}
+                                  {' · Delivery '}
+                                  {formatWhen(cargo.deliveryDate ? String(cargo.deliveryDate) : null)}
+                                </p>
+                              </div>
+                              {selected ? (
+                                <StatusPill>Selected</StatusPill>
+                              ) : null}
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
+
+              {selectedCargo ? (
+                <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-1.5">
+                  <p className="ui-label inline-flex items-center gap-1.5">
+                    <Package size={12} /> Selected cargo
+                  </p>
+                  <p className="font-medium text-slate-900 dark:text-white">{selectedCargo.title}</p>
+                  <p className="text-xs text-slate-500">
+                    {Math.round(selectedCargo.weightKg).toLocaleString()} kg
+                    {selectedCargo.volumeM3 ? ` · ${selectedCargo.volumeM3} m³` : ''}
+                    {' · '}
+                    {placeLabel(selectedCargo.origin)} → {placeLabel(selectedCargo.destination)}
+                  </p>
+                </div>
+              ) : null}
 
               <Field label="Your offered price">
                 <input
@@ -716,46 +882,45 @@ const AvailableSpacePage: React.FC = () => {
                   value={offeredPrice || ''}
                   onChange={(e) => setOfferedPrice(Number(e.target.value) || 0)}
                   className={inputClass}
+                  disabled={!selectedCargoId}
                 />
                 <p className="ui-helper mt-1.5">
-                  Owner asking from {compact(quote.suggestedFreight || quote.freightAmount || active.floorPrice || 0)}.
-                  The truck owner reviews this offer before confirming.
+                  {quoting
+                    ? 'Updating quote…'
+                    : quote
+                      ? `Suggested from listing: ${compact(quote.suggestedFreight || quote.freightAmount)}. Truck owner reviews your offer.`
+                      : 'Select cargo to get a suggested price.'}
                 </p>
               </Field>
 
-              <div className="space-y-2">
-                <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
-                  <span>Offered freight</span>
-                  <strong className="tabular-nums text-slate-900 dark:text-white">
-                    {compact(offerPreview.freight)}
-                  </strong>
+              {selectedCargoId && quote ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
+                    <span>Offered freight</span>
+                    <strong className="tabular-nums text-slate-900 dark:text-white">
+                      {compact(offerPreview.freight)}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
+                    <span>Match fee ({offerPreview.rate}%)</span>
+                    <strong className="tabular-nums text-slate-900 dark:text-white">
+                      {compact(offerPreview.fee)}
+                    </strong>
+                  </div>
+                  <div className="flex justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 font-semibold text-slate-900 dark:text-white">
+                    <span>Total</span>
+                    <span className="tabular-nums">{compact(offerPreview.total)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between gap-3 text-slate-600 dark:text-slate-300">
-                  <span>Match fee ({offerPreview.rate}%)</span>
-                  <strong className="tabular-nums text-slate-900 dark:text-white">
-                    {compact(offerPreview.fee)}
-                  </strong>
-                </div>
-                <div className="flex justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800 font-semibold text-slate-900 dark:text-white">
-                  <span>Total</span>
-                  <span className="tabular-nums">{compact(offerPreview.total)}</span>
-                </div>
-              </div>
+              ) : null}
             </div>
             <div className="px-5 py-3.5 border-t border-slate-200 dark:border-slate-800 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setActive(null);
-                  setQuote(null);
-                }}
-                className={`${ghostBtnClass} flex-1`}
-              >
+              <button type="button" onClick={closeModal} className={`${ghostBtnClass} flex-1`}>
                 Back
               </button>
               <button
                 type="button"
-                disabled={booking || !selectedCargoId || offeredPrice <= 0}
+                disabled={booking || quoting || !selectedCargoId || offeredPrice <= 0}
                 onClick={confirmBook}
                 className={`${primaryBtnClass} flex-1`}
               >
